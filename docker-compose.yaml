@@ -31,18 +31,15 @@ services:
           cpus: "0.5"
     environment:
       TZ: "America/Chicago"
-      # WEBPASSWORD: 'set a secure password here or it will be random'
-    # Volumes store your data between container upgrades
     volumes:
-      - "./etc-pihole/:/etc/pihole/"
-      - "./etc-dnsmasq.d/:/etc/dnsmasq.d/"
+      - "./docker/pihole/etc-pihole/:/etc/pihole/"
+      - "./docker/pihole/etc-dnsmasq.d/:/etc/dnsmasq.d/"
     # Recommended but not required (DHCP needs NET_ADMIN)
     #   https://github.com/pi-hole/docker-pi-hole#note-on-capabilities
     cap_add:
       - NET_ADMIN
     restart: unless-stopped    
   gitlab:
-    # export GITLAB_HOME=/srv/gitlab
     container_name: gitlab
     image: "gitlab/gitlab-ce:latest"
     restart: always
@@ -62,10 +59,9 @@ services:
         limits:
           cpus: "0.5"
     volumes:
-      - "$GITLAB_HOME/config:/etc/gitlab"
-      - "$GITLAB_HOME/logs:/var/log/gitlab"
-      - "$GITLAB_HOME/data:/var/opt/gitlab"
-
+      - "./docker/gitlab/config:/etc/gitlab"
+      - "./docker/gitlab/logs:/var/log/gitlab"
+      - "./docker/gitlab/data:/var/opt/gitlab"
   analytics-for-spotify:
     container_name: analytics-for-spotify
     image: "localhost:5000/analytics-for-spotify:202106140827"
