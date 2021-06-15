@@ -1,6 +1,6 @@
 # export GITLAB_HOME=/srv/gitlab
 # rm docker-compose.yaml && nano docker-compose.yaml
-# docker-compose --compatibility up --detach
+# docker-compose --compatibility up --detach  --remove-orphans
 version: "3.7"
 
 # More info at https://github.com/pi-hole/docker-pi-hole/ and https://docs.pi-hole.net/
@@ -40,21 +40,7 @@ services:
     #   https://github.com/pi-hole/docker-pi-hole#note-on-capabilities
     cap_add:
       - NET_ADMIN
-    restart: unless-stopped
-  
-  #registry-ui: # https://medium.com/@rukeith/note-learn-how-to-build-private-docker-registry-with-website-and-use-it-81d6916b7adc
-  #  image: konradkleine/docker-registry-frontend:v2
-  #  container_name: registry-ui
-  #  labels:
-  #    - "PROJECT=registry"
-  #  ports:
-  #    - 5001:80
-  #  environment:
-  #    - ENV_DOCKER_REGISTRY_PORT=5000
-  #    - ENV_DOCKER_REGISTRY_HOST=registry
-  #  depends_on:
-  #    - registry
-      
+    restart: unless-stopped    
   gitlab:
     # export GITLAB_HOME=/srv/gitlab
     container_name: gitlab
