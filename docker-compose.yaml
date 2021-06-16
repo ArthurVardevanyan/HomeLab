@@ -77,6 +77,15 @@ services:
       resources:
         limits:
           cpus: "0.5"
+  mariadb:
+    container_name: mariadb
+    image: mariadb
+    restart: always
+    ports:
+      - "3306:3306"
+    volumes:
+      - "./docker/mariadb/data:/var/lib/mysql"
+      - "./docker/mariadb/mysql:/etc/mysql"
   nextcloud:
     container_name: nextcloud
     hostname: nextcloud
@@ -91,7 +100,8 @@ services:
       - "/backup/File_Storage/Nextcloud:/var/www/html/data"
       - "./docker/nextcloud/apache2:/etc/apache2"
       - "./docker/nextcloud/letsencrypt/:/etc/letsencrypt"
-      #- "./docker/nextcloud/theme:/var/www/html/themes/<YOUR_CUSTOM_THEME>"
+    depends_on:
+      - mariadb
 networks:
   dockerBridge:
     external: true
