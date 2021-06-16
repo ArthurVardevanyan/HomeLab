@@ -38,9 +38,10 @@ services:
     #   https://github.com/pi-hole/docker-pi-hole#note-on-capabilities
     cap_add:
       - NET_ADMIN
-    restart: unless-stopped    
+    restart: unless-stopped
   gitlab:
     container_name: gitlab
+    hostname: gitlab
     image: "gitlab/gitlab-ce:latest"
     restart: always
     networks:
@@ -64,19 +65,33 @@ services:
       - "./docker/gitlab/data:/var/opt/gitlab"
   analytics-for-spotify:
     container_name: analytics-for-spotify
+    hostname: analytics-for-spotify
     image: "localhost:5000/analytics-for-spotify:202106140827"
     restart: always
     networks:
       dockerBridge:
         ipv4_address: 10.0.0.6
-    
     ports:
       - "80:80"
     deploy:
       resources:
         limits:
           cpus: "0.5"
-
+  nextcloud:
+    container_name: nextcloud
+    hostname: nextcloud
+    image: nextcloud
+    restart: always
+    ports:
+      - 7070:7070
+    volumes:
+      - "./docker/nextcloud/nextcloud:/var/www/html"
+      - "./docker/nextcloud/apps:/var/www/html/custom_apps"
+      - "./docker/nextcloud/config:/var/www/html/config"
+      - "/backup/File_Storage/Nextcloud:/var/www/html/data"
+      - "./docker/nextcloud/apache2:/etc/apache2"
+      - "./docker/nextcloud/letsencrypt/:/etc/letsencrypt"
+      #- "./docker/nextcloud/theme:/var/www/html/themes/<YOUR_CUSTOM_THEME>"
 networks:
   dockerBridge:
     external: true
