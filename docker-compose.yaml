@@ -63,20 +63,6 @@ services:
       - "./docker/gitlab/config:/etc/gitlab"
       - "./docker/gitlab/logs:/var/log/gitlab"
       - "./docker/gitlab/data:/var/opt/gitlab"
-  analytics-for-spotify:
-    container_name: analytics-for-spotify
-    hostname: analytics-for-spotify
-    image: "localhost:5000/analytics-for-spotify:202106140827"
-    restart: always
-    networks:
-      dockerBridge:
-        ipv4_address: 10.0.0.6
-    ports:
-      - "80:80"
-    deploy:
-      resources:
-        limits:
-          cpus: "0.5"
   mariadb:
     container_name: mariadb
     image: mariadb
@@ -113,6 +99,19 @@ services:
       - PMA_HOST=10.0.0.7
     ports:
     - 3305:80
+  analytics-for-spotify:
+    container_name: analytics-for-spotify
+    hostname: analytics-for-spotify
+    image: "localhost:5000/analytics-for-spotify:202106162020"
+    restart: always
+    ports:
+      - "7071:80"
+    deploy:
+      resources:
+        limits:
+          cpus: "0.5"
+    depends_on:
+      - mariadb
 networks:
   dockerBridge:
     external: true
