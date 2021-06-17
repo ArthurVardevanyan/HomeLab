@@ -102,6 +102,17 @@ services:
       - "./docker/nextcloud/letsencrypt/:/etc/letsencrypt"
     depends_on:
       - mariadb
+  phpmyadmin:
+    hostname: phpmyadmin
+    container_name: phpmyadmin
+    image: phpmyadmin
+    restart: always
+    depends_on:
+      - mariadb          
+    environment:
+      - PMA_HOST=10.0.0.7
+    ports:
+    - 3305:80
 networks:
   dockerBridge:
     external: true
