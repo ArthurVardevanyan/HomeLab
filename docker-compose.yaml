@@ -66,7 +66,11 @@ services:
     container_name: mariadb
     image: mariadb
     restart: always
+    networks:
+      dockerBridge:
+        ipv4_address: 10.0.0.5
     ports:
+      - "80:80"
       - "3306:3306"
     volumes:
       - "./docker/mariadb/data:/var/lib/mysql"
@@ -88,30 +92,24 @@ services:
     depends_on:
       - mariadb
   phpmyadmin:
-    hostname: phpmyadmin
     container_name: phpmyadmin
     image: phpmyadmin
     restart: always
+    network_mode: "service:mariadb"
     depends_on:
       - mariadb
     environment:
-      - PMA_HOST=10.0.0.7
-    ports:
-      - 3305:80
-  arthurvardevanyan:
-    hostname: arthurvardevanyan
-    container_name: arthurvardevanyan
-    image: "localhost:5000/arthurvardevanyan:202006162033"
-    restart: always
-    ports:
-      - 7072:80
+      - PMA_HOST=10.0.0.5
   analytics-for-spotify:
     container_name: analytics-for-spotify
     hostname: analytics-for-spotify
-    image: "localhost:5000/analytics-for-spotify:202106162020"
+    image: "localhost:5000/analytics-for-spotify:latest"
     restart: always
+    networks:
+      dockerBridge:
+        ipv4_address: 10.0.0.6
     ports:
-      - "7071:80"
+      - "80:80"
     deploy:
       resources:
         limits:
