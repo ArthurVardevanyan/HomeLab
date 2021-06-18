@@ -1,0 +1,14 @@
+docker network create -d macvlan \
+--subnet=10.0.0.0/26 \
+--ip-range=10.0.0.15/28 \
+--gateway=10.0.0.1 \
+-o parent=enp1s0 dockerBridge
+
+sudo ip link add macvlan0 link enp1s0 type macvlan mode bridge
+sudo ip link set dev macvlan0 up
+sudo ip addr add 10.0.0.100/24 dev macvlan0
+sudo ip route add 10.0.0.3 dev macvlan0
+sudo ip route add 10.0.0.4 dev macvlan0
+sudo ip route add 10.0.0.5 dev macvlan0
+sudo ip route add 10.0.0.6 dev macvlan0
+sudo ip route add 10.0.0.9 dev macvlan0
