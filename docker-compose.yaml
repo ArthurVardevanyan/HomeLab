@@ -1,4 +1,6 @@
 # rm docker-compose.yaml && nano docker-compose.yaml
+# docker-compose down
+# docker-compose pull
 # docker-compose --compatibility up --detach  --remove-orphans
 version: "3.7"
 
@@ -56,6 +58,7 @@ services:
       - "22:22"
       - "5000:5000"
       - "5050:5050"
+      - "8093:8093"
     deploy:
       resources:
         limits:
@@ -74,8 +77,7 @@ services:
       - "./docker/gitlab-runner:/etc/gitlab-runner"
       - "./docker/gitlab-docker:/etc/docker"
       - /var/run/docker.sock:/var/run/docker.sock
-    ports:
-      - "8093:8093"
+    network_mode: "service:gitlab"
     deploy:
       resources:
         limits:
