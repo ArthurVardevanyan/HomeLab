@@ -54,14 +54,32 @@ services:
       - "80:80"
       - "443:443"
       - "22:22"
+      - "5000:5000"
+      - "5050:5050"
     deploy:
       resources:
         limits:
-          cpus: "0.5"
+          cpus: "0.75"
     volumes:
       - "./docker/gitlab/config:/etc/gitlab"
       - "./docker/gitlab/logs:/var/log/gitlab"
       - "./docker/gitlab/data:/var/opt/gitlab"
+  gitlab-runner:
+    container_name: gitlab-runner
+    image: gitlab/gitlab-runner
+    restart: unless-stopped
+    depends_on:
+      - gitlab
+    volumes:
+      - "./docker/gitlab-runner:/etc/gitlab-runner"
+      - "./docker/gitlab-docker:/etc/docker"
+      - /var/run/docker.sock:/var/run/docker.sock
+    ports:
+      - "8093:8093"
+    deploy:
+      resources:
+        limits:
+          cpus: "0.5"
   mariadb:
     container_name: mariadb
     image: mariadb
