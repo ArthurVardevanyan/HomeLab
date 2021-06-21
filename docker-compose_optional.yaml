@@ -1,10 +1,32 @@
-# NON FUNCTIONAL 
-financetracker:
-    container_name: financetracker
-    hostname: financetracker
-    image: "localhost:5000/financetracker:202006162039"
+services:
+  arthurvardevanyan:
+    container_name: arthurvardevanyan
+    image: "10.0.0.9:5050/arthurvardevanyan/arthurvardevanyan:latest"
     restart: always
     ports:
-      - "7073:80"
-    depends_on:
-      - mariadb
+      - "8080:80"
+financetracker:
+  container_name: financetracker
+  hostname: financetracker
+  image: "10.0.0.9:5050/arthurvardevanyan/financetracker:latest"
+  restart: always
+  ports:
+    - "8081:80"
+  depends_on:
+    - mariadb
+
+
+# Not Functional
+nginx-proxy:
+  container_name: nginx-proxy
+  image: jwilder/nginx-proxy
+  ports:
+    - "80:80"
+  volumes:
+    - /var/run/docker.sock:/tmp/docker.sock:ro
+
+
+
+
+environment:
+  - VIRTUAL_HOST=gitlab.arthurvardevanyan.com
