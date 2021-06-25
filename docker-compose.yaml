@@ -123,7 +123,17 @@ services:
   analytics-for-spotify:
     container_name: analytics-for-spotify
     hostname: analytics-for-spotify
-    image: "10.0.0.9:5050/arthurvardevanyan/analytics-for-spotify:latest"
+    env_file: .env
+    image: ${REPOSITORY}
+    environment:
+        - DOCKER=YES
+        - CLIENT_ID=${CLIENT_ID}
+        - CLIENT_SECERT=${CLIENT_SECERT}
+        - REDIRECT_URL=${REDIRECT_URL}
+        - HOST=${HOST}
+        - DATABASE=${DATABASE}
+        - USER=${USERNAME}
+        - PASSWORD=${PASSWORD}
     restart: always
     networks:
       dockerBridge:
