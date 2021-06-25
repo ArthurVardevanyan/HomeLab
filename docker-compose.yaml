@@ -48,10 +48,6 @@ services:
     networks:
       dockerBridge:
         ipv4_address: 10.0.0.9
-    environment:
-      GITLAB_OMNIBUS_CONFIG: |
-        external_url 'http://10.0.0.9/'
-        # Add any other gitlab.rb configuration here, each on its own line
     ports:
       - "80:80"
       - "443:443"
@@ -76,6 +72,7 @@ services:
     volumes:
       - "./docker/gitlab-runner:/etc/gitlab-runner"
       - "./docker/gitlab-docker:/etc/docker"
+      - "./docker/gitlab-hosts/hosts:/etc/hosts"
       - /var/run/docker.sock:/var/run/docker.sock
     network_mode: "service:gitlab"
     deploy:
