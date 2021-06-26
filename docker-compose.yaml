@@ -1,19 +1,14 @@
-# rm docker-compose.yaml && nano docker-compose.yaml
+# sudo rm docker-compose.yaml && sudo nano docker-compose.yaml
+# sudo rm docker-compose.yaml && nano docker-compose.yaml
+# docker system prune -a
+# docker image prune -a
+# docker kill $(docker ps -q)
 # docker-compose down
 # docker-compose pull
-# docker-compose --compatibility up --detach  --remove-orphans
+# sudo docker-compose --compatibility up --detach  --remove-orphans
 version: "3.7"
 
-# More info at https://github.com/pi-hole/docker-pi-hole/ and https://docs.pi-hole.net/
 services:
-  registry:
-    container_name: registry
-    restart: always
-    image: registry:2
-    environment:
-      - REGISTRY_STORAGE_DELETE_ENABLED=true
-    ports:
-      - "5000:5000"
   pihole:
     container_name: pihole
     image: pihole/pihole:latest
@@ -33,10 +28,8 @@ services:
     environment:
       TZ: "America/Chicago"
     volumes:
-      - "./docker/pihole/etc-pihole/:/etc/pihole/"
-      - "./docker/pihole/etc-dnsmasq.d/:/etc/dnsmasq.d/"
-    # Recommended but not required (DHCP needs NET_ADMIN)
-    #   https://github.com/pi-hole/docker-pi-hole#note-on-capabilities
+      - "/home/arthur/docker/pihole/etc-pihole/:/etc/pihole/"
+      - "/home/arthur/docker/pihole/etc-dnsmasq.d/:/etc/dnsmasq.d/"
     cap_add:
       - NET_ADMIN
     restart: unless-stopped
@@ -60,9 +53,9 @@ services:
         limits:
           cpus: "0.75"
     volumes:
-      - "./docker/gitlab/config:/etc/gitlab"
-      - "./docker/gitlab/logs:/var/log/gitlab"
-      - "./docker/gitlab/data:/var/opt/gitlab"
+      - "/home/arthur/docker/gitlab/config:/etc/gitlab"
+      - "/home/arthur/docker/gitlab/logs:/var/log/gitlab"
+      - "/home/arthur/docker/gitlab/data:/var/opt/gitlab"
   gitlab-runner:
     container_name: gitlab-runner
     image: gitlab/gitlab-runner
@@ -70,15 +63,15 @@ services:
     depends_on:
       - gitlab
     volumes:
-      - "./docker/gitlab-runner:/etc/gitlab-runner"
-      - "./docker/gitlab-docker:/etc/docker"
-      - "./docker/gitlab-hosts/hosts:/etc/hosts"
+      - "/home/arthur/docker/gitlab-runner:/etc/gitlab-runner"
+      - "/home/arthur/docker/gitlab-docker:/etc/docker"
+      - "/home/arthur/docker/gitlab-hosts/hosts:/etc/hosts"
       - /var/run/docker.sock:/var/run/docker.sock
     network_mode: "service:gitlab"
     deploy:
       resources:
         limits:
-          cpus: "0.5"
+          cpus: "0.75"
   mariadb:
     container_name: mariadb
     image: mariadb
@@ -90,8 +83,8 @@ services:
       - "80:80"
       - "3306:3306"
     volumes:
-      - "./docker/mariadb/data:/var/lib/mysql"
-      - "./docker/mariadb/mysql:/etc/mysql"
+      - "/home/arthur/docker/mariadb/data:/var/lib/mysql"
+      - "/home/arthur/docker/mariadb/mysql:/etc/mysql"
   nextcloud:
     container_name: nextcloud
     hostname: nextcloud
@@ -100,14 +93,18 @@ services:
     ports:
       - 7070:7070
     volumes:
-      - "./docker/nextcloud/nextcloud:/var/www/html"
-      - "./docker/nextcloud/apps:/var/www/html/custom_apps"
-      - "./docker/nextcloud/config:/var/www/html/config"
+      - "/home/arthur/docker/nextcloud/nextcloud:/var/www/html"
+      - "/home/arthur/docker/nextcloud/apps:/var/www/html/custom_apps"
+      - "/home/arthur/docker/nextcloud/config:/var/www/html/config"
       - "/backup/File_Storage/Nextcloud:/var/www/html/data"
-      - "./docker/nextcloud/apache2:/etc/apache2"
-      - "./docker/nextcloud/letsencrypt/:/etc/letsencrypt"
+      - "/home/arthur/docker/nextcloud/apache2:/etc/apache2"
+      - "/home/arthur/docker/nextcloud/letsencrypt/:/etc/letsencrypt"
     depends_on:
       - mariadb
+    deploy:
+      resources:
+        limits:
+          cpus: "0.75"
   phpmyadmin:
     container_name: phpmyadmin
     image: phpmyadmin
@@ -117,20 +114,24 @@ services:
       - mariadb
     environment:
       - PMA_HOST=10.0.0.5
+    deploy:
+      resources:
+        limits:
+          cpus: "0.5"
   analytics-for-spotify:
     container_name: analytics-for-spotify
     hostname: analytics-for-spotify
     env_file: .env
     image: ${REPOSITORY}
     environment:
-        - DOCKER=YES
-        - CLIENT_ID=${CLIENT_ID}
-        - CLIENT_SECERT=${CLIENT_SECERT}
-        - REDIRECT_URL=${REDIRECT_URL}
-        - HOST=${HOST}
-        - DATABASE=${DATABASE}
-        - USER=${USERNAME}
-        - PASSWORD=${PASSWORD}
+      - DOCKER=YES
+      - CLIENT_ID=${CLIENT_ID}
+      - CLIENT_SECRET=${CLIENT_SECRET}
+      - REDIRECT_URL=${REDIRECT_URL}
+      - HOST=${HOST}
+      - DATABASE=${DATABASE}
+      - USER=${USERNAME}
+      - PASSWORD=${PASSWORD}
     restart: always
     networks:
       dockerBridge:
@@ -140,7 +141,7 @@ services:
     deploy:
       resources:
         limits:
-          cpus: "0.5"
+          cpus: "0.75"
     depends_on:
       - mariadb
 networks:
