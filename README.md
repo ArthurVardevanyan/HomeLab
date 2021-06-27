@@ -85,6 +85,7 @@ sudo ip route add 10.0.0.5 dev macvlan0
 sudo ip route add 10.0.0.6 dev macvlan0
 sudo ip route add 10.0.0.9 dev macvlan0
 
+sudo chmod +x  network.bash
 ```
  
 ### SSL
