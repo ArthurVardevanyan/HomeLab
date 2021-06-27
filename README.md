@@ -17,6 +17,7 @@ scp -r /home/arthur/vmware windowsBackup@10.0.0.7:/backup/Virtual_Machine_Backup
 ## NAS
 ```
 sudo apt-get install luckybackup
+sudo apt-get autopurge ubuntu-advantage-tools
 
 sudo gsettings set org.gnome.Vino require-encryption false
 
@@ -26,6 +27,18 @@ sudo service apache2 restart
 
 sudo systemctl start  gdm3
 sudo systemctl stop  gdm3
+```
+#### Logging
+```
+journalctl --disk-usage
+sudo journalctl --rotate
+sudo journalctl --vacuum-time=2days
+sudo journalctl --vacuum-size=0M
+sudo journalctl --vacuum-files=5
+sudo nano /etc/systemd/journald.conf
+sudo rm /etc/systemd/journald.conf
+sudo systemctl daemon-reload
+
 ```
 #### Crontab
 ```
