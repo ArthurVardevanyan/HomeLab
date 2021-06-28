@@ -90,8 +90,12 @@ cp -r /etc/letsencrypt/live/server.arthurvardevanyan.com/ /backup/Timeshift/lets
 
 ### Cockpit Cert
 ```
-ln -s  /etc/letsencrypt/live/server.arthurvardevanyan.com/fullchain.pem >> /etc/cockpit/ws-certs.d/1-my-cert.cert
-ln -s  /etc/letsencrypt/live/server.arthurvardevanyan.com/privkey.pem >> /etc/cockpit/ws-certs.d/1-my-cert.cert
+sudo su
+
+rm /etc/cockpit/ws-certs.d/1-my-cert.cert
+cat  /etc/letsencrypt/live/server.arthurvardevanyan.com/fullchain.pem >> /etc/cockpit/ws-certs.d/1-my-cert.cert
+cat  /etc/letsencrypt/live/server.arthurvardevanyan.com/privkey.pem >> /etc/cockpit/ws-certs.d/1-my-cert.cert
+systemctl restart cockpit.socket
 ```
 ### GitLab
 ```
@@ -117,6 +121,14 @@ sudo -u www-data php occ maintenance:repair
 
 sudo -u www-data php occ preview:delete_old
 sudo -u www-data php occ preview:generate-all
+
+
+sudo rm -r ~/docker/nextcloud/letsencrypt/
+sudo cp -r /etc/letsencrypt/ ~/docker/nextcloud/
+docker container restart nextcloud
+
+sudo su
+
 ```
 
 ### Pi-Hole
