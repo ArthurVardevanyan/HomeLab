@@ -8,16 +8,20 @@ git merge --no-ff production
 
 scp -r /home/arthur/vmware windowsBackup@10.0.0.7:/backup/Virtual_Machine_Backup/vmware
 
-
-
-
 7z a -t7z -m0=lzma2 -mx=9 -mfb=128 -md=256m -ms=on archive.7z FOLDER
+
+https://ohmyz.sh/
+sudo apt-get install zsh-autosuggestions zsh-syntax-highlighting autojump
+
+sudo usermod -s /usr/bin/zsh $(whoami)
+
+omz update
+
 ```
 
 ## NAS
 ```
 sudo apt-get install luckybackup
-sudo apt-get autopurge ubuntu-advantage-tools
 
 sudo gsettings set org.gnome.Vino require-encryption false
 
@@ -27,18 +31,6 @@ sudo service apache2 restart
 
 sudo systemctl start  gdm3
 sudo systemctl stop  gdm3
-```
-#### Logging
-```
-journalctl --disk-usage
-sudo journalctl --rotate
-sudo journalctl --vacuum-time=2days
-sudo journalctl --vacuum-size=0M
-sudo journalctl --vacuum-files=5
-sudo nano /etc/systemd/journald.conf
-sudo rm /etc/systemd/journald.conf
-sudo systemctl daemon-reload
-
 ```
 #### Crontab
 ```
@@ -85,7 +77,6 @@ sudo ip route add 10.0.0.5 dev macvlan0
 sudo ip route add 10.0.0.6 dev macvlan0
 sudo ip route add 10.0.0.9 dev macvlan0
 
-sudo chmod +x  network.bash
 ```
  
 ### SSL
