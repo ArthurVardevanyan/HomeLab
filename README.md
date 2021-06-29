@@ -22,6 +22,7 @@ omz update
 ## NAS
 ```
 sudo apt-get install luckybackup
+sudo apt-get autopurge ubuntu-advantage-tools
 
 sudo gsettings set org.gnome.Vino require-encryption false
 
@@ -32,6 +33,19 @@ sudo service apache2 restart
 sudo systemctl start  gdm3
 sudo systemctl stop  gdm3
 ```
+
+#### Logging
+```
+journalctl --disk-usage
+sudo journalctl --rotate
+sudo journalctl --vacuum-time=2days
+sudo journalctl --vacuum-files=5
+sudo nano /etc/systemd/journald.conf
+sudo rm /etc/systemd/journald.conf
+
+sudo journalctl --vacuum-size=1M
+sudo systemctl daemon-reload
+
 #### Crontab
 ```
 @reboot    sleep 25;  /home/arthur/docker/network.bash
@@ -77,6 +91,7 @@ sudo ip route add 10.0.0.5 dev macvlan0
 sudo ip route add 10.0.0.6 dev macvlan0
 sudo ip route add 10.0.0.9 dev macvlan0
 
+sudo chmod +x  network.bash
 ```
  
 ### SSL
