@@ -45,7 +45,7 @@ sudo rm /etc/systemd/journald.conf
 
 sudo journalctl --vacuum-size=1M
 sudo systemctl daemon-reload
-
+```
 #### Crontab
 ```
 @reboot    sleep 25;  /home/arthur/docker/network.bash
