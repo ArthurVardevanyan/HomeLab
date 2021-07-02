@@ -170,4 +170,26 @@ mysqldump -h 10.0.0.5 -u arthur -p nextcloud > nextcloud.sql
 
 mysqldump -h 10.0.0.5 -u arthur -p  --all-databases > sever.sql
 ```
+##### Database Dump & Log Rotate
+```
+mysqldump -h 10.0.0.5 -ubackup -pbackup  --all-databases > /home/arthur/docker/mariadb/backup/server/server.sql
+mysqldump -h 10.0.0.5 -ubackup -pbackup  spotify         > /home/arthur/docker/mariadb/backup/spotify/spotify.sql
+mysqldump -h 10.0.0.5 -ubackup -pbackup  nextcloud       > /home/arthur/docker/mariadb/backup/nextcloud/nextcloud.sql
+mysqldump -h 10.0.0.5 -ubackup -pbackup  FinanceTracker  > /home/arthur/docker/mariadb/backup/FinanceTracker/FinanceTracker.sql
+
+/etc/logrotate.d/mysqlbackup
+
+/home/arthur/docker/mariadb/backup/*/*.sql {
+    daily
+    rotate 180
+    compress
+    delaycompress
+    create 640 root backup
+    dateext
+    dateformat .%Y-%m-%dT%H:%M:%S
+    postrotate
+        /home/arthur/docker/mariadb/backup/databaseDump.sh
+    endscript
+}
+```
 
