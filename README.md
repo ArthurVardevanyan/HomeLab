@@ -144,6 +144,16 @@ docker container restart nextcloud
 
 sudo su
 
+
+sudo docker exec nextcloud apt-get update
+sudo docker exec nextcloud apt-get install -y libmagickcore-6.q16-6-extra
+sudo nano /home/arthur/docker/nextcloud/nextcloud/.htaccess
+
+RewriteRule ^.well-known/webfinger /nextcloud/index.php/.well-known/webfinger [R=301,L]
+RewriteRule ^.well-known/nodeinfo /nextcloud/index.php/.well-known/nodeinfo [R=301,L]
+
+docker container restart nextcloud
+
 ```
 
 ### Pi-Hole
