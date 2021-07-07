@@ -120,6 +120,20 @@ services:
       resources:
         limits:
           cpus: "0.5"
+  homeassistant:
+    container_name: homeassistant
+    hostname: homeassistant
+    image: homeassistant/home-assistant
+    restart: unless-stopped
+    ports:
+      - 8123:8123
+    volumes:
+      - "/etc/localtime:/etc/localtime:ro"
+      - "/home/arthur/docker/homeassistant/:/config"    
+    deploy:
+      resources:
+        limits:
+          cpus: "0.75"
   analytics-for-spotify:
     container_name: analytics-for-spotify
     hostname: analytics-for-spotify
