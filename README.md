@@ -17,6 +17,7 @@ sudo usermod -s /usr/bin/zsh $(whoami)
 
 omz update
 
+system76-power profile performance
 ```
 
 ## NAS
