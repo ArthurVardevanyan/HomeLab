@@ -188,6 +188,8 @@ mysqldump -h 10.0.0.5 -u arthur -p  --all-databases > sever.sql
 ```
 ##### Database Dump & Log Rotate
 ```
+sudo apt install mariadb-client
+
 mysqldump -h 10.0.0.5 -ubackup -pbackup  --all-databases > /home/arthur/docker/mariadb/backup/server/server.sql
 mysqldump -h 10.0.0.5 -ubackup -pbackup  spotify         > /home/arthur/docker/mariadb/backup/spotify/spotify.sql
 mysqldump -h 10.0.0.5 -ubackup -pbackup  nextcloud       > /home/arthur/docker/mariadb/backup/nextcloud/nextcloud.sql
