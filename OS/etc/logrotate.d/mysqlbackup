@@ -1,0 +1,12 @@
+/home/arthur/docker/mariadb/backup/*/*.sql {
+    daily
+    rotate 180
+    compress
+    delaycompress
+    create 640 root backup
+    dateext
+    dateformat .%Y-%m-%dT%H:%M:%S
+    postrotate
+        /home/arthur/docker/mariadb/backup/databaseDump.sh
+    endscript
+}

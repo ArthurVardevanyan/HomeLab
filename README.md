@@ -22,6 +22,9 @@ system76-power profile performance
 
 ## NAS
 ```
+sudo apt install cockpit cockpit-pcp
+https://github.com/optimans/cockpit-zfs-manager
+
 sudo apt-get install luckybackup
 sudo apt-get autopurge ubuntu-advantage-tools
 
@@ -67,6 +70,8 @@ zfs send backup/Virtual_Machine_Backup@2021.06.14-13.06.38	    | ssh arthur@10.0
 ```
 ### Docker
 ```
+sudo usermod -aG docker $USER
+
 sudo rm docker-compose.yaml && sudo nano docker-compose.yaml
 sudo rm docker-compose.yaml && nano docker-compose.yaml
 docker system prune -a
