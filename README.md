@@ -59,13 +59,18 @@ sudo systemctl daemon-reload
 ```
 
 ### ZFS
-```
+```bash
+/usr/sbin/zfs send  backup/Timeshift@20210801 | pv | ssh arthur@10.42.0.105 /usr/sbin/zfs receive -F backup/Timeshift
+/usr/sbin/zfs send  backup/File_Storage@20210801 | pv | ssh arthur@10.42.0.105 /usr/sbin/zfs receive -F backup/File_Storage
+
+/usr/sbin/zfs send -i backup/File_Storage backup/File_Storage@2021.08.01 | pv | ssh arthur@10.42.0.105 /usr/sbin/zfs receive -F backup/
+File_Storage
+
+
+
 zfs send backup/File_Storage@2021.06.14-10.22.09 | ssh arthur@10.0.0.2 zfs receive -F backup/File_Storage
-
 zfs send backup/Timeshift@2021.06.14-10.39.17    | ssh arthur@10.0.0.2 zfs receive -F backup/Timeshift
-
 zfs send backup/WindowsBackup@2021.06.14-12.56.48	    | ssh arthur@10.0.0.2 zfs receive -F backup/WindowsBackup
-
 zfs send backup/Virtual_Machine_Backup@2021.06.14-13.06.38	    | ssh arthur@10.0.0.2 zfs receive -F backup/Virtual_Machine_Backup
 ```
 ### Docker
