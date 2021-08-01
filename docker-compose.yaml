@@ -10,6 +10,19 @@
 version: "3.7"
 
 services:
+  heimdall:
+    image: linuxserver/heimdall
+    container_name: heimdall
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=America/Detroit
+    volumes:
+      - /home/arthur/docker/heimdall:/config
+    ports:
+      - 80:80
+      - 443:443
+    restart: unless-stopped
   pihole:
     container_name: pihole
     image: pihole/pihole:latest
