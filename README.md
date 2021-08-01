@@ -108,14 +108,21 @@ sudo apt install certbot python3-certbot-apache
 sudo certbot --agree-tos -d server.arthurvardevanyan.com --manual --preferred-challenges dns certonly
 cp -r /etc/letsencrypt/live/server.arthurvardevanyan.com/ /backup/Timeshift/letsencrypt/server.arthurvardevanyan.com
 ```
+sudo certbot --agree-tos -d "*.arthurvardevanyan.com" --manual --preferred-challenges dns certonly
+
 
 ### Cockpit Cert
-```
+```bash
 sudo su
 
 rm /etc/cockpit/ws-certs.d/1-my-cert.cert
+
 cat  /etc/letsencrypt/live/server.arthurvardevanyan.com/fullchain.pem >> /etc/cockpit/ws-certs.d/1-my-cert.cert
 cat  /etc/letsencrypt/live/server.arthurvardevanyan.com/privkey.pem >> /etc/cockpit/ws-certs.d/1-my-cert.cert
+
+# WildCard
+cat  /etc/letsencrypt/live/arthurvardevanyan.com/fullchain.pem >> /etc/cockpit/ws-certs.d/1-my-cert.cert
+cat  /etc/letsencrypt/live/arthurvardevanyan.com/privkey.pem >> /etc/cockpit/ws-certs.d/1-my-cert.cert
 systemctl restart cockpit.socket
 ```
 ### GitLab
@@ -160,10 +167,13 @@ RewriteRule ^.well-known/nodeinfo /nextcloud/index.php/.well-known/nodeinfo [R=3
 
 docker container restart nextcloud
 
+docker exec nextcloud bash -c 'apt-get update && apt-get install -y --no-install-recommends $(apt-cache search libmagickcore-6.q[0-9][0-9]-[0-9]-extra | cut -d " " -f1)'
 ```
 
 ### Pi-Hole
 ```
+sudo docker exec -it pihole bash
+
 git clone https://github.com/anudeepND/whitelist.git
 apt-get update && apt-get install python3 -y
 ./whitelist/scripts/referral.sh
