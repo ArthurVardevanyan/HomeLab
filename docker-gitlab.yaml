@@ -1,0 +1,47 @@
+version: "3.7"
+
+services:
+  gitlab:
+    container_name: gitlab
+    hostname: gitlab
+    image: "gitlab/gitlab-ce:latest"
+    restart: unless-stopped
+    networks:
+      dockerBridge:
+        ipv4_address: 10.0.0.9
+    ports:
+      - "80:80"
+      - "443:443"
+      - "22:22"
+      - "5000:5000"
+      - "5050:5050"
+      - "8093:8093"
+    deploy:
+      resources:
+        limits:
+          cpus: "0.75"
+    volumes:
+      - "/home/arthur/docker/gitlab/config:/etc/gitlab"
+      - "/home/arthur/docker/gitlab/logs:/var/log/gitlab"
+      - "/home/arthur/docker/gitlab/data:/var/opt/gitlab"
+
+  gitlab-runner:
+    container_name: gitlab-runner
+    image: gitlab/gitlab-runner
+    restart: unless-stopped
+    depends_on:
+      - gitlab
+    volumes:
+      - "/home/arthur/docker/gitlab-runner:/etc/gitlab-runner"
+      - "/home/arthur/docker/gitlab-docker:/etc/docker"
+      - "/home/arthur/docker/gitlab-hosts/hosts:/etc/hosts"
+      - /var/run/docker.sock:/var/run/docker.sock
+    network_mode: "service:gitlab"
+    deploy:
+      resources:
+        limits:
+          cpus: "0.75"
+
+networks:
+  dockerBridge:
+    external: true
