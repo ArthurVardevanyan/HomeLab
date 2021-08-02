@@ -46,12 +46,12 @@ services:
       - "/home/arthur/docker/pihole/etc-dnsmasq.d/:/etc/dnsmasq.d/"
     cap_add:
       - NET_ADMIN
-    restart: unless-stopped
+    restart: always
   gitlab:
     container_name: gitlab
     hostname: gitlab
     image: "gitlab/gitlab-ce:latest"
-    restart: always
+    restart: unless-stopped
     networks:
       dockerBridge:
         ipv4_address: 10.0.0.9
@@ -133,7 +133,7 @@ services:
     container_name: homeassistant
     hostname: homeassistant
     image: homeassistant/home-assistant
-    restart: unless-stopped
+    restart: always
     ports:
       - 8123:8123
     networks:
