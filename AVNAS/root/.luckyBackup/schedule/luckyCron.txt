@@ -21,8 +21,13 @@
 # For more information see the manual pages of crontab(5) and cron(8)
 # 
 # m h  dom mon dow   command
-#@reboot    sleep 30;  /home/arthur/vmware/VMwareStartup.bash
+#30-59 23 * * * sudo rtcwake -u -s 28800 -m mem #OLD 35100 @ 11pm
+@reboot    sleep 25;  /home/arthur/docker/network.bash
+@reboot    sleep 45;  mount /backup/Timeshift/Timeshift.img /media/arthur/Timeshift/
+@reboot    sleep 600;  systemctl stop gdm
+*/5 * * * * docker exec --user www-data nextcloud php -f cron.php
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ luckybackup entries ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-0 3 * * *	/usr/bin/luckybackup -c --no-questions --skip-critical /home/arthur/.luckyBackup/profiles/default.profile > /home/arthur/.luckyBackup/logs/default-LastCronLog.log 2>&1
+0 3 * * *	/usr/bin/luckybackup -c --no-questions --skip-critical /root/.luckyBackup/profiles/default.profile > /root/.luckyBackup/logs/default-LastCronLog.log 2>&1
+@reboot    sleep 180;    /usr/bin/luckybackup -c --no-questions --skip-critical /root/.luckyBackup/profiles/default.profile > /root/.luckyBackup/logs/default-LastCronLog.log 2>&1
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ end of luckybackup entries ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
