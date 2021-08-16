@@ -1,0 +1,19 @@
+- hosts: AVNAS
+  become: true
+  user: arthur
+  tasks:
+    - name: Install Samba
+      apt:
+        state: latest
+        name:
+          - samba
+    - name: Creating Samba Config
+      copy:
+        src: "../AVNAS/etc/samba/smb.conf"
+        dest: "/etc/samba/smb.conf"
+      register: samba_conf
+    - name: restart Samba
+      service:
+        name: smbd
+        state: restarted
+      when: samba_conf.changed

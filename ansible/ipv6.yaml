@@ -1,0 +1,16 @@
+- hosts: AVNAS
+  become: true
+  user: arthur
+  tasks:
+    - name: Modify sysctl.conf
+      copy:
+        src: "../AVNAS/etc/sysctl.conf"
+        dest: "/etc/sysctl.conf"
+    - name: Modify Grub
+      copy:
+        src: "../AVNAS/etc/default/grub"
+        dest: "/etc/default/grub"
+      register: grub_conf
+    - name: Update Grub
+      command: update-grub
+      when: grub_conf.changed

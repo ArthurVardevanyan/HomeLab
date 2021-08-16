@@ -1,0 +1,28 @@
+- hosts: AVNAS
+  become: true
+  user: arthur
+  tasks:
+    - name: Install apache2
+      apt:
+        state: latest
+        name:
+          - apache2
+    - name: Install php
+      apt:
+        state: latest
+        name:
+          - php
+    - name: Git ezservermonitor-AVNAS
+      git:
+        repo: "https://gitlab.arthurvardevanyan.com/ArthurVardevanyan/ezservermonitor-AVNAS.git"
+        dest: /var/www/html/EZ
+    - name: Creating apache2 Config
+      copy:
+        src: "../AVNAS/etc/apache2/ports.conf"
+        dest: "/etc/apache2/ports.conf"
+      register: apache2_conf
+    - name: restart apache2
+      service:
+        name: apache2
+        state: restarted
+      when: apache2_conf.changed

@@ -1,0 +1,14 @@
+- hosts: AVNAS
+  become: true
+  tasks:
+    - name: Install Docker
+      apt:
+        state: latest
+        name:
+          - docker.io
+          - docker-compose
+    - name: Add user to docker.
+      user:
+        name: arthur
+        groups: docker
+        append: yes

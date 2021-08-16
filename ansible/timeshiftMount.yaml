@@ -1,0 +1,12 @@
+- hosts: AVNAS
+  become: true
+  user: arthur
+  tasks:
+    - name: Create Timeshift Mounting Service
+      copy:
+        src: "../AVNAS/etc/systemd/system/timeshiftMount.service"
+        dest: "/etc/systemd/system/timeshiftMount.service"
+      register: timeshiftMount_conf
+    - name: Enable Service
+      command: systemctl enable timeshiftMount.service
+      when: timeshiftMount_conf.changed

@@ -1,0 +1,13 @@
+- hosts: AVNAS
+  become: true
+  user: arthur
+  tasks:
+    - name: install mysql-client
+      apt:
+        state: latest
+        name:
+          - mariadb-client
+    - name: Create Docker MySql Logrotate Config
+      copy:
+        src: "../AVNAS/etc/logrotate.d/mysqlbackup"
+        dest: "/etc/logrotate.d/mysqlbackup"
