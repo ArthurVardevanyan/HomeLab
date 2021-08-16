@@ -177,12 +177,12 @@ docker exec nextcloud bash -c 'apt-get update && apt-get install -y --no-install
 
 ### Pi-Hole
 ```
-sudo docker exec -it pihole bash -c 'apt-get update && apt-get install python3 -y && git clone https://github.com/anudeepND/whitelist.git && ./whitelist/scripts/referral.sh'
+sudo docker exec -it pihole bash -c 'apt-get update && apt-get install python3 -y && git clone https://github.com/anudeepND/whitelist.git && ./whitelist/scripts/whitelist.py'
 
 
 git clone https://github.com/anudeepND/whitelist.git
 apt-get update && apt-get install python3 -y
-./whitelist/scripts/referral.sh
+./whitelist/scripts/whitelist.py
 
 ```
 ### Database
