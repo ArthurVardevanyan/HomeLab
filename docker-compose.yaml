@@ -126,6 +126,28 @@ services:
           cpus: "0.75"
     depends_on:
       - mariadb
+  test-analytics-for-spotify:
+    container_name: test-analytics-for-spotify
+    image: ${TEST_REPOSITORY}
+    environment:
+      - DOCKER=YES
+      - CLIENT_ID=${TEST_CLIENT_ID}
+      - CLIENT_SECRET=${TEST_CLIENT_SECRET}
+      - REDIRECT_URL=${TEST_REDIRECT_URL}
+      - HOST=${TEST_HOST}
+      - DATABASE=${TEST_DATABASE}
+      - USER=${TEST_USERNAME}
+      - PASSWORD=${TEST_PASSWORD}
+    restart: always
+    ports:
+      - "8080:80"
+    deploy:
+      resources:
+        limits:
+          cpus: "0.75"
+    depends_on:
+      - mariadb
+      - analytics-for-spotify
 networks:
   dockerBridge:
     external: true
