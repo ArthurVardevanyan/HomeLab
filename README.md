@@ -226,4 +226,7 @@ mysqldump -h 10.0.0.5 -ubackup -pbackup  FinanceTracker  > /home/arthur/docker/m
     endscript
 }
 ```
-
+### Analytics For Spotify
+```bash
+clear && cat /var/log/apache2/error.log  
+```
