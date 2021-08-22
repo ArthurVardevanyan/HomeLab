@@ -1,0 +1,26 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: phpmyadmin
+spec:
+  selector:
+    matchLabels:
+      app: phpmyadmin
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: phpmyadmin
+    spec:
+      containers:
+        - image: phpmyadmin
+          name: phpmyadmin
+          env:
+            - name: PMA_HOST
+              value: "mariadb.analytics-for-spotify"
+            - name: UPLOAD_LIMIT
+              value: "500M"
+          ports:
+            - containerPort: 80
+              name: phpmyadmin
