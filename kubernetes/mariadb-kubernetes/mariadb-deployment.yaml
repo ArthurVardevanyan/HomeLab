@@ -2,6 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: mariadb
+namespace: database
 spec:
   selector:
     matchLabels:
@@ -20,7 +21,7 @@ spec:
             - name: MYSQL_ROOT_PASSWORD
               valueFrom:
                 configMapKeyRef:
-                  key: CLIENT_SECRET
+                  key: PASSWORD
                   name: env
           ports:
             - containerPort: 3306

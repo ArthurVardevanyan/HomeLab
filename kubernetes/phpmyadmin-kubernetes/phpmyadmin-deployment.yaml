@@ -1,5 +1,6 @@
 apiVersion: apps/v1
 kind: Deployment
+namespace: database
 metadata:
   name: phpmyadmin
 spec:
@@ -18,7 +19,7 @@ spec:
           name: phpmyadmin
           env:
             - name: PMA_HOST
-              value: "mariadb.analytics-for-spotify"
+              value: "mariadb.database"
             - name: UPLOAD_LIMIT
               value: "500M"
           ports:

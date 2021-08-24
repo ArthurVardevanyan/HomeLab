@@ -195,8 +195,8 @@ FLUSH PRIVILEGES;
 
 % for everything
 
-CREATE USER 'spotifyTest'@'10.244.0.%' IDENTIFIED BY 'spotifyTest'; 
-GRANT ALL PRIVILEGES ON spotifyTEST.* TO `spotifyTest`@`10.244.0.%`;
+CREATE USER 'spotifyTest'@'10.42.0.%' IDENTIFIED BY 'spotifyTest'; 
+GRANT ALL PRIVILEGES ON spotifyTEST.* TO `spotifyTest`@`10.42.0.%`;
 
 mysqldump -h 10.0.0.5 -u arthur -p FinanceTracker > FinanceTracker.sql
 mysqldump -h 10.0.0.5 -u arthur -p spotify > spotify.sql
