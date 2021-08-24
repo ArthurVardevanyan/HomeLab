@@ -235,3 +235,8 @@ mysqldump -h 10.0.0.5 -ubackup -pbackup  FinanceTracker  > /home/arthur/docker/m
 ```bash
 clear && cat /var/log/apache2/error.log  
 ```
+### Ansible
+'''bash
+ansible-playbook -i ansible/inventory --ask-become-pass ansible/AVNAS.yaml --ask-pass
+ansible-playbook -i ansible/inventory --ask-become-pass ansible/Kubernetes.yaml --ask-pass
+'''
