@@ -25,10 +25,6 @@ services:
       - "53:53/udp"
       - "67:67/udp"
       - "80:80/tcp"
-    deploy:
-      resources:
-        limits:
-          cpus: "0.5"
     environment:
       TZ: "America/Chicago"
     volumes:
@@ -76,10 +72,6 @@ services:
     environment:
       - PMA_HOST=10.0.0.5
       - UPLOAD_LIMIT=500M
-    deploy:
-      resources:
-        limits:
-          cpus: "0.5"
   homeassistant:
     container_name: homeassistant
     hostname: homeassistant
@@ -93,10 +85,6 @@ services:
     volumes:
       - "/etc/localtime:/etc/localtime:ro"
       - "/home/arthur/docker/homeassistant/:/config"
-    deploy:
-      resources:
-        limits:
-          cpus: "0.75"
     depends_on:
       - mariadb
   analytics-for-spotify:
@@ -119,10 +107,6 @@ services:
         ipv4_address: 10.0.0.6
     ports:
       - "80:80"
-    deploy:
-      resources:
-        limits:
-          cpus: "0.75"
     depends_on:
       - mariadb
 networks:

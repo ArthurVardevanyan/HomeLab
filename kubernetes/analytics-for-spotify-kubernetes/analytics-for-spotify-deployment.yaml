@@ -62,10 +62,13 @@ spec:
           ports:
             - containerPort: 80
           volumeMounts:
-          - name: certs
-            mountPath: "/home/root/cert"
-            readOnly: true
-          resources: {}
+            - name: certs
+              mountPath: "/home/root/cert"
+              readOnly: true
+          resources:
+            limits:
+              memory: "250Mi"
+              cpu: "500m"
       hostname: analytics-for-spotify
       restartPolicy: Always
       volumes:
