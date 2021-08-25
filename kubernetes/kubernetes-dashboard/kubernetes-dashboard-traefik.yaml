@@ -1,0 +1,49 @@
+apiVersion: traefik.containo.us/v1alpha1
+kind: IngressRoute
+metadata:
+  labels:
+    k8s-app: kubernetes-dashboard
+  name: kubernetes-dashboard
+  namespace: kubernetes-dashboard
+spec:
+  entryPoints:
+    - web
+  routes:
+    - match: "Host(`dashboard.external.arthurvardevanyan.com`)"
+      kind: Rule
+      services:
+        - name: kubernetes-dashboard
+          port: 443
+      middlewares:
+        - name: https-redirect
+---
+apiVersion: traefik.containo.us/v1alpha1
+kind: IngressRouteTCP
+metadata:
+  labels:
+    k8s-app: kubernetes-dashboard
+  name: kubernetes-dashboard
+  namespace: kubernetes-dashboard
+spec:
+  entryPoints:
+    - websecure
+  routes:
+    - match: HostSNI(`dashboard.external.arthurvardevanyan.com`)
+      services:
+        - name: kubernetes-dashboard
+          port: 443
+  tls:
+    domains:
+      - main: dashboard.external.arthurvardevanyan.com
+    passthrough: true
+
+---
+apiVersion: traefik.containo.us/v1alpha1
+kind: Middleware
+metadata:
+  name: https-redirect
+  namespace: kubernetes-dashboard
+spec:
+  redirectScheme:
+    scheme: https
+    permanent: true
