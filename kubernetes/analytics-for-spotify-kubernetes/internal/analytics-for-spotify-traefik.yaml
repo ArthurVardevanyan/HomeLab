@@ -1,0 +1,49 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: analytics-for-spotify-internal
+spec:
+  ports:
+    - protocol: TCP
+      name: web
+      port: 80
+      targetPort: 80
+  selector:
+    app: analytics-for-spotify
+---
+apiVersion: traefik.containo.us/v1alpha1
+kind: IngressRoute
+metadata:
+  name: analytics-for-spotify
+  namespace: analytics-for-spotify
+spec:
+  entryPoints:
+    - web
+  routes:
+    - match: "Host(`spotify.internal.arthurvardevanyan.com`) || Host(`spotify.arthurvardevanyan.com`)"
+      kind: Rule
+      services:
+        - name: analytics-for-spotify-internal
+          port: 80
+
+---
+apiVersion: traefik.containo.us/v1alpha1
+kind: IngressRouteTCP
+metadata:
+  name: analytics-for-spotify
+  namespace: analytics-for-spotify
+spec:
+  entryPoints:
+    - web
+    - websecure
+  routes:
+    - match: HostSNI(`*`)
+      services:
+        - name: analytics-for-spotify-internal
+          port: 80
+  tls:
+    domains:
+      - main: analytics-for-spotify.internal.arthurvardevanyan.com
+        sans:
+          - spotify.arthurvardevanyan.com
+    passthrough: true

@@ -1,0 +1,69 @@
+apiVersion: apps/v1
+kind: Deployment
+namespace: analytics-for-spotify
+metadata:
+  name: analytics-for-spotify
+  labels:
+    app: analytics-for-spotify
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: analytics-for-spotify
+  template:
+    metadata:
+      labels:
+        app: analytics-for-spotify
+    spec:
+      containers:
+        - env:
+            - name: CLIENT_ID
+              valueFrom:
+                configMapKeyRef:
+                  key: CLIENT_ID
+                  name: env
+            - name: CLIENT_SECRET
+              valueFrom:
+                configMapKeyRef:
+                  key: CLIENT_SECRET
+                  name: env
+            - name: DATABASE
+              valueFrom:
+                configMapKeyRef:
+                  key: DATABASE
+                  name: env
+            - name: DOCKER
+              value: "YES"
+            - name: HOST
+              valueFrom:
+                configMapKeyRef:
+                  key: HOST
+                  name: env
+            - name: PASSWORD
+              valueFrom:
+                configMapKeyRef:
+                  key: PASSWORD
+                  name: env
+            - name: REDIRECT_URL
+              valueFrom:
+                configMapKeyRef:
+                  key: REDIRECT_URL
+                  name: env
+            - name: USER
+              value: spotifyTest
+            - name: USERNAME
+              valueFrom:
+                configMapKeyRef:
+                  key: USERNAME
+                  name: env
+          image: gitlab.arthurvardevanyan.com:5050/arthurvardevanyan/analytics-for-spotify:develop
+          imagePullPolicy: Always
+          name: analytics-for-spotify
+          ports:
+            - containerPort: 80
+          resources:
+            limits:
+              memory: "250Mi"
+              cpu: "500m"
+      hostname: analytics-for-spotify
+      restartPolicy: Always
