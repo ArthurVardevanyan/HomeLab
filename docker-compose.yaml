@@ -46,22 +46,6 @@ services:
     volumes:
       - "/home/arthur/docker/mariadb/data:/var/lib/mysql"
       - "/home/arthur/docker/mariadb/mysql:/etc/mysql"
-  nextcloud:
-    container_name: nextcloud
-    hostname: nextcloud
-    image: nextcloud
-    restart: always
-    ports:
-      - 7070:7070
-    volumes:
-      - "/home/arthur/docker/nextcloud/nextcloud:/var/www/html"
-      - "/home/arthur/docker/nextcloud/apps:/var/www/html/custom_apps"
-      - "/home/arthur/docker/nextcloud/config:/var/www/html/config"
-      - "/backup/File_Storage/Nextcloud:/var/www/html/data"
-      - "/home/arthur/docker/nextcloud/apache2:/etc/apache2"
-      - "/home/arthur/docker/nextcloud/letsencrypt/:/etc/letsencrypt"
-    depends_on:
-      - mariadb
   phpmyadmin:
     container_name: phpmyadmin
     image: phpmyadmin

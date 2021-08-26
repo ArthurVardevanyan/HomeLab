@@ -1,0 +1,59 @@
+apiVersion: apps/v1
+kind: Deployment
+namespace: nextcloud
+metadata:
+  name: nextcloud
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: nextcloud
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: nextcloud
+    spec:
+      containers:
+        - image: nextcloud
+          imagePullPolicy: IfNotPresent
+          name: nextcloud
+          ports:
+            - containerPort: 7070
+          resources: {}
+          volumeMounts:
+            - mountPath: /var/www/html
+              name: nextcloud-nextcloud
+            - mountPath: /var/www/html/custom_apps
+              name: nextcloud-apps
+            - mountPath: /var/www/html/config
+              name: nextcloud-config
+            - mountPath: /etc/apache2
+              name: nextcloud-apache2
+            - mountPath: /etc/letsencrypt
+              name: nextcloud-letsencrypt
+            - mountPath: /var/www/html/data
+              name: nextcloud-data
+      hostname: nextcloud
+      restartPolicy: Always
+      volumes:
+        - name: nextcloud-nextcloud
+          persistentVolumeClaim:
+            claimName: nextcloud-nextcloud
+        - name: nextcloud-apps
+          persistentVolumeClaim:
+            claimName: nextcloud-apps
+        - name: nextcloud-config
+          persistentVolumeClaim:
+            claimName: nextcloud-config
+        - name: nextcloud-apache2
+          persistentVolumeClaim:
+            claimName: nextcloud-apache2
+        - name: nextcloud-letsencrypt
+          persistentVolumeClaim:
+            claimName: nextcloud-letsencrypt
+        - name: nextcloud-data
+          persistentVolumeClaim:
+            claimName: nextcloud-data
+status: {}
