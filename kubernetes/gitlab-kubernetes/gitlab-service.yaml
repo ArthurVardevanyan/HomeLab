@@ -1,0 +1,21 @@
+apiVersion: v1
+kind: Service
+namespace: gitlab
+metadata:
+  name: gitlab
+spec:
+  ports:
+    - name: http
+      port: 80
+      targetPort: 80
+    - name: https
+      port: 443
+      targetPort: 443
+    - name: ssh
+      port: 22
+      targetPort: 22
+    - name: Registry
+      port: 5050
+      targetPort: 5050
+  selector:
+    app: gitlab

@@ -1,0 +1,42 @@
+apiVersion: apps/v1
+kind: Deployment
+namespace: gitlab
+metadata:
+  name: gitlab
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: gitlab
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: gitlab
+    spec:
+      containers:
+        - image: gitlab/gitlab-ce
+          imagePullPolicy: Always
+          name: gitlab
+          resources: {}
+          volumeMounts:
+            - mountPath: /var/opt/gitlab
+              name: gitlab-data
+            - mountPath: /var/log/gitlab
+              name: gitlab-logs
+            - mountPath: /etc/gitlab
+              name: gitlab-config
+      hostname: gitlab
+      restartPolicy: Always
+      volumes:
+        - name: gitlab-data
+          persistentVolumeClaim:
+            claimName: gitlab-data
+        - name: gitlab-logs
+          persistentVolumeClaim:
+            claimName: gitlab-logs
+        - name: gitlab-config
+          persistentVolumeClaim:
+            claimName: gitlab-config
+status: {}

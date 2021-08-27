@@ -1,0 +1,48 @@
+apiVersion: traefik.containo.us/v1alpha1
+kind: Middleware
+metadata:
+  name: https-redirect
+  namespace: gitlab
+spec:
+  redirectScheme:
+    scheme: https
+    permanent: true
+---
+apiVersion: traefik.containo.us/v1alpha1
+kind: IngressRoute
+metadata:
+  name: gitlab
+  namespace: gitlab
+spec:
+  entryPoints:
+    - web
+    - websecure
+  routes:
+    - match: "Host(`gitlab.internal.arthurvardevanyan.com`) || Host(`gitlab.arthurvardevanyan.com`)"
+      kind: Rule
+      services:
+        - name: gitlab
+          port: 443
+      middlewares:
+        - name: https-redirect
+---
+apiVersion: traefik.containo.us/v1alpha1
+kind: IngressRouteTCP
+metadata:
+  name: gitlab
+  namespace: gitlab
+spec:
+  entryPoints:
+    - web
+    - websecure
+  routes:
+    - match: "HostSNI(`gitlab.internal.arthurvardevanyan.com`) || HostSNI(`gitlab.arthurvardevanyan.com`)"
+      services:
+        - name: gitlab
+          port: 443
+  tls:
+    domains:
+      - main: gitlab.internal.arthurvardevanyan.com
+        sans:
+          - gitlab.arthurvardevanyan.com
+    passthrough: true
