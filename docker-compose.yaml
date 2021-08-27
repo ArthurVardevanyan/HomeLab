@@ -44,21 +44,6 @@ services:
     environment:
       - PMA_HOST=10.0.0.5
       - UPLOAD_LIMIT=500M
-  homeassistant:
-    container_name: homeassistant
-    hostname: homeassistant
-    image: homeassistant/home-assistant
-    restart: always
-    ports:
-      - 8123:8123
-    networks:
-      dockerBridge:
-        ipv4_address: 10.0.0.3
-    volumes:
-      - "/etc/localtime:/etc/localtime:ro"
-      - "/home/arthur/docker/homeassistant/:/config"
-    depends_on:
-      - mariadb
   analytics-for-spotify:
     container_name: analytics-for-spotify
     hostname: analytics-for-spotify
