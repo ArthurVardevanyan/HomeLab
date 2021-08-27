@@ -1,0 +1,32 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  namespace: heimdall
+  name: heimdall
+spec:
+  storageClassName: manual
+  volumeName: heimdall
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 100Mi
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  namespace: heimdall
+  name: heimdall
+  labels:
+    type: local
+spec:
+  storageClassName: manual
+  capacity:
+    storage: 100Mi
+  accessModes:
+    - ReadWriteOnce
+  hostPath:
+    path: "/home/arthur/kubernetes/heimdall"
+  claimRef:
+    name: heimdall
+    namespace: heimdall

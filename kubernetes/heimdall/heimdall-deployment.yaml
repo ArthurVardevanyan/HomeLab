@@ -1,0 +1,34 @@
+apiVersion: apps/v1
+kind: Deployment
+namespace: heimdall
+metadata:
+  name: heimdall
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: heimdall
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: heimdall
+    spec:
+      containers:
+        - image: linuxserver/heimdall
+          imagePullPolicy: Always
+          name: heimdall
+          ports:
+            - containerPort: 80
+          resources: {}
+          volumeMounts:
+            - mountPath: /config
+              name: heimdall
+      hostname: heimdall
+      restartPolicy: Always
+      volumes:
+        - name: heimdall
+          persistentVolumeClaim:
+            claimName: heimdall
+status: {}
