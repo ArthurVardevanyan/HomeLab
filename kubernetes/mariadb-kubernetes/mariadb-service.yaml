@@ -9,3 +9,21 @@ spec:
     targetPort: 3306
   selector:
     app: mariadb
+---
+apiVersion: v1
+kind: Service
+namespace: mariadb
+metadata:
+  name: mariadb-lb
+spec:
+  selector:
+    app: mariadb
+  ports:
+    - protocol: TCP
+      port: 3306
+      targetPort: 3306
+  type: LoadBalancer
+status:
+  loadBalancer:
+    ingress:
+    - ip: 10.0.0.7

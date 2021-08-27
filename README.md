@@ -206,6 +206,8 @@ mysqldump -h 10.0.0.5 -u spotifyTest -p spotifyTEST > spotifyTEST.sql;
 mysql -u root -p spotifyTEST < spotifyTEST.sql
 
 mysqldump -h 10.0.0.5 -u arthur -p  --all-databases > sever.sql
+
+GRANT SELECT, LOCK TABLES, SHOW VIEW ON *.* TO 'backup'@'10.42.0.1' IDENTIFIED BY 'backup';
 ```
 ##### Database Dump & Log Rotate
 ```

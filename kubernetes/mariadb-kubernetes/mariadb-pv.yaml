@@ -12,7 +12,7 @@ spec:
   accessModes:
     - ReadWriteOnce
   hostPath:
-    path: "/home/arthur/kubernetes/database/mariadb"
+    path: "/home/arthur/kubernetes/database/data"
 ---
 apiVersion: v1
 kind: PersistentVolumeClaim
@@ -26,3 +26,32 @@ spec:
   resources:
     requests:
       storage: 20Gi
+---
+apiVersion: v1
+kind: PersistentVolume
+namespace: database
+metadata:
+  name: mysql-config-pv-volume
+  labels:
+    type: local
+spec:
+  storageClassName: manual
+  capacity:
+    storage: 100Mi
+  accessModes:
+    - ReadWriteOnce
+  hostPath:
+    path: "/home/arthur/kubernetes/database/mysql"
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+namespace: database
+metadata:
+  name: mysql-config-pv-claim
+spec:
+  storageClassName: manual
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 100Mi
