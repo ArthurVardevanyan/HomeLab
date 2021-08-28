@@ -1,0 +1,37 @@
+apiVersion: apps/v1
+kind: Deployment
+namespace: gitlab
+metadata:
+  name: gitlab-runner
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: gitlab
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: gitlab
+    spec:
+      containers:
+        - image: gitlab/gitlab-runner
+          imagePullPolicy: Always
+          name: gitlab
+          resources: {}
+          volumeMounts:
+            - mountPath: /etc/gitlab-runner
+              name: gitlab-runner
+            - mountPath: /var/run/docker.sock
+              name: gitlab-docker-socket
+      hostname: gitlab
+      restartPolicy: Always
+      volumes:
+        - name: gitlab-runner
+          persistentVolumeClaim:
+            claimName: gitlab-runner
+        - name: gitlab-docker-socket
+          persistentVolumeClaim:
+            claimName: gitlab-docker-socket
+status: {}

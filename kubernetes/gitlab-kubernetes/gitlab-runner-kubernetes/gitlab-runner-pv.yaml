@@ -1,0 +1,65 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: gitlab-runner
+  namespace: gitlab
+spec:
+  storageClassName: manual
+  volumeName: gitlab-runner
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 100Mi
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  namespace: gitlab
+  name: gitlab-runner
+  labels:
+    type: local
+spec:
+  storageClassName: manual
+  capacity:
+    storage: 100Mi
+  accessModes:
+    - ReadWriteOnce
+  hostPath:
+    path: "/home/arthur/kubernetes/gitlab-runner/gitlab-runner"
+  claimRef:
+    name: gitlab-runner
+    namespace: gitlab
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: gitlab-docker-socket
+  namespace: gitlab
+spec:
+  storageClassName: manual
+  volumeName: gitlab-docker-socket
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 100Mi
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  namespace: gitlab
+  name: gitlab-docker-socket
+  labels:
+    type: local
+spec:
+  storageClassName: manual
+  capacity:
+    storage: 100Mi
+  accessModes:
+    - ReadWriteOnce
+  hostPath:
+    path: "/var/run/docker.sock"
+  claimRef:
+    name: gitlab-docker-socket
+    namespace: gitlab
