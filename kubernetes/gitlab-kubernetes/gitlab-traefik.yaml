@@ -44,3 +44,24 @@ spec:
         sans:
           - gitlab.arthurvardevanyan.com
     passthrough: true
+---
+apiVersion: traefik.containo.us/v1alpha1
+kind: IngressRouteTCP
+metadata:
+  name: gitlab-registry
+  namespace: gitlab
+spec:
+  entryPoints:
+    - registry
+  routes:
+    - match: "HostSNI(`gitlab.internal.arthurvardevanyan.com`) || HostSNI(`gitlab.arthurvardevanyan.com`)"
+      services:
+        - name: gitlab
+          port: 5050
+  tls:
+    domains:
+      - main: gitlab.internal.arthurvardevanyan.com
+        sans:
+          - gitlab.arthurvardevanyan.com
+    passthrough: true
+
