@@ -16,13 +16,12 @@ metadata:
 spec:
   entryPoints:
     - web
-    - websecure
   routes:
     - match: "Host(`gitlab.internal.arthurvardevanyan.com`) || Host(`gitlab.arthurvardevanyan.com`)"
       kind: Rule
       services:
         - name: gitlab
-          port: 443
+          port: 80
       middlewares:
         - name: https-redirect
 ---
@@ -33,7 +32,6 @@ metadata:
   namespace: gitlab
 spec:
   entryPoints:
-    - web
     - websecure
   routes:
     - match: "HostSNI(`gitlab.internal.arthurvardevanyan.com`) || HostSNI(`gitlab.arthurvardevanyan.com`)"
