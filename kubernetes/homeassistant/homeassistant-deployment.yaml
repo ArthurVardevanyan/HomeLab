@@ -21,7 +21,13 @@ spec:
           name: homeassistant
           ports:
             - containerPort: 8123
-          resources: {}
+          resources:
+            requests:
+              memory: "300Mi"
+              cpu: "300m"
+            limits:
+              memory: "500Mi"
+              cpu: "500m"
           volumeMounts:
             - mountPath: /config
               name: homeassistant
@@ -32,4 +38,3 @@ spec:
         - name: homeassistant
           persistentVolumeClaim:
             claimName: homeassistant
-status: {}

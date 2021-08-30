@@ -22,7 +22,12 @@ spec:
                 - -c
                 - runuser -u www-data -- php -f /var/www/html/cron.php
               name: nextcloud
-              resources: {}
+              requests:
+                memory: "250Mi"
+                cpu: "250m"
+              limits:
+                memory: "500Mi"
+                cpu: "500m"
               volumeMounts:
                 - mountPath: /var/www/html
                   name: nextcloud-nextcloud

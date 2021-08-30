@@ -21,7 +21,13 @@ spec:
           name: nextcloud
           ports:
             - containerPort: 7070
-          resources: {}
+          resources:
+            requests:
+              memory: "250Mi"
+              cpu: "500m"
+            limits:
+              memory: "500Mi"
+              cpu: "1000m"
           volumeMounts:
             - mountPath: /var/www/html
               name: nextcloud-nextcloud
@@ -56,4 +62,3 @@ spec:
         - name: nextcloud-data
           persistentVolumeClaim:
             claimName: nextcloud-data
-status: {}

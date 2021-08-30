@@ -19,7 +19,13 @@ spec:
         - image: gitlab/gitlab-ce
           imagePullPolicy: Always
           name: gitlab
-          resources: {}
+          resources:
+            requests:
+              memory: "3.5Gi"
+              cpu: "500m"
+            limits:
+              memory: "5Gi"
+              cpu: "1000m"
           volumeMounts:
             - mountPath: /var/opt/gitlab
               name: gitlab-data
@@ -39,4 +45,3 @@ spec:
         - name: gitlab-config
           persistentVolumeClaim:
             claimName: gitlab-config
-status: {}

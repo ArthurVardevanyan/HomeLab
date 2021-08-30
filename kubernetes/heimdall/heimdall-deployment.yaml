@@ -21,7 +21,13 @@ spec:
           name: heimdall
           ports:
             - containerPort: 80
-          resources: {}
+          resources:
+            requests:
+              memory: "150Mi"
+              cpu: "300m"
+            limits:
+              memory: "250Mi"
+              cpu: "500m"
           volumeMounts:
             - mountPath: /config
               name: heimdall
@@ -31,4 +37,3 @@ spec:
         - name: heimdall
           persistentVolumeClaim:
             claimName: heimdall
-status: {}
