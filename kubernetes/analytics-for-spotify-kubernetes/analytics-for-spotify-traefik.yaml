@@ -6,20 +6,30 @@ spec:
   ports:
     - protocol: TCP
       name: web
-      port: 443
+      port: 80
       targetPort: 80
     - protocol: TCP
       name: websecure
       port: 443
       targetPort: 80
   selector:
-    app: analytics-for-spotify
+    app: analytics-for-spotify-external
+---
+apiVersion: traefik.containo.us/v1alpha1
+kind: Middleware
+metadata:
+  name: https-redirect
+  namespace: analytics-for-spotify-external
+spec:
+  redirectScheme:
+    scheme: https
+    permanent: true
 ---
 apiVersion: traefik.containo.us/v1alpha1
 kind: IngressRoute
 metadata:
-  name: analytics-for-spotify
-  namespace: analytics-for-spotify
+  name: analytics-for-spotify-external
+  namespace: analytics-for-spotify-external
 spec:
   entryPoints:
     - web
@@ -36,8 +46,8 @@ spec:
 apiVersion: traefik.containo.us/v1alpha1
 kind: IngressRouteTCP
 metadata:
-  name: analytics-for-spotify
-  namespace: analytics-for-spotify
+  name: analytics-for-spotify-external
+  namespace: analytics-for-spotify-external
 spec:
   entryPoints:
     - web

@@ -2,18 +2,18 @@ apiVersion: apps/v1
 kind: Deployment
 namespace: analytics-for-spotify
 metadata:
-  name: analytics-for-spotify
+  name: analytics-for-spotify-external
   labels:
-    app: analytics-for-spotify
+    app: analytics-for-spotify-external
 spec:
   replicas: 2
   selector:
     matchLabels:
-      app: analytics-for-spotify
+      app: analytics-for-spotify-external
   template:
     metadata:
       labels:
-        app: analytics-for-spotify
+        app: analytics-for-spotify-external
     spec:
       containers:
         - env:
@@ -56,7 +56,7 @@ spec:
                   name: env
           image: gitlab.arthurvardevanyan.com:5050/arthurvardevanyan/analytics-for-spotify:testing
           imagePullPolicy: Always
-          name: analytics-for-spotify
+          name: analytics-for-spotify-external
           ports:
             - containerPort: 80
           volumeMounts:
@@ -67,7 +67,7 @@ spec:
             limits:
               memory: "250Mi"
               cpu: "500m"
-      hostname: analytics-for-spotify
+      hostname: analytics-for-spotify-external
       restartPolicy: Always
       volumes:
         - name: certs
