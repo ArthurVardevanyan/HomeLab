@@ -196,14 +196,14 @@ FLUSH PRIVILEGES;
 % for everything
 
 CREATE USER 'spotifyTest'@'10.42.0.%' IDENTIFIED BY 'spotifyTest'; 
-GRANT ALL PRIVILEGES ON spotifyTEST.* TO `spotifyTest`@`10.42.0.%`;
+GRANT ALL PRIVILEGES ON spotifyTest.* TO `spotifyTest`@`10.42.0.%`;
 
 mysqldump -h 10.0.0.5 -u arthur -p FinanceTracker > FinanceTracker.sql
 mysqldump -h 10.0.0.5 -u arthur -p spotify > spotify.sql
 mysqldump -h 10.0.0.5 -u arthur -p nextcloud > nextcloud.sql
 
-mysqldump -h 10.0.0.5 -u spotifyTest -p spotifyTEST > spotifyTEST.sql;
-mysql -u root -p spotifyTEST < spotifyTEST.sql
+mysqldump -h 10.0.0.5 -u spotifyTest -p spotifyTest > spotifyTest.sql;
+mysql -u root -p spotifyTest < spotifyTest.sql
 
 mysqldump -h 10.0.0.5 -u arthur -p  --all-databases > sever.sql
 
@@ -213,14 +213,19 @@ GRANT SELECT, LOCK TABLES, SHOW VIEW ON *.* TO 'backup'@'10.42.0.1' IDENTIFIED B
 ```
 sudo apt install mariadb-client
 
-mysqldump -h 10.0.0.5 -ubackup -pbackup  --all-databases > /home/arthur/docker/mariadb/backup/server/server.sql
-mysqldump -h 10.0.0.5 -ubackup -pbackup  spotify         > /home/arthur/docker/mariadb/backup/spotify/spotify.sql
-mysqldump -h 10.0.0.5 -ubackup -pbackup  nextcloud       > /home/arthur/docker/mariadb/backup/nextcloud/nextcloud.sql
-mysqldump -h 10.0.0.5 -ubackup -pbackup  FinanceTracker  > /home/arthur/docker/mariadb/backup/FinanceTracker/FinanceTracker.sql
+#!/bin/sh
+
+mysqldump -h 10.0.0.3 -ubackup -pbackup  mysql           > /home/arthur/kubernetes/database/backup/mysql/mysql.sql
+mysqldump -h 10.0.0.3 -ubackup -pbackup  spotify         > /home/arthur/kubernetes/database/backup/spotify/spotify.sql
+mysqldump -h 10.0.0.3 -ubackup -pbackup  nextcloud       > /home/arthur/kubernetes/database/backup/nextcloud/nextcloud.sql
+mysqldump -h 10.0.0.3 -ubackup -pbackup  FinanceTracker  > /home/arthur/kubernetes/database/backup/FinanceTracker/FinanceTracker.sql
+mysqldump -h 10.0.0.3 -ubackup -pbackup  fitness         > /home/arthur/kubernetes/database/backup/fitness/fitness.sql
+
+mysqldump -h 10.0.0.3 -ubackup -pbackup  spotifyExternal > /home/arthur/kubernetes/database/backup/spotifyExternal/spotifyExternal.sql
 
 /etc/logrotate.d/mysqlbackup
 
-/home/arthur/docker/mariadb/backup/*/*.sql {
+/home/arthur/kubernetes/database/backup/*/*.sql {
     daily
     rotate 180
     compress
@@ -229,7 +234,7 @@ mysqldump -h 10.0.0.5 -ubackup -pbackup  FinanceTracker  > /home/arthur/docker/m
     dateext
     dateformat .%Y-%m-%dT%H:%M:%S
     postrotate
-        /home/arthur/docker/mariadb/backup/databaseDump.sh
+        /home/arthur/kubernetes/database/backup/databaseDump.sh
     endscript
 }
 ```
