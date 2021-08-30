@@ -6,7 +6,7 @@ metadata:
   labels:
     app: analytics-for-spotify
 spec:
-  replicas: 2
+  replicas: 1
   selector:
     matchLabels:
       app: analytics-for-spotify
@@ -50,11 +50,9 @@ spec:
                   key: REDIRECT_URL
                   name: env
             - name: USER
-              value: spotifyTest
-            - name: USERNAME
               valueFrom:
                 configMapKeyRef:
-                  key: USERNAME
+                  key: USER
                   name: env
           image: gitlab.arthurvardevanyan.com:5050/arthurvardevanyan/analytics-for-spotify:develop
           imagePullPolicy: Always
