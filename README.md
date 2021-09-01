@@ -240,7 +240,8 @@ mysqldump -h 10.0.0.3 -ubackup -pbackup  spotifyExternal > /home/arthur/kubernet
 ```
 ### Analytics For Spotify
 ```bash
-clear && cat /var/log/apache2/error.log  
+clear && cat /var/log/apache2/error.log 
+clear &&  cat /home/root/analytics-for-spotify/analytics-for-spotify.log  | grep -v DEBUG 
 ```
 ### Ansible
 '''bash
