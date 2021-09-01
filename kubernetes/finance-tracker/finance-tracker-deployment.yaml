@@ -1,0 +1,26 @@
+apiVersion: apps/v1
+kind: Deployment
+namespace: finance-tracker
+metadata:
+  name: finance-tracker
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: finance-tracker
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: finance-tracker
+    spec:
+      containers:
+        - image: gitlab.arthurvardevanyan.com:5050/arthurvardevanyan/financetracker
+          imagePullPolicy: Always
+          name: finance-tracker
+          ports:
+            - containerPort: 80
+          resources: {}
+      hostname: finance-tracker
+      restartPolicy: Always
