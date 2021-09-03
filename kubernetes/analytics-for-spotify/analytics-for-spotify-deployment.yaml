@@ -1,12 +1,15 @@
 apiVersion: apps/v1
 kind: Deployment
-namespace: analytics-for-spotify-external
 metadata:
+  namespace: analytics-for-spotify-external
   name: analytics-for-spotify-external
   labels:
     app: analytics-for-spotify-external
 spec:
   replicas: 2
+  revisionHistoryLimit: 0
+  strategy:
+    type: RollingUpdate
   selector:
     matchLabels:
       app: analytics-for-spotify-external
@@ -66,7 +69,7 @@ spec:
           resources:
             requests:
               memory: "175Mi"
-              cpu: "300m"
+              cpu: "250m"
             limits:
               memory: "250Mi"
               cpu: "500m"

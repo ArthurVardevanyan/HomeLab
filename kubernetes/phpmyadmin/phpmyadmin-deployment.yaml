@@ -1,14 +1,13 @@
 apiVersion: apps/v1
 kind: Deployment
-namespace: database
 metadata:
   name: phpmyadmin
+  namespace: database
 spec:
   selector:
     matchLabels:
       app: phpmyadmin
-  strategy:
-    type: Recreate
+  revisionHistoryLimit: 0
   template:
     metadata:
       labels:
@@ -23,7 +22,7 @@ spec:
               cpu: "250m"
             limits:
               memory: "200Mi"
-              cpu: "350m"
+              cpu: "500m"
           env:
             - name: PMA_HOST
               value: "mariadb.database"

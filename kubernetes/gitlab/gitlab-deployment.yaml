@@ -1,8 +1,8 @@
 apiVersion: apps/v1
 kind: Deployment
-namespace: gitlab
 metadata:
   name: gitlab
+  namespace: gitlab
 spec:
   replicas: 1
   selector:
@@ -10,6 +10,7 @@ spec:
       app: gitlab
   strategy:
     type: Recreate
+  revisionHistoryLimit: 0
   template:
     metadata:
       labels:
@@ -21,8 +22,8 @@ spec:
           name: gitlab
           resources:
             requests:
-              memory: "3.5Gi"
-              cpu: "500m"
+              memory: "3.75Gi"
+              cpu: "250m"
             limits:
               memory: "5Gi"
               cpu: "1000m"

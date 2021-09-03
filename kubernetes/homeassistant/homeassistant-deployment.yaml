@@ -1,10 +1,11 @@
 apiVersion: apps/v1
 kind: Deployment
-namespace: homeassistant
 metadata:
   name: homeassistant
+  namespace: homeassistant
 spec:
   replicas: 1
+  revisionHistoryLimit: 0
   selector:
     matchLabels:
       app: homeassistant
@@ -23,10 +24,10 @@ spec:
             - containerPort: 8123
           resources:
             requests:
-              memory: "300Mi"
-              cpu: "300m"
-            limits:
               memory: "500Mi"
+              cpu: "250m"
+            limits:
+              memory: "750Mi"
               cpu: "500m"
           volumeMounts:
             - mountPath: /config

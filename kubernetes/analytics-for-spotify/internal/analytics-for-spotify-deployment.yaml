@@ -1,12 +1,15 @@
 apiVersion: apps/v1
 kind: Deployment
-namespace: analytics-for-spotify
 metadata:
   name: analytics-for-spotify
+  namespace: analytics-for-spotify
   labels:
     app: analytics-for-spotify
 spec:
   replicas: 1
+  revisionHistoryLimit: 0
+  strategy:
+    type: RollingUpdate
   selector:
     matchLabels:
       app: analytics-for-spotify
@@ -62,7 +65,7 @@ spec:
           resources:
             requests:
               memory: "175Mi"
-              cpu: "300m"
+              cpu: "250m"
             limits:
               memory: "250Mi"
               cpu: "500m"

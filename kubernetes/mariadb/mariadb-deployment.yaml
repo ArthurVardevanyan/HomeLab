@@ -2,11 +2,12 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: mariadb
-namespace: database
+  namespace: database
 spec:
   selector:
     matchLabels:
       app: mariadb
+  revisionHistoryLimit: 0
   strategy:
     type: Recreate
   template:
@@ -20,9 +21,9 @@ spec:
           resources:
             requests:
               memory: "500Mi"
-              cpu: "750m"
+              cpu: "500m"
             limits:
-              memory: "750Mi"
+              memory: "1Gi"
               cpu: "1000m"
           env:
             - name: MYSQL_ROOT_PASSWORD

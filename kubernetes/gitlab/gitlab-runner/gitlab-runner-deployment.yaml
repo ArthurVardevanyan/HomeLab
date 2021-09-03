@@ -1,8 +1,8 @@
 apiVersion: apps/v1
 kind: Deployment
-namespace: gitlab-runner
 metadata:
   name: gitlab-runner
+  namespace: gitlab-runner
 spec:
   replicas: 1
   selector:
@@ -10,6 +10,7 @@ spec:
       app: gitlab
   strategy:
     type: Recreate
+  revisionHistoryLimit: 0
   template:
     metadata:
       labels:
@@ -19,7 +20,13 @@ spec:
         - image: gitlab/gitlab-runner
           imagePullPolicy: Always
           name: gitlab
-          resources: {}
+          resources:
+            requests:
+              memory: "50Mi"
+              cpu: "25m"
+            limits:
+              memory: "100Mi"
+              cpu: "50m"
           volumeMounts:
             - mountPath: /etc/gitlab-runner
               name: gitlab-runner

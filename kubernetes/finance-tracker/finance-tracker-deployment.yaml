@@ -1,8 +1,8 @@
 apiVersion: apps/v1
 kind: Deployment
-namespace: finance-tracker
 metadata:
   name: finance-tracker
+  namespace: finance-tracker
 spec:
   replicas: 1
   selector:
@@ -21,6 +21,12 @@ spec:
           name: finance-tracker
           ports:
             - containerPort: 80
-          resources: {}
+          resources:
+            requests:
+              memory: "100Mi"
+              cpu: "100m"
+            limits:
+              memory: "200Mi"
+              cpu: "200m"
       hostname: finance-tracker
       restartPolicy: Always

@@ -7,6 +7,7 @@ spec:
   selector:
     matchLabels:
       app: portainer-agent
+  revisionHistoryLimit: 0
   template:
     metadata:
       labels:
@@ -14,25 +15,25 @@ spec:
     spec:
       serviceAccountName: portainer-sa-clusteradmin
       containers:
-      - name: portainer-agent
-        image: portainer/agent:latest
-        imagePullPolicy: Always
-        resources:
+        - name: portainer-agent
+          image: portainer/agent:latest
+          imagePullPolicy: Always
+          resources:
             requests:
               memory: "50Mi"
-              cpu: "300m"
+              cpu: "250m"
             limits:
               memory: "100Mi"
-              cpu: "500m"
-        env:
-        - name: LOG_LEVEL
-          value: DEBUG
-        - name: AGENT_CLUSTER_ADDR
-          value: "portainer-agent-headless"
-        - name: KUBERNETES_POD_IP
-          valueFrom:
-            fieldRef:
-              fieldPath: status.podIP
-        ports:
-        - containerPort: 9001
-          protocol: TCP
+              cpu: "750m"
+          env:
+            - name: LOG_LEVEL
+              value: DEBUG
+            - name: AGENT_CLUSTER_ADDR
+              value: "portainer-agent-headless"
+            - name: KUBERNETES_POD_IP
+              valueFrom:
+                fieldRef:
+                  fieldPath: status.podIP
+          ports:
+            - containerPort: 9001
+              protocol: TCP
