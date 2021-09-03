@@ -1,0 +1,14 @@
+[Unit]
+Description=Discord Bot Reboot
+DefaultDependencies=no
+
+Conflicts=poweroff.target
+Before=Reboot.target
+Requires=Reboot.target
+
+[Service]
+Type=oneshot
+ExecStart=/bin/bash -c 'sh /home/arthur/discord/discord_bot.sh reboot'
+
+[Install]
+WantedBy=reboot.target

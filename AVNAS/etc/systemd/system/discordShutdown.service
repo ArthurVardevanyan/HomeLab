@@ -1,0 +1,14 @@
+[Unit]
+Description=Discord Bot Shutdown
+DefaultDependencies=no
+
+Conflicts=reboot.target
+Before=poweroff.target halt.target shutdown.target
+Requires=poweroff.target
+
+[Service]
+Type=oneshot
+ExecStart=/bin/bash -c 'sh /home/arthur/discord/discord_bot.sh shutdown'
+
+[Install]
+WantedBy=shutdown.target
