@@ -1,0 +1,32 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  namespace: prometheus
+  name: prometheus-storage-volume
+spec:
+  storageClassName: manual
+  volumeName: prometheus-storage-volume
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 50Gi
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  namespace: prometheus
+  name: prometheus-storage-volume
+  labels:
+    type: local
+spec:
+  storageClassName: manual
+  capacity:
+    storage: 50Gi
+  accessModes:
+    - ReadWriteOnce
+  hostPath:
+    path: "/home/arthur/kubernetes/prometheus"
+  claimRef:
+    name: prometheus-storage-volume
+    namespace: prometheus
