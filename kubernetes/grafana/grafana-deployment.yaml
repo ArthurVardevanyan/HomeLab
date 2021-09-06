@@ -1,0 +1,39 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: grafana
+  namespace: grafana
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: grafana
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: grafana
+    spec:
+      hostname: grafana
+      restartPolicy: Always
+      containers:
+        - image: grafana/grafana
+          imagePullPolicy: Always
+          name: grafana
+          ports:
+            - containerPort: 3000
+          resources:
+            requests:
+              memory: "100Mi"
+              cpu: "100m"
+            limits:
+              memory: "200Mi"
+              cpu: "200m"
+          volumeMounts:
+            - name: grafana-storage-pvc
+              mountPath: /var/lib/grafana/
+      volumes:
+      - name: grafana-storage-pvc
+        persistentVolumeClaim:
+          claimName: grafana-storage-pvc
