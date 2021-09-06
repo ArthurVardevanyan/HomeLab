@@ -23,7 +23,7 @@
   "gnetId": 9871,
   "graphTooltip": 0,
   "id": 2,
-  "iteration": 1630937115008,
+  "iteration": 1630939369734,
   "links": [],
   "panels": [
     {
@@ -306,10 +306,13 @@
       "pluginVersion": "8.1.2",
       "targets": [
         {
-          "expr": "sum(eagle_node_resource_usage_memory_bytes{node=~\"$node_pool.*\", node=~\"$node.*\"}) / sum(eagle_node_resource_allocatable_memory_bytes{node=~\"$node_pool.*\", node=~\"$node.*\"})",
+          "exemplar": true,
+          "expr": "sum(eagle_pod_container_resource_usage_memory_bytes{node=~\"$node_pool.*\", node=~\"$node.*\"}) / sum(eagle_node_resource_allocatable_memory_bytes{node=~\"$node_pool.*\", node=~\"$node.*\"})",
           "format": "time_series",
           "instant": true,
+          "interval": "",
           "intervalFactor": 1,
+          "legendFormat": "",
           "refId": "A"
         }
       ],
@@ -1714,7 +1717,7 @@
       {
         "allValue": ".*",
         "current": {
-          "selected": true,
+          "selected": false,
           "text": "All",
           "value": "$__all"
         },
@@ -1744,7 +1747,7 @@
     ]
   },
   "time": {
-    "from": "now-30m",
+    "from": "now-2m",
     "to": "now"
   },
   "timepicker": {
@@ -1774,5 +1777,5 @@
   "timezone": "",
   "title": "Kube Eagle",
   "uid": "cDBYcRInk",
-  "version": 4
+  "version": 5
 }
