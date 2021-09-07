@@ -1,12 +1,12 @@
 # HomeLab
 ### Desktop
-```
+```bash
 sudo apt-get update && sudo apt-get upgrade -y && sudo apt-get dist-upgrade -y && sudo apt-get autoremove -y && flatpak update -y
 
 git merge --no-ff develop
 git merge --no-ff production
 
-scp -r /home/arthur/vmware windowsBackup@10.0.0.7:/backup/Virtual_Machine_Backup/vmware
+scp -r /home/arthur/vmware windowsBackup@10.0.0.3:/backup/Virtual_Machine_Backup/vmware
 
 7z a -t7z -m0=lzma2 -mx=9 -mfb=128 -md=256m -ms=on archive.7z FOLDER
 
@@ -21,7 +21,7 @@ system76-power profile performance
 ```
 
 ## NAS
-```
+```bash
 sudo apt install cockpit cockpit-pcp
 https://github.com/optimans/cockpit-zfs-manager
 
@@ -30,20 +30,19 @@ sudo apt-get autopurge ubuntu-advantage-tools
 
 sudo gsettings set org.gnome.Vino require-encryption false
 
-sudo journalctl --vacuum-time=1s && sudo journalctl --rotate --vacuum-size=5000M
-
 sudo service apache2 restart
 
-sudo systemctl start  gdm3
+sudo systemctl start gdm3
 sudo systemctl stop  gdm3
 ```
 
 #### Logging
-```
+```bash
 journalctl --disk-usage
 sudo journalctl --rotate
 sudo journalctl --vacuum-time=2days
 sudo journalctl --vacuum-files=5
+sudo journalctl --vacuum-time=1s && sudo journalctl --rotate --vacuum-size=5000M
 sudo nano /etc/systemd/journald.conf
 sudo rm /etc/systemd/journald.conf
 
@@ -51,10 +50,11 @@ sudo journalctl --vacuum-size=1M
 sudo systemctl daemon-reload
 ```
 #### Crontab
-```
+```bash
 @reboot    sleep 25;  /home/arthur/docker/network.bash
 @reboot    sleep 45;  mount /backup/Timeshift/Timeshift.img /media/arthur/Timeshift/
 @reboot    sleep 600;  systemctl stop gdm
+@reboot     sleep 1; sh /home/arthur/discord/discord_bot.sh booted
 */5 * * * * docker exec --user www-data nextcloud php -f cron.php
 ```
 
@@ -74,7 +74,7 @@ zfs send backup/WindowsBackup@2021.06.14-12.56.48	    | ssh arthur@10.0.0.2 zfs 
 zfs send backup/Virtual_Machine_Backup@2021.06.14-13.06.38	    | ssh arthur@10.0.0.2 zfs receive -F backup/Virtual_Machine_Backup
 ```
 ### Docker
-```
+```bash
 sudo usermod -aG docker $USER
 
 sudo rm docker-compose.yaml && sudo nano docker-compose.yaml
@@ -87,7 +87,7 @@ docker-compose pull
 sudo docker-compose --compatibility up --detach  --remove-orphans
 ```
 ##### Docker MacVlan Network Creation & Routing
-```
+```bash
 docker network create -d macvlan \
 --subnet=10.0.0.0/24 \
 --ip-range=10.0.0.15/28 \
@@ -107,7 +107,7 @@ sudo chmod +x  network.bash
  
 ### SSL
 
-```
+```bash
 sudo apt install certbot python3-certbot-apache 
 
 sudo certbot --agree-tos -d server.arthurvardevanyan.com --manual --preferred-challenges dns certonly
@@ -131,7 +131,7 @@ cat  /etc/letsencrypt/live/arthurvardevanyan.com/privkey.pem >> /etc/cockpit/ws-
 systemctl restart cockpit.socket
 ```
 ### GitLab
-```
+```bash
 gitlab-ctl registry-garbage-collect
 gitlab-ctl reconfigure
 
@@ -146,7 +146,7 @@ cat /etc/letsencrypt/live/gitlab.arthurvardevanyan.com/privkey.pem   >> /home/ar
 ```
 
 ### Nextcloud
-```
+```bash
 sudo -u www-data php occ delete:old
 
 sudo -u www-data php occ files:scan-app-data
@@ -176,7 +176,7 @@ docker exec nextcloud bash -c 'apt-get update && apt-get install -y --no-install
 ```
 
 ### Pi-Hole
-```
+```bash
 sudo docker exec -it pihole bash -c 'apt-get update && apt-get install python3 -y && git clone https://github.com/anudeepND/whitelist.git && ./whitelist/scripts/whitelist.py'
 
 
@@ -186,7 +186,7 @@ apt-get update && apt-get install python3 -y
 
 ```
 ### Database
-```
+```sql
 CREATE USER 'arthur'@'10.0.0.X' IDENTIFIED BY 'arthur'; 
 SET PASSWORD FOR 'arthur'@'10.0.0.X' = PASSWORD('arthur');
 GRANT ALL PRIVILEGES ON *.* TO `arthur`@`10.0.0.X`;
@@ -198,19 +198,19 @@ FLUSH PRIVILEGES;
 CREATE USER 'spotifyTest'@'10.42.0.%' IDENTIFIED BY 'spotifyTest'; 
 GRANT ALL PRIVILEGES ON spotifyTest.* TO `spotifyTest`@`10.42.0.%`;
 
-mysqldump -h 10.0.0.5 -u arthur -p FinanceTracker > FinanceTracker.sql
-mysqldump -h 10.0.0.5 -u arthur -p spotify > spotify.sql
-mysqldump -h 10.0.0.5 -u arthur -p nextcloud > nextcloud.sql
+mysqldump -h 10.0.0.3 -u arthur -p FinanceTracker > FinanceTracker.sql
+mysqldump -h 10.0.0.3 -u arthur -p spotify > spotify.sql
+mysqldump -h 10.0.0.3 -u arthur -p nextcloud > nextcloud.sql
 
-mysqldump -h 10.0.0.5 -u spotifyTest -p spotifyTest > spotifyTest.sql;
+mysqldump -h 10.0.0.3 -u spotifyTest -p spotifyTest > spotifyTest.sql;
 mysql -u root -p spotifyTest < spotifyTest.sql
 
-mysqldump -h 10.0.0.5 -u arthur -p  --all-databases > sever.sql
+mysqldump -h 10.0.0.3 -u arthur -p  --all-databases > sever.sql
 
 GRANT SELECT, LOCK TABLES, SHOW VIEW ON *.* TO 'backup'@'10.42.0.1' IDENTIFIED BY 'backup';
 ```
 ##### Database Dump & Log Rotate
-```
+```bash
 sudo apt install mariadb-client
 
 #!/bin/sh
@@ -242,9 +242,10 @@ mysqldump -h 10.0.0.3 -ubackup -pbackup  spotifyExternal > /home/arthur/kubernet
 ```bash
 clear && cat /var/log/apache2/error.log 
 clear &&  cat /home/root/analytics-for-spotify/analytics-for-spotify.log  | grep -v DEBUG 
+cat test.log | grep -v DEBUG > test_noDebug.log
 ```
 ### Ansible
-'''bash
+```bash
 ansible-playbook -i ansible/inventory --ask-become-pass ansible/AVNAS.yaml --ask-pass
 ansible-playbook -i ansible/inventory --ask-become-pass ansible/Kubernetes.yaml --ask-pass
-'''
+```
