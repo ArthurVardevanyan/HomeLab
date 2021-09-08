@@ -1,0 +1,63 @@
+- hosts: ryzen
+  become: true
+  user: arthur
+  tasks:
+    - name: install core packages
+      apt:
+        state: latest
+        name:
+          - openssh-server
+          - htop
+          - git
+          - speedtest-cli
+          - zsh
+          - zsh-autosuggestions
+          - zsh-syntax-highlighting
+          - autojump
+          - pv
+          - jq
+          - p7zip-full
+          - sshpass
+          - gnome-tweaks
+          - pulseeffects
+          - remmina
+    - name: install development tools
+      apt:
+        state: latest
+        name:
+          - apache2
+          - php
+          - mariadb-server
+          - phpmyadmin
+          - python3-pip
+          - libmariadb-dev
+          - npm
+          - adb
+          - node-typescript
+          - openjdk-17-jre
+    - name: install virtual machine tools
+      apt:
+        state: latest
+        name:
+          - virt-manager
+          - qemu
+          - qemu-kvm
+          - libvirt-clients
+          - libvirt-daemon
+          - libvirt-daemon-system
+          - virtinst
+          - bridge-utils
+    - name: install additional packages
+      apt:
+        state: latest
+        name:
+          - system76-cuda-latest
+          - steam
+          - winetricks
+          - cura
+          - obs-studio
+          - blender
+          - handbrake
+    - name: Install ProtonTricks
+      pip:
+        name: protontricks

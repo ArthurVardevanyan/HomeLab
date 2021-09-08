@@ -1,0 +1,14 @@
+- hosts: ryzen
+  become: true
+  user: arthur
+  tasks:
+    - name: Add Spotify Repo
+      apt_repository:
+        repo: deb http://repository.spotify.com stable non-free
+        state: present
+        filename: spotify
+    - name: Install spotify
+      apt:
+        state: latest
+        name:
+          - spotify-client

@@ -1,0 +1,14 @@
+- hosts: ryzen
+  become: true
+  user: arthur
+  tasks:
+    - name: Add Google Chrome Repo
+      apt_repository:
+        repo: deb [arch=amd64] http://dl.google.com/linux/chrome/deb/ stable main
+        state: present
+        filename: google-chrome
+    - name: Install Google Chrome
+      apt:
+        state: latest
+        name:
+          - google-chrome-stable

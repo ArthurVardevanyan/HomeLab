@@ -1,0 +1,14 @@
+- hosts: ryzen
+  become: true
+  user: arthur
+  tasks:
+    - name: Add VSCodium Repo
+      apt_repository:
+        repo: deb https://paulcarroty.gitlab.io/vscodium-deb-rpm-repo/debs/ vscodium main
+        state: present
+        filename: spotify
+    - name: Install VSCodium 
+      apt:
+        state: latest
+        name:
+          - codium
