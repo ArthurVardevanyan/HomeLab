@@ -30,7 +30,7 @@ TypeDirName=1
 TypeSync=0
 Source=/home/arthur/docker
 Destination=/backup/Timeshift/
-LastExecutionTime=20210814030001
+LastExecutionTime=20210908030001
 LastExecutionErrors=0
 Args=-h
 Args=--progress
@@ -54,6 +54,7 @@ Args=/home/arthur/docker
 Args=/backup/Timeshift/
 ConnectRestore=
 KeepSnapshots=180
+
 Exclude=1
 ExcludeFromFile=0
 ExcludeFile=
@@ -117,8 +118,8 @@ TypeDirName=1
 TypeSync=0
 Source=/home/arthur/kubernetes
 Destination=/backup/Timeshift/
-LastExecutionTime=20210814030001
-LastExecutionErrors=0
+LastExecutionTime=20210908030010
+LastExecutionErrors=1
 Args=-h
 Args=--progress
 Args=--stats
@@ -141,6 +142,7 @@ Args=/home/arthur/kubernetes
 Args=/backup/Timeshift/
 ConnectRestore=
 KeepSnapshots=180
+
 Exclude=1
 ExcludeFromFile=0
 ExcludeFile=
@@ -196,5 +198,6 @@ CloneWarning=1
 RepeatOnFail=0
 IncludeState=1
 [Task_end] - 1
+
 
 [profile end]

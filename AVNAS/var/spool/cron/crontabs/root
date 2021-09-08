@@ -29,9 +29,10 @@
 # m h  dom mon dow   command
 #30-59 23 * * * sudo rtcwake -u -s 28800 -m mem #OLD 35100 @ 11pm
 #@reboot    sleep 25;  /home/arthur/docker/network.bash
-@reboot     sleep 1; sh /home/arthur/discord/discord_bot.sh booted
 #@reboot    sleep 45;  mount /backup/Timeshift/Timeshift.img /media/arthur/Timeshift/
 #*/5 * * * * docker exec --user www-data nextcloud php -f cron.php
+
+@reboot     sleep 10;   /bin/bash -c 'sh /home/arthur/discord/discord_bot.sh booted'
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ luckybackup entries ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 0 3 * * *	/usr/bin/luckybackup -c --no-questions --skip-critical /root/.luckyBackup/profiles/default.profile > /root/.luckyBackup/logs/default-LastCronLog.log 2>&1
