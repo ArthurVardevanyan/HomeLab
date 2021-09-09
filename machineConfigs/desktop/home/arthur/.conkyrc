@@ -1,0 +1,87 @@
+conky.config = {
+	
+	update_interval = 2,
+	cpu_avg_samples = 2,
+	net_avg_samples = 2,
+	out_to_console = false,
+	override_utf8_locale = true,
+	double_buffer = true,
+	no_buffers = true,
+	text_buffer_size = 32768,
+	imlib_cache_size = 0,
+	own_window = true,
+	own_window_type = 'normal',
+	own_window_argb_visual = true,
+	own_window_argb_value = 0,
+	own_window_hints = 'undecorated,below,sticky,skip_taskbar,skip_pager',
+	border_inner_margin = 5,
+	border_outer_margin = 0,
+	xinerama_head = 3,
+	alignment = 'bottom_right',
+	gap_x = 0,
+	gap_y = 33,
+	draw_shades = false,
+	draw_outline = false,
+	draw_borders = false,
+	draw_graph_borders = false,
+	use_xft = true,
+	font = 'Ubuntu Mono:size=12',
+	xftalpha = 0.8,
+	uppercase = false,
+	default_color = 'white',
+	own_window_colour = '#000000',
+	own_window_transparent = 'yes', 
+	minimum_width = 300, minimum_height = 0,
+	alignment = 'top_right',
+
+};
+conky.text = [[
+
+#${time %H:%M:%S}${alignr}${time %d-%m-%y}
+${voffset -16}${font sans-serif:bold:size=18}${alignc}${time %I:%M}${font}
+${voffset 4}${alignc}${time %A %B %d, %Y}
+${font}${voffset -4}
+${font sans-serif:bold:size=10}SYSTEM ${hr 2}
+${font sans-serif:normal:size=8}$sysname $kernel $alignr $machine
+Host:$alignr$nodename
+Uptime:$alignr$uptime
+#File System: $alignr${fs_type}
+Processes: $alignr ${execi 1000 ps aux | wc -l}
+
+${font sans-serif:bold:size=10}CPU ${hr 2}
+${font sans-serif:normal:size=8}${execi 1000 grep model /proc/cpuinfo | cut -d : -f2 | tail -1 | sed 's/\s//'}
+${font sans-serif:normal:size=8}Frequency:$color $freq_g GHz
+${exec sensors | grep 'Tdie\|fan1'}
+${font sans-serif:normal:size=8}${cpugraph cpu1}
+CPU: ${cpu cpu1}% ${cpubar cpu1}
+
+${font sans-serif:bold:size=10}MEMORY ${hr 2}
+${font sans-serif:normal:size=8}RAM $alignc $mem / $memmax $alignr $memperc%
+$membar
+SWAP $alignc ${swap} / ${swapmax} $alignr ${swapperc}%
+${swapbar}
+
+${font Ubuntu:bold:size=10}GPU ${hr 2}
+${font sans-serif:normal:size=8}${color1}GPU:${exec nvidia-smi --query-gpu=gpu_name --format=csv,noheader,nounits} $color
+${color1}GPU Temperature ${color}  ${execi 60 nvidia-settings -query [gpu:0]/GPUCoreTemp -t} °C
+${color1}GPU Utilization ${color}  ${exec nvidia-smi | grep % | cut -c 61-63} % ${nvidia gpufreq} Mhz
+${color1}VRAM Utilization ${color} ${nvidia membwutil}% ${exec nvidia-smi | grep % | cut -c 37-40} MB 
+${color1}GPU Power Draw ${color} ${exec nvidia-smi | grep % | cut -c 21-23} W
+
+${font Ubuntu:bold:size=10}NETWORK ${hr 2}
+${font sans-serif:normal:size=8}Down: ${downspeed wlo1}  ${alignr}Up: ${upspeed wlo1} 
+#${color lightgray}${downspeedgraph wlo1 80,130 } ${alignr}${upspeedgraph wlo1 80,130 }$color
+
+${font sans-serif:bold:size=10}TOP PROCESSES ${hr 2}
+${font sans-serif:normal:size=8}Name $alignr PID   CPU%   MEM%${font sans-serif:normal:size=8}
+${top name 1} $alignr ${top pid 1} ${top cpu 1}% ${top mem 1}%
+${top name 2} $alignr ${top pid 2} ${top cpu 2}% ${top mem 2}%
+${top name 3} $alignr ${top pid 3} ${top cpu 3}% ${top mem 3}%
+${top name 4} $alignr ${top pid 4} ${top cpu 4}% ${top mem 4}%
+${top name 5} $alignr ${top pid 5} ${top cpu 5}% ${top mem 5}%
+${top name 6} $alignr ${top pid 6} ${top cpu 6}% ${top mem 6}%
+${top name 7} $alignr ${top pid 7} ${top cpu 7}% ${top mem 7}%
+${top name 8} $alignr ${top pid 8} ${top cpu 8}% ${top mem 8}%
+${top name 9} $alignr ${top pid 9} ${top cpu 9}% ${top mem 9}%
+${top name 10} $alignr ${top pid 10} ${top cpu 10}% ${top mem 10}%
+]];

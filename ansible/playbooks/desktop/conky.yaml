@@ -1,1 +1,14 @@
-conky-all
+- hosts: ryzen
+  become: true
+  user: arthur
+  tasks:
+    - name: Install Conky
+      apt:
+        state: latest
+        name:
+          - conky-all
+
+    - name: Copy Conky Config
+      copy:
+        src: "../../../machineConfigs/desktop/home/arthur/.conkyrc"
+        dest: "/home/arthur/"
