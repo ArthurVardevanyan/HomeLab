@@ -1,0 +1,15 @@
+- hosts: ryzen
+  become: true
+  user: arthur
+  tasks:
+    - name: install packages
+      apt:
+        state: latest
+        name:
+          - terminator
+
+    - name: Copy Terminator Config
+      copy:
+        src: "../../../Ryzen/home/arthur/.config/terminator"
+        dest: "/home/arthur/.config/"
+      when: zshrc.stat.exists
