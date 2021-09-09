@@ -1,0 +1,15 @@
+- hosts: ryzen
+  become: true
+  user: arthur
+  tasks:
+    - name: Install xbindkeys
+      apt:
+        state: latest
+        name:
+          - xbindkeys
+
+    - name: Copy xbindkeys Config
+      copy:
+        src: "../../../machineConfigs/desktop/home/arthur/.xbindkeysrc"
+        dest: "/home/arthur/"
+
