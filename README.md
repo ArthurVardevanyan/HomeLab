@@ -246,8 +246,8 @@ cat test.log | grep -v DEBUG > test_noDebug.log
 ```
 ### Ansible
 ```bash
-ansible-playbook -i ansible/inventory --ask-become-pass ansible/AVNAS.yaml --ask-pass
-ansible-playbook -i ansible/inventory --ask-become-pass ansible/Kubernetes.yaml --ask-pass
+ansible-playbook -i ansible/inventory --ask-become-pass ansible/server.yaml --ask-pass
+ansible-playbook -i ansible/inventory --ask-become-pass ansible/desktop.yaml --ask-pass
 ```
 ### Kubernetes
 https://k3s.io/

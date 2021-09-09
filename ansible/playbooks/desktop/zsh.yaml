@@ -2,7 +2,7 @@
   become: true
   user: arthur
   tasks:
-    - name: install packages
+    - name: Install ZSH Packages
       apt:
         state: latest
         name:
@@ -29,13 +29,13 @@
 
     - name: Creating new zsh theme
       copy:
-        src: "../../../Ryzen/home/arthur/.oh-my-zsh/themes/custom.zsh-theme"
+        src: "../../../machineConfigs/desktop/home/arthur/.oh-my-zsh/themes/custom.zsh-theme"
         dest: "/home/arthur/.oh-my-zsh/themes/custom.zsh-theme"
       when: zshrc.stat.exists
 
     - name: Creating new ~/.zshrc
       copy:
-        src: "../../../Ryzen/home/arthur/.zshrc"
+        src: "../../../machineConfigs/desktop/home/arthur/.zshrc"
         dest: "/home/arthur/.zshrc"
       when: zshrc.stat.exists
 
