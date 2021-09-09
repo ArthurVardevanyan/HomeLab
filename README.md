@@ -249,3 +249,8 @@ cat test.log | grep -v DEBUG > test_noDebug.log
 ansible-playbook -i ansible/inventory --ask-become-pass ansible/AVNAS.yaml --ask-pass
 ansible-playbook -i ansible/inventory --ask-become-pass ansible/Kubernetes.yaml --ask-pass
 ```
+### Kubernetes
+https://k3s.io/
+https://upcloud.com/community/tutorials/deploy-kubernetes-dashboard/
+#### Helm
+https://helm.sh/docs/helm/helm_install/
