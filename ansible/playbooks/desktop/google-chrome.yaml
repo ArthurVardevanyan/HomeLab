@@ -2,6 +2,10 @@
   become: true
   user: arthur
   tasks:
+    - name: Add Google Chrome key
+      apt_key:
+        url: https://dl-ssl.google.com/linux/linux_signing_key.pub 
+        state: present
     - name: Add Google Chrome Repo
       apt_repository:
         repo: deb [arch=amd64] http://dl.google.com/linux/chrome/deb/ stable main
