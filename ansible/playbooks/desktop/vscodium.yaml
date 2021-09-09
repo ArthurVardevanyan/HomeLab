@@ -2,6 +2,11 @@
   become: true
   user: arthur
   tasks:
+    - name: Add VSCodium Key
+      apt_key:
+        url: https://gitlab.com/paulcarroty/vscodium-deb-rpm-repo/raw/master/pub.gpg
+        keyring: /usr/share/keyrings/vscodium-archive-keyring.gpg
+        state: present
     - name: Add VSCodium Repo
       apt_repository:
         repo: deb https://paulcarroty.gitlab.io/vscodium-deb-rpm-repo/debs/ vscodium main
