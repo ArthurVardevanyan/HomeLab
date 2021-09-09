@@ -1,0 +1,15 @@
+- hosts: ryzen
+  become: true
+  user: arthur
+  tasks:
+    - name: Add Insomnia Repo
+      apt_repository:
+        repo: deb [trusted=yes arch=amd64] https://download.konghq.com/insomnia-ubuntu/ default all
+        state: present
+        update_cache: True
+        filename: insomnia
+    - name: Install Insomnia
+      apt:
+        state: latest
+        name:
+          - insomnia
