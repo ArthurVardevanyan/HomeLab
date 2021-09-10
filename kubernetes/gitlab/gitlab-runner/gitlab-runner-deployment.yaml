@@ -7,19 +7,19 @@ spec:
   replicas: 1
   selector:
     matchLabels:
-      app: gitlab
+      app: gitlab-runner
   strategy:
     type: Recreate
   revisionHistoryLimit: 0
   template:
     metadata:
       labels:
-        app: gitlab
+        app: gitlab-runner
     spec:
       containers:
         - image: gitlab/gitlab-runner
           imagePullPolicy: Always
-          name: gitlab
+          name: gitlab-runner
           resources:
             requests:
               memory: "50Mi"
@@ -32,7 +32,7 @@ spec:
               name: gitlab-runner
             - mountPath: /var/run/docker.sock
               name: gitlab-docker-socket
-      hostname: gitlab
+      hostname: gitlab-runner
       restartPolicy: Always
       volumes:
         - name: gitlab-runner
