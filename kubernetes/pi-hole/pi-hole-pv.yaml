@@ -1,0 +1,65 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  namespace: pi-hole
+  name: pihole-config
+spec:
+  storageClassName: manual
+  volumeName: pihole-config
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 100M
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  namespace: pi-hole
+  name: pihole-config
+  labels:
+    type: local
+spec:
+  storageClassName: manual
+  capacity:
+    storage: 100M
+  accessModes:
+    - ReadWriteOnce
+  hostPath:
+    path: "/home/arthur/kubernetes/pihole/etc-pihole"
+  claimRef:
+    name: pihole-config
+    namespace: pi-hole
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  namespace: pi-hole
+  name: pihole-dnsmasq
+spec:
+  storageClassName: manual
+  volumeName: pihole-dnsmasq
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 100M
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  namespace: pi-hole
+  name: pihole-dnsmasq
+  labels:
+    type: local
+spec:
+  storageClassName: manual
+  capacity:
+    storage: 100M
+  accessModes:
+    - ReadWriteOnce
+  hostPath:
+    path: "/home/arthur/kubernetes/pihole/etc-dnsmasq.d"
+  claimRef:
+    name: pihole-dnsmasq
+    namespace: pi-hole
