@@ -1,0 +1,57 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: influxdb
+  namespace: influxdb
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: influxdb
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: influxdb
+    spec:
+      containers:
+        - resources:
+            requests:
+              memory: "750M"
+              cpu: "250m"
+            limits:
+              memory: "1G"
+              cpu: "500m"
+          env:
+            - name: INFLUXDB_HTTP_AUTH_ENABLED
+              value: "true"
+            - name: INFLUXDB_MONITOR_STORE_ENABLED
+              value: "false"
+            - name: INFLUXDB_ADMIN_PASSWORD
+              value: adminpass
+            - name: INFLUXDB_ADMIN_USER
+              value: admin
+            - name: INFLUXDB_DATA_QUERY_LOG_ENABLED
+              value: "false"
+            - name: INFLUXDB_DB
+              value: pfsense
+            - name: INFLUXDB_REPORTING_DISABLED
+              value: "true"
+            - name: TZ
+              value: America/New_York
+          image: influxdb:1.8.5
+          imagePullPolicy: "Always"
+          name: influxdb
+          ports:
+            - containerPort: 2003
+            - containerPort: 8086
+          volumeMounts:
+            - mountPath: /var/lib/influxdb
+              name: influxdb
+      hostname: influxdb
+      restartPolicy: Always
+      volumes:
+        - name: influxdb
+          persistentVolumeClaim:
+            claimName: influxdb
