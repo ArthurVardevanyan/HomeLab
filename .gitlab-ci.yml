@@ -1,0 +1,134 @@
+stages:
+  - build
+  - ansible
+  - kubernetes
+
+AnsibleBuild:
+  stage: build
+  when: manual
+  image: docker:latest
+  services:
+    - name: docker:dind
+  before_script:
+    - docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" $CI_REGISTRY
+  script:
+    - docker pull $CI_REGISTRY_IMAGE:latest || true
+    - docker build --cache-from $CI_REGISTRY_IMAGE:latest -t $CI_REGISTRY_IMAGE:$CI_COMMIT_SHA .
+    - docker push $CI_REGISTRY_IMAGE:$CI_COMMIT_SHA
+    - docker tag $CI_REGISTRY_IMAGE:$CI_COMMIT_SHA $CI_REGISTRY_IMAGE:latest
+    - docker push $CI_REGISTRY_IMAGE:latest
+
+AnsibleServer:
+  stage: ansible
+  image: $CI_REGISTRY_IMAGE:latest
+  before_script:
+    - mkdir -p ~/.ssh
+    - chmod 700 ~/.ssh
+    - echo "$SSH_KNOWN_HOSTS" >> ~/.ssh/known_hosts
+    - chmod 644 ~/.ssh/known_hosts
+    - ansible-playbook -i ansible/inventory ansible/server.yaml --extra-vars "ansible_become_pass=${SUDO} ansible_ssh_pass=${SUDO} ansible_python_interpreter=/usr/bin/python3" --check
+  script:
+    - ansible-playbook -i ansible/inventory ansible/server.yaml --extra-vars "ansible_become_pass=${SUDO} ansible_ssh_pass=${SUDO} ansible_python_interpreter=/usr/bin/python3"
+
+AnsibleDesktop:
+  stage: ansible
+  image: $CI_REGISTRY_IMAGE:latest
+  allow_failure: true
+  before_script:
+    - mkdir -p ~/.ssh
+    - chmod 700 ~/.ssh
+    - echo "$SSH_KNOWN_HOSTS" >> ~/.ssh/known_hosts
+    - chmod 644 ~/.ssh/known_hosts
+  script:
+    - ansible-playbook -i ansible/inventory ansible/desktop.yaml --extra-vars "ansible_become_pass=${SUDO} ansible_ssh_pass=${SUDO} ansible_python_interpreter=/usr/bin/python3" --check
+
+heimdall:
+  stage: kubernetes
+  when: always
+  needs: []
+  image: dtzar/helm-kubectl
+  environment: production
+  script:
+    - kubectl apply -f kubernetes/heimdall
+
+gitlab:
+  stage: kubernetes
+  when: always
+  needs: []
+  image: dtzar/helm-kubectl
+  environment: production
+  script:
+    - kubectl apply -f kubernetes/gitlab
+
+gitlab-runner:
+  stage: kubernetes
+  when: always
+  needs: []
+  image: dtzar/helm-kubectl
+  environment: production
+  script:
+    - kubectl apply -f kubernetes/gitlab/gitlab-runner/
+
+influxdb:
+  stage: kubernetes
+  when: always
+  needs: []
+  image: dtzar/helm-kubectl
+  environment: production
+  script:
+    - kubectl apply -f kubernetes/influxdb
+
+prometheus:
+  stage: kubernetes
+  when: always
+  needs: []
+  image: dtzar/helm-kubectl
+  environment: production
+  script:
+    - kubectl apply -f kubernetes/prometheus
+
+grafana:
+  stage: kubernetes
+  when: always
+  needs: []
+  image: dtzar/helm-kubectl
+  environment: production
+  script:
+    - kubectl apply -f kubernetes/grafana
+
+nextcloud:
+  stage: kubernetes
+  when: always
+  needs: []
+  image: dtzar/helm-kubectl
+  environment: production
+  script:
+    - kubectl apply -f kubernetes/nextcloud
+
+mariadb:
+  stage: kubernetes
+  when: always
+  needs: []
+  image: dtzar/helm-kubectl
+  environment: production
+  script:
+    - sed -i "s,<PASSWORD>,${SUDO},g" kubernetes/mariadb/mariadb-env-configmap.yaml
+    - kubectl apply -f kubernetes/mariadb
+
+phpmyadmin:
+  stage: kubernetes
+  when: always
+  needs: []
+  image: dtzar/helm-kubectl
+  environment: production
+  script:
+    - kubectl apply -f kubernetes/phpmyadmin
+
+homeassistant:
+  stage: kubernetes
+  when: always
+  needs: []
+  image: dtzar/helm-kubectl
+  environment: production
+  script:
+    - kubectl apply -f kubernetes/homeassistant

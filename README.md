@@ -1,4 +1,5 @@
 # HomeLab
+[![pipeline status](https://gitlab.arthurvardevanyan.com/ArthurVardevanyan/HomeLab/badges/production/pipeline.svg)](https://gitlab.arthurvardevanyan.com/ArthurVardevanyan/HomeLab/-/commits/production)
 
 ## Desktop
 
