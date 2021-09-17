@@ -1,7 +1,82 @@
+kind: Deployment
+apiVersion: apps/v1
+metadata:
+  name: kubernetes-dashboard
+  namespace: kubernetes-dashboard
+  labels:
+    k8s-app: kubernetes-dashboard
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      k8s-app: kubernetes-dashboard
+  template:
+    metadata:
+      labels:
+        k8s-app: kubernetes-dashboard
+    spec:
+      volumes:
+        - name: kubernetes-dashboard-certs
+          secret:
+            secretName: kubernetes-dashboard-certs
+            defaultMode: 420
+        - name: tmp-volume
+          emptyDir: {}
+      containers:
+        - name: kubernetes-dashboard
+          image: kubernetesui/dashboard:v2.3.1
+          args:
+            - "--auto-generate-certificates"
+            - "--namespace=kubernetes-dashboard"
+          ports:
+            - containerPort: 8443
+              protocol: TCP
           resources:
             limits:
               cpu: 100m
-              memory: 100m
+              memory: 100M
             requests:
               cpu: 50m
-              memory: 50m
+              memory: 50M
+          volumeMounts:
+            - name: kubernetes-dashboard-certs
+              mountPath: /certs
+            - name: tmp-volume
+              mountPath: /tmp
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 8443
+              scheme: HTTPS
+            initialDelaySeconds: 30
+            timeoutSeconds: 30
+            periodSeconds: 10
+            successThreshold: 1
+            failureThreshold: 3
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+          imagePullPolicy: Always
+          securityContext:
+            runAsUser: 1001
+            runAsGroup: 2001
+            readOnlyRootFilesystem: true
+            allowPrivilegeEscalation: false
+      restartPolicy: Always
+      terminationGracePeriodSeconds: 30
+      dnsPolicy: ClusterFirst
+      nodeSelector:
+        kubernetes.io/os: linux
+      serviceAccountName: kubernetes-dashboard
+      serviceAccount: kubernetes-dashboard
+      securityContext: {}
+      schedulerName: default-scheduler
+      tolerations:
+        - key: node-role.kubernetes.io/master
+          effect: NoSchedule
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 25%
+      maxSurge: 25%
+  revisionHistoryLimit: 0
+  progressDeadlineSeconds: 600

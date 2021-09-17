@@ -1,0 +1,56 @@
+kind: Service
+apiVersion: v1
+metadata:
+  name: kubernetes-dashboard
+  namespace: kubernetes-dashboard
+  labels:
+    k8s-app: kubernetes-dashboard
+spec:
+  ports:
+    - name: kube-websecure
+      protocol: TCP
+      port: 443
+      targetPort: 8443
+  selector:
+    k8s-app: dashboard-metrics-scraper
+  type: ClusterIP
+  sessionAffinity: None
+  ipFamilies:
+    - IPv4
+  ipFamilyPolicy: SingleStack
+---
+kind: Service
+apiVersion: v1
+metadata:
+  labels:
+    k8s-app: kubernetes-dashboard
+  name: kubernetes-dashboard-nodeport
+  namespace: kubernetes-dashboard
+spec:
+  ports:
+    - port: 443
+      targetPort: 8443
+      nodePort: 30001
+  selector:
+    k8s-app: kubernetes-dashboard
+  type: NodePort
+---
+kind: Service
+apiVersion: v1
+metadata:
+  name: dashboard-metrics-scraper
+  namespace: kubernetes-dashboard
+  labels:
+    k8s-app: dashboard-metrics-scraper
+spec:
+  ports:
+    - protocol: TCP
+      port: 8000
+      targetPort: 8000
+  selector:
+    k8s-app: dashboard-metrics-scraper
+  type: ClusterIP
+  sessionAffinity: None
+  ipFamilies:
+    - IPv4
+  ipFamilyPolicy: SingleStack
