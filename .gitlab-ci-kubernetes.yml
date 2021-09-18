@@ -1,0 +1,117 @@
+kubernetes-dashboard:
+  stage: kubernetes
+  when: always
+  needs: []
+  image: $CI_REGISTRY_IMAGE:kubernetes
+  environment: production
+  script:
+    - kubectl apply -f kubernetes/kubernetes-dashboard
+
+traefik:
+  stage: kubernetes
+  when: always
+  needs: []
+  image: $CI_REGISTRY_IMAGE:kubernetes
+  environment: production
+  script:
+    - kubectl apply -f kubernetes/traefik
+
+heimdall:
+  stage: kubernetes
+  when: always
+  needs: []
+  image: $CI_REGISTRY_IMAGE:kubernetes
+  environment: production
+  script:
+    - kubectl apply -f kubernetes/heimdall
+
+gitlab:
+  stage: kubernetes
+  when: always
+  needs: []
+  image: $CI_REGISTRY_IMAGE:kubernetes
+  environment: production
+  script:
+    - kubectl apply -f kubernetes/gitlab
+
+gitlab-runner:
+  stage: kubernetes
+  when: always
+  needs: []
+  image: $CI_REGISTRY_IMAGE:kubernetes
+  environment: production
+  script:
+    - kubectl apply -f kubernetes/gitlab/gitlab-runner/
+
+influxdb:
+  stage: kubernetes
+  when: always
+  needs: []
+  image: $CI_REGISTRY_IMAGE:kubernetes
+  environment: production
+  script:
+    - kubectl apply -f kubernetes/influxdb
+
+prometheus:
+  stage: kubernetes
+  when: always
+  needs: []
+  image: $CI_REGISTRY_IMAGE:kubernetes
+  environment: production
+  script:
+    - kubectl apply -f kubernetes/prometheus
+
+kube-state-metrics:
+  stage: kubernetes
+  when: always
+  needs: []
+  image: $CI_REGISTRY_IMAGE:kubernetes
+  environment: production
+  script:
+    - kubectl apply -f kubernetes/kube-state-metrics
+
+grafana:
+  stage: kubernetes
+  when: always
+  needs: []
+  image: $CI_REGISTRY_IMAGE:kubernetes
+  environment: production
+  script:
+    - kubectl apply -f kubernetes/grafana
+
+nextcloud:
+  stage: kubernetes
+  when: always
+  needs: []
+  image: $CI_REGISTRY_IMAGE:kubernetes
+  environment: production
+  script:
+    - kubectl apply -f kubernetes/nextcloud
+
+mariadb:
+  stage: kubernetes
+  when: always
+  needs: []
+  image: $CI_REGISTRY_IMAGE:kubernetes
+  environment: production
+  script:
+    - sed -i "s,<PASSWORD>,${SUDO},g" kubernetes/mariadb/mariadb-env-configmap.yaml
+    - kubectl apply -f kubernetes/mariadb
+
+phpmyadmin:
+  stage: kubernetes
+  when: always
+  needs: []
+  image: $CI_REGISTRY_IMAGE:kubernetes
+  environment: production
+  script:
+    - kubectl apply -f kubernetes/phpmyadmin
+
+homeassistant:
+  stage: kubernetes
+  when: always
+  needs: []
+  image: $CI_REGISTRY_IMAGE:kubernetes
+  environment: production
+  script:
+    - kubectl apply -f kubernetes/homeassistant

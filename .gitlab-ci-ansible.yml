@@ -1,0 +1,165 @@
+before_script:
+  - mkdir -p ~/.ssh
+  - chmod 700 ~/.ssh
+  - echo "$SSH_KNOWN_HOSTS" >> ~/.ssh/known_hosts
+  - chmod 644 ~/.ssh/known_hosts
+
+StandardPackages:
+  stage: ansible
+  image: $CI_REGISTRY_IMAGE:ansible
+  variables:
+    PLAYBOOK: installServerPackages
+  before_script:
+    - ansible-playbook -i ansible/inventory ansible/playbooks/server/${PLAYBOOK}.yaml --extra-vars "ansible_become_pass=${SUDO} ansible_ssh_pass=${SUDO} ansible_python_interpreter=/usr/bin/python3" --check
+  script:
+    - ansible-playbook -i ansible/inventory ansible/playbooks/server/${PLAYBOOK}.yaml --extra-vars "ansible_become_pass=${SUDO} ansible_ssh_pass=${SUDO} ansible_python_interpreter=/usr/bin/python3"
+
+ZSH:
+  stage: ansible
+  image: $CI_REGISTRY_IMAGE:ansible
+  variables:
+    PLAYBOOK: zsh
+  before_script:
+    - ansible-playbook -i ansible/inventory ansible/playbooks/server/${PLAYBOOK}.yaml --extra-vars "ansible_become_pass=${SUDO} ansible_ssh_pass=${SUDO} ansible_python_interpreter=/usr/bin/python3" --check
+  script:
+    - ansible-playbook -i ansible/inventory ansible/playbooks/server/${PLAYBOOK}.yaml --extra-vars "ansible_become_pass=${SUDO} ansible_ssh_pass=${SUDO} ansible_python_interpreter=/usr/bin/python3"
+
+Cockpit:
+  stage: ansible
+  image: $CI_REGISTRY_IMAGE:ansible
+  variables:
+    PLAYBOOK: cockpit
+  before_script:
+    - ansible-playbook -i ansible/inventory ansible/playbooks/server/${PLAYBOOK}.yaml --extra-vars "ansible_become_pass=${SUDO} ansible_ssh_pass=${SUDO} ansible_python_interpreter=/usr/bin/python3" --check
+  script:
+    - ansible-playbook -i ansible/inventory ansible/playbooks/server/${PLAYBOOK}.yaml --extra-vars "ansible_become_pass=${SUDO} ansible_ssh_pass=${SUDO} ansible_python_interpreter=/usr/bin/python3"
+
+IPV6:
+  stage: ansible
+  image: $CI_REGISTRY_IMAGE:ansible
+  variables:
+    PLAYBOOK: ipv6
+  before_script:
+    - ansible-playbook -i ansible/inventory ansible/playbooks/server/${PLAYBOOK}.yaml --extra-vars "ansible_become_pass=${SUDO} ansible_ssh_pass=${SUDO} ansible_python_interpreter=/usr/bin/python3" --check
+  script:
+    - ansible-playbook -i ansible/inventory ansible/playbooks/server/${PLAYBOOK}.yaml --extra-vars "ansible_become_pass=${SUDO} ansible_ssh_pass=${SUDO} ansible_python_interpreter=/usr/bin/python3"
+
+Docker:
+  stage: ansible
+  image: $CI_REGISTRY_IMAGE:ansible
+  variables:
+    PLAYBOOK: docker
+  before_script:
+    - ansible-playbook -i ansible/inventory ansible/playbooks/server/${PLAYBOOK}.yaml --extra-vars "ansible_become_pass=${SUDO} ansible_ssh_pass=${SUDO} ansible_python_interpreter=/usr/bin/python3" --check
+  script:
+    - ansible-playbook -i ansible/inventory ansible/playbooks/server/${PLAYBOOK}.yaml --extra-vars "ansible_become_pass=${SUDO} ansible_ssh_pass=${SUDO} ansible_python_interpreter=/usr/bin/python3"
+
+ZFS:
+  stage: ansible
+  image: $CI_REGISTRY_IMAGE:ansible
+  variables:
+    PLAYBOOK: zfs
+  before_script:
+    - ansible-playbook -i ansible/inventory ansible/playbooks/server/${PLAYBOOK}.yaml --extra-vars "ansible_become_pass=${SUDO} ansible_ssh_pass=${SUDO} ansible_python_interpreter=/usr/bin/python3" --check
+  script:
+    - ansible-playbook -i ansible/inventory ansible/playbooks/server/${PLAYBOOK}.yaml --extra-vars "ansible_become_pass=${SUDO} ansible_ssh_pass=${SUDO} ansible_python_interpreter=/usr/bin/python3"
+
+Samba:
+  stage: ansible
+  image: $CI_REGISTRY_IMAGE:ansible
+  variables:
+    PLAYBOOK: samba
+  before_script:
+    - ansible-playbook -i ansible/inventory ansible/playbooks/server/${PLAYBOOK}.yaml --extra-vars "ansible_become_pass=${SUDO} ansible_ssh_pass=${SUDO} ansible_python_interpreter=/usr/bin/python3" --check
+  script:
+    - ansible-playbook -i ansible/inventory ansible/playbooks/server/${PLAYBOOK}.yaml --extra-vars "ansible_become_pass=${SUDO} ansible_ssh_pass=${SUDO} ansible_python_interpreter=/usr/bin/python3"
+
+Timeshift:
+  stage: ansible
+  image: $CI_REGISTRY_IMAGE:ansible
+  variables:
+    PLAYBOOK: timeshift
+  before_script:
+    - ansible-playbook -i ansible/inventory ansible/playbooks/server/${PLAYBOOK}.yaml --extra-vars "ansible_become_pass=${SUDO} ansible_ssh_pass=${SUDO} ansible_python_interpreter=/usr/bin/python3" --check
+  script:
+    - ansible-playbook -i ansible/inventory ansible/playbooks/server/${PLAYBOOK}.yaml --extra-vars "ansible_become_pass=${SUDO} ansible_ssh_pass=${SUDO} ansible_python_interpreter=/usr/bin/python3"
+
+Logrotate:
+  stage: ansible
+  image: $CI_REGISTRY_IMAGE:ansible
+  variables:
+    PLAYBOOK: logrotate
+  before_script:
+    - ansible-playbook -i ansible/inventory ansible/playbooks/server/${PLAYBOOK}.yaml --extra-vars "ansible_become_pass=${SUDO} ansible_ssh_pass=${SUDO} ansible_python_interpreter=/usr/bin/python3" --check
+  script:
+    - ansible-playbook -i ansible/inventory ansible/playbooks/server/${PLAYBOOK}.yaml --extra-vars "ansible_become_pass=${SUDO} ansible_ssh_pass=${SUDO} ansible_python_interpreter=/usr/bin/python3"
+
+SSHD:
+  stage: ansible
+  image: $CI_REGISTRY_IMAGE:ansible
+  variables:
+    PLAYBOOK: sshd
+  before_script:
+    - ansible-playbook -i ansible/inventory ansible/playbooks/server/${PLAYBOOK}.yaml --extra-vars "ansible_become_pass=${SUDO} ansible_ssh_pass=${SUDO} ansible_python_interpreter=/usr/bin/python3" --check
+  script:
+    - ansible-playbook -i ansible/inventory ansible/playbooks/server/${PLAYBOOK}.yaml --extra-vars "ansible_become_pass=${SUDO} ansible_ssh_pass=${SUDO} ansible_python_interpreter=/usr/bin/python3"
+
+Network:
+  stage: ansible
+  image: $CI_REGISTRY_IMAGE:ansible
+  variables:
+    PLAYBOOK: network
+  before_script:
+    - ansible-playbook -i ansible/inventory ansible/playbooks/server/${PLAYBOOK}.yaml --extra-vars "ansible_become_pass=${SUDO} ansible_ssh_pass=${SUDO} ansible_python_interpreter=/usr/bin/python3" --check
+  script:
+    - ansible-playbook -i ansible/inventory ansible/playbooks/server/${PLAYBOOK}.yaml --extra-vars "ansible_become_pass=${SUDO} ansible_ssh_pass=${SUDO} ansible_python_interpreter=/usr/bin/python3"
+
+TimeshiftMount:
+  stage: ansible
+  image: $CI_REGISTRY_IMAGE:ansible
+  variables:
+    PLAYBOOK: timeshiftMount
+  before_script:
+    - ansible-playbook -i ansible/inventory ansible/playbooks/server/${PLAYBOOK}.yaml --extra-vars "ansible_become_pass=${SUDO} ansible_ssh_pass=${SUDO} ansible_python_interpreter=/usr/bin/python3" --check
+  script:
+    - ansible-playbook -i ansible/inventory ansible/playbooks/server/${PLAYBOOK}.yaml --extra-vars "ansible_become_pass=${SUDO} ansible_ssh_pass=${SUDO} ansible_python_interpreter=/usr/bin/python3"
+
+Cron:
+  stage: ansible
+  image: $CI_REGISTRY_IMAGE:ansible
+  variables:
+    PLAYBOOK: installServerPackages
+  before_script:
+    - ansible-playbook -i ansible/inventory ansible/playbooks/server/${PLAYBOOK}.yaml --extra-vars "ansible_become_pass=${SUDO} ansible_ssh_pass=${SUDO} ansible_python_interpreter=/usr/bin/python3" --check
+  script:
+    - ansible-playbook -i ansible/inventory ansible/playbooks/server/${PLAYBOOK}.yaml --extra-vars "ansible_become_pass=${SUDO} ansible_ssh_pass=${SUDO} ansible_python_interpreter=/usr/bin/python3"
+
+LuckyBackup:
+  stage: ansible
+  image: $CI_REGISTRY_IMAGE:ansible
+  variables:
+    PLAYBOOK: luckyBackup
+  before_script:
+    - ansible-playbook -i ansible/inventory ansible/playbooks/server/${PLAYBOOK}.yaml --extra-vars "ansible_become_pass=${SUDO} ansible_ssh_pass=${SUDO} ansible_python_interpreter=/usr/bin/python3" --check
+  script:
+    - ansible-playbook -i ansible/inventory ansible/playbooks/server/${PLAYBOOK}.yaml --extra-vars "ansible_become_pass=${SUDO} ansible_ssh_pass=${SUDO} ansible_python_interpreter=/usr/bin/python3"
+
+EZweb:
+  stage: ansible
+  image: $CI_REGISTRY_IMAGE:ansible
+  variables:
+    PLAYBOOK: ezweb
+  before_script:
+    - ansible-playbook -i ansible/inventory ansible/playbooks/server/${PLAYBOOK}.yaml --extra-vars "ansible_become_pass=${SUDO} ansible_ssh_pass=${SUDO} ansible_python_interpreter=/usr/bin/python3" --check
+  script:
+    - ansible-playbook -i ansible/inventory ansible/playbooks/server/${PLAYBOOK}.yaml --extra-vars "ansible_become_pass=${SUDO} ansible_ssh_pass=${SUDO} ansible_python_interpreter=/usr/bin/python3"
+
+K3s:
+  stage: ansible
+  image: $CI_REGISTRY_IMAGE:ansible
+  variables:
+    PLAYBOOK: kubernetes
+  before_script:
+    - ansible-playbook -i ansible/inventory ansible/playbooks/server/${PLAYBOOK}.yaml --extra-vars "ansible_become_pass=${SUDO} ansible_ssh_pass=${SUDO} ansible_python_interpreter=/usr/bin/python3" --check
+  script:
+    - ansible-playbook -i ansible/inventory ansible/playbooks/server/${PLAYBOOK}.yaml --extra-vars "ansible_become_pass=${SUDO} ansible_ssh_pass=${SUDO} ansible_python_interpreter=/usr/bin/python3"
