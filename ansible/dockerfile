@@ -1,8 +1,6 @@
-FROM python:latest
+FROM python:slim
 
-COPY requirements.txt /
-
-RUN pip install -r /requirements.txt
-RUN apt-get update && apt-get install sshpass
+RUN pip install ansible
+RUN apt-get update && apt-get install sshpass -y
 
 CMD ["ansible-playbook", "--help"]
