@@ -34,39 +34,6 @@ spec:
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
-  name: gitlab-logs
-  namespace: gitlab
-spec:
-  storageClassName: manual
-  volumeName: gitlab-logs
-  accessModes:
-    - ReadWriteOnce
-  resources:
-    requests:
-      storage: 5G
----
-apiVersion: v1
-kind: PersistentVolume
-metadata:
-  name: gitlab-logs
-  namespace: gitlab
-  labels:
-    type: local
-spec:
-  storageClassName: manual
-  capacity:
-    storage: 5G
-  accessModes:
-    - ReadWriteOnce
-  hostPath:
-    path: "/home/arthur/kubernetes/gitlab/logs"
-  claimRef:
-    name: gitlab-logs
-    namespace: gitlab
----
-apiVersion: v1
-kind: PersistentVolumeClaim
-metadata:
   name: gitlab-config
   namespace: gitlab
 spec:
