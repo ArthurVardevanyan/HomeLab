@@ -1,0 +1,28 @@
+apiVersion: traefik.containo.us/v1alpha1
+kind: Middleware
+metadata:
+  name: https-redirect
+  namespace: heimdall
+spec:
+  redirectScheme:
+    scheme: https
+    permanent: true
+---
+apiVersion: traefik.containo.us/v1alpha1
+kind: IngressRoute
+metadata:
+  name: heimdall-traefik
+  namespace: heimdall
+spec:
+  entryPoints:
+    - web
+    - websecure
+  routes:
+    - match: Host(`heimdall.arthurvardevanyan.com`)
+      kind: Rule
+      services:
+        - name: heimdall-service
+          port: 443
+      middlewares:
+        - name: https-redirect
+  tls: {}
