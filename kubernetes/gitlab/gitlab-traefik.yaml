@@ -16,8 +16,9 @@ metadata:
 spec:
   entryPoints:
     - web
+    - websecure
   routes:
-    - match: "Host(`gitlab.internal.arthurvardevanyan.com`) || Host(`gitlab.arthurvardevanyan.com`)"
+    - match: "Host(`gitlab.arthurvardevanyan.com`)"
       kind: Rule
       services:
         - name: gitlab
@@ -32,17 +33,16 @@ metadata:
   namespace: gitlab
 spec:
   entryPoints:
+    - web
     - websecure
   routes:
-    - match: "HostSNI(`gitlab.internal.arthurvardevanyan.com`) || HostSNI(`gitlab.arthurvardevanyan.com`)"
+    - match: "HostSNI(`gitlab.arthurvardevanyan.com`)"
       services:
         - name: gitlab
           port: 443
   tls:
     domains:
-      - main: gitlab.internal.arthurvardevanyan.com
-        sans:
-          - gitlab.arthurvardevanyan.com
+      - main: gitlab.arthurvardevanyan.com
     passthrough: true
 ---
 apiVersion: traefik.containo.us/v1alpha1
@@ -54,14 +54,12 @@ spec:
   entryPoints:
     - registry
   routes:
-    - match: "HostSNI(`gitlab.internal.arthurvardevanyan.com`) || HostSNI(`gitlab.arthurvardevanyan.com`)"
+    - match: "HostSNI(`gitlab.arthurvardevanyan.com`)"
       services:
         - name: gitlab
           port: 5050
   tls:
     domains:
-      - main: gitlab.internal.arthurvardevanyan.com
-        sans:
-          - gitlab.arthurvardevanyan.com
+      - main: gitlab.arthurvardevanyan.com
     passthrough: true
 
