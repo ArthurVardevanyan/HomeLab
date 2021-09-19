@@ -35,31 +35,14 @@ spec:
     - web
     - websecure
   routes:
-    - match: "Host(`analytics-for-spotify.external.arthurvardevanyan.com`) || Host(`analytics-for-spotify.arthurvardevanyan.com`)"
+    - match: "Host(`analytics-for-spotify.arthurvardevanyan.com`)"
       kind: Rule
       services:
         - name: analytics-for-spotify-external
           port: 443
       middlewares:
         - name: https-redirect
----
-apiVersion: traefik.containo.us/v1alpha1
-kind: IngressRouteTCP
-metadata:
-  name: analytics-for-spotify-external
-  namespace: analytics-for-spotify-external
-spec:
-  entryPoints:
-    - web
-    - websecure
-  routes:
-    - match: "HostSNI(`analytics-for-spotify.external.arthurvardevanyan.com`) || HostSNI(`analytics-for-spotify.arthurvardevanyan.com`)"
-      services:
-        - name: analytics-for-spotify-external
-          port: 443
   tls:
     domains:
-      - main: analytics-for-spotify.external.arthurvardevanyan.com
-        sans:
-          - analytics-for-spotify.arthurvardevanyan.com
+      - main: analytics-for-spotify.arthurvardevanyan.com
     passthrough: true

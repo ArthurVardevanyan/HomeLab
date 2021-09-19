@@ -22,24 +22,9 @@ spec:
       kind: Rule
       services:
         - name: gitlab
-          port: 80
+          port: 443
       middlewares:
         - name: https-redirect
----
-apiVersion: traefik.containo.us/v1alpha1
-kind: IngressRouteTCP
-metadata:
-  name: gitlab
-  namespace: gitlab
-spec:
-  entryPoints:
-    - web
-    - websecure
-  routes:
-    - match: "HostSNI(`gitlab.arthurvardevanyan.com`)"
-      services:
-        - name: gitlab
-          port: 443
   tls:
     domains:
       - main: gitlab.arthurvardevanyan.com
@@ -62,4 +47,3 @@ spec:
     domains:
       - main: gitlab.arthurvardevanyan.com
     passthrough: true
-

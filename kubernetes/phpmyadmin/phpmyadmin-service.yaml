@@ -4,6 +4,19 @@ metadata:
   name: phpmyadmin
   namespace: database
 spec:
+  type: ClusterIP
+  ports:
+  - port: 80
+    targetPort: 80
+  selector:
+    app: phpmyadmin
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: phpmyadmin-node
+  namespace: database
+spec:
   type: NodePort
   ports:
   - port: 80
@@ -11,4 +24,3 @@ spec:
     nodePort: 30000
   selector:
     app: phpmyadmin
-  

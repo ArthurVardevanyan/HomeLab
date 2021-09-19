@@ -1,0 +1,15 @@
+apiVersion: traefik.containo.us/v1alpha1
+kind: IngressRoute
+metadata:
+  name: grafana
+  namespace: grafana
+spec:
+  entryPoints:
+    - web
+    - websecure
+  routes:
+    - match: Host(`grafana.arthurvardevanyan.com`)
+      kind: Rule
+      services:
+        - name: grafana
+          port: 3000
