@@ -6,7 +6,7 @@ metadata:
   labels:
     app: analytics-for-spotify-external
 spec:
-  replicas: 2
+  replicas: 1
   revisionHistoryLimit: 0
   strategy:
     type: RollingUpdate
@@ -58,7 +58,7 @@ spec:
                   key: USER
                   name: env
           image: gitlab.arthurvardevanyan.com:5050/arthurvardevanyan/analytics-for-spotify:external
-          imagePullPolicy: Always
+          imagePullPolicy: IfNotPresent
           name: analytics-for-spotify-external
           ports:
             - containerPort: 80
