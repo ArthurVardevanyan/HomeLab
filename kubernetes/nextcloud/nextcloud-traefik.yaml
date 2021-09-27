@@ -1,0 +1,30 @@
+apiVersion: traefik.containo.us/v1alpha1
+kind: Middleware
+metadata:
+  name: https-redirect
+  namespace: nextcloud
+spec:
+  redirectScheme:
+    scheme: https
+    permanent: true
+---
+apiVersion: traefik.containo.us/v1alpha1
+kind: IngressRoute
+metadata:
+  name: nextcloud
+  namespace: nextcloud
+spec:
+  entryPoints:
+    - web
+    - websecure
+  routes:
+    - match: Host(`nextcloud.arthurvardevanyan.com`)
+      kind: Rule
+      services:
+        - name: nextcloud-np
+          port: 443
+      middlewares:
+        - name: https-redirect
+  tls:
+    domains:
+      - main: nextcloud.arthurvardevanyan.com

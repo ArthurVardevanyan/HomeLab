@@ -9,6 +9,21 @@ spec:
   ports:
     - protocol: TCP
       port: 7070
-      targetPort: 7070
+      targetPort: 443
   type: LoadBalancer
+  externalTrafficPolicy: Local
+---
+apiVersion: v1
+kind: Service
+metadata:
+  namespace: nextcloud
+  name: nextcloud-np
+spec:
+  selector:
+    app: nextcloud
+  ports:
+    - protocol: TCP
+      port: 443
+      targetPort: 443
+  type: NodePort
   externalTrafficPolicy: Local
