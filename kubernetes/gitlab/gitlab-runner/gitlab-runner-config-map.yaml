@@ -38,3 +38,20 @@ data:
         disable_cache = false
         volumes = ["/cache", "/tmp/builds:/tmp/builds"]
         shm_size = 0
+  kubernetes.config: | # Kubernetes Runner Doesn't Work / cgroup mountpoint does not exist or docker daemon not found.
+    [runners.kubernetes]
+       namespace = "gitlab-runner"
+       bearer_token_overwrite_allowed = true
+       cpu_request= "125m"
+       cpu_limit = "1"
+       memory_limit = "500M"
+       service_cpu_request = "125m"
+       service_cpu_limit = "1"
+       service_memory_limit = "500M"
+       helper_cpu_request = "75m"
+       helper_cpu_limit = "250m"
+       helper_memory_limit = "100M"
+       poll_interval = 5
+       poll_timeout = 3600
+       dns_policy = "cluster-first"
+       privileged = true
