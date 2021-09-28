@@ -2,6 +2,14 @@
 
 [![pipeline status](https://gitlab.arthurvardevanyan.com/ArthurVardevanyan/HomeLab/badges/production/pipeline.svg)](https://gitlab.arthurvardevanyan.com/ArthurVardevanyan/HomeLab/-/commits/production)
 
+## Todo
+
+- Switch GitLab Runner to Kubernetes instead of Docker
+
+  - Currently not workign for DIND
+
+- Automated Debian Installation
+
 ## Desktop
 
 ```bash
