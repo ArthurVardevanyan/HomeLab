@@ -93,9 +93,6 @@ sudo -u www-data php occ maintenance:repair
 
 sudo -u www-data php occ preview:delete_old
 sudo -u www-data php occ preview:generate-all
-
-# Adds SVG Support
-docker exec nextcloud bash -c 'apt-get update && apt-get install -y --no-install-recommends $(apt-cache search libmagickcore-6.q[0-9][0-9]-[0-9]-extra | cut -d " " -f1)'
 ```
 
 ### Database
