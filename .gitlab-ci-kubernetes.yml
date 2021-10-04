@@ -14,7 +14,7 @@ certManager:
   image: $CI_REGISTRY_IMAGE:kubernetes
   environment: production
   script:
-    - kubectl apply -f https://github.com/jetstack/cert-manager/releases/download/v1.5.4/cert-manager.yaml
+    - sh kubernetes/cert-manager/cert-manager-deployment.sh
     - sed -i "s,<CLOUDFLARE_EMAIL>,${CLOUDFLARE_EMAIL},g" kubernetes/cert-manager/cert-manager-cloudflare.yaml
     - sed -i "s,<CLOUDFLARE_API>,${CLOUDFLARE_API},g" kubernetes/cert-manager/cert-manager-cloudflare-secret.yaml
     - kubectl apply -f kubernetes/cert-manager
