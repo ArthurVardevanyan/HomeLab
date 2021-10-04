@@ -14,11 +14,20 @@ certManager:
   image: $CI_REGISTRY_IMAGE:kubernetes
   environment: production
   script:
-    - kubectl apply -f https://github.com/jetstack/cert-manager/releases/download/v1.5.3/cert-manager.yaml
+    - kubectl apply -f https://github.com/jetstack/cert-manager/releases/download/v1.5.4/cert-manager.yaml
     - sed -i "s,<CLOUDFLARE_EMAIL>,${CLOUDFLARE_EMAIL},g" kubernetes/cert-manager/cert-manager-cloudflare.yaml
     - sed -i "s,<CLOUDFLARE_API>,${CLOUDFLARE_API},g" kubernetes/cert-manager/cert-manager-cloudflare-secret.yaml
     - kubectl apply -f kubernetes/cert-manager
 
+versionChecker:
+  stage: kubernetes
+  when: always
+  needs: []
+  image: $CI_REGISTRY_IMAGE:kubernetes
+  environment: production
+  script:
+    - kubectl apply -f kubernetes/version-checker
+    
 traefik:
   stage: kubernetes
   when: always

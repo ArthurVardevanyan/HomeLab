@@ -15,6 +15,9 @@ spec:
     metadata:
       labels:
         app: influxdb
+      annotations:
+        use-metadata.version-checker.io/influxdb: "true"
+        pin-major.version-checker.io/influxdb: "1"
     spec:
       containers:
         - resources:
@@ -41,7 +44,7 @@ spec:
               value: "true"
             - name: TZ
               value: America/New_York
-          image: influxdb:1.8.5
+          image: influxdb:1.8.9
           imagePullPolicy: IfNotPresent
           name: influxdb
           ports:

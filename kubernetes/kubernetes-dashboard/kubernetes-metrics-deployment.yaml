@@ -16,13 +16,14 @@ spec:
         k8s-app: dashboard-metrics-scraper
       annotations:
         seccomp.security.alpha.kubernetes.io/pod: runtime/default
+        use-metadata.version-checker.io/dashboard-metrics-scraper: "true"
     spec:
       volumes:
         - name: tmp-volume
           emptyDir: {}
       containers:
         - name: dashboard-metrics-scraper
-          image: kubernetesui/metrics-scraper:v1.0.6
+          image: kubernetesui/metrics-scraper:v1.0.7
           ports:
             - containerPort: 8000
               protocol: TCP

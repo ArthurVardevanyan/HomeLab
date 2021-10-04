@@ -14,11 +14,13 @@ spec:
     metadata:
       labels:
         app: grafana
+      annotations:
+        use-metadata.version-checker.io/grafana: "true"
     spec:
       hostname: grafana
       restartPolicy: Always
       containers:
-        - image: grafana/grafana
+        - image: grafana/grafana:8.1.5
           imagePullPolicy: IfNotPresent
           name: grafana
           ports:
@@ -34,6 +36,6 @@ spec:
             - name: grafana-storage-pvc
               mountPath: /var/lib/grafana/
       volumes:
-      - name: grafana-storage-pvc
-        persistentVolumeClaim:
-          claimName: grafana-storage-pvc
+        - name: grafana-storage-pvc
+          persistentVolumeClaim:
+            claimName: grafana-storage-pvc

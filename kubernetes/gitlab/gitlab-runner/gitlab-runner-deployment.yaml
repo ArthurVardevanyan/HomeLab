@@ -15,9 +15,11 @@ spec:
     metadata:
       labels:
         app: gitlab-runner
+      annotations:
+        use-metadata.version-checker.io/gitlab-runner: "true"
     spec:
       containers:
-        - image: gitlab/gitlab-runner
+        - image: gitlab/gitlab-runner:v14.3.2
           imagePullPolicy: IfNotPresent
           name: gitlab-runner
           resources:
