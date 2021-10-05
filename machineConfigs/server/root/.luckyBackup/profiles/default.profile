@@ -29,7 +29,7 @@ TypeDirContents=0
 TypeDirName=1
 TypeSync=0
 Source=/home/arthur/kubernetes
-Destination=/backup/Timeshift/
+Destination=/backup/Kubernetes/
 LastExecutionTime=20210908030010
 LastExecutionErrors=1
 Args=-h
@@ -46,12 +46,12 @@ Args=--delete-excluded
 Args=--exclude=kubernetes/gitlab/data/gitlab-rails/shared/registry/kubernetes/registry/v2/
 Args=--exclude=/kubernetes/database/data/
 Args=--backup
-Args=--backup-dir=/backup/Timeshift/kubernetes/.luckybackup-snaphots/20210724030002/
+Args=--backup-dir=/backup/Kubernetes/kubernetes/.luckybackup-snaphots/20210724030002/
 Args=--filter=protect .luckybackup-snaphots/
 Args=--log-file=/root/.luckyBackup/snaps/changes.log
 Args=--log-file-format=[changed_data]%i[LB]%n
 Args=/home/arthur/kubernetes
-Args=/backup/Timeshift/
+Args=/backup/Kubernetes/
 ConnectRestore=
 KeepSnapshots=180
 
