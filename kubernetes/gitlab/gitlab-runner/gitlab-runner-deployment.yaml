@@ -24,16 +24,14 @@ spec:
           name: gitlab-runner
           resources:
             requests:
-              memory: "50M"
-              cpu: "75m"
+              memory: "75M"
+              cpu: "100m"
             limits:
-              memory: "100M"
-              cpu: "125m"
+              memory: "150M"
+              cpu: "200m"
           volumeMounts:
             - mountPath: /etc/gitlab-runner
               name: gitlab-runner
-            - mountPath: /var/run/docker.sock
-              name: gitlab-docker-socket
       hostname: gitlab-runner
       restartPolicy: Always
       volumes:
@@ -41,6 +39,3 @@ spec:
           configMap:
             defaultMode: 0777
             name: gitlab-runner
-        - name: gitlab-docker-socket
-          persistentVolumeClaim:
-            claimName: gitlab-docker-socket

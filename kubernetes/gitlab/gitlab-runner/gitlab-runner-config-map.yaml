@@ -7,38 +7,17 @@ metadata:
   namespace: gitlab-runner
 data:
   config.toml: |-
-    concurrent = 5
+    concurrent = 3
     check_interval = 5
 
     [session_server]
       session_timeout = 1800
 
     [[runners]]
-      name = "gitlab-runner"
-      url = "https://gitlab.arthurvardevanyan.com/"
-      token = "TeYK-eQDZfpjNxxtyh6Z"
-      executor = "docker"
-      pre_build_script = "export DOCKER_HOST=tcp://docker:2375"
-      environment = ["DOCKER_DRIVER=overlay2", "DOCKER_TLS_CERTDIR="]
-      builds_dir = "/tmp/builds"
-      [runners.custom_build_dir]
-      [runners.cache]
-        [runners.cache.s3]
-        [runners.cache.gcs]
-        [runners.cache.azure]
-      [runners.docker]
-        wait_for_services_timeout = 15
-        tls_cert_path = ""
-        tls = false
-        tls_verify = false
-        image = "debian"
-        privileged = true
-        disable_entrypoint_overwrite = false
-        oom_kill_disable = false
-        disable_cache = false
-        volumes = ["/cache", "/tmp/builds:/tmp/builds"]
-        shm_size = 0
-  kubernetes.config: | # Kubernetes Runner Doesn't Work / cgroup mountpoint does not exist or docker daemon not found.
+    name = "gitlab-runner"
+    url = "https://gitlab.arthurvardevanyan.com/"
+    token = "TeYK-eQDZfpjNxxtyh6Z"
+    executor = "kubernetes"
     [runners.kubernetes]
        namespace = "gitlab-runner"
        bearer_token_overwrite_allowed = true
@@ -49,7 +28,7 @@ data:
        service_cpu_limit = "1"
        service_memory_limit = "500M"
        helper_cpu_request = "75m"
-       helper_cpu_limit = "250m"
+       helper_cpu_limit = "200m"
        helper_memory_limit = "100M"
        poll_interval = 5
        poll_timeout = 3600

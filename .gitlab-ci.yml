@@ -7,13 +7,19 @@ AnsibleImage:
   stage: images
   when: manual
   image: docker:latest
+  variables:
+    DOCKER_HOST: tcp://docker:2375
+    DOCKER_DRIVER: overlay2
+    DOCKER_TLS_CERTDIR: ""
   services:
-    - docker:dind
+    - name: docker:dind
+      alias: docker
+      command: ["--tls=false"]
   before_script:
     - docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" $CI_REGISTRY
   script:
     - docker pull $CI_REGISTRY_IMAGE:ansible || true
-    - docker build -f ansible/dockerfile --cache-from $CI_REGISTRY_IMAGE:ansible -t $CI_REGISTRY_IMAGE:$CI_COMMIT_SHA .
+    - docker build --network host -f ansible/dockerfile --cache-from $CI_REGISTRY_IMAGE:ansible -t $CI_REGISTRY_IMAGE:$CI_COMMIT_SHA .
     - docker push $CI_REGISTRY_IMAGE:$CI_COMMIT_SHA
     - docker tag $CI_REGISTRY_IMAGE:$CI_COMMIT_SHA $CI_REGISTRY_IMAGE:ansible
     - docker push $CI_REGISTRY_IMAGE:ansible
@@ -22,13 +28,19 @@ KubernetesImage:
   stage: images
   when: manual
   image: docker:latest
+  variables:
+    DOCKER_HOST: tcp://docker:2375
+    DOCKER_DRIVER: overlay2
+    DOCKER_TLS_CERTDIR: ""
   services:
-    - docker:dind
+    - name: docker:dind
+      alias: docker
+      command: ["--tls=false"]
   before_script:
     - docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" $CI_REGISTRY
   script:
     - docker pull $CI_REGISTRY_IMAGE:kubernetes || true
-    - docker build -f kubernetes/dockerfile --cache-from $CI_REGISTRY_IMAGE:kubernetes -t $CI_REGISTRY_IMAGE:$CI_COMMIT_SHA .
+    - docker build --network host -f kubernetes/dockerfile --cache-from $CI_REGISTRY_IMAGE:kubernetes -t $CI_REGISTRY_IMAGE:$CI_COMMIT_SHA .
     - docker push $CI_REGISTRY_IMAGE:$CI_COMMIT_SHA
     - docker tag $CI_REGISTRY_IMAGE:$CI_COMMIT_SHA $CI_REGISTRY_IMAGE:kubernetes
     - docker push $CI_REGISTRY_IMAGE:kubernetes
