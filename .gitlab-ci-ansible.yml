@@ -44,16 +44,6 @@ IPV6:
   script:
     - ansible-playbook -i ansible/inventory ansible/playbooks/server/${PLAYBOOK}.yaml --extra-vars "ansible_become_pass=${SUDO} ansible_ssh_pass=${SUDO} ansible_python_interpreter=/usr/bin/python3"
 
-Docker:
-  stage: ansible
-  image: $CI_REGISTRY_IMAGE:ansible
-  variables:
-    PLAYBOOK: docker
-  before_script:
-    - ansible-playbook -i ansible/inventory ansible/playbooks/server/${PLAYBOOK}.yaml --extra-vars "ansible_become_pass=${SUDO} ansible_ssh_pass=${SUDO} ansible_python_interpreter=/usr/bin/python3" --check
-  script:
-    - ansible-playbook -i ansible/inventory ansible/playbooks/server/${PLAYBOOK}.yaml --extra-vars "ansible_become_pass=${SUDO} ansible_ssh_pass=${SUDO} ansible_python_interpreter=/usr/bin/python3"
-
 ZFS:
   stage: ansible
   image: $CI_REGISTRY_IMAGE:ansible
