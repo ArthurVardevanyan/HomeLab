@@ -3,6 +3,7 @@
 [![pipeline status](https://gitlab.arthurvardevanyan.com/ArthurVardevanyan/HomeLab/badges/production/pipeline.svg)](https://gitlab.arthurvardevanyan.com/ArthurVardevanyan/HomeLab/-/commits/production)
 
 ## Todo
+
 - Automated Debian Installation
 
 ## Desktop
@@ -126,6 +127,14 @@ ansible-playbook -i ansible/inventory --ask-become-pass ansible/desktop.yaml --a
 ### Kubernetes
 
 <https://k3s.io/> <https://upcloud.com/community/tutorials/deploy-kubernetes-dashboard/>
+
+```bash
+watch $(echo "kubectl get pods -A -o wide |  grep -v 'svclb' | sort -k8 -r")
+kubectl drain k3s-worker --ignore-daemonsets --delete-emptydir-data
+
+curl -sfL https://get.k3s.io | INSTALL_K3S_EXEC="server --disable traefik --flannel-iface=enp1s0" sh
+curl -sfL https://get.k3s.io | INSTALL_K3S_EXEC=--flannel-iface=enp6s0 K3S_URL=https://10.0.0.3:6443 K3S_TOKEN=$K3S_TOKEN sh -
+```
 
 #### Helm
 
