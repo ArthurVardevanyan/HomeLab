@@ -20,13 +20,21 @@ metadata:
   labels:
     type: local
 spec:
-  storageClassName: manual
+  storageClassName: manuals
   capacity:
     storage: 50G
   accessModes:
     - ReadWriteOnce
-  hostPath:
+  local:
     path: "/home/arthur/kubernetes/gitlab/data"
+  nodeAffinity:
+    required:
+      nodeSelectorTerms:
+        - matchExpressions:
+            - key: kubernetes.io/hostname
+              operator: In
+              values:
+                - avnas
   claimRef:
     name: gitlab-data
     namespace: gitlab
@@ -58,8 +66,16 @@ spec:
     storage: 1G
   accessModes:
     - ReadWriteOnce
-  hostPath:
+  local:
     path: "/home/arthur/kubernetes/gitlab/config"
+  nodeAffinity:
+    required:
+      nodeSelectorTerms:
+        - matchExpressions:
+            - key: kubernetes.io/hostname
+              operator: In
+              values:
+                - avnas
   claimRef:
     name: gitlab-config
     namespace: gitlab

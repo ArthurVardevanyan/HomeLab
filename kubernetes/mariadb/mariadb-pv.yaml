@@ -11,8 +11,16 @@ spec:
     storage: 20G
   accessModes:
     - ReadWriteOnce
-  hostPath:
+  local:
     path: "/home/arthur/kubernetes/mariadb"
+  nodeAffinity:
+    required:
+      nodeSelectorTerms:
+        - matchExpressions:
+            - key: kubernetes.io/hostname
+              operator: In
+              values:
+                - avnas
 ---
 apiVersion: v1
 kind: PersistentVolumeClaim

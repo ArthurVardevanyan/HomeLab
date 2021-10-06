@@ -25,8 +25,16 @@ spec:
     storage: 100M
   accessModes:
     - ReadWriteOnce
-  hostPath:
+  local:
     path: "/home/arthur/kubernetes/heimdall"
+  nodeAffinity:
+    required:
+      nodeSelectorTerms:
+        - matchExpressions:
+            - key: kubernetes.io/hostname
+              operator: In
+              values:
+                - avnas
   claimRef:
     name: heimdall
     namespace: heimdall

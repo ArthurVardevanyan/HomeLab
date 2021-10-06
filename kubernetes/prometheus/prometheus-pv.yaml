@@ -25,8 +25,16 @@ spec:
     storage: 50G
   accessModes:
     - ReadWriteOnce
-  hostPath:
+  local:
     path: "/home/arthur/kubernetes/prometheus"
+  nodeAffinity:
+    required:
+      nodeSelectorTerms:
+        - matchExpressions:
+            - key: kubernetes.io/hostname
+              operator: In
+              values:
+                - avnas
   claimRef:
     name: prometheus-storage-volume
     namespace: prometheus

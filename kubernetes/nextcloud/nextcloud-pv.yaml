@@ -25,8 +25,16 @@ spec:
     storage: 5G
   accessModes:
     - ReadWriteOnce
-  hostPath:
+  local:
     path: "/home/arthur/kubernetes/nextcloud/nextcloud"
+  nodeAffinity:
+    required:
+      nodeSelectorTerms:
+        - matchExpressions:
+            - key: kubernetes.io/hostname
+              operator: In
+              values:
+                - avnas
   claimRef:
     name: nextcloud-nextcloud
     namespace: nextcloud
@@ -58,8 +66,16 @@ spec:
     storage: 1G
   accessModes:
     - ReadWriteOnce
-  hostPath:
+  local:
     path: "/home/arthur/kubernetes/nextcloud/apps"
+  nodeAffinity:
+    required:
+      nodeSelectorTerms:
+        - matchExpressions:
+            - key: kubernetes.io/hostname
+              operator: In
+              values:
+                - avnas
   claimRef:
     name: nextcloud-apps
     namespace: nextcloud
@@ -91,8 +107,16 @@ spec:
     storage: 1G
   accessModes:
     - ReadWriteOnce
-  hostPath:
+  local:
     path: "/home/arthur/kubernetes/nextcloud/config"
+  nodeAffinity:
+    required:
+      nodeSelectorTerms:
+        - matchExpressions:
+            - key: kubernetes.io/hostname
+              operator: In
+              values:
+                - avnas
   claimRef:
     name: nextcloud-config
     namespace: nextcloud
@@ -124,8 +148,16 @@ spec:
     storage: 1G
   accessModes:
     - ReadWriteOnce
-  hostPath:
+  local:
     path: "/home/arthur/kubernetes/nextcloud/apache2"
+  nodeAffinity:
+    required:
+      nodeSelectorTerms:
+        - matchExpressions:
+            - key: kubernetes.io/hostname
+              operator: In
+              values:
+                - avnas
   claimRef:
     name: nextcloud-apache2
     namespace: nextcloud
@@ -157,8 +189,16 @@ spec:
     storage: 1G
   accessModes:
     - ReadWriteOnce
-  hostPath:
+  local:
     path: "/home/arthur/kubernetes/nextcloud/letsencrypt"
+  nodeAffinity:
+    required:
+      nodeSelectorTerms:
+        - matchExpressions:
+            - key: kubernetes.io/hostname
+              operator: In
+              values:
+                - avnas
   claimRef:
     name: nextcloud-letsencrypt
     namespace: nextcloud
@@ -190,8 +230,16 @@ spec:
     storage: 750G
   accessModes:
     - ReadWriteOnce
-  hostPath:
+  local:
     path: "/backup/File_Storage/Nextcloud"
+  nodeAffinity:
+    required:
+      nodeSelectorTerms:
+        - matchExpressions:
+            - key: kubernetes.io/hostname
+              operator: In
+              values:
+                - avnas
   claimRef:
     name: nextcloud-data
     namespace: nextcloud
