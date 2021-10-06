@@ -23,5 +23,5 @@
       register: k3s
 
     - name: Install k3s
-      shell: curl -sfL https://get.k3s.io | INSTALL_K3S_EXEC="server --disable traefik" sh
+      shell: curl -sfL https://get.k3s.io | INSTALL_K3S_EXEC="server --disable traefik --flannel-iface=enp1s0" sh
       when: not k3s.stat.exists
