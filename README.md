@@ -32,6 +32,14 @@ sudo journalctl --vacuum-size=1M
 sudo systemctl daemon-reload
 ```
 
+### Timeshift
+```bash
+sudo dd if=/dev/zero of=Timeshift.img bs=1M count=78600
+sudo mkfs -t ext4 Timeshift.img && sudo mount Timeshift.img /media/arthur/Timeshift
+sudo mount Timeshift.img
+sudo umount /media/arthur/Timeshift
+```
+
 ### ZFS
 
 ```bash
