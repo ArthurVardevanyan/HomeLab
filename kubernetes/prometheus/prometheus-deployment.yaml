@@ -23,19 +23,19 @@ spec:
           imagePullPolicy: IfNotPresent
           image: prom/prometheus:v2.30.2
           args:
-            #- "--storage.tsdb.retention.time=12h"
             - "--config.file=/etc/prometheus/prometheus.yml"
             - "--storage.tsdb.path=/prometheus_data/"
-            - "--storage.tsdb.retention.time=50y"
+            - "--storage.tsdb.retention.time=30d"
+            - "--web.enable-admin-api"
           ports:
             - containerPort: 9090
           resources:
             requests:
               cpu: 150m
-              memory: 1G
-            limits:
-              cpu: 250m
               memory: 1.5G
+            limits:
+              cpu: 300m
+              memory: 3G
           volumeMounts:
             - name: prometheus-config-volume
               mountPath: /etc/prometheus/
