@@ -1,3 +1,12 @@
+metricsServer:
+  stage: kubernetes
+  when: always
+  needs: []
+  image: $CI_REGISTRY_IMAGE:kubernetes
+  environment: production
+  script:
+    - kubectl patch deployment -n kube-system metrics-server --patch "$(cat kubernetes/metrics-server/metrics-server-deployment.yaml)"
+
 kubernetes-dashboard:
   stage: kubernetes
   when: always
@@ -27,7 +36,7 @@ versionChecker:
   environment: production
   script:
     - kubectl apply -f kubernetes/version-checker
-    
+
 traefik:
   stage: kubernetes
   when: always
