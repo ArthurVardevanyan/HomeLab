@@ -1,6 +1,8 @@
-FROM python
+FROM debian
 
-RUN apt-get update && apt-get install sshpass
-RUN pip install ansible
+RUN apt-get update && apt-get install gnupg2 sshpass -y
+RUN printf "deb http://ppa.launchpad.net/ansible/ansible/ubuntu focal main" > /etc/apt/sources.list.d/ansible.list
+RUN apt-key adv --keyserver keyserver.ubuntu.com --recv-keys 93C4A3FD7BB9C367
+RUN apt-get update && apt-get install ansible -y
 
 CMD ["ansible-playbook", "--help"]
