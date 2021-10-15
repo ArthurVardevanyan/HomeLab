@@ -1,5 +1,6 @@
 stages:
   - images
+  - test
   - ansible
   - kubernetes
 
@@ -71,5 +72,10 @@ AnsibleDesktop:
     - ansible-playbook -i ansible/inventory ansible/desktop.yaml --extra-vars "ansible_become_pass=${SUDO} ansible_ssh_pass=${SUDO} ansible_python_interpreter=/usr/bin/python3" --check
 
 include:
+  - template: Security/Secret-Detection.gitlab-ci.yml
+  - template: Security/SAST.gitlab-ci.yml
   - local: ".gitlab-ci-ansible.yml"
   - local: ".gitlab-ci-kubernetes.yml"
+
+variables:
+  SCAN_KUBERNETES_MANIFESTS: "true"
