@@ -1,48 +1,28 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: analytics-for-spotify-external
+  namespace: analytics-for-spotify
+  name: analytics-for-spotify-internal
 spec:
   ports:
     - protocol: TCP
       name: web
       port: 80
       targetPort: 80
-    - protocol: TCP
-      name: websecure
-      port: 443
-      targetPort: 80
   selector:
-    app: analytics-for-spotify-external
----
-apiVersion: traefik.containo.us/v1alpha1
-kind: Middleware
-metadata:
-  name: https-redirect
-  namespace: analytics-for-spotify-external
-spec:
-  redirectScheme:
-    scheme: https
-    permanent: true
+    app: analytics-for-spotify
 ---
 apiVersion: traefik.containo.us/v1alpha1
 kind: IngressRoute
 metadata:
-  name: analytics-for-spotify-external
-  namespace: analytics-for-spotify-external
+  name: analytics-for-spotify
+  namespace: analytics-for-spotify
 spec:
   entryPoints:
     - web
-    - websecure
   routes:
-    - match: "Host(`analytics-for-spotify.arthurvardevanyan.com`)"
+    - match: "Host(`spotify.internal.arthurvardevanyan.com`)"
       kind: Rule
       services:
-        - name: analytics-for-spotify-external
-          port: 443
-      middlewares:
-        - name: https-redirect
-  tls:
-    domains:
-      - main: analytics-for-spotify.arthurvardevanyan.com
-    passthrough: true
+        - name: analytics-for-spotify-internal
+          port: 80

@@ -1,10 +1,10 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  namespace: analytics-for-spotify-external
-  name: analytics-for-spotify-external
+  name: analytics-for-spotify
+  namespace: analytics-for-spotify
   labels:
-    app: analytics-for-spotify-external
+    app: analytics-for-spotify
 spec:
   replicas: 1
   revisionHistoryLimit: 0
@@ -12,13 +12,13 @@ spec:
     type: RollingUpdate
   selector:
     matchLabels:
-      app: analytics-for-spotify-external
+      app: analytics-for-spotify
   template:
     metadata:
       labels:
-        app: analytics-for-spotify-external
+        app: analytics-for-spotify
       annotations:
-        enable.version-checker.io/analytics-for-spotify-external: "false"
+        enable.version-checker.io/analytics-for-spotify: "false"
     spec:
       containers:
         - env:
@@ -59,30 +59,17 @@ spec:
                 configMapKeyRef:
                   key: USER
                   name: env
-          image: gitlab.arthurvardevanyan.com:5050/arthurvardevanyan/analytics-for-spotify:external
+          image: gitlab.arthurvardevanyan.com:5050/arthurvardevanyan/analytics-for-spotify:develop
           imagePullPolicy: IfNotPresent
-          name: analytics-for-spotify-external
+          name: analytics-for-spotify
           ports:
             - containerPort: 80
-          volumeMounts:
-            - name: certs
-              mountPath: "/home/root/cert"
-              readOnly: true
           resources:
-            requests:
-              memory: "250M"
-              cpu: "250m"
             limits:
-              memory: "500M"
-              cpu: "500m"
-      hostname: analytics-for-spotify-external
+              cpu: 350m
+              memory: 250M
+            requests:
+              cpu: 150m
+              memory: 175M
+      hostname: analytics-for-spotify
       restartPolicy: Always
-      volumes:
-        - name: certs
-          configMap:
-            name: certs
-            items:
-              - key: "fullchain.pem"
-                path: "fullchain.pem"
-              - key: "privkey.pem"
-                path: "privkey.pem"
