@@ -51,7 +51,8 @@ Processes: $alignr ${execi 1000 ps aux | wc -l}
 ${font sans-serif:bold:size=10}CPU ${hr 2}
 ${font sans-serif:normal:size=8}${execi 1000 grep model /proc/cpuinfo | cut -d : -f2 | tail -1 | sed 's/\s//'}
 ${font sans-serif:normal:size=8}Frequency:$color $freq_g GHz
-${exec sensors | grep 'Tdie\|fan1'}
+#${exec sensors | grep 'Tdie\|fan1'}
+${exec sensors | grep 'Tctl\|fan1'}
 ${font sans-serif:normal:size=8}${cpugraph cpu1}
 CPU: ${cpu cpu1}% ${cpubar cpu1}
 

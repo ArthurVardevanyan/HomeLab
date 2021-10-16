@@ -15,6 +15,8 @@ git merge --no-ff production
 scp -r /home/arthur/vmware windowsBackup@10.0.0.3:/backup/Virtual_Machine_Backup/vmware
 
 7z a -t7z -m0=lzma2 -mx=9 -mfb=128 -md=256m -ms=on archive.7z FOLDER
+
+sudo sensors-detect
 ```
 
 ### Logging
