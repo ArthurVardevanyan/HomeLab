@@ -38,7 +38,7 @@ sudo systemctl daemon-reload
 
 ```bash
 sudo zfs create -V 76.76G backup/Timeshift
-sudo mkfs.ext4 /dev/zd0 
+sudo mkfs.ext4 /dev/zd0
 sudo mount /dev/zd0 /media/arthur/Timeshift
 sudo umount /media/arthur/Timeshift
 ```
@@ -105,14 +105,14 @@ sudo -u www-data php occ preview:generate-all
 ### Database
 
 ```sql
-CREATE USER 'arthur'@'10.0.0.X' IDENTIFIED BY 'arthur'; 
+CREATE USER 'arthur'@'10.0.0.X' IDENTIFIED BY 'arthur';
 GRANT ALL PRIVILEGES ON *.* TO `arthur`@`10.0.0.X`;
 
 FLUSH PRIVILEGES;
 
 # % for everything
 
-CREATE USER 'spotifyTest'@'10.42.0.%' IDENTIFIED BY 'spotifyTest'; 
+CREATE USER 'spotifyTest'@'10.42.0.%' IDENTIFIED BY 'spotifyTest';
 GRANT ALL PRIVILEGES ON spotifyTest.* TO `spotifyTest`@`10.42.0.%`;
 
 # View Only Access
@@ -122,8 +122,8 @@ GRANT SELECT, LOCK TABLES, SHOW VIEW ON *.* TO 'backup'@'10.42.0.1' IDENTIFIED B
 ### Analytics For Spotify
 
 ```bash
-clear && cat /var/log/apache2/error.log 
-clear &&  cat /home/root/analytics-for-spotify/analytics-for-spotify.log  | grep -v DEBUG 
+clear && cat /var/log/apache2/error.log
+clear &&  cat /home/root/analytics-for-spotify/analytics-for-spotify.log  | grep -v DEBUG
 cat test.log | grep -v DEBUG > test_noDebug.log
 `
 ```
