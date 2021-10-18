@@ -1,0 +1,14 @@
+- hosts: ryzen
+  user: arthur
+  tasks:
+    - name: Install PulseEffects
+      become: true
+      apt:
+        state: latest
+        name:
+          - pulseeffects
+
+    - name: Copy PulseEffects Output Configs
+      copy:
+        src: "../../../machineConfigs/desktop/home/arthur/.config/PulseEffects/output"
+        dest: "/home/arthur/.config/PulseEffects/"
