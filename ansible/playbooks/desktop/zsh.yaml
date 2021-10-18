@@ -1,8 +1,8 @@
 - hosts: ryzen
-  become: true
   user: arthur
   tasks:
     - name: Install ZSH Packages
+      become: true
       apt:
         state: latest
         name:
@@ -39,7 +39,7 @@
         dest: "/home/arthur/.zshrc"
       when: zshrc.stat.exists
 
-    - name: change user shell to zsh 
+    - name: change user shell to zsh
       user:
         name: "arthur"
         shell: /bin/zsh

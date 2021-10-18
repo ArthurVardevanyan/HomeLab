@@ -3,6 +3,7 @@
   user: arthur
   tasks:
     - name: install packages
+      become: true
       apt:
         state: latest
         name:
@@ -39,7 +40,7 @@
         dest: "/home/arthur/.zshrc"
       when: zshrc.stat.exists
 
-    - name: change user shell to zsh 
+    - name: change user shell to zsh
       user:
         name: "arthur"
         shell: /bin/zsh
