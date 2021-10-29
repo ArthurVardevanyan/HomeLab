@@ -19,6 +19,16 @@ scp -r /home/arthur/vmware windowsBackup@10.0.0.3:/backup/Virtual_Machine_Backup
 sudo sensors-detect
 ```
 
+### Cura
+
+Config files need to be applied manually.
+
+```bash
+machineConfigs/home/arthur/cura
+```
+
+## Server
+
 ### Logging
 
 ```bash
