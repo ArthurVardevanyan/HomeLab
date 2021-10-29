@@ -5,7 +5,7 @@
     - name: Add VSCodium Key
       apt_key:
         url: https://gitlab.com/paulcarroty/vscodium-deb-rpm-repo/raw/master/pub.gpg
-        keyring: /usr/share/keyrings/vscodium-archive-keyring.gpg
+        keyring: /etc/apt/trusted.gpg.d/vscodium-archive-keyring.gpg
         state: present
     - name: Add VSCodium Repo
       apt_repository:
@@ -13,7 +13,7 @@
         state: present
         update_cache: True
         filename: vscodium
-    - name: Install VSCodium 
+    - name: Install VSCodium
       apt:
         state: latest
         name:

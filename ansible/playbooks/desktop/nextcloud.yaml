@@ -1,15 +1,24 @@
 - hosts: ryzen
-  become: true
   user: arthur
   tasks:
-      - name: Add Nextcloud Repo
-        apt_repository:
-            validate_certs: no
-            repo: "ppa:nextcloud-devs/client"
-            state: present
-            update_cache: True
-      - name: Install Nextcloud
-        apt:
-            state: latest
-            name:
-                - nextcloud-desktop
+    - name: Add Nextcloud Repo
+      become: true
+      apt_repository:
+        validate_certs: no
+        repo: "ppa:nextcloud-devs/client"
+        state: present
+        update_cache: True
+    - name: Install Nextcloud
+      become: true
+      apt:
+        state: latest
+        name:
+          - nextcloud-desktop
+    - name: Nextcloud Startup
+      copy:
+        src: "../../../machineConfigs/desktop/home/arthur/.config/autostart/com.nextcloud.desktopclient.nextcloud.desktop"
+        dest: "/home/arthur/.config/autostart/com.nextcloud.desktopclient.nextcloud.desktop"
+    - name: Create Nextcloud Sync Directories
+      file:
+        path: /home/arthur/Projects
+        state: directory

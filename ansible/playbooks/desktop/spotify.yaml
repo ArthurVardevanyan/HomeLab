@@ -1,19 +1,26 @@
 - hosts: ryzen
-  become: true
   user: arthur
   tasks:
     - name: Add Spotify key
+      become: true
       apt_key:
         url: https://download.spotify.com/debian/pubkey_0D811D58.gpg
         state: present
     - name: Add Spotify Repo
+      become: true
       apt_repository:
         repo: deb http://repository.spotify.com stable non-free
         state: present
         update_cache: True
         filename: spotify
     - name: Install spotify
+      become: true
       apt:
         state: latest
         name:
           - spotify-client
+    - name: Spotify Startup
+      copy:
+        src: "../../../machineConfigs/desktop/home/arthur/.config/autostart/spotify.desktop"
+        dest: "/home/arthur/.config/autostart/spotify.desktop"
+# Need Libraries for Local Song Playback

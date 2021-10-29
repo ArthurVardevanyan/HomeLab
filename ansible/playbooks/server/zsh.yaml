@@ -32,15 +32,16 @@
       copy:
         src: "../../../machineConfigs/server/home/arthur/.oh-my-zsh/themes/custom.zsh-theme"
         dest: "/home/arthur/.oh-my-zsh/themes/custom.zsh-theme"
-      when: zshrc.stat.exists
+      when: not zshrc.stat.exists
 
     - name: Creating new ~/.zshrc
       copy:
         src: "../../../machineConfigs/server/home/arthur/.zshrc"
         dest: "/home/arthur/.zshrc"
-      when: zshrc.stat.exists
+      when: not zshrc.stat.exists
 
     - name: change user shell to zsh
+      become: yes
       user:
         name: "arthur"
         shell: /bin/zsh

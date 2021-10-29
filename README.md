@@ -131,6 +131,8 @@ cat test.log | grep -v DEBUG > test_noDebug.log
 ### Ansible
 
 ```bash
+ansible-galaxy install -r ansible/requirements.yaml
+
 ansible-playbook -i ansible/inventory --ask-become-pass ansible/server.yaml --ask-pass
 ansible-playbook -i ansible/inventory --ask-become-pass ansible/desktop.yaml --ask-pass
 ```

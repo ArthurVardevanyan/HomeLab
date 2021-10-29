@@ -1,0 +1,17 @@
+- hosts: ryzen
+  become: true
+  user: arthur
+  tasks:
+    - name: Create Timeshift Folder
+      file:
+        path: /etc/timeshift
+        state: directory
+    - name: Install Timeshift
+      apt:
+        state: latest
+        name:
+          - timeshift
+    - name: Create Timeshift Config
+      copy:
+        src: "../../../machineConfigs/desktop/etc/timeshift/timeshift.json"
+        dest: "/etc/timeshift/timeshift.json"

@@ -1,0 +1,16 @@
+- hosts: ryzen
+  user: arthur
+  tasks:
+    - name: AutoStart directory
+      file:
+        path: /home/arthur/.config/autostart
+        state: directory
+    - name: Set a hostname
+      hostname:
+        name: arthur-ryzen
+    - name: Bakkes Mod
+      copy:
+        src: "../../../machineConfigs/desktop/home/arthur/.bakkes_mod.sh"
+        dest: "/home/arthur/.bakkes_mod.sh"
+    - name: Bakkes Mod Executable
+      file: dest=/home/arthur/.bakkes_mod.sh mode=a+x
