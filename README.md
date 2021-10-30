@@ -27,6 +27,12 @@ Config files need to be applied manually.
 machineConfigs/home/arthur/cura
 ```
 
+### Spotify
+
+```bash
+https://github.com/ramedeiros/spotify_libraries/
+```
+
 ## Server
 
 ### Logging

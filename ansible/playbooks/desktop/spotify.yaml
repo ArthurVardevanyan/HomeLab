@@ -23,4 +23,15 @@
       copy:
         src: "../../../machineConfigs/desktop/home/arthur/.config/autostart/spotify.desktop"
         dest: "/home/arthur/.config/autostart/spotify.desktop"
-# Need Libraries for Local Song Playback
+
+    - name: Spotify Local Playback Libraries
+      become: true
+      copy:
+        src: "../../../machineConfigs/desktop/usr/lib/x86_64-linux-gnu/"
+        dest: "/usr/lib/x86_64-linux-gnu/"
+      register: create_links
+
+    - name: Create Spotify Symlinks
+      become: yes
+      shell: ldconfig
+      when: create_links.changed
