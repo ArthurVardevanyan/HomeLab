@@ -19,6 +19,15 @@ scp -r /home/arthur/vmware windowsBackup@10.0.0.3:/backup/Virtual_Machine_Backup
 sudo sensors-detect
 ```
 
+### Gnome
+
+Manual Extensions
+
+- gnome-shell-extension-netspeed
+- gnome-shell-extension-places-menu
+- gnome-shell-extension-transparentnotification
+- gnome-shell-extension-tray-icons-reloaded
+
 ### Cura
 
 Config files need to be applied manually.

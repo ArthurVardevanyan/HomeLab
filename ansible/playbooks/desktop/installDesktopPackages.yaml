@@ -15,7 +15,8 @@
           - sshpass
           - gnome-tweaks
           - pulseeffects
-          - remmina
+          #- remmina
+          - gparted
     - name: install development tools
       apt:
         state: latest
@@ -32,6 +33,7 @@
           - npm
           - adb
           - node-typescript
+          #- arduino
     #      - openjdk-17-jre
     #- name: install virtual machine tools
     #  apt:
@@ -64,3 +66,11 @@
     - name: Install ProtonTricks
       pip:
         name: protontricks
+    - name: Install psutil
+      pip:
+        name: psutil
+    - name: Remove UnNeeded Packages
+      apt:
+        state: absent
+        name:
+          - geary
