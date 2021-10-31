@@ -1,0 +1,120 @@
+- hosts: ryzen
+  user: arthur
+  tasks:
+    - name: Install Extensions
+      become: true
+      package:
+        name:
+          - dconf-editor
+          - gnome-shell-extension-gsconnect
+          - gnome-shell-extension-autohidetopbar
+          #- gnome-shell-extension-netspeed
+          - gnome-shell-extension-weather
+          #- gnome-shell-extension-places-menu
+          #- gnome-shell-extension-transparentnotification
+
+    - name: Enable Extensions
+      dconf:
+        key: "/org/gnome/shell/enabled-extensions"
+        value:
+          "['netspeed@hedayaty.gmail.com', 'openweather-extension@jenslody.de', 'places-menu@gnome-shell-extensions.gcampax.github.com', \
+          'gsconnect@andyholmes.github.io', 'transparentnotification@ipaq3870', 'trayIconsReloaded@selfmade.pl', \
+          'hidetopbar@mathieu.bidon.ca', 'pop-shell@system76.com']"
+    - name: Nautilus Show Image Thumbnails
+      dconf:
+        key: "/org/gnome/nautilus/preferences/show-image-thumbnails"
+        value: "'always'"
+    - name: Nautilus Bookmarks
+      copy:
+        src: "../../../machineConfigs/desktop/home/arthur/.config/gtk-3.0/bookmarks"
+        dest: "/home/arthur/.config/gtk-3.0/bookmarks"
+
+    - name: Dash to Dock Cycle Windows
+      dconf:
+        key: "/org/gnome/shell/extensions/dash-to-dock/click-action"
+        value: "'cycle-windows'"
+
+    - name: Dock Auto Hide
+      dconf:
+        key: "/org/gnome/shell/extensions/dash-to-dock/manualhide"
+        value: "false"
+
+    - name: Dock Fixed
+      dconf:
+        key: "/org/gnome/shell/extensions/dash-to-dock/dock-fixed"
+        value: "false"
+
+    - name: Dock Max Icon Size
+      dconf:
+        key: "/org/gnome/shell/extensions/dash-to-dock/dash-max-icon-size"
+        value: "36"
+
+    - name: Dock Multi Monitor
+      dconf:
+        key: "/org/gnome/shell/extensions/dash-to-dock/multi-monitor"
+        value: "true"
+
+    - name: Dock Show Mounts
+      dconf:
+        key: "/org/gnome/shell/extensions/dash-to-dock/show-mounts"
+        value: "false"
+
+    - name: Dock Extend Height
+      dconf:
+        key: "/org/gnome/shell/extensions/dash-to-dock/extend-height"
+        value: "false"
+
+    - name: Dock Position
+      dconf:
+        key: "/org/gnome/shell/extensions/dash-to-dock/dock-position"
+        value: "'BOTTOM'"
+
+    - name: Show Volumes on Desktop
+      dconf:
+        key: "/org/gnome/shell/extensions/ding/show-volumes"
+        value: "false"
+
+    - name: Show Trash on Desktop
+      dconf:
+        key: "/org/gnome/shell/extensions/ding/show-trash"
+        value: "false"
+
+    - name: Show Home on Desktop
+      dconf:
+        key: "/org/gnome/shell/extensions/ding/show-home"
+        value: "false"
+
+    - name: Pop Cosmic Overlay Key Action
+      dconf:
+        key: "/org/gnome/shell/extensions/pop-cosmic/overlay-key-action"
+        value: "'WORKSPACES'"
+
+    - name: Pop Cosmic Show Applications Button
+      dconf:
+        key: "/org/gnome/shell/extensions/pop-cosmic/show-applications-button"
+        value: "true"
+
+    - name: Pop Shell Gap Inner
+      dconf:
+        key: "/org/gnome/shell/extensions/pop-shell/gap-inner"
+        value: "uint32 0"
+
+    - name: Pop Shell Gap Outer
+      dconf:
+        key: "/org/gnome/shell/extensions/pop-shell/gap-outer"
+        value: "uint32 0"
+
+    - name: Pop Shell Hint Color
+      dconf:
+        key: "/org/gnome/shell/extensions/pop-shell/hint-color-rgba"
+        value: "'rgb(0,0,0)'"
+
+    - name: Pop Shell Show Title
+      dconf:
+        key: "/org/gnome/shell/extensions/pop-shell/show-title"
+        value: "true"
+
+    - name: Pop Shell Tile
+      dconf:
+        key: "/org/gnome/shell/extensions/pop-shell/tile-by-default"
+        value: "false"

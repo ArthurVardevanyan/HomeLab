@@ -20,3 +20,17 @@
       copy:
         src: "../../../machineConfigs/desktop/home/arthur/.gitconfig"
         dest: "/home/arthur/.gitconfig"
+    - name: Find Audio Power Save
+      become: true
+      lineinfile:
+        dest: /etc/modprobe.d/alsa-base.conf
+        line: "options snd-hda-intel power_save=0 power_save_controller=N"
+      check_mode: yes
+      register: presence
+
+    - name: Add Audio Power Save
+      become: true
+      lineinfile:
+        dest: /etc/modprobe.d/alsa-base.conf
+        line: "options snd-hda-intel power_save=0 power_save_controller=N"
+      when: presence.changed
