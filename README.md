@@ -2,10 +2,6 @@
 
 [![pipeline status](https://gitlab.arthurvardevanyan.com/ArthurVardevanyan/HomeLab/badges/production/pipeline.svg)](https://gitlab.arthurvardevanyan.com/ArthurVardevanyan/HomeLab/-/commits/production)
 
-## Todo
-
-- Automated Debian Installation
-
 ## Desktop
 
 ```bash
@@ -35,6 +31,10 @@ Config files need to be applied manually.
 ```bash
 machineConfigs/home/arthur/cura
 ```
+
+### GWE
+
+Copy Database File
 
 ### Spotify
 
