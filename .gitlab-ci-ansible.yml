@@ -8,7 +8,7 @@ StandardPackages:
   stage: ansible
   image: $CI_REGISTRY_IMAGE:ansible
   variables:
-    PLAYBOOK: installServerPackages
+    PLAYBOOK: serverPackages
   before_script:
     - ansible-playbook -i ansible/inventory ansible/playbooks/server/${PLAYBOOK}.yaml --extra-vars "ansible_become_pass=${SUDO} ansible_ssh_pass=${SUDO}" --check
   script:
@@ -118,7 +118,7 @@ Cron:
   stage: ansible
   image: $CI_REGISTRY_IMAGE:ansible
   variables:
-    PLAYBOOK: installServerPackages
+    PLAYBOOK: cron
   before_script:
     - ansible-playbook -i ansible/inventory ansible/playbooks/server/${PLAYBOOK}.yaml --extra-vars "ansible_become_pass=${SUDO} ansible_ssh_pass=${SUDO}" --check
   script:

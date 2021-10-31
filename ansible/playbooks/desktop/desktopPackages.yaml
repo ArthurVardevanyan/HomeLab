@@ -2,6 +2,12 @@
   become: true
   user: arthur
   tasks:
+    - name: Upgrade all apt packages
+      apt:
+        update_cache: True
+        cache_valid_time: 3600
+        upgrade: dist
+        autoremove: yes
     - name: install core packages
       apt:
         state: latest
