@@ -36,6 +36,13 @@ machineConfigs/home/arthur/cura
 
 Copy Database File
 
+### Python
+
+```bash
+python3 -m venv .
+source bin/activate
+```
+
 ### Spotify
 
 ```bash
