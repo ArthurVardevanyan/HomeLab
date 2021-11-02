@@ -51,6 +51,12 @@ https://github.com/ramedeiros/spotify_libraries/
 
 ## Server
 
+### Cockpit
+
+```bash
+sudo nano /etc/cockpit/ws-certs.d/1-my-cert.cert
+```
+
 ### Logging
 
 ```bash
