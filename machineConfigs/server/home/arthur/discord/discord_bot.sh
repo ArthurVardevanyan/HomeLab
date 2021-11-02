@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-export UPTIME_WEBHOOK=https://discord.com/api/webhooks/
+export UPTIME_WEBHOOK=https://discord.com/api/webhooks/REPLACE_ME
 
 booted() {
   /home/arthur/discord/discord.sh \
@@ -11,7 +11,7 @@ booted() {
     --timestamp
 }
 
-restart(){
+restart() {
   /home/arthur/discord/discord.sh \
     --webhook-url="$UPTIME_WEBHOOK" \
     --username "Server is Rebooting!" \
@@ -20,7 +20,7 @@ restart(){
     --timestamp
 }
 
-shutdown(){
+shutdown() {
   /home/arthur/discord/discord.sh \
     --webhook-url="$UPTIME_WEBHOOK" \
     --username "Server is Shutting Down!" \
@@ -28,6 +28,5 @@ shutdown(){
     --color "FF0000" \
     --timestamp
 }
-
 
 "$@"

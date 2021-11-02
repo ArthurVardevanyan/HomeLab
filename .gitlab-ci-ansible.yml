@@ -153,3 +153,14 @@ K3s:
     - ansible-playbook -i ansible/inventory ansible/playbooks/server/${PLAYBOOK}.yaml --extra-vars "ansible_become_pass=${SUDO} ansible_ssh_pass=${SUDO}" --check
   script:
     - ansible-playbook -i ansible/inventory ansible/playbooks/server/${PLAYBOOK}.yaml --extra-vars "ansible_become_pass=${SUDO} ansible_ssh_pass=${SUDO}"
+
+Discord:
+  stage: ansible
+  image: $CI_REGISTRY_IMAGE:ansible
+  variables:
+    PLAYBOOK: discord_bot
+  before_script:
+    - sed -i "s,REPLACE_ME,${DISCORD},g" machineConfigs/server/home/arthur/discord/discord_bot.sh
+    - ansible-playbook -i ansible/inventory ansible/playbooks/server/${PLAYBOOK}.yaml --extra-vars "ansible_become_pass=${SUDO} ansible_ssh_pass=${SUDO}" --check
+  script:
+    - ansible-playbook -i ansible/inventory ansible/playbooks/server/${PLAYBOOK}.yaml --extra-vars "ansible_become_pass=${SUDO} ansible_ssh_pass=${SUDO}"
