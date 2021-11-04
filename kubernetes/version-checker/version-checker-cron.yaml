@@ -1,0 +1,49 @@
+kind: CronJob
+apiVersion: batch/v1
+metadata:
+  name: version-checker
+  namespace: version-checker
+spec:
+  schedule: "00 05,17 * * *"
+  concurrencyPolicy: Replace
+  suspend: false
+  jobTemplate:
+    spec:
+      backoffLimit: 0
+      template:
+        metadata:
+          labels:
+            app: version-checker
+          annotations:
+            prometheus.io/path: /metrics
+            prometheus.io/port: "8080"
+            prometheus.io/scrape: "true"
+            enable.version-checker.io/version-checker: "true"
+        spec:
+          containers:
+            - name: version-checker
+              image: quay.io/jetstack/version-checker:v0.2.1
+              command:
+                - version-checker
+                - "--test-all-containers"
+              ports:
+                - containerPort: 8080
+                  protocol: TCP
+              resources:
+                limits:
+                  cpu: 50m
+                  memory: 75M
+                requests:
+                  cpu: 25m
+                  memory: 50M
+              terminationMessagePath: /dev/termination-log
+              terminationMessagePolicy: File
+              imagePullPolicy: IfNotPresent
+          restartPolicy: Never
+          terminationGracePeriodSeconds: 30
+          dnsPolicy: ClusterFirst
+          serviceAccountName: version-checker
+          serviceAccount: version-checker
+          schedulerName: default-scheduler
+  successfulJobsHistoryLimit: 1
+  failedJobsHistoryLimit: 1
