@@ -14,9 +14,7 @@ ToolBoxImage:
     - docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" $CI_REGISTRY
   script:
     - docker pull $CI_REGISTRY_IMAGE:toolbox || true
-    - docker build --network host --cache-from $CI_REGISTRY_IMAGE:toolbox -t $CI_REGISTRY_IMAGE:$CI_COMMIT_SHA .
-    - docker push $CI_REGISTRY_IMAGE:$CI_COMMIT_SHA
-    - docker tag $CI_REGISTRY_IMAGE:$CI_COMMIT_SHA $CI_REGISTRY_IMAGE:toolbox
+    - docker build --network host -f gitlab/dockerfile --cache-from $CI_REGISTRY_IMAGE:toolbox -t $CI_REGISTRY_IMAGE:toolbox .
     - docker push $CI_REGISTRY_IMAGE:toolbox
 
 AnsibleImage:
@@ -35,9 +33,7 @@ AnsibleImage:
     - docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" $CI_REGISTRY
   script:
     - docker pull $CI_REGISTRY_IMAGE:ansible || true
-    - docker build --network host -f ansible/dockerfile --cache-from $CI_REGISTRY_IMAGE:ansible -t $CI_REGISTRY_IMAGE:$CI_COMMIT_SHA .
-    - docker push $CI_REGISTRY_IMAGE:$CI_COMMIT_SHA
-    - docker tag $CI_REGISTRY_IMAGE:$CI_COMMIT_SHA $CI_REGISTRY_IMAGE:ansible
+    - docker build --network host -f ansible/dockerfile --cache-from $CI_REGISTRY_IMAGE:ansible -t $CI_REGISTRY_IMAGE:ansible .
     - docker push $CI_REGISTRY_IMAGE:ansible
 
 KubernetesImage:
@@ -56,7 +52,5 @@ KubernetesImage:
     - docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" $CI_REGISTRY
   script:
     - docker pull $CI_REGISTRY_IMAGE:kubernetes || true
-    - docker build --network host -f kubernetes/dockerfile --cache-from $CI_REGISTRY_IMAGE:kubernetes -t $CI_REGISTRY_IMAGE:$CI_COMMIT_SHA .
-    - docker push $CI_REGISTRY_IMAGE:$CI_COMMIT_SHA
-    - docker tag $CI_REGISTRY_IMAGE:$CI_COMMIT_SHA $CI_REGISTRY_IMAGE:kubernetes
+    - docker build --network host -f kubernetes/dockerfile --cache-from $CI_REGISTRY_IMAGE:kubernetes -t $CI_REGISTRY_IMAGE:kubernetes .
     - docker push $CI_REGISTRY_IMAGE:kubernetes
