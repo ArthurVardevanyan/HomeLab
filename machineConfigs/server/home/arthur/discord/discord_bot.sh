@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+# https://github.com/ChaoticWeg/discord.sh
+
 export UPTIME_WEBHOOK=https://discord.com/api/webhooks/REPLACE_ME
 
 booted() {
