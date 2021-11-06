@@ -1,0 +1,60 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: vault
+  namespace: vault
+spec:
+  replicas: 1
+  revisionHistoryLimit: 0
+  selector:
+    matchLabels:
+      app: vault
+  strategy:
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        app: vault
+      annotations:
+        use-metadata.version-checker.io/vault: "true"
+    spec:
+      containers:
+        - image: vault:1.8.5
+          imagePullPolicy: IfNotPresent
+          name: vault
+          ports:
+            - containerPort: 8200
+          securityContext:
+            capabilities:
+              add:
+                - IPC_LOCK
+          command:
+            - vault
+            - server
+            - -config=/vault/config/vault.json
+          volumeMounts:
+            - mountPath: /vault/file
+              name: vault-file
+            - mountPath: /vault/config
+              name: vault-config
+            - mountPath: /vault/cert
+              name: vault-cert
+          resources:
+            requests:
+              memory: "150M"
+              cpu: "50m"
+            limits:
+              memory: "300M"
+              cpu: "100m"
+      hostname: vault
+      restartPolicy: Always
+      volumes:
+        - name: vault-config
+          configMap:
+            name: vault-config
+        - name: vault-file
+          persistentVolumeClaim:
+            claimName: vault-file
+        - name: vault-cert
+          persistentVolumeClaim:
+            claimName: vault-cert

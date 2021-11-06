@@ -145,3 +145,12 @@ homeassistant:
   environment: production
   script:
     - kubectl apply -f kubernetes/homeassistant
+
+vault:
+  stage: kubernetes
+  when: always
+  needs: []
+  image: $CI_REGISTRY_IMAGE:kubernetes
+  environment: production
+  script:
+    - kubectl apply -f kubernetes/vault

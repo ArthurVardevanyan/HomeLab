@@ -1,0 +1,30 @@
+apiVersion: traefik.containo.us/v1alpha1
+kind: Middleware
+metadata:
+  name: https-redirect
+  namespace: vault
+spec:
+  redirectScheme:
+    scheme: https
+    permanent: true
+---
+apiVersion: traefik.containo.us/v1alpha1
+kind: IngressRoute
+metadata:
+  name: vault
+  namespace: vault
+spec:
+  entryPoints:
+    - web
+    - websecure
+  routes:
+    - match: Host(`vault.arthurvardevanyan.com`)
+      kind: Rule
+      services:
+        - name: vault
+          port: 443
+      middlewares:
+        - name: https-redirect
+  tls:
+    domains:
+      - main: vault.arthurvardevanyan.com
