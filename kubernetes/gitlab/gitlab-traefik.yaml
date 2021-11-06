@@ -18,7 +18,7 @@ spec:
     - web
     - websecure
   routes:
-    - match: "Host(`gitlab.arthurvardevanyan.com`)"
+    - match: "Host(`gitlab.<URL>`)"
       kind: Rule
       services:
         - name: gitlab
@@ -27,7 +27,7 @@ spec:
         - name: https-redirect
   tls:
     domains:
-      - main: gitlab.arthurvardevanyan.com
+      - main: gitlab.<URL>
 ---
 apiVersion: traefik.containo.us/v1alpha1
 kind: IngressRouteTCP
@@ -38,11 +38,11 @@ spec:
   entryPoints:
     - registry
   routes:
-    - match: "HostSNI(`gitlab.arthurvardevanyan.com`)"
+    - match: "HostSNI(`gitlab.<URL>`)"
       services:
         - name: gitlab
           port: 5050
   tls:
     domains:
-      - main: gitlab.arthurvardevanyan.com
+      - main: gitlab.<URL>
     passthrough: true

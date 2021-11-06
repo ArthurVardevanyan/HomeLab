@@ -14,6 +14,7 @@ kubernetes-dashboard:
   image: $CI_REGISTRY_IMAGE:kubernetes
   environment: production
   script:
+    - sed -i "s/<URL>/${URL}/g" kubernetes/kubernetes-dashboard/kubernetes-dashboard-traefik.yaml
     - kubectl apply -f kubernetes/kubernetes-dashboard
 
 certManager:
@@ -24,6 +25,7 @@ certManager:
   environment: production
   script:
     - sh kubernetes/cert-manager/cert-manager-deployment.sh
+    - sed -i "s/<URL>/${URL}/g" kubernetes/cert-manager/cert-manager-cloudflare.yaml
     - sed -i "s,<CLOUDFLARE_EMAIL>,${CLOUDFLARE_EMAIL},g" kubernetes/cert-manager/cert-manager-cloudflare.yaml
     - sed -i "s,<CLOUDFLARE_API>,${CLOUDFLARE_API},g" kubernetes/cert-manager/cert-manager-cloudflare-secret.yaml
     - kubectl apply -f kubernetes/cert-manager
@@ -44,6 +46,8 @@ traefik:
   image: $CI_REGISTRY_IMAGE:kubernetes
   environment: production
   script:
+    - sed -i "s/<URL>/${URL}/g" kubernetes/traefik/traefik-dashboard-traefik.yaml
+    - sed -i "s/<URL>/${URL}/g" kubernetes/traefik/cluster-wildcard-certificate.yaml
     - kubectl apply -f kubernetes/traefik
 
 heimdall:
@@ -53,6 +57,7 @@ heimdall:
   image: $CI_REGISTRY_IMAGE:kubernetes
   environment: production
   script:
+    - sed -i "s/<URL>/${URL}/g" kubernetes/heimdall/heimdall-traefik.yaml
     - kubectl apply -f kubernetes/heimdall
 
 gitlab:
@@ -62,6 +67,7 @@ gitlab:
   image: $CI_REGISTRY_IMAGE:kubernetes
   environment: production
   script:
+    - sed -i "s/<URL>/${URL}/g" kubernetes/gitlab/gitlab-traefik.yaml
     - kubectl apply -f kubernetes/gitlab
 
 gitlab-runner:
@@ -71,6 +77,7 @@ gitlab-runner:
   image: $CI_REGISTRY_IMAGE:kubernetes
   environment: production
   script:
+    - sed -i "s/<URL>/${URL}/g" kubernetes/gitlab/gitlab-runner/gitlab-runner-config-map.yaml
     - kubectl apply -f kubernetes/gitlab/gitlab-runner/
 
 influxdb:
@@ -89,6 +96,7 @@ prometheus:
   image: $CI_REGISTRY_IMAGE:kubernetes
   environment: production
   script:
+    - sed -i "s/<URL>/${URL}/g" kubernetes/prometheus/prometheus-traefik.yaml
     - kubectl apply -f kubernetes/prometheus
 
 kube-state-metrics:
@@ -107,6 +115,7 @@ grafana:
   image: $CI_REGISTRY_IMAGE:kubernetes
   environment: production
   script:
+    - sed -i "s/<URL>/${URL}/g" kubernetes/grafana/grafana-traefik.yaml
     - kubectl apply -f kubernetes/grafana
 
 nextcloud:
@@ -116,6 +125,7 @@ nextcloud:
   image: $CI_REGISTRY_IMAGE:kubernetes
   environment: production
   script:
+    - sed -i "s/<URL>/${URL}/g" kubernetes/nextcloud/nextcloud-traefik.yaml
     - kubectl apply -f kubernetes/nextcloud
 
 mariadb:
@@ -135,6 +145,7 @@ phpmyadmin:
   image: $CI_REGISTRY_IMAGE:kubernetes
   environment: production
   script:
+    - sed -i "s/<URL>/${URL}/g" kubernetes/phpmyadmin/phpmyadmin-traefik.yaml
     - kubectl apply -f kubernetes/phpmyadmin
 
 homeassistant:
@@ -153,4 +164,5 @@ vault:
   image: $CI_REGISTRY_IMAGE:kubernetes
   environment: production
   script:
+    - sed -i "s/<URL>/${URL}/g" kubernetes/vault/vault-traefik.yaml
     - kubectl apply -f kubernetes/vault

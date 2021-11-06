@@ -5,17 +5,17 @@ metadata:
   namespace: cert-manager
 spec:
   acme:
-    email: arthur@arthurvardevanyan.com
+    email: arthur@<URL>
     server: https://acme-staging-v02.api.letsencrypt.org/directory
     privateKeySecretRef:
       name: issuer-letsencrypt-staging
     solvers:
-    - dns01:
-        cloudflare:
-          apiTokenSecretRef:
-            key: api-token
-            name: cloudflare-api-token-secret
-          email: <CLOUDFLARE_EMAIL>
+      - dns01:
+          cloudflare:
+            apiTokenSecretRef:
+              key: api-token
+              name: cloudflare-api-token-secret
+            email: <CLOUDFLARE_EMAIL>
 ---
 apiVersion: cert-manager.io/v1
 kind: ClusterIssuer
@@ -24,14 +24,14 @@ metadata:
   namespace: cert-manager
 spec:
   acme:
-    email: arthur@arthurvardevanyan.com
+    email: arthur@<URL>
     server: https://acme-v02.api.letsencrypt.org/directory
     privateKeySecretRef:
       name: issuer-letsencrypt
     solvers:
-    - dns01:
-        cloudflare:
-          apiTokenSecretRef:
-            key: api-token
-            name: cloudflare-api-token-secret
-          email: <CLOUDFLARE_EMAIL>
+      - dns01:
+          cloudflare:
+            apiTokenSecretRef:
+              key: api-token
+              name: cloudflare-api-token-secret
+            email: <CLOUDFLARE_EMAIL>
