@@ -13,7 +13,7 @@ booted() {
     --timestamp
 }
 
-restart() {
+reboot() {
   /home/arthur/discord/discord.sh \
     --webhook-url="$UPTIME_WEBHOOK" \
     --username "Server is Rebooting!" \
