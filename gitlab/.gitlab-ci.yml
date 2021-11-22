@@ -1,3 +1,11 @@
+include:
+  - template: Security/Secret-Detection.gitlab-ci.yml
+  - template: Security/SAST.gitlab-ci.yml
+
+variables:
+  SCAN_KUBERNETES_MANIFESTS: "true"
+  ANSIBLE_FORCE_COLOR: "true"
+
 stages:
   - images
   - test
@@ -11,7 +19,7 @@ GithubPending:
   script:
     - export DESCRIPTION="Running"
     - export STATUS=pending
-    - gitlab/.github-status.sh
+    - gitlab/github-status.sh
 
 GithubFinish:
   stage: github
@@ -19,11 +27,12 @@ GithubFinish:
   script:
     - export DESCRIPTION="Completed Successfully"
     - export STATUS=success
-    - gitlab/.github-status.sh
+    - gitlab/github-status.sh
 
-AnsibleDesktop:
+Desktop:
   stage: ansible
   image: $CI_REGISTRY_IMAGE:ansible
+  needs: []
   allow_failure: true
   before_script:
     - mkdir -p ~/.ssh
@@ -33,12 +42,82 @@ AnsibleDesktop:
   script:
     - ansible-playbook -i ansible/inventory ansible/desktop.yaml --extra-vars "ansible_become_pass=${SUDO} ansible_ssh_pass=${SUDO} ansible_python_interpreter=/usr/bin/python3"
 
-include:
-  - template: Security/Secret-Detection.gitlab-ci.yml
-  - template: Security/SAST.gitlab-ci.yml
-  - local: "gitlab/.gitlab-ci-images.yml"
-  - local: "gitlab/.gitlab-ci-ansible.yml"
-  - local: "gitlab/.gitlab-ci-kubernetes.yml"
+Server:
+  stage: ansible
+  image: $CI_REGISTRY_IMAGE:ansible
+  needs: []
+  before_script:
+    - mkdir -p ~/.ssh
+    - chmod 700 ~/.ssh
+    - echo "$SSH_KNOWN_HOSTS" >> ~/.ssh/known_hosts
+    - chmod 644 ~/.ssh/known_hosts
+    - sed -i "s,REPLACE_ME,${DISCORD},g" machineConfigs/server/home/arthur/discord/discord_bot.sh
+    - sed -i "s,##,,g"  ansible/server.yaml
+  script:
+    - ansible-playbook -i ansible/inventory ansible/server.yaml --extra-vars "ansible_become_pass=${SUDO} ansible_ssh_pass=${SUDO} ansible_python_interpreter=/usr/bin/python3"
 
-variables:
-  SCAN_KUBERNETES_MANIFESTS: "true"
+Configurations:
+  stage: kubernetes
+  when: always
+  needs: []
+  image: $CI_REGISTRY_IMAGE:kubernetes
+  environment: production
+  script:
+    - gitlab/kubernetes_configurations.sh
+
+Toolbox:
+  stage: images
+  when: manual
+  image: docker:latest
+  variables:
+    DOCKER_HOST: tcp://docker:2375
+    DOCKER_DRIVER: overlay2
+    DOCKER_TLS_CERTDIR: ""
+  services:
+    - name: docker:dind
+      alias: docker
+      command: ["--tls=false"]
+  before_script:
+    - docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" $CI_REGISTRY
+  script:
+    - docker pull $CI_REGISTRY_IMAGE:toolbox || true
+    - docker build --network host -f gitlab/dockerfile --cache-from $CI_REGISTRY_IMAGE:toolbox -t $CI_REGISTRY_IMAGE:toolbox .
+    - docker push $CI_REGISTRY_IMAGE:toolbox
+
+Ansible:
+  stage: images
+  when: manual
+  image: docker:latest
+  variables:
+    DOCKER_HOST: tcp://docker:2375
+    DOCKER_DRIVER: overlay2
+    DOCKER_TLS_CERTDIR: ""
+  services:
+    - name: docker:dind
+      alias: docker
+      command: ["--tls=false"]
+  before_script:
+    - docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" $CI_REGISTRY
+  script:
+    - docker pull $CI_REGISTRY_IMAGE:ansible || true
+    - docker build --network host -f ansible/dockerfile --cache-from $CI_REGISTRY_IMAGE:ansible -t $CI_REGISTRY_IMAGE:ansible .
+    - docker push $CI_REGISTRY_IMAGE:ansible
+
+Kubernetes:
+  stage: images
+  when: manual
+  image: docker:latest
+  variables:
+    DOCKER_HOST: tcp://docker:2375
+    DOCKER_DRIVER: overlay2
+    DOCKER_TLS_CERTDIR: ""
+  services:
+    - name: docker:dind
+      alias: docker
+      command: ["--tls=false"]
+  before_script:
+    - docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" $CI_REGISTRY
+  script:
+    - docker pull $CI_REGISTRY_IMAGE:kubernetes || true
+    - docker build --network host -f kubernetes/dockerfile --cache-from $CI_REGISTRY_IMAGE:kubernetes -t $CI_REGISTRY_IMAGE:kubernetes .
+    - docker push $CI_REGISTRY_IMAGE:kubernetes
