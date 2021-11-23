@@ -16,8 +16,10 @@ spec:
       labels:
         app: vault
       annotations:
+        seccomp.security.alpha.kubernetes.io/defaultProfileName: "runtime/default"
         use-metadata.version-checker.io/vault: "true"
     spec:
+      automountServiceAccountToken: false
       containers:
         - image: vault:1.9.0
           imagePullPolicy: IfNotPresent

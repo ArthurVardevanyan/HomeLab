@@ -33,14 +33,6 @@ echo -e " \n${BLUE}Heimdall:${NC}"
 sed -i "s/<URL>/${URL}/g" kubernetes/heimdall/heimdall-traefik.yaml
 kubectl apply -f kubernetes/heimdall
 
-echo -e " \n${BLUE}Gitlab:${NC}"
-sed -i "s/<URL>/${URL}/g" kubernetes/gitlab/gitlab-traefik.yaml
-kubectl apply -f kubernetes/gitlab
-
-echo -e " \n${BLUE}Gitlab Runner:${NC}"
-sed -i "s/<URL>/${URL}/g" kubernetes/gitlab/gitlab-runner/gitlab-runner-config-map.yaml
-kubectl apply -f kubernetes/gitlab/gitlab-runner/
-
 echo -e " \n${BLUE}influxdb:${NC}"
 kubectl apply -f kubernetes/influxdb
 
@@ -73,3 +65,12 @@ kubectl apply -f kubernetes/homeassistant
 echo -e " \n${BLUE}Vault:${NC}"
 sed -i "s/<URL>/${URL}/g" kubernetes/vault/vault-traefik.yaml
 kubectl apply -f kubernetes/vault
+
+echo -e " \n${BLUE}Gitlab Runner:${NC}"
+sed -i "s/<URL>/${URL}/g" kubernetes/gitlab/gitlab-runner/gitlab-runner-config-map.yaml
+sed -i "s/<GITLAB_RUNNER_TOKEN>/${GITLAB_RUNNER_TOKEN}/g" kubernetes/gitlab/gitlab-runner/gitlab-runner-config-map.yaml
+kubectl apply -f kubernetes/gitlab/gitlab-runner/
+
+echo -e " \n${BLUE}Gitlab:${NC}"
+sed -i "s/<URL>/${URL}/g" kubernetes/gitlab/gitlab-traefik.yaml
+kubectl apply -f kubernetes/gitlab

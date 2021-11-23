@@ -16,8 +16,10 @@ spec:
       labels:
         app: homeassistant
       annotations:
+        seccomp.security.alpha.kubernetes.io/defaultProfileName: "runtime/default"
         use-metadata.version-checker.io/homeassistant: "true"
     spec:
+      automountServiceAccountToken: false
       containers:
         - image: homeassistant/home-assistant:2021.11.3
           imagePullPolicy: IfNotPresent

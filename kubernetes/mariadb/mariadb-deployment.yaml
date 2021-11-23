@@ -16,10 +16,12 @@ spec:
       labels:
         app: mariadb
       annotations:
+        seccomp.security.alpha.kubernetes.io/defaultProfileName: "runtime/default"
         use-metadata.version-checker.io/mariadb: "true"
         pin-major.version-checker.io/mariadb: "10"
         pin-minor.version-checker.io/mariadb: "6"
     spec:
+      automountServiceAccountToken: false
       containers:
         - image: mariadb:10.6.5
           imagePullPolicy: IfNotPresent

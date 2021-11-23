@@ -15,7 +15,11 @@ spec:
     metadata:
       labels:
         app: nextcloud
+      annotations:
+        seccomp.security.alpha.kubernetes.io/defaultProfileName: "runtime/default"
+        use-metadata.version-checker.io/nextcloud: "true"
     spec:
+      automountServiceAccountToken: false
       containers:
         - image: nextcloud:22.2.3
           imagePullPolicy: IfNotPresent

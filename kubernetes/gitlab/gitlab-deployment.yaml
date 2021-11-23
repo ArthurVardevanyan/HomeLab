@@ -16,8 +16,10 @@ spec:
       labels:
         app: gitlab
       annotations:
+        seccomp.security.alpha.kubernetes.io/defaultProfileName: "runtime/default"
         use-metadata.version-checker.io/gitlab: "true"
     spec:
+      automountServiceAccountToken: true
       containers:
         - image: gitlab/gitlab-ce:14.5.0-ce.0
           imagePullPolicy: IfNotPresent

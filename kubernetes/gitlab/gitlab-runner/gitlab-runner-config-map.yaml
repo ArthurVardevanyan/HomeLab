@@ -16,14 +16,14 @@ data:
     [[runners]]
     name = "gitlab-runner"
     url = "https://gitlab.<URL>/"
-    token = "TeYK-eQDZfpjNxxtyh6Z"
+    token = "<GITLAB_RUNNER_TOKEN>"
     executor = "kubernetes"
     [runners.kubernetes]
        namespace = "gitlab-runner"
        bearer_token_overwrite_allowed = true
        cpu_request= "125m"
        cpu_limit = "1"
-       memory_limit = "500M"
+       memory_limit = "1.5G"
        service_cpu_request = "125m"
        service_cpu_limit = "1"
        service_memory_limit = "500M"
@@ -34,3 +34,23 @@ data:
        poll_timeout = 3600
        dns_policy = "cluster-first"
        privileged = true
+
+  entrypoint: |
+    #!/bin/bash
+    set -e
+    mkdir -p /home/gitlab-runner/.gitlab-runner/
+    cp /scripts/config.toml /home/gitlab-runner/.gitlab-runner/
+
+    # Start the runner
+    exec /entrypoint run --user=gitlab-runner \
+      --working-directory=/home/gitlab-runner
+
+  check-live: |
+    #!/bin/bash
+    if /usr/bin/pgrep -f .*register-the-runner; then
+      exit 0
+    elif /usr/bin/pgrep gitlab.*runner; then
+      exit 0
+    else
+      exit 1
+    fi

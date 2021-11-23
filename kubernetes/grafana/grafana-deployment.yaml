@@ -15,10 +15,12 @@ spec:
       labels:
         app: grafana
       annotations:
+        seccomp.security.alpha.kubernetes.io/defaultProfileName: "runtime/default"
         use-metadata.version-checker.io/grafana: "true"
     spec:
       hostname: grafana
       restartPolicy: Always
+      automountServiceAccountToken: false
       containers:
         - image: grafana/grafana:8.2.4
           imagePullPolicy: IfNotPresent

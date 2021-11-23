@@ -15,6 +15,7 @@ spec:
       labels:
         k8s-app: kubernetes-dashboard
       annotations:
+        seccomp.security.alpha.kubernetes.io/defaultProfileName: "runtime/default"
         use-metadata.version-checker.io/kubernetes-dashboard: "true"
     spec:
       volumes:
@@ -24,6 +25,7 @@ spec:
             defaultMode: 420
         - name: tmp-volume
           emptyDir: {}
+      automountServiceAccountToken: true
       containers:
         - name: kubernetes-dashboard
           image: kubernetesui/dashboard:v2.4.0

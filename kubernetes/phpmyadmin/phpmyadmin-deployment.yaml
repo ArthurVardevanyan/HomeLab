@@ -14,8 +14,10 @@ spec:
       labels:
         app: phpmyadmin
       annotations:
+        seccomp.security.alpha.kubernetes.io/defaultProfileName: "runtime/default"
         use-metadata.version-checker.io/phpmyadmin: "true"
     spec:
+      automountServiceAccountToken: false
       containers:
         - image: phpmyadmin:5.1.1
           name: phpmyadmin

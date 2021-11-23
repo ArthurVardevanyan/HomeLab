@@ -17,7 +17,10 @@ spec:
         app: gitlab-runner
       annotations:
         use-metadata.version-checker.io/gitlab-runner: "true"
+        seccomp.security.alpha.kubernetes.io/defaultProfileName: "runtime/default"
     spec:
+      serviceAccountName: gitlab-runner-sa
+      automountServiceAccountToken: true
       containers:
         - image: gitlab/gitlab-runner:v14.5.0
           imagePullPolicy: IfNotPresent
@@ -32,6 +35,25 @@ spec:
           volumeMounts:
             - mountPath: /etc/gitlab-runner
               name: gitlab-runner
+          livenessProbe:
+            exec:
+              command: ["/bin/bash", "/etc/gitlab-runner/check-live"]
+            initialDelaySeconds: 60
+            timeoutSeconds: 1
+            periodSeconds: 10
+            successThreshold: 1
+            failureThreshold: 3
+          readinessProbe:
+            exec:
+              command: ["/usr/bin/pgrep", "gitlab.*runner"]
+            initialDelaySeconds: 10
+            timeoutSeconds: 1
+            periodSeconds: 10
+            successThreshold: 1
+            failureThreshold: 3
+          ports:
+            - name: metrics
+              containerPort: 9252
       hostname: gitlab-runner
       restartPolicy: Always
       volumes:

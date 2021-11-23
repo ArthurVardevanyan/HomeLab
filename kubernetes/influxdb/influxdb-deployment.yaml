@@ -16,10 +16,12 @@ spec:
       labels:
         app: influxdb
       annotations:
+        seccomp.security.alpha.kubernetes.io/defaultProfileName: "runtime/default"
         use-metadata.version-checker.io/influxdb: "true"
         pin-major.version-checker.io/influxdb: "1"
         pin-minor.version-checker.io/influxdb: "8"
     spec:
+      automountServiceAccountToken: false
       containers:
         - resources:
             requests:
