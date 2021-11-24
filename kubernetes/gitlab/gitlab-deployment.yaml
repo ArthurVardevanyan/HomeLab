@@ -3,6 +3,8 @@ kind: Deployment
 metadata:
   name: gitlab
   namespace: gitlab
+  labels:
+    app: gitlab
 spec:
   replicas: 1
   selector:
@@ -24,6 +26,17 @@ spec:
         - image: gitlab/gitlab-ce:14.5.0-ce.0
           imagePullPolicy: IfNotPresent
           name: gitlab
+          ports:
+            - containerPort: 80
+              name: http
+            - containerPort: 443
+              name: https
+            - containerPort: 22
+              name: websecure
+            - containerPort: 5050
+              name: registry
+            - containerPort: 9090
+              name: metrics
           resources:
             requests:
               memory: "4G"

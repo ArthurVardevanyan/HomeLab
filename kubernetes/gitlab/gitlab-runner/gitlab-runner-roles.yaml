@@ -24,6 +24,63 @@ metadata:
   name: gitlab-runner-r
   namespace: gitlab-runner
 rules:
-  - apiGroups: ["*"]
-    resources: ["*"]
-    verbs: ["*"]
+  - verbs:
+      - create
+      - get
+      - update
+      - patch
+      - delete
+      - watch
+      - list
+    apiGroups:
+      - ""
+    resources:
+      - secrets
+  - verbs:
+      - create
+      - patch
+      - get
+      - update
+      - delete
+      - watch
+      - list
+    apiGroups:
+      - ""
+    resources:
+      - pods
+  - verbs:
+      - create
+      - get
+      - patch
+      - update
+      - delete
+      - watch
+      - list
+    apiGroups:
+      - ""
+    resources:
+      - configmaps
+  - verbs:
+      - create
+      - get
+      - patch
+      - update
+      - delete
+      - watch
+      - list
+    apiGroups:
+      - ""
+    resources:
+      - pods/exec
+  - verbs:
+      - create
+      - get
+      - patch
+      - update
+      - delete
+      - watch
+      - list
+    apiGroups:
+      - ""
+    resources:
+      - pods/attach

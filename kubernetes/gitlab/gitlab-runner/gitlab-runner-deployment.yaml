@@ -3,6 +3,8 @@ kind: Deployment
 metadata:
   name: gitlab-runner
   namespace: gitlab-runner
+  labels:
+    app: gitlab-runner
 spec:
   replicas: 1
   selector:
@@ -19,12 +21,18 @@ spec:
         use-metadata.version-checker.io/gitlab-runner: "true"
         seccomp.security.alpha.kubernetes.io/defaultProfileName: "runtime/default"
     spec:
+      securityContext:
+        runAsUser: 100
+        fsGroup: 65533
       serviceAccountName: gitlab-runner-sa
       automountServiceAccountToken: true
       containers:
-        - image: gitlab/gitlab-runner:v14.5.0
+        - image: gitlab/gitlab-runner:alpine-v14.5.0
           imagePullPolicy: IfNotPresent
           name: gitlab-runner
+          command: ["/bin/bash", "/scripts/entrypoint"]
+          securityContext:
+            allowPrivilegeEscalation: false
           resources:
             requests:
               memory: "100M"
@@ -33,11 +41,13 @@ spec:
               memory: "300M"
               cpu: "200m"
           volumeMounts:
-            - mountPath: /etc/gitlab-runner
+            - mountPath: /scripts
               name: gitlab-runner
+            - name: etc-gitlab-runner
+              mountPath: /home/gitlab-runner/.gitlab-runner
           livenessProbe:
             exec:
-              command: ["/bin/bash", "/etc/gitlab-runner/check-live"]
+              command: ["/bin/bash", "/scripts/check-live"]
             initialDelaySeconds: 60
             timeoutSeconds: 1
             periodSeconds: 10
@@ -54,10 +64,15 @@ spec:
           ports:
             - name: metrics
               containerPort: 9252
+            - name: runner
+              containerPort: 8093
       hostname: gitlab-runner
       restartPolicy: Always
       volumes:
+        - name: etc-gitlab-runner
+          emptyDir:
+            medium: "Memory"
         - name: gitlab-runner
           configMap:
-            defaultMode: 0777
+            #defaultMode: 0777
             name: gitlab-runner

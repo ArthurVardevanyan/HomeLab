@@ -3,6 +3,8 @@ kind: Deployment
 metadata:
   name: phpmyadmin
   namespace: database
+  labels:
+    app: vault
 spec:
   replicas: 1
   selector:
@@ -35,4 +37,4 @@ spec:
               value: "500M"
           ports:
             - containerPort: 80
-              name: phpmyadmin
+              name: web

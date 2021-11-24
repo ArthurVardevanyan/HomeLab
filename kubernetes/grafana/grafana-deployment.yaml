@@ -3,6 +3,8 @@ kind: Deployment
 metadata:
   name: grafana
   namespace: grafana
+  labels:
+    app: grafana
 spec:
   revisionHistoryLimit: 0
   replicas: 1
@@ -19,6 +21,10 @@ spec:
         seccomp.security.alpha.kubernetes.io/defaultProfileName: "runtime/default"
         use-metadata.version-checker.io/grafana: "true"
     spec:
+      securityContext:
+        fsGroup: 472
+        supplementalGroups:
+          - 0
       hostname: grafana
       restartPolicy: Always
       automountServiceAccountToken: false
