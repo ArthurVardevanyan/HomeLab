@@ -1,0 +1,45 @@
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: traefik
+  name: traefik-dashboard
+  namespace: traefik
+spec:
+  type: ClusterIP
+  ports:
+    - protocol: TCP
+      port: 9000
+      targetPort: 9000
+  selector:
+    app: traefik
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: traefik
+  namespace: traefik
+  labels:
+    app: traefik
+spec:
+  type: LoadBalancer
+  selector:
+    app: traefik
+  externalTrafficPolicy: Local
+  ports:
+    - name: web
+      port: 80
+      protocol: TCP
+      targetPort: web
+    - name: websecure
+      port: 443
+      protocol: TCP
+      targetPort: websecure
+    - name: registry
+      port: 5050
+      protocol: TCP
+      targetPort: 5050
+    - name: web-external
+      port: 50500
+      protocol: TCP
+      targetPort: web
