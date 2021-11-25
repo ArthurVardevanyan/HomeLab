@@ -1,5 +1,5 @@
-apiVersion: apps/v1
 kind: Deployment
+apiVersion: apps/v1
 metadata:
   name: gitlab
   namespace: gitlab
@@ -10,47 +10,14 @@ spec:
   selector:
     matchLabels:
       app: gitlab
-  strategy:
-    type: Recreate
-  revisionHistoryLimit: 0
   template:
     metadata:
       labels:
         app: gitlab
       annotations:
-        seccomp.security.alpha.kubernetes.io/defaultProfileName: "runtime/default"
+        seccomp.security.alpha.kubernetes.io/defaultProfileName: runtime/default
         use-metadata.version-checker.io/gitlab: "true"
     spec:
-      automountServiceAccountToken: true
-      containers:
-        - image: gitlab/gitlab-ce:14.5.0-ce.0
-          imagePullPolicy: IfNotPresent
-          name: gitlab
-          ports:
-            - containerPort: 80
-              name: http
-            - containerPort: 443
-              name: https
-            - containerPort: 22
-              name: websecure
-            - containerPort: 5050
-              name: registry
-            - containerPort: 9090
-              name: metrics
-          resources:
-            requests:
-              memory: "4G"
-              cpu: "250m"
-            limits:
-              memory: "5G"
-              cpu: "1000m"
-          volumeMounts:
-            - mountPath: /var/opt/gitlab
-              name: gitlab-data
-            - mountPath: /etc/gitlab
-              name: gitlab-config
-      hostname: gitlab
-      restartPolicy: Always
       volumes:
         - name: gitlab-data
           persistentVolumeClaim:
@@ -58,3 +25,67 @@ spec:
         - name: gitlab-config
           persistentVolumeClaim:
             claimName: gitlab-config
+      containers:
+        - name: gitlab
+          image: gitlab/gitlab-ce:14.5.0-ce.0
+          ports:
+            - name: http
+              containerPort: 80
+              protocol: TCP
+            - name: https
+              containerPort: 443
+              protocol: TCP
+            - name: websecure
+              containerPort: 22
+              protocol: TCP
+            - name: registry
+              containerPort: 5050
+              protocol: TCP
+            - name: metrics
+              containerPort: 9090
+              protocol: TCP
+          resources:
+            limits:
+              cpu: "1"
+              memory: 5G
+            requests:
+              cpu: 250m
+              memory: 4G
+          volumeMounts:
+            - name: gitlab-data
+              mountPath: /var/opt/gitlab
+            - name: gitlab-config
+              mountPath: /etc/gitlab
+          livenessProbe:
+            httpGet:
+              path: -/liveness?token=<HEALTH_CHECK_TOKEN>
+              port: 443
+              scheme: HTTPS
+            initialDelaySeconds: 300
+            timeoutSeconds: 15
+            periodSeconds: 10
+            successThreshold: 1
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: -/readiness?token=<HEALTH_CHECK_TOKEN>
+              port: 443
+              scheme: HTTPS
+            initialDelaySeconds: 300
+            timeoutSeconds: 1
+            periodSeconds: 10
+            successThreshold: 1
+            failureThreshold: 3
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+          imagePullPolicy: IfNotPresent
+      restartPolicy: Always
+      terminationGracePeriodSeconds: 30
+      dnsPolicy: ClusterFirst
+      automountServiceAccountToken: true
+      hostname: gitlab
+      schedulerName: default-scheduler
+  strategy:
+    type: Recreate
+  revisionHistoryLimit: 0
+  progressDeadlineSeconds: 600

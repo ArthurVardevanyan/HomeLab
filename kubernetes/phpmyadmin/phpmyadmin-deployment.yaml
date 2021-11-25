@@ -11,6 +11,8 @@ spec:
     matchLabels:
       app: phpmyadmin
   revisionHistoryLimit: 0
+  strategy:
+    type: Recreate
   template:
     metadata:
       labels:
@@ -20,8 +22,11 @@ spec:
         use-metadata.version-checker.io/phpmyadmin: "true"
     spec:
       automountServiceAccountToken: false
+      securityContext:
+        runAsUser: 1001
+        fsGroup: 1001
       containers:
-        - image: phpmyadmin:5.1.1
+        - image: bitnami/phpmyadmin:5.1.1
           name: phpmyadmin
           resources:
             requests:
@@ -31,10 +36,30 @@ spec:
               memory: "125M"
               cpu: "250m"
           env:
-            - name: PMA_HOST
+            - name: DATABASE_HOST
               value: "mariadb.database"
-            - name: UPLOAD_LIMIT
+            - name: PHP_UPLOAD_MAX_FILESIZE
               value: "500M"
+            - name: APACHE_HTTP_PORT_NUMBER
+              value: "8080"
           ports:
-            - containerPort: 80
+            - containerPort: 8080
               name: web
+          livenessProbe:
+            failureThreshold: 6
+            httpGet:
+              path: /
+              port: web
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            successThreshold: 1
+            timeoutSeconds: 30
+          readinessProbe:
+            failureThreshold: 6
+            httpGet:
+              path: /
+              port: web
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            successThreshold: 1
+            timeoutSeconds: 30

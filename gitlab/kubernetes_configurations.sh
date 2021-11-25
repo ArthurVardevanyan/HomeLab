@@ -72,5 +72,6 @@ sed -i "s/<GITLAB_RUNNER_TOKEN>/${GITLAB_RUNNER_TOKEN}/g" kubernetes/gitlab/gitl
 kubectl apply -f kubernetes/gitlab/gitlab-runner/
 
 echo -e " \n${BLUE}Gitlab:${NC}"
+sed -i "s/<HEALTH_CHECK_TOKEN>/${HEALTH_CHECK_TOKEN}/g" kubernetes/gitlab/gitlab-deployment.yaml
 sed -i "s/<URL>/${URL}/g" kubernetes/gitlab/gitlab-traefik.yaml
 kubectl apply -f kubernetes/gitlab
