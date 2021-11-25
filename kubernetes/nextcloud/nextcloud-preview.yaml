@@ -1,49 +1,17 @@
-apiVersion: batch/v1
 kind: CronJob
+apiVersion: batch/v1
 metadata:
   name: nextcloud-preview
   namespace: nextcloud
 spec:
   schedule: "0 5 * * 0"
-  successfulJobsHistoryLimit: 1
-  failedJobsHistoryLimit: 1
   concurrencyPolicy: Forbid
+  suspend: false
   jobTemplate:
     spec:
       backoffLimit: 0
       template:
         spec:
-          restartPolicy: Never
-          containers:
-            - image: nextcloud:22.2.3
-              imagePullPolicy: IfNotPresent
-              command:
-                - /bin/sh
-                - -c
-                - runuser -u www-data --  php -f /var/www/html/occ preview:delete_old \
-                  && runuser -u www-data --  php -f /var/www/html/occ preview:generate-all
-              name: nextcloud-preview
-              resources:
-                requests:
-                  memory: "250M"
-                  cpu: "150m"
-                limits:
-                  memory: "500M"
-                  cpu: "300m"
-              volumeMounts:
-                - mountPath: /var/www/html
-                  name: nextcloud-nextcloud
-                - mountPath: /var/www/html/custom_apps
-                  name: nextcloud-apps
-                - mountPath: /var/www/html/config
-                  name: nextcloud-config
-                - mountPath: /etc/apache2
-                  name: nextcloud-apache2
-                - mountPath: /etc/letsencrypt
-                  name: nextcloud-letsencrypt
-                - mountPath: /var/www/html/data
-                  name: nextcloud-data
-          hostname: nextcloud-preview
           volumes:
             - name: nextcloud-nextcloud
               persistentVolumeClaim:
@@ -63,3 +31,41 @@ spec:
             - name: nextcloud-data
               persistentVolumeClaim:
                 claimName: nextcloud-data
+          containers:
+            - name: nextcloud-preview
+              image: nextcloud:22.2.3
+              command:
+                - /bin/sh
+                - -c
+                - runuser -u www-data --  php -f /var/www/html/occ preview:delete_old \
+                  && runuser -u www-data --  php -f /var/www/html/occ preview:generate-all
+              resources:
+                limits:
+                  cpu: 50m
+                  memory: 250M
+                requests:
+                  cpu: 25m
+                  memory: 50M
+              volumeMounts:
+                - name: nextcloud-nextcloud
+                  mountPath: /var/www/html
+                - name: nextcloud-apps
+                  mountPath: /var/www/html/custom_apps
+                - name: nextcloud-config
+                  mountPath: /var/www/html/config
+                - name: nextcloud-apache2
+                  mountPath: /etc/apache2
+                - name: nextcloud-letsencrypt
+                  mountPath: /etc/letsencrypt
+                - name: nextcloud-data
+                  mountPath: /var/www/html/data
+              terminationMessagePath: /dev/termination-log
+              terminationMessagePolicy: File
+              imagePullPolicy: IfNotPresent
+          restartPolicy: Never
+          terminationGracePeriodSeconds: 30
+          dnsPolicy: ClusterFirst
+          hostname: nextcloud-preview
+          schedulerName: default-scheduler
+  successfulJobsHistoryLimit: 1
+  failedJobsHistoryLimit: 1

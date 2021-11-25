@@ -24,9 +24,22 @@ spec:
             enable.version-checker.io/version-checker: "true"
         spec:
           automountServiceAccountToken: true
+          securityContext:
+            fsGroup: 65554
+            runAsGroup: 65554
+            runAsNonRoot: true
+            runAsUser: 65554
           containers:
             - name: version-checker
               image: quay.io/jetstack/version-checker:v0.2.1
+              securityContext:
+                runAsGroup: 65554
+                runAsUser: 65554
+                runAsNonRoot: true
+                allowPrivilegeEscalation: false
+                capabilities:
+                  drop:
+                    - all
               command:
                 - version-checker
                 - "--test-all-containers"

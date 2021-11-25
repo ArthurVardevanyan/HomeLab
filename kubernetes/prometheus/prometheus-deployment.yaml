@@ -26,6 +26,14 @@ spec:
         - name: prometheus
           imagePullPolicy: IfNotPresent
           image: prom/prometheus:v2.31.1
+          securityContext:
+            runAsGroup: 65534
+            runAsUser: 65534
+            runAsNonRoot: true
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - all
           args:
             - "--config.file=/etc/prometheus/prometheus.yml"
             - "--storage.tsdb.path=/prometheus_data/"
@@ -40,11 +48,32 @@ spec:
             limits:
               cpu: 300m
               memory: 1G
+          readinessProbe:
+            httpGet:
+              path: /-/ready
+              port: 9090
+              scheme: HTTP
+            initialDelaySeconds: 30
+            periodSeconds: 5
+            timeoutSeconds: 4
+            failureThreshold: 3
+            successThreshold: 1
+          livenessProbe:
+            httpGet:
+              path: /-/healthy
+              port: 9090
+              scheme: HTTP
+            initialDelaySeconds: 30
           volumeMounts:
             - name: prometheus-config-volume
               mountPath: /etc/prometheus/
             - name: prometheus-storage-volume
               mountPath: /prometheus_data/
+      securityContext:
+        fsGroup: 65534
+        runAsGroup: 65534
+        runAsNonRoot: true
+        runAsUser: 65534
       volumes:
         - name: prometheus-config-volume
           configMap:

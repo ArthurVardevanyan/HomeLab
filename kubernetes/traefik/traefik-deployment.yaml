@@ -26,6 +26,11 @@ spec:
         app: traefik
     spec:
       automountServiceAccountToken: true
+      securityContext:
+        runAsNonRoot: true
+        runAsGroup: 65532
+        fsGroup: 65532
+        runAsUser: 65532
       containers:
         - args:
             - --global.checknewversion
@@ -86,13 +91,14 @@ spec:
               cpu: 100m
               memory: 50M
           securityContext:
+            runAsNonRoot: true
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            runAsGroup: 65532
+            runAsUser: 65532
             capabilities:
               drop:
                 - ALL
-            readOnlyRootFilesystem: true
-            runAsGroup: 65532
-            runAsNonRoot: true
-            runAsUser: 65532
           terminationMessagePath: /dev/termination-log
           terminationMessagePolicy: File
           volumeMounts:
@@ -105,8 +111,6 @@ spec:
         node-type: master
       restartPolicy: Always
       schedulerName: default-scheduler
-      securityContext:
-        fsGroup: 65532
       serviceAccountName: traefik
       terminationGracePeriodSeconds: 60
       volumes:

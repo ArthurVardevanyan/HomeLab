@@ -26,12 +26,31 @@ spec:
         - image: vault:1.9.0
           imagePullPolicy: IfNotPresent
           name: vault
+          readinessProbe:
+            exec:
+              command: ["/bin/sh", "-ec", "vault status -tls-skip-verify"]
+            failureThreshold: 2
+            initialDelaySeconds: 5
+            periodSeconds: 5
+            successThreshold: 1
+            timeoutSeconds: 3
+          livenessProbe:
+            httpGet:
+              path: /v1/sys/health?standbyok=true
+              scheme: HTTPS
+              port: 8200
+            initialDelaySeconds: 60
           ports:
             - containerPort: 8200
               protocol: TCP
               name: vault
           securityContext:
+            runAsNonRoot: true
+            runAsUser: 11000
+            allowPrivilegeEscalation: false
             capabilities:
+              drop:
+                - all
               add:
                 - IPC_LOCK
           command:

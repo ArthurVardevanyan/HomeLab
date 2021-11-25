@@ -25,7 +25,21 @@ spec:
     spec:
       automountServiceAccountToken: false
       containers:
-        - resources:
+        - livenessProbe:
+            httpGet:
+              path: /ping
+              port: 8086
+              scheme: HTTP
+            initialDelaySeconds: 90
+            timeoutSeconds: 5
+          readinessProbe:
+            httpGet:
+              path: /ping
+              port: 8086
+              scheme: HTTP
+            initialDelaySeconds: 90
+            timeoutSeconds: 1
+          resources:
             requests:
               memory: "1.75G"
               cpu: "250m"

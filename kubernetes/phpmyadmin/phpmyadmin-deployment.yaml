@@ -23,11 +23,18 @@ spec:
     spec:
       automountServiceAccountToken: false
       securityContext:
-        runAsUser: 1001
-        fsGroup: 1001
+        runAsUser: 11001
+        fsGroup: 11001
       containers:
         - image: bitnami/phpmyadmin:5.1.1
           name: phpmyadmin
+          securityContext:
+            runAsUser: 11001
+            runAsNonRoot: true
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - all
           resources:
             requests:
               memory: "75M"
@@ -42,6 +49,10 @@ spec:
               value: "500M"
             - name: APACHE_HTTP_PORT_NUMBER
               value: "8080"
+            - name: APACHE_RUN_USER
+              value: "11001"
+            - name: APACHE_RUN_GROUP
+              value: "11001"
           ports:
             - containerPort: 8080
               name: web
@@ -50,7 +61,7 @@ spec:
             httpGet:
               path: /
               port: web
-            initialDelaySeconds: 5
+            initialDelaySeconds: 3
             periodSeconds: 10
             successThreshold: 1
             timeoutSeconds: 30
@@ -59,7 +70,7 @@ spec:
             httpGet:
               path: /
               port: web
-            initialDelaySeconds: 5
+            initialDelaySeconds: 3
             periodSeconds: 10
             successThreshold: 1
             timeoutSeconds: 30
