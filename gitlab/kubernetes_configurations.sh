@@ -7,8 +7,10 @@ set -o pipefail
 BLUE='\033[1;34m'
 NC='\033[0m'
 
-echo -e " \n \n${BLUE}Metrics Server:${NC}"
-kubectl patch deployment -n kube-system metrics-server --patch "$(cat kubernetes/metrics-server/metrics-server-deployment.yaml)"
+echo -e " \n \n${BLUE}Kube System:${NC}"
+kubectl patch deployment -n kube-system metrics-server --patch "$(cat kubernetes/kube-system/metrics-server-deployment.yaml)"
+kubectl apply -f kubernetes/kube-system/kube-system-limitRange.yaml
+kubectl apply -f kubernetes/kube-system/kube-system-resourceQuota.yaml
 
 echo -e " \n${BLUE}Kubernetes Dashboard:${NC}"
 sed -i "s/<URL>/${URL}/g" kubernetes/kubernetes-dashboard/kubernetes-dashboard-traefik.yaml
@@ -39,9 +41,6 @@ kubectl apply -f kubernetes/influxdb
 echo -e " \n${BLUE}prometheus:${NC}"
 sed -i "s/<URL>/${URL}/g" kubernetes/prometheus/prometheus-traefik.yaml
 kubectl apply -f kubernetes/prometheus
-
-echo -e " \n${BLUE}Kube State Metrics:${NC}"
-kubectl apply -f kubernetes/kube-state-metrics
 
 echo -e " \n${BLUE}Grafana:${NC}"
 sed -i "s/<URL>/${URL}/g" kubernetes/grafana/grafana-traefik.yaml
