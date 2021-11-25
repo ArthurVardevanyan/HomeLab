@@ -1,0 +1,96 @@
+kind: RoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: kubernetes-dashboard
+  namespace: kubernetes-dashboard
+  labels:
+    k8s-app: kubernetes-dashboard
+subjects:
+  - kind: ServiceAccount
+    name: kubernetes-dashboard
+    namespace: kubernetes-dashboard
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: kubernetes-dashboard
+---
+kind: Role
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: kubernetes-dashboard
+  namespace: kubernetes-dashboard
+  labels:
+    k8s-app: kubernetes-dashboard
+rules:
+  - verbs:
+      - get
+      - update
+      - delete
+    apiGroups:
+      - ""
+    resources:
+      - secrets
+    resourceNames:
+      - kubernetes-dashboard-key-holder
+      - kubernetes-dashboard-certs
+      - kubernetes-dashboard-csrf
+  - verbs:
+      - get
+      - update
+    apiGroups:
+      - ""
+    resources:
+      - configmaps
+    resourceNames:
+      - kubernetes-dashboard-settings
+  - verbs:
+      - proxy
+    apiGroups:
+      - ""
+    resources:
+      - services
+    resourceNames:
+      - heapster
+      - dashboard-metrics-scraper
+  - verbs:
+      - get
+    apiGroups:
+      - ""
+    resources:
+      - services/proxy
+    resourceNames:
+      - heapster
+      - "http:heapster:"
+      - "https:heapster:"
+      - dashboard-metrics-scraper
+      - http:dashboard-metrics-scraper
+---
+kind: ClusterRoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: kubernetes-dashboard
+subjects:
+  - kind: ServiceAccount
+    name: kubernetes-dashboard
+    namespace: kubernetes-dashboard
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: kubernetes-dashboard
+---
+kind: ClusterRole
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: kubernetes-dashboard
+  labels:
+    k8s-app: kubernetes-dashboard
+rules:
+  - verbs:
+      - get
+      - list
+      - watch
+    apiGroups:
+      - metrics.k8s.io
+    resources:
+      - pods
+      - nodes
