@@ -15,13 +15,27 @@ spec:
       labels:
         app: kube-eagle
       annotations:
+        seccomp.security.alpha.kubernetes.io/defaultProfileName: "runtime/default"
+        use-metadata.version-checker.io/kube-eagle: "true"
         prometheus.io/path: /metrics
         prometheus.io/port: "8080"
         prometheus.io/scrape: "true"
     spec:
+      automountServiceAccountToken: true
       containers:
         - name: kube-eagle
           image: quay.io/google-cloud-tools/kube-eagle:1.1.4
+          securityContext:
+            runAsGroup: 11199
+            runAsUser: 11199
+            runAsNonRoot: true
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            seccompProfile:
+              type: RuntimeDefault
+            capabilities:
+              drop:
+                - all
           ports:
             - name: http
               containerPort: 8080
@@ -35,6 +49,13 @@ spec:
               value: eagle
             - name: LOG_LEVEL
               value: info
+          resources:
+            limits:
+              cpu: 25m
+              memory: 50M
+            requests:
+              cpu: 15m
+              memory: 30M
           livenessProbe:
             httpGet:
               path: /health
@@ -62,8 +83,8 @@ spec:
       serviceAccountName: sa-kube-eagle
       serviceAccount: sa-kube-eagle
       securityContext:
-        runAsUser: 99
-        fsGroup: 99
+        runAsUser: 11199
+        fsGroup: 11199
       schedulerName: default-scheduler
   strategy:
     type: Recreate
