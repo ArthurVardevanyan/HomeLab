@@ -1,0 +1,46 @@
+kind: ServiceAccount
+apiVersion: v1
+metadata:
+  name: sa-kube-eagle
+  namespace: kube-system
+  labels:
+    app: kube-eagle
+---
+kind: ClusterRoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: kube-eagle
+  labels:
+    app: kube-eagle
+subjects:
+  - kind: ServiceAccount
+    name: sa-kube-eagle
+    namespace: kube-system
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: kube-eagle
+---
+kind: ClusterRole
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: kube-eagle
+  labels:
+    app: kube-eagle
+rules:
+  - verbs:
+      - get
+      - list
+    apiGroups:
+      - ""
+    resources:
+      - nodes
+      - pods
+  - verbs:
+      - get
+      - list
+    apiGroups:
+      - metrics.k8s.io
+    resources:
+      - pods
+      - nodes

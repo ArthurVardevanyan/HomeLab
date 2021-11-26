@@ -1,0 +1,71 @@
+kind: Deployment
+apiVersion: apps/v1
+metadata:
+  name: kube-eagle
+  namespace: kube-system
+  labels:
+    app: kube-eagle
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: kube-eagle
+  template:
+    metadata:
+      labels:
+        app: kube-eagle
+      annotations:
+        prometheus.io/path: /metrics
+        prometheus.io/port: "8080"
+        prometheus.io/scrape: "true"
+    spec:
+      containers:
+        - name: kube-eagle
+          image: quay.io/google-cloud-tools/kube-eagle:1.1.4
+          ports:
+            - name: http
+              containerPort: 8080
+              protocol: TCP
+          env:
+            - name: TELEMETRY_HOST
+              value: 0.0.0.0
+            - name: TELEMETRY_PORT
+              value: "8080"
+            - name: METRICS_NAMESPACE
+              value: eagle
+            - name: LOG_LEVEL
+              value: info
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: http
+              scheme: HTTP
+            timeoutSeconds: 5
+            periodSeconds: 10
+            successThreshold: 1
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: http
+              scheme: HTTP
+            timeoutSeconds: 5
+            periodSeconds: 10
+            successThreshold: 1
+            failureThreshold: 3
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+          imagePullPolicy: IfNotPresent
+      restartPolicy: Always
+      terminationGracePeriodSeconds: 30
+      dnsPolicy: ClusterFirst
+      serviceAccountName: sa-kube-eagle
+      serviceAccount: sa-kube-eagle
+      securityContext:
+        runAsUser: 99
+        fsGroup: 99
+      schedulerName: default-scheduler
+  strategy:
+    type: Recreate
+  revisionHistoryLimit: 10
+  progressDeadlineSeconds: 600

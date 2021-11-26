@@ -12,6 +12,9 @@ kubectl patch deployment -n kube-system metrics-server --patch "$(cat kubernetes
 kubectl apply -f kubernetes/kube-system/kube-system-limitRange.yaml
 kubectl apply -f kubernetes/kube-system/kube-system-resourceQuota.yaml
 
+echo -e " \n${BLUE}Kube Eagle:${NC}"
+kubectl apply -f kubernetes/kube-eagle
+
 echo -e " \n${BLUE}Kubernetes Dashboard:${NC}"
 sed -i "s/<URL>/${URL}/g" kubernetes/kubernetes-dashboard/kubernetes-dashboard-traefik.yaml
 kubectl apply -f kubernetes/kubernetes-dashboard
