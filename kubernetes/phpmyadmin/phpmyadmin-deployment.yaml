@@ -22,6 +22,7 @@ spec:
         use-metadata.version-checker.io/phpmyadmin: "true"
     spec:
       automountServiceAccountToken: false
+      serviceAccountName: phpmyadmin-sa
       securityContext:
         runAsUser: 11001
         fsGroup: 11001
@@ -32,6 +33,8 @@ spec:
             runAsUser: 11001
             runAsNonRoot: true
             allowPrivilegeEscalation: false
+            seccompProfile:
+              type: RuntimeDefault
             capabilities:
               drop:
                 - all

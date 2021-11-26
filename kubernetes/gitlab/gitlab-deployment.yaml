@@ -28,6 +28,9 @@ spec:
       containers:
         - name: gitlab
           image: gitlab/gitlab-ce:14.5.0-ce.0
+          securityContext:
+            seccompProfile:
+              type: RuntimeDefault
           ports:
             - name: http
               containerPort: 80
@@ -61,7 +64,7 @@ spec:
               path: -/liveness?token=<HEALTH_CHECK_TOKEN>
               port: 443
               scheme: HTTPS
-            initialDelaySeconds: 300
+            initialDelaySeconds: 420
             timeoutSeconds: 15
             periodSeconds: 10
             successThreshold: 1
@@ -71,7 +74,7 @@ spec:
               path: -/readiness?token=<HEALTH_CHECK_TOKEN>
               port: 443
               scheme: HTTPS
-            initialDelaySeconds: 300
+            initialDelaySeconds: 420
             timeoutSeconds: 1
             periodSeconds: 10
             successThreshold: 1

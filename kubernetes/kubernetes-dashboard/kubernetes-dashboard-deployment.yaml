@@ -62,8 +62,8 @@ spec:
           terminationMessagePolicy: File
           imagePullPolicy: IfNotPresent
           securityContext:
-            runAsUser: 1001
-            runAsGroup: 2001
+            runAsUser: 11001
+            runAsGroup: 12001
             readOnlyRootFilesystem: true
             allowPrivilegeEscalation: false
         - name: dashboard-metrics-scraper
@@ -107,6 +107,8 @@ spec:
       serviceAccountName: kubernetes-dashboard
       serviceAccount: kubernetes-dashboard
       securityContext:
+        runAsUser: 11001
+        runAsGroup: 12001
         seccompProfile:
           type: RuntimeDefault
       schedulerName: default-scheduler

@@ -22,18 +22,44 @@ spec:
         use-metadata.version-checker.io/grafana: "true"
     spec:
       securityContext:
-        fsGroup: 472
+        fsGroup: 11472
+        runAsGroup: 11472
+        runAsUser: 11472
+        runAsNonRoot: true
         supplementalGroups:
           - 0
       hostname: grafana
       restartPolicy: Always
       automountServiceAccountToken: false
+      serviceAccountName: grafana-sa
       containers:
         - image: grafana/grafana:8.2.4
           imagePullPolicy: IfNotPresent
           name: grafana
+          securityContext:
+            runAsGroup: 11472
+            runAsUser: 11472
+            runAsNonRoot: true
+            readOnlyRootFilesystem: true
+            allowPrivilegeEscalation: false
+            seccompProfile:
+              type: RuntimeDefault
+            capabilities:
+              drop:
+                - all
           ports:
             - containerPort: 3000
+          livenessProbe:
+            failureThreshold: 10
+            httpGet:
+              path: /api/health
+              port: 3000
+            initialDelaySeconds: 60
+            timeoutSeconds: 30
+          readinessProbe:
+            httpGet:
+              path: /api/health
+              port: 3000
           resources:
             requests:
               memory: "100M"

@@ -7,11 +7,13 @@ spec:
   schedule: "*/5 * * * *"
   concurrencyPolicy: Forbid
   suspend: false
+  startingDeadlineSeconds: 60
   jobTemplate:
     spec:
       backoffLimit: 0
       template:
         spec:
+          serviceAccountName: nextcloud-sa
           volumes:
             - name: nextcloud-nextcloud
               persistentVolumeClaim:
@@ -64,6 +66,7 @@ spec:
           restartPolicy: Never
           terminationGracePeriodSeconds: 30
           dnsPolicy: ClusterFirst
+          automountServiceAccountToken: false
           hostname: nextcloud-cron
           schedulerName: default-scheduler
   successfulJobsHistoryLimit: 1

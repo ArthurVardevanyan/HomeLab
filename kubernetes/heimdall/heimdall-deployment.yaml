@@ -23,10 +23,14 @@ spec:
         pin-major.version-checker.io/heimdall: "2"
     spec:
       automountServiceAccountToken: false
+      serviceAccountName: heimdall-sa
       containers:
         - image: linuxserver/heimdall:2.2.2
           imagePullPolicy: IfNotPresent
           name: heimdall
+          securityContext:
+            seccompProfile:
+              type: RuntimeDefault
           ports:
             - containerPort: 80
               name: http-80
@@ -44,6 +48,27 @@ spec:
           volumeMounts:
             - mountPath: /config
               name: heimdall
+          livenessProbe:
+            tcpSocket:
+              port: 80
+            initialDelaySeconds: 0
+            failureThreshold: 3
+            timeoutSeconds: 1
+            periodSeconds: 10
+          readinessProbe:
+            tcpSocket:
+              port: 80
+            initialDelaySeconds: 0
+            failureThreshold: 3
+            timeoutSeconds: 1
+            periodSeconds: 10
+          startupProbe:
+            tcpSocket:
+              port: 80
+            initialDelaySeconds: 0
+            failureThreshold: 30
+            timeoutSeconds: 1
+            periodSeconds: 5
       hostname: heimdall
       restartPolicy: Always
       volumes:

@@ -9,6 +9,7 @@ spec:
   schedule: "00 05,11,17,23 * * *"
   concurrencyPolicy: Replace
   suspend: false
+  startingDeadlineSeconds: 60
   jobTemplate:
     spec:
       backoffLimit: 0
@@ -37,6 +38,8 @@ spec:
                 runAsUser: 65554
                 runAsNonRoot: true
                 allowPrivilegeEscalation: false
+                seccompProfile:
+                  type: RuntimeDefault
                 capabilities:
                   drop:
                     - all

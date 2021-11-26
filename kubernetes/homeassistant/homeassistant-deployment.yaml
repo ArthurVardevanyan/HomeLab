@@ -22,9 +22,13 @@ spec:
         - name: homeassistant
           persistentVolumeClaim:
             claimName: homeassistant
+      serviceAccountName: homeassistant-sa
       containers:
         - name: homeassistant
           image: homeassistant/home-assistant:2021.11.3
+          securityContext:
+            seccompProfile:
+              type: RuntimeDefault
           ports:
             - hostPort: 8123
               containerPort: 8123

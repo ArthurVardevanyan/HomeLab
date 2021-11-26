@@ -36,6 +36,7 @@ sed -i "s/<URL>/${URL}/g" kubernetes/heimdall/heimdall-traefik.yaml
 kubectl apply -f kubernetes/heimdall
 
 echo -e " \n${BLUE}influxdb:${NC}"
+sed -i "s/<URL>/${URL}/g" kubernetes/influxdb/influxdb-traefik.yaml
 kubectl apply -f kubernetes/influxdb
 
 echo -e " \n${BLUE}prometheus:${NC}"
@@ -52,6 +53,7 @@ kubectl apply -f kubernetes/nextcloud
 
 echo -e " \n${BLUE}Mariadb:${NC}"
 sed -i "s,<PASSWORD>,${SUDO},g" kubernetes/mariadb/mariadb-env-configmap.yaml
+sed -i "s/<URL>/${URL}/g" kubernetes/mariadb/mariadb-traefik.yaml
 kubectl apply -f kubernetes/mariadb
 
 echo -e " \n${BLUE}phpMyAdmin:${NC}"

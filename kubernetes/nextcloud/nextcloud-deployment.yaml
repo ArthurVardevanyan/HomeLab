@@ -18,6 +18,7 @@ spec:
         seccomp.security.alpha.kubernetes.io/defaultProfileName: runtime/default
         use-metadata.version-checker.io/nextcloud: "true"
     spec:
+      serviceAccountName: nextcloud-sa
       volumes:
         - name: nextcloud-nextcloud
           persistentVolumeClaim:
@@ -40,6 +41,9 @@ spec:
       containers:
         - name: nextcloud
           image: nextcloud:22.2.3
+          securityContext:
+            seccompProfile:
+              type: RuntimeDefault
           ports:
             - containerPort: 443
               protocol: TCP

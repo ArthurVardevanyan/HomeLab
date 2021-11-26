@@ -24,20 +24,26 @@ spec:
         pin-minor.version-checker.io/influxdb: "8"
     spec:
       automountServiceAccountToken: false
+      serviceAccountName: influxdb-sa
+      securityContext:
+        fsGroup: 18086
+        runAsGroup: 18086
+        runAsUser: 18086
+        runAsNonRoot: true
       containers:
         - livenessProbe:
             httpGet:
               path: /ping
               port: 8086
               scheme: HTTP
-            initialDelaySeconds: 90
+            initialDelaySeconds: 120
             timeoutSeconds: 5
           readinessProbe:
             httpGet:
               path: /ping
               port: 8086
               scheme: HTTP
-            initialDelaySeconds: 90
+            initialDelaySeconds: 120
             timeoutSeconds: 1
           resources:
             requests:
@@ -46,6 +52,17 @@ spec:
             limits:
               memory: "3G"
               cpu: "500m"
+          securityContext:
+            runAsGroup: 18086
+            runAsUser: 18086
+            runAsNonRoot: true
+            readOnlyRootFilesystem: true
+            allowPrivilegeEscalation: false
+            seccompProfile:
+              type: RuntimeDefault
+            capabilities:
+              drop:
+                - all
           env:
             - name: INFLUXDB_HTTP_AUTH_ENABLED
               value: "true"
