@@ -12,6 +12,10 @@ kubectl patch deployment -n kube-system metrics-server --patch "$(cat kubernetes
 kubectl apply -f kubernetes/kube-system/kube-system-limitRange.yaml
 kubectl apply -f kubernetes/kube-system/kube-system-resourceQuota.yaml
 
+echo -e " \n${BLUE}Longhorn:${NC}"
+sed -i "s/<URL>/${URL}/g" kubernetes/longhorn/longhorn-traefik.yaml
+kubectl apply -f kubernetes/longhorn
+
 echo -e " \n${BLUE}Kube Eagle:${NC}"
 kubectl apply -f kubernetes/kube-eagle
 
