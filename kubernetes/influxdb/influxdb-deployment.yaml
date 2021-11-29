@@ -24,6 +24,8 @@ spec:
         pin-minor.version-checker.io/influxdb: "8"
     spec:
       automountServiceAccountToken: false
+      nodeSelector:
+        kubernetes.io/hostname: avnas
       serviceAccountName: influxdb-sa
       securityContext:
         fsGroup: 18086
@@ -50,7 +52,7 @@ spec:
               memory: "1.75G"
               cpu: "250m"
             limits:
-              memory: "3G"
+              memory: "3.5G"
               cpu: "500m"
           securityContext:
             runAsGroup: 18086
@@ -88,10 +90,10 @@ spec:
             - containerPort: 8086
           volumeMounts:
             - mountPath: /var/lib/influxdb
-              name: influxdb
+              name: influxdb-pvc
       hostname: influxdb
       restartPolicy: Always
       volumes:
-        - name: influxdb
+        - name: influxdb-pvc
           persistentVolumeClaim:
-            claimName: influxdb
+            claimName: influxdb-pvc

@@ -23,6 +23,8 @@ spec:
     spec:
       automountServiceAccountToken: false
       serviceAccountName: vault-sa
+      nodeSelector:
+        kubernetes.io/hostname: avnas
       containers:
         - image: vault:1.9.0
           imagePullPolicy: IfNotPresent
@@ -66,7 +68,7 @@ spec:
             - -config=/vault/config/vault.json
           volumeMounts:
             - mountPath: /vault/file
-              name: vault-file
+              name: vault-pvc
             - mountPath: /vault/config
               name: vault-config
             - mountPath: /vault/cert
@@ -74,19 +76,19 @@ spec:
           resources:
             requests:
               memory: "150M"
-              cpu: "50m"
+              cpu: "75m"
             limits:
               memory: "300M"
-              cpu: "100m"
+              cpu: "150m"
       hostname: vault
       restartPolicy: Always
       volumes:
         - name: vault-config
           configMap:
             name: vault-config
-        - name: vault-file
-          persistentVolumeClaim:
-            claimName: vault-file
         - name: vault-cert
+          secret:
+            secretName: vault-cert
+        - name: vault-pvc
           persistentVolumeClaim:
-            claimName: vault-cert
+            claimName: vault-pvc

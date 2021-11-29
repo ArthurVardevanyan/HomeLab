@@ -24,6 +24,8 @@ spec:
         pin-minor.version-checker.io/mariadb: "6"
     spec:
       automountServiceAccountToken: false
+      nodeSelector:
+        kubernetes.io/hostname: avnas
       securityContext:
         runAsUser: 1337
         runAsGroup: 1337
@@ -51,7 +53,7 @@ spec:
             - containerPort: 3306
               name: mariadb
           volumeMounts:
-            - name: mariadb-data
+            - name: mariadb-pvc
               mountPath: /var/lib/mysql
             - name: mariadb-config
               mountPath: /etc/mysql/my.cnf
@@ -72,6 +74,6 @@ spec:
         - name: mariadb-config
           configMap:
             name: mariadb-config
-        - name: mariadb-data
+        - name: mariadb-pvc
           persistentVolumeClaim:
-            claimName: mariadb-data
+            claimName: mariadb-pvc

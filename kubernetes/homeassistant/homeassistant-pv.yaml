@@ -1,40 +1,41 @@
-apiVersion: v1
 kind: PersistentVolumeClaim
+apiVersion: v1
 metadata:
+  name: homeassistant-pvc
   namespace: homeassistant
-  name: homeassistant
 spec:
-  storageClassName: manual
-  volumeName: homeassistant
   accessModes:
     - ReadWriteOnce
   resources:
     requests:
-      storage: 100M
+      storage: 50Mi
+  volumeName: homeassistant-pv
+  storageClassName: longhorn-static
+  volumeMode: Filesystem
 ---
-apiVersion: v1
 kind: PersistentVolume
+apiVersion: v1
 metadata:
-  namespace: homeassistant
-  name: homeassistant
-  labels:
-    type: local
+  name: homeassistant-pv
 spec:
-  storageClassName: manual
   capacity:
-    storage: 100M
+    storage: 50Mi
+  csi:
+    driver: driver.longhorn.io
+    volumeHandle: homeassistant
+    fsType: ext4
+    volumeAttributes:
+      diskSelector: ""
+      migratable: "false"
+      nodeSelector: ""
+      numberOfReplicas: "1"
+      staleReplicaTimeout: "20"
   accessModes:
     - ReadWriteOnce
-  local:
-    path: "/home/arthur/kubernetes/homeassistant"
-  nodeAffinity:
-    required:
-      nodeSelectorTerms:
-        - matchExpressions:
-            - key: kubernetes.io/hostname
-              operator: In
-              values:
-                - avnas
   claimRef:
-    name: homeassistant
+    kind: PersistentVolumeClaim
+    name: homeassistant-pvc
     namespace: homeassistant
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: longhorn-static
+  volumeMode: Filesystem

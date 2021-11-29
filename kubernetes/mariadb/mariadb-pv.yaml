@@ -1,36 +1,41 @@
-apiVersion: v1
-kind: PersistentVolume
-metadata:
-  name: mariadb-data
-  namespace: database
-  labels:
-    type: local
-spec:
-  storageClassName: manual
-  capacity:
-    storage: 20G
-  accessModes:
-    - ReadWriteOnce
-  local:
-    path: "/home/arthur/kubernetes/mariadb"
-  nodeAffinity:
-    required:
-      nodeSelectorTerms:
-        - matchExpressions:
-            - key: kubernetes.io/hostname
-              operator: In
-              values:
-                - avnas
----
-apiVersion: v1
 kind: PersistentVolumeClaim
+apiVersion: v1
 metadata:
-  name: mariadb-data
+  name: mariadb-pvc
   namespace: database
 spec:
-  storageClassName: manual
   accessModes:
     - ReadWriteOnce
   resources:
     requests:
-      storage: 20G
+      storage: 25Gi
+  volumeName: mariadb-pv
+  storageClassName: longhorn-static
+  volumeMode: Filesystem
+---
+kind: PersistentVolume
+apiVersion: v1
+metadata:
+  name: mariadb-pv
+spec:
+  capacity:
+    storage: 25Gi
+  csi:
+    driver: driver.longhorn.io
+    volumeHandle: mariadb
+    fsType: ext4
+    volumeAttributes:
+      diskSelector: ""
+      migratable: "false"
+      nodeSelector: ""
+      numberOfReplicas: "1"
+      staleReplicaTimeout: "20"
+  accessModes:
+    - ReadWriteOnce
+  claimRef:
+    kind: PersistentVolumeClaim
+    name: mariadb-pvc
+    namespace: database
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: longhorn-static
+  volumeMode: Filesystem

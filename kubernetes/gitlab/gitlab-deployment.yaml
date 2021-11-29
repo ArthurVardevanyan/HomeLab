@@ -18,13 +18,18 @@ spec:
         seccomp.security.alpha.kubernetes.io/defaultProfileName: runtime/default
         use-metadata.version-checker.io/gitlab: "true"
     spec:
+      nodeSelector:
+        kubernetes.io/hostname: avnas
       volumes:
-        - name: gitlab-data
+        - name: gitlab-data-pvc
           persistentVolumeClaim:
-            claimName: gitlab-data
-        - name: gitlab-config
+            claimName: gitlab-data-pvc
+        - name: gitlab-config-pvc
           persistentVolumeClaim:
-            claimName: gitlab-config
+            claimName: gitlab-config-pvc
+        - name: gitlab-cert
+          secret:
+            secretName: gitlab-cert
       containers:
         - name: gitlab
           image: gitlab/gitlab-ce:14.5.0-ce.0
@@ -55,10 +60,12 @@ spec:
               cpu: 250m
               memory: 4G
           volumeMounts:
-            - name: gitlab-data
+            - name: gitlab-data-pvc
               mountPath: /var/opt/gitlab
-            - name: gitlab-config
+            - name: gitlab-config-pvc
               mountPath: /etc/gitlab
+            - name: gitlab-cert
+              mountPath: /etc/gitlab/ssl/
           livenessProbe:
             httpGet:
               path: -/liveness?token=<HEALTH_CHECK_TOKEN>

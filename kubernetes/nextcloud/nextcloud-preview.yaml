@@ -14,7 +14,12 @@ spec:
       template:
         spec:
           serviceAccountName: nextcloud-sa
+          nodeSelector:
+            kubernetes.io/hostname: avnas
           volumes:
+            - name: nextcloud-cert
+              secret:
+                secretName: nextcloud-cert
             - name: nextcloud-nextcloud
               persistentVolumeClaim:
                 claimName: nextcloud-nextcloud
@@ -27,9 +32,6 @@ spec:
             - name: nextcloud-apache2
               persistentVolumeClaim:
                 claimName: nextcloud-apache2
-            - name: nextcloud-letsencrypt
-              persistentVolumeClaim:
-                claimName: nextcloud-letsencrypt
             - name: nextcloud-data
               persistentVolumeClaim:
                 claimName: nextcloud-data
@@ -43,11 +45,11 @@ spec:
                   && runuser -u www-data --  php -f /var/www/html/occ preview:generate-all
               resources:
                 limits:
-                  cpu: 50m
-                  memory: 250M
+                  cpu: 100m
+                  memory: 500M
                 requests:
-                  cpu: 25m
-                  memory: 50M
+                  cpu: 50m
+                  memory: 350M
               volumeMounts:
                 - name: nextcloud-nextcloud
                   mountPath: /var/www/html
@@ -57,8 +59,8 @@ spec:
                   mountPath: /var/www/html/config
                 - name: nextcloud-apache2
                   mountPath: /etc/apache2
-                - name: nextcloud-letsencrypt
-                  mountPath: /etc/letsencrypt
+                - name: nextcloud-cert
+                  mountPath: /ssl
                 - name: nextcloud-data
                   mountPath: /var/www/html/data
               terminationMessagePath: /dev/termination-log

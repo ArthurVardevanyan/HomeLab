@@ -55,6 +55,8 @@ sed -i "s/<URL>/${URL}/g" kubernetes/grafana/grafana-traefik.yaml
 kubectl apply -f kubernetes/grafana
 
 echo -e " \n${BLUE}Nextcloud:${NC}"
+sed -i "s/<GENERIC_CERT>/${GENERIC_CERT}/g" kubernetes/nextcloud/nextcloud-cert.yaml
+sed -i "s/<GENERIC_KEY>/${GENERIC_KEY}/g" kubernetes/nextcloud/nextcloud-cert.yaml
 sed -i "s/<URL>/${URL}/g" kubernetes/nextcloud/nextcloud-traefik.yaml
 kubectl apply -f kubernetes/nextcloud
 
@@ -72,6 +74,8 @@ kubectl apply -f kubernetes/homeassistant
 
 echo -e " \n${BLUE}Vault:${NC}"
 sed -i "s/<URL>/${URL}/g" kubernetes/vault/vault-traefik.yaml
+sed -i "s/<GENERIC_CERT>/${GENERIC_CERT}/g" kubernetes/vault/vault-cert.yaml
+sed -i "s/<GENERIC_KEY>/${GENERIC_KEY}/g" kubernetes/vault/vault-cert.yaml
 kubectl apply -f kubernetes/vault
 
 echo -e " \n${BLUE}Gitlab Runner:${NC}"
@@ -80,6 +84,9 @@ sed -i "s/<GITLAB_RUNNER_TOKEN>/${GITLAB_RUNNER_TOKEN}/g" kubernetes/gitlab/gitl
 kubectl apply -f kubernetes/gitlab/gitlab-runner/
 
 echo -e " \n${BLUE}Gitlab:${NC}"
+sed -i "s/<URL>/${URL}/g" kubernetes/gitlab/gitlab-cert.yaml
+sed -i "s/<GENERIC_CERT>/${GENERIC_CERT}/g" kubernetes/gitlab/gitlab-cert.yaml
+sed -i "s/<GENERIC_KEY>/${GENERIC_KEY}/g" kubernetes/gitlab/gitlab-cert.yaml
 sed -i "s/<HEALTH_CHECK_TOKEN>/${HEALTH_CHECK_TOKEN}/g" kubernetes/gitlab/gitlab-deployment.yaml
 sed -i "s/<URL>/${URL}/g" kubernetes/gitlab/gitlab-traefik.yaml
 kubectl apply -f kubernetes/gitlab

@@ -47,7 +47,7 @@ spec:
               cpu: "500m"
           volumeMounts:
             - mountPath: /config
-              name: heimdall
+              name: heimdall-pvc
           livenessProbe:
             tcpSocket:
               port: 80
@@ -72,6 +72,6 @@ spec:
       hostname: heimdall
       restartPolicy: Always
       volumes:
-        - name: heimdall
+        - name: heimdall-pvc
           persistentVolumeClaim:
-            claimName: heimdall
+            claimName: heimdall-pvc

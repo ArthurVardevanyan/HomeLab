@@ -1,81 +1,83 @@
-apiVersion: v1
 kind: PersistentVolumeClaim
+apiVersion: v1
 metadata:
-  name: gitlab-data
+  name: gitlab-config-pvc
   namespace: gitlab
 spec:
-  storageClassName: manual
-  volumeName: gitlab-data
   accessModes:
     - ReadWriteOnce
   resources:
     requests:
-      storage: 50G
+      storage: 10Mi
+  volumeName: gitlab-config-pv
+  storageClassName: longhorn-static
+  volumeMode: Filesystem
 ---
-apiVersion: v1
 kind: PersistentVolume
+apiVersion: v1
 metadata:
-  name: gitlab-data
-  namespace: gitlab
-  labels:
-    type: local
+  name: gitlab-config-pv
 spec:
-  storageClassName: manuals
   capacity:
-    storage: 50G
+    storage: 10Mi
+  csi:
+    driver: driver.longhorn.io
+    volumeHandle: gitlab-config
+    fsType: ext4
+    volumeAttributes:
+      diskSelector: ""
+      migratable: "false"
+      nodeSelector: ""
+      numberOfReplicas: "1"
+      staleReplicaTimeout: "20"
   accessModes:
     - ReadWriteOnce
-  local:
-    path: "/home/arthur/kubernetes/gitlab/data"
-  nodeAffinity:
-    required:
-      nodeSelectorTerms:
-        - matchExpressions:
-            - key: kubernetes.io/hostname
-              operator: In
-              values:
-                - avnas
   claimRef:
-    name: gitlab-data
+    kind: PersistentVolumeClaim
+    name: gitlab-config-pvc
     namespace: gitlab
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: longhorn-static
+  volumeMode: Filesystem
 ---
-apiVersion: v1
 kind: PersistentVolumeClaim
+apiVersion: v1
 metadata:
-  name: gitlab-config
+  name: gitlab-data-pvc
   namespace: gitlab
 spec:
-  storageClassName: manual
-  volumeName: gitlab-config
   accessModes:
     - ReadWriteOnce
   resources:
     requests:
-      storage: 1G
+      storage: 25Gi
+  volumeName: gitlab-data-pv
+  storageClassName: longhorn-static
+  volumeMode: Filesystem
 ---
-apiVersion: v1
 kind: PersistentVolume
+apiVersion: v1
 metadata:
-  namespace: gitlab
-  name: gitlab-config
-  labels:
-    type: local
+  name: gitlab-data-pv
 spec:
-  storageClassName: manual
   capacity:
-    storage: 1G
+    storage: 25Gi
+  csi:
+    driver: driver.longhorn.io
+    volumeHandle: gitlab-data
+    fsType: ext4
+    volumeAttributes:
+      diskSelector: ""
+      migratable: "false"
+      nodeSelector: ""
+      numberOfReplicas: "1"
+      staleReplicaTimeout: "20"
   accessModes:
     - ReadWriteOnce
-  local:
-    path: "/home/arthur/kubernetes/gitlab/config"
-  nodeAffinity:
-    required:
-      nodeSelectorTerms:
-        - matchExpressions:
-            - key: kubernetes.io/hostname
-              operator: In
-              values:
-                - avnas
   claimRef:
-    name: gitlab-config
+    kind: PersistentVolumeClaim
+    name: gitlab-data-pvc
     namespace: gitlab
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: longhorn-static
+  volumeMode: Filesystem

@@ -1,36 +1,41 @@
-apiVersion: v1
-kind: PersistentVolume
-metadata:
-  name: influxdb
-  namespace: influxdb
-  labels:
-    type: local
-spec:
-  storageClassName: manual
-  capacity:
-    storage: 20G
-  accessModes:
-    - ReadWriteOnce
-  local:
-    path: "/home/arthur/kubernetes/influxdb"
-  nodeAffinity:
-    required:
-      nodeSelectorTerms:
-        - matchExpressions:
-            - key: kubernetes.io/hostname
-              operator: In
-              values:
-                - avnas
----
-apiVersion: v1
 kind: PersistentVolumeClaim
+apiVersion: v1
 metadata:
-  name: influxdb
+  name: influxdb-pvc
   namespace: influxdb
 spec:
-  storageClassName: manual
   accessModes:
     - ReadWriteOnce
   resources:
     requests:
-      storage: 20G
+      storage: 50Gi
+  volumeName: influxdb-pv
+  storageClassName: longhorn-static
+  volumeMode: Filesystem
+---
+kind: PersistentVolume
+apiVersion: v1
+metadata:
+  name: influxdb-pv
+spec:
+  capacity:
+    storage: 50Gi
+  csi:
+    driver: driver.longhorn.io
+    volumeHandle: influxdb
+    fsType: ext4
+    volumeAttributes:
+      diskSelector: ""
+      migratable: "false"
+      nodeSelector: ""
+      numberOfReplicas: "1"
+      staleReplicaTimeout: "20"
+  accessModes:
+    - ReadWriteOnce
+  claimRef:
+    kind: PersistentVolumeClaim
+    name: influxdb-pvc
+    namespace: influxdb
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: longhorn-static
+  volumeMode: Filesystem

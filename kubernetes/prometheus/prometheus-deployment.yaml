@@ -71,7 +71,7 @@ spec:
           volumeMounts:
             - name: prometheus-config-volume
               mountPath: /etc/prometheus/
-            - name: prometheus-storage-volume
+            - name: prometheus-pvc
               mountPath: /prometheus_data/
       securityContext:
         fsGroup: 65534
@@ -83,6 +83,6 @@ spec:
           configMap:
             defaultMode: 420
             name: prometheus-server-conf
-        - name: prometheus-storage-volume
+        - name: prometheus-pvc
           persistentVolumeClaim:
-            claimName: prometheus-storage-volume
+            claimName: prometheus-pvc

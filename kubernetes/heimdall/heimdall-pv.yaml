@@ -1,40 +1,41 @@
-apiVersion: v1
 kind: PersistentVolumeClaim
+apiVersion: v1
 metadata:
+  name: heimdall-pvc
   namespace: heimdall
-  name: heimdall
 spec:
-  storageClassName: manual
-  volumeName: heimdall
   accessModes:
-    - ReadWriteOnce
+    - ReadWriteMany
   resources:
     requests:
-      storage: 100M
+      storage: 75Mi
+  volumeName: heimdall-pv
+  storageClassName: longhorn-static
+  volumeMode: Filesystem
 ---
-apiVersion: v1
 kind: PersistentVolume
+apiVersion: v1
 metadata:
-  namespace: heimdall
-  name: heimdall
-  labels:
-    type: local
+  name: heimdall-pv
 spec:
-  storageClassName: manual
   capacity:
-    storage: 100M
+    storage: 75Mi
+  csi:
+    driver: driver.longhorn.io
+    volumeHandle: heimdall
+    fsType: ext4
+    volumeAttributes:
+      diskSelector: ""
+      migratable: "false"
+      nodeSelector: ""
+      numberOfReplicas: "1"
+      staleReplicaTimeout: "20"
   accessModes:
-    - ReadWriteOnce
-  local:
-    path: "/home/arthur/kubernetes/heimdall"
-  nodeAffinity:
-    required:
-      nodeSelectorTerms:
-        - matchExpressions:
-            - key: kubernetes.io/hostname
-              operator: In
-              values:
-                - avnas
+    - ReadWriteMany
   claimRef:
-    name: heimdall
+    kind: PersistentVolumeClaim
+    name: heimdall-pvc
     namespace: heimdall
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: longhorn-static
+  volumeMode: Filesystem

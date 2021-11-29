@@ -19,7 +19,12 @@ spec:
         use-metadata.version-checker.io/nextcloud: "true"
     spec:
       serviceAccountName: nextcloud-sa
+      nodeSelector:
+        kubernetes.io/hostname: avnas
       volumes:
+        - name: nextcloud-cert
+          secret:
+            secretName: nextcloud-cert
         - name: nextcloud-nextcloud
           persistentVolumeClaim:
             claimName: nextcloud-nextcloud
@@ -32,9 +37,6 @@ spec:
         - name: nextcloud-apache2
           persistentVolumeClaim:
             claimName: nextcloud-apache2
-        - name: nextcloud-letsencrypt
-          persistentVolumeClaim:
-            claimName: nextcloud-letsencrypt
         - name: nextcloud-data
           persistentVolumeClaim:
             claimName: nextcloud-data
@@ -63,8 +65,8 @@ spec:
               mountPath: /var/www/html/config
             - name: nextcloud-apache2
               mountPath: /etc/apache2
-            - name: nextcloud-letsencrypt
-              mountPath: /etc/letsencrypt
+            - name: nextcloud-cert
+              mountPath: /ssl
             - name: nextcloud-data
               mountPath: /var/www/html/data
           livenessProbe:
