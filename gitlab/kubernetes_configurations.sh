@@ -12,6 +12,11 @@ kubectl patch deployment -n kube-system metrics-server --patch "$(cat kubernetes
 kubectl apply -f kubernetes/kube-system/kube-system-limitRange.yaml
 kubectl apply -f kubernetes/kube-system/kube-system-resourceQuota.yaml
 
+echo -e " \n${BLUE}Traefik:${NC}"
+sed -i "s/<URL>/${URL}/g" kubernetes/traefik/traefik-dashboard-traefik.yaml
+sed -i "s/<URL>/${URL}/g" kubernetes/traefik/cluster-wildcard-certificate.yaml
+kubectl apply -f kubernetes/traefik
+
 echo -e " \n${BLUE}Longhorn:${NC}"
 sed -i "s/<URL>/${URL}/g" kubernetes/longhorn/longhorn-traefik.yaml
 kubectl apply -f kubernetes/longhorn
@@ -32,11 +37,6 @@ kubectl apply -f kubernetes/cert-manager
 
 echo -e " \n${BLUE}Image Version Checker:${NC}"
 kubectl apply -f kubernetes/version-checker
-
-echo -e " \n${BLUE}Traefik:${NC}"
-sed -i "s/<URL>/${URL}/g" kubernetes/traefik/traefik-dashboard-traefik.yaml
-sed -i "s/<URL>/${URL}/g" kubernetes/traefik/cluster-wildcard-certificate.yaml
-kubectl apply -f kubernetes/traefik
 
 echo -e " \n${BLUE}Heimdall:${NC}"
 sed -i "s/<URL>/${URL}/g" kubernetes/heimdall/heimdall-traefik.yaml
