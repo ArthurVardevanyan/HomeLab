@@ -29,7 +29,7 @@ sed -i "s/<URL>/${URL}/g" kubernetes/kubernetes-dashboard/kubernetes-dashboard-t
 kubectl apply -f kubernetes/kubernetes-dashboard
 
 echo -e " \n${BLUE}Certificate Manager:${NC}"
-sh kubernetes/cert-manager/cert-manager-deployment.sh
+sh kubernetes/cert-manager/cert-manager-crds.sh
 sed -i "s/<URL>/${URL}/g" kubernetes/cert-manager/cert-manager-cloudflare.yaml
 sed -i "s,<CLOUDFLARE_EMAIL>,${CLOUDFLARE_EMAIL},g" kubernetes/cert-manager/cert-manager-cloudflare.yaml
 sed -i "s,<CLOUDFLARE_API>,${CLOUDFLARE_API},g" kubernetes/cert-manager/cert-manager-cloudflare-secret.yaml
