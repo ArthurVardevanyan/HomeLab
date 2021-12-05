@@ -38,10 +38,10 @@ spec:
               name: kube-websecure
           resources:
             limits:
-              cpu: 100m
+              cpu: 200m
               memory: 100M
             requests:
-              cpu: 50m
+              cpu: 100m
               memory: 50M
           volumeMounts:
             - name: kubernetes-dashboard-certs
@@ -78,10 +78,10 @@ spec:
               protocol: TCP
           resources:
             limits:
-              cpu: 75m
+              cpu: 200m
               memory: 75M
             requests:
-              cpu: 25m
+              cpu: 100m
               memory: 35M
           volumeMounts:
             - name: tmp-volume
@@ -111,7 +111,10 @@ spec:
       terminationGracePeriodSeconds: 30
       dnsPolicy: ClusterFirst
       nodeSelector:
-        kubernetes.io/os: linux
+        node-type: master
+      tolerations:
+        - key: node-role.kubernetes.io/master
+          effect: NoSchedule
       serviceAccountName: kubernetes-dashboard
       serviceAccount: kubernetes-dashboard
       securityContext:
@@ -120,9 +123,6 @@ spec:
         seccompProfile:
           type: RuntimeDefault
       schedulerName: default-scheduler
-      tolerations:
-        - key: node-role.kubernetes.io/master
-          effect: NoSchedule
   strategy:
     type: Recreate
   revisionHistoryLimit: 0

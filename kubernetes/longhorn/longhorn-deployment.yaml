@@ -24,9 +24,6 @@ spec:
             requests:
               cpu: 250m
               memory: 75M
-            limits:
-              cpu: 500m
-              memory: 150M
           command:
             - longhorn-manager
             - -d
@@ -109,17 +106,20 @@ spec:
       labels:
         app: longhorn-ui
     spec:
+      tolerations:
+        - key: node-role.kubernetes.io/master
+          effect: NoSchedule
       containers:
         - name: longhorn-ui
           image: longhornio/longhorn-ui:v1.2.2
           imagePullPolicy: IfNotPresent
           resources:
             requests:
-              cpu: 50m
+              cpu: 75m
               memory: 10M
             limits:
-              cpu: 100m
-              memory: 20M
+              cpu: 150m
+              memory: 10M
           securityContext:
             runAsUser: 0
           ports:
@@ -161,9 +161,6 @@ spec:
             requests:
               cpu: 10m
               memory: 10M
-            limits:
-              cpu: 20m
-              memory: 20M
           command:
             - longhorn-manager
             - -d

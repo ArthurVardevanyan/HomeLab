@@ -34,7 +34,7 @@ spec:
             - key: kubernetes.io/hostname
               operator: In
               values:
-                - avnas
+                - k3s-infra
   claimRef:
     name: nextcloud-nextcloud
     namespace: nextcloud
@@ -75,7 +75,7 @@ spec:
             - key: kubernetes.io/hostname
               operator: In
               values:
-                - avnas
+                - k3s-infra
   claimRef:
     name: nextcloud-apps
     namespace: nextcloud
@@ -116,7 +116,7 @@ spec:
             - key: kubernetes.io/hostname
               operator: In
               values:
-                - avnas
+                - k3s-infra
   claimRef:
     name: nextcloud-config
     namespace: nextcloud
@@ -157,50 +157,9 @@ spec:
             - key: kubernetes.io/hostname
               operator: In
               values:
-                - avnas
+                - k3s-infra
   claimRef:
     name: nextcloud-apache2
-    namespace: nextcloud
----
-apiVersion: v1
-kind: PersistentVolumeClaim
-metadata:
-  namespace: nextcloud
-  name: nextcloud-letsencrypt
-spec:
-  storageClassName: manual
-  volumeName: nextcloud-letsencrypt
-  accessModes:
-    - ReadWriteOnce
-  resources:
-    requests:
-      storage: 5G
----
-apiVersion: v1
-kind: PersistentVolume
-metadata:
-  namespace: nextcloud
-  name: nextcloud-letsencrypt
-  labels:
-    type: local
-spec:
-  storageClassName: manual
-  capacity:
-    storage: 1G
-  accessModes:
-    - ReadWriteOnce
-  local:
-    path: "/home/arthur/kubernetes/nextcloud/letsencrypt"
-  nodeAffinity:
-    required:
-      nodeSelectorTerms:
-        - matchExpressions:
-            - key: kubernetes.io/hostname
-              operator: In
-              values:
-                - avnas
-  claimRef:
-    name: nextcloud-letsencrypt
     namespace: nextcloud
 ---
 apiVersion: v1
@@ -239,7 +198,7 @@ spec:
             - key: kubernetes.io/hostname
               operator: In
               values:
-                - avnas
+                - k3s-infra
   claimRef:
     name: nextcloud-data
     namespace: nextcloud

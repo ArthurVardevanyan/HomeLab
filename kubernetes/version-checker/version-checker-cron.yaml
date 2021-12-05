@@ -24,6 +24,9 @@ spec:
             seccomp.security.alpha.kubernetes.io/defaultProfileName: "runtime/default"
             enable.version-checker.io/version-checker: "true"
         spec:
+          tolerations:
+            - key: node-role.kubernetes.io/master
+              effect: NoSchedule
           automountServiceAccountToken: true
           securityContext:
             fsGroup: 65554

@@ -51,10 +51,10 @@ spec:
               value: info
           resources:
             limits:
-              cpu: 25m
+              cpu: 150m
               memory: 50M
             requests:
-              cpu: 15m
+              cpu: 75m
               memory: 30M
           livenessProbe:
             httpGet:
@@ -80,6 +80,11 @@ spec:
       restartPolicy: Always
       terminationGracePeriodSeconds: 30
       dnsPolicy: ClusterFirst
+      nodeSelector:
+        node-type: master
+      tolerations:
+        - key: node-role.kubernetes.io/master
+          effect: NoSchedule
       serviceAccountName: sa-kube-eagle
       serviceAccount: sa-kube-eagle
       securityContext:

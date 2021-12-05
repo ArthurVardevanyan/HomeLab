@@ -93,10 +93,10 @@ spec:
             timeoutSeconds: 2
           resources:
             limits:
-              cpu: 200m
+              cpu: 300m
               memory: 100M
             requests:
-              cpu: 100m
+              cpu: 150m
               memory: 50M
           securityContext:
             runAsNonRoot: true
@@ -119,6 +119,9 @@ spec:
       dnsPolicy: ClusterFirst
       nodeSelector:
         node-type: master
+      tolerations:
+        - key: node-role.kubernetes.io/master
+          effect: NoSchedule
       restartPolicy: Always
       schedulerName: default-scheduler
       serviceAccountName: traefik
