@@ -1,15 +1,16 @@
 - hosts: ryzen
+  gather_facts: no
   become: true
   user: arthur
   tasks:
-      - name: Add android-studio Repo
-        apt_repository:
-            validate_certs: no
-            repo: "ppa:maarten-fonville/android-studio"
-            state: present
-            update_cache: True
-      - name: Install android-studio
-        apt:
-            state: latest
-            name:
-                - android-studio
+    - name: Add android-studio Repo
+      apt_repository:
+        validate_certs: no
+        repo: "ppa:maarten-fonville/android-studio"
+        state: present
+        update_cache: True
+    - name: Install android-studio
+      apt:
+        state: latest
+        name:
+          - android-studio

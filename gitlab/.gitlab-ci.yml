@@ -10,17 +10,9 @@ variables:
 stages:
   - images
   - test
-  - ansible
   - kubernetes
+  - ansible
   - github
-
-GithubPending:
-  stage: test
-  image: $CI_REGISTRY_IMAGE:toolbox
-  script:
-    - export DESCRIPTION="Running"
-    - export STATUS=pending
-    - gitlab/github-status.sh
 
 GithubFinish:
   stage: github

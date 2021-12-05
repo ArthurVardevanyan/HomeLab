@@ -1,10 +1,11 @@
 - hosts: ryzen
+  gather_facts: no
   become: true
   user: arthur
   tasks:
     - name: Add Google Chrome key
       apt_key:
-        url: https://dl-ssl.google.com/linux/linux_signing_key.pub 
+        url: https://dl-ssl.google.com/linux/linux_signing_key.pub
         state: present
     - name: Add Google Chrome Repo
       apt_repository:
