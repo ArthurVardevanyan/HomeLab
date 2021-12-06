@@ -21,10 +21,13 @@ spec:
         seccomp.security.alpha.kubernetes.io/defaultProfileName: "runtime/default"
         use-metadata.version-checker.io/vault: "true"
     spec:
+      nodeSelector:
+        kubernetes.io/hostname: k3s-server
+      tolerations:
+        - key: node-role.kubernetes.io/master
+          effect: NoSchedule
       automountServiceAccountToken: false
       serviceAccountName: vault-sa
-      nodeSelector:
-        kubernetes.io/hostname: k3s-infra
       containers:
         - image: vault:1.9.0
           imagePullPolicy: IfNotPresent
@@ -76,10 +79,10 @@ spec:
           resources:
             requests:
               memory: "150M"
-              cpu: "75m"
+              cpu: "150m"
             limits:
               memory: "300M"
-              cpu: "150m"
+              cpu: "300m"
       hostname: vault
       restartPolicy: Always
       volumes:

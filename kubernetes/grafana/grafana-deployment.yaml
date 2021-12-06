@@ -21,6 +21,11 @@ spec:
         seccomp.security.alpha.kubernetes.io/defaultProfileName: "runtime/default"
         use-metadata.version-checker.io/grafana: "true"
     spec:
+      nodeSelector:
+        kubernetes.io/hostname: k3s-server
+      tolerations:
+        - key: node-role.kubernetes.io/master
+          effect: NoSchedule
       securityContext:
         fsGroup: 11472
         runAsGroup: 11472
@@ -63,10 +68,10 @@ spec:
           resources:
             requests:
               memory: "100M"
-              cpu: "50m"
+              cpu: "250m"
             limits:
               memory: "200M"
-              cpu: "250m"
+              cpu: "500m"
           volumeMounts:
             - name: grafana-pvc
               mountPath: /var/lib/grafana/

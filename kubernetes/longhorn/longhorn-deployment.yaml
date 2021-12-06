@@ -14,6 +14,9 @@ spec:
       labels:
         app: longhorn-manager
     spec:
+      tolerations:
+        - key: node-role.kubernetes.io/master
+          effect: NoSchedule
       containers:
         - name: longhorn-manager
           image: longhornio/longhorn-manager:v1.2.2
@@ -106,6 +109,8 @@ spec:
       labels:
         app: longhorn-ui
     spec:
+      nodeSelector:
+        kubernetes.io/hostname: k3s-server
       tolerations:
         - key: node-role.kubernetes.io/master
           effect: NoSchedule
@@ -144,6 +149,11 @@ spec:
       labels:
         app: longhorn-driver-deployer
     spec:
+      nodeSelector:
+        kubernetes.io/hostname: k3s-server
+      tolerations:
+        - key: node-role.kubernetes.io/master
+          effect: NoSchedule
       initContainers:
         - name: wait-longhorn-manager
           image: longhornio/longhorn-manager:v1.2.2
@@ -170,6 +180,8 @@ spec:
             - --manager-url
             - http://longhorn-backend:9500/v1
           env:
+            #- name: KUBELET_ROOT_DIR
+            #  value: /k3s/agent/kubelet
             - name: POD_NAMESPACE
               valueFrom:
                 fieldRef:

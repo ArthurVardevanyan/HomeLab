@@ -24,6 +24,11 @@ spec:
     spec:
       automountServiceAccountToken: false
       serviceAccountName: heimdall-sa
+      nodeSelector:
+        kubernetes.io/hostname: k3s-server
+      tolerations:
+        - key: node-role.kubernetes.io/master
+          effect: NoSchedule
       containers:
         - image: linuxserver/heimdall:2.2.2
           imagePullPolicy: IfNotPresent
@@ -41,10 +46,10 @@ spec:
           resources:
             requests:
               memory: "175M"
-              cpu: "250m"
+              cpu: "500m"
             limits:
               memory: "250M"
-              cpu: "500m"
+              cpu: "1"
           volumeMounts:
             - mountPath: /config
               name: heimdall-pvc
