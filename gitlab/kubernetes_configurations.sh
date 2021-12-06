@@ -90,3 +90,7 @@ sed -i "s/<GENERIC_KEY>/${GENERIC_KEY}/g" kubernetes/gitlab/gitlab-cert.yaml
 sed -i "s/<HEALTH_CHECK_TOKEN>/${HEALTH_CHECK_TOKEN}/g" kubernetes/gitlab/gitlab-deployment.yaml
 sed -i "s/<URL>/${URL}/g" kubernetes/gitlab/gitlab-traefik.yaml
 kubectl apply -f kubernetes/gitlab
+
+echo -e " \n${BLUE}Uptime Kuma:${NC}"
+sed -i "s/<URL>/${URL}/g" kubernetes/uptime-kuma/uptime-kuma-traefik.yaml
+kubectl apply -f kubernetes/uptime-kuma

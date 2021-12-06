@@ -1,0 +1,65 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: uptime-kuma
+  namespace: uptime-kuma
+  labels:
+    app: uptime-kuma
+spec:
+  revisionHistoryLimit: 0
+  replicas: 1
+  selector:
+    matchLabels:
+      app: uptime-kuma
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: uptime-kuma
+      annotations:
+        seccomp.security.alpha.kubernetes.io/defaultProfileName: "runtime/default"
+        use-metadata.version-checker.io/uptime-kuma: "true"
+    spec:
+      nodeSelector:
+        kubernetes.io/hostname: k3s-server
+      tolerations:
+        - key: node-role.kubernetes.io/master
+          effect: NoSchedule
+      hostname: uptime-kuma
+      restartPolicy: Always
+      automountServiceAccountToken: false
+      serviceAccountName: uptime-kuma-sa
+      containers:
+        - image: louislam/uptime-kuma:1.10.2
+          imagePullPolicy: IfNotPresent
+          name: uptime-kuma
+          ports:
+            - containerPort: 3001
+          resources:
+            requests:
+              memory: "100M"
+              cpu: "250m"
+            limits:
+              memory: "200M"
+              cpu: "500m"
+          volumeMounts:
+            - name: uptime-kuma-pvc
+              mountPath: /app/data
+          livenessProbe:
+            exec:
+              command:
+                - node
+                - extra/healthcheck.js
+            initialDelaySeconds: 180
+            periodSeconds: 60
+            timeoutSeconds: 30
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 3001
+              scheme: HTTP
+      volumes:
+        - name: uptime-kuma-pvc
+          persistentVolumeClaim:
+            claimName: uptime-kuma-pvc
