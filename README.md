@@ -76,8 +76,8 @@ sudo umount /media/arthur/Timeshift
 watch $(echo "kubectl get pods -A -o wide |  grep -v 'svclb' | sort -k8 -r")
 kubectl drain k3s-worker --ignore-daemonsets --delete-emptydir-data
 
-curl -sfL <https://get.k3s.io> | INSTALL_K3S_EXEC="server --disable traefik --flannel-iface=enp1s0 --kubelet-arg system-reserved=cpu=250m,memory=250M --kubelet-arg kube-reserved=cpu=250m,memory=200M" INSTALL_K3S_CHANNEL=latest sh
-curl -sfL https://get.k3s.io | INSTALL_K3S_EXEC=--flannel-iface=enp6s0 K3S_URL=https://10.0.0.3:6443 K3S_TOKEN=$K3S_TOKEN INSTALL_K3S_CHANNEL=latest sh -
+curl -sfL https://get.k3s.io | INSTALL_K3S_EXEC="server --disable traefik --flannel-iface=enp1s0 --kubelet-arg system-reserved=cpu=250m,memory=250M --kubelet-arg kube-reserved=cpu=250m,memory=200M" INSTALL_K3S_CHANNEL=v1.22 sh
+curl -sfL https://get.k3s.io | INSTALL_K3S_EXEC=--flannel-iface=enp6s0 K3S_URL=https://10.0.0.3:6443 K3S_TOKEN=$K3S_TOKEN INSTALL_K3S_CHANNEL=v1.22 sh -
 ```
 
 #### Cockpit
