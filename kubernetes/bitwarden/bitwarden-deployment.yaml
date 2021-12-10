@@ -1,0 +1,67 @@
+kind: Deployment
+apiVersion: apps/v1
+metadata:
+  name: bitwarden
+  namespace: bitwarden
+  labels:
+    app: bitwarden
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: bitwarden
+  template:
+    metadata:
+      labels:
+        app: bitwarden
+      annotations:
+        seccomp.security.alpha.kubernetes.io/defaultProfileName: runtime/default
+        use-metadata.version-checker.io/bitwarden: "true"
+    spec:
+      nodeSelector:
+        kubernetes.io/hostname: k3s-server
+      tolerations:
+        - key: node-role.kubernetes.io/master
+          effect: NoSchedule
+      hostname: bitwarden
+      containers:
+        - image: vaultwarden/server:1.23.0
+          imagePullPolicy: IfNotPresent
+          name: bitwarden
+          # Only Needed For Setup
+          #envFrom:
+          #  - secretRef:
+          #      name: bitwarden-secrets
+          securityContext:
+            seccompProfile:
+              type: RuntimeDefault
+          livenessProbe:
+            httpGet:
+              path: /
+              port: http
+          readinessProbe:
+            httpGet:
+              path: /
+              port: http
+          ports:
+            - containerPort: 80
+              name: http
+              protocol: TCP
+            - containerPort: 3012
+              name: websocket
+          volumeMounts:
+            - name: bitwarden-pvc
+              mountPath: /data
+          resources:
+            limits:
+              cpu: 100m
+              memory: 200M
+            requests:
+              cpu: 50m
+              memory: 100M
+      automountServiceAccountToken: false
+      serviceAccountName: bitwarden
+      volumes:
+        - name: bitwarden-pvc
+          persistentVolumeClaim:
+            claimName: bitwarden-pvc

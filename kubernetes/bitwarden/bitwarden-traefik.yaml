@@ -1,0 +1,29 @@
+apiVersion: traefik.containo.us/v1alpha1
+kind: Middleware
+metadata:
+  name: https-redirect
+  namespace: bitwarden
+spec:
+  redirectScheme:
+    scheme: https
+    permanent: true
+---
+apiVersion: traefik.containo.us/v1alpha1
+kind: IngressRoute
+metadata:
+  name: bitwarden
+  namespace: bitwarden
+spec:
+  entryPoints:
+    - websecure
+  routes:
+    - match: Host(`bitwarden.<URL>`)
+      kind: Rule
+      services:
+        - name: bitwarden
+          port: 80
+      middlewares:
+        - name: https-redirect
+  tls:
+    domains:
+      - main: bitwarden.<URL>

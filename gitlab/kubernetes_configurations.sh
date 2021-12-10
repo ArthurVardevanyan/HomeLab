@@ -78,6 +78,14 @@ sed -i "s/<GENERIC_CERT>/${GENERIC_CERT}/g" kubernetes/vault/vault-cert.yaml
 sed -i "s/<GENERIC_KEY>/${GENERIC_KEY}/g" kubernetes/vault/vault-cert.yaml
 kubectl apply -f kubernetes/vault
 
+echo -e " \n${BLUE}Bitwarden:${NC}"
+sed -i "s/<URL>/${URL}/g" kubernetes/bitwarden/bitwarden-traefik.yaml
+kubectl apply -f kubernetes/bitwarden
+
+echo -e " \n${BLUE}Uptime Kuma:${NC}"
+sed -i "s/<URL>/${URL}/g" kubernetes/uptime-kuma/uptime-kuma-traefik.yaml
+kubectl apply -f kubernetes/uptime-kuma
+
 echo -e " \n${BLUE}Gitlab Runner:${NC}"
 sed -i "s/<URL>/${URL}/g" kubernetes/gitlab/gitlab-runner/gitlab-runner-config-map.yaml
 sed -i "s/<GITLAB_RUNNER_TOKEN>/${GITLAB_RUNNER_TOKEN}/g" kubernetes/gitlab/gitlab-runner/gitlab-runner-config-map.yaml
@@ -90,7 +98,3 @@ sed -i "s/<GENERIC_KEY>/${GENERIC_KEY}/g" kubernetes/gitlab/gitlab-cert.yaml
 sed -i "s/<HEALTH_CHECK_TOKEN>/${HEALTH_CHECK_TOKEN}/g" kubernetes/gitlab/gitlab-deployment.yaml
 sed -i "s/<URL>/${URL}/g" kubernetes/gitlab/gitlab-traefik.yaml
 kubectl apply -f kubernetes/gitlab
-
-echo -e " \n${BLUE}Uptime Kuma:${NC}"
-sed -i "s/<URL>/${URL}/g" kubernetes/uptime-kuma/uptime-kuma-traefik.yaml
-kubectl apply -f kubernetes/uptime-kuma
