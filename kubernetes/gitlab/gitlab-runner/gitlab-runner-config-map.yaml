@@ -21,22 +21,24 @@ data:
     [runners.kubernetes]
        namespace = "gitlab-runner"
        bearer_token_overwrite_allowed = true
-       cpu_request= "150m"
+       cpu_request= "100m"
        cpu_limit = "1"
        memory_request = "100M"
        memory_limit = "750M"
-       service_cpu_request = "150m"
+       service_cpu_request = "100m"
        service_cpu_limit = "750m"
        service_memory_request = "250M"
        service_memory_limit = "500M"
-       helper_cpu_request = "50m"
-       helper_cpu_limit = "100m"
+       helper_cpu_request = "25m"
+       helper_cpu_limit = "75m"
        helper_memory_request = "25M"
        helper_memory_limit = "50M"
        poll_interval = 5
        poll_timeout = 3600
        dns_policy = "cluster-first"
        privileged = true
+    [runners.kubernetes.pod_labels ]
+      app = "runner"
 
   entrypoint: |
     #!/bin/bash

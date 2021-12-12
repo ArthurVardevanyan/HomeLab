@@ -1,28 +1,28 @@
 kind: PersistentVolumeClaim
 apiVersion: v1
 metadata:
-  name: grafana-pvc
+  name: loki-pvc
   namespace: grafana
 spec:
   accessModes:
-    - ReadWriteMany
+    - ReadWriteOnce
   resources:
     requests:
-      storage: 50Mi
-  volumeName: grafana-pv
+      storage: 35Gi
+  volumeName: loki-pv
   storageClassName: longhorn-static
   volumeMode: Filesystem
 ---
 kind: PersistentVolume
 apiVersion: v1
 metadata:
-  name: grafana-pv
+  name: loki-pv
 spec:
   capacity:
-    storage: 50Mi
+    storage: 35Gi
   csi:
     driver: driver.longhorn.io
-    volumeHandle: grafana
+    volumeHandle: loki
     fsType: ext4
     volumeAttributes:
       diskSelector: k3s-infra-ssd
@@ -31,10 +31,10 @@ spec:
       numberOfReplicas: "1"
       staleReplicaTimeout: "20"
   accessModes:
-    - ReadWriteMany
+    - ReadWriteOnce
   claimRef:
     kind: PersistentVolumeClaim
-    name: grafana-pvc
+    name: loki-pvc
     namespace: grafana
   persistentVolumeReclaimPolicy: Retain
   storageClassName: longhorn-static
