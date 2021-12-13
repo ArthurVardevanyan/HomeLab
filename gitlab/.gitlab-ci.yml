@@ -35,7 +35,7 @@ Desktop:
   script:
     - ansible-playbook -i ansible/inventory ansible/desktop.yaml --extra-vars "ansible_become_pass=${SUDO} ansible_ssh_pass=${SUDO} ansible_python_interpreter=/usr/bin/python3"
 
-Server:
+K3s:
   stage: ansible
   image: $CI_REGISTRY_IMAGE:ansible
   needs: []
@@ -47,6 +47,7 @@ Server:
     - sed -i "s,REPLACE_ME,${DISCORD},g" machineConfigs/server/home/arthur/discord/discord_bot.sh
     - sed -i "s,##,,g"  ansible/server.yaml
   script:
+    - ansible-playbook -i ansible/inventory ansible/k3s.yaml --extra-vars "ansible_become_pass=${SUDO} ansible_ssh_pass=${SUDO} ansible_python_interpreter=/usr/bin/python3"
     - ansible-playbook -i ansible/inventory ansible/server.yaml --extra-vars "ansible_become_pass=${SUDO} ansible_ssh_pass=${SUDO} ansible_python_interpreter=/usr/bin/python3"
 
 Configurations:
