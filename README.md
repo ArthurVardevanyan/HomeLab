@@ -92,11 +92,19 @@ curl -sfL https://get.k3s.io | INSTALL_K3S_EXEC="--flannel-iface=enp6s0 --kubele
 sudo nano /etc/cockpit/ws-certs.d/1-my-cert.cert
 ```
 
+#### Vault
+
+```bash
+kubectl exec -it $(kubectl -n vault get pod --selector='app=vault' -o custom-columns="-:metadata.name" --no-headers) -n vault -- vault operator unseal --tls-skip-verify
+```
+
 #### GitLab
 
 ```bash
 gitlab-ctl registry-garbage-collect
 gitlab-ctl reconfigure
+
+kubectl patch -n gitlab deployment/gitlab --type='json' -p='[{"op": "replace", "path": "/spec/template/spec/containers/0/image", "value": "gitlab/gitlab-ce:XX.X.X-ce.0"}]'
 ```
 
 #### Database
