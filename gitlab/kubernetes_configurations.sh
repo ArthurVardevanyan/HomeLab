@@ -54,6 +54,12 @@ echo -e " \n${BLUE}Grafana:${NC}"
 sed -i "s/<URL>/${URL}/g" kubernetes/grafana/grafana-traefik.yaml
 kubectl apply -f kubernetes/grafana
 
+echo -e " \n${BLUE}Grafana Loki:${NC}"
+kubectl apply -f kubernetes/grafana-loki
+
+echo -e " \n${BLUE}Grafana Promtail:${NC}"
+kubectl apply -f kubernetes/grafana-promtail
+
 echo -e " \n${BLUE}Nextcloud:${NC}"
 sed -i "s/<GENERIC_CERT>/${GENERIC_CERT}/g" kubernetes/nextcloud/nextcloud-cert.yaml
 sed -i "s/<GENERIC_KEY>/${GENERIC_KEY}/g" kubernetes/nextcloud/nextcloud-cert.yaml
