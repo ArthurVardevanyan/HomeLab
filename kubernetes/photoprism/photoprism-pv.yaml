@@ -1,0 +1,163 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  namespace: photoprism
+  name: photoprism-photos
+spec:
+  storageClassName: manual
+  volumeName: photoprism-photos
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 100G
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  namespace: photoprism
+  name: photoprism-photos
+  labels:
+    type: local
+spec:
+  storageClassName: manual
+  capacity:
+    storage: 100G
+  accessModes:
+    - ReadWriteOnce
+  local:
+    path: "/backup/File_Storage/Nextcloud/Arthur/files/Photos"
+  nodeAffinity:
+    required:
+      nodeSelectorTerms:
+        - matchExpressions:
+            - key: kubernetes.io/hostname
+              operator: In
+              values:
+                - k3s-infra
+  claimRef:
+    name: photoprism-photos
+    namespace: photoprism
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  namespace: photoprism
+  name: photoprism-trips
+spec:
+  storageClassName: manual
+  volumeName: photoprism-trips
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 150G
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  namespace: photoprism
+  name: photoprism-trips
+  labels:
+    type: local
+spec:
+  storageClassName: manual
+  capacity:
+    storage: 150G
+  accessModes:
+    - ReadWriteOnce
+  local:
+    path: "/backup/File_Storage/Nextcloud/Arthur/files/Trips-Events"
+  nodeAffinity:
+    required:
+      nodeSelectorTerms:
+        - matchExpressions:
+            - key: kubernetes.io/hostname
+              operator: In
+              values:
+                - k3s-infra
+  claimRef:
+    name: photoprism-trips
+    namespace: photoprism
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  namespace: photoprism
+  name: photoprism-cache
+spec:
+  storageClassName: manual
+  volumeName: photoprism-cache
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 10G
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  namespace: photoprism
+  name: photoprism-cache
+  labels:
+    type: local
+spec:
+  storageClassName: manual
+  capacity:
+    storage: 10G
+  accessModes:
+    - ReadWriteOnce
+  local:
+    path: "/home/arthur/kubernetes/photoprism/cache"
+  nodeAffinity:
+    required:
+      nodeSelectorTerms:
+        - matchExpressions:
+            - key: kubernetes.io/hostname
+              operator: In
+              values:
+                - k3s-infra
+  claimRef:
+    name: photoprism-cache
+    namespace: photoprism
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  namespace: photoprism
+  name: photoprism-storage
+spec:
+  storageClassName: manual
+  volumeName: photoprism-storage
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 10G
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  namespace: photoprism
+  name: photoprism-storage
+  labels:
+    type: local
+spec:
+  storageClassName: manual
+  capacity:
+    storage: 10G
+  accessModes:
+    - ReadWriteOnce
+  local:
+    path: "/home/arthur/kubernetes/photoprism/storage"
+  nodeAffinity:
+    required:
+      nodeSelectorTerms:
+        - matchExpressions:
+            - key: kubernetes.io/hostname
+              operator: In
+              values:
+                - k3s-infra
+  claimRef:
+    name: photoprism-storage
+    namespace: photoprism

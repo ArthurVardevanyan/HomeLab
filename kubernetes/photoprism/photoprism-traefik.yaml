@@ -1,0 +1,15 @@
+apiVersion: traefik.containo.us/v1alpha1
+kind: IngressRoute
+metadata:
+  name: photoprism
+  namespace: photoprism
+spec:
+  entryPoints:
+    - web
+    - websecure
+  routes:
+    - match: Host(`photoprism.<URL>`)
+      kind: Rule
+      services:
+        - name: photoprism
+          port: 80

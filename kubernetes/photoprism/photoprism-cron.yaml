@@ -1,0 +1,83 @@
+kind: CronJob
+apiVersion: batch/v1
+metadata:
+  name: photoprism-cron
+  namespace: photoprism
+spec:
+  schedule: "00 05,17 * * *"
+  concurrencyPolicy: Forbid
+  suspend: false
+  startingDeadlineSeconds: 60
+  jobTemplate:
+    spec:
+      backoffLimit: 0
+      template:
+        spec:
+          hostname: photoprism
+          automountServiceAccountToken: false
+          serviceAccountName: photoprism-sa
+          restartPolicy: Never
+          nodeSelector:
+            kubernetes.io/hostname: k3s-infra
+          containers:
+            - name: photoprism-cron
+              image: photoprism/photoprism:20211215
+              command:
+                - /bin/bash
+                - "-c"
+                - photoprism index --cleanup
+              env:
+                - name: PHOTOPRISM_DEBUG
+                  value: "true"
+                - name: PHOTOPRISM_CACHE_PATH
+                  value: /assets/cache
+                - name: PHOTOPRISM_ORIGINALS_PATH
+                  value: /assets/photos/originals
+                - name: PHOTOPRISM_READONLY
+                  value: "True"
+                - name: PHOTOPRISM_DATABASE_DRIVER
+                  value: mysql
+                - name: PHOTOPRISM_HTTP_HOST
+                  value: 0.0.0.0
+                - name: PHOTOPRISM_HTTP_PORT
+                  value: "2342"
+              envFrom:
+                - secretRef:
+                    name: photoprism-secrets
+                    optional: false
+              ports:
+                - containerPort: 2342
+                  name: http
+              volumeMounts:
+                - mountPath: /assets/photos/originals/Photos
+                  name: photoprism-photos
+                - mountPath: /assets/photos/originals/Trips-Events
+                  name: photoprism-trips
+                - mountPath: /assets/cache
+                  name: photoprism-cache
+                - mountPath: /photoprism/storage
+                  name: photoprism-storage
+              resources:
+                limits:
+                  cpu: 100m
+                  memory: 1.5G
+                requests:
+                  cpu: 50m
+                  memory: 750M
+          volumes:
+            - name: photoprism-photos
+              persistentVolumeClaim:
+                claimName: photoprism-photos
+                readOnly: true
+            - name: photoprism-trips
+              persistentVolumeClaim:
+                claimName: photoprism-trips
+                readOnly: true
+            - name: photoprism-cache
+              persistentVolumeClaim:
+                claimName: photoprism-cache
+            - name: photoprism-storage
+              persistentVolumeClaim:
+                claimName: photoprism-storage
+  successfulJobsHistoryLimit: 1
+  failedJobsHistoryLimit: 1

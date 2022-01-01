@@ -92,6 +92,12 @@ echo -e " \n${BLUE}Uptime Kuma:${NC}"
 sed -i "s/<URL>/${URL}/g" kubernetes/uptime-kuma/uptime-kuma-traefik.yaml
 kubectl apply -f kubernetes/uptime-kuma
 
+echo -e " \n${BLUE}Photoprism:${NC}"
+sed -i "s/<URL>/${URL}/g" kubernetes/photoprism/photoprism-traefik.yaml
+sed -i "s/<PHOTOPRISM_DB_PASSWORD>/${PHOTOPRISM_DB_PASSWORD}/g" kubernetes/photoprism/photoprism-secret.yaml
+sed -i "s/<PHOTOPRISM_ADMIN_PASSWORD>/${PHOTOPRISM_ADMIN_PASSWORD}/g" kubernetes/photoprism/photoprism-secret.yaml
+kubectl apply -f kubernetes/photoprism
+
 echo -e " \n${BLUE}Gitlab Runner:${NC}"
 sed -i "s/<URL>/${URL}/g" kubernetes/gitlab/gitlab-runner/gitlab-runner-config-map.yaml
 sed -i "s/<GITLAB_RUNNER_TOKEN>/${GITLAB_RUNNER_TOKEN}/g" kubernetes/gitlab/gitlab-runner/gitlab-runner-config-map.yaml
