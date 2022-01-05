@@ -47,7 +47,8 @@ Database file needs to be restored manually.
 #### Ansible
 
 ```bash
-ansible-playbook -i ansible/inventory --ask-become-pass ansible/server.yaml --ask-pass --check
+ansible-playbook -i ansible/inventory --ask-become-pass ansible/k3s.yaml --ask-pass --check
+ansible-playbook -i ansible/inventory --ask-become-pass ansible/k3s-infra.yaml --ask-pass --check
 ansible-playbook -i ansible/inventory --ask-become-pass ansible/desktop.yaml --ask-pass --check
 ```
 
@@ -73,7 +74,11 @@ sudo umount /media/arthur/Timeshift
 <https://k3s.io/> <https://upcloud.com/community/tutorials/deploy-kubernetes-dashboard/>
 
 ```bash
+# Watch ALl Pods
 watch $(echo "kubectl get pods -A -o wide |  grep -v 'svclb' | sort -k8 -r")
+# Delete Pods that Have a Restart
+kubectl get pods -A | awk '$5>0' | awk '{print "kubectl delete pod -n " $1 " " $2}' | bash -
+# Drain Node
 kubectl drain k3s-worker --ignore-daemonsets --delete-emptydir-data
 
 # Server
