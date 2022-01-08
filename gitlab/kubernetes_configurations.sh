@@ -7,6 +7,19 @@ set -o pipefail
 BLUE='\033[1;34m'
 NC='\033[0m'
 
+echo -e " \n \n${BLUE}Load Secrets From Vault:${NC}"
+URL=$(vault kv get -field=url secret/gitlab/domain)
+CLOUDFLARE_EMAIL=$(vault kv get -field=api secret/gitlab/cloudflare)
+CLOUDFLARE_API=$(vault kv get -field=email secret/gitlab/cloudflare)
+GENERIC_CERT=$(vault kv get -field=generic_cert secret/gitlab/cert)
+GENERIC_KEY=$(vault kv get -field=generic_key secret/gitlab/cert)
+MARIADB_PASSWORD=$(vault kv get -field=password secret/gitlab/mariadb)
+PHOTOPRISM_DB_PASSWORD=$(vault kv get -field=db_password secret/gitlab/photoprism)
+PHOTOPRISM_ADMIN_PASSWORD=$(vault kv get -field=admin_password secret/gitlab/photoprism)
+GITLAB_RUNNER_TOKEN=$(vault kv get -field=token secret/gitlab/runner)
+HEALTH_CHECK_TOKEN=$(vault kv get -field=token secret/gitlab/health)
+echo "Secrets Loaded"
+
 echo -e " \n \n${BLUE}Kube System:${NC}"
 kubectl patch deployment -n kube-system metrics-server --patch "$(cat kubernetes/kube-system/metrics-server-deployment.yaml)"
 kubectl apply -f kubernetes/kube-system/kube-system-limitRange.yaml
@@ -67,7 +80,7 @@ sed -i "s/<URL>/${URL}/g" kubernetes/nextcloud/nextcloud-traefik.yaml
 kubectl apply -f kubernetes/nextcloud
 
 echo -e " \n${BLUE}Mariadb:${NC}"
-sed -i "s,<PASSWORD>,${SUDO},g" kubernetes/mariadb/mariadb-env-configmap.yaml
+sed -i "s,<PASSWORD>,${MARIADB_PASSWORD},g" kubernetes/mariadb/mariadb-env-configmap.yaml
 sed -i "s/<URL>/${URL}/g" kubernetes/mariadb/mariadb-traefik.yaml
 kubectl apply -f kubernetes/mariadb
 

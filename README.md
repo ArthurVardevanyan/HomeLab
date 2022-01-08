@@ -112,6 +112,36 @@ gitlab-ctl reconfigure
 kubectl patch -n gitlab deployment/gitlab --type='json' -p='[{"op": "replace", "path": "/spec/template/spec/containers/0/image", "value": "gitlab/gitlab-ce:XX.X.X-ce.0"}]'
 ```
 
+#### GitLab Vault Integration
+
+```bash
+# JWT Authentication
+vault auth enable jwt
+vault write auth/jwt/config jwks_url="<https://gitlab.<URL>/-/jwks>" bound_issuer="gitlab.<URL>"
+
+# Policy
+vault policy write homelab - <<EOF
+path "secret/data/*" {
+  capabilities = [ "read" ]
+}
+EOF
+
+# Role
+vault write auth/jwt/role/homelab - <<EOF
+{
+  "role_type": "jwt",
+  "policies": ["homelab"],
+  "token_explicit_max_ttl": 60,
+  "user_claim": "user_email",
+  "bound_claims": {
+    "project_id": "XX",
+    "ref": "production",
+    "ref_type": "branch"
+  }
+}
+EOF
+```
+
 #### Database
 
 ```sql

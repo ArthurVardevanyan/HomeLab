@@ -1,3 +1,6 @@
 FROM debian:stable-slim
 
-RUN apt-get update && apt-get install curl jq -y
+RUN apt-get update && apt-get install curl jq gnupg2 -y
+RUN curl -fsSL https://apt.releases.hashicorp.com/gpg | apt-key add -
+RUN echo "deb [arch=amd64] https://apt.releases.hashicorp.com bullseye main" | tee /etc/apt/sources.list.d/vault.list
+RUN apt-get update && apt-get install -y vault

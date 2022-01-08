@@ -18,6 +18,9 @@ GithubFinish:
   stage: github
   image: $CI_REGISTRY_IMAGE:toolbox
   script:
+    - export VAULT_ADDR=https://vault.${URL}
+    - export VAULT_TOKEN="$(vault write -field=token auth/jwt/login role=homelab jwt=$CI_JOB_JWT)"
+    - export GITHUB_TOKEN="$(vault kv get -field=token secret/gitlab/github)"
     - export DESCRIPTION="Completed Successfully"
     - export STATUS=success
     - gitlab/github-status.sh
@@ -28,6 +31,11 @@ Desktop:
   needs: []
   allow_failure: true
   before_script:
+    - export VAULT_ADDR=https://vault.${URL}
+    - export VAULT_TOKEN="$(vault write -field=token auth/jwt/login role=homelab jwt=$CI_JOB_JWT)"
+    - export SSH_KNOWN_HOSTS="$(vault kv get -field=known_hosts secret/gitlab/ssh)"
+    - export SSH_PRIVATE_KEY="$(vault kv get -field=private_key secret/gitlab/ssh)"
+    - export SUDO="$(vault kv get -field=sudo secret/gitlab/ssh)"
     - mkdir -p ~/.ssh
     - chmod 700 ~/.ssh
     - echo "$SSH_KNOWN_HOSTS" >> ~/.ssh/known_hosts
@@ -40,10 +48,16 @@ K3s:
   image: $CI_REGISTRY_IMAGE:ansible
   needs: []
   before_script:
+    - export VAULT_ADDR=https://vault.${URL}
+    - export VAULT_TOKEN="$(vault write -field=token auth/jwt/login role=homelab jwt=$CI_JOB_JWT)"
+    - export SSH_KNOWN_HOSTS="$(vault kv get -field=known_hosts secret/gitlab/ssh)"
+    - export SSH_PRIVATE_KEY="$(vault kv get -field=private_key secret/gitlab/ssh)"
+    - export SUDO="$(vault kv get -field=sudo secret/gitlab/ssh)"
     - mkdir -p ~/.ssh
     - chmod 700 ~/.ssh
     - echo "$SSH_KNOWN_HOSTS" >> ~/.ssh/known_hosts
     - chmod 644 ~/.ssh/known_hosts
+    - export DISCORD="$(vault kv get -field=webhook secret/gitlab/discord)"
     - sed -i "s,REPLACE_ME,${DISCORD},g" machineConfigs/server/home/arthur/discord/discord_bot.sh
     - sed -i "s,##,,g"  ansible/k3s.yaml
   script:
@@ -51,11 +65,15 @@ K3s:
     - ansible-playbook -i ansible/inventory ansible/k3s-infra.yaml --extra-vars "ansible_become_pass=${SUDO} ansible_ssh_pass=${SUDO} ansible_python_interpreter=/usr/bin/python3"
 
 Configurations:
+  # https://docs.gitlab.com/ee/ci/examples/authenticating-with-hashicorp-vault/
   stage: kubernetes
   when: always
   needs: []
   image: $CI_REGISTRY_IMAGE:kubernetes
   environment: production
+  before_script:
+    - export VAULT_ADDR=https://vault.${URL}
+    - export VAULT_TOKEN="$(vault write -field=token auth/jwt/login role=homelab jwt=$CI_JOB_JWT)"
   script:
     - gitlab/kubernetes_configurations.sh
 
