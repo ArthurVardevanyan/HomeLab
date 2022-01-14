@@ -5,7 +5,7 @@ metadata:
   namespace: grafana
 spec:
   accessModes:
-    - ReadWriteMany
+    - ReadWriteOnce
   resources:
     requests:
       storage: 50Mi
@@ -25,13 +25,13 @@ spec:
     volumeHandle: grafana
     fsType: ext4
     volumeAttributes:
-      diskSelector: k3s-infra-ssd
+      diskSelector: k3s-server-usb
       migratable: "false"
       nodeSelector: ""
-      numberOfReplicas: "1"
+      numberOfReplicas: "2"
       staleReplicaTimeout: "20"
   accessModes:
-    - ReadWriteMany
+    - ReadWriteOnce
   claimRef:
     kind: PersistentVolumeClaim
     name: grafana-pvc
