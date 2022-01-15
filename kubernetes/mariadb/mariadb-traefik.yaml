@@ -1,16 +1,14 @@
 # Doesn't Work
 apiVersion: traefik.containo.us/v1alpha1
-kind: IngressRoute
+kind: IngressRouteTCP
 metadata:
   name: mariadb
   namespace: database
 spec:
   entryPoints:
-    - web
-    - websecure
+    - mariadb
   routes:
-    - match: Host(`mariadb.<URL>`)
-      kind: Rule
+    - match: HostSNI(`*`)
       services:
         - name: mariadb
           port: 3306
