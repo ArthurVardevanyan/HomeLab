@@ -89,6 +89,7 @@ sed -i "s/<URL>/${URL}/g" kubernetes/phpmyadmin/phpmyadmin-traefik.yaml
 kubectl apply -f kubernetes/phpmyadmin
 
 echo -e " \n${BLUE}Home Assistant:${NC}"
+sed -i "s/<URL>/${URL}/g" kubernetes/homeassistant/homeassistant-traefik.yaml
 kubectl apply -f kubernetes/homeassistant
 
 echo -e " \n${BLUE}Vault:${NC}"
