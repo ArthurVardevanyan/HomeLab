@@ -1,5 +1,5 @@
 apiVersion: apps/v1
-kind: Deployment
+kind: StatefulSet
 metadata:
   name: photoprism
   namespace: photoprism
@@ -11,8 +11,7 @@ spec:
     matchLabels:
       app: photoprism
   #replicas: 1
-  strategy:
-    type: Recreate
+  serviceName: photoprism
   template:
     metadata:
       labels:

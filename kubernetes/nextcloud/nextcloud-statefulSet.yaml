@@ -1,4 +1,4 @@
-kind: Deployment
+kind: StatefulSet
 apiVersion: apps/v1
 metadata:
   name: nextcloud
@@ -7,6 +7,8 @@ metadata:
     app: nextcloud
 spec:
   replicas: 1
+  serviceName: nextcloud-np
+  revisionHistoryLimit: 0
   selector:
     matchLabels:
       app: nextcloud
@@ -114,7 +116,3 @@ spec:
       automountServiceAccountToken: false
       hostname: nextcloud
       schedulerName: default-scheduler
-  strategy:
-    type: Recreate
-  revisionHistoryLimit: 0
-  progressDeadlineSeconds: 600

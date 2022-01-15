@@ -120,6 +120,6 @@ echo -e " \n${BLUE}Gitlab:${NC}"
 sed -i "s/<URL>/${URL}/g" kubernetes/gitlab/gitlab-cert.yaml
 sed -i "s/<GENERIC_CERT>/${GENERIC_CERT}/g" kubernetes/gitlab/gitlab-cert.yaml
 sed -i "s/<GENERIC_KEY>/${GENERIC_KEY}/g" kubernetes/gitlab/gitlab-cert.yaml
-sed -i "s/<HEALTH_CHECK_TOKEN>/${HEALTH_CHECK_TOKEN}/g" kubernetes/gitlab/gitlab-deployment.yaml
+sed -i "s/<HEALTH_CHECK_TOKEN>/${HEALTH_CHECK_TOKEN}/g" kubernetes/gitlab/gitlab-statefulSet.yaml
 sed -i "s/<URL>/${URL}/g" kubernetes/gitlab/gitlab-traefik.yaml
 kubectl apply -f kubernetes/gitlab

@@ -1,5 +1,5 @@
 apiVersion: apps/v1
-kind: Deployment
+kind: StatefulSet
 metadata:
   name: mariadb
   namespace: database
@@ -10,9 +10,8 @@ spec:
   selector:
     matchLabels:
       app: mariadb
+  serviceName: mariadb
   revisionHistoryLimit: 0
-  strategy:
-    type: Recreate
   template:
     metadata:
       labels:

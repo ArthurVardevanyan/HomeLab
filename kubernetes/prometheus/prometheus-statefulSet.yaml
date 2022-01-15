@@ -1,5 +1,5 @@
 apiVersion: apps/v1
-kind: Deployment
+kind: StatefulSet
 metadata:
   name: prometheus
   namespace: prometheus
@@ -7,9 +7,8 @@ metadata:
     app: prometheus-server
 spec:
   replicas: 1
+  serviceName: prometheus-service
   revisionHistoryLimit: 0
-  strategy:
-    type: Recreate
   selector:
     matchLabels:
       app: prometheus-server

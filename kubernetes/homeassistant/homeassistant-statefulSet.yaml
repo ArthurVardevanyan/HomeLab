@@ -1,4 +1,4 @@
-kind: Deployment
+kind: StatefulSet
 apiVersion: apps/v1
 metadata:
   name: homeassistant
@@ -7,6 +7,8 @@ metadata:
     app: homeassistant
 spec:
   replicas: 1
+  serviceName: homeassistant
+  revisionHistoryLimit: 0
   selector:
     matchLabels:
       app: homeassistant
@@ -77,7 +79,3 @@ spec:
       hostNetwork: true
       hostname: homeassistant
       schedulerName: default-scheduler
-  strategy:
-    type: Recreate
-  revisionHistoryLimit: 0
-  progressDeadlineSeconds: 600

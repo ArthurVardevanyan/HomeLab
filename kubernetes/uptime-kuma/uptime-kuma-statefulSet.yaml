@@ -1,5 +1,5 @@
 apiVersion: apps/v1
-kind: Deployment
+kind: StatefulSet
 metadata:
   name: uptime-kuma
   namespace: uptime-kuma
@@ -8,11 +8,10 @@ metadata:
 spec:
   revisionHistoryLimit: 0
   replicas: 1
+  serviceName: uptime-kuma-service
   selector:
     matchLabels:
       app: uptime-kuma
-  strategy:
-    type: Recreate
   template:
     metadata:
       labels:

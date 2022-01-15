@@ -1,18 +1,17 @@
 apiVersion: apps/v1
-kind: Deployment
+kind: StatefulSet
 metadata:
   name: grafana
   namespace: grafana
   labels:
     app: grafana
 spec:
-  revisionHistoryLimit: 0
   replicas: 1
+  serviceName: grafana
+  revisionHistoryLimit: 0
   selector:
     matchLabels:
       app: grafana
-  strategy:
-    type: Recreate
   template:
     metadata:
       labels:

@@ -1,5 +1,5 @@
 apiVersion: apps/v1
-kind: Deployment
+kind: StatefulSet
 metadata:
   name: heimdall
   namespace: heimdall
@@ -7,11 +7,10 @@ metadata:
     app: heimdall
 spec:
   replicas: 1
+  serviceName: heimdall-service
   selector:
     matchLabels:
       app: heimdall
-  strategy:
-    type: Recreate
   revisionHistoryLimit: 0
   template:
     metadata:

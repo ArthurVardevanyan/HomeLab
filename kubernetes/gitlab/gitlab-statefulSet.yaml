@@ -1,4 +1,4 @@
-kind: Deployment
+kind: StatefulSet
 apiVersion: apps/v1
 metadata:
   name: gitlab
@@ -7,6 +7,7 @@ metadata:
     app: gitlab
 spec:
   replicas: 1
+  serviceName: gitlab
   selector:
     matchLabels:
       app: gitlab
@@ -95,7 +96,4 @@ spec:
       automountServiceAccountToken: true
       hostname: gitlab
       schedulerName: default-scheduler
-  strategy:
-    type: Recreate
   revisionHistoryLimit: 0
-  progressDeadlineSeconds: 600
