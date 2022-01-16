@@ -82,7 +82,7 @@ kubectl get pods -A | awk '$5>0' | awk '{print "kubectl delete pod -n " $1 " " $
 kubectl drain k3s-worker --ignore-daemonsets --delete-emptydir-data
 
 # Server
-curl -sfL https://get.k3s.io | INSTALL_K3S_EXEC="server --disable traefik --flannel-iface=enp1s0 --kubelet-arg system-reserved=cpu=250m,memory=500Mi --kubelet-arg kube-reserved=cpu=500m,memory=1Gi" INSTALL_K3S_CHANNEL=v1.22 sh -
+curl -sfL https://get.k3s.io | INSTALL_K3S_EXEC="server --cluster-init  --tls-san 10.0.0.100 --tls-san k3s.<URL>.com --disable traefik --flannel-iface=enp1s0 --kubelet-arg system-reserved=cpu=250m,memory=500Mi --kubelet-arg kube-reserved=cpu=500m,memory=1Gi" INSTALL_K3S_CHANNEL=v1.22 sh -
 
 # Infra
 curl -sfL https://get.k3s.io | INSTALL_K3S_EXEC="--flannel-iface=enp1s0 --kubelet-arg system-reserved=cpu=250m,memory=500Mi --kubelet-arg kube-reserved=cpu=250m,memory=500Mi" K3S_URL=https://10.0.0.5:6443 K3S_TOKEN=$K3S_TOKEN INSTALL_K3S_CHANNEL=v1.22 sh -
