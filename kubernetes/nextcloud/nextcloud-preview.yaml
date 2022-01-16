@@ -20,18 +20,9 @@ spec:
             - name: nextcloud-cert
               secret:
                 secretName: nextcloud-cert
-            - name: nextcloud-nextcloud
-              persistentVolumeClaim:
-                claimName: nextcloud-nextcloud
-            - name: nextcloud-apps
-              persistentVolumeClaim:
-                claimName: nextcloud-apps
             - name: nextcloud-config
               persistentVolumeClaim:
-                claimName: nextcloud-config
-            - name: nextcloud-apache2
-              persistentVolumeClaim:
-                claimName: nextcloud-apache2
+                claimName: nextcloud-config-pvc
             - name: nextcloud-data
               persistentVolumeClaim:
                 claimName: nextcloud-data
@@ -51,16 +42,16 @@ spec:
                   cpu: 50m
                   memory: 350M
               volumeMounts:
-                - name: nextcloud-nextcloud
-                  mountPath: /var/www/html
-                - name: nextcloud-apps
-                  mountPath: /var/www/html/custom_apps
                 - name: nextcloud-config
-                  mountPath: /var/www/html/config
-                - name: nextcloud-apache2
+                  mountPath: /var/www/html
+                  subPath: nextcloud
+                - name: nextcloud-config
                   mountPath: /etc/apache2
+                  subPath: apache2
+                  readOnly: true
                 - name: nextcloud-cert
                   mountPath: /ssl
+                  readOnly: true
                 - name: nextcloud-data
                   mountPath: /var/www/html/data
               terminationMessagePath: /dev/termination-log
