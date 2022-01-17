@@ -81,11 +81,33 @@ kubectl get pods -A | awk '$5>0' | awk '{print "kubectl delete pod -n " $1 " " $
 # Drain Node
 kubectl drain k3s-worker --ignore-daemonsets --delete-emptydir-data
 
+# Taint
+kubectl taint node k3s-server node-role.kubernetes.io/master:NoSchedule
+
+# Master Label
+kubectl label nodes k3s-server node-type=master
+kubectl label nodes k3s-infra node-type=master
+kubectl label nodes k3s-worker node-type=master
+
+# Role Label
+kubectl label node k3s-infra node-role.kubernetes.io/infra=true
+kubectl label node k3s-worker node-role.kubernetes.io/worker=true
+
+# Longhorn Label
+kubectl label node k3s-server node.longhorn.io/create-default-disk=true
+kubectl label node k3s-infra node.longhorn.io/create-default-disk=true
+kubectl label node k3s-worker node.longhorn.io/create-default-disk=true
+
+# Servers
 # Server
 curl -sfL https://get.k3s.io | INSTALL_K3S_EXEC="server --cluster-init  --tls-san 10.0.0.100 --tls-san k3s.<URL>.com --disable traefik --flannel-iface=enp1s0 --kubelet-arg system-reserved=cpu=250m,memory=500Mi --kubelet-arg kube-reserved=cpu=500m,memory=1Gi" INSTALL_K3S_CHANNEL=v1.22 sh -
-# Other Servers
-curl -sfL https://get.k3s.io | INSTALL_K3S_EXEC="server --server https://:6443 --tls-san 10.0.0.100 --tls-san k3s.<URL>.com --disable traefik --flannel-iface=enp1s0 --kubelet-arg system-reserved=cpu=250m,memory=500Mi --kubelet-arg kube-reserved=cpu=500m,memory=1Gi" INSTALL_K3S_CHANNEL=v1.22 sh -
+# Infra
+curl -sfL https://get.k3s.io | INSTALL_K3S_EXEC="server --server https://:6443 --disable traefik --flannel-iface=enp1s0 --kubelet-arg system-reserved=cpu=250m,memory=500Mi --kubelet-arg kube-reserved=cpu=250,memory=1Gi" INSTALL_K3S_CHANNEL=v1.22 sh -
+# Worker
+curl -sfL https://get.k3s.io | INSTALL_K3S_EXEC="server --server https://:6443 --disable traefik --flannel-iface=enp6s0 --kubelet-arg system-reserved=cpu=250m,memory=500Mi --kubelet-arg kube-reserved=cpu=500m,memory=1Gi" INSTALL_K3S_CHANNEL=v1.22 sh -
 
+
+# Agents
 # Infra
 curl -sfL https://get.k3s.io | INSTALL_K3S_EXEC="--flannel-iface=enp1s0 --kubelet-arg system-reserved=cpu=250m,memory=500Mi --kubelet-arg kube-reserved=cpu=250m,memory=500Mi" K3S_URL=https://10.0.0.5:6443 K3S_TOKEN=$K3S_TOKEN INSTALL_K3S_CHANNEL=v1.22 sh -
 

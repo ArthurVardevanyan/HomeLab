@@ -8,7 +8,7 @@ spec:
     - ReadWriteOnce
   resources:
     requests:
-      storage: 50Gi
+      storage: 15Gi
   volumeName: influxdb-pv
   storageClassName: longhorn-static
   volumeMode: Filesystem
@@ -19,16 +19,16 @@ metadata:
   name: influxdb-pv
 spec:
   capacity:
-    storage: 50Gi
+    storage: 15Gi
   csi:
     driver: driver.longhorn.io
     volumeHandle: influxdb
     fsType: ext4
     volumeAttributes:
-      diskSelector: ""
+      diskSelector: "k3s-infra-ssd"
       migratable: "false"
       nodeSelector: ""
-      numberOfReplicas: "1"
+      numberOfReplicas: "2"
       staleReplicaTimeout: "20"
   accessModes:
     - ReadWriteOnce

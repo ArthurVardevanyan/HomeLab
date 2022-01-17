@@ -8,7 +8,7 @@ spec:
     - ReadWriteOnce
   resources:
     requests:
-      storage: 35Gi
+      storage: 15Gi
   volumeName: loki-pv
   storageClassName: longhorn-static
   volumeMode: Filesystem
@@ -19,7 +19,7 @@ metadata:
   name: loki-pv
 spec:
   capacity:
-    storage: 35Gi
+    storage: 15Gi
   csi:
     driver: driver.longhorn.io
     volumeHandle: loki
@@ -28,7 +28,7 @@ spec:
       diskSelector: k3s-infra-ssd
       migratable: "false"
       nodeSelector: ""
-      numberOfReplicas: "1"
+      numberOfReplicas: "2"
       staleReplicaTimeout: "20"
   accessModes:
     - ReadWriteOnce
