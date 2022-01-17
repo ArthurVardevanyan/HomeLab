@@ -109,11 +109,19 @@ spec:
       labels:
         app: longhorn-ui
     spec:
-      nodeSelector:
-        node-role.kubernetes.io/master: "true"
       tolerations:
         - key: node-role.kubernetes.io/master
           effect: NoSchedule
+      affinity:
+        nodeAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 1
+              preference:
+                matchExpressions:
+                  - key: kubernetes.io/hostname
+                    operator: In
+                    values:
+                      - "k3s-server"
       containers:
         - name: longhorn-ui
           image: longhornio/longhorn-ui:v1.2.3
@@ -149,11 +157,19 @@ spec:
       labels:
         app: longhorn-driver-deployer
     spec:
-      nodeSelector:
-        node-role.kubernetes.io/master: "true"
       tolerations:
         - key: node-role.kubernetes.io/master
           effect: NoSchedule
+      affinity:
+        nodeAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 1
+              preference:
+                matchExpressions:
+                  - key: kubernetes.io/hostname
+                    operator: In
+                    values:
+                      - "k3s-server"
       initContainers:
         - name: wait-longhorn-manager
           image: longhornio/longhorn-manager:v1.2.3

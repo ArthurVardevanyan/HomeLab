@@ -20,11 +20,19 @@ spec:
         seccomp.security.alpha.kubernetes.io/defaultProfileName: "runtime/default"
         use-metadata.version-checker.io/uptime-kuma: "true"
     spec:
-      nodeSelector:
-        node-role.kubernetes.io/master: "true"
       tolerations:
         - key: node-role.kubernetes.io/master
           effect: NoSchedule
+      affinity:
+        nodeAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 1
+              preference:
+                matchExpressions:
+                  - key: kubernetes.io/hostname
+                    operator: In
+                    values:
+                      - "k3s-server"
       hostname: uptime-kuma
       restartPolicy: Always
       automountServiceAccountToken: false

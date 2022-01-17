@@ -23,11 +23,19 @@ spec:
     spec:
       automountServiceAccountToken: false
       serviceAccountName: heimdall-sa
-      nodeSelector:
-        node-role.kubernetes.io/master: "true"
       tolerations:
         - key: node-role.kubernetes.io/master
           effect: NoSchedule
+      affinity:
+        nodeAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 1
+              preference:
+                matchExpressions:
+                  - key: kubernetes.io/hostname
+                    operator: In
+                    values:
+                      - "k3s-server"
       containers:
         - image: linuxserver/heimdall:2.2.2
           imagePullPolicy: IfNotPresent

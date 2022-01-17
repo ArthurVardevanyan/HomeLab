@@ -1,8 +1,16 @@
 spec:
   template:
     spec:
-      nodeSelector:
-        node-type: master
+      affinity:
+        nodeAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 1
+              preference:
+                matchExpressions:
+                  - key: kubernetes.io/hostname
+                    operator: In
+                    values:
+                      - "k3s-server"
       containers:
         - name: metrics-server
           args:

@@ -24,11 +24,19 @@ spec:
             seccomp.security.alpha.kubernetes.io/defaultProfileName: "runtime/default"
             enable.version-checker.io/version-checker: "true"
         spec:
-          nodeSelector:
-            node-type: master
           tolerations:
             - key: node-role.kubernetes.io/master
               effect: NoSchedule
+          affinity:
+            nodeAffinity:
+              preferredDuringSchedulingIgnoredDuringExecution:
+                - weight: 1
+                  preference:
+                    matchExpressions:
+                      - key: kubernetes.io/hostname
+                        operator: In
+                        values:
+                          - "k3s-server"
           automountServiceAccountToken: true
           securityContext:
             fsGroup: 65554

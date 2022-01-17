@@ -110,11 +110,19 @@ spec:
       restartPolicy: Always
       terminationGracePeriodSeconds: 30
       dnsPolicy: ClusterFirst
-      nodeSelector:
-        node-type: master
       tolerations:
         - key: node-role.kubernetes.io/master
           effect: NoSchedule
+      affinity:
+        nodeAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 1
+              preference:
+                matchExpressions:
+                  - key: kubernetes.io/hostname
+                    operator: In
+                    values:
+                      - "k3s-server"
       serviceAccountName: kubernetes-dashboard
       serviceAccount: kubernetes-dashboard
       securityContext:
