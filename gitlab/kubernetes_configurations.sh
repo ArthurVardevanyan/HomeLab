@@ -9,8 +9,8 @@ NC='\033[0m'
 
 echo -e " \n \n${BLUE}Load Secrets From Vault:${NC}"
 URL=$(vault kv get -field=url secret/gitlab/domain)
-CLOUDFLARE_EMAIL=$(vault kv get -field=api secret/gitlab/cloudflare)
-CLOUDFLARE_API=$(vault kv get -field=email secret/gitlab/cloudflare)
+CLOUDFLARE_EMAIL=$(vault kv get -field=email secret/gitlab/cloudflare)
+CLOUDFLARE_API=$(vault kv get -field=api secret/gitlab/cloudflare)
 GENERIC_CERT=$(vault kv get -field=generic_cert secret/gitlab/cert)
 GENERIC_KEY=$(vault kv get -field=generic_key secret/gitlab/cert)
 MARIADB_PASSWORD=$(vault kv get -field=password secret/gitlab/mariadb)
