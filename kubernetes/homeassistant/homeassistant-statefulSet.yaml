@@ -17,8 +17,8 @@ spec:
       labels:
         app: homeassistant
       annotations:
+        enable.version-checker.io/homeassistant: "true"
         seccomp.security.alpha.kubernetes.io/defaultProfileName: runtime/default
-        use-metadata.version-checker.io/homeassistant: "true"
     spec:
       volumes:
         - name: homeassistant-pvc
@@ -27,7 +27,7 @@ spec:
       serviceAccountName: homeassistant-sa
       containers:
         - name: homeassistant
-          image: homeassistant/home-assistant:2021.12.5
+          image: homeassistant/home-assistant:2021.12.10
           securityContext:
             seccompProfile:
               type: RuntimeDefault

@@ -17,8 +17,8 @@ spec:
       labels:
         app: grafana
       annotations:
+        enable.version-checker.io/grafana: "true"
         seccomp.security.alpha.kubernetes.io/defaultProfileName: "runtime/default"
-        use-metadata.version-checker.io/grafana: "true"
     spec:
       securityContext:
         fsGroup: 11472
@@ -32,7 +32,7 @@ spec:
       automountServiceAccountToken: false
       serviceAccountName: grafana-sa
       containers:
-        - image: grafana/grafana:8.3.3
+        - image: grafana/grafana:8.3.4
           imagePullPolicy: IfNotPresent
           name: grafana
           securityContext:

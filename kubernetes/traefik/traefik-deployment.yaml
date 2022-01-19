@@ -20,8 +20,8 @@ spec:
   template:
     metadata:
       annotations:
+        enable.version-checker.io/traefik: "true"
         seccomp.security.alpha.kubernetes.io/defaultProfileName: runtime/default
-        use-metadata.version-checker.io/traefik: "true"
       labels:
         app: traefik
     spec:
@@ -118,11 +118,19 @@ spec:
             - mountPath: /tmp
               name: tmp
       dnsPolicy: ClusterFirst
-      nodeSelector:
-        node-type: master
       tolerations:
         - key: node-role.kubernetes.io/master
           effect: NoSchedule
+      affinity:
+        nodeAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 1
+              preference:
+                matchExpressions:
+                  - key: kubernetes.io/hostname
+                    operator: In
+                    values:
+                      - "k3s-server"
       restartPolicy: Always
       schedulerName: default-scheduler
       serviceAccountName: traefik

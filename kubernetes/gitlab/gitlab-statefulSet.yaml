@@ -16,8 +16,9 @@ spec:
       labels:
         app: gitlab
       annotations:
+        enable.version-checker.io/gitlab: "true"
+        match-regex.version-checker.io/gitlab: ".*-ce.0$"
         seccomp.security.alpha.kubernetes.io/defaultProfileName: runtime/default
-        use-metadata.version-checker.io/gitlab: "true"
     spec:
       volumes:
         - name: gitlab-data-pvc
@@ -31,7 +32,7 @@ spec:
             secretName: gitlab-cert
       containers:
         - name: gitlab
-          image: gitlab/gitlab-ce:14.6.2-ce.0
+          image: gitlab/gitlab-ce:14.6.3-ce.0
           securityContext:
             seccompProfile:
               type: RuntimeDefault

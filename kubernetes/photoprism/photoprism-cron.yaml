@@ -12,6 +12,12 @@ spec:
     spec:
       backoffLimit: 0
       template:
+        metadata:
+          labels:
+            app: photoprism
+          annotations:
+            enable.version-checker.io/photoprism: "true"
+            seccomp.security.alpha.kubernetes.io/defaultProfileName: "runtime/default"
         spec:
           hostname: photoprism
           automountServiceAccountToken: false
