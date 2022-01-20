@@ -1,4 +1,4 @@
-# Doesn't Work
+# Loses Source IP if Pod Node Differs from Incoming Traffic Node
 apiVersion: traefik.containo.us/v1alpha1
 kind: IngressRouteTCP
 metadata:
@@ -8,7 +8,7 @@ spec:
   entryPoints:
     - mariadb
   routes:
-    - match: HostSNI(`*`)
+    - match: HostSNI(`mariadb.<URL>`)
       services:
         - name: mariadb
           port: 3306
