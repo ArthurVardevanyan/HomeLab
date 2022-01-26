@@ -71,9 +71,13 @@ sudo umount /media/arthur/Timeshift
 
 #### Kubernetes
 
-<https://k3s.io/> <https://upcloud.com/community/tutorials/deploy-kubernetes-dashboard/>
+<https://k3s.io/>
 
 ```bash
+# Kubernetes Dashboard
+# <https://upcloud.com/community/tutorials/deploy-kubernetes-dashboard>
+kubectl get secret -n kubernetes-dashboard $(kubectl get serviceaccount admin-user -n kubernetes-dashboard -o jsonpath="{.secrets[0].name}") -o jsonpath="{.data.token}" | base64 --decode
+
 # Watch ALl Pods
 watch $(echo "kubectl get pods -A -o wide |  grep -v 'svclb' | sort -k8 -r")
 # Delete Pods that Have a Restart
