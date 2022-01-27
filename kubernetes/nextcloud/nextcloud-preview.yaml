@@ -4,7 +4,7 @@ metadata:
   name: nextcloud-preview
   namespace: nextcloud
 spec:
-  schedule: "0 5 * * 0"
+  schedule: "0 7 * * *"
   concurrencyPolicy: Forbid
   suspend: false
   startingDeadlineSeconds: 60
@@ -33,13 +33,13 @@ spec:
                 - /bin/sh
                 - -c
                 - runuser -u www-data --  php -f /var/www/html/occ preview:delete_old \
-                  && runuser -u www-data --  php -f /var/www/html/occ preview:generate-all
+                  && runuser -u www-data --  php -f /var/www/html/occ preview:pre-generate
               resources:
                 limits:
-                  cpu: 100m
+                  cpu: 250m
                   memory: 500M
                 requests:
-                  cpu: 50m
+                  cpu: 125m
                   memory: 350M
               volumeMounts:
                 - name: nextcloud-config

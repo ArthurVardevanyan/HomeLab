@@ -103,8 +103,12 @@ kubectl label node k3s-infra node.longhorn.io/create-default-disk=true
 kubectl label node k3s-worker node.longhorn.io/create-default-disk=true
 
 # Servers
+#First Time Setup
+curl -sfL https://get.k3s.io | INSTALL_K3S_EXEC="server --cluster-init  --tls-san 10.0.0.100 --tls-san k3s.<URL>.com --disable traefik --flannel-iface=enp1s0 --kubelet-arg system-reserved=cpu=250m,memory=500Mi --kubelet-arg kube-reserved=cpu=500m,memory=1Gi" INSTALL_K3S_CHANNEL=v1.22
+
 # Server
-curl -sfL https://get.k3s.io | INSTALL_K3S_EXEC="server --cluster-init  --tls-san 10.0.0.100 --tls-san k3s.<URL>.com --disable traefik --flannel-iface=enp1s0 --kubelet-arg system-reserved=cpu=250m,memory=500Mi --kubelet-arg kube-reserved=cpu=500m,memory=1Gi" INSTALL_K3S_CHANNEL=v1.22 sh -
+curl -sfL https://get.k3s.io | INSTALL_K3S_EXEC="server --server https://:6443 --disable traefik --flannel-iface=enp1s0 --kubelet-arg system-reserved=cpu=250m,memory=500Mi --kubelet-arg kube-reserved=cpu=500m,memory=1Gi" INSTALL_K3S_CHANNEL=v1.22 sh -
+sh -
 # Infra
 curl -sfL https://get.k3s.io | INSTALL_K3S_EXEC="server --server https://:6443 --disable traefik --flannel-iface=enp1s0 --kubelet-arg system-reserved=cpu=250m,memory=500Mi --kubelet-arg kube-reserved=cpu=250,memory=1Gi" INSTALL_K3S_CHANNEL=v1.22 sh -
 # Worker
@@ -136,6 +140,7 @@ kubectl exec -it $(kubectl -n vault get pod --selector='app=vault' -o custom-col
 ```bash
 gitlab-ctl registry-garbage-collect
 gitlab-ctl reconfigure
+kubectl exec -it gitlab-0 -n gitlab -- bash
 
 kubectl patch -n gitlab deployment/gitlab --type='json' -p='[{"op": "replace", "path": "/spec/template/spec/containers/0/image", "value": "gitlab/gitlab-ce:XX.X.X-ce.0"}]'
 ```
@@ -184,4 +189,10 @@ GRANT ALL PRIVILEGES ON spotifyTest.* TO `spotifyTest`@`10.42.0.%`;
 
 # View Only Access
 GRANT SELECT, LOCK TABLES, SHOW VIEW ON *.* TO 'backup'@'10.42.0.1' IDENTIFIED BY 'backup';
+```
+
+#### Nextcloud
+
+```bash
+kubectl exec -it nextcloud-0 -n nextcloud -- runuser -u www-data -- php -f /var/www/html/occ
 ```
