@@ -1,6 +1,6 @@
 # HomeLab
 
-HomeLab Server & Desktop Configuration
+HomeLab Server/Cluster, Virtual Sandbox Cluster, & Desktop Configuration
 
 - Server: Debian Stable /w K3s & ZFS
 - Desktop: Pop!_OS Latest
@@ -41,6 +41,14 @@ machineConfigs/home/arthur/cura
 #### GWE
 
 Database file needs to be restored manually.
+
+### Virtual Sandbox
+
+```bash
+mkdir -p notes
+time bash kvm_k3s.bash install_cluster > notes/install.log
+# Enter Password Defined with Hash in Pre Seed Config
+```
 
 ### Server
 
