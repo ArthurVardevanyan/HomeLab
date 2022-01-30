@@ -18,6 +18,9 @@ set -o pipefail
 # virsh net-destroy default
 # virsh net-start default
 
+BLUE='\033[1;34m'
+NC='\033[0m'
+
 export LIBVIRT_DEFAULT_URI=qemu:///system
 export PREFIX="sk3s"       # Sandbox k3s
 export K3S_TOKEN=${PREFIX} # Sandbox k3s
@@ -91,6 +94,93 @@ label_cluster() {
 
 load_kubeconfig() {
 	export KUBECONFIG=${HOME}/vm/${PREFIX}/${PREFIX}.yaml
+}
+
+install_addons() {
+	# Tweak Settings from Physical HomeLab
+	load_kubeconfig
+
+	echo -e " \n \n${BLUE}Get URL:${NC}"
+	URL=${URL:-}
+	if [ -z "${URL}" ]; then
+		echo -n URL:
+		read -r -s URL
+		echo ""
+	fi
+	echo "${URL}"
+
+	echo -e " \n \n${BLUE}Kube System:${NC}"
+	kubectl patch deployment -n kube-system metrics-server --patch "$(cat kubernetes/kube-system/metrics-server-deployment.yaml)"
+	kubectl apply -f kubernetes/kube-system/kube-system-limitRange.yaml
+	kubectl apply -f kubernetes/kube-system/kube-system-resourceQuota.yaml
+
+	echo -e " \n${BLUE}Traefik:${NC}"
+	kubectl apply -f kubernetes/traefik/traefik-namespace.yaml
+	sed -i "s/<URL>/${URL}/g" kubernetes/traefik/traefik-dashboard-traefik.yaml
+	rm -f kubernetes/traefik/cluster-wildcard-certificate.yaml
+	kubectl apply -f kubernetes/traefik
+
+	echo -e " \n${BLUE}Longhorn:${NC}"
+	kubectl apply -f kubernetes/longhorn/longhorn-namespace.yaml
+	sed -i "s/<URL>/${URL}/g" kubernetes/longhorn/longhorn-traefik.yaml
+	kubectl apply -f kubernetes/longhorn
+
+	echo -e " \n${BLUE}Kube Eagle:${NC}"
+	kubectl apply -f kubernetes/kube-eagle
+
+	echo -e " \n${BLUE}Kubernetes Dashboard:${NC}"
+	kubectl apply -f kubernetes/kubernetes-dashboard/kubernetes-dashboard-namespace.yaml
+	sed -i "s/<URL>/${URL}/g" kubernetes/kubernetes-dashboard/kubernetes-dashboard-traefik.yaml
+	kubectl apply -f kubernetes/kubernetes-dashboard
+
+	echo -e " \n${BLUE}Image Version Checker:${NC}"
+	kubectl apply -f kubernetes/version-checker/version-checker-namespace.yaml
+	kubectl apply -f kubernetes/version-checker
+
+	echo -e " \n${BLUE}Heimdall:${NC}"
+	kubectl apply -f kubernetes/heimdall/heimdall-namespace.yaml
+	sed -i "s/- k3s-server-usb//g" kubernetes/heimdall/heimdall-longhorn.yaml
+	sed -i "s/diskSelector://g" kubernetes/heimdall/heimdall-longhorn.yaml
+	sed -i "s/numberOfReplicas: 3/numberOfReplicas: 2/g" kubernetes/heimdall/heimdall-longhorn.yaml
+	sed -i "s/<URL>/${URL}/g" kubernetes/heimdall/heimdall-traefik.yaml
+	kubectl apply -f kubernetes/heimdall
+
+	echo -e " \n${BLUE}Prometheus:${NC}"
+	kubectl apply -f kubernetes/prometheus/prometheus-namespace.yaml
+	sed -i "s/- k3s-infra-ssd//g" kubernetes/prometheus/prometheus-longhorn.yaml
+	sed -i "s/diskSelector://g" kubernetes/prometheus/prometheus-longhorn.yaml
+	sed -i "s/<URL>/${URL}/g" kubernetes/prometheus/prometheus-traefik.yaml
+	kubectl apply -f kubernetes/prometheus
+
+	echo -e " \n${BLUE}Grafana:${NC}"
+	kubectl apply -f kubernetes/grafana/grafana-namespace.yaml
+	sed -i "s/- k3s-server-usb//g" kubernetes/grafana/grafana-longhorn.yaml
+	sed -i "s/diskSelector://g" kubernetes/grafana/grafana-longhorn.yaml
+	sed -i "s/numberOfReplicas: 3/numberOfReplicas: 2/g" kubernetes/grafana/grafana-longhorn.yaml
+	sed -i "s/<URL>/${URL}/g" kubernetes/grafana/grafana-traefik.yaml
+	kubectl apply -f kubernetes/grafana
+
+	echo -e " \n${BLUE}Grafana Loki:${NC}"
+	sed -i "s/- k3s-infra-ssd//g" kubernetes/grafana-loki/loki-longhorn.yaml
+	sed -i "s/diskSelector://g" kubernetes/grafana-loki/loki-longhorn.yaml
+	kubectl apply -f kubernetes/grafana-loki
+
+	echo -e " \n${BLUE}Grafana Promtail:${NC}"
+	kubectl apply -f kubernetes/grafana-promtail
+
+	echo -e " \n${BLUE}Uptime Kuma:${NC}"
+	kubectl apply -f kubernetes/uptime-kuma/uptime-kuma-namespace.yaml
+	sed -i "s/- k3s-server-ssd//g" kubernetes/uptime-kuma/uptime-kuma-longhorn.yaml
+	sed -i "s/diskSelector://g" kubernetes/uptime-kuma/uptime-kuma-longhorn.yaml
+	sed -i "s/numberOfReplicas: 3/numberOfReplicas: 2/g" kubernetes/uptime-kuma/uptime-kuma-longhorn.yaml
+	sed -i "s/<URL>/${URL}/g" kubernetes/uptime-kuma/uptime-kuma-traefik.yaml
+	kubectl apply -f kubernetes/uptime-kuma
+}
+
+dashboard_secret() {
+	load_kubeconfig
+	echo -e " \n${BLUE}Kubernetes Dasboard Secret:${NC}"
+	kubectl get secret -n kubernetes-dashboard $(kubectl get serviceaccount admin-user -n kubernetes-dashboard -o jsonpath="{.secrets[0].name}") -o jsonpath="{.data.token}" | base64 --decode
 }
 install_cluster() {
 	echo -n Password:
@@ -205,8 +295,6 @@ install_cluster() {
 		fi
 		((IP++))
 	done
-
-	label_cluster
 
 	echo ""
 	echo "export KUBECONFIG=${HOME}/vm/${PREFIX}/${PREFIX}.yaml"
