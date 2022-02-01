@@ -37,6 +37,7 @@ echo -e " \n${BLUE}Traefik:${NC}"
 kubectl apply -f kubernetes/traefik/traefik-namespace.yaml
 sed -i "s/<URL>/${URL}/g" kubernetes/traefik/traefik-dashboard-traefik.yaml
 sed -i "s/<URL>/${URL}/g" kubernetes/traefik/cluster-wildcard-certificate.yaml
+kubectl apply -f kubernetes/traefik/traefik-crd.yaml
 kubectl apply -f kubernetes/traefik
 
 echo -e " \n${BLUE}Longhorn:${NC}"
