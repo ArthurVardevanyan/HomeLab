@@ -250,7 +250,6 @@ install_addons() {
 	kubectl apply -f /tmp/kubernetes/grafana/grafana-namespace.yaml
 	sed -i "s/- k3s-server-usb//g" /tmp/kubernetes/grafana/grafana-longhorn.yaml
 	sed -i "s/diskSelector://g" /tmp/kubernetes/grafana/grafana-longhorn.yaml
-	sed -i "s/numberOfReplicas: 3/numberOfReplicas: 2/g" /tmp/kubernetes/grafana/grafana-longhorn.yaml
 	sed -i "s/<URL>/${URL}/g" /tmp/kubernetes/grafana/grafana-traefik.yaml
 	kubectl apply -f /tmp/kubernetes/grafana
 
@@ -272,7 +271,6 @@ install_addons_optional() {
 	kubectl apply -f /tmp/kubernetes/heimdall/heimdall-namespace.yaml
 	sed -i "s/- k3s-server-usb//g" /tmp/kubernetes/heimdall/heimdall-longhorn.yaml
 	sed -i "s/diskSelector://g" /tmp/kubernetes/heimdall/heimdall-longhorn.yaml
-	sed -i "s/numberOfReplicas: 3/numberOfReplicas: 2/g" /tmp/kubernetes/heimdall/heimdall-longhorn.yaml
 	sed -i "s/<URL>/${URL}/g" /tmp/kubernetes/heimdall/heimdall-traefik.yaml
 	sed -i "s[tolerations:[[g" /tmp/kubernetes/heimdall/heimdall-statefulSet.yaml
 	sed -i "s[- key: node-role.kubernetes.io/master[[g" /tmp/kubernetes/heimdall/heimdall-statefulSet.yaml
@@ -283,7 +281,6 @@ install_addons_optional() {
 	kubectl apply -f /tmp/kubernetes/uptime-kuma/uptime-kuma-namespace.yaml
 	sed -i "s/- k3s-server-ssd//g" /tmp/kubernetes/uptime-kuma/uptime-kuma-longhorn.yaml
 	sed -i "s/diskSelector://g" /tmp/kubernetes/uptime-kuma/uptime-kuma-longhorn.yaml
-	sed -i "s/numberOfReplicas: 3/numberOfReplicas: 2/g" /tmp/kubernetes/uptime-kuma/uptime-kuma-longhorn.yaml
 	sed -i "s/<URL>/${URL}/g" /tmp/kubernetes/uptime-kuma/uptime-kuma-traefik.yaml
 	sed -i "s[tolerations:[[g" /tmp/kubernetes/uptime-kuma/uptime-kuma-statefulSet.yaml
 	sed -i "s[- key: node-role.kubernetes.io/master[[g" /tmp/kubernetes/uptime-kuma/uptime-kuma-statefulSet.yaml
