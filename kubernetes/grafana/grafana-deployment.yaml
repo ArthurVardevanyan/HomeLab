@@ -1,5 +1,5 @@
 apiVersion: apps/v1
-kind: StatefulSet
+kind: Deployment
 metadata:
   name: grafana
   namespace: grafana
@@ -7,7 +7,6 @@ metadata:
     app: grafana
 spec:
   replicas: 1
-  serviceName: grafana
   revisionHistoryLimit: 0
   selector:
     matchLabels:
@@ -39,7 +38,6 @@ spec:
             runAsGroup: 11472
             runAsUser: 11472
             runAsNonRoot: true
-            readOnlyRootFilesystem: true
             allowPrivilegeEscalation: false
             seccompProfile:
               type: RuntimeDefault
@@ -66,10 +64,14 @@ spec:
             limits:
               memory: "200M"
               cpu: "150m"
-          volumeMounts:
-            - name: grafana-pvc
-              mountPath: /var/lib/grafana/
-      volumes:
-        - name: grafana-pvc
-          persistentVolumeClaim:
-            claimName: grafana-pvc
+          env:
+            - name: GF_DATABASE_TYPE
+              value: mysql
+            - name: GF_DATABASE_HOST
+              value: mariadb.database
+            - name: GF_DATABASE_NAME
+              value: grafana
+            - name: GF_DATABASE_USER
+              value: grafana
+            - name: GF_DATABASE_PASSWORD
+              value: grafana
