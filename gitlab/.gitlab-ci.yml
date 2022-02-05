@@ -58,7 +58,7 @@ K3s:
     - echo "$SSH_KNOWN_HOSTS" >> ~/.ssh/known_hosts
     - chmod 644 ~/.ssh/known_hosts
     - export DISCORD="$(vault kv get -field=webhook secret/gitlab/discord)"
-    - sed -i "s,REPLACE_ME,${DISCORD},g" machineConfigs/server/home/arthur/discord/discord_bot.sh
+    - sed -i "s,REPLACE_ME,${DISCORD},g" machineConfigs/k3s/home/arthur/discord/discord_bot.sh
     - sed -i "s,##,,g"  ansible/k3s.yaml
   script:
     - ansible-playbook -i ansible/inventory ansible/k3s.yaml --extra-vars "ansible_become_pass=${SUDO} ansible_ssh_pass=${SUDO} ansible_python_interpreter=/usr/bin/python3"
