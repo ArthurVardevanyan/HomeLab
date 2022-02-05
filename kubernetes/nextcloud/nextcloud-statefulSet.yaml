@@ -21,8 +21,16 @@ spec:
         seccomp.security.alpha.kubernetes.io/defaultProfileName: runtime/default
     spec:
       serviceAccountName: nextcloud-sa
-      nodeSelector:
-        kubernetes.io/hostname: k3s-infra
+      affinity:
+        nodeAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 1
+              preference:
+                matchExpressions:
+                  - key: kubernetes.io/hostname
+                    operator: In
+                    values:
+                      - "k3s-infra"
       volumes:
         - name: nextcloud-cert
           secret:

@@ -14,8 +14,25 @@ spec:
       template:
         spec:
           serviceAccountName: nextcloud-sa
-          nodeSelector:
-            kubernetes.io/hostname: k3s-infra
+          affinity:
+            nodeAffinity:
+              preferredDuringSchedulingIgnoredDuringExecution:
+                - weight: 1
+                  preference:
+                    matchExpressions:
+                      - key: kubernetes.io/hostname
+                        operator: In
+                        values:
+                          - "k3s-infra"
+            podAffinity:
+              requiredDuringSchedulingIgnoredDuringExecution:
+                - labelSelector:
+                    matchExpressions:
+                      - key: app
+                        operator: In
+                        values:
+                          - nextcloud
+                  topologyKey: kubernetes.io/hostname
           volumes:
             - name: nextcloud-cert
               secret:
