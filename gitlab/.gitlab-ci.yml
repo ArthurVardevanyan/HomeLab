@@ -27,7 +27,7 @@ GithubFinish:
 
 Desktop:
   stage: ansible
-  image: $CI_REGISTRY_IMAGE:ansible
+  image: $CI_REGISTRY_IMAGE:toolbox
   needs: []
   allow_failure: true
   before_script:
@@ -45,7 +45,7 @@ Desktop:
 
 K3s:
   stage: ansible
-  image: $CI_REGISTRY_IMAGE:ansible
+  image: $CI_REGISTRY_IMAGE:toolbox
   needs: []
   before_script:
     - export VAULT_ADDR=https://vault.${URL}
@@ -68,7 +68,7 @@ Configurations:
   stage: kubernetes
   when: always
   needs: []
-  image: $CI_REGISTRY_IMAGE:kubernetes
+  image: $CI_REGISTRY_IMAGE:toolbox
   environment: production
   before_script:
     - export VAULT_ADDR=https://vault.${URL}
@@ -94,41 +94,3 @@ Toolbox:
     - docker pull $CI_REGISTRY_IMAGE:toolbox || true
     - docker build --network host -f gitlab/dockerfile --cache-from $CI_REGISTRY_IMAGE:toolbox -t $CI_REGISTRY_IMAGE:toolbox .
     - docker push $CI_REGISTRY_IMAGE:toolbox
-
-Ansible:
-  stage: images
-  when: manual
-  image: docker:latest
-  variables:
-    DOCKER_HOST: tcp://docker:2375
-    DOCKER_DRIVER: overlay2
-    DOCKER_TLS_CERTDIR: ""
-  services:
-    - name: docker:dind
-      alias: docker
-      command: ["--tls=false"]
-  before_script:
-    - docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" $CI_REGISTRY
-  script:
-    - docker pull $CI_REGISTRY_IMAGE:ansible || true
-    - docker build --network host -f ansible/dockerfile --cache-from $CI_REGISTRY_IMAGE:ansible -t $CI_REGISTRY_IMAGE:ansible .
-    - docker push $CI_REGISTRY_IMAGE:ansible
-
-Kubernetes:
-  stage: images
-  when: manual
-  image: docker:latest
-  variables:
-    DOCKER_HOST: tcp://docker:2375
-    DOCKER_DRIVER: overlay2
-    DOCKER_TLS_CERTDIR: ""
-  services:
-    - name: docker:dind
-      alias: docker
-      command: ["--tls=false"]
-  before_script:
-    - docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" $CI_REGISTRY
-  script:
-    - docker pull $CI_REGISTRY_IMAGE:kubernetes || true
-    - docker build --network host -f kubernetes/dockerfile --cache-from $CI_REGISTRY_IMAGE:kubernetes -t $CI_REGISTRY_IMAGE:kubernetes .
-    - docker push $CI_REGISTRY_IMAGE:kubernetes

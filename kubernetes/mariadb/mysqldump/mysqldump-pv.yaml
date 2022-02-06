@@ -1,0 +1,37 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  namespace: database
+  name: mysqldump-pvc
+spec:
+  storageClassName: nfs
+  volumeName: mysqldump-pv
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 15G
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  namespace: database
+  name: mysqldump-pv
+  labels:
+    type: local
+spec:
+  storageClassName: nfs
+  volumeMode: Filesystem
+  capacity:
+    storage: 15G
+  accessModes:
+    - ReadWriteOnce
+  mountOptions:
+    - hard
+    - nfsvers=4.1
+  nfs:
+    path: /backup/Kubernetes/mysqldump
+    server: 10.0.0.3
+  claimRef:
+    name: mysqldump-pvc
+    namespace: database

@@ -1,0 +1,43 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: mysqldump-config
+  labels:
+    name: mysqldump-config
+  namespace: database
+data:
+  mysqldump.sh: |-
+    #!/bin/sh
+
+    echo "Rotating SQL Files"
+    logrotate -vf  /etc/logrotate.d/mysqldump
+
+    URL=mariadb.database
+    LOCATION=/mnt/mysqldump
+
+    echo "Dumping MariaDB Database Configs"
+    mysqldump -h ${URL} --port=3306 -ubackup -pbackup  mysql           > ${LOCATION}/mysql/mysql.sql
+    echo "Dumping Grafana"
+    mysqldump -h ${URL} --port=3306 -ubackup -pbackup  grafana         > ${LOCATION}/grafana/grafana.sql
+    echo "Dumping Nextcloud"
+    mysqldump -h ${URL} --port=3306 -ubackup -pbackup  nextcloud       > ${LOCATION}/nextcloud/nextcloud.sql
+    echo "Dumping Spotify"
+    mysqldump -h ${URL} --port=3306 -ubackup -pbackup  spotify         > ${LOCATION}/spotify/spotify.sql
+    echo "Dumping Finance Tracker"
+    mysqldump -h ${URL} --port=3306 -ubackup -pbackup  FinanceTracker  > ${LOCATION}/FinanceTracker/FinanceTracker.sql
+    echo "Dumping Fitness Data"
+    mysqldump -h ${URL} --port=3306 -ubackup -pbackup  fitness         > ${LOCATION}/fitness/fitness.sql
+
+    echo "Dumping Spotify Testing"
+    mysqldump -h ${URL} --port=3306 -ubackup -pbackup  spotifyExternal > ${LOCATION}/spotifyExternal/spotifyExternal.sql
+
+  mysqldump: |-
+    /mnt/mysqldump/*/*.sql {
+      daily
+      rotate 90
+      compress
+      delaycompress
+      create 640 root backup
+      dateext
+      dateformat .%Y-%m-%dT%H:%M:%S
+    }

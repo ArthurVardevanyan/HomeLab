@@ -1,0 +1,54 @@
+kind: CronJob
+apiVersion: batch/v1
+metadata:
+  name: mysqldump-cron
+  namespace: database
+spec:
+  schedule: "* 7 * * *"
+  concurrencyPolicy: Forbid
+  suspend: false
+  startingDeadlineSeconds: 60
+  jobTemplate:
+    spec:
+      backoffLimit: 0
+      template:
+        spec:
+          serviceAccountName: mariadb-sa
+          volumes:
+            - name: mysqldump-config
+              configMap:
+                name: mysqldump-config
+            - name: mysqldump-pvc
+              persistentVolumeClaim:
+                claimName: mysqldump-pvc
+          containers:
+            - name: mysqldump-cron
+              image: gitlab.arthurvardevanyan.com:5050/arthurvardevanyan/homelab:toolbox
+              command: ["/bin/bash", "-c", "sh /mnt/mysqldump.sh"]
+              resources:
+                limits:
+                  cpu: 50m
+                  memory: 50M
+                requests:
+                  cpu: 25m
+                  memory: 25M
+              volumeMounts:
+                - name: mysqldump-pvc
+                  mountPath: /mnt/mysqldump
+                - name: mysqldump-config
+                  mountPath: /mnt/mysqldump.sh
+                  subPath: mysqldump.sh
+                - name: mysqldump-config
+                  mountPath: /etc/logrotate.d/mysqldump
+                  subPath: mysqldump
+              terminationMessagePath: /dev/termination-log
+              terminationMessagePolicy: File
+              imagePullPolicy: IfNotPresent
+          restartPolicy: Never
+          terminationGracePeriodSeconds: 30
+          dnsPolicy: ClusterFirst
+          automountServiceAccountToken: false
+          hostname: mysqldump-cron
+          schedulerName: default-scheduler
+  successfulJobsHistoryLimit: 1
+  failedJobsHistoryLimit: 1
