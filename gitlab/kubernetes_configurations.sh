@@ -25,7 +25,6 @@ kubectl patch deployment -n kube-system metrics-server --patch "$(cat kubernetes
 kubectl patch deployment -n kube-system coredns --patch "$(cat kubernetes/kube-system/kube-deployments.yaml)"
 kubectl patch deployment -n kube-system local-path-provisioner --patch "$(cat kubernetes/kube-system/kube-deployments.yaml)"
 kubectl apply -f kubernetes/kube-system/kube-system-limitRange.yaml
-kubectl apply -f kubernetes/kube-system/kube-system-resourceQuota.yaml
 
 echo -e " \n${BLUE}Certificate Manager:${NC}"
 kubectl apply -f kubernetes/cert-manager/cert-manager-namespace.yaml
