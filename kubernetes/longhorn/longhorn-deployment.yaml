@@ -114,6 +114,8 @@ spec:
         enable.version-checker.io/longhorn-ui: "true"
     spec:
       tolerations:
+        - key: node-role.kubernetes.io/control-plane
+          effect: NoSchedule
         - key: node-role.kubernetes.io/master
           effect: NoSchedule
       affinity:
@@ -125,7 +127,8 @@ spec:
                   - key: kubernetes.io/hostname
                     operator: In
                     values:
-                      - "k3s-server"
+                      - "k3s-server-1"
+                      - "k3s-server-2"
                       - "k3s-server-3"
       containers:
         - name: longhorn-ui
@@ -176,7 +179,9 @@ spec:
                   - key: kubernetes.io/hostname
                     operator: In
                     values:
-                      - "k3s-server"
+                      - "k3s-server-1"
+                      - "k3s-server-2"
+                      - "k3s-server-3"
       initContainers:
         - name: wait-longhorn-manager
           image: longhornio/longhorn-manager:v1.2.3

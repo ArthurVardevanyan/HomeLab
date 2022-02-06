@@ -21,7 +21,9 @@ HEALTH_CHECK_TOKEN=$(vault kv get -field=token secret/gitlab/health)
 echo "Secrets Loaded"
 
 echo -e " \n \n${BLUE}Kube System:${NC}"
-kubectl patch deployment -n kube-system metrics-server --patch "$(cat kubernetes/kube-system/metrics-server-deployment.yaml)"
+kubectl patch deployment -n kube-system metrics-server --patch "$(cat kubernetes/kube-system/kube-deployments.yaml)"
+kubectl patch deployment -n kube-system coredns --patch "$(cat kubernetes/kube-system/kube-deployments.yaml)"
+kubectl patch deployment -n kube-system local-path-provisioner --patch "$(cat kubernetes/kube-system/kube-deployments.yaml)"
 kubectl apply -f kubernetes/kube-system/kube-system-limitRange.yaml
 kubectl apply -f kubernetes/kube-system/kube-system-resourceQuota.yaml
 
@@ -122,12 +124,12 @@ kubectl apply -f kubernetes/uptime-kuma/uptime-kuma-namespace.yaml
 sed -i "s/<URL>/${URL}/g" kubernetes/uptime-kuma/uptime-kuma-traefik.yaml
 kubectl apply -f kubernetes/uptime-kuma
 
-echo -e " \n${BLUE}Photoprism:${NC}"
-kubectl apply -f kubernetes/photoprism/photoprism-namespace.yaml
-sed -i "s/<URL>/${URL}/g" kubernetes/photoprism/photoprism-traefik.yaml
-sed -i "s/<PHOTOPRISM_DB_PASSWORD>/${PHOTOPRISM_DB_PASSWORD}/g" kubernetes/photoprism/photoprism-secret.yaml
-sed -i "s/<PHOTOPRISM_ADMIN_PASSWORD>/${PHOTOPRISM_ADMIN_PASSWORD}/g" kubernetes/photoprism/photoprism-secret.yaml
-kubectl apply -f kubernetes/photoprism
+# echo -e " \n${BLUE}Photoprism:${NC}"
+# kubectl apply -f kubernetes/photoprism/photoprism-namespace.yaml
+# sed -i "s/<URL>/${URL}/g" kubernetes/photoprism/photoprism-traefik.yaml
+# sed -i "s/<PHOTOPRISM_DB_PASSWORD>/${PHOTOPRISM_DB_PASSWORD}/g" kubernetes/photoprism/photoprism-secret.yaml
+# sed -i "s/<PHOTOPRISM_ADMIN_PASSWORD>/${PHOTOPRISM_ADMIN_PASSWORD}/g" kubernetes/photoprism/photoprism-secret.yaml
+# kubectl apply -f kubernetes/photoprism
 
 echo -e " \n${BLUE}Gitlab Runner:${NC}"
 kubectl apply -f kubernetes/gitlab/gitlab-runner/gitlab-runner-namespace.yaml

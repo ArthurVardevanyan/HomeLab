@@ -34,8 +34,6 @@ spec:
       tolerations:
         - key: node-role.kubernetes.io/master
           effect: NoSchedule
-        - key: node-role.kubernetes.io/master
-          effect: NoExecute
       affinity:
         nodeAffinity:
           preferredDuringSchedulingIgnoredDuringExecution:
@@ -45,7 +43,8 @@ spec:
                   - key: kubernetes.io/hostname
                     operator: In
                     values:
-                      - "k3s-server"
+                      - "k3s-server-1"
+                      - "k3s-server-2"
                       - "k3s-server-3"
       containers:
         - name: cert-manager-cainjector
@@ -100,8 +99,6 @@ spec:
       tolerations:
         - key: node-role.kubernetes.io/master
           effect: NoSchedule
-        - key: node-role.kubernetes.io/master
-          effect: NoExecute
       affinity:
         nodeAffinity:
           preferredDuringSchedulingIgnoredDuringExecution:
@@ -111,7 +108,8 @@ spec:
                   - key: kubernetes.io/hostname
                     operator: In
                     values:
-                      - "k3s-server"
+                      - "k3s-server-1"
+                      - "k3s-server-2"
                       - "k3s-server-3"
       serviceAccountName: cert-manager
       securityContext:
@@ -173,8 +171,6 @@ spec:
       tolerations:
         - key: node-role.kubernetes.io/master
           effect: NoSchedule
-        - key: node-role.kubernetes.io/master
-          effect: NoExecute
       affinity:
         nodeAffinity:
           preferredDuringSchedulingIgnoredDuringExecution:
@@ -184,7 +180,8 @@ spec:
                   - key: kubernetes.io/hostname
                     operator: In
                     values:
-                      - "k3s-server"
+                      - "k3s-server-1"
+                      - "k3s-server-2"
                       - "k3s-server-3"
       serviceAccountName: cert-manager-webhook
       securityContext:

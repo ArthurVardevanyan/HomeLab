@@ -19,6 +19,11 @@ spec:
         enable.version-checker.io/grafana: "true"
         seccomp.security.alpha.kubernetes.io/defaultProfileName: "runtime/default"
     spec:
+      tolerations:
+        - key: node-role.kubernetes.io/control-plane
+          effect: NoSchedule
+        - key: node-role.kubernetes.io/master
+          effect: NoSchedule
       securityContext:
         fsGroup: 11472
         runAsGroup: 11472

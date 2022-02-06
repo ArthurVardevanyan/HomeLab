@@ -81,10 +81,10 @@ spec:
       terminationGracePeriodSeconds: 30
       dnsPolicy: ClusterFirst
       tolerations:
-        - key: node-role.kubernetes.io/master
+        - key: node-role.kubernetes.io/control-plane
           effect: NoSchedule
         - key: node-role.kubernetes.io/master
-          effect: NoExecute
+          effect: NoSchedule
       affinity:
         nodeAffinity:
           preferredDuringSchedulingIgnoredDuringExecution:
@@ -94,7 +94,8 @@ spec:
                   - key: kubernetes.io/hostname
                     operator: In
                     values:
-                      - "k3s-server"
+                      - "k3s-server-1"
+                      - "k3s-server-2"
                       - "k3s-server-3"
       serviceAccountName: sa-kube-eagle
       serviceAccount: sa-kube-eagle
