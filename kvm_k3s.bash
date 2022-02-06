@@ -201,10 +201,7 @@ install_addons() {
 	cp -r kubernetes /tmp/
 
 	echo -e "\n${BLUE}Kube System:${NC}"
-	kubectl patch deployment -n kube-system metrics-server --patch \
-		"$(cat /tmp/kubernetes/kube-system/metrics-server-deployment.yaml)"
 	kubectl apply -f /tmp/kubernetes/kube-system/kube-system-limitRange.yaml
-	kubectl apply -f /tmp/kubernetes/kube-system/kube-system-resourceQuota.yaml
 
 	echo -e "\n${BLUE}Traefik:${NC}"
 	kubectl apply -f /tmp/kubernetes/traefik/traefik-namespace.yaml
@@ -227,6 +224,7 @@ install_addons() {
 	sed -i "s[node-role.kubernetes.io/master:NoSchedule[[g" /tmp/kubernetes/longhorn/longhorn-configmap.yaml
 	sed -i "s[tolerations:[[g" /tmp/kubernetes/longhorn/longhorn-deployment.yaml
 	sed -i "s[- key: node-role.kubernetes.io/master[[g" /tmp/kubernetes/longhorn/longhorn-deployment.yaml
+	sed -i "s[- key: node-role.kubernetes.io/control-plane[[g" /tmp/kubernetes/longhorn/longhorn-deployment.yaml
 	sed -i "s[effect: NoSchedule[[g" /tmp/kubernetes/longhorn/longhorn-deployment.yaml
 	kubectl apply -f /tmp/kubernetes/longhorn
 
@@ -246,14 +244,8 @@ install_addons() {
 	kubectl apply -f /tmp/kubernetes/version-checker/version-checker-namespace.yaml
 	kubectl apply -f /tmp/kubernetes/version-checker
 
-	echo -e "\n${BLUE}Grafana:${NC}"
-	kubectl apply -f /tmp/kubernetes/grafana/grafana-namespace.yaml
-	sed -i "s/- k3s-server-usb//g" /tmp/kubernetes/grafana/grafana-longhorn.yaml
-	sed -i "s/diskSelector://g" /tmp/kubernetes/grafana/grafana-longhorn.yaml
-	sed -i "s/<URL>/${URL}/g" /tmp/kubernetes/grafana/grafana-traefik.yaml
-	kubectl apply -f /tmp/kubernetes/grafana
-
 	echo -e "\n${BLUE}Grafana Loki:${NC}"
+	kubectl create namespace grafana --dry-run=client -o yaml | kubectl apply -f -
 	sed -i "s/- k3s-infra-ssd//g" /tmp/kubernetes/grafana-loki/loki-longhorn.yaml
 	sed -i "s/diskSelector://g" /tmp/kubernetes/grafana-loki/loki-longhorn.yaml
 	kubectl apply -f /tmp/kubernetes/grafana-loki
@@ -266,6 +258,13 @@ install_addons() {
 
 install_addons_optional() {
 	load_kubeconfig
+
+	echo -e "\n${BLUE}Grafana:${NC}"
+	kubectl apply -f /tmp/kubernetes/grafana/grafana-namespace.yaml
+	sed -i "s/- k3s-server-usb//g" /tmp/kubernetes/grafana/grafana-longhorn.yaml
+	sed -i "s/diskSelector://g" /tmp/kubernetes/grafana/grafana-longhorn.yaml
+	sed -i "s/<URL>/${URL}/g" /tmp/kubernetes/grafana/grafana-traefik.yaml
+	kubectl apply -f /tmp/kubernetes/grafana
 
 	echo -e "\n${BLUE}Heimdall:${NC}"
 	kubectl apply -f /tmp/kubernetes/heimdall/heimdall-namespace.yaml
@@ -295,6 +294,21 @@ get_dashboard_secret() {
 		$(kubectl get serviceaccount admin-user -n kubernetes-dashboard -o jsonpath="{.secrets[0].name}") \
 		-o jsonpath="{.data.token}" | base64 --decode
 }
+
+preseed_server() {
+	echo -e "\n${BLUE}Loading Preseed Server:${NC}"
+	echo -n Password:
+	read -r -s PASSWORD
+	echo ""
+
+	# Startup Preseed Web Server
+	mkdir -p /tmp/preseed/
+	cp machineConfigs/preseed.cfg /tmp/preseed//preseed.cfg
+	mkpasswd -m md5 "${PASSWORD}"
+	sed -i "s,#d-i passwd/user-password-crypted password <HASH>,d-i passwd/user-password-crypted password $(mkpasswd -s -m md5 ${PASSWORD}),g" "/tmp/preseed/preseed.cfg"
+	python3 -m http.server --directory /tmp/preseed/
+}
+
 install_cluster() {
 	echo -e "\n${BLUE}Installing Cluster:${NC}"
 	echo -n Password:
@@ -334,7 +348,7 @@ install_cluster() {
 			--location=http://ftp.us.debian.org/debian/dists/stable/main/installer-amd64/ \
 			--extra-args="\
 	  auto=true priority=critical vga=normal hostname=${PREFIX}${NODE} \
-	  url=http://10.0.0.3:7071/preseed.cfg"
+	  url=http://10.10.10.1:8000/preseed.cfg"
 		# https://crysol.org/recipe/2012-12-25/virtual-machine-unattended-debian-installations-with-libvirt-and-d-i-preseeding.html
 
 		((IP++))

@@ -45,9 +45,19 @@ Database file needs to be restored manually.
 ### Virtual Sandbox
 
 ```bash
-mkdir -p notes
-time bash kvm_k3s.bash install_cluster > notes/install.log
+# Terminal 1
+# Generate Preseed Config Password and Startup Temporary Webserver
+bash kvm_k3s.bash preseed_server
+
+# Terminal 2
 # Enter Password Defined with Hash in Pre Seed Config
+mkdir -p notes time bash kvm_k3s.bash install_cluster > notes/install.log
+
+# KubeConfig
+export KUBECONFIG=${HOME}/vm/sk3s/sk3s.yaml
+
+# Dashboard Secret
+bash kvm_k3s.bash get_dashboard_secret
 ```
 
 ### Server
