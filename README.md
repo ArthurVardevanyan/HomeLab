@@ -66,7 +66,6 @@ bash kvm_k3s.bash get_dashboard_secret
 
 ```bash
 ansible-playbook -i ansible/inventory --ask-become-pass ansible/k3s.yaml --ask-pass --check
-ansible-playbook -i ansible/inventory --ask-become-pass ansible/k3s-infra.yaml --ask-pass --check
 ansible-playbook -i ansible/inventory --ask-become-pass ansible/desktop.yaml --ask-pass --check
 ```
 
@@ -78,23 +77,30 @@ sudo zfs get compressratio
 zfs send backup/File_Storage@20211101 | ssh arthur@10.0.0.4 zfs receive -F backup/File_Storage
 ```
 
-Creating ZFS zvol for Timeshift
-
-```bash
-sudo zfs create -V 76.76G backup/Timeshift
-sudo mkfs.ext4 /dev/zd0 # Note UUID
-sudo mount /dev/zd0 /media/arthur/Timeshift
-sudo umount /media/arthur/Timeshift
-```
-
 #### Kubernetes
 
 <https://k3s.io/>
 
+Machine       | CPU
+------------- | --------
+Bare Metal    | GX-415GA
+Infra Proxmox | i5-6600
+Proxmox       | i3-2130
+
+NAME         | ROLES                     | VERSION | INTERNAL-IP | OS-IMAGE  | Machine Type  | hCPU | vCPU | Mem   | ZFS
+------------ | ------------------------- | ------- | ----------- | --------- | ------------- | ---- | ---- | ----- | -------------------------
+k3s-server-1 | control-plane,etcd,master | v1.22.X | 10.0.0.5    | Debian 11 | Bare Metal    | 4    | N/A  | 6G    | N
+k3s-server-2 | control-plane,etcd,master | v1.22.X | 10.0.0.102  | Debian 11 | Infra Proxmox | 4    | 2    | 2G    | Longhorn ZFS NFS Backup
+k3s-server-3 | control-plane,etcd,master | v1.22.X | 10.0.0.103  | Debian 11 | Proxmox       | 4    | 2    | 1.75G | N
+k3s-worker-0 | infra,worker              | v1.22.X | 10.0.0.110  | Debian 11 | Infra Proxmox | 4    | 4    | 10G   | Nextcloud ZFS NFS Storage
+k3s-worker-1 | worker                    | v1.22.X | 10.0.0.111  | Debian 11 | Proxmox       | 4    | 4    | 4G    | N
+
 ```bash
 # Kubernetes Dashboard
-# <https://upcloud.com/community/tutorials/deploy-kubernetes-dashboard>
-kubectl get secret -n kubernetes-dashboard $(kubectl get serviceaccount admin-user -n kubernetes-dashboard -o jsonpath="{.secrets[0].name}") -o jsonpath="{.data.token}" | base64 --decode
+# https://upcloud.com/community/tutorials/deploy-kubernetes-dashboard
+kubectl get secret -n kubernetes-dashboard \
+$(kubectl get serviceaccount admin-user -n kubernetes-dashboard -o jsonpath="{.secrets[0].name}") \
+-o jsonpath="{.data.token}" | base64 --decode
 
 # Watch ALl Pods
 watch $(echo "kubectl get pods -A -o wide |  grep -v 'svclb' | sort -k8 -r")
@@ -104,41 +110,53 @@ kubectl get pods -A | awk '$5>0' | awk '{print "kubectl delete pod -n " $1 " " $
 kubectl drain k3s-worker --ignore-daemonsets --delete-emptydir-data
 
 # Taint
-kubectl taint node k3s-server node-role.kubernetes.io/master:NoSchedule
-
-# Master Label
-kubectl label nodes k3s-server node-type=master
-kubectl label nodes k3s-infra node-type=master
-kubectl label nodes k3s-worker node-type=master
+kubectl taint node k3s-server-1 node-role.kubernetes.io/master:NoSchedule --overwrite
+kubectl taint node k3s-server-2 node-role.kubernetes.io/master:NoSchedule --overwrite
+kubectl taint node k3s-server-3 node-role.kubernetes.io/master:NoSchedule --overwrite
+kubectl taint node k3s-server-2 node-role.kubernetes.io/control-plane:NoSchedule --overwrite
+kubectl taint node k3s-server-3 node-role.kubernetes.io/control-plane:NoSchedule --overwrite
 
 # Role Label
-kubectl label node k3s-infra node-role.kubernetes.io/infra=true
-kubectl label node k3s-worker node-role.kubernetes.io/worker=true
+kubectl label node k3s-worker-0 node-role.kubernetes.io/infra=true --overwrite
+kubectl label node k3s-worker-0 node-role.kubernetes.io/worker=true --overwrite
+kubectl label node k3s-worker-1 node-role.kubernetes.io/worker=true --overwrite
 
 # Longhorn Label
-kubectl label node k3s-server node.longhorn.io/create-default-disk=true
-kubectl label node k3s-infra node.longhorn.io/create-default-disk=true
-kubectl label node k3s-worker node.longhorn.io/create-default-disk=true
+kubectl label node k3s-server-1 node.longhorn.io/create-default-disk=true --overwrite
+kubectl label node k3s-worker-0 node.longhorn.io/create-default-disk=true --overwrite
+kubectl label node k3s-worker-1 node.longhorn.io/create-default-disk=true --overwrite
+
+# Zone Labels
+kubectl label node k3s-server-1 topology.kubernetes.io/zone=bare-metal --overwrite
+kubectl label node k3s-server-2 topology.kubernetes.io/zone=infra-proxmox --overwrite
+kubectl label node k3s-server-3 topology.kubernetes.io/zone=proxmox --overwrite
+kubectl label node k3s-worker-0 topology.kubernetes.io/zone=infra-proxmox --overwrite
+kubectl label node k3s-worker-1 topology.kubernetes.io/zone=proxmox --overwrite
+
 
 # Servers
 #First Time Setup
-curl -sfL https://get.k3s.io | INSTALL_K3S_EXEC="server --cluster-init  --tls-san 10.0.0.100 --tls-san k3s.<URL>.com --disable traefik --flannel-iface=enp1s0 --kubelet-arg system-reserved=cpu=250m,memory=500Mi --kubelet-arg kube-reserved=cpu=500m,memory=1Gi" INSTALL_K3S_CHANNEL=v1.22
+export K3S_TOKEN=""
+export RESERVED="--kubelet-arg system-reserved=cpu=250m,memory=500Mi --kubelet-arg kube-reserved=cpu=250m,memory=500Mi"
+
+curl -sfL https://get.k3s.io | INSTALL_K3S_EXEC="server --cluster-init  --tls-san 10.0.0.100 --tls-san k3s.<URL>.com ${RESERVED}"\
+INSTALL_K3S_CHANNEL=v1.22 sh -
 
 # Server
-curl -sfL https://get.k3s.io | INSTALL_K3S_EXEC="server --server https://:6443 --disable traefik --flannel-iface=enp1s0 --kubelet-arg system-reserved=cpu=250m,memory=500Mi --kubelet-arg kube-reserved=cpu=500m,memory=1Gi" INSTALL_K3S_CHANNEL=v1.22 sh -
-sh -
-# Infra
-curl -sfL https://get.k3s.io | INSTALL_K3S_EXEC="server --server https://:6443 --disable traefik --flannel-iface=enp1s0 --kubelet-arg system-reserved=cpu=250m,memory=500Mi --kubelet-arg kube-reserved=cpu=250,memory=1Gi" INSTALL_K3S_CHANNEL=v1.22 sh -
-# Worker
-curl -sfL https://get.k3s.io | INSTALL_K3S_EXEC="server --server https://:6443 --disable traefik --flannel-iface=enp6s0 --kubelet-arg system-reserved=cpu=250m,memory=500Mi --kubelet-arg kube-reserved=cpu=500m,memory=1Gi" INSTALL_K3S_CHANNEL=v1.22 sh -
+export K3S_TOKEN=""
+export RESERVED="--kubelet-arg system-reserved=cpu=250m,memory=500Mi --kubelet-arg kube-reserved=cpu=250m,memory=500Mi"
 
+curl -sfL https://get.k3s.io | \
+INSTALL_K3S_EXEC="server --server https://10.0.0.100:6443 --disable traefik ${RESERVED}" \
+K3S_URL=https://10.0.0.100:6443 INSTALL_K3S_CHANNEL=v1.22 sh -
 
-# Agents
-# Infra
-curl -sfL https://get.k3s.io | INSTALL_K3S_EXEC="--flannel-iface=enp1s0 --kubelet-arg system-reserved=cpu=250m,memory=500Mi --kubelet-arg kube-reserved=cpu=250m,memory=500Mi" K3S_URL=https://10.0.0.5:6443 K3S_TOKEN=$K3S_TOKEN INSTALL_K3S_CHANNEL=v1.22 sh -
+# Agents/Workers
+export K3S_TOKEN=""
+export RESERVED="--kubelet-arg system-reserved=cpu=250m,memory=250Mi --kubelet-arg kube-reserved=cpu=250m,memory=250Mi"
 
-# Worker
-curl -sfL https://get.k3s.io | INSTALL_K3S_EXEC="--flannel-iface=enp6s0 --kubelet-arg system-reserved=cpu=250m,memory=500Mi --kubelet-arg kube-reserved=cpu=250m,memory=500Mi" K3S_URL=https://10.0.0.5:6443 K3S_TOKEN=$K3S_TOKEN INSTALL_K3S_CHANNEL=v1.22 sh -
+curl -sfL https://get.k3s.io | \
+INSTALL_K3S_EXEC="${RESERVED}" \
+K3S_URL=https://10.0.0.100:6443 INSTALL_K3S_CHANNEL=v1.22 sh -
 ```
 
 #### Cockpit
