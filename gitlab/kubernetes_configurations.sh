@@ -94,7 +94,7 @@ kubectl apply -f kubernetes/nextcloud
 echo -e " \n${BLUE}Mariadb:${NC}"
 kubectl apply -f kubernetes/mariadb/database-namespace.yaml
 sed -i "s,<PASSWORD>,${MARIADB_PASSWORD},g" kubernetes/mariadb/mariadb-env-configmap.yaml
-sed -i "s/<URL>/${URL}/g" kubernetes/mariadb/mariadb-traefik.yaml
+#sed -i "s/<URL>/${URL}/g" kubernetes/mariadb/mariadb-traefik.yaml
 kubectl apply -f kubernetes/mariadb
 
 echo -e " \n${BLUE}phpMyAdmin:${NC}"

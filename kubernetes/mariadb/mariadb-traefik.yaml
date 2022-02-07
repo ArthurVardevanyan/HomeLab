@@ -1,4 +1,6 @@
 # Loses Source IP if Pod Node Differs from Incoming Traffic Node
+# Using Wildcard: Only IngressRouteTCP Using Port 3306
+# Not Using With HaProxy
 apiVersion: traefik.containo.us/v1alpha1
 kind: IngressRouteTCP
 metadata:
@@ -8,7 +10,7 @@ spec:
   entryPoints:
     - mariadb
   routes:
-    - match: HostSNI(`mariadb.<URL>`)
+    - match: HostSNI(`*`)
       services:
         - name: mariadb
           port: 3306

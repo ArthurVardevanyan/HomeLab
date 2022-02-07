@@ -25,7 +25,8 @@ spec:
         fsGroup: 65532
         runAsUser: 65532
       containers:
-        - args:
+        - name: traefik
+          args:
             - --global.checknewversion
             - --entryPoints.traefik.address=:9000/tcp
             - --entryPoints.web.address=:8000/tcp
@@ -34,6 +35,7 @@ spec:
             - --entryPoints.mariadb.address=:3306/tcp
             - --api.dashboard=true
             - --ping=true
+            - --ping.entryPoint=web
             - --providers.kubernetescrd
             - --providers.kubernetesingress
             - --api.dashboard=true
@@ -41,19 +43,32 @@ spec:
             - --providers.kubernetesingress.ingressclass=traefik-internal
             - --serversTransport.insecureSkipVerify=true
             - --api.insecure=true
+            - --entryPoints.web.proxyProtocol.trustedIPs=10.0.0.2
+            - --entryPoints.websecure.proxyProtocol.trustedIPs=10.0.0.2
+            - --entryPoints.registry.proxyProtocol.trustedIPs=10.0.0.2
+            - --entryPoints.mariadb.proxyProtocol.trustedIPs=10.0.0.2
           image: traefik:v2.6.0
           imagePullPolicy: IfNotPresent
           livenessProbe:
             failureThreshold: 3
             httpGet:
               path: /ping
-              port: 9000
+              port: 8000
               scheme: HTTP
             initialDelaySeconds: 10
             periodSeconds: 10
             successThreshold: 1
             timeoutSeconds: 2
-          name: traefik
+          readinessProbe:
+            failureThreshold: 1
+            httpGet:
+              path: /ping
+              port: 8000
+              scheme: HTTP
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            successThreshold: 1
+            timeoutSeconds: 2
           ports:
             - containerPort: 9100
               name: metrics
@@ -67,24 +82,10 @@ spec:
             - containerPort: 8443
               name: websecure
               protocol: TCP
-            - containerPort: 80 # Serves No Purpose other than to Satisfy kics IaC Scanner.
-              name: unused-80
-            - containerPort: 443 # Serves No Purpose other than to Satisfy kics IaC Scanner.
-              name: unused-443
-            - containerPort: 5050 # Serves No Purpose other than to Satisfy kics IaC Scanner.
-              name: unused-5050
-            - containerPort: 50500 # Serves No Purpose other than to Satisfy  kicsIaC Scanner.
-              name: unused-50500
-          readinessProbe:
-            failureThreshold: 1
-            httpGet:
-              path: /ping
-              port: 9000
-              scheme: HTTP
-            initialDelaySeconds: 10
-            periodSeconds: 10
-            successThreshold: 1
-            timeoutSeconds: 2
+            - containerPort: 5050
+              name: registry
+            - containerPort: 3306
+              name: mariadb
           resources:
             limits:
               cpu: 200m
