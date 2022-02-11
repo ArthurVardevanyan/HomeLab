@@ -1,0 +1,29 @@
+apiVersion: longhorn.io/v1beta1
+kind: Volume
+metadata:
+  labels:
+    longhornvolume: photoprism-storage
+    recurring-job-group.longhorn.io/default: enabled
+  name: photoprism-storage
+  namespace: longhorn-system
+spec:
+  accessMode: rwo
+  engineImage: longhornio/longhorn-engine:v1.2.3
+  frontend: blockdev
+  numberOfReplicas: 2
+  size: "1073741824"
+---
+apiVersion: longhorn.io/v1beta1
+kind: Volume
+metadata:
+  labels:
+    longhornvolume: photoprism-cache
+    recurring-job-group.longhorn.io/default: enabled
+  name: photoprism-cache
+  namespace: longhorn-system
+spec:
+  accessMode: rwo
+  engineImage: longhornio/longhorn-engine:v1.2.3
+  frontend: blockdev
+  numberOfReplicas: 2
+  size: "26843545600"

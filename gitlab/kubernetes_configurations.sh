@@ -124,12 +124,12 @@ kubectl apply -f kubernetes/uptime-kuma/uptime-kuma-namespace.yaml
 sed -i "s/<URL>/${URL}/g" kubernetes/uptime-kuma/uptime-kuma-traefik.yaml
 kubectl apply -f kubernetes/uptime-kuma
 
-# echo -e " \n${BLUE}Photoprism:${NC}"
-# kubectl apply -f kubernetes/photoprism/photoprism-namespace.yaml
-# sed -i "s/<URL>/${URL}/g" kubernetes/photoprism/photoprism-traefik.yaml
-# sed -i "s/<PHOTOPRISM_DB_PASSWORD>/${PHOTOPRISM_DB_PASSWORD}/g" kubernetes/photoprism/photoprism-secret.yaml
-# sed -i "s/<PHOTOPRISM_ADMIN_PASSWORD>/${PHOTOPRISM_ADMIN_PASSWORD}/g" kubernetes/photoprism/photoprism-secret.yaml
-# kubectl apply -f kubernetes/photoprism
+echo -e " \n${BLUE}Photoprism:${NC}"
+kubectl apply -f kubernetes/photoprism/photoprism-namespace.yaml
+sed -i "s/<URL>/${URL}/g" kubernetes/photoprism/photoprism-traefik.yaml
+sed -i "s/<PHOTOPRISM_DB_PASSWORD>/${PHOTOPRISM_DB_PASSWORD}/g" kubernetes/photoprism/photoprism-secret.yaml
+sed -i "s/<PHOTOPRISM_ADMIN_PASSWORD>/${PHOTOPRISM_ADMIN_PASSWORD}/g" kubernetes/photoprism/photoprism-secret.yaml
+kubectl apply -f kubernetes/photoprism
 
 echo -e " \n${BLUE}Gitlab Runner:${NC}"
 kubectl apply -f kubernetes/gitlab/gitlab-runner/gitlab-runner-namespace.yaml

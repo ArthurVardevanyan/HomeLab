@@ -10,7 +10,7 @@ spec:
   selector:
     matchLabels:
       app: photoprism
-  replicas: 0 # APPLICATION CURRENTLY DISABLED
+  replicas: 0
   serviceName: photoprism
   template:
     metadata:
@@ -24,11 +24,9 @@ spec:
       restartPolicy: Always
       automountServiceAccountToken: false
       serviceAccountName: photoprism-sa
-      nodeSelector:
-        kubernetes.io/hostname: k3s-infra
       containers:
         - name: photoprism
-          image: photoprism/photoprism:20220107
+          image: photoprism/photoprism:20220121
           env:
             - name: PHOTOPRISM_DEBUG
               value: "true"
@@ -56,14 +54,16 @@ spec:
               path: /api/v1/status
               port: http
           volumeMounts:
-            - mountPath: /assets/photos/originals/Photos
-              name: photoprism-photos
-            - mountPath: /assets/photos/originals/Trips-Events
-              name: photoprism-trips
-            - mountPath: /assets/cache
-              name: photoprism-cache
-            - mountPath: /photoprism/storage
-              name: photoprism-storage
+            - name: photoprism-photos
+              mountPath: /assets/photos/originals/Photos
+              subPath: Arthur/files/Photos/
+            - name: photoprism-trips
+              mountPath: /assets/photos/originals/Trips-Events
+              subPath: Arthur/files/Trips-Events/
+            - name: photoprism-cache
+              mountPath: /assets/cache
+            - name: photoprism-storage
+              mountPath: /photoprism/storage
           resources:
             limits:
               cpu: 500m
@@ -82,7 +82,7 @@ spec:
             readOnly: true
         - name: photoprism-cache
           persistentVolumeClaim:
-            claimName: photoprism-cache
+            claimName: photoprism-cache-pvc
         - name: photoprism-storage
           persistentVolumeClaim:
-            claimName: photoprism-storage
+            claimName: photoprism-storage-pvc

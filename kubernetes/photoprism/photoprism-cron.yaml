@@ -6,7 +6,7 @@ metadata:
 spec:
   schedule: "00 05,17 * * *"
   concurrencyPolicy: Forbid
-  suspend: true # CRON JOB CURRENTLY SUSPENDED
+  suspend: false
   startingDeadlineSeconds: 60
   jobTemplate:
     spec:
@@ -19,15 +19,24 @@ spec:
             enable.version-checker.io/photoprism: "true"
             seccomp.security.alpha.kubernetes.io/defaultProfileName: "runtime/default"
         spec:
-          hostname: photoprism
+          affinity:
+            podAffinity:
+              preferredDuringSchedulingIgnoredDuringExecution:
+                - weight: 1
+                  podAffinityTerm:
+                    labelSelector:
+                      matchExpressions:
+                        - key: app
+                          operator: In
+                          values:
+                            - photoprism
+                    topologyKey: kubernetes.io/hostname
           automountServiceAccountToken: false
           serviceAccountName: photoprism-sa
           restartPolicy: Never
-          nodeSelector:
-            kubernetes.io/hostname: k3s-infra
           containers:
             - name: photoprism-cron
-              image: photoprism/photoprism:20220107
+              image: photoprism/photoprism:20220121
               command:
                 - /bin/bash
                 - "-c"
@@ -55,14 +64,16 @@ spec:
                 - containerPort: 2342
                   name: http
               volumeMounts:
-                - mountPath: /assets/photos/originals/Photos
-                  name: photoprism-photos
-                - mountPath: /assets/photos/originals/Trips-Events
-                  name: photoprism-trips
-                - mountPath: /assets/cache
-                  name: photoprism-cache
-                - mountPath: /photoprism/storage
-                  name: photoprism-storage
+                - name: photoprism-photos
+                  mountPath: /assets/photos/originals/Photos
+                  subPath: Arthur/files/Photos/
+                - name: photoprism-trips
+                  mountPath: /assets/photos/originals/Trips-Events
+                  subPath: Arthur/files/Trips-Events/
+                - name: photoprism-cache
+                  mountPath: /assets/cache
+                - name: photoprism-storage
+                  mountPath: /photoprism/storage
               resources:
                 limits:
                   cpu: 100m
@@ -81,9 +92,9 @@ spec:
                 readOnly: true
             - name: photoprism-cache
               persistentVolumeClaim:
-                claimName: photoprism-cache
+                claimName: photoprism-cache-pvc
             - name: photoprism-storage
               persistentVolumeClaim:
-                claimName: photoprism-storage
+                claimName: photoprism-storage-pvc
   successfulJobsHistoryLimit: 1
   failedJobsHistoryLimit: 1
