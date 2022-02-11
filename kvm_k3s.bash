@@ -236,8 +236,6 @@ install_addons() {
 
 	echo -e "\n${BLUE}Prometheus:${NC}"
 	kubectl apply -f /tmp/kubernetes/prometheus/prometheus-namespace.yaml
-	sed -i "s/- k3s-infra-ssd//g" /tmp/kubernetes/prometheus/prometheus-longhorn.yaml
-	sed -i "s/diskSelector://g" /tmp/kubernetes/prometheus/prometheus-longhorn.yaml
 	sed -i "s/<URL>/${URL}/g" /tmp/kubernetes/prometheus/prometheus-traefik.yaml
 	kubectl apply -f /tmp/kubernetes/prometheus
 
@@ -247,8 +245,6 @@ install_addons() {
 
 	echo -e "\n${BLUE}Grafana Loki:${NC}"
 	kubectl create namespace grafana --dry-run=client -o yaml | kubectl apply -f -
-	sed -i "s/- k3s-infra-ssd//g" /tmp/kubernetes/grafana-loki/loki-longhorn.yaml
-	sed -i "s/diskSelector://g" /tmp/kubernetes/grafana-loki/loki-longhorn.yaml
 	kubectl apply -f /tmp/kubernetes/grafana-loki
 
 	echo -e "\n${BLUE}Grafana Promtail:${NC}"
@@ -262,15 +258,11 @@ install_addons_optional() {
 
 	echo -e "\n${BLUE}Grafana:${NC}"
 	kubectl apply -f /tmp/kubernetes/grafana/grafana-namespace.yaml
-	sed -i "s/- k3s-server-usb//g" /tmp/kubernetes/grafana/grafana-longhorn.yaml
-	sed -i "s/diskSelector://g" /tmp/kubernetes/grafana/grafana-longhorn.yaml
 	sed -i "s/<URL>/${URL}/g" /tmp/kubernetes/grafana/grafana-traefik.yaml
 	kubectl apply -f /tmp/kubernetes/grafana
 
 	echo -e "\n${BLUE}Heimdall:${NC}"
 	kubectl apply -f /tmp/kubernetes/heimdall/heimdall-namespace.yaml
-	sed -i "s/- k3s-server-usb//g" /tmp/kubernetes/heimdall/heimdall-longhorn.yaml
-	sed -i "s/diskSelector://g" /tmp/kubernetes/heimdall/heimdall-longhorn.yaml
 	sed -i "s/<URL>/${URL}/g" /tmp/kubernetes/heimdall/heimdall-traefik.yaml
 	sed -i "s[tolerations:[[g" /tmp/kubernetes/heimdall/heimdall-statefulSet.yaml
 	sed -i "s[- key: node-role.kubernetes.io/master[[g" /tmp/kubernetes/heimdall/heimdall-statefulSet.yaml
@@ -279,8 +271,6 @@ install_addons_optional() {
 
 	echo -e "\n${BLUE}Uptime Kuma:${NC}"
 	kubectl apply -f /tmp/kubernetes/uptime-kuma/uptime-kuma-namespace.yaml
-	sed -i "s/- k3s-server-ssd//g" /tmp/kubernetes/uptime-kuma/uptime-kuma-longhorn.yaml
-	sed -i "s/diskSelector://g" /tmp/kubernetes/uptime-kuma/uptime-kuma-longhorn.yaml
 	sed -i "s/<URL>/${URL}/g" /tmp/kubernetes/uptime-kuma/uptime-kuma-traefik.yaml
 	sed -i "s[tolerations:[[g" /tmp/kubernetes/uptime-kuma/uptime-kuma-statefulSet.yaml
 	sed -i "s[- key: node-role.kubernetes.io/master[[g" /tmp/kubernetes/uptime-kuma/uptime-kuma-statefulSet.yaml
