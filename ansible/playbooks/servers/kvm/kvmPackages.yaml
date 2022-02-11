@@ -1,0 +1,33 @@
+- hosts: kvm
+  gather_facts: no
+  become: true
+  user: arthur
+  tasks:
+    - name: install packages
+      apt:
+        state: latest
+        name:
+          - firmware-realtek
+          - firmware-misc-nonfree
+          - cockpit-machines
+          - qemu-kvm
+          - libvirt-clients
+          - libvirt-daemon-system
+          - bridge-utils
+          - virtinst
+          - libvirt-daemon
+
+    - name: Creates VM Directory
+      file:
+        path: /home/arthur/vm
+        state: directory
+
+    - name: Adding user to Libvirt Group
+      user: name=arthur
+        groups=libvirt
+        append=yes
+
+    - name: Enable modprobe vhost_net
+      modprobe:
+        name: vhost_net
+        state: present

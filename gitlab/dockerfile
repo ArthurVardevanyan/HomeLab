@@ -7,6 +7,6 @@ RUN curl -fsSL https://apt.releases.hashicorp.com/gpg | apt-key add -
 RUN echo "deb [arch=amd64] https://apt.releases.hashicorp.com bullseye main" | tee /etc/apt/sources.list.d/vault.list
 RUN curl -fsSLo /usr/share/keyrings/kubernetes-archive-keyring.gpg https://packages.cloud.google.com/apt/doc/apt-key.gpg
 RUN echo "deb [signed-by=/usr/share/keyrings/kubernetes-archive-keyring.gpg] https://apt.kubernetes.io/ kubernetes-xenial main" | tee /etc/apt/sources.list.d/kubernetes.list
-RUN apt-get update && apt-get install ansible kubectl vault mariadb-client -y
+RUN apt-get update && apt-get install mariadb-client kubectl ansible vault  -y
 
 CMD ["ansible-playbook", "--help"]

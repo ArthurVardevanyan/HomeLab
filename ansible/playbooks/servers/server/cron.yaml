@@ -1,0 +1,9 @@
+- hosts: servers
+  gather_facts: no
+  become: true
+  user: arthur
+  tasks:
+    - name: Modify Crontab
+      copy:
+        src: "../../../../machineConfigs/servers/server/var/spool/cron/crontabs/root"
+        dest: "/var/spool/cron/crontabs/root"

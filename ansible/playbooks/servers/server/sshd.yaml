@@ -1,0 +1,9 @@
+- hosts: servers
+  gather_facts: no
+  become: true
+  user: arthur
+  tasks:
+    - name: Modify SSHD Config
+      copy:
+        src: "../../../../machineConfigs/servers/server/etc/pam.d/sshd"
+        dest: "/etc/pam.d/sshd"

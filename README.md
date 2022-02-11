@@ -10,18 +10,18 @@ HomeLab Server/Cluster, Virtual Sandbox Cluster, & Desktop Configuration
     - <https://github.com/ArthurVardevanyan/pop-shell>
     - <https://github.com/ArthurVardevanyan/pop-cosmic>
 
-## Extra Commands & Notes
-
-### Desktop
+## Desktop
 
 ```bash
+ansible-playbook -i ansible/inventory --ask-become-pass ansible/desktop.yaml --ask-pass
+
 git merge --no-ff
 scp -r /home/arthur/vmware windowsBackup@10.0.0.3:/backup/WindowsBackup/vmware
 7z a -t7z -m0=lzma2 -mx=9 -mfb=128 -md=256m -ms=on FOLDER.7z FOLDER
 sudo sensors-detect
 ```
 
-#### Gnome
+### Gnome
 
 Manually Install Extensions from extensions.gnome.org
 
@@ -30,7 +30,7 @@ Manually Install Extensions from extensions.gnome.org
 - gnome-shell-extension-transparentnotification
 - gnome-shell-extension-tray-icons-reloaded
 
-#### Cura
+### Cura
 
 Config files need to be applied manually.
 
@@ -38,11 +38,11 @@ Config files need to be applied manually.
 machineConfigs/home/arthur/cura
 ```
 
-#### GWE
+### GWE
 
 Database file needs to be restored manually.
 
-### Virtual Sandbox
+## Virtual Sandbox
 
 ```bash
 # Terminal 1
@@ -60,81 +60,129 @@ export KUBECONFIG=${HOME}/vm/sk3s/sk3s.yaml
 bash kvm_k3s.bash get_dashboard_secret
 ```
 
-### Server
+## Server
 
-#### Ansible
-
-```bash
-ansible-playbook -i ansible/inventory --ask-become-pass ansible/k3s.yaml --ask-pass --check
-ansible-playbook -i ansible/inventory --ask-become-pass ansible/desktop.yaml --ask-pass --check
-```
-
-#### ZFS
-
-```bash
-sudo zfs get compressratio
-/usr/sbin/zfs send -i backup/File_Storage backup/File_Storage@20211201 | pv | ssh arthur@10.0.0.4 /usr/sbin/zfs receive -F backup/File_Storage
-zfs send backup/File_Storage@20211101 | ssh arthur@10.0.0.4 zfs receive -F backup/File_Storage
-```
-
-#### Kubernetes
+### Kubernetes
 
 <https://k3s.io/>
 
-Machine       | CPU
-------------- | --------
-Bare Metal    | GX-415GA
-Infra Proxmox | i5-6600
-Proxmox       | i3-2130
+k3s Channel | Operating System
+----------- | ----------------
+v1.22       | Debian 11
 
-NAME         | ROLES                     | VERSION | INTERNAL-IP | OS-IMAGE  | Machine Type  | hCPU | vCPU | Mem   | ZFS
------------- | ------------------------- | ------- | ----------- | --------- | ------------- | ---- | ---- | ----- | -------------------------
-k3s-server-1 | control-plane,etcd,master | v1.22.X | 10.0.0.5    | Debian 11 | Bare Metal    | 4    | N/A  | 6G    | N
-k3s-server-2 | control-plane,etcd,master | v1.22.X | 10.0.0.102  | Debian 11 | Infra Proxmox | 4    | 2    | 2G    | Longhorn ZFS NFS Backup
-k3s-server-3 | control-plane,etcd,master | v1.22.X | 10.0.0.103  | Debian 11 | Proxmox       | 4    | 2    | 1.75G | N
-k3s-worker-0 | infra,worker              | v1.22.X | 10.0.0.110  | Debian 11 | Infra Proxmox | 4    | 4    | 10G   | Nextcloud ZFS NFS Storage
-k3s-worker-1 | worker                    | v1.22.X | 10.0.0.111  | Debian 11 | Proxmox       | 4    | 4    | 4G    | N
+**Machines:**
+
+[CPU Benchmark](https://www.cpubenchmark.net/compare/Intel-i5-6600-vs-AMD-RX-427BB-vs-Intel-i3-2130-vs-AMD-GX-415GA-SOC/2594vs2496vs755vs2081)
+
+Machine    | Model             | CPU      | CPU | Mem | Storage           | ZFS Storage
+---------- | ----------------- | -------- | --- | --- | ----------------- | -------------
+pfSense    | Hp t730           | RX-427BB | 4   | 4G  | 16G SSD           | N/A
+Bare Metal | Hp t620           | GX-415GA | 4   | 6G  | 16G SSD & 16G USB | N/A
+Infra KVM  | Hp ProDesk 400 G3 | i5-6600  | 4   | 16G | 240G SSD          | 2T ZFS Mirror
+KVM        | Hp p7-1226s       | i3-2130  | 4   | 8G  | 240G SSD          | 1T ZFS Mirror
+
+**ZFS Storage:**
+
+Machine   | Use     | Dataset   | Size  | Dataset         | Size | Dataset       | Size
+--------- | ------- | --------- | ----- | --------------- | ---- | ------------- | -----
+Infra KVM | Primary | Nextcloud | 750GB | Longhorn Backup | 75GB | WindowsBackup | 750GB
+KVM       | Backup  | Nextcloud | 750GB | Longhorn Backup | 75GB | N/A           | N/A
+
+**Kubernetes Nodes:**
+
+NAME         | ROLES          | IP         | Machine    | hCPU | vCPU | Mem  | Storage
+------------ | -------------- | ---------- | ---------- | ---- | ---- | ---- | ------------
+k3s-server-1 | cp,etcd,master | 10.0.0.5   | Bare Metal | 4    | N/A  | 6G   | LH SSD & USB
+k3s-server-2 | cp,etcd,master | 10.0.0.102 | Infra KVM  | 4    | 2    | 2G   | LH SSD
+k3s-server-3 | cp,etcd,master | 10.0.0.103 | KVM        | 4    | 2    | 1.5G | N/A
+k3s-worker-1 | infra,worker   | 10.0.0.111 | Infra KVM  | 4    | 4    | 10G  | LH SSD
+k3s-worker-2 | worker         | 10.0.0.112 | KVM        | 4    | 4    | 4.5G | N/A
+
+#### KVM Infra Box
 
 ```bash
-# Kubernetes Dashboard
-# https://upcloud.com/community/tutorials/deploy-kubernetes-dashboard
-kubectl get secret -n kubernetes-dashboard \
-$(kubectl get serviceaccount admin-user -n kubernetes-dashboard -o jsonpath="{.secrets[0].name}") \
--o jsonpath="{.data.token}" | base64 --decode
+# https://www.how2shout.com/linux/how-to-install-and-configure-kvm-on-debian-11-bullseye-linux/
+ssh 10.0.0.3
+ansible-playbook -i ansible/inventory --ask-become-pass ansible/servers.yaml --ask-pass
+# Reboot && Update DHCP Server With New Mac Address
 
-# Watch ALl Pods
-watch $(echo "kubectl get pods -A -o wide |  grep -v 'svclb' | sort -k8 -r")
-# Delete Pods that Have a Restart
-kubectl get pods -A | awk '$5>0' | awk '{print "kubectl delete pod -n " $1 " " $2}' | bash -
-# Drain Node
-kubectl drain k3s-worker --ignore-daemonsets --delete-emptydir-data
+export LIBVIRT_DEFAULT_URI=qemu:///system
 
-# Taint
-kubectl taint node k3s-server-1 node-role.kubernetes.io/master:NoSchedule --overwrite
-kubectl taint node k3s-server-2 node-role.kubernetes.io/master:NoSchedule --overwrite
-kubectl taint node k3s-server-3 node-role.kubernetes.io/master:NoSchedule --overwrite
-kubectl taint node k3s-server-2 node-role.kubernetes.io/control-plane:NoSchedule --overwrite
-kubectl taint node k3s-server-3 node-role.kubernetes.io/control-plane:NoSchedule --overwrite
+virt-install \
+    --noautoconsole \
+    --graphics vnc \
+    --name=k3s-server-2 \
+    --os-variant=debian10 \
+    --vcpus sockets=1,cores=1,threads=2 \
+    --ram=2048 \
+    --disk "${HOME}/vm/k3s-server-2".img,,format=raw,size=25 \
+    --network bridge=br0,mac="10:00:00:00:01:02" \
+    --location=http://ftp.us.debian.org/debian/dists/stable/main/installer-amd64/ \
+    --extra-args="\
+            auto=true priority=critical vga=normal hostname=k3s-server-2 \
+            url=http://10.0.0.5:7071/preseed.cfg"
 
-# Role Label
-kubectl label node k3s-worker-0 node-role.kubernetes.io/infra=true --overwrite
-kubectl label node k3s-worker-0 node-role.kubernetes.io/worker=true --overwrite
-kubectl label node k3s-worker-1 node-role.kubernetes.io/worker=true --overwrite
+virt-install \
+    --noautoconsole \
+    --graphics vnc \
+    --name=k3s-worker-1 \
+    --os-variant=debian10 \
+    --vcpus sockets=1,cores=2,threads=2 \
+    --ram=10240 \
+    --disk "${HOME}/vm/k3s-worker-1".img,,format=raw,size=125 \
+    --network bridge=br0,mac="10:00:00:00:01:11" \
+    --location=http://ftp.us.debian.org/debian/dists/stable/main/installer-amd64/ \
+    --extra-args="\
+            auto=true priority=critical vga=normal hostname=k3s-worker-1 \
+            url=http://10.0.0.5:7071/preseed.cfg"
+```
 
-# Longhorn Label
-kubectl label node k3s-server-1 node.longhorn.io/create-default-disk=true --overwrite
-kubectl label node k3s-worker-0 node.longhorn.io/create-default-disk=true --overwrite
-kubectl label node k3s-worker-1 node.longhorn.io/create-default-disk=true --overwrite
+#### KVM Infra
 
-# Zone Labels
-kubectl label node k3s-server-1 topology.kubernetes.io/zone=bare-metal --overwrite
-kubectl label node k3s-server-2 topology.kubernetes.io/zone=infra-proxmox --overwrite
-kubectl label node k3s-server-3 topology.kubernetes.io/zone=proxmox --overwrite
-kubectl label node k3s-worker-0 topology.kubernetes.io/zone=infra-proxmox --overwrite
-kubectl label node k3s-worker-1 topology.kubernetes.io/zone=proxmox --overwrite
+```bash
+# https://www.how2shout.com/linux/how-to-install-and-configure-kvm-on-debian-11-bullseye-linux/
+ssh 10.0.0.4
+ansible-playbook -i ansible/inventory --ask-become-pass ansible/servers.yaml --ask-pass
+# Reboot && Update DHCP Server With New Mac Address
 
+export LIBVIRT_DEFAULT_URI=qemu:///system
 
+virt-install \
+    --noautoconsole \
+    --graphics vnc \
+    --name=k3s-server-3 \
+    --os-variant=debian10 \
+    --vcpus sockets=1,cores=1,threads=2 \
+    --ram=1536 \
+    --disk "${HOME}/vm/k3s-server-3".img,,format=raw,size=25 \
+    --network bridge=br0,mac="10:00:00:00:01:03" \
+    --location=http://ftp.us.debian.org/debian/dists/stable/main/installer-amd64/ \
+    --extra-args="\
+            auto=true priority=critical vga=normal hostname=k3s-server-3 \
+            url=http://10.0.0.5:7071/preseed.cfg"
+
+virt-install \
+    --noautoconsole \
+    --graphics vnc \
+    --name=k3s-worker-2 \
+    --os-variant=debian10 \
+    --vcpus sockets=1,cores=2,threads=2 \
+    --ram=4608 \
+    --disk "${HOME}/vm/k3s-worker-2".img,,format=raw,size=125 \
+    --network bridge=br0,mac="10:00:00:00:01:12" \
+    --location=http://ftp.us.debian.org/debian/dists/stable/main/installer-amd64/ \
+    --extra-args="\
+            auto=true priority=critical vga=normal hostname=k3s-worker-2 \
+            url=http://10.0.0.5:7071/preseed.cfg"
+```
+
+#### K3S Setup
+
+```bash
 # Servers
+ansible-playbook -i ansible/inventory --ask-become-pass ansible/servers.yaml --ask-pass
+# Reboot All Kubernetes Nodes
+
 #First Time Setup
 export K3S_TOKEN=""
 export RESERVED="--kubelet-arg system-reserved=cpu=250m,memory=500Mi --kubelet-arg kube-reserved=cpu=250m,memory=500Mi"
@@ -159,19 +207,92 @@ INSTALL_K3S_EXEC="${RESERVED}" \
 K3S_URL=https://10.0.0.100:6443 INSTALL_K3S_CHANNEL=v1.22 sh -
 ```
 
-#### Cockpit
+#### K3S Post Setup
+
+```bash
+# Taint
+kubectl taint node k3s-server-1 node-role.kubernetes.io/master:NoSchedule --overwrite
+kubectl taint node k3s-server-2 node-role.kubernetes.io/master:NoSchedule --overwrite
+kubectl taint node k3s-server-3 node-role.kubernetes.io/master:NoSchedule --overwrite
+kubectl taint node k3s-server-2 node-role.kubernetes.io/control-plane:NoSchedule --overwrite
+kubectl taint node k3s-server-3 node-role.kubernetes.io/control-plane:NoSchedule --overwrite
+
+
+# Role Label
+kubectl label node k3s-worker-1 node-role.kubernetes.io/infra=true --overwrite
+kubectl label node k3s-worker-1 node-role.kubernetes.io/worker=true --overwrite
+kubectl label node k3s-worker-2 node-role.kubernetes.io/worker=true --overwrite
+
+# Zone Labels
+kubectl label node k3s-server-1 topology.kubernetes.io/zone=bare-metal --overwrite
+kubectl label node k3s-server-2 topology.kubernetes.io/zone=infra-kvm --overwrite
+kubectl label node k3s-server-3 topology.kubernetes.io/zone=kvm --overwrite
+kubectl label node k3s-worker-1 topology.kubernetes.io/zone=infra-kvm --overwrite
+kubectl label node k3s-worker-2 topology.kubernetes.io/zone=kvm --overwrite
+
+# Longhorn Label
+kubectl label node k3s-server-1 node.longhorn.io/create-default-disk=true --overwrite
+kubectl label node k3s-worker-1 node.longhorn.io/create-default-disk=true --overwrite
+kubectl label node k3s-worker-2 node.longhorn.io/create-default-disk=true --overwrite
+
+# Drain DaemonSets Temporarily off a Node
+kubectl taint node k3s-server- node-role.kubernetes.io/control-plane:NoExecute
+kubectl taint node k3s-server- node-role.kubernetes.io/control-plane:NoExecute-
+```
+
+#### K3S Commands
+
+```bash
+# Kubernetes Dashboard
+# https://upcloud.com/community/tutorials/deploy-kubernetes-dashboard
+kubectl get secret -n kubernetes-dashboard \
+$(kubectl get serviceaccount admin-user -n kubernetes-dashboard -o jsonpath="{.secrets[0].name}") \
+-o jsonpath="{.data.token}" | base64 --decode
+
+# Watch ALl Pods
+watch $(echo "kubectl get pods -A -o wide |  grep -v 'svclb' | sort -k8 -r")
+# Delete Pods that Have a Restart
+kubectl get pods -A | awk '$5>0' | awk '{print "kubectl delete pod -n " $1 " " $2}' | bash -
+# Drain Node
+kubectl drain k3s-worker --ignore-daemonsets --delete-emptydir-data
+```
+
+#### SSH Keyscan
+
+```bash
+export IP_LIST="3 4 5 17 102 103 111 112"
+
+rm -f /tmp/output.txt
+for IP in $( echo "$IP_LIST" ); do
+ssh-keyscan 10.0.0."${IP}" >> /tmp/ssh_keyscan.txt
+
+done
+
+echo "\n\n\nSSH Keyscan\n\n"
+cat /tmp/ssh_keyscan.txt
+```
+
+### ZFS
+
+```bash
+sudo zfs get compressratio
+/usr/sbin/zfs send -i backup/File_Storage backup/File_Storage@20211201 | pv | ssh arthur@10.0.0.4 /usr/sbin/zfs receive -F backup/File_Storage
+zfs send backup/File_Storage@20211101 | ssh arthur@10.0.0.4 zfs receive -F backup/File_Storage
+```
+
+### Cockpit
 
 ```bash
 sudo nano /etc/cockpit/ws-certs.d/1-my-cert.cert
 ```
 
-#### Vault
+### Vault
 
 ```bash
 kubectl exec -it $(kubectl -n vault get pod --selector='app=vault' -o custom-columns="-:metadata.name" --no-headers) -n vault -- vault operator unseal --tls-skip-verify
 ```
 
-#### GitLab
+### GitLab
 
 ```bash
 gitlab-ctl registry-garbage-collect
@@ -181,7 +302,7 @@ kubectl exec -it gitlab-0 -n gitlab -- bash
 kubectl patch -n gitlab deployment/gitlab --type='json' -p='[{"op": "replace", "path": "/spec/template/spec/containers/0/image", "value": "gitlab/gitlab-ce:XX.X.X-ce.0"}]'
 ```
 
-#### GitLab Vault Integration
+### GitLab Vault Integration
 
 ```bash
 # JWT Authentication
@@ -211,7 +332,7 @@ vault write auth/jwt/role/homelab - <<EOF
 EOF
 ```
 
-#### Database
+### Database
 
 ```sql
 CREATE USER 'arthur'@'10.0.0.X' IDENTIFIED BY 'arthur';
@@ -227,7 +348,7 @@ GRANT ALL PRIVILEGES ON spotifyTest.* TO `spotifyTest`@`10.42.0.%`;
 GRANT SELECT, LOCK TABLES, SHOW VIEW ON *.* TO 'backup'@'10.42.0.1' IDENTIFIED BY 'backup';
 ```
 
-#### Nextcloud
+### Nextcloud
 
 ```bash
 kubectl exec -it nextcloud-0 -n nextcloud -- runuser -u www-data -- php -f /var/www/html/occ

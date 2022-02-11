@@ -10,7 +10,7 @@ data:
     #!/bin/sh
 
     echo "Rotating SQL Files"
-    logrotate -v  /etc/logrotate.d/mysqldump
+    logrotate -vf  /etc/logrotate.d/mysqldump
 
     URL=mariadb.database
     LOCATION=/mnt/mysqldump
@@ -28,13 +28,10 @@ data:
     echo "Dumping Fitness Data"
     mysqldump -h ${URL} --port=3306 -ubackup -pbackup  fitness         > ${LOCATION}/fitness/fitness.sql
 
-    echo "Dumping Spotify Testing"
-    mysqldump -h ${URL} --port=3306 -ubackup -pbackup  spotifyExternal > ${LOCATION}/spotifyExternal/spotifyExternal.sql
-
   mysqldump: |-
     /mnt/mysqldump/*/*.sql {
       daily
-      rotate 90
+      rotate 75
       compress
       delaycompress
       create 640 root backup

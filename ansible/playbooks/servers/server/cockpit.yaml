@@ -1,0 +1,15 @@
+- hosts: servers
+  gather_facts: no
+  become: true
+  user: arthur
+  tasks:
+    - name: Install Cockpit
+      apt:
+        state: latest
+        name:
+          - cockpit
+          - cockpit-pcp
+    - name: Cockpit Web Gui Devices
+      copy:
+        src: "../../../../machineConfigs/servers/server/etc/cockpit/machines.d/99-webui.json"
+        dest: "/etc/cockpit/machines.d/99-webui.json"

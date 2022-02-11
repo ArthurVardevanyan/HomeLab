@@ -1,0 +1,9 @@
+- hosts: kvm-infra-network
+  gather_facts: no
+  become: true
+  user: arthur
+  tasks:
+    - name: Modify Network Bridge Config
+      copy:
+        src: "../../../../machineConfigs/servers/kvm-infra/etc/network/interfaces"
+        dest: "/etc/network/interfaces"

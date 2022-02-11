@@ -4,8 +4,9 @@ set -o errexit
 set -o nounset
 set -o pipefail
 
-# PRESEED CONFIG: /machineConfigs/server/preseed.cfg
+# PRESEED CONFIG: /machineConfigs/servers/preseed.cfg
 # ANSIBLE CONFIG: /ansible/k3s.yaml
+# SANDBOX HAPROXY: /machineConfigs/sandbox/var/etc/haproxy
 
 # Setup DHCP Network
 # virsh net-edit default
@@ -74,13 +75,13 @@ ansible() {
 	fi
 	IP=${START_IP}
 	# Create Ansible Inventory File
-	echo "[k3s]" >/tmp/inventory
+	echo "[servers]" >/tmp/inventory
 	for NODE in ${NODES}; do
 		echo "10.10.10.${IP}" >>/tmp/inventory
 		((IP++))
 	done
 	# Run Playbooks On All Machines
-	ansible-playbook -i /tmp/inventory ansible/k3s.yaml --extra-vars \
+	ansible-playbook -i /tmp/inventory ansible/servers.yaml --extra-vars \
 		"ansible_become_pass=${PASSWORD} ansible_ssh_pass=${PASSWORD}"
 }
 
@@ -339,6 +340,7 @@ install_cluster() {
 		#--wait=-1 \
 		virt-install \
 			--noautoconsole \
+			--graphics vnc \
 			--name="${PREFIX}${NODE}" \
 			--os-variant=debian11 \
 			--vcpus sockets=1,cores=1,threads="${CPU}" \

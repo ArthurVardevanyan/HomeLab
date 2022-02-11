@@ -43,7 +43,7 @@ Desktop:
   script:
     - ansible-playbook -i ansible/inventory ansible/desktop.yaml --extra-vars "ansible_become_pass=${SUDO} ansible_ssh_pass=${SUDO} ansible_python_interpreter=/usr/bin/python3"
 
-K3s:
+Servers:
   stage: ansible
   image: $CI_REGISTRY_IMAGE:toolbox
   needs: []
@@ -58,10 +58,10 @@ K3s:
     - echo "$SSH_KNOWN_HOSTS" >> ~/.ssh/known_hosts
     - chmod 644 ~/.ssh/known_hosts
     - export DISCORD="$(vault kv get -field=webhook secret/gitlab/discord)"
-    - sed -i "s,REPLACE_ME,${DISCORD},g" machineConfigs/k3s/home/arthur/discord/discord_bot.sh
-    - sed -i "s,##,,g"  ansible/k3s.yaml
+    - sed -i "s,REPLACE_ME,${DISCORD},g" machineConfigs/servers/server/home/arthur/discord/discord_bot.sh
+    - sed -i "s,##,,g"  ansible/servers.yaml
   script:
-    - ansible-playbook -i ansible/inventory ansible/k3s.yaml --extra-vars "ansible_become_pass=${SUDO} ansible_ssh_pass=${SUDO} ansible_python_interpreter=/usr/bin/python3"
+    - ansible-playbook -i ansible/inventory ansible/servers.yaml --extra-vars "ansible_become_pass=${SUDO} ansible_ssh_pass=${SUDO} ansible_python_interpreter=/usr/bin/python3"
 
 Configurations:
   # https://docs.gitlab.com/ee/ci/examples/authenticating-with-hashicorp-vault/

@@ -1,0 +1,21 @@
+# TODO: Create Automation for windowsBackup User and Password
+- hosts: kvm
+  gather_facts: no
+  become: true
+  user: arthur
+  tasks:
+    - name: Install Samba
+      apt:
+        state: latest
+        name:
+          - samba
+    - name: Creating Samba Config
+      copy:
+        src: "../../../../machineConfigs/servers/kvm-infra/etc/samba/smb.conf"
+        dest: "/etc/samba/smb.conf"
+      register: samba_conf
+    - name: restart Samba
+      service:
+        name: smbd
+        state: restarted
+      when: samba_conf.changed
