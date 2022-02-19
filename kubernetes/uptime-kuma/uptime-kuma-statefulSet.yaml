@@ -41,6 +41,11 @@ spec:
         - image: louislam/uptime-kuma:1.11.3
           imagePullPolicy: IfNotPresent
           name: uptime-kuma
+          securityContext:
+            readOnlyRootFilesystem: true
+            allowPrivilegeEscalation: false
+            seccompProfile:
+              type: RuntimeDefault
           ports:
             - containerPort: 3001
           resources:

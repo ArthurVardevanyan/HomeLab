@@ -43,6 +43,7 @@ spec:
             runAsGroup: 11472
             runAsUser: 11472
             runAsNonRoot: true
+            readOnlyRootFilesystem: true
             allowPrivilegeEscalation: false
             seccompProfile:
               type: RuntimeDefault
@@ -80,3 +81,10 @@ spec:
               value: grafana
             - name: GF_DATABASE_PASSWORD
               value: grafana
+          volumeMounts:
+            - mountPath: /var/lib/grafana
+              name: grafana-cache
+      volumes:
+        - name: grafana-cache
+          emptyDir:
+            sizeLimit: 1Mi

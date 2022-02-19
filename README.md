@@ -93,7 +93,7 @@ KVM       | Backup  | Nextcloud | 750GB | Longhorn Backup | 75GB | N/A          
 NAME         | ROLES          | IP         | Machine    | hCPU | vCPU | Mem   | Storage
 ------------ | -------------- | ---------- | ---------- | ---- | ---- | ----- | ------------
 k3s-server-1 | cp,etcd,master | 10.0.0.5   | Bare Metal | 4    | N/A  | 6G    | LH SSD & USB
-k3s-server-2 | cp,etcd,master | 10.0.0.102 | Infra KVM  | 4    | 2    | 2G    | LH SSD
+k3s-server-2 | cp,etcd,master | 10.0.0.102 | Infra KVM  | 4    | 2    | 1.75G | LH SSD
 k3s-server-3 | cp,etcd,master | 10.0.0.103 | KVM        | 4    | 2    | 1.75G | N/A
 k3s-worker-1 | infra,worker   | 10.0.0.111 | Infra KVM  | 4    | 4    | 10G   | LH SSD
 k3s-worker-2 | worker         | 10.0.0.112 | KVM        | 4    | 4    | 4.25G | N/A
@@ -114,7 +114,7 @@ virt-install \
     --name=k3s-server-2 \
     --os-variant=debian10 \
     --vcpus sockets=1,cores=1,threads=2 \
-    --ram=2048 \
+    --ram=1792 \
     --disk "${HOME}/vm/k3s-server-2".img,,format=raw,size=25 \
     --network bridge=br0,mac="10:00:00:00:01:02" \
     --location=http://ftp.us.debian.org/debian/dists/stable/main/installer-amd64/ \
