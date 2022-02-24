@@ -68,7 +68,7 @@ bash kvm_k3s.bash get_dashboard_secret
 
 k3s Channel | Operating System
 ----------- | ----------------
-v1.22       | Debian 11
+v1.23       | Debian 11
 
 **Machines:**
 
@@ -188,7 +188,7 @@ export K3S_TOKEN=""
 export RESERVED="--kubelet-arg system-reserved=cpu=250m,memory=500Mi --kubelet-arg kube-reserved=cpu=250m,memory=500Mi"
 
 curl -sfL https://get.k3s.io | INSTALL_K3S_EXEC="server --cluster-init  --tls-san 10.0.0.100 --tls-san k3s.<URL>.com ${RESERVED}"\
-INSTALL_K3S_CHANNEL=v1.22 sh -
+INSTALL_K3S_CHANNEL=v1.23 sh -
 
 # Server
 export K3S_TOKEN=""
@@ -196,7 +196,7 @@ export RESERVED="--kubelet-arg system-reserved=cpu=250m,memory=500Mi --kubelet-a
 
 curl -sfL https://get.k3s.io | \
 INSTALL_K3S_EXEC="server --server https://10.0.0.100:6443 --disable traefik ${RESERVED}" \
-K3S_URL=https://10.0.0.100:6443 INSTALL_K3S_CHANNEL=v1.22 sh -
+K3S_URL=https://10.0.0.100:6443 INSTALL_K3S_CHANNEL=v1.23 sh -
 
 # Agents/Workers
 export K3S_TOKEN=""
@@ -204,7 +204,7 @@ export RESERVED="--kubelet-arg system-reserved=cpu=250m,memory=250Mi --kubelet-a
 
 curl -sfL https://get.k3s.io | \
 INSTALL_K3S_EXEC="${RESERVED}" \
-K3S_URL=https://10.0.0.100:6443 INSTALL_K3S_CHANNEL=v1.22 sh -
+K3S_URL=https://10.0.0.100:6443 INSTALL_K3S_CHANNEL=v1.23 sh -
 ```
 
 #### K3S Post Setup

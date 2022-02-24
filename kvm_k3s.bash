@@ -146,7 +146,7 @@ install_k3s() {
 
 	K3S="echo ${PASSWORD}	| sudo -S ls; curl -sfL https://get.k3s.io | INSTALL_K3S_EXEC='"
 	K3S_RESERVED="--kubelet-arg system-reserved=cpu=125m,memory=250Mi --kubelet-arg kube-reserved=cpu=125m,memory=250Mi'"
-	K3S_CONFIG="K3S_TOKEN=${K3S_TOKEN} INSTALL_K3S_CHANNEL=v1.22 sh -"
+	K3S_CONFIG="K3S_TOKEN=${K3S_TOKEN} INSTALL_K3S_CHANNEL=v1.23 sh -"
 
 	INSTALL="${K3S} server --cluster-init --disable traefik ${K3S_RESERVED} ${K3S_CONFIG}"
 	SERVER=" ${K3S} server --server https://10.10.10.3:6443 --disable traefik ${K3S_RESERVED} ${K3S_CONFIG}"
