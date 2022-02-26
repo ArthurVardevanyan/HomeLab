@@ -78,72 +78,35 @@ apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
   namespace: photoprism
-  name: photoprism-photos
+  name: photoprism-media
 spec:
-  storageClassName: manual
-  volumeName: photoprism-photos
+  storageClassName: nfs
+  volumeName: photoprism-media
   accessModes:
     - ReadWriteOnce
   resources:
     requests:
-      storage: 100G
+      storage: 250G
 ---
 apiVersion: v1
 kind: PersistentVolume
 metadata:
   namespace: photoprism
-  name: photoprism-photos
+  name: photoprism-media
   labels:
     type: local
 spec:
   storageClassName: nfs
   capacity:
-    storage: 100G
+    storage: 250G
   accessModes:
     - ReadWriteOnce
   mountOptions:
     - hard
     - nfsvers=4.1
   nfs:
-    path: /backup/File_Storage/Nextcloud #/Arthur/files/Photos
+    path: /backup/File_Storage/Nextcloud
     server: 10.0.0.3
   claimRef:
-    name: photoprism-photos
-    namespace: photoprism
----
-apiVersion: v1
-kind: PersistentVolumeClaim
-metadata:
-  namespace: photoprism
-  name: photoprism-trips
-spec:
-  storageClassName: nfs
-  volumeName: photoprism-trips
-  accessModes:
-    - ReadWriteOnce
-  resources:
-    requests:
-      storage: 150G
----
-apiVersion: v1
-kind: PersistentVolume
-metadata:
-  namespace: photoprism
-  name: photoprism-trips
-  labels:
-    type: local
-spec:
-  storageClassName: manual
-  capacity:
-    storage: 150G
-  accessModes:
-    - ReadWriteOnce
-  mountOptions:
-    - hard
-    - nfsvers=4.1
-  nfs:
-    path: /backup/File_Storage/Nextcloud #/Arthur/files/Trips-Events
-    server: 10.0.0.3
-  claimRef:
-    name: photoprism-trips
+    name: photoprism-media
     namespace: photoprism
