@@ -131,6 +131,11 @@ sed -i "s/<PHOTOPRISM_DB_PASSWORD>/${PHOTOPRISM_DB_PASSWORD}/g" kubernetes/photo
 sed -i "s/<PHOTOPRISM_ADMIN_PASSWORD>/${PHOTOPRISM_ADMIN_PASSWORD}/g" kubernetes/photoprism/photoprism-secret.yaml
 kubectl apply -f kubernetes/photoprism
 
+echo -e " \n${BLUE}JellyFin:${NC}"
+kubectl apply -f kubernetes/jellyfin/jellyfin-namespace.yaml
+sed -i "s/<URL>/${URL}/g" kubernetes/jellyfin/jellyfin-traefik.yaml
+kubectl apply -f kubernetes/jellyfin
+
 echo -e " \n${BLUE}Gitlab Runner:${NC}"
 kubectl apply -f kubernetes/gitlab/gitlab-runner/gitlab-runner-namespace.yaml
 sed -i "s/<URL>/${URL}/g" kubernetes/gitlab/gitlab-runner/gitlab-runner-config-map.yaml
