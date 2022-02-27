@@ -1,0 +1,50 @@
+# Configure a default setup of Home Assistant (frontend, api, etc)
+default_config:
+
+http:
+  use_x_forwarded_for: true
+  trusted_proxies:
+    - 10.0.0.2
+    - 10.0.0.3
+    - 10.0.0.4
+    - 10.0.0.5
+    - 10.42.0.0/16
+
+# Text to speech
+tts:
+  - platform: google_translate
+
+group: !include groups.yaml
+automation: !include automations.yaml
+script: !include scripts.yaml
+scene: !include scenes.yaml
+
+recorder:
+  db_url: mysql://homeAssistant:<myql_password>@mariadb.database/homeAssistant?charset=utf8
+  purge_keep_days: 90
+
+influxdb:
+  host: influxdb.influxdb
+  port: 80
+  database: home_assistant
+  username: admin
+  password: <influxdb_password>
+
+nest:
+  client_id: <nest_client_id>
+  client_secret: <nest_client_secret>
+  # "Project ID" in the Device Access Console
+  project_id: <nest_project_id>
+  # Provide the full path exactly as shown under "Subscription name" in Google Cloud Console
+  subscriber_id: projects/<nest_project>/subscriptions/HomeAssistant
+
+template:
+  - sensor:
+      - name: "Home Network Current Consumption"
+        unit_of_measurement: "W"
+        state: '{{ states("sensor.modem_current_consumption") |float + states("sensor.pfsense_current_consumption") | float + states("sensor.wifi_current_consumption") | float+ states("sensor.network_switch_current_consumption") | float}}'
+      - name: "Home Network Today's Consumption"
+        device_class: energy
+        state_class: total_increasing
+        unit_of_measurement: "kWh"
+        state: '{{ states("sensor.modem_today_s_consumption") |float + states("sensor.pfsense_today_s_consumption") | float + states("sensor.wifi_today_s_consumption") | float+ states("sensor.network_switch_today_s_consumption") | float}}'

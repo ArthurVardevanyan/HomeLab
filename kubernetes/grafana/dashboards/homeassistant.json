@@ -21,7 +21,7 @@
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 0,
-  "id": 11,
+  "id": 19,
   "links": [],
   "liveNow": false,
   "panels": [
@@ -33,7 +33,7 @@
             "mode": "thresholds"
           },
           "mappings": [],
-          "max": 135,
+          "max": 60,
           "min": 0,
           "thresholds": {
             "mode": "absolute",
@@ -44,11 +44,11 @@
               },
               {
                 "color": "#EAB839",
-                "value": 75
+                "value": 40
               },
               {
                 "color": "red",
-                "value": 100
+                "value": 50
               }
             ]
           },
@@ -62,7 +62,7 @@
         "x": 0,
         "y": 0
       },
-      "id": 10,
+      "id": 15,
       "options": {
         "orientation": "auto",
         "reduceOptions": {
@@ -76,7 +76,90 @@
         "showThresholdMarkers": true,
         "text": {}
       },
-      "pluginVersion": "8.3.4",
+      "pluginVersion": "8.4.1",
+      "targets": [
+        {
+          "datasource": "InfluxDB-Home_Assistant",
+          "groupBy": [],
+          "measurement": "W",
+          "orderByTime": "ASC",
+          "policy": "default",
+          "refId": "A",
+          "resultFormat": "time_series",
+          "select": [
+            [
+              {
+                "params": [
+                  "value"
+                ],
+                "type": "field"
+              }
+            ]
+          ],
+          "tags": [
+            {
+              "key": "entity_id",
+              "operator": "=",
+              "value": "home_network_current_consumption"
+            }
+          ]
+        }
+      ],
+      "title": "Home Network Power Draw",
+      "type": "gauge"
+    },
+    {
+      "datasource": "InfluxDB-Home_Assistant",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [],
+          "max": 150,
+          "min": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "#EAB839",
+                "value": 100
+              },
+              {
+                "color": "red",
+                "value": 125
+              }
+            ]
+          },
+          "unit": "watt"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 6,
+        "x": 6,
+        "y": 0
+      },
+      "id": 14,
+      "options": {
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showThresholdLabels": false,
+        "showThresholdMarkers": true,
+        "text": {}
+      },
+      "pluginVersion": "8.4.1",
       "targets": [
         {
           "groupBy": [],
@@ -104,94 +187,8 @@
           ]
         }
       ],
-      "title": "Server Power Draw",
+      "title": "HomeLab Servers Power Draw",
       "type": "gauge"
-    },
-    {
-      "datasource": "InfluxDB-Home_Assistant",
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "thresholds"
-          },
-          "mappings": [],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": null
-              },
-              {
-                "color": "orange",
-                "value": 0
-              },
-              {
-                "color": "green",
-                "value": 115
-              },
-              {
-                "color": "orange",
-                "value": 130
-              }
-            ]
-          },
-          "unit": "volt"
-        },
-        "overrides": []
-      },
-      "gridPos": {
-        "h": 8,
-        "w": 6,
-        "x": 6,
-        "y": 0
-      },
-      "id": 11,
-      "options": {
-        "colorMode": "value",
-        "graphMode": "area",
-        "justifyMode": "auto",
-        "orientation": "auto",
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ],
-          "fields": "",
-          "values": false
-        },
-        "text": {},
-        "textMode": "auto"
-      },
-      "pluginVersion": "8.3.4",
-      "targets": [
-        {
-          "groupBy": [],
-          "measurement": "V",
-          "orderByTime": "ASC",
-          "policy": "default",
-          "refId": "A",
-          "resultFormat": "time_series",
-          "select": [
-            [
-              {
-                "params": [
-                  "value"
-                ],
-                "type": "field"
-              }
-            ]
-          ],
-          "tags": [
-            {
-              "key": "entity_id",
-              "operator": "=",
-              "value": "ford_laptop_voltage"
-            }
-          ]
-        }
-      ],
-      "title": "Server Voltage",
-      "type": "stat"
     },
     {
       "datasource": "InfluxDB-Home_Assistant",
@@ -261,7 +258,7 @@
         "text": {},
         "textMode": "auto"
       },
-      "pluginVersion": "8.3.4",
+      "pluginVersion": "8.4.1",
       "targets": [
         {
           "groupBy": [],
@@ -364,7 +361,7 @@
         "text": {},
         "textMode": "auto"
       },
-      "pluginVersion": "8.3.4",
+      "pluginVersion": "8.4.1",
       "targets": [
         {
           "groupBy": [],
@@ -467,12 +464,14 @@
           "placement": "bottom"
         },
         "tooltip": {
-          "mode": "single"
+          "mode": "single",
+          "sort": "none"
         }
       },
       "targets": [
         {
-          "alias": "Server",
+          "alias": "Servers",
+          "datasource": "InfluxDB-Home_Assistant",
           "groupBy": [
             {
               "params": [
@@ -511,6 +510,51 @@
               "key": "entity_id",
               "operator": "=",
               "value": "power_monitor_current_consumption"
+            }
+          ]
+        },
+        {
+          "alias": "Home Network",
+          "datasource": "InfluxDB-Home_Assistant",
+          "groupBy": [
+            {
+              "params": [
+                "$interval"
+              ],
+              "type": "time"
+            },
+            {
+              "params": [
+                "previous"
+              ],
+              "type": "fill"
+            }
+          ],
+          "hide": false,
+          "measurement": "W",
+          "orderByTime": "ASC",
+          "policy": "default",
+          "refId": "B",
+          "resultFormat": "time_series",
+          "select": [
+            [
+              {
+                "params": [
+                  "value"
+                ],
+                "type": "field"
+              },
+              {
+                "params": [],
+                "type": "mean"
+              }
+            ]
+          ],
+          "tags": [
+            {
+              "key": "entity_id",
+              "operator": "=",
+              "value": "home_network_current_consumption"
             }
           ]
         }
@@ -611,7 +655,8 @@
           "placement": "bottom"
         },
         "tooltip": {
-          "mode": "single"
+          "mode": "single",
+          "sort": "none"
         }
       },
       "targets": [
@@ -725,7 +770,7 @@
       },
       "gridPos": {
         "h": 8,
-        "w": 12,
+        "w": 8,
         "x": 0,
         "y": 16
       },
@@ -738,7 +783,8 @@
           "placement": "bottom"
         },
         "tooltip": {
-          "mode": "single"
+          "mode": "single",
+          "sort": "none"
         }
       },
       "targets": [
@@ -788,6 +834,92 @@
       ],
       "title": "Home Voltage",
       "type": "timeseries"
+    },
+    {
+      "datasource": "InfluxDB-Home_Assistant",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "orange",
+                "value": 0
+              },
+              {
+                "color": "green",
+                "value": 115
+              },
+              {
+                "color": "orange",
+                "value": 130
+              }
+            ]
+          },
+          "unit": "volt"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 4,
+        "x": 8,
+        "y": 16
+      },
+      "id": 11,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "text": {},
+        "textMode": "auto"
+      },
+      "pluginVersion": "8.4.1",
+      "targets": [
+        {
+          "groupBy": [],
+          "measurement": "V",
+          "orderByTime": "ASC",
+          "policy": "default",
+          "refId": "A",
+          "resultFormat": "time_series",
+          "select": [
+            [
+              {
+                "params": [
+                  "value"
+                ],
+                "type": "field"
+              }
+            ]
+          ],
+          "tags": [
+            {
+              "key": "entity_id",
+              "operator": "=",
+              "value": "ford_laptop_voltage"
+            }
+          ]
+        }
+      ],
+      "title": "Server Voltage",
+      "type": "stat"
     },
     {
       "datasource": "InfluxDB-Home_Assistant",
@@ -857,7 +989,8 @@
           "placement": "bottom"
         },
         "tooltip": {
-          "mode": "single"
+          "mode": "single",
+          "sort": "none"
         }
       },
       "targets": [
@@ -1021,7 +1154,8 @@
           "placement": "bottom"
         },
         "tooltip": {
-          "mode": "single"
+          "mode": "single",
+          "sort": "none"
         }
       },
       "targets": [
@@ -1119,7 +1253,7 @@
     }
   ],
   "refresh": "10s",
-  "schemaVersion": 34,
+  "schemaVersion": 35,
   "style": "dark",
   "tags": [],
   "templating": {
@@ -1145,6 +1279,6 @@
   "timezone": "",
   "title": "Home Assistant",
   "uid": "w63pUYSnk",
-  "version": 27,
+  "version": 2,
   "weekStart": ""
 }
