@@ -28,7 +28,10 @@ spec:
           resources:
             requests:
               cpu: 250m
-              memory: 75M
+              memory: 250M
+            limits:
+              cpu: 500m
+              memory: 500M
           command:
             - longhorn-manager
             - -d
@@ -136,10 +139,10 @@ spec:
           imagePullPolicy: IfNotPresent
           resources:
             requests:
-              cpu: 50m
-              memory: 10M
+              cpu: 25m
+              memory: 5M
             limits:
-              cpu: 150m
+              cpu: 50m
               memory: 10M
           securityContext:
             runAsUser: 0
@@ -197,8 +200,11 @@ spec:
           imagePullPolicy: IfNotPresent
           resources:
             requests:
+              cpu: 5m
+              memory: 15M
+            limits:
               cpu: 10m
-              memory: 10M
+              memory: 25M
           command:
             - longhorn-manager
             - -d
