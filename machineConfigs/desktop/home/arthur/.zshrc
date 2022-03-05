@@ -1,5 +1,6 @@
 # Path to your oh-my-zsh installation.
 export ZSH="/home/arthur/.oh-my-zsh"
+export PATH="${KREW_ROOT:-$HOME/.krew}/bin:$PATH"
 
 ZSH_THEME="custom"
 
