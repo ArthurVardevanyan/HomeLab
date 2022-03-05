@@ -21,10 +21,11 @@ HEALTH_CHECK_TOKEN=$(vault kv get -field=token secret/gitlab/health)
 echo "Secrets Loaded"
 
 echo -e " \n \n${BLUE}Kube System:${NC}"
+kubectl apply -f kubernetes/kube-system/kube-system-limitRange.yaml
+kubectl apply -f kubernetes/kube-system/kube-system-resourceQuota.yaml
 kubectl patch deployment -n kube-system metrics-server --patch "$(cat kubernetes/kube-system/kube-deployments.yaml)"
 kubectl patch deployment -n kube-system coredns --patch "$(cat kubernetes/kube-system/kube-deployments.yaml)"
 kubectl patch deployment -n kube-system local-path-provisioner --patch "$(cat kubernetes/kube-system/kube-deployments.yaml)"
-kubectl apply -f kubernetes/kube-system/kube-system-limitRange.yaml
 
 echo -e " \n${BLUE}Certificate Manager:${NC}"
 kubectl apply -f kubernetes/cert-manager/cert-manager-namespace.yaml
