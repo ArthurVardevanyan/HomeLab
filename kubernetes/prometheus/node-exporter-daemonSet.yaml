@@ -19,7 +19,14 @@ spec:
       annotations:
         prometheus.io/scrape: "true"
         prometheus.io/port: "9100"
+        enable.version-checker.io/node-exporter: "true"
+        seccomp.security.alpha.kubernetes.io/defaultProfileName: runtime/default
     spec:
+      securityContext:
+        fsGroup: 19100
+        runAsGroup: 19100
+        runAsUser: 19100
+        runAsNonRoot: true
       containers:
         - args:
             - --path.sysfs=/host/sys
@@ -30,9 +37,21 @@ spec:
             - --collector.netclass.ignored-devices=^(veth.*)$
           name: node-exporter
           image: prom/node-exporter:v1.3.1
+          securityContext:
+            runAsGroup: 19100
+            runAsUser: 19100
+            runAsNonRoot: true
+            readOnlyRootFilesystem: true
+            allowPrivilegeEscalation: false
+            seccompProfile:
+              type: RuntimeDefault
+            capabilities:
+              drop:
+                - all
           ports:
             - containerPort: 9100
               protocol: TCP
+              name: metrics
           resources:
             limits:
               cpu: 20m
@@ -49,6 +68,24 @@ spec:
               mountPropagation: HostToContainer
               name: root
               readOnly: true
+          livenessProbe:
+            failureThreshold: 6
+            initialDelaySeconds: 120
+            periodSeconds: 10
+            successThreshold: 1
+            timeoutSeconds: 5
+            httpGet:
+              path: /
+              port: metrics
+          readinessProbe:
+            failureThreshold: 6
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            successThreshold: 1
+            timeoutSeconds: 5
+            httpGet:
+              path: /
+              port: metrics
       tolerations:
         - key: node-role.kubernetes.io/control-plane
           effect: NoSchedule

@@ -22,6 +22,11 @@ spec:
     spec:
       automountServiceAccountToken: false
       serviceAccountName: jellyfin-sa
+      securityContext:
+        fsGroup: 18096
+        runAsGroup: 18096
+        runAsUser: 18096
+        runAsNonRoot: true
       containers:
         - image: jellyfin/jellyfin:10.7.7
           imagePullPolicy: IfNotPresent
@@ -38,6 +43,16 @@ spec:
             - containerPort: 8920
             - containerPort: 1900
             - containerPort: 7359
+          securityContext:
+            runAsGroup: 18096
+            runAsUser: 18096
+            runAsNonRoot: true
+            allowPrivilegeEscalation: false
+            seccompProfile:
+              type: RuntimeDefault
+            capabilities:
+              drop:
+                - all
           volumeMounts:
             - name: jellyfin-config
               mountPath: /config

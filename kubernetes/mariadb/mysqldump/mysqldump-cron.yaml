@@ -12,6 +12,9 @@ spec:
     spec:
       backoffLimit: 0
       template:
+        metadata:
+          annotations:
+            seccomp.security.alpha.kubernetes.io/defaultProfileName: runtime/default
         spec:
           serviceAccountName: mariadb-sa
           volumes:
@@ -41,6 +44,13 @@ spec:
                 - name: mysqldump-config
                   mountPath: /etc/logrotate.d/mysqldump
                   subPath: mysqldump
+              securityContext:
+                allowPrivilegeEscalation: false
+                seccompProfile:
+                  type: RuntimeDefault
+                capabilities:
+                  drop:
+                    - all
               terminationMessagePath: /dev/termination-log
               terminationMessagePolicy: File
               imagePullPolicy: IfNotPresent

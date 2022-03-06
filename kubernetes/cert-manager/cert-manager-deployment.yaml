@@ -27,9 +27,13 @@ spec:
         app.kubernetes.io/version: "v1.7.1"
       annotations:
         enable.version-checker.io/cert-manager-cainjector: "true"
+        seccomp.security.alpha.kubernetes.io/defaultProfileName: runtime/default
     spec:
       serviceAccountName: cert-manager-cainjector
       securityContext:
+        fsGroup: 10250
+        runAsGroup: 10250
+        runAsUser: 10250
         runAsNonRoot: true
       tolerations:
         - key: node-role.kubernetes.io/master
@@ -58,6 +62,17 @@ spec:
               valueFrom:
                 fieldRef:
                   fieldPath: metadata.namespace
+          securityContext:
+            runAsGroup: 10250
+            runAsUser: 10250
+            runAsNonRoot: true
+            readOnlyRootFilesystem: true
+            allowPrivilegeEscalation: false
+            seccompProfile:
+              type: RuntimeDefault
+            capabilities:
+              drop:
+                - all
           resources:
             limits:
               cpu: 20m
@@ -95,6 +110,7 @@ spec:
         app.kubernetes.io/version: "v1.7.1"
       annotations:
         enable.version-checker.io/cert-manager: "true"
+        seccomp.security.alpha.kubernetes.io/defaultProfileName: runtime/default
     spec:
       tolerations:
         - key: node-role.kubernetes.io/master
@@ -113,6 +129,9 @@ spec:
                       - "k3s-server-3"
       serviceAccountName: cert-manager
       securityContext:
+        fsGroup: 10250
+        runAsGroup: 10250
+        runAsUser: 10250
         runAsNonRoot: true
       containers:
         - name: cert-manager
@@ -130,6 +149,17 @@ spec:
               valueFrom:
                 fieldRef:
                   fieldPath: metadata.namespace
+          securityContext:
+            runAsGroup: 10250
+            runAsUser: 10250
+            runAsNonRoot: true
+            readOnlyRootFilesystem: true
+            allowPrivilegeEscalation: false
+            seccompProfile:
+              type: RuntimeDefault
+            capabilities:
+              drop:
+                - all
           resources:
             limits:
               cpu: 20m
@@ -167,6 +197,7 @@ spec:
         app.kubernetes.io/version: "v1.7.1"
       annotations:
         enable.version-checker.io/cert-manager-webhook: "true"
+        seccomp.security.alpha.kubernetes.io/defaultProfileName: runtime/default
     spec:
       tolerations:
         - key: node-role.kubernetes.io/master
@@ -185,6 +216,9 @@ spec:
                       - "k3s-server-3"
       serviceAccountName: cert-manager-webhook
       securityContext:
+        fsGroup: 10250
+        runAsGroup: 10250
+        runAsUser: 10250
         runAsNonRoot: true
       containers:
         - name: cert-manager-webhook
@@ -200,6 +234,17 @@ spec:
             - name: https
               protocol: TCP
               containerPort: 10250
+          securityContext:
+            runAsGroup: 10250
+            runAsUser: 10250
+            runAsNonRoot: true
+            readOnlyRootFilesystem: true
+            allowPrivilegeEscalation: false
+            seccompProfile:
+              type: RuntimeDefault
+            capabilities:
+              drop:
+                - all
           livenessProbe:
             httpGet:
               path: /livez

@@ -33,6 +33,11 @@ spec:
                     values:
                       - "k3s-server-1"
       hostname: bitwarden
+      securityContext:
+        fsGroup: 11024
+        runAsGroup: 11024
+        runAsUser: 11024
+        runAsNonRoot: true
       containers:
         - image: vaultwarden/server:1.24.0
           imagePullPolicy: IfNotPresent
@@ -41,19 +46,40 @@ spec:
           #envFrom:
           #  - secretRef:
           #      name: bitwarden-secrets
+          env:
+            - name: ROCKET_PORT
+              value: "8080"
           securityContext:
+            runAsGroup: 11024
+            runAsUser: 11024
+            runAsNonRoot: true
+            readOnlyRootFilesystem: true
+            allowPrivilegeEscalation: false
             seccompProfile:
               type: RuntimeDefault
+            capabilities:
+              drop:
+                - all
           livenessProbe:
             httpGet:
               path: /
               port: http
+            timeoutSeconds: 1
+            periodSeconds: 10
+            successThreshold: 1
+            failureThreshold: 3
+            initialDelaySeconds: 10
           readinessProbe:
             httpGet:
               path: /
               port: http
+            timeoutSeconds: 1
+            periodSeconds: 10
+            successThreshold: 1
+            failureThreshold: 3
+            initialDelaySeconds: 10
           ports:
-            - containerPort: 80
+            - containerPort: 8080
               name: http
               protocol: TCP
             - containerPort: 3012

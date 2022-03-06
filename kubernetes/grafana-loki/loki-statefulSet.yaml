@@ -17,6 +17,7 @@ spec:
         app: loki
       annotations:
         enable.version-checker.io/loki: "true"
+        seccomp.security.alpha.kubernetes.io/defaultProfileName: runtime/default
     spec:
       serviceAccountName: loki
       securityContext:
@@ -24,7 +25,6 @@ spec:
         runAsGroup: 10001
         runAsNonRoot: true
         runAsUser: 10001
-      initContainers: []
       containers:
         - name: loki
           image: "grafana/loki:2.4.2"
@@ -58,7 +58,16 @@ spec:
               port: http-metrics
             initialDelaySeconds: 45
           securityContext:
+            runAsGroup: 10001
+            runAsUser: 10001
+            runAsNonRoot: true
             readOnlyRootFilesystem: true
+            allowPrivilegeEscalation: false
+            seccompProfile:
+              type: RuntimeDefault
+            capabilities:
+              drop:
+                - all
       terminationGracePeriodSeconds: 4800
       volumes:
         - name: config

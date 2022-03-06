@@ -33,6 +33,7 @@ spec:
           name: gitlab-runner
           command: ["/bin/bash", "/scripts/entrypoint"]
           securityContext:
+            readOnlyRootFilesystem: true
             allowPrivilegeEscalation: false
             seccompProfile:
               type: RuntimeDefault
@@ -49,6 +50,8 @@ spec:
           volumeMounts:
             - mountPath: /scripts
               name: gitlab-runner
+            - mountPath: /tmp
+              name: tmp-gitlab-runner
             - name: etc-gitlab-runner
               mountPath: /home/gitlab-runner/.gitlab-runner
           livenessProbe:
@@ -78,6 +81,11 @@ spec:
         - name: etc-gitlab-runner
           emptyDir:
             medium: "Memory"
+            sizeLimit: 1Mi
+        - name: tmp-gitlab-runner
+          emptyDir:
+            medium: "Memory"
+            sizeLimit: 1Mi
         - name: gitlab-runner
           configMap:
             #defaultMode: 0777

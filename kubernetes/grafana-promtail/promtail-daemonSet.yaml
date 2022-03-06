@@ -15,11 +15,9 @@ spec:
         app.kubernetes.io/instance: promtail
       annotations:
         enable.version-checker.io/promtail: "true"
+        seccomp.security.alpha.kubernetes.io/defaultProfileName: runtime/default
     spec:
       serviceAccountName: promtail
-      securityContext:
-        runAsGroup: 0
-        runAsUser: 0
       containers:
         - name: promtail
           image: "grafana/promtail:2.4.2"
@@ -55,11 +53,13 @@ spec:
               containerPort: 3101
               protocol: TCP
           securityContext:
+            readOnlyRootFilesystem: true
             allowPrivilegeEscalation: false
+            seccompProfile:
+              type: RuntimeDefault
             capabilities:
               drop:
-                - ALL
-            readOnlyRootFilesystem: true
+                - all
           readinessProbe:
             failureThreshold: 5
             httpGet:
