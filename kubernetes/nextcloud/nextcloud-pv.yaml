@@ -73,3 +73,41 @@ spec:
   claimRef:
     name: nextcloud-data
     namespace: nextcloud
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  namespace: nextcloud
+  name: nextcloud-data-backup
+spec:
+  storageClassName: nfs
+  volumeName: nextcloud-data-backup
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 750G
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  namespace: nextcloud
+  name: nextcloud-data-backup
+  labels:
+    type: local
+spec:
+  storageClassName: nfs
+  volumeMode: Filesystem
+  capacity:
+    storage: 750G
+  accessModes:
+    - ReadWriteOnce
+  mountOptions:
+    - hard
+    - nfsvers=4.1
+  nfs:
+    path: /backup/File_Storage/Nextcloud
+    server: 10.0.0.4
+  claimRef:
+    name: nextcloud-data-backup
+    namespace: nextcloud

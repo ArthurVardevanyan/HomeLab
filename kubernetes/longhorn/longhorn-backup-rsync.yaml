@@ -1,10 +1,10 @@
 kind: CronJob
 apiVersion: batch/v1
 metadata:
-  name: mysqldump-cron
-  namespace: database
+  name: longhorn-rsync
+  namespace: longhorn-system
 spec:
-  schedule: "0 3 * * *"
+  schedule: "0 4 * * *"
   concurrencyPolicy: Forbid
   suspend: false
   startingDeadlineSeconds: 60
@@ -14,38 +14,39 @@ spec:
       template:
         metadata:
           labels:
-            app: mysqldump-cron
+            app: longhorn-rsync
           annotations:
             seccomp.security.alpha.kubernetes.io/defaultProfileName: runtime/default
         spec:
-          serviceAccountName: mariadb-sa
           volumes:
-            - name: mysqldump-config
-              configMap:
-                name: mysqldump-config
-            - name: mysqldump-pvc
+            - name: longhorn-data
               persistentVolumeClaim:
-                claimName: mysqldump-pvc
+                claimName: longhorn-data
+            - name: longhorn-data-backup
+              persistentVolumeClaim:
+                claimName: longhorn-data-backup
           containers:
-            - name: mysqldump-cron
+            - name: longhorn-rsync
               image: gitlab.arthurvardevanyan.com:5050/arthurvardevanyan/homelab:toolbox
-              command: ["/bin/bash", "-c", "sh /mnt/mysqldump.sh"]
+              command:
+                [
+                  "/bin/bash",
+                  "-c",
+                  "rsync --stats --archive --verbose --human-readable --stats --delete /mnt/data/longhorn /mnt/backup/",
+                ]
               resources:
                 limits:
-                  cpu: 50m
-                  memory: 50M
+                  cpu: 200m
+                  memory: 1000M
                 requests:
-                  cpu: 25m
-                  memory: 25M
+                  cpu: 100m
+                  memory: 500M
               volumeMounts:
-                - name: mysqldump-pvc
-                  mountPath: /mnt/mysqldump
-                - name: mysqldump-config
-                  mountPath: /mnt/mysqldump.sh
-                  subPath: mysqldump.sh
-                - name: mysqldump-config
-                  mountPath: /etc/logrotate.d/mysqldump
-                  subPath: mysqldump
+                - name: longhorn-data
+                  mountPath: /mnt/data/longhorn
+                  readOnly: true
+                - name: longhorn-data-backup
+                  mountPath: /mnt/backup/longhorn
               securityContext:
                 allowPrivilegeEscalation: false
                 seccompProfile:
@@ -60,7 +61,7 @@ spec:
           terminationGracePeriodSeconds: 30
           dnsPolicy: ClusterFirst
           automountServiceAccountToken: false
-          hostname: mysqldump-cron
+          hostname: longhorn-rsync
           schedulerName: default-scheduler
   successfulJobsHistoryLimit: 1
   failedJobsHistoryLimit: 1

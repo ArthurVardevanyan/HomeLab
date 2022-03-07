@@ -1,0 +1,75 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  namespace: longhorn-system
+  name: longhorn-data
+spec:
+  storageClassName: nfs
+  volumeName: longhorn-data
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 75G
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  namespace: longhorn-system
+  name: longhorn-data
+  labels:
+    type: local
+spec:
+  storageClassName: nfs
+  volumeMode: Filesystem
+  capacity:
+    storage: 75G
+  accessModes:
+    - ReadWriteOnce
+  mountOptions:
+    - hard
+    - nfsvers=4.1
+  nfs:
+    path: /backup/Kubernetes/longhorn
+    server: 10.0.0.3
+  claimRef:
+    name: longhorn-data
+    namespace: longhorn-system
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  namespace: longhorn-system
+  name: longhorn-data-backup
+spec:
+  storageClassName: nfs
+  volumeName: longhorn-data-backup
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 75G
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  namespace: longhorn-system
+  name: longhorn-data-backup
+  labels:
+    type: local
+spec:
+  storageClassName: nfs
+  volumeMode: Filesystem
+  capacity:
+    storage: 75G
+  accessModes:
+    - ReadWriteOnce
+  mountOptions:
+    - hard
+    - nfsvers=4.1
+  nfs:
+    path: /backup/Kubernetes/longhorn
+    server: 10.0.0.4
+  claimRef:
+    name: longhorn-data-backup
+    namespace: longhorn-system

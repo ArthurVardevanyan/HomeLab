@@ -12,6 +12,11 @@ spec:
     spec:
       backoffLimit: 0
       template:
+        metadata:
+          labels:
+            app: nextcloud-cron
+          annotations:
+            seccomp.security.alpha.kubernetes.io/defaultProfileName: runtime/default
         spec:
           serviceAccountName: nextcloud-sa
           affinity:
