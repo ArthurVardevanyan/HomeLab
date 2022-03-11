@@ -44,12 +44,10 @@ spec:
             - weight: 1
               preference:
                 matchExpressions:
-                  - key: kubernetes.io/hostname
+                  - key: node-role.kubernetes.io/master
                     operator: In
                     values:
-                      - "k3s-server-1"
-                      - "k3s-server-2"
-                      - "k3s-server-3"
+                      - "true"
       containers:
         - name: cert-manager-cainjector
           image: "quay.io/jetstack/cert-manager-cainjector:v1.7.1"
@@ -121,12 +119,10 @@ spec:
             - weight: 1
               preference:
                 matchExpressions:
-                  - key: kubernetes.io/hostname
+                  - key: node-role.kubernetes.io/master
                     operator: In
                     values:
-                      - "k3s-server-1"
-                      - "k3s-server-2"
-                      - "k3s-server-3"
+                      - "true"
       serviceAccountName: cert-manager
       securityContext:
         fsGroup: 10250
@@ -208,12 +204,10 @@ spec:
             - weight: 1
               preference:
                 matchExpressions:
-                  - key: kubernetes.io/hostname
+                  - key: node-role.kubernetes.io/master
                     operator: In
                     values:
-                      - "k3s-server-1"
-                      - "k3s-server-2"
-                      - "k3s-server-3"
+                      - "true"
       serviceAccountName: cert-manager-webhook
       securityContext:
         fsGroup: 10250
