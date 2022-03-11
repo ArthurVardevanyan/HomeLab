@@ -16,8 +16,7 @@ HomeLab Server/Cluster, Virtual Sandbox Cluster, & Desktop Configuration
 ansible-playbook -i ansible/inventory --ask-become-pass ansible/desktop.yaml --ask-pass
 
 git merge --no-ff
-scp -r /home/arthur/vmware windowsBackup@10.0.0.3:/backup/WindowsBackup/vmware
-7z a -t7z -m0=lzma2 -mx=9 -mfb=128 -md=256m -ms=on FOLDER.7z FOLDER
+scp -r /home/arthur/vm windowsBackup@10.0.0.3:/backup/WindowsBackup/vm
 sudo sensors-detect
 ```
 
@@ -35,12 +34,8 @@ Manually Install Extensions from extensions.gnome.org
 Config files need to be applied manually.
 
 ```bash
-machineConfigs/home/arthur/cura
+machineConfigs/desktop/home/arthur/cura
 ```
-
-### GWE
-
-Database file needs to be restored manually.
 
 ## Virtual Sandbox
 
@@ -137,7 +132,7 @@ virt-install \
             url=http://10.0.0.5:7071/preseed.cfg"
 ```
 
-#### KVM Infra
+#### KVM
 
 ```bash
 # https://www.how2shout.com/linux/how-to-install-and-configure-kvm-on-debian-11-bullseye-linux/
@@ -250,11 +245,15 @@ $(kubectl get serviceaccount admin-user -n kubernetes-dashboard -o jsonpath="{.s
 -o jsonpath="{.data.token}" | base64 --decode
 
 # Watch ALl Pods
-watch $(echo "kubectl get pods -A -o wide |  grep -v 'svclb' | sort -k8 -r")
+watch kubectl get pods -A -o wide --sort-by=.metadata.creationTimestamp
 # Delete Pods that Have a Restart
 kubectl get pods -A | awk '$5>0' | awk '{print "kubectl delete pod -n " $1 " " $2}' | bash -
 # Drain Node
 kubectl drain k3s-worker --ignore-daemonsets --delete-emptydir-data
+# Vault
+kubectl exec -it vault-0 -n vault -- vault operator unseal --tls-skip-verify
+# Nextcloud
+kubectl exec -it nextcloud-0 -n nextcloud -- runuser -u www-data -- php -f /var/www/html/occ
 ```
 
 #### SSH Keyscan
@@ -262,7 +261,7 @@ kubectl drain k3s-worker --ignore-daemonsets --delete-emptydir-data
 ```bash
 export IP_LIST="3 4 5 17 102 103 111 112"
 
-rm -f /tmp/output.txt
+rm -f /tmp/ssh_keyscan.txt
 for IP in $( echo "$IP_LIST" ); do
 ssh-keyscan 10.0.0."${IP}" >> /tmp/ssh_keyscan.txt
 
@@ -272,24 +271,14 @@ echo "\n\n\nSSH Keyscan\n\n"
 cat /tmp/ssh_keyscan.txt
 ```
 
-### ZFS
+#### K3S Image Cleanup
 
 ```bash
-sudo zfs get compressratio
-/usr/sbin/zfs send -i backup/File_Storage backup/File_Storage@20211201 | pv | ssh arthur@10.0.0.4 /usr/sbin/zfs receive -F backup/File_Storage
-zfs send backup/File_Storage@20211101 | ssh arthur@10.0.0.4 zfs receive -F backup/File_Storage
-```
+export IP_LIST="5 102 103 111 112"
 
-### Cockpit
-
-```bash
-sudo nano /etc/cockpit/ws-certs.d/1-my-cert.cert
-```
-
-### Vault
-
-```bash
-kubectl exec -it $(kubectl -n vault get pod --selector='app=vault' -o custom-columns="-:metadata.name" --no-headers) -n vault -- vault operator unseal --tls-skip-verify
+for IP in $( echo "$IP_LIST" ); do
+ssh -t arthur@10.0.0."${IP}" "sudo k3s crictl rmi --prune"
+done
 ```
 
 ### GitLab
@@ -302,7 +291,7 @@ kubectl exec -it gitlab-0 -n gitlab -- bash
 kubectl patch -n gitlab deployment/gitlab --type='json' -p='[{"op": "replace", "path": "/spec/template/spec/containers/0/image", "value": "gitlab/gitlab-ce:XX.X.X-ce.0"}]'
 ```
 
-### GitLab Vault Integration
+#### GitLab Vault Integration
 
 ```bash
 # JWT Authentication
@@ -346,10 +335,4 @@ GRANT ALL PRIVILEGES ON spotifyTest.* TO `spotifyTest`@`10.42.0.%`;
 
 # View Only Access
 GRANT SELECT, LOCK TABLES, SHOW VIEW ON *.* TO 'backup'@'10.42.0.1' IDENTIFIED BY 'backup';
-```
-
-### Nextcloud
-
-```bash
-kubectl exec -it nextcloud-0 -n nextcloud -- runuser -u www-data -- php -f /var/www/html/occ
 ```
