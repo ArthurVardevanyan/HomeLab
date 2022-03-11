@@ -48,14 +48,19 @@ spec:
             - name: nextcloud-data
               persistentVolumeClaim:
                 claimName: nextcloud-data
+          securityContext:
+            fsGroup: 33
+            runAsGroup: 33
+            runAsNonRoot: true
+            runAsUser: 33
           containers:
             - name: nextcloud-preview
               image: nextcloud:23.0.2
               command:
                 - /bin/sh
                 - -c
-                - runuser -u www-data --  php -f /var/www/html/occ preview:delete_old -vvv \
-                  && runuser -u www-data --  php -f /var/www/html/occ preview:pre-generate -vvv
+                - /var/www/html/occ preview:delete_old -vvv \
+                  && /var/www/html/occ preview:pre-generate -vvv
               resources:
                 limits:
                   cpu: 100m
@@ -63,6 +68,17 @@ spec:
                 requests:
                   cpu: 50m
                   memory: 250M
+              securityContext:
+                runAsGroup: 33
+                runAsUser: 33
+                runAsNonRoot: true
+                readOnlyRootFilesystem: true
+                allowPrivilegeEscalation: false
+                seccompProfile:
+                  type: RuntimeDefault
+                capabilities:
+                  drop:
+                    - all
               volumeMounts:
                 - name: nextcloud-config
                   mountPath: /var/www/html

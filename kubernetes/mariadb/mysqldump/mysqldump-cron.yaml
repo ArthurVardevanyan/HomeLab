@@ -26,6 +26,14 @@ spec:
             - name: mysqldump-pvc
               persistentVolumeClaim:
                 claimName: mysqldump-pvc
+            - name: state
+              emptyDir:
+                sizeLimit: 1Mi
+          securityContext:
+            fsGroup: 65534
+            runAsGroup: 65534
+            runAsNonRoot: true
+            runAsUser: 65534
           containers:
             - name: mysqldump-cron
               image: gitlab.arthurvardevanyan.com:5050/arthurvardevanyan/homelab:toolbox
@@ -34,9 +42,11 @@ spec:
                 limits:
                   cpu: 50m
                   memory: 50M
+                  ephemeral-storage: "1Mi"
                 requests:
                   cpu: 25m
                   memory: 25M
+                  ephemeral-storage: "1Mi"
               volumeMounts:
                 - name: mysqldump-pvc
                   mountPath: /mnt/mysqldump
@@ -44,9 +54,15 @@ spec:
                   mountPath: /mnt/mysqldump.sh
                   subPath: mysqldump.sh
                 - name: mysqldump-config
-                  mountPath: /etc/logrotate.d/mysqldump
+                  mountPath: /tmp/mysqldump
                   subPath: mysqldump
+                - name: state
+                  mountPath: /tmp/state
               securityContext:
+                runAsGroup: 65534
+                runAsUser: 65534
+                runAsNonRoot: true
+                readOnlyRootFilesystem: true
                 allowPrivilegeEscalation: false
                 seccompProfile:
                   type: RuntimeDefault

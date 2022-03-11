@@ -25,6 +25,11 @@ spec:
             - name: longhorn-data-backup
               persistentVolumeClaim:
                 claimName: longhorn-data-backup
+          securityContext:
+            fsGroup: 65534
+            runAsGroup: 65534
+            runAsNonRoot: true
+            runAsUser: 65534
           containers:
             - name: longhorn-rsync
               image: gitlab.arthurvardevanyan.com:5050/arthurvardevanyan/homelab:toolbox
@@ -48,6 +53,10 @@ spec:
                 - name: longhorn-data-backup
                   mountPath: /mnt/backup/longhorn
               securityContext:
+                runAsGroup: 65534
+                runAsUser: 65534
+                runAsNonRoot: true
+                readOnlyRootFilesystem: true
                 allowPrivilegeEscalation: false
                 seccompProfile:
                   type: RuntimeDefault

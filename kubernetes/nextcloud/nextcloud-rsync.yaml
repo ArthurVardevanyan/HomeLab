@@ -45,6 +45,11 @@ spec:
             - name: nextcloud-data-backup
               persistentVolumeClaim:
                 claimName: nextcloud-data-backup
+          securityContext:
+            fsGroup: 33
+            runAsGroup: 33
+            runAsNonRoot: true
+            runAsUser: 33
           containers:
             - name: nextcloud-rsync
               image: gitlab.arthurvardevanyan.com:5050/arthurvardevanyan/homelab:toolbox
@@ -68,6 +73,10 @@ spec:
                 - name: nextcloud-data-backup
                   mountPath: /mnt/backup/Nextcloud
               securityContext:
+                runAsGroup: 33
+                runAsUser: 33
+                runAsNonRoot: true
+                readOnlyRootFilesystem: true
                 allowPrivilegeEscalation: false
                 seccompProfile:
                   type: RuntimeDefault

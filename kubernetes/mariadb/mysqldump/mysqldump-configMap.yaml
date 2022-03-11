@@ -10,7 +10,7 @@ data:
     #!/bin/sh
 
     echo "Rotating SQL Files"
-    logrotate -vf  /etc/logrotate.d/mysqldump
+    logrotate -vf  /tmp/mysqldump -s /tmp/state/logrotate.status
 
     URL=mariadb.database
     LOCATION=/mnt/mysqldump
@@ -34,7 +34,7 @@ data:
       rotate 75
       compress
       delaycompress
-      create 640 root backup
+      create 640 65534 65534
       dateext
       dateformat .%Y-%m-%dT%H:%M:%S
     }
