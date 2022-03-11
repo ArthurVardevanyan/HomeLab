@@ -145,6 +145,7 @@ spec:
               memory: 10M
           securityContext:
             runAsUser: 0
+            allowPrivilegeEscalation: false
             seccompProfile:
               type: RuntimeDefault
           ports:
@@ -184,6 +185,11 @@ spec:
                     operator: In
                     values:
                       - "true"
+      securityContext:
+        fsGroup: 19500
+        runAsGroup: 19500
+        runAsNonRoot: true
+        runAsUser: 19500
       initContainers:
         - name: wait-longhorn-manager
           image: longhornio/longhorn-manager:v1.2.3
@@ -197,6 +203,17 @@ spec:
         - name: longhorn-driver-deployer
           image: longhornio/longhorn-manager:v1.2.3
           imagePullPolicy: IfNotPresent
+          securityContext:
+            runAsGroup: 19500
+            runAsUser: 19500
+            runAsNonRoot: true
+            readOnlyRootFilesystem: true
+            allowPrivilegeEscalation: false
+            seccompProfile:
+              type: RuntimeDefault
+            capabilities:
+              drop:
+                - all
           resources:
             requests:
               cpu: 5m
@@ -228,5 +245,3 @@ spec:
                 fieldRef:
                   fieldPath: spec.serviceAccountName
       serviceAccountName: longhorn-service-account
-      securityContext:
-        runAsUser: 0
