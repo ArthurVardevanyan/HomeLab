@@ -93,99 +93,31 @@ k3s-server-3 | cp,etcd,master | 10.0.0.103 | KVM        | 4    | 2    | 1.5G  | 
 k3s-worker-1 | infra,worker   | 10.0.0.111 | Infra KVM  | 4    | 4    | 10G   | LH SSD
 k3s-worker-2 | worker         | 10.0.0.112 | KVM        | 4    | 4    | 4.25G | N/A
 
-#### KVM Infra Box
-
-```bash
-# https://www.how2shout.com/linux/how-to-install-and-configure-kvm-on-debian-11-bullseye-linux/
-ssh 10.0.0.3
-ansible-playbook -i ansible/inventory --ask-become-pass ansible/servers.yaml --ask-pass
-# Reboot && Update DHCP Server With New Mac Address
-
-export LIBVIRT_DEFAULT_URI=qemu:///system
-
-virt-install \
-    --noautoconsole \
-    --graphics vnc \
-    --name=k3s-server-2 \
-    --os-variant=debian10 \
-    --vcpus sockets=1,cores=1,threads=2 \
-    --ram=1536 \
-    --disk "${HOME}/vm/k3s-server-2".img,,format=raw,size=25 \
-    --network bridge=br0,mac="10:00:00:00:01:02" \
-    --location=http://ftp.us.debian.org/debian/dists/stable/main/installer-amd64/ \
-    --extra-args="\
-            auto=true priority=critical vga=normal hostname=k3s-server-2 \
-            url=http://10.0.0.5:7071/preseed.cfg"
-
-virt-install \
-    --noautoconsole \
-    --graphics vnc \
-    --name=k3s-worker-1 \
-    --os-variant=debian10 \
-    --vcpus sockets=1,cores=2,threads=2 \
-    --ram=10240 \
-    --disk "${HOME}/vm/k3s-worker-1".img,,format=raw,size=125 \
-    --network bridge=br0,mac="10:00:00:00:01:11" \
-    --location=http://ftp.us.debian.org/debian/dists/stable/main/installer-amd64/ \
-    --extra-args="\
-            auto=true priority=critical vga=normal hostname=k3s-worker-1 \
-            url=http://10.0.0.5:7071/preseed.cfg"
-```
-
-#### KVM
-
-```bash
-# https://www.how2shout.com/linux/how-to-install-and-configure-kvm-on-debian-11-bullseye-linux/
-ssh 10.0.0.4
-ansible-playbook -i ansible/inventory --ask-become-pass ansible/servers.yaml --ask-pass
-# Reboot && Update DHCP Server With New Mac Address
-
-export LIBVIRT_DEFAULT_URI=qemu:///system
-
-virt-install \
-    --noautoconsole \
-    --graphics vnc \
-    --name=k3s-server-3 \
-    --os-variant=debian10 \
-    --vcpus sockets=1,cores=1,threads=2 \
-    --ram=1536 \
-    --disk "${HOME}/vm/k3s-server-3".img,,format=raw,size=25 \
-    --network bridge=br0,mac="10:00:00:00:01:03" \
-    --location=http://ftp.us.debian.org/debian/dists/stable/main/installer-amd64/ \
-    --extra-args="\
-            auto=true priority=critical vga=normal hostname=k3s-server-3 \
-            url=http://10.0.0.5:7071/preseed.cfg"
-
-virt-install \
-    --noautoconsole \
-    --graphics vnc \
-    --name=k3s-worker-2 \
-    --os-variant=debian10 \
-    --vcpus sockets=1,cores=2,threads=2 \
-    --ram=4352 \
-    --disk "${HOME}/vm/k3s-worker-2".img,,format=raw,size=125 \
-    --network bridge=br0,mac="10:00:00:00:01:12" \
-    --location=http://ftp.us.debian.org/debian/dists/stable/main/installer-amd64/ \
-    --extra-args="\
-            auto=true priority=critical vga=normal hostname=k3s-worker-2 \
-            url=http://10.0.0.5:7071/preseed.cfg"
-```
-
 #### K3S Setup
 
 ```bash
+# Configure PFsense / HAProxy / DHCP / DNS
+
 # Servers
 ansible-playbook -i ansible/inventory --ask-become-pass ansible/servers.yaml --ask-pass
-# Reboot All Kubernetes Nodes
+# Reboot All Kubernetes Nodes && For KVM Nodes Update DHCP Server With New Mac Address
 
-#First Time Setup
+# Install VMs
+bash kvm_k3s.bash kvm-infra
+bash kvm_k3s.bash kvm
+
+bash kvm_k3s.bash ansible
+# Reboot VMs
+
+# Install K3s
+# First Time Setup
 export K3S_TOKEN=""
 export RESERVED="--kubelet-arg system-reserved=cpu=250m,memory=500Mi --kubelet-arg kube-reserved=cpu=250m,memory=500Mi"
 
 curl -sfL https://get.k3s.io | INSTALL_K3S_EXEC="server --cluster-init  --tls-san 10.0.0.100 --tls-san k3s.<URL>.com ${RESERVED}"\
 INSTALL_K3S_CHANNEL=v1.23 sh -
 
-# Server
+# Servers
 export K3S_TOKEN=""
 export RESERVED="--kubelet-arg system-reserved=cpu=250m,memory=500Mi --kubelet-arg kube-reserved=cpu=250m,memory=500Mi"
 
@@ -205,30 +137,8 @@ K3S_URL=https://10.0.0.100:6443 INSTALL_K3S_CHANNEL=v1.23 sh -
 #### K3S Post Setup
 
 ```bash
-# Taint
-kubectl taint node k3s-server-1 node-role.kubernetes.io/master:NoSchedule --overwrite
-kubectl taint node k3s-server-2 node-role.kubernetes.io/master:NoSchedule --overwrite
-kubectl taint node k3s-server-3 node-role.kubernetes.io/master:NoSchedule --overwrite
-kubectl taint node k3s-server-2 node-role.kubernetes.io/control-plane:NoSchedule --overwrite
-kubectl taint node k3s-server-3 node-role.kubernetes.io/control-plane:NoSchedule --overwrite
-
-
-# Role Label
-kubectl label node k3s-worker-1 node-role.kubernetes.io/infra=true --overwrite
-kubectl label node k3s-worker-1 node-role.kubernetes.io/worker=true --overwrite
-kubectl label node k3s-worker-2 node-role.kubernetes.io/worker=true --overwrite
-
-# Zone Labels
-kubectl label node k3s-server-1 topology.kubernetes.io/zone=bare-metal --overwrite
-kubectl label node k3s-server-2 topology.kubernetes.io/zone=infra-kvm --overwrite
-kubectl label node k3s-server-3 topology.kubernetes.io/zone=kvm --overwrite
-kubectl label node k3s-worker-1 topology.kubernetes.io/zone=infra-kvm --overwrite
-kubectl label node k3s-worker-2 topology.kubernetes.io/zone=kvm --overwrite
-
-# Longhorn Label
-kubectl label node k3s-server-1 node.longhorn.io/create-default-disk=true --overwrite
-kubectl label node k3s-worker-1 node.longhorn.io/create-default-disk=true --overwrite
-kubectl label node k3s-worker-2 node.longhorn.io/create-default-disk=true --overwrite
+# Label Nodes
+bash kvm_k3s label_nodes
 
 # Drain DaemonSets Temporarily off a Node
 kubectl taint node k3s-server- node-role.kubernetes.io/control-plane:NoExecute

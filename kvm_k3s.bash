@@ -6,6 +6,114 @@ set -o pipefail
 
 # PRESEED CONFIG: /machineConfigs/servers/preseed.cfg
 # ANSIBLE CONFIG: /ansible/k3s.yaml
+
+BLUE='\033[1;34m'
+NC='\033[0m'
+
+# https://www.how2shout.com/linux/how-to-install-and-configure-kvm-on-debian-11-bullseye-linux/
+export LIBVIRT_DEFAULT_URI=qemu:///system
+
+# HomeLab Functions
+
+ansible() {
+	ansible-playbook -i ansible/inventory --ask-become-pass ansible/servers.yaml --ask-pass
+}
+
+kvm-infra() {
+	ssh 10.0.0.3
+
+	virt-install \
+		--noautoconsole \
+		--graphics vnc \
+		--name=k3s-server-2 \
+		--os-variant=debian10 \
+		--vcpus sockets=1,cores=1,threads=2 \
+		--ram=1536 \
+		--disk "${HOME}/vm/k3s-server-2".img,,format=raw,size=25 \
+		--network bridge=br0,mac="10:00:00:00:01:02" \
+		--location=http://ftp.us.debian.org/debian/dists/stable/main/installer-amd64/ \
+		--extra-args="\
+            auto=true priority=critical vga=normal hostname=k3s-server-2 \
+            url=http://10.0.0.5:7071/preseed.cfg"
+
+	virt-install \
+		--noautoconsole \
+		--graphics vnc \
+		--name=k3s-worker-1 \
+		--os-variant=debian10 \
+		--vcpus sockets=1,cores=2,threads=2 \
+		--ram=10240 \
+		--disk "${HOME}/vm/k3s-worker-1".img,,format=raw,size=125 \
+		--network bridge=br0,mac="10:00:00:00:01:11" \
+		--location=http://ftp.us.debian.org/debian/dists/stable/main/installer-amd64/ \
+		--extra-args="\
+            auto=true priority=critical vga=normal hostname=k3s-worker-1 \
+            url=http://10.0.0.5:7071/preseed.cfg"
+
+}
+
+kvm() {
+	ssh 10.0.0.4
+
+	export LIBVIRT_DEFAULT_URI=qemu:///system
+
+	virt-install \
+		--noautoconsole \
+		--graphics vnc \
+		--name=k3s-server-3 \
+		--os-variant=debian10 \
+		--vcpus sockets=1,cores=1,threads=2 \
+		--ram=1536 \
+		--disk "${HOME}/vm/k3s-server-3".img,,format=raw,size=25 \
+		--network bridge=br0,mac="10:00:00:00:01:03" \
+		--location=http://ftp.us.debian.org/debian/dists/stable/main/installer-amd64/ \
+		--extra-args="\
+            auto=true priority=critical vga=normal hostname=k3s-server-3 \
+            url=http://10.0.0.5:7071/preseed.cfg"
+
+	virt-install \
+		--noautoconsole \
+		--graphics vnc \
+		--name=k3s-worker-2 \
+		--os-variant=debian10 \
+		--vcpus sockets=1,cores=2,threads=2 \
+		--ram=4352 \
+		--disk "${HOME}/vm/k3s-worker-2".img,,format=raw,size=125 \
+		--network bridge=br0,mac="10:00:00:00:01:12" \
+		--location=http://ftp.us.debian.org/debian/dists/stable/main/installer-amd64/ \
+		--extra-args="\
+            auto=true priority=critical vga=normal hostname=k3s-worker-2 \
+            url=http://10.0.0.5:7071/preseed.cfg"
+}
+
+label_nodes() {
+	# Taint
+	kubectl taint node k3s-server-1 node-role.kubernetes.io/master:NoSchedule --overwrite
+	kubectl taint node k3s-server-2 node-role.kubernetes.io/master:NoSchedule --overwrite
+	kubectl taint node k3s-server-3 node-role.kubernetes.io/master:NoSchedule --overwrite
+	kubectl taint node k3s-server-2 node-role.kubernetes.io/control-plane:NoSchedule --overwrite
+	kubectl taint node k3s-server-3 node-role.kubernetes.io/control-plane:NoSchedule --overwrite
+
+	# Role Label
+	kubectl label node k3s-worker-1 node-role.kubernetes.io/infra=true --overwrite
+	kubectl label node k3s-worker-1 node-role.kubernetes.io/worker=true --overwrite
+	kubectl label node k3s-worker-2 node-role.kubernetes.io/worker=true --overwrite
+
+	# Zone Labels
+	kubectl label node k3s-server-1 topology.kubernetes.io/zone=bare-metal --overwrite
+	kubectl label node k3s-server-2 topology.kubernetes.io/zone=infra-kvm --overwrite
+	kubectl label node k3s-server-3 topology.kubernetes.io/zone=kvm --overwrite
+	kubectl label node k3s-worker-1 topology.kubernetes.io/zone=infra-kvm --overwrite
+	kubectl label node k3s-worker-2 topology.kubernetes.io/zone=kvm --overwrite
+
+	# Longhorn Label
+	kubectl label node k3s-server-1 node.longhorn.io/create-default-disk=true --overwrite
+	kubectl label node k3s-worker-1 node.longhorn.io/create-default-disk=true --overwrite
+	kubectl label node k3s-worker-2 node.longhorn.io/create-default-disk=true --overwrite
+}
+
+# Sandbox Functions
+
 # SANDBOX HAPROXY: /machineConfigs/sandbox/var/etc/haproxy
 
 # Setup DHCP Network
@@ -19,10 +127,6 @@ set -o pipefail
 # <host mac='10:10:00:00:00:09' ip='10.10.10.9'/>
 # virsh net-destroy default && virsh net-start default
 
-BLUE='\033[1;34m'
-NC='\033[0m'
-
-export LIBVIRT_DEFAULT_URI=qemu:///system
 export PREFIX="sk3s"       # Sandbox k3s
 export K3S_TOKEN=${PREFIX} # Sandbox k3s
 export NODES="-master-0 -master-1 -master-2 -worker-0 -worker-1 -worker-2 -worker-3"
@@ -85,7 +189,7 @@ ansible() {
 		"ansible_become_pass=${PASSWORD} ansible_ssh_pass=${PASSWORD}"
 }
 
-label_nodes() {
+label_vms() {
 	load_kubeconfig
 
 	echo -e "\n${BLUE}Labeling Nodes:${NC}"
@@ -406,7 +510,7 @@ install_cluster() {
 	done
 
 	# Label Nodes
-	label_nodes
+	label_vms
 
 	# Install Addons
 	install_addons
