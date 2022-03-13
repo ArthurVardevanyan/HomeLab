@@ -20,17 +20,17 @@ spec:
     spec:
       automountServiceAccountToken: true
       securityContext:
-        runAsNonRoot: true
-        runAsGroup: 65532
-        fsGroup: 65532
-        runAsUser: 65532
+        #runAsNonRoot: true
+        runAsGroup: 0 #65532
+        fsGroup: 0 #65532
+        runAsUser: 0 #65532
       containers:
         - name: traefik
           args:
             - --global.checknewversion
             - --entryPoints.traefik.address=:9000/tcp
-            - --entryPoints.web.address=:8000/tcp
-            - --entryPoints.websecure.address=:8443/tcp
+            - --entryPoints.web.address=:80/tcp
+            - --entryPoints.websecure.address=:443/tcp
             - --entryPoints.registry.address=:5050/tcp
             - --entryPoints.mariadb.address=:3306/tcp
             - --api.dashboard=true
@@ -53,7 +53,7 @@ spec:
             failureThreshold: 3
             httpGet:
               path: /ping
-              port: 8000
+              port: 80 #8000
               scheme: HTTP
             initialDelaySeconds: 10
             periodSeconds: 10
@@ -63,7 +63,7 @@ spec:
             failureThreshold: 1
             httpGet:
               path: /ping
-              port: 8000
+              port: 80 #8000
               scheme: HTTP
             initialDelaySeconds: 10
             periodSeconds: 10
@@ -76,15 +76,19 @@ spec:
             - containerPort: 9000
               name: traefik
               protocol: TCP
-            - containerPort: 8000
+            - containerPort: 80 #8000
+              hostPort: 80
               name: web
               protocol: TCP
-            - containerPort: 8443
+            - containerPort: 443
+              hostPort: 443 #8443
               name: websecure
               protocol: TCP
             - containerPort: 5050
+              hostPort: 5050
               name: registry
             - containerPort: 3306
+              hostPort: 3306
               name: mariadb
           resources:
             limits:
@@ -94,11 +98,11 @@ spec:
               cpu: 25m
               memory: 75M
           securityContext:
-            runAsNonRoot: true
+            #runAsNonRoot: true
             allowPrivilegeEscalation: false
             readOnlyRootFilesystem: true
-            runAsGroup: 65532
-            runAsUser: 65532
+            runAsGroup: 0 #65532
+            runAsUser: 0 #65532
             seccompProfile:
               type: RuntimeDefault
             capabilities:
