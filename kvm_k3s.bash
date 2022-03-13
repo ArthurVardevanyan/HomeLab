@@ -127,9 +127,6 @@ label_nodes() {
 # <host mac='10:10:00:00:00:09' ip='10.10.10.9'/>
 # virsh net-destroy default && virsh net-start default
 
-export PREFIX="sk3s"       # Sandbox k3s
-export K3S_TOKEN=${PREFIX} # Sandbox k3s
-export NODES="-master-0 -master-1 -master-2 -worker-0 -worker-1 -worker-2 -worker-3"
 export START_IP=3
 PASSWORD=${PASSWORD:-}
 
@@ -170,7 +167,7 @@ delete_cluster() {
 	done
 }
 
-ansible() {
+ansible_sandbox() {
 	echo -e "\n${BLUE}Running Ansible Playbooks:${NC}"
 	if [ -z "${PASSWORD}" ]; then
 		echo -n Password:
@@ -326,12 +323,8 @@ install_addons() {
 	echo -e "\n${BLUE}Longhorn:${NC}"
 	kubectl apply -f /tmp/kubernetes/longhorn/longhorn-namespace.yaml
 	sed -i "s/<URL>/${URL}/g" /tmp/kubernetes/longhorn/longhorn-traefik.yaml
-	sed -i "s[node-role.kubernetes.io/master:NoSchedule[[g" /tmp/kubernetes/longhorn/longhorn-configmap.yaml
-	sed -i "s[tolerations:[[g" /tmp/kubernetes/longhorn/longhorn-deployment.yaml
-	sed -i "s[- key: node-role.kubernetes.io/master[[g" /tmp/kubernetes/longhorn/longhorn-deployment.yaml
-	sed -i "s[- key: node-role.kubernetes.io/control-plane[[g" /tmp/kubernetes/longhorn/longhorn-deployment.yaml
-	sed -i "s[effect: NoSchedule[[g" /tmp/kubernetes/longhorn/longhorn-deployment.yaml
 	kubectl apply -f /tmp/kubernetes/longhorn
+	kubectl patch daemonset -n longhorn-system longhorn-manager --type=json -p='[{"op": "remove", "path": "/spec/template/spec/tolerations"}]'
 
 	echo -e "\n${BLUE}Waiting for Longhorn to Boot:${NC}"
 	while [ "$(kubectl get pods -n longhorn-system | grep -v Running | wc -l)" -ne 1 ]; do
@@ -422,7 +415,7 @@ install_cluster() {
 		echo -e "\n\n${BLUE}Creating: ${PREFIX}${NODE}${NC}"
 
 		if [[ "${NODE}" =~ "master" || "${NODE}" =~ "server" ]]; then
-			CPU=1
+			CPU=2
 			SIZE=10
 		elif [[ "${NODE}" =~ "worker" || "${NODE}" =~ "agent" ]]; then
 			SIZE=30
@@ -484,7 +477,7 @@ install_cluster() {
 	done
 
 	# Run Playbooks On All Machines
-	ansible
+	ansible_sandbox
 	reboot_cluster
 
 	IP=${START_IP}
@@ -499,6 +492,16 @@ install_cluster() {
 		done
 		((IP++))
 	done
+
+}
+
+install_k3s_cluster() {
+
+	export PREFIX="sk3s"                                             # Sandbox k3s
+	export K3S_TOKEN=${PREFIX}                                       # Sandbox k3s
+	export NODES="-master-0 -master-1 -master-2 -worker-0 -worker-1" # -worker-2 -worker-3"
+
+	install_cluster
 
 	# Install & Setup k3s
 	install_k3s

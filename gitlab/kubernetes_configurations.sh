@@ -56,6 +56,7 @@ kubectl patch deployment -n longhorn-system csi-resizer --patch "$(cat kubernete
 kubectl patch deployment -n longhorn-system csi-snapshotter --patch "$(cat kubernetes/longhorn/patches/csi-snapshotter.yaml)"
 kubectl patch deployment -n longhorn-system csi-attacher --patch "$(cat kubernetes/longhorn/patches/csi-attacher.yaml)"
 kubectl patch deployment -n longhorn-system csi-provisioner --patch "$(cat kubernetes/longhorn/patches/csi-provisioner.yaml)"
+kubectl apply -f kubernetes/longhorn/backup
 
 echo -e " \n${BLUE}Kube Eagle:${NC}"
 kubectl apply -f kubernetes/kube-eagle
