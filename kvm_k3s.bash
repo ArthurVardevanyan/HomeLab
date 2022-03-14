@@ -250,8 +250,8 @@ install_k3s() {
 	K3S_CONFIG="K3S_TOKEN=${K3S_TOKEN} INSTALL_K3S_CHANNEL=v1.23 sh -"
 
 	INSTALL="${K3S} server --cluster-init --disable traefik ${K3S_RESERVED} ${K3S_CONFIG}"
-	SERVER=" ${K3S} server --server https://10.10.10.3:6443 --disable traefik ${K3S_RESERVED} ${K3S_CONFIG}"
-	WORKER=" ${K3S} ${K3S_RESERVED} K3S_URL=https://10.10.10.3:6443 ${K3S_CONFIG}"
+	SERVER=" ${K3S} server --server https://10.10.10.1:6443 --disable traefik ${K3S_RESERVED} ${K3S_CONFIG}"
+	WORKER=" ${K3S} ${K3S_RESERVED} K3S_URL=https://10.10.10.1:6443 ${K3S_CONFIG}"
 
 	IP=${START_IP}
 	for NODE in ${NODES}; do
@@ -274,7 +274,7 @@ install_k3s() {
 			CMD="echo ${PASSWORD} | sudo -S cp /etc/rancher/k3s/k3s.yaml /tmp; sudo chmod 777 /tmp/k3s.yaml"
 			sshpass -p "${PASSWORD}" ssh -t 10.10.10.${START_IP} "${CMD}"
 			sshpass -p "${PASSWORD}" scp 10.10.10.${START_IP}:/tmp/k3s.yaml "${HOME}/vm/${PREFIX}/${PREFIX}.yaml"
-			sed -i "s,127.0.0.1,10.10.10.${START_IP},g" "${HOME}/vm/${PREFIX}/${PREFIX}.yaml"
+			sed -i "s,127.0.0.1,10.10.10.1,g" "${HOME}/vm/${PREFIX}/${PREFIX}.yaml"
 		fi
 		((IP++))
 	done
