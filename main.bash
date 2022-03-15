@@ -128,7 +128,7 @@ label_nodes() {
 # virsh net-destroy default && virsh net-start default
 
 export START_IP=3
-PASSWORD=${PASSWORD:-}
+export PASSWORD=${PASSWORD:-}
 
 stop_cluster() {
 	echo -e "\n${BLUE}Stopping Cluster:${NC}"
@@ -154,6 +154,20 @@ reboot_cluster() {
 		virsh reboot "${PREFIX}${NODE}"
 		echo "Started ${PREFIX}${NODE}"
 	done
+
+	IP=${START_IP}
+	for NODE in ${NODES}; do
+		finished="0"
+		while [ "$finished" = "0" ]; do
+			sleep 1
+			if nc -z 10.10.10.${IP} 22; then
+				echo "${PREFIX}${NODE} is up."
+				finished=1
+			fi
+		done
+		((IP++))
+	done
+
 }
 
 delete_cluster() {
@@ -285,6 +299,72 @@ install_k3s() {
 
 }
 
+install_k8s() {
+	# Install & Setup k3s
+	echo -e "\n\n${BLUE}Install & Setup k8s:${NC}"
+
+	if [ -z "${PASSWORD}" ]; then
+		echo -n Password:
+		read -r -s PASSWORD
+		echo ""
+	fi
+
+	ansible-playbook -i /tmp/inventory ansible/playbooks/servers/k8s/k8sPackages.yaml --extra-vars \
+		"ansible_become_pass=${PASSWORD} ansible_ssh_pass=${PASSWORD}"
+	reboot_cluster
+
+	IP=${START_IP}
+	K8S_CONFIG="--pod-network-cidr=10.244.0.0/16 --control-plane-endpoint 10.10.10.1:6443 --apiserver-advertise-address 10.10.10.${START_IP}"
+
+	CERT_COMMAND="echo ${PASSWORD} | sudo -S kubeadm certs certificate-key"
+	CERT_KEY=$(sshpass -p "${PASSWORD}" ssh -t 10.10.10.${START_IP} "${CERT_COMMAND}" | cut -d: -f2- | tr -d '\r')
+
+	INSTALL="echo ${PASSWORD} | sudo -S kubeadm init ${K8S_CONFIG} --certificate-key ${CERT_KEY} --upload-certs"
+
+	SERVER=""
+	WORKER=""
+
+	for NODE in ${NODES}; do
+		KUBE=0
+		if [[ "${NODE}" =~ "master" || "${NODE}" =~ "server" ]]; then
+			if [ ${IP} -eq ${START_IP} ]; then
+				CONFIG=${INSTALL}
+				KUBE=1
+			else
+				CONFIG=${SERVER}
+			fi
+		elif [[ "${NODE}" =~ "worker" || "${NODE}" =~ "agent" ]]; then
+			CONFIG=${WORKER}
+		fi
+
+		echo "${PREFIX}${NODE}"
+		sshpass -p "${PASSWORD}" ssh -t 10.10.10.${IP} "${CONFIG}"
+
+		if [ ${KUBE} -eq 1 ]; then
+			CMD="echo ${PASSWORD} | sudo -S cp /etc/kubernetes/admin.conf /tmp; sudo chmod 777 /tmp/admin.conf"
+			sshpass -p "${PASSWORD}" ssh -t 10.10.10.${START_IP} "${CMD}"
+			sshpass -p "${PASSWORD}" scp 10.10.10.${START_IP}:/tmp/admin.conf "${HOME}/vm/${PREFIX}/${PREFIX}.yaml"
+
+			load_kubeconfig
+			kubectl apply -f https://raw.githubusercontent.com/coreos/flannel/master/Documentation/kube-flannel.yml
+
+			TOKEN="echo ${PASSWORD} | sudo -S kubeadm token create --print-join-command"
+			JOIN_COMMAND=$(sshpass -p "${PASSWORD}" ssh -t 10.10.10.${START_IP} "${TOKEN}" | cut -d: -f2- | tr -d '\r')
+			WORKER="echo ${PASSWORD} | sudo -S ${JOIN_COMMAND}"
+
+			SERVER="${WORKER} --certificate-key ${CERT_KEY} --control-plane"
+
+			sleep 10s
+		fi
+		((IP++))
+	done
+
+	echo -e "\n\n${BLUE}Install Complete!${NC}"
+	echo "export KUBECONFIG=${HOME}/vm/${PREFIX}/${PREFIX}.yaml"
+	echo "${PREFIX} k8s Install Complete!"
+
+}
+
 install_addons() {
 	# Tweak Settings from Physical HomeLab
 	load_kubeconfig
@@ -301,9 +381,6 @@ install_addons() {
 
 	rm -rf /tmp/kubernetes
 	cp -r kubernetes /tmp/
-
-	echo -e "\n${BLUE}Kube System:${NC}"
-	kubectl apply -f /tmp/kubernetes/kube-system/kube-system-limitRange.yaml
 
 	echo -e "\n${BLUE}Traefik:${NC}"
 	kubectl apply -f /tmp/kubernetes/traefik/traefik-namespace.yaml
@@ -480,19 +557,6 @@ install_cluster() {
 	ansible_sandbox
 	reboot_cluster
 
-	IP=${START_IP}
-	for NODE in ${NODES}; do
-		finished="0"
-		while [ "$finished" = "0" ]; do
-			sleep 1
-			if nc -z 10.10.10.${IP} 22; then
-				echo "${PREFIX}${NODE} is up."
-				finished=1
-			fi
-		done
-		((IP++))
-	done
-
 }
 
 install_k3s_cluster() {
@@ -523,6 +587,35 @@ install_k3s_cluster() {
 	echo " "
 	echo "export KUBECONFIG=${HOME}/vm/${PREFIX}/${PREFIX}.yaml"
 	echo "${PREFIX} k3s Install Complete!"
+}
+
+install_k8s_cluster() {
+
+	export PREFIX="sk8s"                                             # Sandbox k8s
+	export NODES="-master-0 -master-1 -master-2 -worker-0 -worker-1" # -worker-2 -worker-3"
+
+	install_cluster
+
+	# Install & Setup k8s
+	install_k8s
+
+	export KUBECONFIG=${HOME}/vm/${PREFIX}/${PREFIX}.yaml
+
+	while [ "$(kubectl get nodes | wc -l)" -le "$(echo ${NODES} | wc -w)" ]; do
+		sleep 1
+	done
+
+	# Label Nodes
+	label_vms
+
+	# Install Addons
+	install_addons
+	# install_addons_optional
+	get_dashboard_secret
+
+	echo " "
+	echo "export KUBECONFIG=${HOME}/vm/${PREFIX}/${PREFIX}.yaml"
+	echo "${PREFIX} k8s Install Complete!"
 }
 
 "$@"
