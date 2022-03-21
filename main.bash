@@ -314,13 +314,12 @@ install_k8s() {
 	reboot_cluster
 
 	IP=${START_IP}
-	K8S_CONFIG="--pod-network-cidr=10.244.0.0/16 --control-plane-endpoint 10.10.10.1:6443 --apiserver-advertise-address 10.10.10.${START_IP}"
 
-	CERT_COMMAND="echo ${PASSWORD} | sudo -S kubeadm certs certificate-key"
-	CERT_KEY=$(sshpass -p "${PASSWORD}" ssh -t 10.10.10.${START_IP} "${CERT_COMMAND}" | cut -d: -f2- | tr -d '\r')
+	HAPROXY="echo ${PASSWORD} | sudo -S sed -i 's,10.0.0.100,10.10.10.1,g' '/mnt/kubeadm.yaml'"
+	sshpass -p "${PASSWORD}" ssh -t 10.10.10.${IP} "${HAPROXY}"
 
-	INSTALL="echo ${PASSWORD} | sudo -S kubeadm init ${K8S_CONFIG} --certificate-key ${CERT_KEY} --upload-certs"
-
+	CERT_KEY=""
+	INSTALL="echo ${PASSWORD} | sudo -S kubeadm init --config /mnt/kubeadm.yaml"
 	SERVER=""
 	WORKER=""
 
@@ -346,7 +345,12 @@ install_k8s() {
 			sshpass -p "${PASSWORD}" scp 10.10.10.${START_IP}:/tmp/admin.conf "${HOME}/vm/${PREFIX}/${PREFIX}.yaml"
 
 			load_kubeconfig
-			kubectl apply -f https://raw.githubusercontent.com/coreos/flannel/master/Documentation/kube-flannel.yml
+			rm -rf /tmp/kubernetes
+			cp -r kubernetes /tmp/
+			kubectl apply -f /tmp/kubernetes/kube-flannel
+
+			CERT_COMMAND="echo ${PASSWORD} | sudo -S kubeadm init phase upload-certs --upload-certs | tail -n1"
+			CERT_KEY=$(sshpass -p "${PASSWORD}" ssh -t 10.10.10.${START_IP} "${CERT_COMMAND}" | cut -d: -f2- | tr -d '\r')
 
 			TOKEN="echo ${PASSWORD} | sudo -S kubeadm token create --print-join-command"
 			JOIN_COMMAND=$(sshpass -p "${PASSWORD}" ssh -t 10.10.10.${START_IP} "${TOKEN}" | cut -d: -f2- | tr -d '\r')
@@ -493,10 +497,12 @@ install_cluster() {
 
 		if [[ "${NODE}" =~ "master" || "${NODE}" =~ "server" ]]; then
 			CPU=2
-			SIZE=10
+			MEMORY=2560
+			DISK=10
 		elif [[ "${NODE}" =~ "worker" || "${NODE}" =~ "agent" ]]; then
-			SIZE=30
 			CPU=2
+			MEMORY=4096
+			DISK=30
 		fi
 
 		# Install VM
@@ -508,8 +514,8 @@ install_cluster() {
 			--name="${PREFIX}${NODE}" \
 			--os-variant=debian11 \
 			--vcpus sockets=1,cores=1,threads="${CPU}" \
-			--ram=4096 \
-			--disk "${HOME}/vm/${PREFIX}/${PREFIX}${NODE}".img,size="${SIZE}" \
+			--ram="${MEMORY}" \
+			--disk "${HOME}/vm/${PREFIX}/${PREFIX}${NODE}".img,size="${DISK}" \
 			--network network=default,model=virtio,mac="10:10:00:00:00:0${IP}" \
 			--location=http://ftp.us.debian.org/debian/dists/stable/main/installer-amd64/ \
 			--extra-args="\
@@ -523,6 +529,7 @@ install_cluster() {
 	# Wait for Machines to Finish Installing OS, Then Boot Machines
 	echo -e "\n\n${BLUE}Booting Nodes:${NC}"
 	echo "Waiting for Installation to Finish..."
+	echo "http://localhost:9090/machines"
 	for NODE in ${NODES}; do
 		# https://serverfault.com/a/386867
 		finished="0"
@@ -591,8 +598,8 @@ install_k3s_cluster() {
 
 install_k8s_cluster() {
 
-	export PREFIX="sk8s"                                             # Sandbox k8s
-	export NODES="-master-0 -master-1 -master-2 -worker-0 -worker-1" # -worker-2 -worker-3"
+	export PREFIX="sk8s" # Sandbox k8s
+	export NODES="-master-0 -master-1 -master-2 -worker-0 -worker-1 -worker-2 -worker-3"
 
 	install_cluster
 
@@ -607,6 +614,9 @@ install_k8s_cluster() {
 
 	# Label Nodes
 	label_vms
+	load_kubeconfig
+	kubectl -n kube-system rollout restart deployment coredns
+	kubectl apply -f /tmp/kubernetes/kube-metrics-server
 
 	# Install Addons
 	install_addons

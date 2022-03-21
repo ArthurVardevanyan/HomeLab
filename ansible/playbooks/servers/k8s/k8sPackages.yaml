@@ -33,9 +33,24 @@
       apt:
         state: present
         name:
-          - kubelet=1.23.4-00
-          - kubeadm=1.23.4-00
-          - kubectl=1.23.4-00
+          - kubelet #=1.23.5-00
+          - kubeadm #=1.23.5-00
+          - kubectl #=1.23.5-00
+
+    - name: Hold kubelet
+      dpkg_selections:
+        name: kubelet
+        selection: hold
+
+    - name: Hold kubeadm
+      dpkg_selections:
+        name: kubeadm
+        selection: hold
+
+    - name: Hold kubectl
+      dpkg_selections:
+        name: kubectl
+        selection: hold
 
     - name: containerd.conf
       copy:
@@ -78,3 +93,8 @@
       modprobe:
         name: overlay
         state: present
+
+    - name: kubeadm-config.yaml
+      copy:
+        src: "../../../../kubernetes/kubeadm.yaml"
+        dest: "/mnt/kubeadm.yaml"
