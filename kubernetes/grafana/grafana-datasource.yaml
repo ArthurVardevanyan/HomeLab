@@ -1,0 +1,20 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-source-config
+  namespace: grafana
+data:
+  grafana-datasource.yaml: |
+    apiVersion: 1
+    datasources:
+      - name: Prometheus
+        type: prometheus
+        orgId: 1
+        url: http://prometheus-service.prometheus:9090
+        isDefault: true
+        editable: true
+      - name: Loki
+        type: loki
+        orgId: 1
+        url: http://loki.grafana:3100
+        editable: true

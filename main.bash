@@ -421,8 +421,13 @@ install_addons() {
 	kubectl apply -f /tmp/kubernetes/version-checker/version-checker-namespace.yaml
 	kubectl apply -f /tmp/kubernetes/version-checker
 
+	echo -e "\n${BLUE}Grafana:${NC}"
+	kubectl apply -f /tmp/kubernetes/grafana/grafana-namespace.yaml
+	sed -i "s/<URL>/${URL}/g" /tmp/kubernetes/grafana/grafana-traefik.yaml
+	kubectl apply -f /tmp/kubernetes/grafana
+	kubectl patch deployment -n grafana grafana --type=json -p='[{"op": "remove", "path": "/spec/template/spec/containers/0/env"}]'
+
 	echo -e "\n${BLUE}Grafana Loki:${NC}"
-	kubectl create namespace grafana --dry-run=client -o yaml | kubectl apply -f -
 	kubectl apply -f /tmp/kubernetes/grafana-loki
 
 	echo -e "\n${BLUE}Grafana Promtail:${NC}"
@@ -436,12 +441,6 @@ install_addons_optional() {
 
 	rm -rf /tmp/kubernetes
 	cp -r kubernetes /tmp/
-
-	echo -e "\n${BLUE}Grafana:${NC}"
-	kubectl apply -f /tmp/kubernetes/grafana/grafana-namespace.yaml
-	sed -i "s/<URL>/${URL}/g" /tmp/kubernetes/grafana/grafana-traefik.yaml
-	kubectl apply -f /tmp/kubernetes/grafana
-	kubectl patch deployment -n grafana grafana --type=json -p='[{"op": "remove", "path": "/spec/template/spec/containers/0/env"}]'
 
 	echo -e "\n${BLUE}Heimdall:${NC}"
 	kubectl apply -f /tmp/kubernetes/heimdall/heimdall-namespace.yaml

@@ -65,11 +65,11 @@ spec:
               port: 3000
           resources:
             requests:
-              ephemeral-storage: "1Mi"
+              ephemeral-storage: "5Mi"
               memory: "75"
               cpu: "50m"
             limits:
-              ephemeral-storage: "1Mi"
+              ephemeral-storage: "5Mi"
               memory: "150M"
               cpu: "100m"
           env:
@@ -86,7 +86,22 @@ spec:
           volumeMounts:
             - mountPath: /var/lib/grafana
               name: grafana-cache
+            - name: grafana-dash-config
+              mountPath: /etc/grafana/provisioning/dashboards
+            - name: dashboard-templates
+              mountPath: /var/lib/grafana/dashboards
+            - name: grafana-source-config
+              mountPath: /etc/grafana/provisioning/datasources
       volumes:
         - name: grafana-cache
           emptyDir:
             sizeLimit: 1Mi
+        - name: grafana-source-config
+          configMap:
+            name: grafana-source-config
+        - name: grafana-dash-config
+          configMap:
+            name: grafana-dashboard-config
+        - name: dashboard-templates
+          configMap:
+            name: grafana-dashboards
