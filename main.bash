@@ -434,26 +434,25 @@ install_addons() {
 install_addons_optional() {
 	load_kubeconfig
 
+	rm -rf /tmp/kubernetes
+	cp -r kubernetes /tmp/
+
 	echo -e "\n${BLUE}Grafana:${NC}"
 	kubectl apply -f /tmp/kubernetes/grafana/grafana-namespace.yaml
 	sed -i "s/<URL>/${URL}/g" /tmp/kubernetes/grafana/grafana-traefik.yaml
 	kubectl apply -f /tmp/kubernetes/grafana
+	kubectl patch deployment -n grafana grafana --type=json -p='[{"op": "remove", "path": "/spec/template/spec/containers/0/env"}]'
 
 	echo -e "\n${BLUE}Heimdall:${NC}"
 	kubectl apply -f /tmp/kubernetes/heimdall/heimdall-namespace.yaml
 	sed -i "s/<URL>/${URL}/g" /tmp/kubernetes/heimdall/heimdall-traefik.yaml
-	sed -i "s[tolerations:[[g" /tmp/kubernetes/heimdall/heimdall-statefulSet.yaml
-	sed -i "s[- key: node-role.kubernetes.io/master[[g" /tmp/kubernetes/heimdall/heimdall-statefulSet.yaml
-	sed -i "s[effect: NoSchedule[[g" /tmp/kubernetes/heimdall/heimdall-statefulSet.yaml
 	kubectl apply -f /tmp/kubernetes/heimdall
+	kubectl patch statefulset -n heimdall heimdall --type=json -p='[{"op": "remove", "path": "/spec/template/spec/tolerations"}]'
 
 	echo -e "\n${BLUE}Uptime Kuma:${NC}"
 	kubectl apply -f /tmp/kubernetes/uptime-kuma/uptime-kuma-namespace.yaml
-	sed -i "s/<URL>/${URL}/g" /tmp/kubernetes/uptime-kuma/uptime-kuma-traefik.yaml
-	sed -i "s[tolerations:[[g" /tmp/kubernetes/uptime-kuma/uptime-kuma-statefulSet.yaml
-	sed -i "s[- key: node-role.kubernetes.io/master[[g" /tmp/kubernetes/uptime-kuma/uptime-kuma-statefulSet.yaml
-	sed -i "s[effect: NoSchedule[[g" /tmp/kubernetes/uptime-kuma/uptime-kuma-statefulSet.yaml
 	kubectl apply -f /tmp/kubernetes/uptime-kuma
+	kubectl patch statefulset -n uptime-kuma uptime-kuma --type=json -p='[{"op": "remove", "path": "/spec/template/spec/tolerations"}]'
 }
 
 get_dashboard_secret() {
