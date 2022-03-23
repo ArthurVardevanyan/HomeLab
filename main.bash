@@ -439,19 +439,23 @@ install_addons() {
 install_addons_optional() {
 	load_kubeconfig
 
-	rm -rf /tmp/kubernetes
-	cp -r kubernetes /tmp/
-
 	echo -e "\n${BLUE}Heimdall:${NC}"
 	kubectl apply -f /tmp/kubernetes/heimdall/heimdall-namespace.yaml
 	sed -i "s/<URL>/${URL}/g" /tmp/kubernetes/heimdall/heimdall-traefik.yaml
+	sed -i "s/replicas: 1/replicas: 0/g" /tmp/kubernetes/heimdall/heimdall-statefulSet.yaml
 	kubectl apply -f /tmp/kubernetes/heimdall
+	kubectl patch statefulset -n heimdall heimdall --type=json -p='[{"op": "remove", "path": "/spec/template/spec/affinity"}]'
 	kubectl patch statefulset -n heimdall heimdall --type=json -p='[{"op": "remove", "path": "/spec/template/spec/tolerations"}]'
+	kubectl scale --replicas=1 statefulSet/heimdall -n heimdall
 
 	echo -e "\n${BLUE}Uptime Kuma:${NC}"
 	kubectl apply -f /tmp/kubernetes/uptime-kuma/uptime-kuma-namespace.yaml
+	sed -i "s/<URL>/${URL}/g" /tmp/kubernetes/uptime-kuma/uptime-kuma-traefik.yaml
+	sed -i "s/replicas: 1/replicas: 0/g" /tmp/kubernetes/uptime-kuma/uptime-kuma-statefulSet.yaml
 	kubectl apply -f /tmp/kubernetes/uptime-kuma
+	kubectl patch statefulset -n uptime-kuma uptime-kuma --type=json -p='[{"op": "remove", "path": "/spec/template/spec/affinity"}]'
 	kubectl patch statefulset -n uptime-kuma uptime-kuma --type=json -p='[{"op": "remove", "path": "/spec/template/spec/tolerations"}]'
+	kubectl scale --replicas=1 statefulSet/uptime-kuma -n uptime-kuma
 }
 
 get_dashboard_secret() {
@@ -566,9 +570,9 @@ install_cluster() {
 
 install_k3s_cluster() {
 
-	export PREFIX="sk3s"                                             # Sandbox k3s
-	export K3S_TOKEN=${PREFIX}                                       # Sandbox k3s
-	export NODES="-master-0 -master-1 -master-2 -worker-0 -worker-1" # -worker-2 -worker-3"
+	export PREFIX="sk3s"       # Sandbox k3s
+	export K3S_TOKEN=${PREFIX} # Sandbox k3s
+	export NODES="-master-0 -master-1 -master-2 -worker-0 -worker-1 -worker-2 -worker-3"
 
 	install_cluster
 
@@ -586,7 +590,8 @@ install_k3s_cluster() {
 
 	# Install Addons
 	install_addons
-	# install_addons_optional
+	install_addons_optional
+
 	get_dashboard_secret
 
 	echo " "
@@ -612,13 +617,15 @@ install_k8s_cluster() {
 
 	# Label Nodes
 	label_vms
+
 	load_kubeconfig
 	kubectl -n kube-system rollout restart deployment coredns
 	kubectl apply -f /tmp/kubernetes/kube-metrics-server
 
 	# Install Addons
 	install_addons
-	# install_addons_optional
+	install_addons_optional
+
 	get_dashboard_secret
 
 	echo " "
