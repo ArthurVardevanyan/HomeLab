@@ -88,8 +88,8 @@ KVM       | Backup  | Nextcloud | 750GB | Longhorn Backup | 75GB | N/A          
 NAME         | ROLES          | IP         | Machine    | hCPU | vCPU | Mem   | Storage
 ------------ | -------------- | ---------- | ---------- | ---- | ---- | ----- | ------------
 k3s-server-1 | cp,etcd,master | 10.0.0.5   | Bare Metal | 4    | N/A  | 6G    | LH SSD & USB
-k3s-server-2 | cp,etcd,master | 10.0.0.102 | Infra KVM  | 4    | 2    | 1.5G  | LH SSD
-k3s-server-3 | cp,etcd,master | 10.0.0.103 | KVM        | 4    | 2    | 1.5G  | N/A
+k3s-server-2 | cp,etcd,master | 10.0.0.102 | Infra KVM  | 4    | 2    | 1.75G | LH SSD
+k3s-server-3 | cp,etcd,master | 10.0.0.103 | KVM        | 4    | 2    | 1.75G | N/A
 k3s-worker-1 | infra,worker   | 10.0.0.111 | Infra KVM  | 4    | 4    | 10G   | LH SSD
 k3s-worker-2 | worker         | 10.0.0.112 | KVM        | 4    | 4    | 4.25G | N/A
 

@@ -28,7 +28,7 @@ kvm-infra() {
 		--name=k3s-server-2 \
 		--os-variant=debian10 \
 		--vcpus sockets=1,cores=1,threads=2 \
-		--ram=1536 \
+		--ram=1792 \
 		--disk "${HOME}/vm/k3s-server-2".img,,format=raw,size=25 \
 		--network bridge=br0,mac="10:00:00:00:01:02" \
 		--location=http://ftp.us.debian.org/debian/dists/stable/main/installer-amd64/ \
@@ -63,7 +63,7 @@ kvm() {
 		--name=k3s-server-3 \
 		--os-variant=debian10 \
 		--vcpus sockets=1,cores=1,threads=2 \
-		--ram=1536 \
+		--ram=1792 \
 		--disk "${HOME}/vm/k3s-server-3".img,,format=raw,size=25 \
 		--network bridge=br0,mac="10:00:00:00:01:03" \
 		--location=http://ftp.us.debian.org/debian/dists/stable/main/installer-amd64/ \
