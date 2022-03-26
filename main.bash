@@ -127,7 +127,7 @@ label_nodes() {
 # <host mac='10:10:00:00:00:09' ip='10.10.10.9'/>
 # virsh net-destroy default && virsh net-start default
 
-export START_IP=3
+export START_IP=11
 export PASSWORD=${PASSWORD:-}
 
 stop_cluster() {
@@ -518,7 +518,7 @@ install_cluster() {
 			--vcpus sockets=1,cores=1,threads="${CPU}" \
 			--ram="${MEMORY}" \
 			--disk "${HOME}/vm/${PREFIX}/${PREFIX}${NODE}".img,size="${DISK}" \
-			--network network=default,model=virtio,mac="10:10:00:00:00:0${IP}" \
+			--network network=default,model=virtio,mac="10:10:00:00:00:${IP}" \
 			--location=http://ftp.us.debian.org/debian/dists/stable/main/installer-amd64/ \
 			--extra-args="\
 	  auto=true priority=critical vga=normal hostname=${PREFIX}${NODE} \
