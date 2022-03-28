@@ -722,6 +722,7 @@ install_okd() {
 		VCPUS="4"
 		RAM_MB="12288"
 		SIZE="50G"
+		STORAGE=''
 
 		if [[ "${NODE}" =~ "master" ]]; then
 			IGNITION_CONFIG="${HOME}/vm/okd/okd/master.ign"
@@ -732,6 +733,11 @@ install_okd() {
 			RAM_MB="6144"
 			IGNITION_CONFIG="${HOME}/vm/okd/okd/worker.ign"
 			"${HOME}"/vm/okd/openshift-install --dir="${HOME}"/vm/okd/okd wait-for bootstrap-complete --log-level debug
+
+			STORAGE_PATH="${HOME}/vm/okd/${NODE}_storage.raw"
+			STORAGE_SIZE="50G"
+			qemu-img create "${STORAGE_PATH}" "${STORAGE_SIZE}" -f raw
+			STORAGE="--disk=\"${STORAGE_PATH}\"",cache=none
 		fi
 
 		if [ "$NODE" = "worker-1" ]; then
@@ -751,12 +757,18 @@ install_okd() {
 		fi
 
 		qemu-img create "${IMAGE}" "${SIZE}" -f raw
-
 		virt-resize --expand /dev/sda4 "${HOME}"/vm/okd/fedora-coreos-*.qcow2 "${IMAGE}"
 
-		virt-install --connect="qemu:///system" --name="${NODE}" --vcpus="${VCPUS}" --memory="${RAM_MB}" \
-			--os-variant="fedora-coreos-stable" --import --graphics="none" --network network=default,model=virtio,mac="${MAC}" \
-			--disk="${IMAGE},cache=none" --cpu="host-passthrough" --noautoconsole \
+		virt-install \
+			--connect="qemu:///system" \
+			--name="${NODE}" \
+			--vcpus="${VCPUS}" --memory="${RAM_MB}" \
+			--os-variant="fedora-coreos-stable" \
+			--import --graphics="none" \
+			--network network=default,model=virtio,mac="${MAC}" \
+			--disk="${IMAGE},cache=none" ${STORAGE} \
+			--cpu="host-passthrough" \
+			--noautoconsole \
 			--qemu-commandline="-fw_cfg name=opt/com.coreos/config,file=${IGNITION_CONFIG}"
 
 		if [ "$NODE" != "bootstrap" ]; then
