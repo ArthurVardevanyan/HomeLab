@@ -1,0 +1,58 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: longhorn-ui
+    app.kubernetes.io/instance: longhorn-system
+  name: longhorn-ui
+  namespace: longhorn-system
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: longhorn-ui
+  template:
+    metadata:
+      labels:
+        app: longhorn-ui
+      annotations:
+        enable.version-checker.io/longhorn-ui: "true"
+        seccomp.security.alpha.kubernetes.io/defaultProfileName: runtime/default
+    spec:
+      tolerations:
+        - key: node-role.kubernetes.io/control-plane
+          effect: NoSchedule
+        - key: node-role.kubernetes.io/master
+          effect: NoSchedule
+      affinity:
+        nodeAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 1
+              preference:
+                matchExpressions:
+                  - key: node-role.kubernetes.io/master
+                    operator: In
+                    values:
+                      - "true"
+      containers:
+        - name: longhorn-ui
+          image: longhornio/longhorn-ui:v1.2.4
+          imagePullPolicy: IfNotPresent
+          resources:
+            requests:
+              cpu: 50m
+              memory: 10M
+            limits:
+              cpu: 100m
+              memory: 20M
+          securityContext:
+            runAsUser: 0
+            allowPrivilegeEscalation: false
+            seccompProfile:
+              type: RuntimeDefault
+          ports:
+            - containerPort: 8000
+              name: http
+          env:
+            - name: LONGHORN_MANAGER_IP
+              value: "http://longhorn-backend:9500"

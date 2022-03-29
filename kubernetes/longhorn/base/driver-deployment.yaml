@@ -1,0 +1,92 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: longhorn-driver-deployer
+  namespace: longhorn-system
+  labels:
+    app.kubernetes.io/instance: longhorn-system
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: longhorn-driver-deployer
+  template:
+    metadata:
+      labels:
+        app: longhorn-driver-deployer
+      annotations:
+        enable.version-checker.io/longhorn-driver-deployer: "true"
+    spec:
+      tolerations:
+        - key: node-role.kubernetes.io/master
+          effect: NoSchedule
+      affinity:
+        nodeAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 1
+              preference:
+                matchExpressions:
+                  - key: node-role.kubernetes.io/master
+                    operator: In
+                    values:
+                      - "true"
+      securityContext:
+        fsGroup: 19500
+        runAsGroup: 19500
+        runAsNonRoot: true
+        runAsUser: 19500
+      initContainers:
+        - name: wait-longhorn-manager
+          image: longhornio/longhorn-manager:v1.2.4
+          command:
+            [
+              "sh",
+              "-c",
+              'while [ $(curl -m 1 -s -o /dev/null -w "%{http_code}" http://longhorn-backend:9500/v1) != "200" ]; do echo waiting; sleep 2; done',
+            ]
+      containers:
+        - name: longhorn-driver-deployer
+          image: longhornio/longhorn-manager:v1.2.4
+          imagePullPolicy: IfNotPresent
+          securityContext:
+            runAsGroup: 19500
+            runAsUser: 19500
+            runAsNonRoot: true
+            readOnlyRootFilesystem: true
+            allowPrivilegeEscalation: false
+            seccompProfile:
+              type: RuntimeDefault
+            capabilities:
+              drop:
+                - all
+          resources:
+            requests:
+              cpu: 5m
+              memory: 15M
+            limits:
+              cpu: 10m
+              memory: 25M
+          command:
+            - longhorn-manager
+            - -d
+            - deploy-driver
+            - --manager-image
+            - longhornio/longhorn-manager:v1.2.4
+            - --manager-url
+            - http://longhorn-backend:9500/v1
+          env:
+            #- name: KUBELET_ROOT_DIR
+            #  value: /k3s/agent/kubelet
+            - name: POD_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+            - name: NODE_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: spec.nodeName
+            - name: SERVICE_ACCOUNT
+              valueFrom:
+                fieldRef:
+                  fieldPath: spec.serviceAccountName
+      serviceAccountName: longhorn-service-account

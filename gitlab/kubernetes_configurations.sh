@@ -43,20 +43,10 @@ kubectl apply -f kubernetes/traefik/traefik-crd.yaml
 kubectl apply -f kubernetes/traefik
 
 echo -e " \n${BLUE}Longhorn:${NC}"
-kubectl apply -f kubernetes/longhorn/longhorn-namespace.yaml
-kubectl apply -f kubernetes/longhorn/nodes
-sed -i "s/<URL>/${URL}/g" kubernetes/longhorn/longhorn-traefik.yaml
-kubectl apply -f kubernetes/longhorn
-echo -e "\n${BLUE}Waiting for Longhorn to Boot:${NC}"
-while [ "$(kubectl get pods -n longhorn-system | egrep -v "Running|Completed" | wc -l)" -ne 1 ]; do
-	sleep 1
-done
-kubectl patch daemonset -n longhorn-system longhorn-csi-plugin --patch "$(cat kubernetes/longhorn/patches/longhorn-csi-plugin.yaml)"
-kubectl patch deployment -n longhorn-system csi-resizer --patch "$(cat kubernetes/longhorn/patches/csi-resizer.yaml)"
-kubectl patch deployment -n longhorn-system csi-snapshotter --patch "$(cat kubernetes/longhorn/patches/csi-snapshotter.yaml)"
-kubectl patch deployment -n longhorn-system csi-attacher --patch "$(cat kubernetes/longhorn/patches/csi-attacher.yaml)"
-kubectl patch deployment -n longhorn-system csi-provisioner --patch "$(cat kubernetes/longhorn/patches/csi-provisioner.yaml)"
-kubectl apply -f kubernetes/longhorn/backup
+kubectl apply -f kubernetes/longhorn/base/namespace.yaml
+kubectl apply -f kubernetes/longhorn/overlays/homelab/nodes
+sed -i "s/<URL>/${URL}/g" kubernetes/longhorn/overlays/homelab/traefik.yaml
+kubectl kustomize kubernetes/longhorn/overlays/homelab | kubectl apply -f -
 
 echo -e " \n${BLUE}Kube Eagle:${NC}"
 kubectl apply -f kubernetes/kube-eagle
