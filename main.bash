@@ -802,8 +802,6 @@ single_server() {
 	"${HOME}"/vm/okd/oc scale --replicas=1 deployment.apps/thanos-querier -n openshift-monitoring
 	"${HOME}"/vm/okd/oc scale --replicas=1 statefulset.apps/prometheus-k8s -n openshift-monitoring
 	"${HOME}"/vm/okd/oc scale --replicas=1 statefulset.apps/alertmanager-main -n openshift-monitoring
-
-	"${HOME}"/vm/okd/oc patch clusterversion version --type json -p "$(cat okd/okd-configuration/etcd_quorum.yaml)"
 }
 
 approve_csr() {

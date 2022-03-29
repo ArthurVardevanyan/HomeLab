@@ -1,0 +1,19 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: longhorn-system
+  namespace: argocd
+  labels:
+    app.kubernetes.io/instance: argocd
+spec:
+  destination:
+    namespace: longhorn-system
+    server: https://kubernetes.default.svc
+  project: default
+  source:
+    path: kubernetes/longhorn/overlays/okd
+    repoURL: https://github.com/ArthurVardevanyan/HomeLab
+    targetRevision: HEAD
+  syncPolicy:
+    syncOptions:
+      - CreateNamespace=true
