@@ -28,12 +28,12 @@ kubectl patch deployment -n kube-system coredns --patch "$(cat kubernetes/kube-s
 kubectl patch deployment -n kube-system local-path-provisioner --patch "$(cat kubernetes/kube-system/kube-deployments.yaml)"
 
 echo -e " \n${BLUE}Certificate Manager:${NC}"
-kubectl apply -f kubernetes/cert-manager/cert-manager-namespace.yaml
-sh kubernetes/cert-manager/cert-manager-crds.sh
-sed -i "s/<URL>/${URL}/g" kubernetes/cert-manager/cert-manager-cloudflare.yaml
-sed -i "s,<CLOUDFLARE_EMAIL>,${CLOUDFLARE_EMAIL},g" kubernetes/cert-manager/cert-manager-cloudflare.yaml
-sed -i "s,<CLOUDFLARE_API>,${CLOUDFLARE_API},g" kubernetes/cert-manager/cert-manager-cloudflare-secret.yaml
-kubectl apply -f kubernetes/cert-manager
+kubectl kustomize kubernetes/cert-manager/base | kubectl apply -f -
+sh kubernetes/cert-manager/components/yaml/crds.sh
+sed -i "s/<URL>/${URL}/g" kubernetes/cert-manager/components/cloudflare/cluster-issuer.yaml
+sed -i "s,<CLOUDFLARE_EMAIL>,${CLOUDFLARE_EMAIL},g" kubernetes/cert-manager/components/cloudflare/cluster-issuer.yaml
+sed -i "s,<CLOUDFLARE_API>,${CLOUDFLARE_API},g" kubernetes/cert-manager/components/cloudflare/api-token.yaml
+kubectl kustomize kubernetes/cert-manager/overlays/k8s | kubectl apply -f -
 
 echo -e " \n${BLUE}Traefik:${NC}"
 kubectl apply -f kubernetes/traefik/traefik-namespace.yaml
