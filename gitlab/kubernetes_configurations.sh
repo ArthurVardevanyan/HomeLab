@@ -9,8 +9,6 @@ NC='\033[0m'
 
 echo -e " \n \n${BLUE}Load Secrets From Vault:${NC}"
 URL=${URL:-$(vault kv get -field=url secret/gitlab/domain)}
-CLOUDFLARE_EMAIL=$(vault kv get -field=email secret/gitlab/cloudflare)
-CLOUDFLARE_API=$(vault kv get -field=api secret/gitlab/cloudflare)
 GENERIC_CERT=$(vault kv get -field=generic_cert secret/gitlab/cert)
 GENERIC_KEY=$(vault kv get -field=generic_key secret/gitlab/cert)
 MARIADB_PASSWORD=$(vault kv get -field=password secret/gitlab/mariadb)
@@ -18,6 +16,9 @@ PHOTOPRISM_DB_PASSWORD=$(vault kv get -field=db_password secret/gitlab/photopris
 PHOTOPRISM_ADMIN_PASSWORD=$(vault kv get -field=admin_password secret/gitlab/photoprism)
 GITLAB_RUNNER_TOKEN=$(vault kv get -field=token secret/gitlab/runner)
 HEALTH_CHECK_TOKEN=$(vault kv get -field=token secret/gitlab/health)
+
+export AVP_TYPE=vault
+export AVP_AUTH_TYPE=token
 echo "Secrets Loaded"
 
 echo -e " \n \n${BLUE}Kube System:${NC}"
@@ -30,10 +31,7 @@ kubectl patch deployment -n kube-system local-path-provisioner --patch "$(cat ku
 echo -e " \n${BLUE}Certificate Manager:${NC}"
 kubectl kustomize kubernetes/cert-manager/base | kubectl apply -f -
 sh kubernetes/cert-manager/components/yaml/crds.sh
-sed -i "s/<URL>/${URL}/g" kubernetes/cert-manager/components/cloudflare/cluster-issuer.yaml
-sed -i "s,<CLOUDFLARE_EMAIL>,${CLOUDFLARE_EMAIL},g" kubernetes/cert-manager/components/cloudflare/cluster-issuer.yaml
-sed -i "s,<CLOUDFLARE_API>,${CLOUDFLARE_API},g" kubernetes/cert-manager/components/cloudflare/api-token.yaml
-kubectl kustomize kubernetes/cert-manager/overlays/k8s | kubectl apply -f -
+kubectl kustomize kubernetes/cert-manager/overlays/k8s | argocd-vault-plugin generate - | kubectl apply -f -
 
 echo -e " \n${BLUE}Traefik:${NC}"
 kubectl apply -f kubernetes/traefik/traefik-namespace.yaml

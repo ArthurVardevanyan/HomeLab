@@ -13,4 +13,8 @@ RUN echo "deb [signed-by=/usr/share/keyrings/kubernetes-archive-keyring.gpg] htt
 
 RUN apt-get update && apt-get install mariadb-client kubectl ansible vault  -y
 
-CMD ["ansible-playbook", "--help"]
+RUN curl -L -o argocd-vault-plugin https://github.com/IBM/argocd-vault-plugin/releases/download/v1.10.1/argocd-vault-plugin_1.10.1_linux_amd64
+RUN chmod +x argocd-vault-plugin
+RUN mv argocd-vault-plugin /usr/local/bin
+
+CMD ["sleep", "infinity"]

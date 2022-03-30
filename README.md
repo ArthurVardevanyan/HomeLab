@@ -231,7 +231,42 @@ vault write auth/jwt/role/homelab - <<EOF
 EOF
 ```
 
-### Database
+#### GitLab Kubernetes Integration
+
+```bash
+# https://blog.ramon-gordillo.dev/2021/03/gitops-with-argocd-and-hashicorp-vault-on-kubernetes/
+# https://cloud.redhat.com/blog/how-to-use-hashicorp-vault-and-argo-cd-for-gitops-on-openshift
+# https://itnext.io/argocd-secret-management-with-argocd-vault-plugin-539f104aff05
+vault auth enable kubernetes
+
+token_reviewer_jwt=$(kubectl get secrets -n argocd -o jsonpath="{.items[?(@.metadata.annotations.kubernetes.io/service-account.name=='default')].data.token}" |base64 -d)
+
+kubernetes_host=$(oc whoami --show-server)
+
+# Pod With Service Account Token Mounted
+kubectl cp -n argocd toolbox-0:/var/run/secrets/kubernetes.io/serviceaccount/..data/ca.crt /tmp/ca.crt
+
+vault write auth/kubernetes/config \
+   token_reviewer_jwt="${token_reviewer_jwt}" \
+   kubernetes_host=${kubernetes_host} \
+   kubernetes_ca_cert=@/tmp/ca.crt
+
+vault write auth/kubernetes/role/argocd \
+    bound_service_account_names=default \
+    bound_service_account_namespaces=argocd \
+    policies=argocd \
+    ttl=1h
+
+vault policy write argocd - <<EOF
+path "secret/*" {
+    capabilities = ["create", "read", "update", "delete", "list"]
+}
+EOF
+
+vault write auth/kubernetes/login role=argocd jwt=$(cat /var/run/secrets/kubernetes.io/serviceaccount/token)
+```
+
+## Database
 
 ```sql
 CREATE USER 'arthur'@'10.0.0.X' IDENTIFIED BY 'arthur';

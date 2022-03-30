@@ -40,7 +40,13 @@ spec:
   initialSSHKnownHosts: {}
   rbac:
     policy: "g, system:cluster-admins, role:admin"
+  image: gitlab.arthurvardevanyan.com:5050/arthurvardevanyan/homelab
+  version: argocd-v2.2.5
   repo:
+    image: gitlab.arthurvardevanyan.com:5050/arthurvardevanyan/homelab
+    version: argocd-v2.2.5
+    mountsatoken: true
+    serviceaccount: default
     resources:
       limits:
         cpu: "500m"
@@ -86,3 +92,12 @@ spec:
         cpu: 250m
         memory: 500M
     sharding: {}
+  configManagementPlugins: |
+    - name: argocd-vault-plugin
+      generate:
+        command: ["argocd-vault-plugin"]
+        args: ["generate", "./"]
+    - name: argocd-vault-plugin-kustomize
+      generate:
+        command: ["sh", "-c"]
+        args: ["kustomize build . > all.yaml && argocd-vault-plugin generate all.yaml"]
