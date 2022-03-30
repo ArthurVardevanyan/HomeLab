@@ -120,9 +120,7 @@ sed -i "s/<URL>/${URL}/g" kubernetes/bitwarden/bitwarden-traefik.yaml
 kubectl apply -f kubernetes/bitwarden
 
 echo -e " \n${BLUE}Uptime Kuma:${NC}"
-kubectl apply -f kubernetes/uptime-kuma/uptime-kuma-namespace.yaml
-sed -i "s/<URL>/${URL}/g" kubernetes/uptime-kuma/uptime-kuma-traefik.yaml
-kubectl apply -f kubernetes/uptime-kuma
+kubectl kustomize kubernetes/uptime-kuma/overlays/k8s | argocd-vault-plugin generate - | kubectl apply -f -
 
 echo -e " \n${BLUE}Photoprism:${NC}"
 kubectl apply -f kubernetes/photoprism/photoprism-namespace.yaml

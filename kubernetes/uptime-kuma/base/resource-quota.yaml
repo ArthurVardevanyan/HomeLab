@@ -3,16 +3,18 @@ kind: ResourceQuota
 metadata:
   name: uptime-kuma-rq
   namespace: uptime-kuma
+  labels:
+    app.kubernetes.io/instance: uptime-kuma
 spec:
   hard:
-    requests.cpu: "150m"
-    requests.memory: "250M"
-    limits.cpu: "300m"
-    limits.memory: "500M"
+    requests.cpu: "300m"
+    requests.memory: "500M"
+    limits.cpu: "600m"
+    limits.memory: "1G"
     services.nodeports: "0"
     services.loadbalancers: "0"
     requests.ephemeral-storage: "0"
     limits.ephemeral-storage: "0"
     local-path.storageclass.storage.k8s.io/requests.storage: "0"
     longhorn.storageclass.storage.k8s.io/requests.storage: "0"
-    longhorn-static.storageclass.storage.k8s.io/requests.storage: "3Gi"
+    longhorn-static.storageclass.storage.k8s.io/requests.storage: "6Gi"

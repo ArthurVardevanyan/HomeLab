@@ -1,0 +1,19 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: uptime-kuma
+  namespace: argocd
+  labels:
+    app.kubernetes.io/instance: argocd
+spec:
+  destination:
+    namespace: uptime-kuma
+    server: https://kubernetes.default.svc
+  project: default
+  source:
+    path: kubernetes/uptime-kuma/overlays/okd
+    repoURL: https://github.com/ArthurVardevanyan/HomeLab
+    targetRevision: HEAD
+  syncPolicy:
+    syncOptions:
+      - CreateNamespace=true

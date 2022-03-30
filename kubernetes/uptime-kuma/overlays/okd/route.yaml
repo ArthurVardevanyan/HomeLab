@@ -1,0 +1,16 @@
+kind: Route
+apiVersion: route.openshift.io/v1
+metadata:
+  name: uptime-kuma
+  namespace: uptime-kuma
+  labels:
+    app: uptime-kuma
+    app.kubernetes.io/instance: uptime-kuma
+spec:
+  to:
+    kind: Service
+    name: uptime-kuma-service
+    weight: 100
+  port:
+    targetPort: 3001
+  wildcardPolicy: None
