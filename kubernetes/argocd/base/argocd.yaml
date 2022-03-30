@@ -96,8 +96,8 @@ spec:
     - name: argocd-vault-plugin
       generate:
         command: ["argocd-vault-plugin"]
-        args: ["generate", "./"]
+        args: ["-s", "argocd-vault-plugin-credentials", "generate", "./"]
     - name: argocd-vault-plugin-kustomize
       generate:
         command: ["sh", "-c"]
-        args: ["kustomize build . > all.yaml && argocd-vault-plugin generate all.yaml"]
+        args: ["kustomize build . > all.yaml && argocd-vault-plugin -s argocd-vault-plugin-credentials generate all.yaml"]
