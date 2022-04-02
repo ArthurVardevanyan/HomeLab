@@ -1,5 +1,4 @@
 conky.config = {
-	
 	update_interval = 2,
 	cpu_avg_samples = 2,
 	net_avg_samples = 2,
@@ -30,7 +29,7 @@ conky.config = {
 	uppercase = false,
 	default_color = 'white',
 	own_window_colour = '#000000',
-	own_window_transparent = 'yes', 
+	own_window_transparent = 'yes',
 	minimum_width = 300, minimum_height = 0,
 	alignment = 'top_right',
 
@@ -63,14 +62,20 @@ SWAP $alignc ${swap} / ${swapmax} $alignr ${swapperc}%
 ${swapbar}
 
 ${font Ubuntu:bold:size=10}GPU ${hr 2}
-${font sans-serif:normal:size=8}${color1}GPU:${exec nvidia-smi --query-gpu=gpu_name --format=csv,noheader,nounits} $color
+${font sans-serif:normal:size=8}${color1}GPU:${exec nvidia-smi -i 0 --query-gpu=gpu_name --format=csv,noheader,nounits} $color
 ${color1}GPU Temperature ${color}  ${execi 60 nvidia-settings -query [gpu:0]/GPUCoreTemp -t} °C
-${color1}GPU Utilization ${color}  ${exec nvidia-smi | grep % | cut -c 61-63} % ${nvidia gpufreq} Mhz
-${color1}VRAM Utilization ${color} ${nvidia membwutil}% ${exec nvidia-smi | grep % | cut -c 37-40} MB 
-${color1}GPU Power Draw ${color} ${exec nvidia-smi | grep % | cut -c 21-23} W
+${color1}GPU Utilization ${color}  ${exec nvidia-smi  -i 0 | grep % | cut -c 61-63} % ${nvidia gpufreq} Mhz
+${color1}VRAM Utilization ${color} ${nvidia membwutil}% ${exec nvidia-smi  -i 0 | grep % | cut -c 37-40} MB
+${color1}GPU Power Draw ${color} ${exec nvidia-smi  -i 0 | grep % | cut -c 21-23} W
+
+${font sans-serif:normal:size=8}${color1}GPU:${exec nvidia-smi -i 1 --query-gpu=gpu_name --format=csv,noheader,nounits} $color
+${color1}GPU Temperature ${color}  ${execi 60 nvidia-settings -query [gpu:1]/GPUCoreTemp -t} °C
+${color1}GPU Utilization ${color}  ${exec nvidia-smi  -i 1 | grep % | cut -c 61-63} % ${nvidia gpufreq} Mhz
+${color1}VRAM Utilization ${color} ${nvidia membwutil}% ${exec nvidia-smi  -i 1 | grep % | cut -c 37-40} MB
+${color1}GPU Power Draw ${color} ${exec nvidia-smi  -i 1 | grep % | cut -c 21-23} W
 
 ${font Ubuntu:bold:size=10}NETWORK ${hr 2}
-${font sans-serif:normal:size=8}Down: ${downspeed wlo1}  ${alignr}Up: ${upspeed wlo1} 
+${font sans-serif:normal:size=8}Down: ${downspeed wlo1}  ${alignr}Up: ${upspeed wlo1}
 #${color lightgray}${downspeedgraph wlo1 80,130 } ${alignr}${upspeedgraph wlo1 80,130 }$color
 
 ${font sans-serif:bold:size=10}TOP PROCESSES ${hr 2}
