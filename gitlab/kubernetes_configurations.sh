@@ -31,7 +31,7 @@ kubectl patch deployment -n kube-system local-path-provisioner --patch "$(cat ku
 echo -e " \n${BLUE}Certificate Manager:${NC}"
 kubectl kustomize kubernetes/cert-manager/base | kubectl apply -f -
 sh kubernetes/cert-manager/components/yaml/crds.sh
-kubectl kustomize kubernetes/cert-manager/overlays/k8s | argocd-vault-plugin generate - | kubectl apply -f -
+kubectl kustomize kubernetes/cert-manager/overlays/k3s | argocd-vault-plugin generate - | kubectl apply -f -
 
 echo -e " \n${BLUE}Traefik:${NC}"
 kubectl apply -f kubernetes/traefik/traefik-namespace.yaml
@@ -42,9 +42,9 @@ kubectl apply -f kubernetes/traefik
 
 echo -e " \n${BLUE}Longhorn:${NC}"
 kubectl apply -f kubernetes/longhorn/base/namespace.yaml
-kubectl apply -f kubernetes/longhorn/overlays/homelab/nodes
-sed -i "s/<URL>/${URL}/g" kubernetes/longhorn/overlays/homelab/traefik.yaml
-kubectl kustomize kubernetes/longhorn/overlays/homelab | kubectl apply -f -
+kubectl apply -f kubernetes/longhorn/overlays/k3s/nodes
+sed -i "s/<URL>/${URL}/g" kubernetes/longhorn/overlays/k3s/traefik.yaml
+kubectl kustomize kubernetes/longhorn/overlays/k3s | kubectl apply -f -
 
 echo -e " \n${BLUE}Kube Eagle:${NC}"
 kubectl apply -f kubernetes/kube-eagle
@@ -120,7 +120,7 @@ sed -i "s/<URL>/${URL}/g" kubernetes/bitwarden/bitwarden-traefik.yaml
 kubectl apply -f kubernetes/bitwarden
 
 echo -e " \n${BLUE}Uptime Kuma:${NC}"
-kubectl kustomize kubernetes/uptime-kuma/overlays/k8s | argocd-vault-plugin generate - | kubectl apply -f -
+kubectl kustomize kubernetes/uptime-kuma/overlays/k3s | argocd-vault-plugin generate - | kubectl apply -f -
 
 echo -e " \n${BLUE}Photoprism:${NC}"
 kubectl apply -f kubernetes/photoprism/photoprism-namespace.yaml

@@ -3,15 +3,11 @@ kind: Kustomization
 resources:
   - ../../base
   - traefik.yaml
-  - ./nodes/node-k3s-server-1.yaml
-  - ./nodes/node-k3s-worker-1.yaml
-  - ./nodes/node-k3s-worker-2.yaml
+  - ./nodes/node-server.yaml
+  - ./nodes/node-k3s-infra.yaml
+  - ./nodes/node-k3s-worker.yaml
   - ./backup/backup-cron.yaml
   - ./backup/backup-pv.yaml
   - ./backup/backup-rsync.yaml
   - ./backup/backup-target.yaml
   - ./backup/snapshot-cron.yaml
-
-patchesStrategicMerge:
-  - default-setting.yaml
-  - manager-deployment.yaml
