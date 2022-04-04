@@ -62,17 +62,17 @@ SWAP $alignc ${swap} / ${swapmax} $alignr ${swapperc}%
 ${swapbar}
 
 ${font Ubuntu:bold:size=10}GPU ${hr 2}
-${font sans-serif:normal:size=8}${color1}GPU:${exec nvidia-smi -i 0 --query-gpu=gpu_name --format=csv,noheader,nounits} $color
-${color1}GPU Temperature ${color}  ${execi 60 nvidia-settings -query [gpu:0]/GPUCoreTemp -t} °C
-${color1}GPU Utilization ${color}  ${exec nvidia-smi  -i 0 | grep % | cut -c 61-63} % ${nvidia gpufreq} Mhz
-${color1}VRAM Utilization ${color} ${nvidia membwutil}% ${exec nvidia-smi  -i 0 | grep % | cut -c 37-40} MB
-${color1}GPU Power Draw ${color} ${exec nvidia-smi  -i 0 | grep % | cut -c 21-23} W
-
 ${font sans-serif:normal:size=8}${color1}GPU:${exec nvidia-smi -i 1 --query-gpu=gpu_name --format=csv,noheader,nounits} $color
+${color1}GPU Temperature ${color}  ${execi 60 nvidia-settings -query [gpu:0]/GPUCoreTemp -t} °C
+${color1}GPU Utilization ${color}  ${exec nvidia-smi -i 1 | grep % | cut -c 61-63} % ${nvidia gpufreq} Mhz
+${color1}VRAM Utilization ${color} ${nvidia membwutil}% ${exec nvidia-smi -i 1 | grep % | cut -c 37-40} MB
+${color1}GPU Power Draw ${color} ${exec nvidia-smi -i 1 | grep % | cut -c 21-23} W
+
+${font sans-serif:normal:size=8}${color1}GPU:${exec nvidia-smi -i 0 --query-gpu=gpu_name --format=csv,noheader,nounits} $color
 ${color1}GPU Temperature ${color}  ${execi 60 nvidia-settings -query [gpu:1]/GPUCoreTemp -t} °C
-${color1}GPU Utilization ${color}  ${exec nvidia-smi  -i 1 | grep % | cut -c 61-63} % ${nvidia gpufreq} Mhz
-${color1}VRAM Utilization ${color} ${nvidia membwutil}% ${exec nvidia-smi  -i 1 | grep % | cut -c 37-40} MB
-${color1}GPU Power Draw ${color} ${exec nvidia-smi  -i 1 | grep % | cut -c 21-23} W
+${color1}GPU Utilization ${color}  ${exec nvidia-smi -i 0 | grep % | cut -c 61-63} % ${nvidia gpufreq} Mhz
+${color1}VRAM Utilization ${color} ${nvidia membwutil}% ${exec nvidia-smi -i 0 | grep % | cut -c 37-40} MB
+${color1}GPU Power Draw ${color} ${exec nvidia-smi -i 0 | grep % | cut -c 21-23} W
 
 ${font Ubuntu:bold:size=10}NETWORK ${hr 2}
 ${font sans-serif:normal:size=8}Down: ${downspeed wlo1}  ${alignr}Up: ${upspeed wlo1}
