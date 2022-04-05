@@ -1,0 +1,46 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: traefik
+  namespace: traefik
+spec:
+  template:
+    spec:
+      containers:
+        - name: traefik
+          args:
+            - --global.checknewversion
+            - --entryPoints.traefik.address=:9000/tcp
+            - --entryPoints.web.address=:8000/tcp
+            - --entryPoints.websecure.address=:8443/tcp
+            - --entryPoints.registry.address=:5050/tcp
+            - --entryPoints.mariadb.address=:3306/tcp
+            - --api.dashboard=true
+            - --ping=true
+            - --ping.entryPoint=web
+            - --providers.kubernetescrd
+            - --providers.kubernetesingress
+            - --api.dashboard=true
+            - --log.level=INFO
+            - --providers.kubernetesingress.ingressclass=traefik-internal
+            - --serversTransport.insecureSkipVerify=true
+            - --api.insecure=true
+            - --entryPoints.web.proxyProtocol.trustedIPs=10.0.0.2
+            - --entryPoints.websecure.proxyProtocol.trustedIPs=10.0.0.2
+            - --entryPoints.registry.proxyProtocol.trustedIPs=10.0.0.2
+            - --entryPoints.mariadb.proxyProtocol.trustedIPs=10.0.0.2
+          ports:
+            - containerPort: 8000
+              hostPort: 80
+              name: web
+              protocol: TCP
+            - containerPort: 8443
+              hostPort: 443
+              name: websecure
+              protocol: TCP
+            - containerPort: 5050
+              hostPort: 5050
+              name: registry
+            - containerPort: 3306
+              hostPort: 3306
+              name: mariadb

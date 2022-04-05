@@ -34,11 +34,7 @@ sh kubernetes/cert-manager/components/yaml/crds.sh
 kubectl kustomize kubernetes/cert-manager/overlays/k3s | argocd-vault-plugin generate - | kubectl apply -f -
 
 echo -e " \n${BLUE}Traefik:${NC}"
-kubectl apply -f kubernetes/traefik/traefik-namespace.yaml
-sed -i "s/<URL>/${URL}/g" kubernetes/traefik/traefik-dashboard-traefik.yaml
-sed -i "s/<URL>/${URL}/g" kubernetes/traefik/cluster-wildcard-certificate.yaml
-kubectl apply -f kubernetes/traefik/traefik-crd.yaml
-kubectl apply -f kubernetes/traefik
+kubectl kustomize kubernetes/traefik/overlays/k3s | argocd-vault-plugin generate - | kubectl apply -f -
 
 echo -e " \n${BLUE}Longhorn:${NC}"
 kubectl apply -f kubernetes/longhorn/base/namespace.yaml

@@ -1,0 +1,16 @@
+kind: Route
+apiVersion: route.openshift.io/v1
+metadata:
+  name: dashboard
+  namespace: traefik
+  labels:
+    app: traefik
+    app.kubernetes.io/instance: traefik
+spec:
+  to:
+    kind: Service
+    name: traefik-dashboard
+    weight: 100
+  port:
+    targetPort: 9000
+  wildcardPolicy: None
