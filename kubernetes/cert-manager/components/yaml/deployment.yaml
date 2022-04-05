@@ -38,16 +38,6 @@ spec:
       tolerations:
         - key: node-role.kubernetes.io/master
           effect: NoSchedule
-      affinity:
-        nodeAffinity:
-          preferredDuringSchedulingIgnoredDuringExecution:
-            - weight: 1
-              preference:
-                matchExpressions:
-                  - key: node-role.kubernetes.io/master
-                    operator: In
-                    values:
-                      - "true"
       containers:
         - name: cert-manager-cainjector
           image: "quay.io/jetstack/cert-manager-cainjector:v1.7.2"
@@ -113,16 +103,6 @@ spec:
       tolerations:
         - key: node-role.kubernetes.io/master
           effect: NoSchedule
-      affinity:
-        nodeAffinity:
-          preferredDuringSchedulingIgnoredDuringExecution:
-            - weight: 1
-              preference:
-                matchExpressions:
-                  - key: node-role.kubernetes.io/master
-                    operator: In
-                    values:
-                      - "true"
       serviceAccountName: cert-manager
       securityContext:
         fsGroup: 10250
@@ -198,16 +178,6 @@ spec:
       tolerations:
         - key: node-role.kubernetes.io/master
           effect: NoSchedule
-      affinity:
-        nodeAffinity:
-          preferredDuringSchedulingIgnoredDuringExecution:
-            - weight: 1
-              preference:
-                matchExpressions:
-                  - key: node-role.kubernetes.io/master
-                    operator: In
-                    values:
-                      - "true"
       serviceAccountName: cert-manager-webhook
       securityContext:
         fsGroup: 10250
