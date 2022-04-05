@@ -131,10 +131,10 @@ sed -i "s/<URL>/${URL}/g" kubernetes/jellyfin/jellyfin-traefik.yaml
 kubectl apply -f kubernetes/jellyfin
 
 echo -e " \n${BLUE}Gitlab Runner:${NC}"
-kubectl apply -f kubernetes/gitlab/gitlab-runner/gitlab-runner-namespace.yaml
-sed -i "s/<URL>/${URL}/g" kubernetes/gitlab/gitlab-runner/gitlab-runner-config-map.yaml
-sed -i "s/<GITLAB_RUNNER_TOKEN>/${GITLAB_RUNNER_TOKEN}/g" kubernetes/gitlab/gitlab-runner/gitlab-runner-config-map.yaml
-kubectl apply -f kubernetes/gitlab/gitlab-runner/
+kubectl apply -f kubernetes/gitlab-runner/gitlab-runner-namespace.yaml
+sed -i "s/<URL>/${URL}/g" kubernetes/gitlab-runner/gitlab-runner-config-map.yaml
+sed -i "s/<GITLAB_RUNNER_TOKEN>/${GITLAB_RUNNER_TOKEN}/g" kubernetes/gitlab-runner/gitlab-runner-config-map.yaml
+kubectl apply -f kubernetes/gitlab-runner/
 
 echo -e " \n${BLUE}Gitlab:${NC}"
 kubectl apply -f kubernetes/gitlab/gitlab-namespace.yaml
