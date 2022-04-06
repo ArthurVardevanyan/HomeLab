@@ -772,7 +772,7 @@ install_okd() {
 			--qemu-commandline="-fw_cfg name=opt/com.coreos/config,file=${IGNITION_CONFIG}"
 
 		if [ "$NODE" != "bootstrap" ]; then
-			IP=$((IP++))
+			IP=$((IP + 1))
 		fi
 
 	done
