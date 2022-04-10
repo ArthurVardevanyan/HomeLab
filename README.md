@@ -93,6 +93,14 @@ k3s-server-3 | cp,etcd,master | 10.0.0.103 | KVM        | 4    | 2    | 1.75G | 
 k3s-worker-1 | infra,worker   | 10.0.0.111 | Infra KVM  | 4    | 4    | 10G   | LH SSD
 k3s-worker-2 | worker         | 10.0.0.112 | KVM        | 4    | 4    | 4.25G | N/A
 
+#### OKD Setup
+
+```bash
+sudo fdisk /dev/vdb1
+sudo echo "/dev/vdb1 /mnt/storage auto nofail" > /etc/fstab
+sudo mkfs.ext4 -F /dev/vdb1
+```
+
 #### K3S Setup
 
 ```bash
