@@ -10,7 +10,6 @@ variables:
 stages:
   - images
   #- test
-  #- kubernetes
   - ansible
   - github
 
@@ -63,53 +62,24 @@ Servers:
   script:
     - ansible-playbook -i ansible/inventory ansible/servers.yaml --extra-vars "ansible_become_pass=${SUDO} ansible_ssh_pass=${SUDO} ansible_python_interpreter=/usr/bin/python3"
 
-Configurations:
-  # https://docs.gitlab.com/ee/ci/examples/authenticating-with-hashicorp-vault/
-  stage: kubernetes
-  when: always
-  needs: []
-  image: $CI_REGISTRY_IMAGE:toolbox
-  environment: production
-  before_script:
-    - export VAULT_ADDR=https://vault.${URL}
-    - export VAULT_TOKEN="$(vault write -field=token auth/jwt/login role=homelab jwt=$CI_JOB_JWT)"
-  script:
-    - gitlab/kubernetes_configurations.sh
-
 Toolbox:
   stage: images
   when: manual
-  image: docker:latest
-  variables:
-    DOCKER_HOST: tcp://docker:2375
-    DOCKER_DRIVER: overlay2
-    DOCKER_TLS_CERTDIR: ""
-  services:
-    - name: docker:dind
-      alias: docker
-      command: ["--tls=false"]
+  image: quay.io/buildah/stable:v1.23.3
   before_script:
-    - docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" $CI_REGISTRY
+    - buildah login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" $CI_REGISTRY
   script:
-    - docker pull $CI_REGISTRY_IMAGE:toolbox || true
-    - docker build --network host -f gitlab/dockerfile --cache-from $CI_REGISTRY_IMAGE:toolbox -t $CI_REGISTRY_IMAGE:toolbox .
-    - docker push $CI_REGISTRY_IMAGE:toolbox
+    - buildah pull $CI_REGISTRY_IMAGE:toolbox || true
+    - buildah bud --network host -f gitlab/dockerfile --cache-from $CI_REGISTRY_IMAGE:toolbox -t $CI_REGISTRY_IMAGE:toolbox .
+    - buildah push $CI_REGISTRY_IMAGE:toolbox
 
 ArgoCD:
   stage: images
   when: manual
-  image: docker:latest
-  variables:
-    DOCKER_HOST: tcp://docker:2375
-    DOCKER_DRIVER: overlay2
-    DOCKER_TLS_CERTDIR: ""
-  services:
-    - name: docker:dind
-      alias: docker
-      command: ["--tls=false"]
+  image: quay.io/buildah/stable:v1.23.3
   before_script:
-    - docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" $CI_REGISTRY
+    - buildah login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" $CI_REGISTRY
   script:
-    - docker pull $CI_REGISTRY_IMAGE:argocd-v2.2.5 || true
-    - docker build --network host -f kubernetes/argocd/dockerfile --cache-from $CI_REGISTRY_IMAGE:argocd-v2.2.5 -t $CI_REGISTRY_IMAGE:argocd-v2.2.5 .
-    - docker push $CI_REGISTRY_IMAGE:argocd-v2.2.5
+    - buildah pull $CI_REGISTRY_IMAGE:argocd-v2.2.5 || true
+    - buildah bud --network host -f kubernetes/argocd/dockerfile --cache-from $CI_REGISTRY_IMAGE:argocd-v2.2.5 -t $CI_REGISTRY_IMAGE:argocd-v2.2.5 .
+    - buildah push $CI_REGISTRY_IMAGE:argocd-v2.2.5
