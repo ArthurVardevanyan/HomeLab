@@ -96,9 +96,10 @@ k3s-worker-2 | worker         | 10.0.0.112 | KVM        | 4    | 4    | 4.25G | 
 #### OKD Setup
 
 ```bash
-sudo fdisk /dev/vdb1
-sudo echo "/dev/vdb1 /mnt/storage auto nofail" > /etc/fstab
+sudo fdisk /dev/vdb
 sudo mkfs.ext4 -F /dev/vdb1
+sudo su
+echo "/dev/vdb1 /mnt/storage auto nofail" > /etc/fstab
 ```
 
 #### K3S Setup

@@ -68,7 +68,7 @@ spec:
               mountPath: /etc/gitlab/ssl/
           livenessProbe:
             httpGet:
-              path: -/liveness?token=<HEALTH_CHECK_TOKEN>
+              path: -/liveness?token=<path:secret/data/gitlab/health#token>
               port: 443
               scheme: HTTPS
             initialDelaySeconds: 500
@@ -78,7 +78,7 @@ spec:
             failureThreshold: 5
           readinessProbe:
             httpGet:
-              path: -/readiness?token=<HEALTH_CHECK_TOKEN>
+              path: -/readiness?token=<path:secret/data/gitlab/health#token>
               port: 443
               scheme: HTTPS
             initialDelaySeconds: 500
@@ -92,6 +92,7 @@ spec:
       restartPolicy: Always
       terminationGracePeriodSeconds: 30
       dnsPolicy: ClusterFirst
+      serviceAccountName: gitlab-sa
       automountServiceAccountToken: true
       hostname: gitlab
       schedulerName: default-scheduler

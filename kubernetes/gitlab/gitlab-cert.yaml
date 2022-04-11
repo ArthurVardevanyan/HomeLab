@@ -1,11 +1,16 @@
-kind: Secret
-apiVersion: v1
+apiVersion: cert-manager.io/v1
+kind: Certificate
 metadata:
   name: gitlab-cert
   namespace: gitlab
-type: Opaque
-data:
-  gitlab.<URL>.crt: >-
-    <GENERIC_CERT>
-  gitlab.<URL>.key: >-
-    <GENERIC_KEY>
+  labels:
+    app.kubernetes.io/instance: gitlab
+spec:
+  # Secret names are always required.
+  secretName: gitlab-cert
+  # At least one of a DNS Name, URI, or IP address is required.
+  dnsNames:
+    - "gitlab.<path:secret/data/gitlab/domain#url>"
+  issuerRef:
+    kind: ClusterIssuer
+    name: letsencrypt

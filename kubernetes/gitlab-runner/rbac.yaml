@@ -1,0 +1,34 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: gitlab-runner-cr
+  labels:
+    app.kubernetes.io/instance: gitlab-runner
+rules:
+  - apiGroups:
+      - security.openshift.io
+    resourceNames:
+      - anyuid
+      - privileged
+    resources:
+      - securitycontextconstraints
+    verbs:
+      - use
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: gitlab-runner-crb
+  labels:
+    app.kubernetes.io/instance: gitlab-runner
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: gitlab-runner-cr
+subjects:
+  - kind: ServiceAccount
+    name: gitlab-runner-sa
+    namespace: gitlab-runner
+  - kind: ServiceAccount
+    name: default
+    namespace: gitlab-runner
