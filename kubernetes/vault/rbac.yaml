@@ -1,0 +1,31 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: vault-cr
+  labels:
+    app.kubernetes.io/instance: vault
+rules:
+  - apiGroups:
+      - security.openshift.io
+    resourceNames:
+      - anyuid
+      - privileged
+    resources:
+      - securitycontextconstraints
+    verbs:
+      - use
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: vault-crb
+  labels:
+    app.kubernetes.io/instance: vault
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: vault-cr
+subjects:
+  - kind: ServiceAccount
+    name: vault-sa
+    namespace: vault

@@ -1,0 +1,31 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: heimdall-cr
+  labels:
+    app.kubernetes.io/instance: heimdall
+rules:
+  - apiGroups:
+      - security.openshift.io
+    resourceNames:
+      - anyuid
+      - privileged
+    resources:
+      - securitycontextconstraints
+    verbs:
+      - use
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: heimdall-crb
+  labels:
+    app.kubernetes.io/instance: heimdall
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: heimdall-cr
+subjects:
+  - kind: ServiceAccount
+    name: heimdall-sa
+    namespace: heimdall
