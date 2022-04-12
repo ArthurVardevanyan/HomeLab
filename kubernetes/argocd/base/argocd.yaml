@@ -7,6 +7,7 @@ metadata:
     app.kubernetes.io/instance: argocd
 spec:
   server:
+    host: argocd.apps.okd.<path:secret/data/gitlab/domain#url>
     autoscale:
       enabled: false
     grpc:
@@ -21,8 +22,12 @@ spec:
       requests:
         cpu: 100m
         memory: 100M
+    insecure: true
     route:
       enabled: true
+      tls:
+        termination: edge
+        insecureEdgeTerminationPolicy: Redirect
     service:
       type: ""
   grafana:
@@ -49,8 +54,8 @@ spec:
     serviceaccount: default
     resources:
       limits:
-        cpu: "750m"
-        memory: 300M
+        cpu: 750m
+        memory: 500M
       requests:
         cpu: 250m
         memory: 150M
