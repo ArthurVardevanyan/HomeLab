@@ -2,7 +2,7 @@ kind: Deployment
 apiVersion: apps/v1
 metadata:
   name: kube-eagle
-  namespace: kube-system
+  namespace: kube-eagle
   labels:
     app: kube-eagle
 spec:
@@ -51,11 +51,11 @@ spec:
               value: info
           resources:
             limits:
+              cpu: 150m
+              memory: 100M
+            requests:
               cpu: 75m
               memory: 50M
-            requests:
-              cpu: 50m
-              memory: 25M
           livenessProbe:
             httpGet:
               path: /health
@@ -85,16 +85,6 @@ spec:
           effect: NoSchedule
         - key: node-role.kubernetes.io/master
           effect: NoSchedule
-      affinity:
-        nodeAffinity:
-          preferredDuringSchedulingIgnoredDuringExecution:
-            - weight: 1
-              preference:
-                matchExpressions:
-                  - key: node-role.kubernetes.io/master
-                    operator: In
-                    values:
-                      - "true"
       serviceAccountName: sa-kube-eagle
       serviceAccount: sa-kube-eagle
       securityContext:

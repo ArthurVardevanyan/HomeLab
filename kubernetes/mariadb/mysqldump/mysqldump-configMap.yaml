@@ -4,7 +4,7 @@ metadata:
   name: mysqldump-config
   labels:
     name: mysqldump-config
-  namespace: database
+  namespace: mariadb
 data:
   mysqldump.sh: |-
     #!/bin/sh
@@ -12,10 +12,10 @@ data:
     echo "Rotating SQL Files"
     logrotate -vf  /tmp/mysqldump -s /tmp/state/logrotate.status
 
-    URL=mariadb.database
+    URL=mariadb.mariadb
     LOCATION=/mnt/mysqldump
 
-    echo "Dumping MariaDB Database Configs"
+    echo "Dumping MariaDB mariadb Configs"
     mysqldump -h ${URL} --port=3306 -ubackup -pbackup  mysql           > ${LOCATION}/mysql/mysql.sql
     echo "Dumping Grafana"
     mysqldump -h ${URL} --port=3306 -ubackup -pbackup  grafana         > ${LOCATION}/grafana/grafana.sql

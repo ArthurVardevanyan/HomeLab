@@ -2,7 +2,7 @@ apiVersion: apps/v1
 kind: StatefulSet
 metadata:
   name: mariadb
-  namespace: database
+  namespace: mariadb
   labels:
     app: mariadb
 spec:
@@ -60,13 +60,13 @@ spec:
             exec:
               command: ["mysqladmin", "ping"]
             initialDelaySeconds: 30
-            periodSeconds: 10
+            periodSeconds: 15
             timeoutSeconds: 5
           readinessProbe:
             exec:
               command: ["mysqladmin", "ping"]
             initialDelaySeconds: 5
-            periodSeconds: 5
+            periodSeconds: 15
             timeoutSeconds: 1
       volumes:
         - name: mariadb-config

@@ -20,19 +20,6 @@ spec:
         enable.version-checker.io/vault: "true"
         seccomp.security.alpha.kubernetes.io/defaultProfileName: "runtime/default"
     spec:
-      tolerations:
-        - key: node-role.kubernetes.io/master
-          effect: NoSchedule
-      affinity:
-        nodeAffinity:
-          preferredDuringSchedulingIgnoredDuringExecution:
-            - weight: 1
-              preference:
-                matchExpressions:
-                  - key: node-role.kubernetes.io/master
-                    operator: In
-                    values:
-                      - "true"
       automountServiceAccountToken: false
       serviceAccountName: vault-sa
       containers:

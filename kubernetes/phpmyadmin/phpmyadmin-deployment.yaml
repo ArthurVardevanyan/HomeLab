@@ -2,7 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: phpmyadmin
-  namespace: database
+  namespace: mariadb
   labels:
     app: phpmyadmin
 spec:
@@ -47,7 +47,7 @@ spec:
               cpu: "250m"
           env:
             - name: DATABASE_HOST
-              value: "mariadb.database"
+              value: "mariadb.mariadb"
             - name: PHP_UPLOAD_MAX_FILESIZE
               value: "500M"
             - name: APACHE_HTTP_PORT_NUMBER

@@ -1,11 +1,16 @@
-kind: Secret
-apiVersion: v1
+apiVersion: cert-manager.io/v1
+kind: Certificate
 metadata:
   name: nextcloud-cert
   namespace: nextcloud
-data:
-  tls.crt: >-
-    <GENERIC_CERT>
-  tls.key: >-
-    <GENERIC_KEY>
-type: kubernetes.io/tls
+  labels:
+    app.kubernetes.io/instance: nextcloud
+spec:
+  # Secret names are always required.
+  secretName: nextcloud-cert
+  # At least one of a DNS Name, URI, or IP address is required.
+  dnsNames:
+    - "nextcloud.<path:secret/data/gitlab/domain#url>"
+  issuerRef:
+    kind: ClusterIssuer
+    name: letsencrypt

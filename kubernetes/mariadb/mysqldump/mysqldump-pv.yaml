@@ -1,7 +1,7 @@
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
-  namespace: database
+  namespace: mariadb
   name: mysqldump-pvc
 spec:
   storageClassName: nfs
@@ -15,7 +15,7 @@ spec:
 apiVersion: v1
 kind: PersistentVolume
 metadata:
-  namespace: database
+  namespace: mariadb
   name: mysqldump-pv
   labels:
     type: local
@@ -34,12 +34,12 @@ spec:
     server: 10.0.0.3
   claimRef:
     name: mysqldump-pvc
-    namespace: database
+    namespace: mariadb
 ---
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
-  namespace: database
+  namespace: mariadb
   name: mysqldump-backup-pvc
 spec:
   storageClassName: nfs
@@ -53,7 +53,7 @@ spec:
 apiVersion: v1
 kind: PersistentVolume
 metadata:
-  namespace: database
+  namespace: mariadb
   name: mysqldump-backup-pv
   labels:
     type: local
@@ -72,4 +72,4 @@ spec:
     server: 10.0.0.4
   claimRef:
     name: mysqldump-backup-pvc
-    namespace: database
+    namespace: mariadb
