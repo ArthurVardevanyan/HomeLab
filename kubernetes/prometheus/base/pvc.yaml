@@ -3,6 +3,8 @@ apiVersion: v1
 metadata:
   name: prometheus-pvc
   namespace: prometheus
+  labels:
+    app.kubernetes.io/instance: prometheus
 spec:
   accessModes:
     - ReadWriteOnce
@@ -17,6 +19,8 @@ kind: PersistentVolume
 apiVersion: v1
 metadata:
   name: prometheus-pv
+  labels:
+    app.kubernetes.io/instance: prometheus
 spec:
   capacity:
     storage: 10Gi

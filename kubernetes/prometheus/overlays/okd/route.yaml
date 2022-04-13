@@ -1,0 +1,20 @@
+kind: Route
+apiVersion: route.openshift.io/v1
+metadata:
+  name: prometheus
+  namespace: prometheus
+  labels:
+    app: prometheus
+    app.kubernetes.io/instance: prometheus
+spec:
+  host: prometheus.apps.okd.<path:secret/data/gitlab/domain#url>
+  to:
+    kind: Service
+    name: prometheus-service
+    weight: 100
+  port:
+    targetPort: 9090
+  tls:
+    termination: edge
+    insecureEdgeTerminationPolicy: Redirect
+  wildcardPolicy: None

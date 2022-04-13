@@ -1,15 +1,14 @@
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
-  name: prometheus-cr
+  name: node-exporter-cr
   labels:
     app.kubernetes.io/instance: prometheus
 rules:
   - apiGroups:
       - security.openshift.io
     resourceNames:
-      - anyuid
-      - privileged
+      - hostmount-anyuid
     resources:
       - securitycontextconstraints
     verbs:
@@ -18,14 +17,22 @@ rules:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
-  name: prometheus-crb
+  name: node-exporter-crb
   labels:
     app.kubernetes.io/instance: prometheus
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
-  name: prometheus-cr
+  name: node-exporter-cr
 subjects:
   - kind: ServiceAccount
-    name: prometheus-sa
+    name: node-exporter-sa
     namespace: prometheus
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: node-exporter-sa
+  namespace: prometheus
+  labels:
+    app.kubernetes.io/instance: prometheus
