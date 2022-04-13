@@ -7,10 +7,14 @@ metadata:
     app: traefik
     app.kubernetes.io/instance: traefik
 spec:
+  host: traefik.apps.okd.<path:secret/data/gitlab/domain#url>
   to:
     kind: Service
     name: traefik-dashboard
     weight: 100
   port:
     targetPort: 9000
+  tls:
+    termination: edge
+    insecureEdgeTerminationPolicy: Redirect
   wildcardPolicy: None

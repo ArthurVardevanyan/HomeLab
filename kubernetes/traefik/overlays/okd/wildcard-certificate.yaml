@@ -6,12 +6,9 @@ metadata:
   labels:
     app.kubernetes.io/instance: traefik
 spec:
-  # Secret names are always required.
   secretName: wildcard-secret
-  # At least one of a DNS Name, URI, or IP address is required.
   dnsNames:
     - "*.<path:secret/data/gitlab/domain#url>"
-    - "*.okd.<path:secret/data/gitlab/domain#url>"
   issuerRef:
     kind: ClusterIssuer
     name: letsencrypt
