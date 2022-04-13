@@ -3,6 +3,8 @@ kind: Middleware
 metadata:
   name: https-redirect
   namespace: vault
+  labels:
+    app.kubernetes.io/instance: vault
 spec:
   redirectScheme:
     scheme: https
@@ -13,12 +15,14 @@ kind: IngressRoute
 metadata:
   name: vault
   namespace: vault
+  labels:
+    app.kubernetes.io/instance: vault
 spec:
   entryPoints:
     - web
     - websecure
   routes:
-    - match: Host(`vault.<URL>`)
+    - match: Host(`vault.<path:secret/data/gitlab/domain#url>`)
       kind: Rule
       services:
         - name: vault
@@ -27,4 +31,4 @@ spec:
         - name: https-redirect
   tls:
     domains:
-      - main: vault.<URL>
+      - main: vault.<path:secret/data/gitlab/domain#url>

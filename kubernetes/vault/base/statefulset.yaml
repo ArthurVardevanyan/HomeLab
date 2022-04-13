@@ -5,6 +5,7 @@ metadata:
   namespace: vault
   labels:
     app: vault
+    app.kubernetes.io/instance: argocd
 spec:
   replicas: 1
   serviceName: vault
@@ -41,7 +42,7 @@ spec:
               port: 8200
             initialDelaySeconds: 60
           ports:
-            - containerPort: 443 # Serves No Purpose other than to Satisfy kics IaC Scanner.
+            - containerPort: 443
               protocol: TCP
               name: unused-443
             - containerPort: 8200
@@ -50,15 +51,15 @@ spec:
           securityContext:
             readOnlyRootFilesystem: true
             runAsNonRoot: true
-            runAsUser: 11000
+            # runAsUser: 11000
             allowPrivilegeEscalation: false
-            seccompProfile:
-              type: RuntimeDefault
+            # seccompProfile:
+            #   type: RuntimeDefault
             capabilities:
               drop:
                 - all
-              add:
-                - IPC_LOCK
+            #   add:
+            #     - IPC_LOCK
           command:
             - vault
             - server
