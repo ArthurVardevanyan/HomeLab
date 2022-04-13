@@ -1,0 +1,17 @@
+apiVersion: traefik.containo.us/v1alpha1
+kind: IngressRoute
+metadata:
+  name: phpmyadmin
+  namespace: mariadb
+  labels:
+    app.kubernetes.io/instance: phpmyadmin
+spec:
+  entryPoints:
+    - web
+    - websecure
+  routes:
+    - match: Host(`phpmyadmin.k3s.<path:secret/data/gitlab/domain#url>`)
+      kind: Rule
+      services:
+        - name: phpmyadmin
+          port: 8080
