@@ -7,10 +7,14 @@ metadata:
     app: longhorn-ui
     app.kubernetes.io/instance: longhorn-system
 spec:
+  host: longhorn.apps.okd.<path:secret/data/gitlab/domain#url>
   to:
     kind: Service
     name: longhorn-frontend
     weight: 100
   port:
     targetPort: http
+  tls:
+    termination: edge
+    insecureEdgeTerminationPolicy: Redirect
   wildcardPolicy: None
