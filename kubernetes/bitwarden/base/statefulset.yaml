@@ -5,6 +5,7 @@ metadata:
   namespace: bitwarden
   labels:
     app: bitwarden
+    app.kubernetes.io/instance: bitwarden
 spec:
   replicas: 1
   serviceName: bitwarden
@@ -19,25 +20,12 @@ spec:
         enable.version-checker.io/bitwarden: "true"
         seccomp.security.alpha.kubernetes.io/defaultProfileName: runtime/default
     spec:
-      tolerations:
-        - key: node-role.kubernetes.io/master
-          effect: NoSchedule
-      affinity:
-        nodeAffinity:
-          preferredDuringSchedulingIgnoredDuringExecution:
-            - weight: 1
-              preference:
-                matchExpressions:
-                  - key: node-role.kubernetes.io/master
-                    operator: In
-                    values:
-                      - "true"
       hostname: bitwarden
-      securityContext:
-        fsGroup: 11024
-        runAsGroup: 11024
-        runAsUser: 11024
-        runAsNonRoot: true
+      # securityContext:
+      #   fsGroup: 11024
+      #   runAsGroup: 11024
+      #   runAsUser: 11024
+      #   runAsNonRoot: true
       containers:
         - image: vaultwarden/server:1.24.0
           imagePullPolicy: IfNotPresent
@@ -50,13 +38,13 @@ spec:
             - name: ROCKET_PORT
               value: "8080"
           securityContext:
-            runAsGroup: 11024
-            runAsUser: 11024
+            # runAsGroup: 11024
+            # runAsUser: 11024
             runAsNonRoot: true
             readOnlyRootFilesystem: true
             allowPrivilegeEscalation: false
-            seccompProfile:
-              type: RuntimeDefault
+            # seccompProfile:
+            #   type: RuntimeDefault
             capabilities:
               drop:
                 - all

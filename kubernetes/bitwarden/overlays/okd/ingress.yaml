@@ -1,0 +1,23 @@
+kind: Ingress
+apiVersion: networking.k8s.io/v1
+metadata:
+  name: bitwarden
+  namespace: bitwarden
+  labels:
+    app.kubernetes.io/instance: bitwarden
+spec:
+  tls:
+    - hosts:
+        - bitwarden.<path:secret/data/gitlab/domain#url>
+      secretName: bitwarden-cert
+  rules:
+    - host: bitwarden.<path:secret/data/gitlab/domain#url>
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: bitwarden
+                port:
+                  number: 80
