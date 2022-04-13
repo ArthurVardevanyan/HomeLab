@@ -5,6 +5,7 @@ metadata:
   namespace: version-checker
   labels:
     app: version-checker
+    app.kubernetes.io/instance: version-checker
 spec:
   schedule: "00 05,11,17,23 * * *"
   concurrencyPolicy: Replace
@@ -40,22 +41,22 @@ spec:
                         values:
                           - "true"
           automountServiceAccountToken: true
-          securityContext:
-            fsGroup: 65554
-            runAsGroup: 65554
-            runAsNonRoot: true
-            runAsUser: 65554
+          # securityContext:
+          #   fsGroup: 65554
+          #   runAsGroup: 65554
+          #   runAsNonRoot: true
+          #   runAsUser: 65554
           containers:
             - name: version-checker
               image: quay.io/jetstack/version-checker:v0.2.1
               securityContext:
-                runAsGroup: 65554
-                runAsUser: 65554
+                # runAsGroup: 65554
+                # runAsUser: 65554
                 runAsNonRoot: true
                 readOnlyRootFilesystem: true
                 allowPrivilegeEscalation: false
-                seccompProfile:
-                  type: RuntimeDefault
+                # seccompProfile:
+                #   type: RuntimeDefault
                 capabilities:
                   drop:
                     - all
@@ -81,19 +82,3 @@ spec:
           schedulerName: default-scheduler
   successfulJobsHistoryLimit: 1
   failedJobsHistoryLimit: 1
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: version-checker
-  namespace: version-checker
-  labels:
-    app: version-checker
-spec:
-  selector:
-    app: version-checker
-  ports:
-    - protocol: TCP
-      name: web
-      port: 8080
-      targetPort: 8080
