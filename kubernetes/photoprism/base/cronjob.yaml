@@ -3,6 +3,8 @@ apiVersion: batch/v1
 metadata:
   name: photoprism-cron
   namespace: photoprism
+  labels:
+    app.kubernetes.io/instance: photoprism
 spec:
   schedule: "30 07,17 * * *"
   concurrencyPolicy: Forbid
@@ -35,9 +37,9 @@ spec:
           serviceAccountName: photoprism-sa
           restartPolicy: Never
           securityContext:
-            fsGroup: 12342
-            runAsGroup: 12342
-            runAsUser: 12342
+            # fsGroup: 12342
+            # runAsGroup: 12342
+            # runAsUser: 12342
             runAsNonRoot: true
           containers:
             - name: photoprism-cron
@@ -87,13 +89,13 @@ spec:
                   cpu: 25m
                   memory: 1G
               securityContext:
-                runAsGroup: 12342
-                runAsUser: 12342
+                # runAsGroup: 12342
+                # runAsUser: 12342
                 runAsNonRoot: true
                 readOnlyRootFilesystem: true
                 allowPrivilegeEscalation: false
-                seccompProfile:
-                  type: RuntimeDefault
+                # seccompProfile:
+                #   type: RuntimeDefault
                 capabilities:
                   drop:
                     - all

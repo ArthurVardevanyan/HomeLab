@@ -3,6 +3,8 @@ apiVersion: v1
 metadata:
   name: photoprism-storage-pvc
   namespace: photoprism
+  labels:
+    app.kubernetes.io/instance: photoprism
 spec:
   accessModes:
     - ReadWriteOnce
@@ -17,6 +19,8 @@ kind: PersistentVolume
 apiVersion: v1
 metadata:
   name: photoprism-storage-pv
+  labels:
+    app.kubernetes.io/instance: photoprism
 spec:
   capacity:
     storage: 1Gi
@@ -41,6 +45,8 @@ apiVersion: v1
 metadata:
   name: photoprism-cache-pvc
   namespace: photoprism
+  labels:
+    app.kubernetes.io/instance: photoprism
 spec:
   accessModes:
     - ReadWriteOnce
@@ -55,6 +61,8 @@ kind: PersistentVolume
 apiVersion: v1
 metadata:
   name: photoprism-cache-pv
+  labels:
+    app.kubernetes.io/instance: photoprism
 spec:
   capacity:
     storage: 25Gi
@@ -79,6 +87,8 @@ kind: PersistentVolumeClaim
 metadata:
   namespace: photoprism
   name: photoprism-media
+  labels:
+    app.kubernetes.io/instance: photoprism
 spec:
   storageClassName: nfs
   volumeName: photoprism-media
@@ -95,6 +105,7 @@ metadata:
   name: photoprism-media
   labels:
     type: local
+    app.kubernetes.io/instance: photoprism
 spec:
   storageClassName: nfs
   capacity:

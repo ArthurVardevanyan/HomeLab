@@ -3,12 +3,14 @@ kind: IngressRoute
 metadata:
   name: photoprism
   namespace: photoprism
+  labels:
+    app.kubernetes.io/instance: photoprism
 spec:
   entryPoints:
     - web
     - websecure
   routes:
-    - match: Host(`photoprism.<URL>`)
+    - match: Host(`photoprism.k3s.<path:secret/data/gitlab/domain#url>`)
       kind: Rule
       services:
         - name: photoprism
