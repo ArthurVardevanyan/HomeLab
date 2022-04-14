@@ -3,12 +3,14 @@ kind: IngressRoute
 metadata:
   name: jellyfin
   namespace: jellyfin
+  labels:
+    app.kubernetes.io/instance: jellyfin
 spec:
   entryPoints:
     - web
     - websecure
   routes:
-    - match: Host(`jellyfin.<URL>`)
+    - match: Host(`jellyfin.k3s.<path:secret/data/gitlab/domain#url>`)
       kind: Rule
       services:
         - name: jellyfin
