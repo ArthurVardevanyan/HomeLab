@@ -1,0 +1,20 @@
+kind: Route
+apiVersion: route.openshift.io/v1
+metadata:
+  name: nextcloud
+  namespace: nextcloud
+  labels:
+    app: nextcloud
+    app.kubernetes.io/instance: nextcloud
+spec:
+  host: nextcloud.<path:secret/data/gitlab/domain#url>
+  to:
+    kind: Service
+    name: nextcloud
+    weight: 100
+  port:
+    targetPort: 8443
+  tls:
+    termination: passthrough
+    insecureEdgeTerminationPolicy: Redirect
+  wildcardPolicy: None

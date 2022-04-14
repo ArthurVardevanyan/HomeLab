@@ -3,6 +3,8 @@ kind: Middleware
 metadata:
   name: https-redirect
   namespace: nextcloud
+  labels:
+    app.kubernetes.io/instance: nextcloud
 spec:
   redirectScheme:
     scheme: https
@@ -13,12 +15,14 @@ kind: IngressRoute
 metadata:
   name: nextcloud
   namespace: nextcloud
+  labels:
+    app.kubernetes.io/instance: nextcloud
 spec:
   entryPoints:
     - web
     - websecure
   routes:
-    - match: Host(`nextcloud.<URL>`)
+    - match: Host(`nextcloud.<path:secret/data/gitlab/domain#url>`)
       kind: Rule
       services:
         - name: nextcloud
@@ -27,4 +31,4 @@ spec:
         - name: https-redirect
   tls:
     domains:
-      - main: nextcloud.<URL>
+      - main: nextcloud.<path:secret/data/gitlab/domain#url>

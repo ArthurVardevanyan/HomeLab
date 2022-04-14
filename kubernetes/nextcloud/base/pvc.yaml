@@ -3,6 +3,8 @@ apiVersion: v1
 metadata:
   name: nextcloud-config-pvc
   namespace: nextcloud
+  labels:
+    app.kubernetes.io/instance: nextcloud
 spec:
   accessModes:
     - ReadWriteOnce
@@ -17,6 +19,8 @@ kind: PersistentVolume
 apiVersion: v1
 metadata:
   name: nextcloud-config-pv
+  labels:
+    app.kubernetes.io/instance: nextcloud
 spec:
   capacity:
     storage: 1Gi
@@ -41,6 +45,8 @@ kind: PersistentVolumeClaim
 metadata:
   namespace: nextcloud
   name: nextcloud-data
+  labels:
+    app.kubernetes.io/instance: nextcloud
 spec:
   storageClassName: nfs
   volumeName: nextcloud-data
@@ -57,6 +63,7 @@ metadata:
   name: nextcloud-data
   labels:
     type: local
+    app.kubernetes.io/instance: nextcloud
 spec:
   storageClassName: nfs
   volumeMode: Filesystem
@@ -79,6 +86,8 @@ kind: PersistentVolumeClaim
 metadata:
   namespace: nextcloud
   name: nextcloud-data-backup
+  labels:
+    app.kubernetes.io/instance: nextcloud
 spec:
   storageClassName: nfs
   volumeName: nextcloud-data-backup
@@ -95,6 +104,7 @@ metadata:
   name: nextcloud-data-backup
   labels:
     type: local
+    app.kubernetes.io/instance: nextcloud
 spec:
   storageClassName: nfs
   volumeMode: Filesystem

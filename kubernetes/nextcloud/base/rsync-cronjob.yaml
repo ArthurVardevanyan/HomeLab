@@ -1,12 +1,14 @@
 kind: CronJob
 apiVersion: batch/v1
 metadata:
-  name: nextcloud-cron
+  name: nextcloud-rsync
   namespace: nextcloud
+  labels:
+    app.kubernetes.io/instance: nextcloud
 spec:
-  schedule: "*/15 * * * *"
+  schedule: "30 5 * * *"
   concurrencyPolicy: Forbid
-  suspend: false
+  suspend: true
   startingDeadlineSeconds: 60
   jobTemplate:
     spec:
@@ -14,21 +16,12 @@ spec:
       template:
         metadata:
           labels:
-            app: nextcloud-cron
+            app: nextcloud-rsync
           annotations:
             seccomp.security.alpha.kubernetes.io/defaultProfileName: runtime/default
         spec:
           serviceAccountName: nextcloud-sa
           affinity:
-            nodeAffinity:
-              preferredDuringSchedulingIgnoredDuringExecution:
-                - weight: 1
-                  preference:
-                    matchExpressions:
-                      - key: kubernetes.io/hostname
-                        operator: In
-                        values:
-                          - "k3s-worker-1"
             podAffinity:
               requiredDuringSchedulingIgnoredDuringExecution:
                 - labelSelector:
@@ -38,59 +31,51 @@ spec:
                         values:
                           - nextcloud
                   topologyKey: kubernetes.io/hostname
+          volumes:
+            - name: nextcloud-data
+              persistentVolumeClaim:
+                claimName: nextcloud-data
+            - name: nextcloud-data-backup
+              persistentVolumeClaim:
+                claimName: nextcloud-data-backup
           securityContext:
             fsGroup: 33
             runAsGroup: 33
             runAsNonRoot: true
             runAsUser: 33
-          volumes:
-            - name: nextcloud-cert
-              secret:
-                secretName: nextcloud-cert
-            - name: nextcloud-config
-              persistentVolumeClaim:
-                claimName: nextcloud-config-pvc
-            - name: nextcloud-data
-              persistentVolumeClaim:
-                claimName: nextcloud-data
           containers:
-            - name: nextcloud-cron
-              image: nextcloud:23.0.3
+            - name: nextcloud-rsync
+              image: gitlab.arthurvardevanyan.com:5050/arthurvardevanyan/homelab:toolbox
               command:
-                - /bin/sh
-                - "-c"
-                - php /var/www/html/cron.php
+                [
+                  "/bin/bash",
+                  "-c",
+                  "rsync --stats --archive --verbose --human-readable --stats --delete /mnt/data/Nextcloud /mnt/backup/",
+                ]
               resources:
                 limits:
-                  cpu: 50m
-                  memory: 100M
+                  cpu: 200m
+                  memory: 1000M
                 requests:
-                  cpu: 25m
-                  memory: 50M
+                  cpu: 100m
+                  memory: 500M
+              volumeMounts:
+                - name: nextcloud-data
+                  mountPath: /mnt/data/Nextcloud
+                  readOnly: true
+                - name: nextcloud-data-backup
+                  mountPath: /mnt/backup/Nextcloud
               securityContext:
                 runAsGroup: 33
                 runAsUser: 33
                 runAsNonRoot: true
                 readOnlyRootFilesystem: true
                 allowPrivilegeEscalation: false
-                seccompProfile:
-                  type: RuntimeDefault
+                # seccompProfile:
+                #   type: RuntimeDefault
                 capabilities:
                   drop:
                     - all
-              volumeMounts:
-                - name: nextcloud-config
-                  mountPath: /var/www/html
-                  subPath: nextcloud
-                - name: nextcloud-config
-                  mountPath: /etc/apache2
-                  subPath: apache2
-                  readOnly: true
-                - name: nextcloud-cert
-                  mountPath: /ssl
-                  readOnly: true
-                - name: nextcloud-data
-                  mountPath: /var/www/html/data
               terminationMessagePath: /dev/termination-log
               terminationMessagePolicy: File
               imagePullPolicy: IfNotPresent
@@ -98,7 +83,7 @@ spec:
           terminationGracePeriodSeconds: 30
           dnsPolicy: ClusterFirst
           automountServiceAccountToken: false
-          hostname: nextcloud-cron
+          hostname: nextcloud-rsync
           schedulerName: default-scheduler
   successfulJobsHistoryLimit: 1
   failedJobsHistoryLimit: 1

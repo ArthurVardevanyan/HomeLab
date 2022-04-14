@@ -5,6 +5,7 @@ metadata:
   namespace: nextcloud
   labels:
     app: nextcloud
+    app.kubernetes.io/instance: nextcloud
 spec:
   replicas: 1
   serviceName: nextcloud
@@ -21,16 +22,6 @@ spec:
         seccomp.security.alpha.kubernetes.io/defaultProfileName: runtime/default
     spec:
       serviceAccountName: nextcloud-sa
-      affinity:
-        nodeAffinity:
-          preferredDuringSchedulingIgnoredDuringExecution:
-            - weight: 1
-              preference:
-                matchExpressions:
-                  - key: kubernetes.io/hostname
-                    operator: In
-                    values:
-                      - "k3s-worker-1"
       volumes:
         - name: nextcloud-cert
           secret:
@@ -55,8 +46,8 @@ spec:
             runAsNonRoot: true
             #readOnlyRootFilesystem: true
             allowPrivilegeEscalation: false
-            seccompProfile:
-              type: RuntimeDefault
+            # seccompProfile:
+            #   type: RuntimeDefault
             capabilities:
               drop:
                 - all
