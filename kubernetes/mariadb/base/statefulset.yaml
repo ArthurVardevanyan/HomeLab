@@ -5,6 +5,7 @@ metadata:
   namespace: mariadb
   labels:
     app: mariadb
+    app.kubernetes.io/instance: mariadb
 spec:
   replicas: 1
   selector:
@@ -23,10 +24,10 @@ spec:
         seccomp.security.alpha.kubernetes.io/defaultProfileName: "runtime/default"
     spec:
       automountServiceAccountToken: false
-      securityContext:
-        runAsUser: 1337
-        runAsGroup: 1337
-        fsGroup: 2000
+      # securityContext:
+      #   runAsUser: 1337
+      #   runAsGroup: 1337
+      #   fsGroup: 2000
       serviceAccountName: mariadb-sa
       terminationGracePeriodSeconds: 120
       containers:
@@ -35,8 +36,8 @@ spec:
           name: mariadb
           securityContext:
             allowPrivilegeEscalation: false
-            seccompProfile:
-              type: RuntimeDefault
+            # seccompProfile:
+            #   type: RuntimeDefault
             capabilities:
               drop:
                 - all

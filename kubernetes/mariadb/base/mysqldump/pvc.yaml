@@ -3,6 +3,8 @@ kind: PersistentVolumeClaim
 metadata:
   namespace: mariadb
   name: mysqldump-pvc
+  labels:
+    app.kubernetes.io/instance: mariadb
 spec:
   storageClassName: nfs
   volumeName: mysqldump-pv
@@ -19,6 +21,7 @@ metadata:
   name: mysqldump-pv
   labels:
     type: local
+    app.kubernetes.io/instance: mariadb
 spec:
   storageClassName: nfs
   volumeMode: Filesystem

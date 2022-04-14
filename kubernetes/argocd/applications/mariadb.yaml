@@ -1,0 +1,21 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: mariadb
+  namespace: argocd
+  labels:
+    app.kubernetes.io/instance: argocd
+spec:
+  destination:
+    namespace: mariadb
+    server: https://kubernetes.default.svc
+  project: default
+  source:
+    path: kubernetes/mariadb/overlays/okd
+    repoURL: https://github.com/ArthurVardevanyan/HomeLab
+    targetRevision: HEAD
+    plugin:
+      name: argocd-vault-plugin-kustomize
+  syncPolicy:
+    syncOptions:
+      - CreateNamespace=true
