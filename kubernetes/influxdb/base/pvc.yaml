@@ -3,6 +3,8 @@ apiVersion: v1
 metadata:
   name: influxdb-pvc
   namespace: influxdb
+  labels:
+    app.kubernetes.io/instance: influxdb
 spec:
   accessModes:
     - ReadWriteOnce
@@ -17,6 +19,8 @@ kind: PersistentVolume
 apiVersion: v1
 metadata:
   name: influxdb-pv
+  labels:
+    app.kubernetes.io/instance: influxdb
 spec:
   capacity:
     storage: 5Gi

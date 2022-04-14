@@ -3,12 +3,14 @@ kind: IngressRoute
 metadata:
   name: influxdb
   namespace: influxdb
+  labels:
+    app.kubernetes.io/instance: influxdb
 spec:
   entryPoints:
     - web
     - websecure
   routes:
-    - match: Host(`influxdb.<URL>`)
+    - match: Host(`influxdb.k3s.<path:secret/data/gitlab/domain#url>`)
       kind: Rule
       services:
         - name: influxdb

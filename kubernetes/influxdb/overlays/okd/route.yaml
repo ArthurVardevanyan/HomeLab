@@ -1,0 +1,20 @@
+kind: Route
+apiVersion: route.openshift.io/v1
+metadata:
+  name: influxdb
+  namespace: influxdb
+  labels:
+    app: influxdb
+    app.kubernetes.io/instance: influxdb
+spec:
+  host: influxdb.apps.okd.<path:secret/data/gitlab/domain#url>
+  to:
+    kind: Service
+    name: influxdb
+    weight: 100
+  port:
+    targetPort: 8086
+  tls:
+    termination: edge
+    insecureEdgeTerminationPolicy: Redirect
+  wildcardPolicy: None

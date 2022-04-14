@@ -5,6 +5,7 @@ metadata:
   namespace: influxdb
   labels:
     app: influxdb
+    app.kubernetes.io/instance: influxdb
 spec:
   replicas: 1
   serviceName: influxdb
@@ -26,10 +27,10 @@ spec:
       terminationGracePeriodSeconds: 60
       serviceAccountName: influxdb-sa
       securityContext:
-        fsGroup: 18086
-        runAsGroup: 18086
-        runAsUser: 18086
         runAsNonRoot: true
+        # fsGroup: 18086
+        # runAsGroup: 18086
+        # runAsUser: 18086
       containers:
         - livenessProbe:
             httpGet:
@@ -53,13 +54,13 @@ spec:
               memory: "2G"
               cpu: "250m"
           securityContext:
-            runAsGroup: 18086
-            runAsUser: 18086
+            # runAsGroup: 18086
+            # runAsUser: 18086
             runAsNonRoot: true
             readOnlyRootFilesystem: true
             allowPrivilegeEscalation: false
-            seccompProfile:
-              type: RuntimeDefault
+            # seccompProfile:
+            #   type: RuntimeDefault
             capabilities:
               drop:
                 - all

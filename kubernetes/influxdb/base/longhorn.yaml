@@ -1,11 +1,12 @@
 apiVersion: longhorn.io/v1beta1
 kind: Volume
 metadata:
+  name: influxdb
+  namespace: longhorn-system
   labels:
     longhornvolume: influxdb
     recurring-job-group.longhorn.io/default: enabled
-  name: influxdb
-  namespace: longhorn-system
+    app.kubernetes.io/instance: influxdb
 spec:
   accessMode: rwo
   engineImage: longhornio/longhorn-engine:v1.2.4
