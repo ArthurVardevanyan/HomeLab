@@ -1,0 +1,20 @@
+kind: Route
+apiVersion: route.openshift.io/v1
+metadata:
+  name: heimdall
+  namespace: heimdall
+  labels:
+    app: heimdall
+    app.kubernetes.io/instance: heimdall
+spec:
+  host: heimdall.apps.okd.<path:secret/data/gitlab/domain#url>
+  to:
+    kind: Service
+    name: heimdall
+    weight: 100
+  port:
+    targetPort: 80
+  tls:
+    termination: edge
+    insecureEdgeTerminationPolicy: Redirect
+  wildcardPolicy: None

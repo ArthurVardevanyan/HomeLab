@@ -3,6 +3,8 @@ kind: Middleware
 metadata:
   name: https-redirect
   namespace: heimdall
+  labels:
+    app.kubernetes.io/instance: heimdall
 spec:
   redirectScheme:
     scheme: https
@@ -13,12 +15,14 @@ kind: IngressRoute
 metadata:
   name: heimdall-traefik
   namespace: heimdall
+  labels:
+    app.kubernetes.io/instance: heimdall
 spec:
   entryPoints:
     - web
     - websecure
   routes:
-    - match: Host(`heimdall.<URL>`)
+    - match: Host(`heimdall.<path:secret/data/gitlab/domain#url>`)
       kind: Rule
       services:
         - name: heimdall-service
@@ -27,4 +31,4 @@ spec:
         - name: https-redirect
   tls:
     domains:
-      - main: heimdall.<URL>
+      - main: heimdall.<path:secret/data/gitlab/domain#url>

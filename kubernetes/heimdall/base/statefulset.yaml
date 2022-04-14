@@ -5,6 +5,7 @@ metadata:
   namespace: heimdall
   labels:
     app: heimdall
+    app.kubernetes.io/instance: heimdall
 spec:
   replicas: 1
   serviceName: heimdall-service
@@ -23,19 +24,6 @@ spec:
     spec:
       automountServiceAccountToken: false
       serviceAccountName: heimdall-sa
-      tolerations:
-        - key: node-role.kubernetes.io/master
-          effect: NoSchedule
-      affinity:
-        nodeAffinity:
-          preferredDuringSchedulingIgnoredDuringExecution:
-            - weight: 1
-              preference:
-                matchExpressions:
-                  - key: node-role.kubernetes.io/master
-                    operator: In
-                    values:
-                      - "true"
       containers:
         - image: linuxserver/heimdall:2.4.6
           imagePullPolicy: IfNotPresent
