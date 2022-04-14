@@ -18,7 +18,7 @@ spec:
           annotations:
             seccomp.security.alpha.kubernetes.io/defaultProfileName: runtime/default
         spec:
-          serviceAccountName: mariadb-sa
+          serviceAccountName: mysqldump-sa
           volumes:
             - name: mysqldump-config
               configMap:
@@ -64,8 +64,8 @@ spec:
                 runAsNonRoot: true
                 readOnlyRootFilesystem: true
                 allowPrivilegeEscalation: false
-                seccompProfile:
-                  type: RuntimeDefault
+                # seccompProfile:
+                #   type: RuntimeDefault
                 capabilities:
                   drop:
                     - all
