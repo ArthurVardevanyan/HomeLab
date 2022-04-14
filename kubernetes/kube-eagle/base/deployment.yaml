@@ -5,6 +5,7 @@ metadata:
   namespace: kube-eagle
   labels:
     app: kube-eagle
+    app.kubernetes.io/instance: kube-eagle
 spec:
   replicas: 1
   selector:
@@ -26,13 +27,13 @@ spec:
         - name: kube-eagle
           image: quay.io/google-cloud-tools/kube-eagle:1.1.4
           securityContext:
-            runAsGroup: 11199
-            runAsUser: 11199
+            # runAsGroup: 11199
+            # runAsUser: 11199
             runAsNonRoot: true
             allowPrivilegeEscalation: false
             readOnlyRootFilesystem: true
-            seccompProfile:
-              type: RuntimeDefault
+            # seccompProfile:
+            #   type: RuntimeDefault
             capabilities:
               drop:
                 - all
@@ -87,9 +88,9 @@ spec:
           effect: NoSchedule
       serviceAccountName: sa-kube-eagle
       serviceAccount: sa-kube-eagle
-      securityContext:
-        runAsUser: 11199
-        fsGroup: 11199
+      # securityContext:
+      #   runAsUser: 11199
+      #   fsGroup: 11199
       schedulerName: default-scheduler
   strategy:
     type: Recreate

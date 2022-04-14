@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: LimitRange
+metadata:
+  name: kube-eagle-lr
+  namespace: kube-eagle
+  labels:
+    app.kubernetes.io/instance: kube-eagle
+spec:
+  limits:
+    - type: Container
+      default:
+        cpu: 50m
+        memory: 100M
+      defaultRequest:
+        cpu: 25m
+        memory: 50M
