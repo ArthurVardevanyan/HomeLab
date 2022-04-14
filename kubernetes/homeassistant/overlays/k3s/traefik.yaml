@@ -3,12 +3,14 @@ kind: IngressRoute
 metadata:
   name: homeassistant
   namespace: homeassistant
+  labels:
+    app.kubernetes.io/instance: homeassistant
 spec:
   entryPoints:
     - web
     - websecure
   routes:
-    - match: Host(`home.<URL>`)
+    - match: Host(`home.k3s.<path:secret/data/gitlab/domain#url>`)
       kind: Rule
       services:
         - name: homeassistant

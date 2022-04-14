@@ -3,6 +3,8 @@ apiVersion: v1
 metadata:
   name: homeassistant-pvc
   namespace: homeassistant
+  labels:
+    app.kubernetes.io/instance: homeassistant
 spec:
   accessModes:
     - ReadWriteOnce
@@ -17,6 +19,8 @@ kind: PersistentVolume
 apiVersion: v1
 metadata:
   name: homeassistant-pv
+  labels:
+    app.kubernetes.io/instance: homeassistant
 spec:
   capacity:
     storage: 50Mi
