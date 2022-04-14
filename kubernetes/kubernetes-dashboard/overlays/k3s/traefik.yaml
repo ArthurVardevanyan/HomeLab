@@ -3,6 +3,7 @@ kind: IngressRoute
 metadata:
   labels:
     k8s-app: kubernetes-dashboard
+    app.kubernetes.io/instance: kubernetes-dashboard
   name: kubernetes-dashboard
   namespace: kubernetes-dashboard
 spec:
@@ -10,7 +11,7 @@ spec:
     - web
     - websecure
   routes:
-    - match: "Host(`dashboard.<URL>`)"
+    - match: "Host(`dashboard.k3s.<path:secret/data/gitlab/domain#url>`)"
       kind: Rule
       services:
         - name: kubernetes-dashboard
@@ -19,13 +20,15 @@ spec:
         - name: https-redirect
   tls:
     domains:
-      - main: dashboard.<URL>
+      - main: dashboard.k3s.<path:secret/data/gitlab/domain#url>
 ---
 apiVersion: traefik.containo.us/v1alpha1
 kind: Middleware
 metadata:
   name: https-redirect
   namespace: kubernetes-dashboard
+  labels:
+    app.kubernetes.io/instance: kubernetes-dashboard
 spec:
   redirectScheme:
     scheme: https

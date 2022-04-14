@@ -5,6 +5,7 @@ metadata:
   namespace: kubernetes-dashboard
   labels:
     k8s-app: kubernetes-dashboard
+    app.kubernetes.io/instance: kubernetes-dashboard
 subjects:
   - kind: ServiceAccount
     name: kubernetes-dashboard
@@ -21,6 +22,7 @@ metadata:
   namespace: kubernetes-dashboard
   labels:
     k8s-app: kubernetes-dashboard
+    app.kubernetes.io/instance: kubernetes-dashboard
 rules:
   - verbs:
       - get
@@ -69,6 +71,8 @@ kind: ClusterRoleBinding
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
   name: kubernetes-dashboard
+  labels:
+    app.kubernetes.io/instance: kubernetes-dashboard
 subjects:
   - kind: ServiceAccount
     name: kubernetes-dashboard
@@ -84,6 +88,7 @@ metadata:
   name: kubernetes-dashboard
   labels:
     k8s-app: kubernetes-dashboard
+    app.kubernetes.io/instance: kubernetes-dashboard
 rules:
   - verbs:
       - get
@@ -99,6 +104,8 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
   name: admin-user
+  labels:
+    app.kubernetes.io/instance: kubernetes-dashboard
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
