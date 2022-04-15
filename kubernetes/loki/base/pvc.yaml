@@ -2,7 +2,9 @@ kind: PersistentVolumeClaim
 apiVersion: v1
 metadata:
   name: loki-pvc
-  namespace: grafana
+  namespace: loki
+  labels:
+    app.kubernetes.io/instance: promtail
 spec:
   accessModes:
     - ReadWriteOnce
@@ -17,6 +19,8 @@ kind: PersistentVolume
 apiVersion: v1
 metadata:
   name: loki-pv
+  labels:
+    app.kubernetes.io/instance: promtail
 spec:
   capacity:
     storage: 10Gi
@@ -31,7 +35,7 @@ spec:
   claimRef:
     kind: PersistentVolumeClaim
     name: loki-pvc
-    namespace: grafana
+    namespace: loki
   persistentVolumeReclaimPolicy: Retain
   storageClassName: longhorn-static
   volumeMode: Filesystem

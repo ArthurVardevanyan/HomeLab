@@ -2,7 +2,9 @@ apiVersion: apps/v1
 kind: DaemonSet
 metadata:
   name: promtail
-  namespace: grafana
+  namespace: loki
+  labels:
+    app.kubernetes.io/instance: promtail
 spec:
   selector:
     matchLabels:
@@ -17,7 +19,7 @@ spec:
         enable.version-checker.io/promtail: "true"
         seccomp.security.alpha.kubernetes.io/defaultProfileName: runtime/default
     spec:
-      serviceAccountName: promtail
+      serviceAccountName: promtail-sa
       containers:
         - name: promtail
           image: "grafana/promtail:2.4.2"
@@ -28,10 +30,10 @@ spec:
           resources:
             requests:
               memory: "75M"
-              cpu: "25m"
+              cpu: "75m"
             limits:
               memory: "150M"
-              cpu: "50m"
+              cpu: "150m"
           volumeMounts:
             - name: config
               mountPath: /etc/promtail
@@ -53,8 +55,9 @@ spec:
               containerPort: 3101
               protocol: TCP
           securityContext:
+            privileged: true
             readOnlyRootFilesystem: true
-            allowPrivilegeEscalation: false
+            allowPrivilegeEscalation: true
             seccompProfile:
               type: RuntimeDefault
             capabilities:

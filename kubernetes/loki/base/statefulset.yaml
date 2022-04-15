@@ -2,9 +2,10 @@ apiVersion: apps/v1
 kind: StatefulSet
 metadata:
   name: loki
-  namespace: grafana
+  namespace: loki
   labels:
     app: loki
+    app.kubernetes.io/instance: promtail
 spec:
   replicas: 1
   serviceName: loki
@@ -21,10 +22,10 @@ spec:
     spec:
       serviceAccountName: loki
       securityContext:
-        fsGroup: 10001
-        runAsGroup: 10001
         runAsNonRoot: true
-        runAsUser: 10001
+        # fsGroup: 10001
+        # runAsGroup: 10001
+        # runAsUser: 10001
       containers:
         - name: loki
           image: "grafana/loki:2.4.2"
@@ -34,10 +35,10 @@ spec:
           resources:
             requests:
               memory: "500M"
-              cpu: "25m"
+              cpu: "50m"
             limits:
               memory: "750M"
-              cpu: "100m"
+              cpu: "150m"
           volumeMounts:
             - name: config
               mountPath: /etc/loki
@@ -58,13 +59,13 @@ spec:
               port: http-metrics
             initialDelaySeconds: 45
           securityContext:
-            runAsGroup: 10001
-            runAsUser: 10001
+            # runAsGroup: 10001
+            # runAsUser: 10001
             runAsNonRoot: true
             readOnlyRootFilesystem: true
             allowPrivilegeEscalation: false
-            seccompProfile:
-              type: RuntimeDefault
+            # seccompProfile:
+            #   type: RuntimeDefault
             capabilities:
               drop:
                 - all
