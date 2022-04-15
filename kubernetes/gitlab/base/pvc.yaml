@@ -3,6 +3,8 @@ apiVersion: v1
 metadata:
   name: gitlab-config-pvc
   namespace: gitlab
+  labels:
+    app.kubernetes.io/instance: gitlab
 spec:
   accessModes:
     - ReadWriteOnce
@@ -17,6 +19,8 @@ kind: PersistentVolume
 apiVersion: v1
 metadata:
   name: gitlab-config-pv
+  labels:
+    app.kubernetes.io/instance: gitlab
 spec:
   capacity:
     storage: 10Mi
@@ -41,6 +45,8 @@ apiVersion: v1
 metadata:
   name: gitlab-data-pvc
   namespace: gitlab
+  labels:
+    app.kubernetes.io/instance: gitlab
 spec:
   accessModes:
     - ReadWriteOnce
@@ -55,6 +61,8 @@ kind: PersistentVolume
 apiVersion: v1
 metadata:
   name: gitlab-data-pv
+  labels:
+    app.kubernetes.io/instance: gitlab
 spec:
   capacity:
     storage: 15Gi
