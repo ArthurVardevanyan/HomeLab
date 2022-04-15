@@ -40,7 +40,8 @@ Desktop:
     - echo "$SSH_KNOWN_HOSTS" >> ~/.ssh/known_hosts
     - chmod 644 ~/.ssh/known_hosts
   script:
-    - ansible-playbook -i ansible/inventory ansible/desktop.yaml --extra-vars "ansible_become_pass=${SUDO} ansible_ssh_pass=${SUDO} ansible_python_interpreter=/usr/bin/python3"
+    - ansible-playbook -i ansible/inventory ansible/desktop.yaml --extra-vars "ansible_become_pass=${SUDO} ansible_ssh_pass=${SUDO} \
+      ansible_python_interpreter=/usr/bin/python3" -e 'ansible_python_interpreter=/usr/bin/python3'
 
 Servers:
   stage: ansible
