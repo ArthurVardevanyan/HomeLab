@@ -3,12 +3,14 @@ kind: IngressRoute
 metadata:
   name: grafana
   namespace: grafana
+  labels:
+    app.kubernetes.io/instance: grafana
 spec:
   entryPoints:
     - web
     - websecure
   routes:
-    - match: Host(`grafana.<URL>`)
+    - match: Host(`grafana.k3s.<path:secret/data/gitlab/domain#url>`)
       kind: Rule
       services:
         - name: grafana

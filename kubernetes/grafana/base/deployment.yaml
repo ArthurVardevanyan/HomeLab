@@ -5,6 +5,7 @@ metadata:
   namespace: grafana
   labels:
     app: grafana
+    app.kubernetes.io/instance: grafana
 spec:
   replicas: 1
   revisionHistoryLimit: 0
@@ -25,12 +26,12 @@ spec:
         - key: node-role.kubernetes.io/master
           effect: NoSchedule
       securityContext:
-        fsGroup: 11472
-        runAsGroup: 11472
-        runAsUser: 11472
         runAsNonRoot: true
         supplementalGroups:
           - 0
+        # fsGroup: 11472
+        # runAsGroup: 11472
+        # runAsUser: 11472
       hostname: grafana
       restartPolicy: Always
       automountServiceAccountToken: false
@@ -40,13 +41,13 @@ spec:
           imagePullPolicy: IfNotPresent
           name: grafana
           securityContext:
-            runAsGroup: 11472
-            runAsUser: 11472
+            # runAsGroup: 11472
+            # runAsUser: 11472
             runAsNonRoot: true
             readOnlyRootFilesystem: true
             allowPrivilegeEscalation: false
-            seccompProfile:
-              type: RuntimeDefault
+            # seccompProfile:
+            #   type: RuntimeDefault
             capabilities:
               drop:
                 - all
@@ -66,7 +67,7 @@ spec:
           resources:
             requests:
               ephemeral-storage: "5Mi"
-              memory: "75"
+              memory: "75M"
               cpu: "50m"
             limits:
               ephemeral-storage: "5Mi"
