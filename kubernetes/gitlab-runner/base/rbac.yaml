@@ -3,12 +3,16 @@ kind: ServiceAccount
 metadata:
   name: gitlab-runner-sa
   namespace: gitlab-runner
+  labels:
+    app.kubernetes.io/instance: gitlab-runner
 ---
 kind: RoleBinding
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
   name: gitlab-runner-rb
   namespace: gitlab-runner
+  labels:
+    app.kubernetes.io/instance: gitlab-runner
 subjects:
   - kind: ServiceAccount
     name: gitlab-runner-sa
@@ -23,6 +27,8 @@ apiVersion: rbac.authorization.k8s.io/v1
 metadata:
   name: gitlab-runner-r
   namespace: gitlab-runner
+  labels:
+    app.kubernetes.io/instance: gitlab-runner
 rules:
   - verbs:
       - create
