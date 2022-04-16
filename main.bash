@@ -20,7 +20,7 @@ ansible() {
 }
 
 kvm-infra() {
-	ssh 10.0.0.3
+	ssh 10.0.0.110
 
 	virt-install \
 		--noautoconsole \
@@ -53,7 +53,7 @@ kvm-infra() {
 }
 
 kvm() {
-	ssh 10.0.0.4
+	ssh 10.0.0.3
 
 	export LIBVIRT_DEFAULT_URI=qemu:///system
 

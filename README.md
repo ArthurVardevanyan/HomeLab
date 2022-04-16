@@ -16,7 +16,7 @@ HomeLab Server/Cluster, Virtual Sandbox Cluster, & Desktop Configuration
 ansible-playbook -i ansible/inventory --ask-become-pass ansible/desktop.yaml --ask-pass
 
 git merge --no-ff
-scp -r /home/arthur/vm windowsBackup@10.0.0.3:/backup/WindowsBackup/vm
+scp -r /home/arthur/vm windowsBackup@10.0.0.110:/backup/WindowsBackup/vm
 sudo sensors-detect
 ```
 
