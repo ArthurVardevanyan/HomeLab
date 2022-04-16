@@ -110,6 +110,60 @@ label_nodes() {
 	kubectl label node k3s-server-1 node.longhorn.io/create-default-disk=true --overwrite
 	kubectl label node k3s-worker-1 node.longhorn.io/create-default-disk=true --overwrite
 	kubectl label node k3s-worker-2 node.longhorn.io/create-default-disk=true --overwrite
+
+	# #Drain DaemonSets Temporarily off a Node
+	# kubectl taint node k3s-server- node-role.kubernetes.io/control-plane:NoExecute
+	# kubectl taint node k3s-server- node-role.kubernetes.io/control-plane:NoExecute-
+}
+
+k3s_setup() {
+	# Configure PFsense / HAProxy / DHCP / DNS
+
+	# Servers
+	ansible-playbook -i ansible/inventory --ask-become-pass ansible/servers.yaml --ask-pass
+	# Reboot All Kubernetes Nodes && For KVM Nodes Update DHCP Server With New Mac Address
+
+	# Install VMs
+	bash kvm_k3s.bash kvm-infra
+	bash kvm_k3s.bash kvm
+
+	bash kvm_k3s.bash ansible
+	# Reboot VMs
+
+	# Install K3s
+	# First Time Setup
+	export K3S_TOKEN=""
+	export RESERVED="--kubelet-arg system-reserved=cpu=250m,memory=500Mi --kubelet-arg kube-reserved=cpu=250m,memory=500Mi"
+
+	curl -sfL https://get.k3s.io | INSTALL_K3S_EXEC="server --cluster-init  --tls-san 10.0.0.100 --tls-san k3s.<URL>.com ${RESERVED}" \
+		INSTALL_K3S_CHANNEL=v1.23 sh -
+
+	# Servers
+	export K3S_TOKEN=""
+	export RESERVED="--kubelet-arg system-reserved=cpu=250m,memory=500Mi --kubelet-arg kube-reserved=cpu=250m,memory=500Mi"
+
+	curl -sfL https://get.k3s.io |
+		INSTALL_K3S_EXEC="server --server https://10.0.0.100:6443 --disable traefik ${RESERVED}" \
+			K3S_URL=https://10.0.0.100:6443 INSTALL_K3S_CHANNEL=v1.23 sh -
+
+	# Agents/Workers
+	export K3S_TOKEN=""
+	export RESERVED="--kubelet-arg system-reserved=cpu=250m,memory=250Mi --kubelet-arg kube-reserved=cpu=250m,memory=250Mi"
+
+	curl -sfL https://get.k3s.io |
+		INSTALL_K3S_EXEC="${RESERVED}" \
+			K3S_URL=https://10.0.0.100:6443 INSTALL_K3S_CHANNEL=v1.23 sh -
+
+	# Label Nodes
+	bash kvm_k3s label_nodes
+}
+
+k3s_image_cleanup() {
+	export IP_LIST="5 102 103 111 112"
+
+	for IP in $(echo "$IP_LIST"); do
+		ssh -t arthur@10.0.0."${IP}" "sudo k3s crictl rmi --prune"
+	done
 }
 
 # Sandbox Functions

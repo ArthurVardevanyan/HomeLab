@@ -2,7 +2,7 @@
 
 HomeLab Server/Cluster, Virtual Sandbox Cluster, & Desktop Configuration
 
-- Server: Debian Stable /w K3s & ZFS
+- Server: Debian Stable /w OKD & ZFS
 - Desktop: Pop!_OS Latest
 
   - Manual Patches Applied
@@ -59,41 +59,44 @@ bash kvm_k3s.bash get_dashboard_secret
 
 ### Kubernetes
 
-<https://k3s.io/>
+<https://www.okd.io/>
 
-k3s Channel | Operating System
------------ | ----------------
-v1.23       | Debian 11
+Kubernetes Channel | OKD Channel | OKD OS           | Host Operating System
+------------------ | ----------- | ---------------- | ---------------------
+v1.23              | stable-4.10 | Fedora CoreOS 35 | Debian 11
 
 **Machines:**
 
-[CPU Benchmark](https://www.cpubenchmark.net/compare/Intel-i5-6600-vs-AMD-RX-427BB-vs-Intel-i3-2130-vs-AMD-GX-415GA-SOC/2594vs2496vs755vs2081)
+[CPU Benchmark](https://www.cpubenchmark.net/compare/Intel-i5-6600-vs-AMD-RX-427BB-vs-Intel-i3-2130-vs-AMD-GX-415GA-SOC-vs-AMD-Ryzen-7-5700G/2594vs2496vs755vs2081vs4323)
 
 Machine    | Model             | CPU      | CPU | Mem | Storage           | ZFS Storage
 ---------- | ----------------- | -------- | --- | --- | ----------------- | -------------
 pfSense    | Hp t730           | RX-427BB | 4   | 4G  | 16G SSD           | N/A
 Bare Metal | Hp t620           | GX-415GA | 4   | 6G  | 16G SSD & 16G USB | N/A
-Infra KVM  | Hp ProDesk 400 G3 | i5-6600  | 4   | 16G | 240G SSD          | 2T ZFS Mirror
-KVM        | Hp p7-1226s       | i3-2130  | 4   | 8G  | 240G SSD          | 1T ZFS Mirror
+kvm-0      | N/A               | R7-5700G | 16  | 56G | 500G NVME         | 2T ZFS Mirror
+kvm-1      | Hp ProDesk 400 G3 | i5-6600  | 4   | 24G | 240G SSD          | 1T ZFS Mirror
+kvm-2      | Hp p7-1226s       | i3-2130  | 4   | 8G  | 240G SSD          | N/A
 
 **ZFS Storage:**
 
-Machine   | Use     | Dataset   | Size  | Dataset         | Size | Dataset       | Size
---------- | ------- | --------- | ----- | --------------- | ---- | ------------- | -----
-Infra KVM | Primary | Nextcloud | 750GB | Longhorn Backup | 75GB | WindowsBackup | 750GB
-KVM       | Backup  | Nextcloud | 750GB | Longhorn Backup | 75GB | N/A           | N/A
+Machine | Use     | Dataset   | Size  | Dataset         | Size  | Dataset       | Size
+------- | ------- | --------- | ----- | --------------- | ----- | ------------- | -----
+KVM-0   | Primary | Nextcloud | 750GB | Longhorn Backup | 175GB | WindowsBackup | 750GB
+KVM-1   | Backup  | Nextcloud | 750GB | Longhorn Backup | 175GB | N/A           | N/A
 
 **Kubernetes Nodes:**
 
-NAME         | ROLES          | IP         | Machine    | hCPU | vCPU | Mem   | Storage
------------- | -------------- | ---------- | ---------- | ---- | ---- | ----- | ------------
-k3s-server-1 | cp,etcd,master | 10.0.0.5   | Bare Metal | 4    | N/A  | 6G    | LH SSD & USB
-k3s-server-2 | cp,etcd,master | 10.0.0.102 | Infra KVM  | 4    | 2    | 1.75G | LH SSD
-k3s-server-3 | cp,etcd,master | 10.0.0.103 | KVM        | 4    | 2    | 1.75G | N/A
-k3s-worker-1 | infra,worker   | 10.0.0.111 | Infra KVM  | 4    | 4    | 10G   | LH SSD
-k3s-worker-2 | worker         | 10.0.0.112 | KVM        | 4    | 4    | 4.25G | N/A
+NAME     | ROLES          | Machine | vCPU | Mem | Storage
+-------- | -------------- | ------- | ---- | --- | -------
+server-1 | cp,etcd,master | kvm-0   | 4    | 12G | N/A
+server-2 | cp,etcd,master | kvm-1   | 3    | 12G | N/A
+server-3 | cp,etcd,master | kvm-0   | 4    | 12G | N/A
+worker-1 | worker         | kvm-0   | 5    | 12G | LH NVME
+worker-2 | worker         | kvm-2   | 5    | 7G  | LH SSD
+worker-3 | worker         | kvm-0   | 5    | 12G | LH NVME
+worker-4 | worker         | kvm-1   | 3    | 10G | LH SSD
 
-#### OKD Setup
+#### OKD Longhorn Secondary Disk Setup
 
 ```bash
 sudo fdisk /dev/vdb
@@ -102,59 +105,7 @@ sudo su
 echo "/dev/vdb1 /mnt/storage auto nofail" > /etc/fstab
 ```
 
-#### K3S Setup
-
-```bash
-# Configure PFsense / HAProxy / DHCP / DNS
-
-# Servers
-ansible-playbook -i ansible/inventory --ask-become-pass ansible/servers.yaml --ask-pass
-# Reboot All Kubernetes Nodes && For KVM Nodes Update DHCP Server With New Mac Address
-
-# Install VMs
-bash kvm_k3s.bash kvm-infra
-bash kvm_k3s.bash kvm
-
-bash kvm_k3s.bash ansible
-# Reboot VMs
-
-# Install K3s
-# First Time Setup
-export K3S_TOKEN=""
-export RESERVED="--kubelet-arg system-reserved=cpu=250m,memory=500Mi --kubelet-arg kube-reserved=cpu=250m,memory=500Mi"
-
-curl -sfL https://get.k3s.io | INSTALL_K3S_EXEC="server --cluster-init  --tls-san 10.0.0.100 --tls-san k3s.<URL>.com ${RESERVED}"\
-INSTALL_K3S_CHANNEL=v1.23 sh -
-
-# Servers
-export K3S_TOKEN=""
-export RESERVED="--kubelet-arg system-reserved=cpu=250m,memory=500Mi --kubelet-arg kube-reserved=cpu=250m,memory=500Mi"
-
-curl -sfL https://get.k3s.io | \
-INSTALL_K3S_EXEC="server --server https://10.0.0.100:6443 --disable traefik ${RESERVED}" \
-K3S_URL=https://10.0.0.100:6443 INSTALL_K3S_CHANNEL=v1.23 sh -
-
-# Agents/Workers
-export K3S_TOKEN=""
-export RESERVED="--kubelet-arg system-reserved=cpu=250m,memory=250Mi --kubelet-arg kube-reserved=cpu=250m,memory=250Mi"
-
-curl -sfL https://get.k3s.io | \
-INSTALL_K3S_EXEC="${RESERVED}" \
-K3S_URL=https://10.0.0.100:6443 INSTALL_K3S_CHANNEL=v1.23 sh -
-```
-
-#### K3S Post Setup
-
-```bash
-# Label Nodes
-bash kvm_k3s label_nodes
-
-# Drain DaemonSets Temporarily off a Node
-kubectl taint node k3s-server- node-role.kubernetes.io/control-plane:NoExecute
-kubectl taint node k3s-server- node-role.kubernetes.io/control-plane:NoExecute-
-```
-
-#### K3S Commands
+#### Kubernetes Commands
 
 ```bash
 # Kubernetes Dashboard
@@ -178,7 +129,7 @@ kubectl exec -it nextcloud-0 -n nextcloud -- runuser -u www-data -- php -f /var/
 #### SSH Keyscan
 
 ```bash
-export IP_LIST="3 4 5 17 102 103 111 112"
+export IP_LIST="3 4 5 17 110 101 102 103 111 112 113 114"
 
 rm -f /tmp/ssh_keyscan.txt
 for IP in $( echo "$IP_LIST" ); do
@@ -188,16 +139,6 @@ done
 
 echo "\n\n\nSSH Keyscan\n\n"
 cat /tmp/ssh_keyscan.txt
-```
-
-#### K3S Image Cleanup
-
-```bash
-export IP_LIST="5 102 103 111 112"
-
-for IP in $( echo "$IP_LIST" ); do
-ssh -t arthur@10.0.0."${IP}" "sudo k3s crictl rmi --prune"
-done
 ```
 
 ### GitLab
