@@ -180,7 +180,7 @@ vault write auth/jwt/role/homelab - <<EOF
 EOF
 ```
 
-#### GitLab Kubernetes Integration
+#### Vault Kubernetes Integration
 
 ```bash
 # https://blog.ramon-gordillo.dev/2021/03/gitops-with-argocd-and-hashicorp-vault-on-kubernetes/
