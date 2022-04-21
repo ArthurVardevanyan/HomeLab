@@ -1,0 +1,25 @@
+- hosts: ryzen
+  gather_facts: no
+  become: true
+  user: arthur
+  tasks:
+    - name: Download OKD-Client
+      get_url:
+        url: https://github.com/openshift/okd/releases/download/4.10.0-0.okd-2022-03-07-131213/openshift-client-linux-4.10.0-0.okd-2022-03-07-131213.tar.gz
+        dest: /tmp/openshift-client-linux.tar.gz
+
+    - name: OKD-Client
+      file:
+        path: /tmp/openshift-client-linux
+        state: directory
+
+    - name: Extract OKD-Client
+      unarchive:
+        src: /tmp/openshift-client-linux.tar.gz
+        dest: /tmp/openshift-client-linux
+
+    - name: Copy OKD Binary To Bin
+      copy:
+        src: /tmp/openshift-client-linux/oc
+        dest: /usr/local/bin/oc
+        mode: a+x
