@@ -2,9 +2,9 @@ apiVersion: traefik.containo.us/v1alpha1
 kind: Middleware
 metadata:
   name: https-redirect
-  namespace: gitlab
+  namespace: gitlab-system
   labels:
-    app.kubernetes.io/instance: gitlab
+    app.kubernetes.io/instance: gitlab-system
 spec:
   redirectScheme:
     scheme: https
@@ -14,9 +14,9 @@ apiVersion: traefik.containo.us/v1alpha1
 kind: IngressRoute
 metadata:
   name: gitlab
-  namespace: gitlab
+  namespace: gitlab-system
   labels:
-    app.kubernetes.io/instance: gitlab
+    app.kubernetes.io/instance: gitlab-system
 spec:
   entryPoints:
     - web

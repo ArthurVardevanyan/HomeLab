@@ -2,9 +2,9 @@ kind: PersistentVolumeClaim
 apiVersion: v1
 metadata:
   name: gitlab-config-pvc
-  namespace: gitlab
+  namespace: gitlab-system
   labels:
-    app.kubernetes.io/instance: gitlab
+    app.kubernetes.io/instance: gitlab-system
 spec:
   accessModes:
     - ReadWriteOnce
@@ -20,7 +20,7 @@ apiVersion: v1
 metadata:
   name: gitlab-config-pv
   labels:
-    app.kubernetes.io/instance: gitlab
+    app.kubernetes.io/instance: gitlab-system
 spec:
   capacity:
     storage: 10Mi
@@ -35,7 +35,7 @@ spec:
   claimRef:
     kind: PersistentVolumeClaim
     name: gitlab-config-pvc
-    namespace: gitlab
+    namespace: gitlab-system
   persistentVolumeReclaimPolicy: Retain
   storageClassName: longhorn-static
   volumeMode: Filesystem
@@ -44,9 +44,9 @@ kind: PersistentVolumeClaim
 apiVersion: v1
 metadata:
   name: gitlab-data-pvc
-  namespace: gitlab
+  namespace: gitlab-system
   labels:
-    app.kubernetes.io/instance: gitlab
+    app.kubernetes.io/instance: gitlab-system
 spec:
   accessModes:
     - ReadWriteOnce
@@ -62,7 +62,7 @@ apiVersion: v1
 metadata:
   name: gitlab-data-pv
   labels:
-    app.kubernetes.io/instance: gitlab
+    app.kubernetes.io/instance: gitlab-system
 spec:
   capacity:
     storage: 15Gi
@@ -77,7 +77,7 @@ spec:
   claimRef:
     kind: PersistentVolumeClaim
     name: gitlab-data-pvc
-    namespace: gitlab
+    namespace: gitlab-system
   persistentVolumeReclaimPolicy: Retain
   storageClassName: longhorn-static
   volumeMode: Filesystem
