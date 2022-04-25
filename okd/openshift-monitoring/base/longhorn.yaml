@@ -1,0 +1,31 @@
+apiVersion: longhorn.io/v1beta1
+kind: Volume
+metadata:
+  labels:
+    longhornvolume: prometheus-k8s-db-prometheus-k8s-0
+    recurring-job-group.longhorn.io/default: enabled
+    app.kubernetes.io/instance: openshift-monitoring
+  name: prometheus-k8s-db-prometheus-k8s-0
+  namespace: longhorn-system
+spec:
+  accessMode: rwo
+  engineImage: longhornio/longhorn-engine:v1.2.4
+  frontend: blockdev
+  numberOfReplicas: 2
+  size: "37580963840"
+---
+apiVersion: longhorn.io/v1beta1
+kind: Volume
+metadata:
+  labels:
+    longhornvolume: prometheus-k8s-db-prometheus-k8s-1
+    recurring-job-group.longhorn.io/default: enabled
+    app.kubernetes.io/instance: openshift-monitoring
+  name: prometheus-k8s-db-prometheus-k8s-1
+  namespace: longhorn-system
+spec:
+  accessMode: rwo
+  engineImage: longhornio/longhorn-engine:v1.2.4
+  frontend: blockdev
+  numberOfReplicas: 2
+  size: "37580963840"
