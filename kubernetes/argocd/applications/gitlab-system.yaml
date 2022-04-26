@@ -1,7 +1,7 @@
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: gitlab
+  name: gitlab-system
   namespace: argocd
   labels:
     app.kubernetes.io/instance: argocd
@@ -11,7 +11,7 @@ spec:
     server: https://kubernetes.default.svc
   project: default
   source:
-    path: kubernetes/gitlab/overlays/okd
+    path: kubernetes/gitlab-system/overlays/okd
     repoURL: https://github.com/ArthurVardevanyan/HomeLab
     targetRevision: HEAD
     plugin:

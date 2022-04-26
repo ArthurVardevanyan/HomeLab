@@ -1,0 +1,67 @@
+apiVersion: longhorn.io/v1beta1
+kind: Volume
+metadata:
+  labels:
+    longhornvolume: data-gitlab-postgresql-0
+    recurring-job-group.longhorn.io/backup: enabled
+    recurring-job-group.longhorn.io/default: enabled
+    app.kubernetes.io/instance: gitlab-system
+  name: data-gitlab-postgresql-0
+  namespace: longhorn-system
+spec:
+  accessMode: rwo
+  engineImage: longhornio/longhorn-engine:v1.2.4
+  frontend: blockdev
+  numberOfReplicas: 2
+  size: "1073741824"
+---
+apiVersion: longhorn.io/v1beta1
+kind: Volume
+metadata:
+  labels:
+    longhornvolume: redis-data-gitlab-redis-master-0
+    recurring-job-group.longhorn.io/backup: enabled
+    recurring-job-group.longhorn.io/default: enabled
+    app.kubernetes.io/instance: gitlab-system
+  name: redis-data-gitlab-redis-master-0
+  namespace: longhorn-system
+spec:
+  accessMode: rwo
+  engineImage: longhornio/longhorn-engine:v1.2.4
+  frontend: blockdev
+  numberOfReplicas: 2
+  size: "1073741824"
+---
+apiVersion: longhorn.io/v1beta1
+kind: Volume
+metadata:
+  labels:
+    longhornvolume: repo-data-gitlab-gitaly-0
+    recurring-job-group.longhorn.io/backup: enabled
+    recurring-job-group.longhorn.io/default: enabled
+    app.kubernetes.io/instance: gitlab-system
+  name: repo-data-gitlab-gitaly-0
+  namespace: longhorn-system
+spec:
+  accessMode: rwo
+  engineImage: longhornio/longhorn-engine:v1.2.4
+  frontend: blockdev
+  numberOfReplicas: 2
+  size: "1073741824"
+---
+apiVersion: longhorn.io/v1beta1
+kind: Volume
+metadata:
+  labels:
+    longhornvolume: export-gitlab-minio-0
+    recurring-job-group.longhorn.io/backup: enabled
+    recurring-job-group.longhorn.io/default: enabled
+    app.kubernetes.io/instance: gitlab-system
+  name: export-gitlab-minio-0
+  namespace: longhorn-system
+spec:
+  accessMode: rwo
+  engineImage: longhornio/longhorn-engine:v1.2.4
+  frontend: blockdev
+  numberOfReplicas: 2
+  size: "5368709120"

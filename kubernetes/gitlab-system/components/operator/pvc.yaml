@@ -1,0 +1,167 @@
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: data-gitlab-postgresql-0
+  namespace: gitlab-system
+  labels:
+    app.kubernetes.io/instance: gitlab-system
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
+  volumeName: data-gitlab-postgresql-0
+  storageClassName: longhorn-static
+  volumeMode: Filesystem
+---
+kind: PersistentVolume
+apiVersion: v1
+metadata:
+  name: data-gitlab-postgresql-0
+  labels:
+    app.kubernetes.io/instance: gitlab-system
+spec:
+  capacity:
+    storage: 1Gi
+  csi:
+    driver: driver.longhorn.io
+    volumeHandle: data-gitlab-postgresql-0
+    fsType: ext4
+    volumeAttributes:
+      numberOfReplicas: "2"
+  accessModes:
+    - ReadWriteOnce
+  claimRef:
+    kind: PersistentVolumeClaim
+    name: data-gitlab-postgresql-0
+    namespace: gitlab-system
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: longhorn-static
+  volumeMode: Filesystem
+---
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: redis-data-gitlab-redis-master-0
+  namespace: gitlab-system
+  labels:
+    app.kubernetes.io/instance: gitlab-system
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
+  volumeName: redis-data-gitlab-redis-master-0
+  storageClassName: longhorn-static
+  volumeMode: Filesystem
+---
+kind: PersistentVolume
+apiVersion: v1
+metadata:
+  name: redis-data-gitlab-redis-master-0
+  labels:
+    app.kubernetes.io/instance: gitlab-system
+spec:
+  capacity:
+    storage: 1Gi
+  csi:
+    driver: driver.longhorn.io
+    volumeHandle: redis-data-gitlab-redis-master-0
+    fsType: ext4
+    volumeAttributes:
+      numberOfReplicas: "2"
+  accessModes:
+    - ReadWriteOnce
+  claimRef:
+    kind: PersistentVolumeClaim
+    name: redis-data-gitlab-redis-master-0
+    namespace: gitlab-system
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: longhorn-static
+  volumeMode: Filesystem
+---
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: repo-data-gitlab-gitaly-0
+  namespace: gitlab-system
+  labels:
+    app.kubernetes.io/instance: gitlab-system
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
+  volumeName: repo-data-gitlab-gitaly-0
+  storageClassName: longhorn-static
+  volumeMode: Filesystem
+---
+kind: PersistentVolume
+apiVersion: v1
+metadata:
+  name: repo-data-gitlab-gitaly-0
+  labels:
+    app.kubernetes.io/instance: gitlab-system
+spec:
+  capacity:
+    storage: 1Gi
+  csi:
+    driver: driver.longhorn.io
+    volumeHandle: repo-data-gitlab-gitaly-0
+    fsType: ext4
+    volumeAttributes:
+      numberOfReplicas: "2"
+  accessModes:
+    - ReadWriteOnce
+  claimRef:
+    kind: PersistentVolumeClaim
+    name: repo-data-gitlab-gitaly-0
+    namespace: gitlab-system
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: longhorn-static
+  volumeMode: Filesystem
+---
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: export-gitlab-minio-0
+  namespace: gitlab-system
+  labels:
+    app.kubernetes.io/instance: gitlab-system
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 5Gi
+  volumeName: export-gitlab-minio-0
+  storageClassName: longhorn-static
+  volumeMode: Filesystem
+---
+kind: PersistentVolume
+apiVersion: v1
+metadata:
+  name: export-gitlab-minio-0
+  labels:
+    app.kubernetes.io/instance: gitlab-system
+spec:
+  capacity:
+    storage: 5Gi
+  csi:
+    driver: driver.longhorn.io
+    volumeHandle: export-gitlab-minio-0
+    fsType: ext4
+    volumeAttributes:
+      numberOfReplicas: "2"
+  accessModes:
+    - ReadWriteOnce
+  claimRef:
+    kind: PersistentVolumeClaim
+    name: export-gitlab-minio-0
+    namespace: gitlab-system
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: longhorn-static
+  volumeMode: Filesystem
