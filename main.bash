@@ -693,6 +693,10 @@ install_okd() {
 	# journalctl -b -f -u kubelet.service -u ciro.service
 	export HOME=/home/arthur
 
+	mkdir -p /vm
+	chown -R arthur:arthur /vm/
+	chmod 777 -R /vm/
+
 	export PREFIX=""
 	export NODES="bootstrap master-1 worker-1" #bootstrap master-1 master-2 master-3 worker-1 worker-2
 	export MASTERS=1
@@ -724,11 +728,11 @@ install_okd() {
 	delete_cluster
 
 	echo -e "\n\n${BLUE}Delete All Existing Data:${NC}"
-	rm -rf "${HOME}"/vm/okd/okd
-	rm -rf "${HOME}"/vm/okd/*.qcow2
-	rm -rf "${HOME}"/vm/okd/*.raw
-	rm -rf "${HOME}"/vm/okd/fedora-coreos-*
-	rm -rf "${HOME}"/vm/okd/openshift-install-linux* "${HOME}"/vm/okd/openshift-client-linux* "${HOME}"/vm/okd/oc "${HOME}"/vm/okd/kubectl "${HOME}"/vm/okd/openshift-install
+	rm -rf /vm/okd/okd
+	rm -rf /vm/okd/*.qcow2
+	rm -rf /vm/okd/*.raw
+	rm -rf /vm/okd/fedora-coreos-*
+	rm -rf /vm/okd/openshift-install-linux* /vm/okd/openshift-client-linux* /vm/okd/oc /vm/okd/kubectl /vm/okd/openshift-install
 	echo -e "\n\n${BLUE}Add SSH Known Hosts:${NC}"
 	IP=$((START_IP - 1))
 	for NODE in ${NODES}; do
@@ -742,53 +746,53 @@ install_okd() {
 	echo -e "\n\n${BLUE}Download Dependencies:${NC}"
 	# Download the latest Fedora CoreOS
 	COREOS=35.20220227.3.0
-	wget https://builds.coreos.fedoraproject.org/prod/streams/stable/builds/"${COREOS}"/x86_64/fedora-coreos-"${COREOS}"-qemu.x86_64.qcow2.xz -P "${HOME}"/vm/okd/
-	xz -d "${HOME}"/vm/okd/fedora-coreos-*.xz
+	wget https://builds.coreos.fedoraproject.org/prod/streams/stable/builds/"${COREOS}"/x86_64/fedora-coreos-"${COREOS}"-qemu.x86_64.qcow2.xz -P /vm/okd/
+	xz -d /vm/okd/fedora-coreos-*.xz
 	# Download openshift-install and openshift-client
-	wget "$(curl https://api.github.com/repos/openshift/okd/releases/latest | grep openshift-install-linux | grep browser_download_url | cut -d\" -f4)" -P "${HOME}"/vm/okd/
-	wget "$(curl https://api.github.com/repos/openshift/okd/releases/latest | grep openshift-client-linux | grep browser_download_url | cut -d\" -f4)" -P "${HOME}"/vm/okd/
-	tar xvzf "${HOME}"/vm/okd/openshift-install-linux* -C "${HOME}"/vm/okd
-	tar xvzf "${HOME}"/vm/okd/openshift-client-linux* -C "${HOME}"/vm/okd
+	wget "$(curl https://api.github.com/repos/openshift/okd/releases/latest | grep openshift-install-linux | grep browser_download_url | cut -d\" -f4)" -P /vm/okd/
+	wget "$(curl https://api.github.com/repos/openshift/okd/releases/latest | grep openshift-client-linux | grep browser_download_url | cut -d\" -f4)" -P /vm/okd/
+	tar xvzf /vm/okd/openshift-install-linux* -C /vm/okd
+	tar xvzf /vm/okd/openshift-client-linux* -C /vm/okd
 
 	echo -e "\n\n${BLUE}Create Config Files:${NC}"
 	# Create okd directory of openshift-install files
-	mkdir -p "${HOME}"/vm/okd/okd
+	mkdir -p /vm/okd/okd
 	# Copy the install-config.yaml
-	cp okd/install-config.yaml "${HOME}"/vm/okd/okd/
+	cp okd/install-config.yaml /vm/okd/okd/
 
 	SSH=$(cat ${HOME}/.ssh/id_ed25519.pub)
-	sed -i "s/<SSH>/${SSH}/g" "${HOME}"/vm/okd/okd/install-config.yaml
-	sed -i "s/<URL>/${URL}/g" "${HOME}"/vm/okd/okd/install-config.yaml
-	sed -i "s/<MASTERS>/${MASTERS}/g" "${HOME}"/vm/okd/okd/install-config.yaml
-	sed -i "s/<WORKERS>/${WORKERS}/g" "${HOME}"/vm/okd/okd/install-config.yaml
-	cp "${HOME}"/vm/okd/okd/install-config.yaml "${HOME}"/vm/okd/okd/install-config_backup.yaml
+	sed -i "s/<SSH>/${SSH}/g" /vm/okd/okd/install-config.yaml
+	sed -i "s/<URL>/${URL}/g" /vm/okd/okd/install-config.yaml
+	sed -i "s/<MASTERS>/${MASTERS}/g" /vm/okd/okd/install-config.yaml
+	sed -i "s/<WORKERS>/${WORKERS}/g" /vm/okd/okd/install-config.yaml
+	cp /vm/okd/okd/install-config.yaml /vm/okd/okd/install-config_backup.yaml
 
 	# Create the ignition files
-	"${HOME}"/vm/okd/openshift-install create ignition-configs --dir="${HOME}"/vm/okd/okd
+	/vm/okd/openshift-install create ignition-configs --dir=/vm/okd/okd
 
-	chown -R arthur:arthur "${HOME}"/vm/okd
-	chmod 777 -R "${HOME}"/vm/okd
+	chown -R arthur:arthur /vm/okd
+	chmod 777 -R /vm/okd
 
 	echo -e "\n\n${BLUE}Start OKD Install:${NC}"
 	IP=${START_IP}
 	for NODE in ${NODES}; do
-		IMAGE="${HOME}/vm/okd/${NODE}.raw"
+		IMAGE="/vm/okd/${NODE}.raw"
 		VCPUS="4"
 		RAM_MB="12288"
 		SIZE="50G"
 		STORAGE=''
 
 		if [[ "${NODE}" =~ "master" ]]; then
-			IGNITION_CONFIG="${HOME}/vm/okd/okd/master.ign"
+			IGNITION_CONFIG="/vm/okd/okd/master.ign"
 		fi
 
 		if [[ "${NODE}" =~ "worker" ]]; then
 			VCPUS="4"
 			RAM_MB="6144"
-			IGNITION_CONFIG="${HOME}/vm/okd/okd/worker.ign"
-			"${HOME}"/vm/okd/openshift-install --dir="${HOME}"/vm/okd/okd wait-for bootstrap-complete --log-level debug
+			IGNITION_CONFIG="/vm/okd/okd/worker.ign"
+			/vm/okd/openshift-install --dir=/vm/okd/okd wait-for bootstrap-complete --log-level debug
 
-			STORAGE_PATH="${HOME}/vm/okd/${NODE}_storage.raw"
+			STORAGE_PATH="/vm/okd/${NODE}_storage.raw"
 			STORAGE_SIZE="50G"
 			qemu-img create "${STORAGE_PATH}" "${STORAGE_SIZE}" -f raw
 			STORAGE="--disk=\"${STORAGE_PATH}\"",cache=none
@@ -805,13 +809,13 @@ install_okd() {
 		MAC="10:10:00:00:00:$IP"
 
 		if [ "$NODE" = "bootstrap" ]; then
-			IGNITION_CONFIG="${HOME}/vm/okd/okd/bootstrap.ign"
+			IGNITION_CONFIG="/vm/okd/okd/bootstrap.ign"
 			MAC="10:10:00:00:00:10"
 			VCPUS="5"
 		fi
 
 		qemu-img create "${IMAGE}" "${SIZE}" -f raw
-		virt-resize --expand /dev/sda4 "${HOME}"/vm/okd/fedora-coreos-*.qcow2 "${IMAGE}"
+		virt-resize --expand /dev/sda4 /vm/okd/fedora-coreos-*.qcow2 "${IMAGE}"
 
 		virt-install \
 			--connect="qemu:///system" \
@@ -830,32 +834,33 @@ install_okd() {
 		fi
 
 	done
-	chown -R arthur:arthur "${HOME}"/vm/okd
-	chmod 777 -R "${HOME}"/vm/okd
+	chown -R arthur:arthur /vm/okd
+	chmod 777 -R /vm/okd
 
-	"${HOME}"/vm/okd/openshift-install --dir="${HOME}"/vm/okd/okd wait-for install-complete --log-level debug
+	/vm/okd/openshift-install --dir=/vm/okd/okd wait-for install-complete --log-level debug
 
-	export KUBECONFIG="${HOME}/vm/okd/okd/auth/kubeconfig"
-	"${HOME}"/vm/okd/oc apply -f okd/okd-configuration/operator-hub.yaml
+	export KUBECONFIG="/vm/okd/okd/auth/kubeconfig"
+	/vm/okd/oc apply -f okd/okd-configuration/operator-hub.yaml
 
 	# https://github.com/openshift/okd/issues/963#issuecomment-1073120091
-	"${HOME}"/vm/okd/oc delete mc 99-master-okd-extensions 99-okd-master-disable-mitigations
+	/vm/okd/oc delete mc 99-master-okd-extensions 99-okd-master-disable-mitigations
 
 	single_server
 }
 
 single_server() {
 	echo -e "\n\n${BLUE}Single Server Resource Adjustments:${NC}"
-	"${HOME}"/vm/okd/oc scale --replicas=1 ingresscontroller/default -n openshift-ingress-operator
-	"${HOME}"/vm/okd/oc scale --replicas=1 deployment.apps/console -n openshift-console
-	"${HOME}"/vm/okd/oc scale --replicas=1 deployment.apps/downloads -n openshift-console
-	"${HOME}"/vm/okd/oc scale --replicas=1 deployment.apps/oauth-openshift -n openshift-authentication
-	"${HOME}"/vm/okd/oc scale --replicas=1 deployment.apps/packageserver -n openshift-operator-lifecycle-manager
+	export KUBECONFIG="/vm/okd/okd/auth/kubeconfig"
+	/vm/okd/oc scale --replicas=1 ingresscontroller/default -n openshift-ingress-operator
+	/vm/okd/oc scale --replicas=1 deployment.apps/console -n openshift-console
+	/vm/okd/oc scale --replicas=1 deployment.apps/downloads -n openshift-console
+	/vm/okd/oc scale --replicas=1 deployment.apps/oauth-openshift -n openshift-authentication
+	/vm/okd/oc scale --replicas=1 deployment.apps/packageserver -n openshift-operator-lifecycle-manager
 
-	"${HOME}"/vm/okd/oc scale --replicas=1 deployment.apps/prometheus-adapter -n openshift-monitoring
-	"${HOME}"/vm/okd/oc scale --replicas=1 deployment.apps/thanos-querier -n openshift-monitoring
-	"${HOME}"/vm/okd/oc scale --replicas=1 statefulset.apps/prometheus-k8s -n openshift-monitoring
-	"${HOME}"/vm/okd/oc scale --replicas=1 statefulset.apps/alertmanager-main -n openshift-monitoring
+	/vm/okd/oc scale --replicas=1 deployment.apps/prometheus-adapter -n openshift-monitoring
+	/vm/okd/oc scale --replicas=1 deployment.apps/thanos-querier -n openshift-monitoring
+	/vm/okd/oc scale --replicas=1 statefulset.apps/prometheus-k8s -n openshift-monitoring
+	/vm/okd/oc scale --replicas=1 statefulset.apps/alertmanager-main -n openshift-monitoring
 }
 
 approve_csr() {
