@@ -8,14 +8,29 @@ metadata:
 data:
   config.yaml: |
     enableUserWorkload: true
+    alertmanagerMain:
+      resources:
+        requests:
+          cpu: 5m
+          memory: 50Mi
+        limits:
+          cpu: 15m
+          memory: 100Mi
+      volumeClaimTemplate:
+       spec:
+         storageClassName: longhorn-static
+         volumeMode: Filesystem
+         resources:
+           requests:
+             storage: 50Mi
     prometheusK8s:
       retention: 14d
       resources:
         requests:
-          cpu: 375m
+          cpu: 750m
           memory: 3.5Gi
         limits:
-          cpu: 1
+          cpu: 1.5
           memory: 7Gi
       volumeClaimTemplate:
        spec:

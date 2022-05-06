@@ -81,3 +81,87 @@ spec:
   persistentVolumeReclaimPolicy: Retain
   storageClassName: longhorn-static
   volumeMode: Filesystem
+---
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: alertmanager-main-db-alertmanager-main-1
+  namespace: openshift-monitoring
+  labels:
+    app.kubernetes.io/instance: openshift-monitoring
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 50Mi
+  volumeName: alertmanager-main-db-alertmanager-main-1
+  storageClassName: longhorn-static
+  volumeMode: Filesystem
+---
+kind: PersistentVolume
+apiVersion: v1
+metadata:
+  name: alertmanager-main-db-alertmanager-main-1
+  labels:
+    app.kubernetes.io/instance: openshift-monitoring
+spec:
+  capacity:
+    storage: 50Mi
+  csi:
+    driver: driver.longhorn.io
+    volumeHandle: alertmanager-main-db-alertmanager-main-1
+    fsType: ext4
+    volumeAttributes:
+      numberOfReplicas: "2"
+  accessModes:
+    - ReadWriteOnce
+  claimRef:
+    kind: PersistentVolumeClaim
+    name: alertmanager-main-db-alertmanager-main-1
+    namespace: openshift-monitoring
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: longhorn-static
+  volumeMode: Filesystem
+---
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: alertmanager-main-db-alertmanager-main-0
+  namespace: openshift-monitoring
+  labels:
+    app.kubernetes.io/instance: openshift-monitoring
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 50Mi
+  volumeName: alertmanager-main-db-alertmanager-main-0
+  storageClassName: longhorn-static
+  volumeMode: Filesystem
+---
+kind: PersistentVolume
+apiVersion: v1
+metadata:
+  name: alertmanager-main-db-alertmanager-main-0
+  labels:
+    app.kubernetes.io/instance: openshift-monitoring
+spec:
+  capacity:
+    storage: 50Mi
+  csi:
+    driver: driver.longhorn.io
+    volumeHandle: alertmanager-main-db-alertmanager-main-0
+    fsType: ext4
+    volumeAttributes:
+      numberOfReplicas: "2"
+  accessModes:
+    - ReadWriteOnce
+  claimRef:
+    kind: PersistentVolumeClaim
+    name: alertmanager-main-db-alertmanager-main-0
+    namespace: openshift-monitoring
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: longhorn-static
+  volumeMode: Filesystem
