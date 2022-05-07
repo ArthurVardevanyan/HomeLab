@@ -1,0 +1,32 @@
+apiVersion: machineconfiguration.openshift.io/v1
+kind: KubeletConfig
+metadata:
+  name: server-kubelet-config
+  labels:
+    app.kubernetes.io/instance: okd-configuration
+spec:
+  machineConfigPoolSelector:
+    matchLabels:
+      pools.operator.machineconfiguration.openshift.io/master: ""
+  kubeletConfig:
+    systemReserved:
+      cpu: 250m
+      memory: 1Gi
+---
+apiVersion: machineconfiguration.openshift.io/v1
+kind: KubeletConfig
+metadata:
+  name: worker-kubelet-config
+  labels:
+    app.kubernetes.io/instance: okd-configuration
+spec:
+  machineConfigPoolSelector:
+    matchLabels:
+      pools.operator.machineconfiguration.openshift.io/worker: ""
+  kubeletConfig:
+    imageMinimumGCAge: 75m
+    imageGCHighThresholdPercent: 75
+    imageGCLowThresholdPercent: 50
+    systemReserved:
+      cpu: 250m
+      memory: 1Gi
