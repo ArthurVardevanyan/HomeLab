@@ -1,0 +1,13 @@
+- hosts: dell
+  gather_facts: no
+  user: arthur
+  tasks:
+    - name: Set a hostname
+      become: true
+      hostname:
+        name: arthur-dell
+        use: systemd
+    - name: Wallpaper Paper Path
+      dconf:
+        key: "/org/gnome/desktop/background/picture-uri"
+        value: "'file:///home/arthur/Pictures/Wallpapers/starlitnight1920x1200 No Logo.jpg'"
