@@ -1,0 +1,13 @@
+apiVersion: apps.gitlab.com/v1beta2
+kind: Runner
+metadata:
+  name: gitlab
+  namespace: gitlab-runner
+  labels:
+    app.kubernetes.io/instance: gitlab-runner
+spec:
+  gitlabUrl: "https://gitlab.<path:secret/data/gitlab/domain#url>/"
+  token: gitlab-runner-registration-token
+  serviceaccount: gitlab-runner-sa
+  config: runner-config
+  interval: 5
