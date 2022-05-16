@@ -3,7 +3,7 @@
 HomeLab Server/Cluster, Virtual Sandbox Cluster, & Desktop Configuration
 
 - Server: Debian Stable /w OKD & ZFS
-- Desktop: Pop!_OS Latest
+- Desktop: Pop!\_OS Latest
 
   - Manual Patches Applied
 
@@ -60,40 +60,40 @@ bash kvm_k3s.bash get_dashboard_secret
 
 <https://www.okd.io/>
 
-Kubernetes Channel | OKD Channel | OKD OS           | Host Operating System
------------------- | ----------- | ---------------- | ---------------------
-v1.23              | stable-4.10 | Fedora CoreOS 35 | Debian 11
+| Kubernetes Channel | OKD Channel | OKD OS           | Host Operating System |
+| ------------------ | ----------- | ---------------- | --------------------- |
+| v1.23              | stable-4.10 | Fedora CoreOS 35 | Debian 11             |
 
 **Machines:**
 
 [CPU Benchmark](https://www.cpubenchmark.net/compare/Intel-i5-6600-vs-AMD-RX-427BB-vs-Intel-i3-2130-vs-AMD-GX-415GA-SOC-vs-AMD-Ryzen-7-5700G/2594vs2496vs755vs2081vs4323)
 
-Machine    | Model             | CPU      | CPU | Mem | Storage           | ZFS Storage
----------- | ----------------- | -------- | --- | --- | ----------------- | -------------
-pfSense    | Hp t730           | RX-427BB | 4   | 4G  | 16G SSD           | N/A
-Bare Metal | Hp t620           | GX-415GA | 4   | 6G  | 16G SSD & 16G USB | N/A
-kvm-0      | N/A               | R7-5700G | 16  | 56G | 500G NVME         | 2T ZFS Mirror
-kvm-1      | Hp ProDesk 400 G3 | i5-6600  | 4   | 24G | 240G SSD          | 1T ZFS Mirror
-kvm-2      | Hp p7-1226s       | i3-2130  | 4   | 8G  | 240G SSD          | N/A
+| Machine    | Model             | CPU      | CPU | Mem | Storage           | ZFS Storage   |
+| ---------- | ----------------- | -------- | --- | --- | ----------------- | ------------- |
+| pfSense    | Hp t730           | RX-427BB | 4   | 4G  | 16G SSD           | N/A           |
+| Bare Metal | Hp t620           | GX-415GA | 4   | 6G  | 16G SSD & 16G USB | N/A           |
+| kvm-0      | N/A               | R7-5700G | 16  | 56G | 500G NVME         | 2T ZFS Mirror |
+| kvm-1      | Hp ProDesk 400 G3 | i5-6600  | 4   | 24G | 240G SSD          | 1T ZFS Mirror |
+| kvm-2      | Hp p7-1226s       | i3-2130  | 4   | 8G  | 240G SSD          | N/A           |
 
 **ZFS Storage:**
 
-Machine | Use     | Dataset   | Size  | Dataset         | Size  | Dataset       | Size
-------- | ------- | --------- | ----- | --------------- | ----- | ------------- | -----
-KVM-0   | Primary | Nextcloud | 750GB | Longhorn Backup | 175GB | WindowsBackup | 750GB
-KVM-1   | Backup  | Nextcloud | 750GB | Longhorn Backup | 175GB | N/A           | N/A
+| Machine | Use     | Dataset   | Size  | Dataset         | Size  | Dataset       | Size  |
+| ------- | ------- | --------- | ----- | --------------- | ----- | ------------- | ----- |
+| KVM-0   | Primary | Nextcloud | 750GB | Longhorn Backup | 175GB | WindowsBackup | 750GB |
+| KVM-1   | Backup  | Nextcloud | 750GB | Longhorn Backup | 175GB | N/A           | N/A   |
 
 **Kubernetes Nodes:**
 
-NAME     | ROLES          | Machine | vCPU | Mem | Storage
--------- | -------------- | ------- | ---- | --- | -------
-server-1 | cp,etcd,master | kvm-0   | 4    | 12G | N/A
-server-2 | cp,etcd,master | kvm-1   | 3    | 12G | N/A
-server-3 | cp,etcd,master | kvm-0   | 4    | 12G | N/A
-worker-1 | worker         | kvm-0   | 5    | 12G | LH NVME
-worker-2 | worker         | kvm-2   | 5    | 7G  | LH SSD
-worker-3 | worker         | kvm-0   | 5    | 12G | LH NVME
-worker-4 | worker         | kvm-1   | 3    | 10G | LH SSD
+| NAME     | ROLES          | Machine | vCPU | Mem | Storage |
+| -------- | -------------- | ------- | ---- | --- | ------- |
+| server-1 | cp,etcd,master | kvm-0   | 4    | 12G | N/A     |
+| server-2 | cp,etcd,master | kvm-1   | 3    | 12G | N/A     |
+| server-3 | cp,etcd,master | kvm-0   | 4    | 12G | N/A     |
+| worker-1 | worker         | kvm-0   | 5    | 12G | LH NVME |
+| worker-2 | worker         | kvm-2   | 5    | 7G  | LH SSD  |
+| worker-3 | worker         | kvm-0   | 5    | 12G | LH NVME |
+| worker-4 | worker         | kvm-1   | 3    | 10G | LH SSD  |
 
 #### OKD Longhorn Secondary Disk Setup
 
