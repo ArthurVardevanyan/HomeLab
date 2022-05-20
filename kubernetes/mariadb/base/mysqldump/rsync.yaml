@@ -6,9 +6,9 @@ metadata:
   labels:
     app.kubernetes.io/instance: mariadb
 spec:
-  schedule: "30 3 * * *"
+  schedule: "30 7 * * *"
   concurrencyPolicy: Forbid
-  suspend: true
+  suspend: false
   startingDeadlineSeconds: 60
   jobTemplate:
     spec:
@@ -20,6 +20,7 @@ spec:
           annotations:
             seccomp.security.alpha.kubernetes.io/defaultProfileName: runtime/default
         spec:
+          serviceAccountName: mysqldump-sa
           volumes:
             - name: mysqldump-pvc
               persistentVolumeClaim:
@@ -60,8 +61,8 @@ spec:
                 runAsNonRoot: true
                 readOnlyRootFilesystem: true
                 allowPrivilegeEscalation: false
-                seccompProfile:
-                  type: RuntimeDefault
+                # seccompProfile:
+                #   type: RuntimeDefault
                 capabilities:
                   drop:
                     - all
