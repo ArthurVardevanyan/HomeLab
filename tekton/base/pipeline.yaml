@@ -1,0 +1,15 @@
+apiVersion: tekton.dev/v1beta1
+kind: Pipeline
+metadata:
+  name: toolbox
+  namespace: homelab
+spec:
+  tasks:
+    - name: toolbox
+      taskRef:
+        name: toolbox
+    - name: toolbox-1
+      runAfter:
+        - toolbox
+      taskRef:
+        name: toolbox

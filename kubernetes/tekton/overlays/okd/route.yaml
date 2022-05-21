@@ -1,0 +1,20 @@
+kind: Route
+apiVersion: route.openshift.io/v1
+metadata:
+  name: tekton
+  namespace: tekton-pipelines
+  labels:
+    app: tekton
+    app.kubernetes.io/instance: tekton
+spec:
+  host: tekton.apps.okd.<path:secret/data/gitlab/domain#url>
+  to:
+    kind: Service
+    name: tekton-dashboard
+    weight: 100
+  port:
+    targetPort: 9097
+  tls:
+    termination: edge
+    insecureEdgeTerminationPolicy: Redirect
+  wildcardPolicy: None

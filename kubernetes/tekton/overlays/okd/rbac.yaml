@@ -1,0 +1,45 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: tekton-cr
+  labels:
+    app.kubernetes.io/instance: tekton
+rules:
+  - apiGroups:
+      - security.openshift.io
+    resourceNames:
+      - anyuid
+    resources:
+      - securitycontextconstraints
+    verbs:
+      - use
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: tekton-crb
+  labels:
+    app.kubernetes.io/instance: tekton
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: tekton-cr
+subjects:
+  - kind: ServiceAccount
+    name: tekton-pipelines-controller
+    namespace: tekton-pipelines
+  - kind: ServiceAccount
+    name: tekton-pipelines-webhook
+    namespace: tekton-pipelines
+  - kind: ServiceAccount
+    name: tekton-operators-proxy-webhook
+    namespace: tekton-pipelines
+  - kind: ServiceAccount
+    name: tekton-triggers-controller
+    namespace: tekton-pipelines
+  - kind: ServiceAccount
+    name: tekton-triggers-webhook
+    namespace: tekton-pipelines
+  - kind: ServiceAccount
+    name: tekton-triggers-core-interceptors
+    namespace: tekton-pipelines

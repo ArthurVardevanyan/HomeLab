@@ -1,0 +1,31 @@
+apiVersion: operator.tekton.dev/v1alpha1
+kind: TektonConfig
+metadata:
+  name: config
+  labels:
+    app.kubernetes.io/instance: tekton
+spec:
+  targetNamespace: tekton-pipelines
+  profile: all
+  pipeline:
+    disable-affinity-assistant: true
+    disable-creds-init: false
+    disable-home-env-overwrite: true
+    disable-working-directory-overwrite: true
+    enable-api-fields: stable
+    enable-custom-tasks: false
+    enable-tekton-oci-bundles: true
+    metrics.pipelinerun.duration-type: histogram
+    metrics.pipelinerun.level: pipelinerun
+    metrics.taskrun.duration-type: histogram
+    metrics.taskrun.level: taskrun
+    require-git-ssh-secret-known-hosts: false
+    running-in-environment-with-injected-sidecars: true
+  pruner:
+    resources:
+      - taskrun
+      - pipelinerun
+    keep: 3
+    schedule: "0 * * * *"
+  dashboard:
+    readonly: true
