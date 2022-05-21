@@ -19,6 +19,66 @@ ansible() {
 	ansible-playbook -i ansible/inventory --ask-become-pass ansible/servers.yaml --ask-pass
 }
 
+stateful_workload_stop() {
+	kubectl patch cronjobs -n photoprism photoprism-cron -p '{"spec" : {"suspend" : true }}'
+	kubectl patch cronjobs -n nextcloud nextcloud-preview -p '{"spec" : {"suspend" : true }}'
+	kubectl patch cronjobs -n nextcloud nextcloud-rsync -p '{"spec" : {"suspend" : true }}'
+	kubectl patch cronjobs -n nextcloud nextcloud-cron -p '{"spec" : {"suspend" : true }}'
+	kubectl patch cronjobs -n mariadb mysqldump-cron -p '{"spec" : {"suspend" : true }}'
+
+	kubectl delete configmap -n openshift-monitoring cluster-monitoring-config
+
+	kubectl patch -n bitwarden statefulset/bitwarden --type='json' -p='[{"op": "replace", "path": "/spec/replicas", "value": 0}]'
+	kubectl patch -n grafana deployment/grafana --type='json' -p='[{"op": "replace", "path": "/spec/replicas", "value": 0}]'
+	kubectl patch -n heimdall statefulset/heimdall --type='json' -p='[{"op": "replace", "path": "/spec/replicas", "value": 0}]'
+	kubectl patch -n homeassistant statefulset/homeassistant --type='json' -p='[{"op": "replace", "path": "/spec/replicas", "value": 0}]'
+	kubectl patch -n influxdb statefulset/influxdb --type='json' -p='[{"op": "replace", "path": "/spec/replicas", "value": 0}]'
+	kubectl patch -n loki statefulset/loki --type='json' -p='[{"op": "replace", "path": "/spec/replicas", "value": 0}]'
+	kubectl patch -n mariadb statefulset/mariadb --type='json' -p='[{"op": "replace", "path": "/spec/replicas", "value": 0}]'
+	kubectl patch -n nextcloud statefulset/nextcloud --type='json' -p='[{"op": "replace", "path": "/spec/replicas", "value": 0}]'
+	kubectl patch -n photoprism statefulset/photoprism --type='json' -p='[{"op": "replace", "path": "/spec/replicas", "value": 0}]'
+	kubectl patch -n prometheus statefulset/prometheus --type='json' -p='[{"op": "replace", "path": "/spec/replicas", "value": 0}]'
+	kubectl patch -n uptime-kuma statefulset/uptime-kuma --type='json' -p='[{"op": "replace", "path": "/spec/replicas", "value": 0}]'
+	kubectl patch -n vault statefulset/vault --type='json' -p='[{"op": "replace", "path": "/spec/replicas", "value": 0}]'
+
+	kubectl scale --replicas=0 -n gitlab-system deployment/gitlab-controller-manager
+	kubectl scale --replicas=0 -n gitlab-system statefulset/gitlab-redis-master
+	kubectl scale --replicas=0 -n gitlab-system statefulset/gitlab-postgresql
+	kubectl scale --replicas=0 -n gitlab-system statefulset/gitlab-gitaly
+	kubectl scale --replicas=0 -n gitlab-system statefulset/gitlab-minio
+}
+
+stateful_workload_start() {
+	kubectl patch cronjobs -n photoprism photoprism-cron -p '{"spec" : {"suspend" : false }}'
+	kubectl patch cronjobs -n nextcloud nextcloud-preview -p '{"spec" : {"suspend" : false }}'
+	kubectl patch cronjobs -n nextcloud nextcloud-rsync -p '{"spec" : {"suspend" : false }}'
+	kubectl patch cronjobs -n nextcloud nextcloud-cron -p '{"spec" : {"suspend" : false }}'
+	kubectl patch cronjobs -n mariadb mysqldump-cron -p '{"spec" : {"suspend" : false }}'
+
+	kubectl apply -f okd/openshift-monitoring/base/cluster-monitoring-config.yaml
+
+	kubectl patch -n bitwarden statefulset/bitwarden --type='json' -p='[{"op": "replace", "path": "/spec/replicas", "value": 1}]'
+	kubectl patch -n grafana deployment/grafana --type='json' -p='[{"op": "replace", "path": "/spec/replicas", "value": 1}]'
+	kubectl patch -n heimdall statefulset/heimdall --type='json' -p='[{"op": "replace", "path": "/spec/replicas", "value": 1}]'
+	kubectl patch -n homeassistant statefulset/homeassistant --type='json' -p='[{"op": "replace", "path": "/spec/replicas", "value": 1}]'
+	kubectl patch -n influxdb statefulset/influxdb --type='json' -p='[{"op": "replace", "path": "/spec/replicas", "value": 1}]'
+	kubectl patch -n loki statefulset/loki --type='json' -p='[{"op": "replace", "path": "/spec/replicas", "value": 1}]'
+	kubectl patch -n mariadb statefulset/mariadb --type='json' -p='[{"op": "replace", "path": "/spec/replicas", "value": 1}]'
+	kubectl patch -n nextcloud statefulset/nextcloud --type='json' -p='[{"op": "replace", "path": "/spec/replicas", "value": 1}]'
+	kubectl patch -n photoprism statefulset/photoprism --type='json' -p='[{"op": "replace", "path": "/spec/replicas", "value": 1}]'
+	kubectl patch -n prometheus statefulset/prometheus --type='json' -p='[{"op": "replace", "path": "/spec/replicas", "value": 1}]'
+	kubectl patch -n uptime-kuma statefulset/uptime-kuma --type='json' -p='[{"op": "replace", "path": "/spec/replicas", "value": 1}]'
+	kubectl patch -n vault statefulset/vault --type='json' -p='[{"op": "replace", "path": "/spec/replicas", "value": 1}]'
+
+	kubectl scale --replicas=1 -n gitlab-system deployment/gitlab-controller-manager
+	kubectl scale --replicas=1 -n gitlab-system statefulset/gitlab-redis-master
+	kubectl scale --replicas=1 -n gitlab-system statefulset/gitlab-postgresql
+	kubectl scale --replicas=1 -n gitlab-system statefulset/gitlab-gitaly
+	kubectl scale --replicas=1 -n gitlab-system statefulset/gitlab-minio
+
+	echo -e "\nkubectl exec -it vault-0 -n vault -- vault operator unseal --tls-skip-verify"
+}
+
 kvm-infra() {
 	ssh 10.0.0.110
 
