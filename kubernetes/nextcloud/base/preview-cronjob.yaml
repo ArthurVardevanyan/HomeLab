@@ -6,7 +6,7 @@ metadata:
   labels:
     app.kubernetes.io/instance: nextcloud
 spec:
-  schedule: "0 5 * * *"
+  schedule: "0 */3 * * *"
   concurrencyPolicy: Forbid
   suspend: false
   startingDeadlineSeconds: 60
@@ -52,8 +52,7 @@ spec:
               command:
                 - /bin/sh
                 - -c
-                - /var/www/html/occ preview:delete_old -vvv \
-                  && /var/www/html/occ preview:pre-generate -vvv
+                - /var/www/html/occ preview:pre-generate -vvv
               resources:
                 limits:
                   cpu: 100m
