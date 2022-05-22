@@ -29,6 +29,7 @@ stateful_workload_stop() {
 	kubectl delete configmap -n openshift-monitoring cluster-monitoring-config
 
 	kubectl patch -n bitwarden statefulset/bitwarden --type='json' -p='[{"op": "replace", "path": "/spec/replicas", "value": 0}]'
+	kubectl patch -n gitea statefulset/gitea --type='json' -p='[{"op": "replace", "path": "/spec/replicas", "value": 0}]'
 	kubectl patch -n grafana deployment/grafana --type='json' -p='[{"op": "replace", "path": "/spec/replicas", "value": 0}]'
 	kubectl patch -n heimdall statefulset/heimdall --type='json' -p='[{"op": "replace", "path": "/spec/replicas", "value": 0}]'
 	kubectl patch -n homeassistant statefulset/homeassistant --type='json' -p='[{"op": "replace", "path": "/spec/replicas", "value": 0}]'
@@ -58,6 +59,7 @@ stateful_workload_start() {
 	kubectl apply -f okd/openshift-monitoring/base/cluster-monitoring-config.yaml
 
 	kubectl patch -n bitwarden statefulset/bitwarden --type='json' -p='[{"op": "replace", "path": "/spec/replicas", "value": 1}]'
+	kubectl patch -n gitea statefulset/gitea --type='json' -p='[{"op": "replace", "path": "/spec/replicas", "value": 1}]'
 	kubectl patch -n grafana deployment/grafana --type='json' -p='[{"op": "replace", "path": "/spec/replicas", "value": 1}]'
 	kubectl patch -n heimdall statefulset/heimdall --type='json' -p='[{"op": "replace", "path": "/spec/replicas", "value": 1}]'
 	kubectl patch -n homeassistant statefulset/homeassistant --type='json' -p='[{"op": "replace", "path": "/spec/replicas", "value": 1}]'

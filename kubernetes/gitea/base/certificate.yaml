@@ -1,0 +1,14 @@
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: gitea-cert
+  namespace: gitea
+  labels:
+    app.kubernetes.io/instance: gitea
+spec:
+  secretName: gitea-cert
+  dnsNames:
+    - "git.<path:secret/data/gitlab/domain#url>"
+  issuerRef:
+    kind: ClusterIssuer
+    name: letsencrypt

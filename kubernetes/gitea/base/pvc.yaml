@@ -1,0 +1,41 @@
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: gitea-pvc
+  namespace: gitea
+  labels:
+    app.kubernetes.io/instance: gitea
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
+  volumeName: gitea-pv
+  storageClassName: longhorn-static
+  volumeMode: Filesystem
+---
+kind: PersistentVolume
+apiVersion: v1
+metadata:
+  name: gitea-pv
+  labels:
+    app.kubernetes.io/instance: gitea
+spec:
+  capacity:
+    storage: 1Gi
+  csi:
+    driver: driver.longhorn.io
+    volumeHandle: gitea
+    fsType: ext4
+    volumeAttributes:
+      numberOfReplicas: "2"
+  accessModes:
+    - ReadWriteOnce
+  claimRef:
+    kind: PersistentVolumeClaim
+    name: gitea-pvc
+    namespace: gitea
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: longhorn-static
+  volumeMode: Filesystem
