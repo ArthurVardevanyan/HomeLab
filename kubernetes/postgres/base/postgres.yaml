@@ -1,0 +1,39 @@
+apiVersion: postgres-operator.crunchydata.com/v1beta1
+kind: PostgresCluster
+metadata:
+  name: quay
+  namespace: postgres
+  labels:
+    app.kubernetes.io/instance: postgres
+spec:
+  backups:
+    pgbackrest:
+      repos:
+        - name: repo1
+          volume:
+            volumeClaimSpec:
+              storageClassName: longhorn-static
+              accessModes:
+                - ReadWriteOnce
+              resources:
+                requests:
+                  storage: 1Gi
+  instances:
+    - dataVolumeClaimSpec:
+        storageClassName: longhorn-static
+        accessModes:
+          - ReadWriteOnce
+        resources:
+          requests:
+            storage: 1Gi
+      name: ""
+      replicas: 1
+      resources:
+        requests:
+          memory: "350Mi"
+          cpu: "50m"
+        limits:
+          memory: "700Mi"
+          cpu: "100m"
+  port: 5432
+  postgresVersion: 14
