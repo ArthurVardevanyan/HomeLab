@@ -1,0 +1,28 @@
+apiVersion: quay.redhat.com/v1
+kind: QuayRegistry
+metadata:
+  name: quay
+  namespace: quay
+  labels:
+    app.kubernetes.io/instance: quay
+spec:
+  components:
+    - kind: clair
+      managed: false
+    - kind: postgres
+      managed: false
+    - kind: objectstorage
+      managed: false
+    - kind: redis
+      managed: true
+    - kind: horizontalpodautoscaler
+      managed: false
+    - kind: route
+      managed: true
+    - kind: mirror
+      managed: false
+    - kind: monitoring
+      managed: false
+    - kind: tls
+      managed: true
+  configBundleSecret: quay-config-bundle

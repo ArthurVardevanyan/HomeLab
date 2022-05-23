@@ -91,7 +91,7 @@ bash kvm_k3s.bash get_dashboard_secret
 | server-2 | cp,etcd,master | kvm-1   | 3    | 12G | N/A     |
 | server-3 | cp,etcd,master | kvm-0   | 4    | 12G | N/A     |
 | worker-1 | worker         | kvm-0   | 5    | 16G | LH NVME |
-| worker-2 | worker         | kvm-2   | 5    | 7G  | LH SSD  |
+| worker-2 | worker         | kvm-2   | 4    | 7G  | LH SSD  |
 | worker-3 | worker         | kvm-0   | 5    | 16G | LH NVME |
 | worker-4 | worker         | kvm-1   | 3    | 16G | LH SSD  |
 
@@ -217,6 +217,8 @@ vault write auth/kubernetes/login role=argocd jwt=$(cat /var/run/secrets/kuberne
 
 ## Database
 
+### MariaDB
+
 ```sql
 CREATE USER 'arthur'@'10.0.0.X' IDENTIFIED BY 'arthur';
 GRANT ALL PRIVILEGES ON *.* TO `arthur`@`10.0.0.X`;
@@ -229,4 +231,30 @@ GRANT ALL PRIVILEGES ON spotifyTest.* TO `spotifyTest`@`10.42.0.%`;
 
 # View Only Access
 GRANT SELECT, LOCK TABLES, SHOW VIEW ON *.* TO 'backup'@'10.42.0.1' IDENTIFIED BY 'backup';
+```
+
+### Postgres
+
+```psql
+psql -h localhost -d quay -U quay
+\c quay
+CREATE EXTENSION pg_trgm;
+```
+
+## Quay
+
+```bash
+kubectl scale --replicas=0 deployment.apps/quay-operator-tng -n quay
+kubectl scale --replicas=0 deployment.apps/quay-quay-config-editor -n quay
+```
+
+```yaml
+# deployment/quay-quay-app
+resources:
+  limits:
+    cpu: 750m
+    memory: 6Gi
+  requests:
+    cpu: 250m
+    memory: 3Gi
 ```

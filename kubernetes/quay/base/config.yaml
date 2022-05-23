@@ -1,0 +1,42 @@
+apiVersion: v1
+kind: Secret
+metadata:
+  name: quay-config-bundle
+  namespace: quay
+  labels:
+    app.kubernetes.io/instance: quay
+stringData:
+  config.yaml: |
+    ALLOW_PULLS_WITHOUT_STRICT_LOGGING: false
+    AUTHENTICATION_TYPE: Database
+    DEFAULT_TAG_EXPIRATION: 2w
+    ENTERPRISE_LOGO_URL: /static/img/quay-horizontal-color.svg
+    FEATURE_BUILD_SUPPORT: false
+    FEATURE_DIRECT_LOGIN: true
+    FEATURE_MAILING: false
+    REGISTRY_TITLE: Quay
+    REGISTRY_TITLE_SHORT: Quay
+    SETUP_COMPLETE: true
+    SUPER_USERS:
+      - arthur
+    TAG_EXPIRATION_OPTIONS:
+    - 2w
+    TEAM_RESYNC_STALE_TIME: 60m
+    TESTING: false
+    SERVER_HOSTNAME: registry.<path:secret/data/homelab/domain#url>
+    DB_URI: <path:secret/data/homelab/postgres#uri>
+    DB_CONNECTION_ARGS:
+      sslmode: prefer
+    DISTRIBUTED_STORAGE_DEFAULT_LOCATIONS: []
+    DISTRIBUTED_STORAGE_PREFERENCE:
+      - default
+    DISTRIBUTED_STORAGE_CONFIG:
+      default:
+      - RadosGWStorage
+      - access_key: <path:secret/data/homelab/minio#access_key>
+        secret_key: <path:secret/data/homelab/minio#secret_key>
+        hostname: minio.apps.okd.<path:secret/data/homelab/domain#url>
+        bucket_name: quay
+        port: 80
+        is_secure: false
+        storage_path: /datastorage/registry

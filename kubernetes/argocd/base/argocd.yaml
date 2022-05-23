@@ -7,7 +7,7 @@ metadata:
     app.kubernetes.io/instance: argocd
 spec:
   server:
-    host: argocd.apps.okd.<path:secret/data/gitlab/domain#url>
+    host: argocd.apps.okd.<path:secret/data/homelab/domain#url>
     autoscale:
       enabled: false
     grpc:
@@ -45,11 +45,11 @@ spec:
   initialSSHKnownHosts: {}
   rbac:
     policy: "g, system:cluster-admins, role:admin"
-  image: registry.arthurvardevanyan.com/arthurvardevanyan/homelab
-  version: argocd-v2.3.4
+  image: registry.<path:secret/data/homelab/domain#url>/homelab/argocd
+  version: v2.3.4
   repo:
-    image: registry.arthurvardevanyan.com/arthurvardevanyan/homelab
-    version: argocd-v2.3.4
+    image: registry.<path:secret/data/homelab/domain#url>/homelab/argocd
+    version: v2.3.4
     mountsatoken: true
     serviceaccount: default
     resources:
