@@ -258,3 +258,23 @@ resources:
     cpu: 250m
     memory: 3Gi
 ```
+
+## Tekton
+
+```bah
+kubectl delete replicaSet -n tekton-pipelines --all
+
+tkn -n homelab pipeline start image-build \
+  --param="url=https://git.arthurvardevanyan.com/ArthurVardevanyan/HomeLab" \
+  --param="IMAGE=registry.arthurvardevanyan.com/homelab/toolbox:latest" \
+  --param="DOCKERFILE=./containerfile" \
+  --workspace=name=data,volumeClaimTemplateFile=tekton/base/pvc.yaml \
+  --showlog
+
+tkn -n homelab pipeline start image-build \
+  --param="url=https://git.arthurvardevanyan.com/ArthurVardevanyan/HomeLab" \
+  --param="IMAGE=registry.arthurvardevanyan.com/homelab/argocd:v2.3.4" \
+  --param="DOCKERFILE=./kubernetes/argocd/dockerfile" \
+  --workspace=name=data,volumeClaimTemplateFile=tekton/base/pvc.yaml \
+  --showlog
+```

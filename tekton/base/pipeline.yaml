@@ -1,15 +1,45 @@
 apiVersion: tekton.dev/v1beta1
 kind: Pipeline
 metadata:
-  name: toolbox
+  name: image-build
   namespace: homelab
 spec:
+  params:
+    - name: url
+      description: Repository URL to clone from.
+      type: string
+    - name: IMAGE
+      description: Reference of the image buildah will produce.
+    - name: DOCKERFILE
+      description: Path to the Dockerfile to build.
+      default: ./Dockerfile
+
+  workspaces:
+    - name: data
+
   tasks:
-    - name: toolbox
+    - name: git-clone
       taskRef:
-        name: toolbox
-    - name: toolbox-1
+        name: git-clone
+        kind: ClusterTask
+      params:
+        - name: url
+          value: $(params.url)
+      workspaces:
+        - name: output
+          workspace: data
+
+    - name: buildah
       runAfter:
-        - toolbox
+        - git-clone
       taskRef:
-        name: toolbox
+        name: buildah
+        kind: ClusterTask
+      params:
+        - name: IMAGE
+          value: $(params.IMAGE)
+        - name: DOCKERFILE
+          value: $(params.DOCKERFILE)
+      workspaces:
+        - name: source
+          workspace: data
