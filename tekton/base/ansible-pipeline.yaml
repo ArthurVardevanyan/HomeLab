@@ -1,0 +1,39 @@
+apiVersion: tekton.dev/v1beta1
+kind: Pipeline
+metadata:
+  name: ansible
+  namespace: homelab
+spec:
+  params:
+    - name: playbook
+      type: string
+    - name: url
+      description: Repository URL to clone from.
+
+  workspaces:
+    - name: data
+
+  tasks:
+    - name: git-clone
+      taskRef:
+        name: git-clone
+        kind: ClusterTask
+      params:
+        - name: url
+          value: $(params.url)
+      workspaces:
+        - name: output
+          workspace: data
+
+    - name: ansible
+      runAfter:
+        - git-clone
+      taskRef:
+        name: ansible
+        kind: task
+      params:
+        - name: playbook
+          value: $(params.playbook)
+      workspaces:
+        - name: data
+          workspace: data

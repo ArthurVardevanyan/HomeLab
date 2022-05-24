@@ -1,0 +1,44 @@
+apiVersion: tekton.dev/v1beta1
+kind: Task
+metadata:
+  name: ansible
+  namespace: homelab
+spec:
+  params:
+    - name: playbook
+      type: string
+    - name: image
+      type: string
+      default: "registry.arthurvardevanyan.com/homelab/toolbox"
+
+  workspaces:
+    - name: data
+
+  steps:
+    - name: ansible
+      image: "$(params.image)"
+      env:
+        - name: PLAYBOOK
+          value: "$(params.playbook)"
+        - name: WORKSPACE_DATA_PATH
+          value: $(workspaces.data.path)
+      script: |
+        #!/bin/bash
+
+        export URL=arthurvardevanyan.com
+
+        export CI_JOB_JWT="$(cat /var/run/secrets/kubernetes.io/serviceaccount/token)"
+        export VAULT_ADDR=https://vault.${URL}
+        export VAULT_TOKEN="$(vault write -field=token auth/homelab/login role=homelab jwt=${CI_JOB_JWT})"
+        export SSH_KNOWN_HOSTS="$(vault kv get -field=known_hosts secret/gitlab/ssh)"
+        export SSH_PRIVATE_KEY="$(vault kv get -field=private_key secret/gitlab/ssh)"
+        export SUDO="$(vault kv get -field=sudo secret/gitlab/ssh)"
+
+        mkdir -p ~/.ssh
+        chmod 700 ~/.ssh
+        echo "$SSH_KNOWN_HOSTS" >> ~/.ssh/known_hosts
+        chmod 644 ~/.ssh/known_hosts
+
+        ansible-playbook -i ${WORKSPACE_DATA_PATH}/ansible/inventory ${WORKSPACE_DATA_PATH}/ansible/${PLAYBOOK}.yaml \
+          --extra-vars "ansible_become_pass=${SUDO} ansible_ssh_pass=${SUDO} \
+          ansible_python_interpreter=/usr/bin/python3" -e 'ansible_python_interpreter=/usr/bin/python3'
