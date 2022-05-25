@@ -16,7 +16,7 @@ data:
     URL=mariadb.mariadb
     LOCATION=/mnt/mysqldump
 
-    echo "Dumping MariaDB mariadb Configs"
+    echo "Dumping MariaDB"
     mysqldump -h ${URL} --port=3306 -ubackup -pbackup  mysql           > ${LOCATION}/mysql/mysql.sql
     echo "Dumping Grafana"
     mysqldump -h ${URL} --port=3306 -ubackup -pbackup  grafana         > ${LOCATION}/grafana/grafana.sql
@@ -28,8 +28,10 @@ data:
     mysqldump -h ${URL} --port=3306 -ubackup -pbackup  spotify         > ${LOCATION}/spotify/spotify.sql
     echo "Dumping Finance Tracker"
     mysqldump -h ${URL} --port=3306 -ubackup -pbackup  FinanceTracker  > ${LOCATION}/FinanceTracker/FinanceTracker.sql
-    echo "Dumping Fitness Data"
+    echo "Dumping Fitness"
     mysqldump -h ${URL} --port=3306 -ubackup -pbackup  fitness         > ${LOCATION}/fitness/fitness.sql
+    echo "Dumping Home Assistant"
+    mysqldump -h ${URL} --port=3306 -ubackup -pbackup  homeAssistant   > ${LOCATION}/homeAssistant/homeAssistant.sql
 
   mysqldump: |-
     /mnt/mysqldump/*/*.sql {
