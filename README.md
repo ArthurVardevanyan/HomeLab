@@ -13,7 +13,8 @@ HomeLab Server/Cluster, Virtual Sandbox Cluster, & Desktop Configuration
 ## Desktop
 
 ```bash
-ansible-playbook -i ansible/inventory --ask-become-pass ansible/desktop.yaml --ask-pass
+ansible-playbook -i ansible/inventory --ask-become-pass ansible/desktop.yaml --ask-pass \
+  -e 'ansible_python_interpreter=/usr/bin/python3'
 
 git merge --no-ff
 scp -r /home/arthur/vm windowsBackup@10.0.0.110:/backup/WindowsBackup/vm

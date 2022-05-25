@@ -16,7 +16,8 @@ export LIBVIRT_DEFAULT_URI=qemu:///system
 # HomeLab Functions
 
 ansible() {
-	ansible-playbook -i ansible/inventory --ask-become-pass ansible/servers.yaml --ask-pass
+	ansible-playbook -i ansible/inventory --ask-become-pass ansible/servers.yaml --ask-pass \
+		-e 'ansible_python_interpreter=/usr/bin/python3'
 }
 
 stateful_workload_stop() {
@@ -42,11 +43,11 @@ stateful_workload_stop() {
 	kubectl patch -n uptime-kuma statefulset/uptime-kuma --type='json' -p='[{"op": "replace", "path": "/spec/replicas", "value": 0}]'
 	kubectl patch -n vault statefulset/vault --type='json' -p='[{"op": "replace", "path": "/spec/replicas", "value": 0}]'
 
-	kubectl scale --replicas=0 -n gitlab-system deployment/gitlab-controller-manager
-	kubectl scale --replicas=0 -n gitlab-system statefulset/gitlab-redis-master
-	kubectl scale --replicas=0 -n gitlab-system statefulset/gitlab-postgresql
-	kubectl scale --replicas=0 -n gitlab-system statefulset/gitlab-gitaly
-	kubectl scale --replicas=0 -n gitlab-system statefulset/gitlab-minio
+	kubectl scale --replicas=0 -n minio deployment/minio
+	kubectl scale --replicas=0 -n gitea statefulset/gitea
+	kubectl scale --replicas=0 -n postgres deployment/pgo
+	kubectl scale --replicas=0 -n postgres statefulset/quay-00-87fl
+	kubectl scale --replicas=0 -n postgres statefulset/quay-repo-host
 }
 
 stateful_workload_start() {
@@ -72,11 +73,11 @@ stateful_workload_start() {
 	kubectl patch -n uptime-kuma statefulset/uptime-kuma --type='json' -p='[{"op": "replace", "path": "/spec/replicas", "value": 1}]'
 	kubectl patch -n vault statefulset/vault --type='json' -p='[{"op": "replace", "path": "/spec/replicas", "value": 1}]'
 
-	kubectl scale --replicas=1 -n gitlab-system deployment/gitlab-controller-manager
-	kubectl scale --replicas=1 -n gitlab-system statefulset/gitlab-redis-master
-	kubectl scale --replicas=1 -n gitlab-system statefulset/gitlab-postgresql
-	kubectl scale --replicas=1 -n gitlab-system statefulset/gitlab-gitaly
-	kubectl scale --replicas=1 -n gitlab-system statefulset/gitlab-minio
+	kubectl scale --replicas=1 -n minio deployment/minio
+	kubectl scale --replicas=1 -n gitea statefulset/gitea
+	kubectl scale --replicas=1 -n postgres deployment/pgo
+	kubectl scale --replicas=1 -n postgres statefulset/quay-00-87fl
+	kubectl scale --replicas=1 -n postgres statefulset/quay-repo-host
 
 	echo -e "\nkubectl exec -it vault-0 -n vault -- vault operator unseal --tls-skip-verify"
 }
@@ -412,76 +413,6 @@ install_k3s() {
 	echo -e "\n\n${BLUE}Install Complete!${NC}"
 	echo "export KUBECONFIG=${HOME}/vm/${PREFIX}/${PREFIX}.yaml"
 	echo "${PREFIX} k3s Install Complete!"
-
-}
-
-install_k8s() {
-	# Install & Setup k3s
-	echo -e "\n\n${BLUE}Install & Setup k8s:${NC}"
-
-	if [ -z "${PASSWORD}" ]; then
-		echo -n Password:
-		read -r -s PASSWORD
-		echo ""
-	fi
-
-	ansible-playbook -i /tmp/inventory ansible/playbooks/servers/k8s/k8sPackages.yaml --extra-vars \
-		"ansible_become_pass=${PASSWORD} ansible_ssh_pass=${PASSWORD}"
-	reboot_cluster
-
-	IP=${START_IP}
-
-	HAPROXY="echo ${PASSWORD} | sudo -S sed -i 's,10.0.0.100,10.10.10.1,g' '/mnt/kubeadm.yaml'"
-	sshpass -p "${PASSWORD}" ssh -t 10.10.10.${IP} "${HAPROXY}"
-
-	CERT_KEY=""
-	INSTALL="echo ${PASSWORD} | sudo -S kubeadm init --config /mnt/kubeadm.yaml"
-	SERVER=""
-	WORKER=""
-
-	for NODE in ${NODES}; do
-		KUBE=0
-		if [[ "${NODE}" =~ "master" || "${NODE}" =~ "server" ]]; then
-			if [ ${IP} -eq ${START_IP} ]; then
-				CONFIG=${INSTALL}
-				KUBE=1
-			else
-				CONFIG=${SERVER}
-			fi
-		elif [[ "${NODE}" =~ "worker" || "${NODE}" =~ "agent" ]]; then
-			CONFIG=${WORKER}
-		fi
-
-		echo "${PREFIX}${NODE}"
-		sshpass -p "${PASSWORD}" ssh -t 10.10.10.${IP} "${CONFIG}"
-
-		if [ ${KUBE} -eq 1 ]; then
-			CMD="echo ${PASSWORD} | sudo -S cp /etc/kubernetes/admin.conf /tmp; sudo chmod 777 /tmp/admin.conf"
-			sshpass -p "${PASSWORD}" ssh -t 10.10.10.${START_IP} "${CMD}"
-			sshpass -p "${PASSWORD}" scp 10.10.10.${START_IP}:/tmp/admin.conf "${HOME}/vm/${PREFIX}/${PREFIX}.yaml"
-
-			load_kubeconfig
-			rm -rf /tmp/kubernetes
-			cp -r kubernetes /tmp/
-			kubectl apply -f /tmp/kubernetes/kube-flannel
-
-			CERT_COMMAND="echo ${PASSWORD} | sudo -S kubeadm init phase upload-certs --upload-certs | tail -n1"
-			CERT_KEY=$(sshpass -p "${PASSWORD}" ssh -t 10.10.10.${START_IP} "${CERT_COMMAND}" | cut -d: -f2- | tr -d '\r')
-
-			TOKEN="echo ${PASSWORD} | sudo -S kubeadm token create --print-join-command"
-			JOIN_COMMAND=$(sshpass -p "${PASSWORD}" ssh -t 10.10.10.${START_IP} "${TOKEN}" | cut -d: -f2- | tr -d '\r')
-			WORKER="echo ${PASSWORD} | sudo -S ${JOIN_COMMAND}"
-
-			SERVER="${WORKER} --certificate-key ${CERT_KEY} --control-plane"
-
-			sleep 10s
-		fi
-		((IP++))
-	done
-
-	echo -e "\n\n${BLUE}Install Complete!${NC}"
-	echo "export KUBECONFIG=${HOME}/vm/${PREFIX}/${PREFIX}.yaml"
-	echo "${PREFIX} k8s Install Complete!"
 
 }
 
