@@ -284,12 +284,6 @@ tkn -n homelab pipeline start image-build \
 tkn -n homelab pipeline start ansible \
   --workspace=name=data,volumeClaimTemplateFile=tekton/base/pvc.yaml \
   --param="url=https://git.arthurvardevanyan.com/ArthurVardevanyan/HomeLab" \
-  --param="playbook=servers" \
-  --showlog
-
-tkn -n homelab pipeline start ansible \
-  --workspace=name=data,volumeClaimTemplateFile=tekton/base/pvc.yaml \
-  --param="url=https://git.arthurvardevanyan.com/ArthurVardevanyan/HomeLab" \
-  --param="playbook=desktop" \
+  --param="playbooks=servers,desktop" \
   --showlog
 ```

@@ -1,0 +1,26 @@
+apiVersion: triggers.tekton.dev/v1alpha1
+kind: EventListener
+metadata:
+  name: webhook
+  namespace: homelab
+spec:
+  triggers:
+    - name: webhook
+      bindings:
+        - ref: gitea-push
+      template:
+        ref: trigger-template
+  resources:
+    kubernetesResource:
+      spec:
+        template:
+          spec:
+            serviceAccountName: default
+            containers:
+              - resources:
+                  requests:
+                    cpu: 25m
+                    memory: 25Mi
+                  limits:
+                    cpu: 50m
+                    memory: 50Mi

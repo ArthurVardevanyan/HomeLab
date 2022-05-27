@@ -1,0 +1,33 @@
+apiVersion: triggers.tekton.dev/v1alpha1
+kind: TriggerTemplate
+metadata:
+  name: trigger-template
+  namespace: homelab
+spec:
+  params:
+    - name: url
+  resourcetemplates:
+    - apiVersion: tekton.dev/v1beta1
+      kind: PipelineRun
+      metadata:
+        generateName: "homelab-ansible-"
+      spec:
+        timeout: 15m0s
+        pipelineRef:
+          name: ansible
+        workspaces:
+          - name: data
+            volumeClaimTemplate:
+              spec:
+                accessModes:
+                  - ReadWriteOnce
+                resources:
+                  requests:
+                    storage: 100Mi
+                storageClassName: longhorn-single
+                volumeMode: Filesystem
+        params:
+          - name: url
+            value: $(tt.params.url)
+          - name: playbooks
+            value: servers

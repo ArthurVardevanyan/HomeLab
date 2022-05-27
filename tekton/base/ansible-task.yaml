@@ -5,7 +5,7 @@ metadata:
   namespace: homelab
 spec:
   params:
-    - name: playbook
+    - name: playbooks
       type: string
     - name: image
       type: string
@@ -18,8 +18,8 @@ spec:
     - name: ansible
       image: "$(params.image)"
       env:
-        - name: PLAYBOOK
-          value: "$(params.playbook)"
+        - name: PLAYBOOKS
+          value: "$(params.playbooks)"
         - name: WORKSPACE_DATA_PATH
           value: $(workspaces.data.path)
       script: |
@@ -39,6 +39,9 @@ spec:
         echo "$SSH_KNOWN_HOSTS" >> ~/.ssh/known_hosts
         chmod 644 ~/.ssh/known_hosts
 
+        for PLAYBOOK in ${PLAYBOOKS//,/ }
+        do
         ansible-playbook -i ${WORKSPACE_DATA_PATH}/ansible/inventory ${WORKSPACE_DATA_PATH}/ansible/${PLAYBOOK}.yaml \
           --extra-vars "ansible_become_pass=${SUDO} ansible_ssh_pass=${SUDO} \
           ansible_python_interpreter=/usr/bin/python3" -e 'ansible_python_interpreter=/usr/bin/python3'
+        done
