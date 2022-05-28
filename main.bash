@@ -44,10 +44,19 @@ stateful_workload_stop() {
 	kubectl patch -n vault statefulset/vault --type='json' -p='[{"op": "replace", "path": "/spec/replicas", "value": 0}]'
 
 	kubectl scale --replicas=0 -n minio deployment/minio
+	kubectl scale --replicas=0 -n quay deployment/quay-quay-app
 	kubectl scale --replicas=0 -n gitea statefulset/gitea
 	kubectl scale --replicas=0 -n postgres deployment/pgo
 	kubectl scale --replicas=0 -n postgres statefulset/quay-00-87fl
 	kubectl scale --replicas=0 -n postgres statefulset/quay-repo-host
+
+	kubectl scale --replicas=0 -n argocd deployment/argocd-dex-server
+	kubectl scale --replicas=0 -n argocd deployment/argocd-operator-controller-manager
+	kubectl scale --replicas=0 -n argocd deployment/argocd-redis
+	kubectl scale --replicas=0 -n argocd deployment/argocd-repo-server
+	kubectl scale --replicas=0 -n argocd deployment/argocd-server
+	kubectl scale --replicas=0 -n argocd statefulset/argocd-application-controller
+
 }
 
 stateful_workload_start() {
@@ -74,10 +83,18 @@ stateful_workload_start() {
 	kubectl patch -n vault statefulset/vault --type='json' -p='[{"op": "replace", "path": "/spec/replicas", "value": 1}]'
 
 	kubectl scale --replicas=1 -n minio deployment/minio
+	kubectl scale --replicas=1 -n quay deployment/quay-quay-app
 	kubectl scale --replicas=1 -n gitea statefulset/gitea
 	kubectl scale --replicas=1 -n postgres deployment/pgo
 	kubectl scale --replicas=1 -n postgres statefulset/quay-00-87fl
 	kubectl scale --replicas=1 -n postgres statefulset/quay-repo-host
+
+	kubectl scale --replicas=1 -n argocd deployment/argocd-dex-server
+	kubectl scale --replicas=1 -n argocd deployment/argocd-operator-controller-manager
+	kubectl scale --replicas=1 -n argocd deployment/argocd-redis
+	kubectl scale --replicas=1 -n argocd deployment/argocd-repo-server
+	kubectl scale --replicas=1 -n argocd deployment/argocd-server
+	kubectl scale --replicas=1 -n argocd statefulset/argocd-application-controller
 
 	echo -e "\nkubectl exec -it vault-0 -n vault -- vault operator unseal --tls-skip-verify"
 }
