@@ -1,9 +1,13 @@
 apiVersion: triggers.tekton.dev/v1alpha1
 kind: TriggerBinding
 metadata:
-  name: gitea-push
+  name: git-push
   namespace: homelab
 spec:
   params:
-    - name: url
+    - name: git-url
       value: $(body.repository.original_url)
+    - name: git-name
+      value: $(body.repository.full_name)
+    - name: git-commit
+      value: $(body.head_commit.id)

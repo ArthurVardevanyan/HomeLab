@@ -7,7 +7,11 @@ spec:
   params:
     - name: playbooks
       type: string
-    - name: url
+    - name: git-name
+      type: string
+    - name: git-commit
+      type: string
+    - name: git-url
       description: Repository URL to clone from.
 
   workspaces:
@@ -20,7 +24,7 @@ spec:
         kind: ClusterTask
       params:
         - name: url
-          value: $(params.url)
+          value: $(params.git-url)
       workspaces:
         - name: output
           workspace: data
@@ -37,3 +41,46 @@ spec:
       workspaces:
         - name: data
           workspace: data
+
+  finally:
+    - name: git-success
+      retries: 0
+      when:
+        - input: "$(tasks.status)"
+          operator: in
+          values: ["Succeeded", "Completed"]
+      taskRef:
+        kind: ClusterTask
+        name: github-set-status
+      params:
+        - name: REPO_FULL_NAME
+          value: $(params.git-name)
+        - name: SHA
+          value: $(params.git-commit)
+        - name: DESCRIPTION
+          value: "Completed Successfully"
+        - name: CONTEXT
+          value: "Tekton CI/CD"
+        - name: STATE
+          value: "success"
+
+    - name: git-failure
+      retries: 0
+      when:
+        - input: "$(tasks.status)"
+          operator: in
+          values: ["Failed"]
+      taskRef:
+        kind: ClusterTask
+        name: github-set-status
+      params:
+        - name: REPO_FULL_NAME
+          value: $(params.git-name)
+        - name: SHA
+          value: $(params.git-commit)
+        - name: DESCRIPTION
+          value: "Pipeline Failed"
+        - name: CONTEXT
+          value: "Tekton CI/CD"
+        - name: STATE
+          value: "error"

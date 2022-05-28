@@ -5,7 +5,9 @@ metadata:
   namespace: homelab
 spec:
   params:
-    - name: url
+    - name: git-url
+    - name: git-name
+    - name: git-commit
   resourcetemplates:
     - apiVersion: tekton.dev/v1beta1
       kind: PipelineRun
@@ -27,7 +29,11 @@ spec:
                 storageClassName: longhorn-single
                 volumeMode: Filesystem
         params:
-          - name: url
-            value: $(tt.params.url)
+          - name: git-url
+            value: $(tt.params.git-url)
+          - name: git-name
+            value: $(tt.params.git-name)
+          - name: git-commit
+            value: $(tt.params.git-commit)
           - name: playbooks
             value: servers
