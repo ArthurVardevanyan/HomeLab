@@ -226,14 +226,14 @@ resources:
 kubectl delete replicaSet -n tekton-pipelines --all
 
 # Image Build
-tkn -n homelab pipeline start image-build \
+tkn -n homelab pipeline start image-build -s pipeline-sa \
   --param="url=https://git.arthurvardevanyan.com/ArthurVardevanyan/HomeLab" \
   --param="IMAGE=registry.arthurvardevanyan.com/homelab/toolbox:latest" \
   --param="DOCKERFILE=./containerfile" \
   --workspace=name=data,volumeClaimTemplateFile=tekton/base/pvc.yaml \
   --showlog
 
-tkn -n homelab pipeline start image-build \
+tkn -n homelab pipeline start image-build -s pipeline-sa \
   --param="url=https://git.arthurvardevanyan.com/ArthurVardevanyan/HomeLab" \
   --param="IMAGE=registry.arthurvardevanyan.com/homelab/argocd:v2.3.4" \
   --param="DOCKERFILE=./kubernetes/argocd/dockerfile" \
@@ -241,7 +241,7 @@ tkn -n homelab pipeline start image-build \
   --showlog
 
 # Ansible
-tkn -n homelab pipeline start ansible \
+tkn -n homelab pipeline start ansible -s pipeline-sa \
   --workspace=name=data,volumeClaimTemplateFile=tekton/base/pvc.yaml \
   --param="url=https://git.arthurvardevanyan.com/ArthurVardevanyan/HomeLab" \
   --param="playbooks=servers,desktop" \

@@ -18,6 +18,22 @@ spec:
     - name: data
 
   tasks:
+    - name: git-pending
+      taskRef:
+        kind: ClusterTask
+        name: github-set-status
+      params:
+        - name: REPO_FULL_NAME
+          value: $(params.git-name)
+        - name: SHA
+          value: $(params.git-commit)
+        - name: DESCRIPTION
+          value: "Pipeline Running"
+        - name: CONTEXT
+          value: "Tekton CI/CD"
+        - name: STATE
+          value: "pending"
+
     - name: git-clone
       taskRef:
         name: git-clone
@@ -31,6 +47,7 @@ spec:
 
     - name: ansible
       runAfter:
+        - git-pending
         - git-clone
       taskRef:
         name: ansible
