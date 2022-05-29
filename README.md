@@ -236,7 +236,7 @@ tkn -n homelab pipeline start image-build -s pipeline-sa \
 tkn -n homelab pipeline start image-build -s pipeline-sa \
   --param="url=https://git.arthurvardevanyan.com/ArthurVardevanyan/HomeLab" \
   --param="IMAGE=registry.arthurvardevanyan.com/homelab/argocd:v2.3.4" \
-  --param="DOCKERFILE=./kubernetes/argocd/dockerfile" \
+  --param="DOCKERFILE=./kubernetes/argocd/containerfile" \
   --workspace=name=data,volumeClaimTemplateFile=tekton/base/pvc.yaml \
   --showlog
 

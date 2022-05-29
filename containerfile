@@ -1,6 +1,6 @@
 FROM debian:stable-slim
 
-RUN apt-get update && apt-get install gnupg2 sshpass curl logrotate rsync -y
+RUN apt-get update && apt-get install gnupg2 sshpass curl logrotate rsync git -y
 
 RUN printf "deb http://ppa.launchpad.net/ansible/ansible/ubuntu focal main" > /etc/apt/sources.list.d/ansible.list
 RUN apt-key adv --keyserver keyserver.ubuntu.com --recv-keys 93C4A3FD7BB9C367
@@ -11,7 +11,9 @@ RUN echo "deb [arch=amd64] https://apt.releases.hashicorp.com bullseye main" | t
 RUN curl -fsSLo /usr/share/keyrings/kubernetes-archive-keyring.gpg https://packages.cloud.google.com/apt/doc/apt-key.gpg
 RUN echo "deb [signed-by=/usr/share/keyrings/kubernetes-archive-keyring.gpg] https://apt.kubernetes.io/ kubernetes-xenial main" | tee /etc/apt/sources.list.d/kubernetes.list
 
-RUN apt-get update && apt-get install mariadb-client kubectl ansible vault  -y
+RUN apt-get update && apt-get install mariadb-client kubectl ansible vault -y && \
+	apt-get clean && \
+	rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
 RUN curl -L -o argocd-vault-plugin https://github.com/IBM/argocd-vault-plugin/releases/download/v1.10.1/argocd-vault-plugin_1.10.1_linux_amd64
 RUN chmod +x argocd-vault-plugin
