@@ -2,6 +2,10 @@
 export ZSH="/home/arthur/.oh-my-zsh"
 export PATH="${KREW_ROOT:-$HOME/.krew}/bin:$PATH"
 
+export VAULT_ADDR="https://vault.arthurvardevanyan.com"
+export AVP_TYPE=vault
+export AVP_AUTH_TYPE=token
+
 ZSH_THEME="custom"
 
 # Uncomment the following line to use case-sensitive completion.

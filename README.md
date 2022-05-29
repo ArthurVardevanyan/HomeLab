@@ -243,7 +243,9 @@ tkn -n homelab pipeline start image-build -s pipeline-sa \
 # Ansible
 tkn -n homelab pipeline start ansible -s pipeline-sa \
   --workspace=name=data,volumeClaimTemplateFile=tekton/base/pvc.yaml \
-  --param="url=https://git.arthurvardevanyan.com/ArthurVardevanyan/HomeLab" \
-  --param="playbooks=servers,desktop" \
+  --param="git-url=https://git.arthurvardevanyan.com/ArthurVardevanyan/HomeLab" \
+  --param="playbooks=desktop" \
+  --param="git-name=ArthurVardevanyan/HomeLab" \
+  --param="git-commit=$(git log --format=oneline | cut -d ' ' -f 1 | head -n 1)" \
   --showlog
 ```
