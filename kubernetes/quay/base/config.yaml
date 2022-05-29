@@ -9,7 +9,6 @@ stringData:
   config.yaml: |
     ALLOW_PULLS_WITHOUT_STRICT_LOGGING: false
     AUTHENTICATION_TYPE: Database
-    DEFAULT_TAG_EXPIRATION: 2w
     ENTERPRISE_LOGO_URL: /static/img/quay-horizontal-color.svg
     FEATURE_BUILD_SUPPORT: false
     FEATURE_DIRECT_LOGIN: true
@@ -19,8 +18,6 @@ stringData:
     SETUP_COMPLETE: true
     SUPER_USERS:
       - arthur
-    TAG_EXPIRATION_OPTIONS:
-    - 2w
     TEAM_RESYNC_STALE_TIME: 60m
     TESTING: false
     SERVER_HOSTNAME: registry.<path:secret/data/homelab/domain#url>
@@ -40,3 +37,13 @@ stringData:
         port: 80
         is_secure: false
         storage_path: /datastorage/registry
+    DEFAULT_TAG_EXPIRATION: 30m
+    TAG_EXPIRATION_OPTIONS:
+        - 0s
+        - 30m
+        - 1h
+        - 12h
+        - 1d
+        - 1w
+        - 2w
+        - 4w
