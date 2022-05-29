@@ -9,7 +9,7 @@ spec:
       type: string
     - name: image
       type: string
-      default: "registry.arthurvardevanyan.com/homelab/toolbox"
+      default: "registry.<path:secret/data/homelab/domain#url>/homelab/toolbox"
 
   workspaces:
     - name: data
@@ -25,7 +25,7 @@ spec:
       script: |
         #!/bin/bash
 
-        export URL=arthurvardevanyan.com
+        export URL=<path:secret/data/homelab/domain#url>
 
         export CI_JOB_JWT="$(cat /var/run/secrets/kubernetes.io/serviceaccount/token)"
         export VAULT_ADDR=https://vault.${URL}
