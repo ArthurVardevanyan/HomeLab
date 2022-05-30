@@ -1,0 +1,52 @@
+apiVersion: tekton.dev/v1beta1
+kind: ClusterTask
+metadata:
+  name: deploy
+spec:
+  params:
+    - name: git-commit
+      type: string
+    - name: vault-path
+      type: string
+
+  workspaces:
+    - name: data
+
+  steps:
+    - name: deploy
+      image: "registry.<path:secret/data/homelab/domain#url>/homelab/toolbox:latest"
+      env:
+        - name: SHA
+          value: $(params.git-commit)
+        - name: VAULT_PATH
+          value: $(params.vault-path)
+        - name: WORKSPACE_DATA_PATH
+          value: $(workspaces.data.path)
+      resources:
+        requests:
+          memory: 150Mi
+          cpu: 100m
+        limits:
+          memory: 300Mi
+          cpu: 300m
+      script: |
+        #!/bin/bash
+
+        set -o errexit
+        set -o nounset
+        set -o pipefail
+
+        echo "Starting Deployment"
+
+        export TOKEN="$(cat /var/run/secrets/kubernetes.io/serviceaccount/token)"
+        export URL=<path:secret/data/homelab/domain#url>
+
+        export AVP_TYPE=vault
+        export AVP_AUTH_TYPE=token
+        export VAULT_ADDR=https://vault.${URL}
+        export VAULT_TOKEN="$(vault write -field=token auth/${VAULT_PATH}/login role=${VAULT_PATH} jwt=${TOKEN})"
+
+        sed -i "s/<VERSION>/${SHA}/g" ${WORKSPACE_DATA_PATH}/kubernetes/base/deployment.yaml
+
+        kubectl kustomize ${WORKSPACE_DATA_PATH}/kubernetes/overlays/okd | \
+          argocd-vault-plugin generate - | kubectl apply -f -

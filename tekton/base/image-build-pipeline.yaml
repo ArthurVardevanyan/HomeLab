@@ -5,8 +5,10 @@ metadata:
   namespace: homelab
 spec:
   params:
-    - name: url
+    - name: git-url
       description: Repository URL to clone from.
+      type: string
+    - name: git-commit
       type: string
     - name: IMAGE
       description: Reference of the image buildah will produce.
@@ -25,7 +27,9 @@ spec:
         kind: ClusterTask
       params:
         - name: url
-          value: $(params.url)
+          value: $(params.git-url)
+        - name: revision
+          value: $(params.git-commit)
       workspaces:
         - name: output
           workspace: data
