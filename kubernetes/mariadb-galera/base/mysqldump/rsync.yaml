@@ -1,12 +1,12 @@
 kind: CronJob
 apiVersion: batch/v1
 metadata:
-  name: mysqldump-cron
-  namespace: mariadb
+  name: mysqldump-rsync
+  namespace: mariadb-galera
   labels:
-    app.kubernetes.io/instance: mariadb
+    app.kubernetes.io/instance: mariadb-galera
 spec:
-  schedule: "0 3 * * *"
+  schedule: "30 7 * * *"
   concurrencyPolicy: Forbid
   suspend: false
   startingDeadlineSeconds: 60
@@ -16,50 +16,45 @@ spec:
       template:
         metadata:
           labels:
-            app: mysqldump-cron
+            app: mysqldump-rsync
           annotations:
             seccomp.security.alpha.kubernetes.io/defaultProfileName: runtime/default
         spec:
           serviceAccountName: mysqldump-sa
           volumes:
-            - name: mysqldump-config
-              configMap:
-                name: mysqldump-config
             - name: mysqldump-pvc
               persistentVolumeClaim:
                 claimName: mysqldump-pvc
-            - name: state
-              emptyDir:
-                sizeLimit: 1Mi
+            - name: mysqldump-backup-pvc
+              persistentVolumeClaim:
+                claimName: mysqldump-backup-pvc
           securityContext:
             fsGroup: 65534
             runAsGroup: 65534
             runAsNonRoot: true
             runAsUser: 65534
           containers:
-            - name: mysqldump-cron
+            - name: mysqldump-rsync
               image: registry.<path:secret/data/homelab/domain#url>/homelab/toolbox:latest
-              command: ["/bin/bash", "-c", "sh /mnt/mysqldump.sh"]
+              command:
+                [
+                  "/bin/bash",
+                  "-c",
+                  "rsync --stats --archive --verbose --human-readable --stats --delete /mnt/data/mysqldump /mnt/backup/",
+                ]
               resources:
                 limits:
-                  cpu: 150m
+                  cpu: 50m
                   memory: 50M
-                  ephemeral-storage: "1Mi"
                 requests:
                   cpu: 25m
                   memory: 25M
-                  ephemeral-storage: "1Mi"
               volumeMounts:
                 - name: mysqldump-pvc
-                  mountPath: /mnt/mysqldump
-                - name: mysqldump-config
-                  mountPath: /mnt/mysqldump.sh
-                  subPath: mysqldump.sh
-                - name: mysqldump-config
-                  mountPath: /tmp/mysqldump
-                  subPath: mysqldump
-                - name: state
-                  mountPath: /tmp/state
+                  mountPath: /mnt/data/mysqldump
+                  readOnly: true
+                - name: mysqldump-backup-pvc
+                  mountPath: /mnt/backup/mysqldump
               securityContext:
                 runAsGroup: 65534
                 runAsUser: 65534
@@ -78,7 +73,7 @@ spec:
           terminationGracePeriodSeconds: 30
           dnsPolicy: ClusterFirst
           automountServiceAccountToken: false
-          hostname: mysqldump-cron
+          hostname: mysqldump-rsync
           schedulerName: default-scheduler
   successfulJobsHistoryLimit: 1
   failedJobsHistoryLimit: 1

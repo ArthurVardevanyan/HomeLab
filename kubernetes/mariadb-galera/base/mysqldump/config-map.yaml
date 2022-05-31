@@ -2,7 +2,7 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: mysqldump-config
-  namespace: mariadb
+  namespace: mariadb-galera
   labels:
     name: mysqldump-config
     app.kubernetes.io/instance: mariadb
@@ -13,7 +13,7 @@ data:
     echo "Rotating SQL Files"
     logrotate -vf  /tmp/mysqldump -s /tmp/state/logrotate.status
 
-    URL=mariadb.mariadb
+    URL=mariadb-galera.mariadb-galera
     LOCATION=/mnt/mysqldump
 
     echo "Dumping MariaDB"
@@ -30,6 +30,8 @@ data:
     mysqldump -h ${URL} --port=3306 -ubackup -pbackup  FinanceTracker  > ${LOCATION}/FinanceTracker/FinanceTracker.sql
     echo "Dumping Fitness"
     mysqldump -h ${URL} --port=3306 -ubackup -pbackup  fitness         > ${LOCATION}/fitness/fitness.sql
+    echo "Dumping Home Photoprism"
+    mysqldump -h ${URL} --port=3306 -ubackup -pbackup  photoprism      > ${LOCATION}/photoprism/photoprism.sql
     echo "Dumping Home Assistant"
     mysqldump -h ${URL} --port=3306 -ubackup -pbackup  homeAssistant   > ${LOCATION}/homeAssistant/homeAssistant.sql
 

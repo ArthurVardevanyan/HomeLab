@@ -3,7 +3,7 @@ kind: ClusterRole
 metadata:
   name: mariadb-cr
   labels:
-    app.kubernetes.io/instance: mariadb
+    app.kubernetes.io/instance: mariadb-galera
 rules:
   - apiGroups:
       - security.openshift.io
@@ -20,7 +20,7 @@ kind: ClusterRoleBinding
 metadata:
   name: mariadb-crb
   labels:
-    app.kubernetes.io/instance: mariadb
+    app.kubernetes.io/instance: mariadb-galera
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
@@ -28,12 +28,12 @@ roleRef:
 subjects:
   - kind: ServiceAccount
     name: mysqldump-sa
-    namespace: mariadb
+    namespace: mariadb-galera
 ---
 apiVersion: v1
 kind: ServiceAccount
 metadata:
   name: mysqldump-sa
-  namespace: mariadb
+  namespace: mariadb-galera
   labels:
-    app.kubernetes.io/instance: mariadb
+    app.kubernetes.io/instance: mariadb-galera

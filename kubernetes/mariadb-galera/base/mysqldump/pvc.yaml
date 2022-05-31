@@ -1,10 +1,10 @@
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
-  namespace: mariadb
+  namespace: mariadb-galera
   name: mysqldump-pvc
   labels:
-    app.kubernetes.io/instance: mariadb
+    app.kubernetes.io/instance: mariadb-galera
 spec:
   storageClassName: nfs
   volumeName: mysqldump-pv
@@ -17,11 +17,11 @@ spec:
 apiVersion: v1
 kind: PersistentVolume
 metadata:
-  namespace: mariadb
+  namespace: mariadb-galera
   name: mysqldump-pv
   labels:
     type: local
-    app.kubernetes.io/instance: mariadb
+    app.kubernetes.io/instance: mariadb-galera
 spec:
   storageClassName: nfs
   volumeMode: Filesystem
@@ -37,12 +37,12 @@ spec:
     server: 10.0.0.110
   claimRef:
     name: mysqldump-pvc
-    namespace: mariadb
+    namespace: mariadb-galera
 ---
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
-  namespace: mariadb
+  namespace: mariadb-galera
   name: mysqldump-backup-pvc
 spec:
   storageClassName: nfs
@@ -56,7 +56,7 @@ spec:
 apiVersion: v1
 kind: PersistentVolume
 metadata:
-  namespace: mariadb
+  namespace: mariadb-galera
   name: mysqldump-backup-pv
   labels:
     type: local
@@ -75,4 +75,4 @@ spec:
     server: 10.0.0.3
   claimRef:
     name: mysqldump-backup-pvc
-    namespace: mariadb
+    namespace: mariadb-galera

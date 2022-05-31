@@ -1,17 +1,17 @@
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: mariadb
+  name: mariadb-galera
   namespace: argocd
   labels:
     app.kubernetes.io/instance: argocd
 spec:
   destination:
-    namespace: mariadb
+    namespace: mariadb-galera
     server: https://kubernetes.default.svc
   project: default
   source:
-    path: kubernetes/mariadb/overlays/okd
+    path: kubernetes/mariadb-galera/overlays/okd
     repoURL: https://git.<path:secret/data/homelab/domain#url>/ArthurVardevanyan/HomeLab
     targetRevision: HEAD
     plugin:
