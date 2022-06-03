@@ -827,83 +827,83 @@ subjects:
     name: tekton-operator
     namespace: tekton-pipelines
 ---
-apiVersion: v1
-data:
-  _example: |
-    ################################
-    #                              #
-    #    EXAMPLE CONFIGURATION     #
-    #                              #
-    ################################
+# apiVersion: v1
+# data:
+#   _example: |
+#     ################################
+#     #                              #
+#     #    EXAMPLE CONFIGURATION     #
+#     #                              #
+#     ################################
 
-    # This block is not actually functional configuration,
-    # but serves to illustrate the available configuration
-    # options and document them in a way that is accessible
-    # to users that `kubectl edit` this config map.
-    #
-    # These sample configuration options may be copied out of
-    # this example block and unindented to be in the data block
-    # to actually change the configuration.
+#     # This block is not actually functional configuration,
+#     # but serves to illustrate the available configuration
+#     # options and document them in a way that is accessible
+#     # to users that `kubectl edit` this config map.
+#     #
+#     # These sample configuration options may be copied out of
+#     # this example block and unindented to be in the data block
+#     # to actually change the configuration.
 
-    # Common configuration for all Knative codebase
-    zap-logger-config: |
-      {
-        "level": "info",
-        "development": false,
-        "outputPaths": ["stdout"],
-        "errorOutputPaths": ["stderr"],
-        "encoding": "json",
-        "encoderConfig": {
-          "timeKey": "ts",
-          "levelKey": "level",
-          "nameKey": "logger",
-          "callerKey": "caller",
-          "messageKey": "msg",
-          "stacktraceKey": "stacktrace",
-          "lineEnding": "",
-          "levelEncoder": "",
-          "timeEncoder": "iso8601",
-          "durationEncoder": "",
-          "callerEncoder": ""
-        }
-      }
-  loglevel.controller: info
-  loglevel.webhook: info
-  zap-logger-config: |
-    {
-      "level": "info",
-      "development": false,
-      "sampling": {
-        "initial": 100,
-        "thereafter": 100
-      },
-      "outputPaths": ["stdout"],
-      "errorOutputPaths": ["stderr"],
-      "encoding": "json",
-      "encoderConfig": {
-        "timeKey": "ts",
-        "levelKey": "level",
-        "nameKey": "logger",
-        "callerKey": "caller",
-        "messageKey": "msg",
-        "stacktraceKey": "stacktrace",
-        "lineEnding": "",
-        "levelEncoder": "",
-        "timeEncoder": "iso8601",
-        "durationEncoder": "",
-        "callerEncoder": ""
-      }
-    }
-kind: ConfigMap
-metadata:
-  labels:
-    app.kubernetes.io/instance: default
-    app.kubernetes.io/part-of: tekton-pipelines
-    operator.tekton.dev/operand-name: tektoncd-pipelines
-    operator.tekton.dev/release: devel
-  name: config-logging
-  namespace: tekton-pipelines
----
+#     # Common configuration for all Knative codebase
+#     zap-logger-config: |
+#       {
+#         "level": "info",
+#         "development": false,
+#         "outputPaths": ["stdout"],
+#         "errorOutputPaths": ["stderr"],
+#         "encoding": "json",
+#         "encoderConfig": {
+#           "timeKey": "ts",
+#           "levelKey": "level",
+#           "nameKey": "logger",
+#           "callerKey": "caller",
+#           "messageKey": "msg",
+#           "stacktraceKey": "stacktrace",
+#           "lineEnding": "",
+#           "levelEncoder": "",
+#           "timeEncoder": "iso8601",
+#           "durationEncoder": "",
+#           "callerEncoder": ""
+#         }
+#       }
+#   loglevel.controller: info
+#   loglevel.webhook: info
+#   zap-logger-config: |
+#     {
+#       "level": "info",
+#       "development": false,
+#       "sampling": {
+#         "initial": 100,
+#         "thereafter": 100
+#       },
+#       "outputPaths": ["stdout"],
+#       "errorOutputPaths": ["stderr"],
+#       "encoding": "json",
+#       "encoderConfig": {
+#         "timeKey": "ts",
+#         "levelKey": "level",
+#         "nameKey": "logger",
+#         "callerKey": "caller",
+#         "messageKey": "msg",
+#         "stacktraceKey": "stacktrace",
+#         "lineEnding": "",
+#         "levelEncoder": "",
+#         "timeEncoder": "iso8601",
+#         "durationEncoder": "",
+#         "callerEncoder": ""
+#       }
+#     }
+# kind: ConfigMap
+# metadata:
+#   labels:
+#     app.kubernetes.io/instance: default
+#     app.kubernetes.io/part-of: tekton-pipelines
+#     operator.tekton.dev/operand-name: tektoncd-pipelines
+#     operator.tekton.dev/release: devel
+#   name: config-logging
+#   namespace: tekton-pipelines
+# ---
 apiVersion: v1
 data:
   AUTOINSTALL_COMPONENTS: "true"
