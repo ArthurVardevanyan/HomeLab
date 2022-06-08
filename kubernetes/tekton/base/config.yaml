@@ -6,8 +6,20 @@ metadata:
     app.kubernetes.io/instance: tekton
 spec:
   targetNamespace: tekton-pipelines
+  addon:
+    enablePipelinesAsCode: false
+    params:
+      - name: communityClusterTasks
+        value: "false"
+      - name: clusterTasks
+        value: "false"
+      - name: pipelineTemplates
+        value: "false"
   profile: all
   pipeline:
+    params:
+      - name: enableMetrics
+        value: "true"
     disable-affinity-assistant: true
     disable-creds-init: false
     enable-api-fields: stable

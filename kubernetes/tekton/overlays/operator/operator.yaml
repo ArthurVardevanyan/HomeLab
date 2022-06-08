@@ -4,6 +4,44 @@ metadata:
   labels:
     operator.tekton.dev/release: v0.59.0
     version: v0.59.0
+  name: tektonaddons.operator.tekton.dev
+spec:
+  group: operator.tekton.dev
+  names:
+    kind: TektonAddon
+    listKind: TektonAddonList
+    plural: tektonaddons
+    singular: tektonaddon
+  preserveUnknownFields: false
+  scope: Cluster
+  versions:
+    - additionalPrinterColumns:
+        - jsonPath: .status.version
+          name: Version
+          type: string
+        - jsonPath: .status.conditions[?(@.type=="Ready")].status
+          name: Ready
+          type: string
+        - jsonPath: .status.conditions[?(@.type=="Ready")].reason
+          name: Reason
+          type: string
+      name: v1alpha1
+      schema:
+        openAPIV3Schema:
+          description: Schema for the tektonaddons API
+          type: object
+          x-kubernetes-preserve-unknown-fields: true
+      served: true
+      storage: true
+      subresources:
+        status: {}
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  labels:
+    operator.tekton.dev/release: v0.59.0
+    version: v0.59.0
   name: tektonchains.operator.tekton.dev
 spec:
   group: operator.tekton.dev
@@ -67,44 +105,6 @@ spec:
       schema:
         openAPIV3Schema:
           description: Schema for the tektonconfigs API
-          type: object
-          x-kubernetes-preserve-unknown-fields: true
-      served: true
-      storage: true
-      subresources:
-        status: {}
----
-apiVersion: apiextensions.k8s.io/v1
-kind: CustomResourceDefinition
-metadata:
-  labels:
-    operator.tekton.dev/release: v0.59.0
-    version: v0.59.0
-  name: tektondashboards.operator.tekton.dev
-spec:
-  group: operator.tekton.dev
-  names:
-    kind: TektonDashboard
-    listKind: TektonDashboardList
-    plural: tektondashboards
-    singular: tektondashboard
-  preserveUnknownFields: false
-  scope: Cluster
-  versions:
-    - additionalPrinterColumns:
-        - jsonPath: .status.version
-          name: Version
-          type: string
-        - jsonPath: .status.conditions[?(@.type=="Ready")].status
-          name: Ready
-          type: string
-        - jsonPath: .status.conditions[?(@.type=="Ready")].reason
-          name: Reason
-          type: string
-      name: v1alpha1
-      schema:
-        openAPIV3Schema:
-          description: Schema for the tektondashboards API
           type: object
           x-kubernetes-preserve-unknown-fields: true
       served: true
@@ -235,101 +235,6 @@ metadata:
   labels:
     operator.tekton.dev/release: v0.59.0
     version: v0.59.0
-  name: tektonresults.operator.tekton.dev
-spec:
-  group: operator.tekton.dev
-  names:
-    kind: TektonResult
-    listKind: TektonResultList
-    plural: tektonresults
-    singular: tektonresult
-  preserveUnknownFields: false
-  scope: Cluster
-  versions:
-    - additionalPrinterColumns:
-        - jsonPath: .status.version
-          name: Version
-          type: string
-        - jsonPath: .status.conditions[?(@.type=="Ready")].status
-          name: Ready
-          type: string
-        - jsonPath: .status.conditions[?(@.type=="Ready")].reason
-          name: Reason
-          type: string
-      name: v1alpha1
-      schema:
-        openAPIV3Schema:
-          description: Schema for the tektonresults API
-          properties:
-            apiVersion:
-              description: "APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/  api-conventions.md#resources"
-              type: string
-            kind:
-              description: "Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#types-kinds"
-              type: string
-            metadata:
-              type: object
-            spec:
-              description: Spec defines the desired state of TektonResult
-              properties:
-                targetNamespace:
-                  description: namespace where tekton results will be installed
-                  type: string
-              type: object
-            status:
-              description: Status defines the observed state of TektonResult
-              properties:
-                conditions:
-                  description: The latest available observations of a resource's current state.
-                  items:
-                    properties:
-                      lastTransitionTime:
-                        description: LastTransitionTime is the last time the condition transitioned from one status to another. We use VolatileTime in place of metav1.Time to exclude this from creating equality.Semantic differences (all other things held constant).
-                        type: string
-                      message:
-                        description: A human readable message indicating details about the transition.
-                        type: string
-                      reason:
-                        description: The reason for the condition's last transition.
-                        type: string
-                      severity:
-                        description: Severity with which to treat failures of this type of condition. When this is not specified, it defaults to Error.
-                        type: string
-                      status:
-                        description: Status of the condition, one of True, False, Unknown.
-                        type: string
-                      type:
-                        description: Type of condition.
-                        type: string
-                    required:
-                      - type
-                      - status
-                    type: object
-                  type: array
-                manifests:
-                  description: The list of results manifests, which have been installed by the operator
-                  items:
-                    type: string
-                  type: array
-                observedGeneration:
-                  description: The generation last processed by the controller
-                  type: integer
-                version:
-                  description: The version of the installed release
-                  type: string
-              type: object
-          type: object
-      served: true
-      storage: true
-      subresources:
-        status: {}
----
-apiVersion: apiextensions.k8s.io/v1
-kind: CustomResourceDefinition
-metadata:
-  labels:
-    operator.tekton.dev/release: v0.59.0
-    version: v0.59.0
   name: tektontriggers.operator.tekton.dev
 spec:
   group: operator.tekton.dev
@@ -367,6 +272,23 @@ kind: ServiceAccount
 metadata:
   name: tekton-operator
   namespace: tekton-pipelines
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: openshift-operator-read
+  namespace: tekton-pipelines
+rules:
+  - apiGroups:
+      - ""
+    resources:
+      - services
+      - endpoints
+      - pods
+    verbs:
+      - get
+      - list
+      - watch
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
@@ -428,7 +350,6 @@ rules:
   - apiGroups:
       - extensions
       - apps
-      - networking.k8s.io
     resources:
       - ingresses
       - ingresses/status
@@ -453,12 +374,6 @@ rules:
       - patch
       - watch
   - apiGroups:
-      - ""
-    resources:
-      - namespaces/finalizers
-    verbs:
-      - update
-  - apiGroups:
       - apps
     resources:
       - deployments
@@ -467,13 +382,13 @@ rules:
       - statefulsets
       - deployments/finalizers
     verbs:
-      - get
-      - list
-      - create
-      - update
       - delete
       - deletecollection
+      - create
       - patch
+      - get
+      - list
+      - update
       - watch
   - apiGroups:
       - monitoring.coreos.com
@@ -489,10 +404,16 @@ rules:
       - clusterroles
       - roles
     verbs:
-      - get
-      - create
-      - update
       - delete
+      - deletecollection
+      - create
+      - patch
+      - get
+      - list
+      - update
+      - watch
+      - bind
+      - escalate
   - apiGroups:
       - ""
     resources:
@@ -596,73 +517,43 @@ rules:
       - "*"
       - tektonaddons
     verbs:
-      - get
-      - list
-      - create
-      - update
       - delete
       - deletecollection
+      - create
       - patch
+      - get
+      - list
+      - update
       - watch
   - apiGroups:
       - tekton.dev
-    resources:
-      - tasks
-      - clustertasks
-      - taskruns
-      - pipelines
-      - pipelineruns
-      - pipelineresources
-      - conditions
-      - tasks/status
-      - clustertasks/status
-      - taskruns/status
-      - pipelines/status
-      - pipelineruns/status
-      - pipelineresources/status
-      - taskruns/finalizers
-      - pipelineruns/finalizers
-      - runs
-      - runs/status
-      - runs/finalizers
-    verbs:
-      - get
-      - list
-      - create
-      - update
-      - delete
-      - deletecollection
-      - patch
-      - watch
-  - apiGroups:
       - triggers.tekton.dev
       - operator.tekton.dev
     resources:
       - "*"
     verbs:
       - add
-      - get
-      - list
-      - create
-      - update
       - delete
       - deletecollection
+      - create
       - patch
+      - get
+      - list
+      - update
       - watch
   - apiGroups:
       - dashboard.tekton.dev
     resources:
       - "*"
       - tektonaddons
-      - extensions
     verbs:
-      - get
-      - list
-      - create
-      - update
       - delete
       - deletecollection
+      - create
       - patch
+      - get
+      - list
+      - update
       - watch
   - apiGroups:
       - security.openshift.io
@@ -670,6 +561,23 @@ rules:
       - securitycontextconstraints
     verbs:
       - use
+      - get
+      - create
+      - update
+      - delete
+  - apiGroups:
+      - route.openshift.io
+    resources:
+      - routes
+    verbs:
+      - delete
+      - deletecollection
+      - create
+      - patch
+      - get
+      - list
+      - update
+      - watch
   - apiGroups:
       - coordination.k8s.io
     resources:
@@ -683,12 +591,27 @@ rules:
       - patch
       - watch
   - apiGroups:
+      - console.openshift.io
+    resources:
+      - consoleyamlsamples
+      - consoleclidownloads
+      - consolequickstarts
+      - consolelinks
+    verbs:
+      - delete
+      - deletecollection
+      - create
+      - patch
+      - get
+      - list
+      - update
+      - watch
+  - apiGroups:
       - autoscaling
     resources:
       - horizontalpodautoscalers
     verbs:
       - delete
-      - deletecollection
       - create
       - patch
       - get
@@ -709,62 +632,23 @@ rules:
       - update
       - watch
   - apiGroups:
-      - serving.knative.dev
+      - monitoring.coreos.com
     resources:
-      - "*"
-      - "*/status"
-      - "*/finalizers"
+      - servicemonitors
     verbs:
-      - get
-      - list
-      - create
-      - update
       - delete
       - deletecollection
+      - create
       - patch
+      - get
+      - list
+      - update
       - watch
   - apiGroups:
       - batch
     resources:
-      - cronjobs
       - jobs
-    verbs:
-      - delete
-      - create
-      - patch
-      - get
-      - list
-      - update
-      - watch
-  - apiGroups:
-      - admissionregistration.k8s.io
-    resources:
-      - mutatingwebhookconfigurations
-      - validatingwebhookconfigurations
-    verbs:
-      - delete
-      - create
-      - patch
-      - get
-      - list
-      - update
-      - watch
-  - apiGroups:
-      - authentication.k8s.io
-    resources:
-      - tokenreviews
-    verbs:
-      - create
-  - apiGroups:
-      - authorization.k8s.io
-    resources:
-      - subjectaccessreviews
-    verbs:
-      - create
-  - apiGroups:
-      - results.tekton.dev
-    resources:
-      - "*"
+      - cronjobs
     verbs:
       - delete
       - deletecollection
@@ -774,6 +658,12 @@ rules:
       - list
       - update
       - watch
+  - apiGroups:
+      - ""
+    resources:
+      - namespaces/finalizers
+    verbs:
+      - update
   - apiGroups:
       - resolution.tekton.dev
     resources:
@@ -784,6 +674,20 @@ rules:
       - watch
       - create
       - delete
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: openshift-operators-prometheus-k8s-read-binding
+  namespace: tekton-pipelines
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: openshift-operator-read
+subjects:
+  - kind: ServiceAccount
+    name: prometheus-k8s
+    namespace: openshift-monitoring
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
@@ -973,7 +877,7 @@ apiVersion: v1
 kind: Service
 metadata:
   labels:
-    app: tekton-pipelines-controller
+    name: tekton-operator
     version: v0.59.0
   name: tekton-operator
   namespace: tekton-pipelines
@@ -1038,15 +942,13 @@ spec:
             - name: OPERATOR_NAME
               value: tekton-operator
             - name: IMAGE_PIPELINES_PROXY
-              value: gcr.io/tekton-releases/github.com/tektoncd/operator/cmd/kubernetes/proxy-webhook:v0.59.0@sha256:c2c3a38c2d26fc05d336e0e47c24a488a26cc6df8d72cd55e00ac05668d090d4
+              value: gcr.io/tekton-releases/github.com/tektoncd/operator/cmd/openshift/proxy-webhook:v0.59.0@sha256:cab325836f6f7a2c0b22784a2903c2a8d8cd7586668d53c78e7fb09320563657
             - name: IMAGE_JOB_PRUNER_TKN
               value: gcr.io/tekton-releases/dogfooding/tkn@sha256:025de221fb059ca24a3b2d988889ea34bce48dc76c0cf0d6b4499edb8c21325f
             - name: METRICS_DOMAIN
               value: tekton.dev/operator
             - name: VERSION
               value: v0.59.0
-            - name: CONFIG_OBSERVABILITY_NAME
-              value: tekton-config-observability
             - name: AUTOINSTALL_COMPONENTS
               valueFrom:
                 configMapKeyRef:
@@ -1057,7 +959,21 @@ spec:
                 configMapKeyRef:
                   key: DEFAULT_TARGET_NAMESPACE
                   name: tekton-config-defaults
-          image: gcr.io/tekton-releases/github.com/tektoncd/operator/cmd/kubernetes/operator:v0.59.0@sha256:e5e6cbf5c56a3c62136ac71e478a26fa93067ced6334929f99a82cfd2d726674
+            - name: CONFIG_OBSERVABILITY_NAME
+              value: tekton-config-observability
+            - name: IMAGE_HUB_TEKTON_HUB_DB
+              value: registry.redhat.io/rhel8/postgresql-13@sha256:6032adb3eac903ee8aa61f296ca9aaa57f5709e5673504b609222e042823f195
+            - name: IMAGE_ADDONS_PARAM_BUILDER_IMAGE
+              value: registry.redhat.io/rhel8/buildah@sha256:30fc759d3453a0f9aba2164a0ea7b1aacd65c801abb07f3478ebd4ed7a90aa8f
+            - name: IMAGE_ADDONS_PARAM_KN_IMAGE
+              value: registry.redhat.io/openshift-serverless-1/client-kn-rhel8@sha256:87b02aba2a5ff86900c1f13c6de8d4f8091fa0bf36afbb4a582f8f76189aed80
+            - name: IMAGE_ADDONS_MVN_SETTINGS
+              value: registry.redhat.io/ubi8/ubi-minimal@sha256:eb98682661cc5fe83bbe583af9d55a90d698cfc0d14af5b83e4568c3e26b4516
+            - name: IMAGE_ADDONS_SKOPEO_COPY
+              value: registry.redhat.io/rhel8/skopeo@sha256:60ac283d14e1e2870e37a10954e7a14b41372bb929a5b134455c3e36516f030a
+            - name: IMAGE_ADDONS_GENERATE
+              value: registry.redhat.io/ocp-tools-4-tech-preview/source-to-image-rhel8@sha256:98d8cb3a255641ca6a1bce854e5e2460c20de9fb9b28e3cc67eb459f122873dd
+          image: gcr.io/tekton-releases/github.com/tektoncd/operator/cmd/openshift/operator:v0.59.0@sha256:93bdcf52e55f52579ce1cca904662b4f7637eb8f199cb1fc9205be128dd490f0
           imagePullPolicy: Always
           name: tekton-operator
       serviceAccountName: tekton-operator
@@ -1095,11 +1011,32 @@ spec:
               value: tekton-operator-webhook-certs
             - name: METRICS_DOMAIN
               value: tekton.dev/operator
-          image: gcr.io/tekton-releases/github.com/tektoncd/operator/cmd/kubernetes/webhook:v0.59.0@sha256:24b94e84b9edecd6f98581f4921832a2a1deae13ed9b2308f985eb86f29149b8
+          image: gcr.io/tekton-releases/github.com/tektoncd/operator/cmd/openshift/webhook:v0.59.0@sha256:b66224ce5821c61f88bd67f5b35c37d1900c1dd39a61ce8a03b1db57aefb50c8
           name: tekton-operator-webhook
           ports:
             - containerPort: 8443
               name: https-webhook
       serviceAccountName: tekton-operator
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  annotations:
+    networkoperator.openshift.io/ignore-errors: ""
+  labels:
+    name: tekton-operator
+  name: openshift-operator-monitor
+  namespace: tekton-pipelines
+spec:
+  endpoints:
+    - interval: 10s
+      port: http-metrics
+  jobLabel: name
+  namespaceSelector:
+    matchNames:
+      - tekton-pipelines
+  selector:
+    matchLabels:
+      name: tekton-operator
 
 ---
