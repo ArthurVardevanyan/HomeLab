@@ -105,6 +105,14 @@ sudo su
 echo "/dev/vdb1 /mnt/storage auto nofail" > /etc/fstab
 ```
 
+#### OKD Upgrade
+
+```bash
+bash main.bash stateful_workload_stop
+kubectl delete pdb -n longhorn-system --all
+bash main.bash stateful_workload_start
+```
+
 #### Kubernetes Commands
 
 ```bash

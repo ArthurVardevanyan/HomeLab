@@ -25,9 +25,9 @@ stateful_workload_stop() {
 	kubectl patch cronjobs -n nextcloud nextcloud-preview -p '{"spec" : {"suspend" : true }}'
 	kubectl patch cronjobs -n nextcloud nextcloud-rsync -p '{"spec" : {"suspend" : true }}'
 	kubectl patch cronjobs -n nextcloud nextcloud-cron -p '{"spec" : {"suspend" : true }}'
-	kubectl patch cronjobs -n mariadb mysqldump-cron -p '{"spec" : {"suspend" : true }}'
+	kubectl patch cronjobs -n mariadb-galera mysqldump-cron -p '{"spec" : {"suspend" : true }}'
 
-	kubectl delete configmap -n openshift-monitoring cluster-monitoring-config
+	kubectl delete configmap -n openshift-monitoring cluster-monitoring-config --ignore-not-found
 
 	kubectl patch -n bitwarden statefulset/bitwarden --type='json' -p='[{"op": "replace", "path": "/spec/replicas", "value": 0}]'
 	kubectl patch -n gitea statefulset/gitea --type='json' -p='[{"op": "replace", "path": "/spec/replicas", "value": 0}]'
@@ -36,7 +36,7 @@ stateful_workload_stop() {
 	kubectl patch -n homeassistant statefulset/homeassistant --type='json' -p='[{"op": "replace", "path": "/spec/replicas", "value": 0}]'
 	kubectl patch -n influxdb statefulset/influxdb --type='json' -p='[{"op": "replace", "path": "/spec/replicas", "value": 0}]'
 	kubectl patch -n loki statefulset/loki --type='json' -p='[{"op": "replace", "path": "/spec/replicas", "value": 0}]'
-	kubectl patch -n mariadb statefulset/mariadb --type='json' -p='[{"op": "replace", "path": "/spec/replicas", "value": 0}]'
+	kubectl patch -n mariadb-galera statefulset/mariadb-galera --type='json' -p='[{"op": "replace", "path": "/spec/replicas", "value": 0}]'
 	kubectl patch -n nextcloud statefulset/nextcloud --type='json' -p='[{"op": "replace", "path": "/spec/replicas", "value": 0}]'
 	kubectl patch -n photoprism statefulset/photoprism --type='json' -p='[{"op": "replace", "path": "/spec/replicas", "value": 0}]'
 	kubectl patch -n prometheus statefulset/prometheus --type='json' -p='[{"op": "replace", "path": "/spec/replicas", "value": 0}]'
@@ -50,12 +50,12 @@ stateful_workload_stop() {
 	kubectl scale --replicas=0 -n postgres statefulset/quay-00-87fl
 	kubectl scale --replicas=0 -n postgres statefulset/quay-repo-host
 
-	kubectl scale --replicas=0 -n argocd deployment/argocd-dex-server
 	kubectl scale --replicas=0 -n argocd deployment/argocd-operator-controller-manager
-	kubectl scale --replicas=0 -n argocd deployment/argocd-redis
-	kubectl scale --replicas=0 -n argocd deployment/argocd-repo-server
-	kubectl scale --replicas=0 -n argocd deployment/argocd-server
 	kubectl scale --replicas=0 -n argocd statefulset/argocd-application-controller
+	kubectl scale --replicas=0 -n argocd deployment/argocd-repo-server
+	kubectl scale --replicas=0 -n argocd deployment/argocd-dex-server
+	kubectl scale --replicas=0 -n argocd deployment/argocd-server
+	kubectl scale --replicas=0 -n argocd deployment/argocd-redis
 
 }
 
@@ -64,7 +64,7 @@ stateful_workload_start() {
 	kubectl patch cronjobs -n nextcloud nextcloud-preview -p '{"spec" : {"suspend" : false }}'
 	kubectl patch cronjobs -n nextcloud nextcloud-rsync -p '{"spec" : {"suspend" : false }}'
 	kubectl patch cronjobs -n nextcloud nextcloud-cron -p '{"spec" : {"suspend" : false }}'
-	kubectl patch cronjobs -n mariadb mysqldump-cron -p '{"spec" : {"suspend" : false }}'
+	kubectl patch cronjobs -n mariadb-galera mysqldump-cron -p '{"spec" : {"suspend" : false }}'
 
 	kubectl apply -f okd/openshift-monitoring/base/cluster-monitoring-config.yaml
 
@@ -75,7 +75,7 @@ stateful_workload_start() {
 	kubectl patch -n homeassistant statefulset/homeassistant --type='json' -p='[{"op": "replace", "path": "/spec/replicas", "value": 1}]'
 	kubectl patch -n influxdb statefulset/influxdb --type='json' -p='[{"op": "replace", "path": "/spec/replicas", "value": 1}]'
 	kubectl patch -n loki statefulset/loki --type='json' -p='[{"op": "replace", "path": "/spec/replicas", "value": 1}]'
-	kubectl patch -n mariadb statefulset/mariadb --type='json' -p='[{"op": "replace", "path": "/spec/replicas", "value": 1}]'
+	kubectl patch -n mariadb-galera statefulset/mariadb-galera --type='json' -p='[{"op": "replace", "path": "/spec/replicas", "value": 3}]'
 	kubectl patch -n nextcloud statefulset/nextcloud --type='json' -p='[{"op": "replace", "path": "/spec/replicas", "value": 1}]'
 	kubectl patch -n photoprism statefulset/photoprism --type='json' -p='[{"op": "replace", "path": "/spec/replicas", "value": 1}]'
 	kubectl patch -n prometheus statefulset/prometheus --type='json' -p='[{"op": "replace", "path": "/spec/replicas", "value": 1}]'
@@ -89,12 +89,12 @@ stateful_workload_start() {
 	kubectl scale --replicas=1 -n postgres statefulset/quay-00-87fl
 	kubectl scale --replicas=1 -n postgres statefulset/quay-repo-host
 
-	kubectl scale --replicas=1 -n argocd deployment/argocd-dex-server
 	kubectl scale --replicas=1 -n argocd deployment/argocd-operator-controller-manager
-	kubectl scale --replicas=1 -n argocd deployment/argocd-redis
-	kubectl scale --replicas=1 -n argocd deployment/argocd-repo-server
-	kubectl scale --replicas=1 -n argocd deployment/argocd-server
 	kubectl scale --replicas=1 -n argocd statefulset/argocd-application-controller
+	kubectl scale --replicas=1 -n argocd deployment/argocd-repo-server
+	kubectl scale --replicas=1 -n argocd deployment/argocd-dex-server
+	kubectl scale --replicas=1 -n argocd deployment/argocd-server
+	kubectl scale --replicas=1 -n argocd deployment/argocd-redis
 
 	echo -e "\nkubectl exec -it vault-0 -n vault -- vault operator unseal --tls-skip-verify"
 }
