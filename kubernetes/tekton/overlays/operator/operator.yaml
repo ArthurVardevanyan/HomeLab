@@ -976,6 +976,13 @@ spec:
           image: gcr.io/tekton-releases/github.com/tektoncd/operator/cmd/openshift/operator:v0.59.0@sha256:93bdcf52e55f52579ce1cca904662b4f7637eb8f199cb1fc9205be128dd490f0
           imagePullPolicy: Always
           name: tekton-operator
+          resources:
+            limits:
+              cpu: 30m
+              memory: 192Mi
+            requests:
+              cpu: 10m
+              memory: 96Mi
       serviceAccountName: tekton-operator
 ---
 apiVersion: apps/v1
@@ -1016,6 +1023,13 @@ spec:
           ports:
             - containerPort: 8443
               name: https-webhook
+          resources:
+            limits:
+              cpu: 30m
+              memory: 64Mi
+            requests:
+              cpu: 10m
+              memory: 32Mi
       serviceAccountName: tekton-operator
 ---
 apiVersion: monitoring.coreos.com/v1
