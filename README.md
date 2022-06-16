@@ -235,7 +235,7 @@ kubectl delete replicaSet -n openshift-pipelines --all
 
 # Image Build
 tkn -n homelab pipeline start image-build -s pipeline-sa \
-  --param="url=https://git.arthurvardevanyan.com/ArthurVardevanyan/HomeLab" \
+  --param="git-url=https://git.arthurvardevanyan.com/ArthurVardevanyan/HomeLab" \
   --param="IMAGE=registry.arthurvardevanyan.com/homelab/toolbox:latest" \
   --param="git-commit=$(git log --format=oneline | cut -d ' ' -f 1 | head -n 1)" \
   --param="DOCKERFILE=./containerfile" \
@@ -243,7 +243,7 @@ tkn -n homelab pipeline start image-build -s pipeline-sa \
   --showlog
 
 tkn -n homelab pipeline start image-build -s pipeline-sa \
-  --param="url=https://git.arthurvardevanyan.com/ArthurVardevanyan/HomeLab" \
+  --param="git-url=https://git.arthurvardevanyan.com/ArthurVardevanyan/HomeLab" \
   --param="IMAGE=registry.arthurvardevanyan.com/homelab/argocd:v2.3.4" \
   --param="git-commit=$(git log --format=oneline | cut -d ' ' -f 1 | head -n 1)" \
   --param="DOCKERFILE=./kubernetes/argocd/containerfile" \
