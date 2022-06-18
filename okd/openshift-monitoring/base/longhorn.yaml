@@ -1,4 +1,4 @@
-apiVersion: longhorn.io/v1beta1
+apiVersion: longhorn.io/v1beta2
 kind: Volume
 metadata:
   labels:
@@ -8,13 +8,15 @@ metadata:
   name: prometheus-k8s-db-prometheus-k8s-0
   namespace: longhorn-system
 spec:
+  replicaAutoBalance: disabled
+  dataLocality: disabled
   accessMode: rwo
-  engineImage: longhornio/longhorn-engine:v1.2.4
+  engineImage: longhornio/longhorn-engine:v1.3.0
   frontend: blockdev
   numberOfReplicas: 1
   size: "37580963840"
 ---
-apiVersion: longhorn.io/v1beta1
+apiVersion: longhorn.io/v1beta2
 kind: Volume
 metadata:
   labels:
@@ -24,13 +26,15 @@ metadata:
   name: prometheus-k8s-db-prometheus-k8s-1
   namespace: longhorn-system
 spec:
+  replicaAutoBalance: disabled
+  dataLocality: disabled
   accessMode: rwo
-  engineImage: longhornio/longhorn-engine:v1.2.4
+  engineImage: longhornio/longhorn-engine:v1.3.0
   frontend: blockdev
   numberOfReplicas: 1
   size: "37580963840"
 ---
-apiVersion: longhorn.io/v1beta1
+apiVersion: longhorn.io/v1beta2
 kind: Volume
 metadata:
   labels:
@@ -40,13 +44,15 @@ metadata:
   name: alertmanager-main-db-alertmanager-main-0
   namespace: longhorn-system
 spec:
+  replicaAutoBalance: disabled
+  dataLocality: disabled
   accessMode: rwo
-  engineImage: longhornio/longhorn-engine:v1.2.4
+  engineImage: longhornio/longhorn-engine:v1.3.0
   frontend: blockdev
   numberOfReplicas: 2
   size: "52428800"
 ---
-apiVersion: longhorn.io/v1beta1
+apiVersion: longhorn.io/v1beta2
 kind: Volume
 metadata:
   labels:
@@ -56,8 +62,10 @@ metadata:
   name: alertmanager-main-db-alertmanager-main-1
   namespace: longhorn-system
 spec:
+  replicaAutoBalance: disabled
+  dataLocality: disabled
   accessMode: rwo
-  engineImage: longhornio/longhorn-engine:v1.2.4
+  engineImage: longhornio/longhorn-engine:v1.3.0
   frontend: blockdev
   numberOfReplicas: 2
   size: "52428800"

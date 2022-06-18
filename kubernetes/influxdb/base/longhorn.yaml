@@ -1,4 +1,4 @@
-apiVersion: longhorn.io/v1beta1
+apiVersion: longhorn.io/v1beta2
 kind: Volume
 metadata:
   name: influxdb
@@ -8,8 +8,10 @@ metadata:
     recurring-job-group.longhorn.io/backup: enabled
     app.kubernetes.io/instance: influxdb
 spec:
+  replicaAutoBalance: disabled
+  dataLocality: disabled
   accessMode: rwo
-  engineImage: longhornio/longhorn-engine:v1.2.4
+  engineImage: longhornio/longhorn-engine:v1.3.0
   frontend: blockdev
   numberOfReplicas: 2
   size: "5368709120"

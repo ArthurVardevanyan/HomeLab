@@ -3,7 +3,9 @@ kind: PodSecurityPolicy
 metadata:
   name: longhorn-psp
   labels:
-    app.kubernetes.io/instance: longhorn-system
+    app.kubernetes.io/name: longhorn
+    app.kubernetes.io/instance: longhorn
+    app.kubernetes.io/version: v1.3.0
 spec:
   privileged: true
   allowPrivilegeEscalation: true
@@ -34,6 +36,10 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
   name: longhorn-psp-role
+  labels:
+    app.kubernetes.io/name: longhorn
+    app.kubernetes.io/instance: longhorn
+    app.kubernetes.io/version: v1.3.0
   namespace: longhorn-system
 rules:
   - apiGroups:
@@ -49,6 +55,10 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
   name: longhorn-psp-binding
+  labels:
+    app.kubernetes.io/name: longhorn
+    app.kubernetes.io/instance: longhorn
+    app.kubernetes.io/version: v1.3.0
   namespace: longhorn-system
 roleRef:
   apiGroup: rbac.authorization.k8s.io

@@ -1,0 +1,188 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: longhorn-admission-webhook
+    app.kubernetes.io/instance: longhorn
+    app.kubernetes.io/name: longhorn
+    app.kubernetes.io/version: v1.3.0
+  name: longhorn-admission-webhook
+  namespace: longhorn-system
+spec:
+  progressDeadlineSeconds: 600
+  replicas: 2
+  revisionHistoryLimit: 10
+  selector:
+    matchLabels:
+      app: longhorn-admission-webhook
+  strategy:
+    rollingUpdate:
+      maxSurge: 25%
+      maxUnavailable: 25%
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        app: longhorn-admission-webhook
+        app.kubernetes.io/instance: longhorn
+        app.kubernetes.io/name: longhorn
+        app.kubernetes.io/version: v1.3.0
+    spec:
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - podAffinityTerm:
+                labelSelector:
+                  matchExpressions:
+                    - key: app
+                      operator: In
+                      values:
+                        - longhorn-admission-webhook
+                topologyKey: kubernetes.io/hostname
+              weight: 1
+      containers:
+        - command:
+            - longhorn-manager
+            - admission-webhook
+            - --service-account
+            - longhorn-service-account
+          env:
+            - name: POD_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  apiVersion: v1
+                  fieldPath: metadata.namespace
+            - name: NODE_NAME
+              valueFrom:
+                fieldRef:
+                  apiVersion: v1
+                  fieldPath: spec.nodeName
+          image: longhornio/longhorn-manager:v1.3.0
+          resources:
+            requests:
+              cpu: 25m
+              memory: 256Mi
+            limits:
+              cpu: 50m
+              memory: 512Mi
+          imagePullPolicy: IfNotPresent
+          name: longhorn-admission-webhook
+          ports:
+            - containerPort: 9443
+              name: admission-wh
+              protocol: TCP
+          readinessProbe:
+            failureThreshold: 3
+            periodSeconds: 10
+            successThreshold: 1
+            tcpSocket:
+              port: 9443
+            timeoutSeconds: 1
+          securityContext:
+            runAsUser: 2000
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+      dnsPolicy: ClusterFirst
+      initContainers:
+        - command:
+            - sh
+            - -c
+            - while [ $(curl -m 1 -s -o /dev/null -w "%{http_code}" -k https://longhorn-conversion-webhook:9443/v1/healthz) != "200" ]; do echo waiting; sleep 2; done
+          image: longhornio/longhorn-manager:v1.3.0
+          imagePullPolicy: IfNotPresent
+          name: wait-longhorn-conversion-webhook
+          securityContext:
+            runAsUser: 2000
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+      restartPolicy: Always
+      schedulerName: default-scheduler
+      serviceAccount: longhorn-service-account
+      serviceAccountName: longhorn-service-account
+      terminationGracePeriodSeconds: 30
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: longhorn-conversion-webhook
+    app.kubernetes.io/instance: longhorn
+    app.kubernetes.io/name: longhorn
+    app.kubernetes.io/version: v1.3.0
+  name: longhorn-conversion-webhook
+  namespace: longhorn-system
+spec:
+  progressDeadlineSeconds: 600
+  replicas: 2
+  revisionHistoryLimit: 10
+  selector:
+    matchLabels:
+      app: longhorn-conversion-webhook
+  strategy:
+    rollingUpdate:
+      maxSurge: 25%
+      maxUnavailable: 25%
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        app: longhorn-conversion-webhook
+        app.kubernetes.io/instance: longhorn
+        app.kubernetes.io/name: longhorn
+        app.kubernetes.io/version: v1.3.0
+    spec:
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - podAffinityTerm:
+                labelSelector:
+                  matchExpressions:
+                    - key: app
+                      operator: In
+                      values:
+                        - longhorn-conversion-webhook
+                topologyKey: kubernetes.io/hostname
+              weight: 1
+      containers:
+        - command:
+            - longhorn-manager
+            - conversion-webhook
+            - --service-account
+            - longhorn-service-account
+          env:
+            - name: POD_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  apiVersion: v1
+                  fieldPath: metadata.namespace
+          image: longhornio/longhorn-manager:v1.3.0
+          imagePullPolicy: IfNotPresent
+          name: longhorn-conversion-webhook
+          resources:
+            requests:
+              cpu: 25m
+              memory: 128Mi
+            limits:
+              cpu: 50m
+              memory: 256Mi
+          ports:
+            - containerPort: 9443
+              name: conversion-wh
+              protocol: TCP
+          readinessProbe:
+            failureThreshold: 3
+            periodSeconds: 10
+            successThreshold: 1
+            tcpSocket:
+              port: 9443
+            timeoutSeconds: 1
+          securityContext:
+            runAsUser: 2000
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+      dnsPolicy: ClusterFirst
+      restartPolicy: Always
+      schedulerName: default-scheduler
+      serviceAccount: longhorn-service-account
+      serviceAccountName: longhorn-service-account
+      terminationGracePeriodSeconds: 30
