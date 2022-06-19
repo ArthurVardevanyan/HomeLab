@@ -8,6 +8,23 @@ metadata:
 spec:
   backups:
     pgbackrest:
+      sidecars:
+        pgbackrest:
+          resources:
+            limits:
+              memory: "64Mi"
+              cpu: "30m"
+            requests:
+              memory: "32Mi"
+              cpu: "15m"
+        pgbackrestConfig:
+          resources:
+            limits:
+              memory: "64Mi"
+              cpu: "30m"
+            requests:
+              memory: "32Mi"
+              cpu: "15m"
       repos:
         - name: repo1
           volume:
@@ -35,5 +52,62 @@ spec:
         limits:
           memory: "700Mi"
           cpu: "100m"
+  port: 5432
+  postgresVersion: 14
+---
+apiVersion: postgres-operator.crunchydata.com/v1beta1
+kind: PostgresCluster
+metadata:
+  name: clair
+  namespace: postgres
+  labels:
+    app.kubernetes.io/instance: postgres
+spec:
+  backups:
+    pgbackrest:
+      sidecars:
+        pgbackrest:
+          resources:
+            limits:
+              memory: "1Gi"
+              cpu: "250m"
+            requests:
+              memory: "128Mi"
+              cpu: "50m"
+        pgbackrestConfig:
+          resources:
+            limits:
+              memory: "64Mi"
+              cpu: "30m"
+            requests:
+              memory: "32Mi"
+              cpu: "15m"
+      repos:
+        - name: repo1
+          volume:
+            volumeClaimSpec:
+              storageClassName: longhorn-static
+              accessModes:
+                - ReadWriteOnce
+              resources:
+                requests:
+                  storage: 7.5Gi
+  instances:
+    - dataVolumeClaimSpec:
+        storageClassName: longhorn-static
+        accessModes:
+          - ReadWriteOnce
+        resources:
+          requests:
+            storage: 10Gi
+      name: ""
+      replicas: 1
+      resources:
+        requests:
+          memory: "2Gi"
+          cpu: "350m"
+        limits:
+          memory: "4Gi"
+          cpu: "750m"
   port: 5432
   postgresVersion: 14

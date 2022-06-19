@@ -21,7 +21,7 @@ stringData:
     TEAM_RESYNC_STALE_TIME: 60m
     TESTING: false
     SERVER_HOSTNAME: registry.<path:secret/data/homelab/domain#url>
-    DB_URI: <path:secret/data/homelab/postgres#uri>
+    DB_URI: <path:secret/data/homelab/postgres#quay_uri>
     DB_CONNECTION_ARGS:
       sslmode: prefer
     DISTRIBUTED_STORAGE_DEFAULT_LOCATIONS: []
@@ -47,3 +47,18 @@ stringData:
         - 1w
         - 2w
         - 4w
+  clair-config.yaml: |
+    indexer:
+      connstring: <path:secret/data/homelab/postgres#clair_uri>
+      layer_scan_concurrency: 5
+      migrations: true
+      scanlock_retry: 10
+    log_level: info
+    matcher:
+      connstring: <path:secret/data/homelab/postgres#clair_uri>
+      migrations: true
+    metrics:
+      name: prometheus
+    notifier:
+      connstring: <path:secret/data/homelab/postgres#clair_uri>
+      migrations: true

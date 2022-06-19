@@ -226,6 +226,14 @@ resources:
   requests:
     cpu: 150m
     memory: 3Gi
+# deployment/quay-clair-app
+resources:
+  limits:
+    cpu: 500m
+    memory: 1.5Gi
+  requests:
+    cpu: 150m
+    memory: 750Mi
 ```
 
 ## Tekton
@@ -244,7 +252,7 @@ tkn -n homelab pipeline start image-build -s pipeline-sa \
 
 tkn -n homelab pipeline start image-build -s pipeline-sa \
   --param="git-url=https://git.arthurvardevanyan.com/ArthurVardevanyan/HomeLab" \
-  --param="IMAGE=registry.arthurvardevanyan.com/homelab/argocd:v2.3.4" \
+  --param="IMAGE=registry.arthurvardevanyan.com/homelab/argocd:v2.4.0" \
   --param="git-commit=$(git log --format=oneline | cut -d ' ' -f 1 | head -n 1)" \
   --param="DOCKERFILE=./kubernetes/argocd/containerfile" \
   --workspace=name=data,volumeClaimTemplateFile=tekton/base/pvc.yaml \
