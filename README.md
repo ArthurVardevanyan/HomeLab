@@ -52,7 +52,7 @@ mkdir -p notes time bash kvm_k3s.bash install_cluster > notes/install.log
 export KUBECONFIG=${HOME}/vm/sk3s/sk3s.yaml
 
 # Dashboard Secret
-bash kvm_k3s.bash get_dashboard_secret
+bash main.bash get_dashboard_secret
 ```
 
 ## Server

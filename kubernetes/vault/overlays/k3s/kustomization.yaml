@@ -3,3 +3,11 @@ kind: Kustomization
 resources:
   - ../../base
   - traefik.yaml
+patches:
+  - target:
+      kind: Certificate
+      name: vault-cert
+    patch: |-
+      - op: add
+        path: /spec/dnsNames
+        value: [vault.k3s.<path:secret/data/homelab/domain#url>]
