@@ -3,6 +3,15 @@
   become: true
   user: arthur
   tasks:
+    - name: Create Discord Bot Boot Service
+      copy:
+        src: "../../../../machineConfigs/servers/server/etc/systemd/system/discordBoot.service"
+        dest: "/etc/systemd/system/discordBoot.service"
+      register: discordBoot_conf
+    - name: Enable Service
+      command: systemctl enable discordBoot.service
+      when: discordBoot_conf.changed
+
     - name: Create Discord Bot Reboot Service
       copy:
         src: "../../../../machineConfigs/servers/server/etc/systemd/system/discordReboot.service"
