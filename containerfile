@@ -1,4 +1,4 @@
-FROM debian:stable-slim
+FROM debian:sid-slim
 
 RUN apt-get update && apt-get install gnupg2 sshpass curl logrotate rsync git -y
 
