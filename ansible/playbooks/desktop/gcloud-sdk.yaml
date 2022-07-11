@@ -1,0 +1,20 @@
+- hosts: ryzen
+  gather_facts: no
+  become: true
+  user: arthur
+  tasks:
+    - name: Add gcloud-sdk key
+      apt_key:
+        url: https://packages.cloud.google.com/apt/doc/apt-key.gpg
+        state: present
+    - name: Add gcloud-sdk Repo
+      apt_repository:
+        repo: deb https://packages.cloud.google.com/apt cloud-sdk main
+        state: present
+        update_cache: True
+        filename: google-chrome
+    - name: Install gcloud-sdk
+      apt:
+        state: latest
+        name:
+          - google-cloud-cli
