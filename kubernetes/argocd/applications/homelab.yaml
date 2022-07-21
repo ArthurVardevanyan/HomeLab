@@ -1,0 +1,21 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: homelab
+  namespace: argocd
+  labels:
+    app.kubernetes.io/instance: argocd
+spec:
+  destination:
+    namespace: homelab
+    server: https://kubernetes.default.svc
+  project: default
+  source:
+    path: tekton/base
+    repoURL: https://git.<path:secret/data/homelab/domain#url>/ArthurVardevanyan/HomeLab
+    targetRevision: HEAD
+    plugin:
+      name: argocd-vault-plugin-kustomize
+  syncPolicy:
+    syncOptions:
+      - CreateNamespace=true
