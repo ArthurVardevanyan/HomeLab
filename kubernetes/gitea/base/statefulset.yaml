@@ -24,7 +24,7 @@ spec:
         fsGroup: 1000
       initContainers:
         - name: init-directories
-          image: "gitea/gitea:1.16.8-rootless"
+          image: "gitea/gitea:1.16.9-rootless"
           imagePullPolicy: IfNotPresent
           command: ["/usr/sbin/init_directory_structure.sh"]
           env:
@@ -54,7 +54,7 @@ spec:
             runAsNonRoot: true
             runAsUser: 1000
         - name: init-app-ini
-          image: "gitea/gitea:1.16.8-rootless"
+          image: "gitea/gitea:1.16.9-rootless"
           imagePullPolicy: IfNotPresent
           command: ["/usr/sbin/config_environment.sh"]
           env:
@@ -86,7 +86,7 @@ spec:
             runAsNonRoot: true
             runAsUser: 1000
         - name: configure-gitea
-          image: "gitea/gitea:1.16.8-rootless"
+          image: "gitea/gitea:1.16.9-rootless"
           command: ["/usr/sbin/configure_gitea.sh"]
           imagePullPolicy: IfNotPresent
           securityContext:
@@ -122,7 +122,7 @@ spec:
       terminationGracePeriodSeconds: 60
       containers:
         - name: gitea
-          image: "gitea/gitea:1.16.8-rootless"
+          image: "gitea/gitea:1.16.9-rootless"
           imagePullPolicy: IfNotPresent
           env:
             - name: SSH_LISTEN_PORT
