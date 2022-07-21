@@ -239,7 +239,7 @@ resources:
 ## Tekton
 
 ```bash
-kubectl delete replicaSet -n openshift-pipelines --all
+kubectl delete replicaSet -n tekton-pipelines --all
 
 # Image Build
 tkn -n homelab pipeline start image-build -s pipeline-sa \
