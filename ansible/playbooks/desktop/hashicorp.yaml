@@ -1,0 +1,21 @@
+- hosts: ryzen
+  gather_facts: no
+  become: true
+  user: arthur
+  tasks:
+    - name: Add HashiCorp key
+      apt_key:
+        url: https://apt.releases.hashicorp.com/gpg
+        state: present
+    - name: Add HashiCorp Repo
+      apt_repository:
+        repo: deb https://apt.releases.hashicorp.com jammy main
+        state: present
+        update_cache: True
+        filename: hashicorp
+    - name: Install Terraform & Vault
+      apt:
+        state: latest
+        name:
+          - terraform
+          - vault
