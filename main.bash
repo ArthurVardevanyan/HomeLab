@@ -115,7 +115,7 @@ kvm-infra() {
 		--os-variant=debian10 \
 		--vcpus sockets=1,cores=1,threads=2 \
 		--ram=1792 \
-		--disk "${HOME}/vm/k3s-server-2".img,,format=raw,size=25 \
+		--disk "/mnt/storage/vm/k3s-server-2".img,,format=raw,size=25 \
 		--network bridge=br0,mac="10:00:00:00:01:02" \
 		--location=http://ftp.us.debian.org/debian/dists/stable/main/installer-amd64/ \
 		--extra-args="\
@@ -129,7 +129,7 @@ kvm-infra() {
 		--os-variant=debian10 \
 		--vcpus sockets=1,cores=2,threads=2 \
 		--ram=10240 \
-		--disk "${HOME}/vm/k3s-worker-1".img,,format=raw,size=125 \
+		--disk "/mnt/storage/vm/k3s-worker-1".img,,format=raw,size=125 \
 		--network bridge=br0,mac="10:00:00:00:01:11" \
 		--location=http://ftp.us.debian.org/debian/dists/stable/main/installer-amd64/ \
 		--extra-args="\
@@ -150,7 +150,7 @@ kvm() {
 		--os-variant=debian10 \
 		--vcpus sockets=1,cores=1,threads=2 \
 		--ram=1792 \
-		--disk "${HOME}/vm/k3s-server-3".img,,format=raw,size=25 \
+		--disk "/mnt/storage/vm/k3s-server-3".img,,format=raw,size=25 \
 		--network bridge=br0,mac="10:00:00:00:01:03" \
 		--location=http://ftp.us.debian.org/debian/dists/stable/main/installer-amd64/ \
 		--extra-args="\
@@ -164,7 +164,7 @@ kvm() {
 		--os-variant=debian10 \
 		--vcpus sockets=1,cores=2,threads=2 \
 		--ram=4352 \
-		--disk "${HOME}/vm/k3s-worker-2".img,,format=raw,size=125 \
+		--disk "/mnt/storage/vm/k3s-worker-2".img,,format=raw,size=125 \
 		--network bridge=br0,mac="10:00:00:00:01:12" \
 		--location=http://ftp.us.debian.org/debian/dists/stable/main/installer-amd64/ \
 		--extra-args="\
@@ -364,7 +364,7 @@ label_vms() {
 
 load_kubeconfig() {
 	echo -e "\n${BLUE}Loading KubeConfig:${NC}"
-	export KUBECONFIG=${HOME}/vm/${PREFIX}/${PREFIX}.yaml
+	export KUBECONFIG=/mnt/storage/vm/${PREFIX}/${PREFIX}.yaml
 }
 
 uninstall_k3s() {
@@ -427,14 +427,14 @@ install_k3s() {
 		if [ ${KUBE} -eq 1 ]; then
 			CMD="echo ${PASSWORD} | sudo -S cp /etc/rancher/k3s/k3s.yaml /tmp; sudo chmod 777 /tmp/k3s.yaml"
 			sshpass -p "${PASSWORD}" ssh -t 10.10.10.${START_IP} "${CMD}"
-			sshpass -p "${PASSWORD}" scp 10.10.10.${START_IP}:/tmp/k3s.yaml "${HOME}/vm/${PREFIX}/${PREFIX}.yaml"
-			sed -i "s,127.0.0.1,10.10.10.1,g" "${HOME}/vm/${PREFIX}/${PREFIX}.yaml"
+			sshpass -p "${PASSWORD}" scp 10.10.10.${START_IP}:/tmp/k3s.yaml "/mnt/storage/vm/${PREFIX}/${PREFIX}.yaml"
+			sed -i "s,127.0.0.1,10.10.10.1,g" "/mnt/storage/vm/${PREFIX}/${PREFIX}.yaml"
 		fi
 		((IP++))
 	done
 
 	echo -e "\n\n${BLUE}Install Complete!${NC}"
-	echo "export KUBECONFIG=${HOME}/vm/${PREFIX}/${PREFIX}.yaml"
+	echo "export KUBECONFIG=/mnt/storage/vm/${PREFIX}/${PREFIX}.yaml"
 	echo "${PREFIX} k3s Install Complete!"
 
 }
@@ -562,7 +562,7 @@ install_cluster() {
 	# Delete Cluster If Exists
 	delete_cluster
 
-	mkdir -p "${HOME}/vm/${PREFIX}"
+	mkdir -p "/mnt/storage/vm/${PREFIX}"
 
 	for NODE in ${NODES}; do
 		echo -e "\n\n${BLUE}Creating: ${PREFIX}${NODE}${NC}"
@@ -587,7 +587,7 @@ install_cluster() {
 			--os-variant=debian11 \
 			--vcpus sockets=1,cores=1,threads="${CPU}" \
 			--ram="${MEMORY}" \
-			--disk "${HOME}/vm/${PREFIX}/${PREFIX}${NODE}".img,size="${DISK}" \
+			--disk "/mnt/storage/vm/${PREFIX}/${PREFIX}${NODE}".img,size="${DISK}" \
 			--network network=default,model=virtio,mac="10:10:00:00:00:${IP}" \
 			--location=http://ftp.us.debian.org/debian/dists/stable/main/installer-amd64/ \
 			--extra-args="\
@@ -649,7 +649,7 @@ install_k3s_cluster() {
 	# Install & Setup k3s
 	install_k3s
 
-	export KUBECONFIG=${HOME}/vm/${PREFIX}/${PREFIX}.yaml
+	export KUBECONFIG=/mnt/storage/vm/${PREFIX}/${PREFIX}.yaml
 
 	while [ "$(kubectl get nodes | wc -l)" -le "$(echo ${NODES} | wc -w)" ]; do
 		sleep 1
@@ -665,7 +665,7 @@ install_k3s_cluster() {
 	get_dashboard_secret
 
 	echo " "
-	echo "export KUBECONFIG=${HOME}/vm/${PREFIX}/${PREFIX}.yaml"
+	echo "export KUBECONFIG=/mnt/storage/vm/${PREFIX}/${PREFIX}.yaml"
 	echo "${PREFIX} k3s Install Complete!"
 }
 
@@ -679,7 +679,7 @@ install_k8s_cluster() {
 	# Install & Setup k8s
 	install_k8s
 
-	export KUBECONFIG=${HOME}/vm/${PREFIX}/${PREFIX}.yaml
+	export KUBECONFIG=/mnt/storage/vm/${PREFIX}/${PREFIX}.yaml
 
 	while [ "$(kubectl get nodes | wc -l)" -le "$(echo ${NODES} | wc -w)" ]; do
 		sleep 1
@@ -699,7 +699,7 @@ install_k8s_cluster() {
 	get_dashboard_secret
 
 	echo " "
-	echo "export KUBECONFIG=${HOME}/vm/${PREFIX}/${PREFIX}.yaml"
+	echo "export KUBECONFIG=/mnt/storage/vm/${PREFIX}/${PREFIX}.yaml"
 	echo "${PREFIX} k8s Install Complete!"
 }
 
@@ -710,13 +710,13 @@ install_okd() {
 	export HOME=/home/arthur
 
 	mkdir -p /vm
-	chown -R arthur:arthur /vm/
-	chmod 777 -R /vm/
+	chown -R arthur:arthur /mnt/storage/vm/
+	chmod 777 -R /mnt/storage/vm/
 
 	export PREFIX=""
-	export NODES="bootstrap master-1 worker-1" #bootstrap master-1 master-2 master-3 worker-1 worker-2
-	export MASTERS=1
-	export WORKERS=1
+	export NODES="bootstrap master-1 master-2 master-3 worker-1 worker-2 worker-3 worker-4"
+	export MASTERS=3
+	export WORKERS=4
 	export START_IP=11
 
 	if [[ $(/usr/bin/id -u) -ne 0 ]]; then
@@ -733,22 +733,22 @@ install_okd() {
 	fi
 	echo "${URL}"
 
-	# Expand Swap Size on Host Computer
-	# if ! test -f "/tmp/swapfile.img"; then
-	# 	dd if=/dev/zero of=/tmp/swapfile.img bs=25600 count=1M
-	# 	mkswap /tmp/swapfile.img
-	# 	swapon /tmp/swapfile.img
+	# # Expand Swap Size on Host Computer
+	# if ! test -f "/mnt/swapfile.img"; then
+	# 	dd if=/dev/zero of=/mnt/swapfile.img bs=45056 count=1M
+	# 	mkswap /mnt/swapfile.img
+	# 	swapon /mnt/swapfile.img
 	# fi
 
 	# Delete Cluster If Exists
 	delete_cluster
 
 	echo -e "\n\n${BLUE}Delete All Existing Data:${NC}"
-	rm -rf /vm/okd/okd
-	rm -rf /vm/okd/*.qcow2
-	rm -rf /vm/okd/*.raw
-	rm -rf /vm/okd/fedora-coreos-*
-	rm -rf /vm/okd/openshift-install-linux* /vm/okd/openshift-client-linux* /vm/okd/oc /vm/okd/kubectl /vm/okd/openshift-install
+	rm -rf /mnt/storage/vm/okd/okd
+	rm -rf /mnt/storage/vm/okd/*.qcow2
+	rm -rf /mnt/storage/vm/okd/*.raw
+	rm -rf /mnt/storage/vm/okd/fedora-coreos-*
+	rm -rf /mnt/storage/vm/okd/openshift-install-linux* /mnt/storage/vm/okd/openshift-client-linux* /mnt/storage/vm/okd/oc /mnt/storage/vm/okd/kubectl /mnt/storage/vm/okd/openshift-install
 	echo -e "\n\n${BLUE}Add SSH Known Hosts:${NC}"
 	IP=$((START_IP - 1))
 	for NODE in ${NODES}; do
@@ -762,54 +762,54 @@ install_okd() {
 	echo -e "\n\n${BLUE}Download Dependencies:${NC}"
 	# Download the latest Fedora CoreOS
 	COREOS=35.20220227.3.0
-	wget https://builds.coreos.fedoraproject.org/prod/streams/stable/builds/"${COREOS}"/x86_64/fedora-coreos-"${COREOS}"-qemu.x86_64.qcow2.xz -P /vm/okd/
-	xz -d /vm/okd/fedora-coreos-*.xz
+	wget https://builds.coreos.fedoraproject.org/prod/streams/stable/builds/"${COREOS}"/x86_64/fedora-coreos-"${COREOS}"-qemu.x86_64.qcow2.xz -P /mnt/storage/vm/okd/
+	xz -d /mnt/storage/vm/okd/fedora-coreos-*.xz
 	# Download openshift-install and openshift-client
-	wget "$(curl https://api.github.com/repos/openshift/okd/releases/latest | grep openshift-install-linux | grep browser_download_url | cut -d\" -f4)" -P /vm/okd/
-	wget "$(curl https://api.github.com/repos/openshift/okd/releases/latest | grep openshift-client-linux | grep browser_download_url | cut -d\" -f4)" -P /vm/okd/
-	tar xvzf /vm/okd/openshift-install-linux* -C /vm/okd
-	tar xvzf /vm/okd/openshift-client-linux* -C /vm/okd
+	wget "$(curl https://api.github.com/repos/openshift/okd/releases/latest | grep openshift-install-linux | grep browser_download_url | cut -d\" -f4)" -P /mnt/storage/vm/okd/
+	wget "$(curl https://api.github.com/repos/openshift/okd/releases/latest | grep openshift-client-linux | grep browser_download_url | cut -d\" -f4)" -P /mnt/storage/vm/okd/
+	tar xvzf /mnt/storage/vm/okd/openshift-install-linux* -C /mnt/storage/vm/okd
+	tar xvzf /mnt/storage/vm/okd/openshift-client-linux* -C /mnt/storage/vm/okd
 
 	echo -e "\n\n${BLUE}Create Config Files:${NC}"
 	# Create okd directory of openshift-install files
-	mkdir -p /vm/okd/okd
+	mkdir -p /mnt/storage/vm/okd/okd
 	# Copy the install-config.yaml
-	cp okd/install-config.yaml /vm/okd/okd/
+	cp okd/install-config.yaml /mnt/storage/vm/okd/okd/
 
 	SSH=$(cat ${HOME}/.ssh/id_ed25519.pub)
-	sed -i "s/<SSH>/${SSH}/g" /vm/okd/okd/install-config.yaml
-	sed -i "s/<URL>/${URL}/g" /vm/okd/okd/install-config.yaml
-	sed -i "s/<MASTERS>/${MASTERS}/g" /vm/okd/okd/install-config.yaml
-	sed -i "s/<WORKERS>/${WORKERS}/g" /vm/okd/okd/install-config.yaml
-	cp /vm/okd/okd/install-config.yaml /vm/okd/okd/install-config_backup.yaml
+	sed -i "s/<SSH>/${SSH}/g" /mnt/storage/vm/okd/okd/install-config.yaml
+	sed -i "s/<URL>/${URL}/g" /mnt/storage/vm/okd/okd/install-config.yaml
+	sed -i "s/<MASTERS>/${MASTERS}/g" /mnt/storage/vm/okd/okd/install-config.yaml
+	sed -i "s/<WORKERS>/${WORKERS}/g" /mnt/storage/vm/okd/okd/install-config.yaml
+	cp /mnt/storage/vm/okd/okd/install-config.yaml /mnt/storage/vm/okd/okd/install-config_backup.yaml
 
 	# Create the ignition files
-	/vm/okd/openshift-install create ignition-configs --dir=/vm/okd/okd
+	/mnt/storage/vm/okd/openshift-install create ignition-configs --dir=/mnt/storage/vm/okd/okd
 
-	chown -R arthur:arthur /vm/okd
-	chmod 777 -R /vm/okd
+	chown -R arthur:arthur /mnt/storage/vm/okd
+	chmod 777 -R /mnt/storage/vm/okd
 
 	echo -e "\n\n${BLUE}Start OKD Install:${NC}"
 	IP=${START_IP}
 	for NODE in ${NODES}; do
-		IMAGE="/vm/okd/${NODE}.raw"
+		IMAGE="/mnt/storage/vm/okd/${NODE}.raw"
 		VCPUS="4"
 		RAM_MB="12288"
-		SIZE="50G"
+		SIZE="52G"
 		STORAGE=''
 
 		if [[ "${NODE}" =~ "master" ]]; then
-			IGNITION_CONFIG="/vm/okd/okd/master.ign"
+			IGNITION_CONFIG="/mnt/storage/vm/okd/okd/master.ign"
 		fi
 
 		if [[ "${NODE}" =~ "worker" ]]; then
 			VCPUS="4"
 			RAM_MB="6144"
-			IGNITION_CONFIG="/vm/okd/okd/worker.ign"
-			/vm/okd/openshift-install --dir=/vm/okd/okd wait-for bootstrap-complete --log-level debug
+			IGNITION_CONFIG="/mnt/storage/vm/okd/okd/worker.ign"
+			/mnt/storage/vm/okd/openshift-install --dir=/mnt/storage/vm/okd/okd wait-for bootstrap-complete --log-level debug
 
-			STORAGE_PATH="/vm/okd/${NODE}_storage.raw"
-			STORAGE_SIZE="50G"
+			STORAGE_PATH="/mnt/storage/vm/okd/${NODE}_storage.raw"
+			STORAGE_SIZE="96G"
 			qemu-img create "${STORAGE_PATH}" "${STORAGE_SIZE}" -f raw
 			STORAGE="--disk=\"${STORAGE_PATH}\"",cache=none
 		fi
@@ -825,13 +825,13 @@ install_okd() {
 		MAC="10:10:00:00:00:$IP"
 
 		if [ "$NODE" = "bootstrap" ]; then
-			IGNITION_CONFIG="/vm/okd/okd/bootstrap.ign"
+			IGNITION_CONFIG="/mnt/storage/vm/okd/okd/bootstrap.ign"
 			MAC="10:10:00:00:00:10"
 			VCPUS="5"
 		fi
 
 		qemu-img create "${IMAGE}" "${SIZE}" -f raw
-		virt-resize --expand /dev/sda4 /vm/okd/fedora-coreos-*.qcow2 "${IMAGE}"
+		virt-resize --expand /dev/sda4 /mnt/storage/vm/okd/fedora-coreos-*.qcow2 "${IMAGE}"
 
 		virt-install \
 			--connect="qemu:///system" \
@@ -850,33 +850,33 @@ install_okd() {
 		fi
 
 	done
-	chown -R arthur:arthur /vm/okd
-	chmod 777 -R /vm/okd
+	chown -R arthur:arthur /mnt/storage/vm/okd
+	chmod 777 -R /mnt/storage/vm/okd
 
-	/vm/okd/openshift-install --dir=/vm/okd/okd wait-for install-complete --log-level debug
+	/mnt/storage/vm/okd/openshift-install --dir=/mnt/storage/vm/okd/okd wait-for install-complete --log-level debug
 
-	export KUBECONFIG="/vm/okd/okd/auth/kubeconfig"
-	/vm/okd/oc apply -f okd/okd-configuration/operator-hub.yaml
+	export KUBECONFIG="/mnt/storage/vm/okd/okd/auth/kubeconfig"
+	/mnt/storage/vm/okd/oc apply -f okd/okd-configuration/operator-hub.yaml
 
 	# https://github.com/openshift/okd/issues/963#issuecomment-1073120091
-	/vm/okd/oc delete mc 99-master-okd-extensions 99-okd-master-disable-mitigations
+	/mnt/storage/vm/okd/oc delete mc 99-master-okd-extensions 99-okd-master-disable-mitigations
 
 	single_server
 }
 
 single_server() {
 	echo -e "\n\n${BLUE}Single Server Resource Adjustments:${NC}"
-	export KUBECONFIG="/vm/okd/okd/auth/kubeconfig"
-	/vm/okd/oc scale --replicas=1 ingresscontroller/default -n openshift-ingress-operator
-	/vm/okd/oc scale --replicas=1 deployment.apps/console -n openshift-console
-	/vm/okd/oc scale --replicas=1 deployment.apps/downloads -n openshift-console
-	/vm/okd/oc scale --replicas=1 deployment.apps/oauth-openshift -n openshift-authentication
-	/vm/okd/oc scale --replicas=1 deployment.apps/packageserver -n openshift-operator-lifecycle-manager
+	export KUBECONFIG="/mnt/storage/vm/okd/okd/auth/kubeconfig"
+	/mnt/storage/vm/okd/oc scale --replicas=1 ingresscontroller/default -n openshift-ingress-operator
+	/mnt/storage/vm/okd/oc scale --replicas=1 deployment.apps/console -n openshift-console
+	/mnt/storage/vm/okd/oc scale --replicas=1 deployment.apps/downloads -n openshift-console
+	/mnt/storage/vm/okd/oc scale --replicas=1 deployment.apps/oauth-openshift -n openshift-authentication
+	/mnt/storage/vm/okd/oc scale --replicas=1 deployment.apps/packageserver -n openshift-operator-lifecycle-manager
 
-	/vm/okd/oc scale --replicas=1 deployment.apps/prometheus-adapter -n openshift-monitoring
-	/vm/okd/oc scale --replicas=1 deployment.apps/thanos-querier -n openshift-monitoring
-	/vm/okd/oc scale --replicas=1 statefulset.apps/prometheus-k8s -n openshift-monitoring
-	/vm/okd/oc scale --replicas=1 statefulset.apps/alertmanager-main -n openshift-monitoring
+	/mnt/storage/vm/okd/oc scale --replicas=1 deployment.apps/prometheus-adapter -n openshift-monitoring
+	/mnt/storage/vm/okd/oc scale --replicas=1 deployment.apps/thanos-querier -n openshift-monitoring
+	/mnt/storage/vm/okd/oc scale --replicas=1 statefulset.apps/prometheus-k8s -n openshift-monitoring
+	/mnt/storage/vm/okd/oc scale --replicas=1 statefulset.apps/alertmanager-main -n openshift-monitoring
 }
 
 approve_csr() {
