@@ -17,7 +17,7 @@ ansible-playbook -i ansible/inventory --ask-become-pass ansible/desktop.yaml --a
   -e 'ansible_python_interpreter=/usr/bin/python3'
 
 git merge --no-ff
-scp -r /home/arthur/vm windowsBackup@10.0.0.110:/backup/WindowsBackup/vm
+scp -r /home/arthur/vm windowsBackup@10.0.0.4:/backup/WindowsBackup/vm
 sudo sensors-detect
 ```
 
@@ -63,7 +63,7 @@ bash main.bash get_dashboard_secret
 
 | Kubernetes Channel | OKD Channel | OKD OS           | Host Operating System |
 | ------------------ | ----------- | ---------------- | --------------------- |
-| v1.23              | stable-4.10 | Fedora CoreOS 35 | Debian 11             |
+| v1.24              | stable-4.11 | Fedora CoreOS 36 | Debian 11             |
 
 **Machines:**
 
@@ -73,28 +73,28 @@ bash main.bash get_dashboard_secret
 | ---------- | ----------------- | -------- | --- | --- | ----------------- | ------------- |
 | pfSense    | Hp t730           | RX-427BB | 4   | 4G  | 16G SSD           | N/A           |
 | Bare Metal | Hp t620           | GX-415GA | 4   | 6G  | 16G SSD & 16G USB | N/A           |
-| kvm-0      | N/A               | R7-5700G | 16  | 64G | 500G NVME         | 2T ZFS Mirror |
-| kvm-1      | Hp ProDesk 400 G3 | i5-6600  | 4   | 32G | 240G SSD          | 1T ZFS Mirror |
-| kvm-2      | Hp p7-1226s       | i3-2130  | 4   | 8G  | 240G SSD          | N/A           |
+| kvm-0      | N/A               | R7-5700G | 16  | 64G | 500G NVME x2      | N/A           |
+| kvm-1      | Hp ProDesk 400 G3 | i5-6600  | 4   | 32G | 240G & 120G SSD   | N/A           |
+| ZFS        | Hp p7-1226s       | i3-2130  | 4   | 8G  | 240G SSD          | 2T ZFS Mirror |
 
 **ZFS Storage:**
 
 | Machine | Use     | Dataset   | Size  | Dataset         | Size  | Dataset       | Size  |
 | ------- | ------- | --------- | ----- | --------------- | ----- | ------------- | ----- |
-| KVM-0   | Primary | Nextcloud | 750GB | Longhorn Backup | 175GB | WindowsBackup | 750GB |
-| KVM-1   | Backup  | Nextcloud | 750GB | Longhorn Backup | 175GB | N/A           | N/A   |
+| ZFS     | Primary | Nextcloud | 750GB | Longhorn Backup | 175GB | WindowsBackup | 750GB |
+| N/A     | Backup  | Nextcloud | 750GB | Longhorn Backup | 175GB | N/A           | N/A   |
 
 **Kubernetes Nodes:**
 
-| NAME     | ROLES          | Machine | vCPU | Mem | Storage |
-| -------- | -------------- | ------- | ---- | --- | ------- |
-| server-1 | cp,etcd,master | kvm-0   | 4    | 12G | N/A     |
-| server-2 | cp,etcd,master | kvm-1   | 3    | 12G | N/A     |
-| server-3 | cp,etcd,master | kvm-0   | 4    | 12G | N/A     |
-| worker-1 | worker         | kvm-0   | 5    | 16G | LH NVME |
-| worker-2 | worker         | kvm-2   | 4    | 7G  | LH SSD  |
-| worker-3 | worker         | kvm-0   | 5    | 16G | LH NVME |
-| worker-4 | worker         | kvm-1   | 3    | 16G | LH SSD  |
+| NAME     | ROLES          | Machine | vCPU | Mem   | Storage |
+| -------- | -------------- | ------- | ---- | ----- | ------- |
+| server-1 | cp,etcd,master | kvm-0   | 4    | 13.5G | N/A     |
+| server-2 | cp,etcd,master | kvm-1   | 3    | 13.5G | N/A     |
+| server-3 | cp,etcd,master | kvm-0   | 4    | 13.5G | N/A     |
+| worker-1 | worker         | kvm-0   | 4    | 11G   | LH NVME |
+| worker-2 | worker         | kvm-0   | 4    | 11G   | LH SSD  |
+| worker-3 | worker         | kvm-0   | 4    | 11G   | LH NVME |
+| worker-4 | worker         | kvm-1   | 3    | 16G   | LH SSD  |
 
 #### OKD Longhorn Secondary Disk Setup
 
