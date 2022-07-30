@@ -88,12 +88,12 @@ bash main.bash get_dashboard_secret
 
 | NAME     | ROLES          | Machine | vCPU | Mem   | Storage |
 | -------- | -------------- | ------- | ---- | ----- | ------- |
-| server-1 | cp,etcd,master | kvm-0   | 4    | 13.5G | N/A     |
-| server-2 | cp,etcd,master | kvm-1   | 3    | 13.5G | N/A     |
-| server-3 | cp,etcd,master | kvm-0   | 4    | 13.5G | N/A     |
-| worker-1 | worker         | kvm-0   | 4    | 11G   | LH NVME |
-| worker-2 | worker         | kvm-0   | 4    | 11G   | LH SSD  |
-| worker-3 | worker         | kvm-0   | 4    | 11G   | LH NVME |
+| server-1 | cp,etcd,master | kvm-0   | 4    | 14G   | N/A     |
+| server-2 | cp,etcd,master | kvm-1   | 3    | 14G   | N/A     |
+| server-3 | cp,etcd,master | kvm-0   | 4    | 14G   | N/A     |
+| worker-1 | worker         | kvm-0   | 4    | 10.5G | LH NVME |
+| worker-2 | worker         | kvm-0   | 4    | 10.5G | LH SSD  |
+| worker-3 | worker         | kvm-0   | 4    | 10.5G | LH NVME |
 | worker-4 | worker         | kvm-1   | 3    | 16G   | LH SSD  |
 
 #### OKD Longhorn Secondary Disk Setup
