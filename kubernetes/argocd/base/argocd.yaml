@@ -46,10 +46,10 @@ spec:
   rbac:
     policy: "g, system:cluster-admins, role:admin"
   image: registry.<path:secret/data/homelab/domain#url>/homelab/argocd
-  version: v2.4.4
+  version: v2.4.8
   repo:
     image: registry.<path:secret/data/homelab/domain#url>/homelab/argocd
-    version: v2.4.4
+    version: v2.4.8
     mountsatoken: true
     serviceaccount: default
     resources:
@@ -59,15 +59,16 @@ spec:
       requests:
         cpu: 50m
         memory: 150Mi
-  dex:
-    openShiftOAuth: true
-    resources:
-      limits:
-        cpu: 50m
-        memory: 100Mi
-      requests:
-        cpu: 10m
-        memory: 50Mi
+  sso:
+    dex:
+      openShiftOAuth: true
+      resources:
+        limits:
+          cpu: 50m
+          memory: 100Mi
+        requests:
+          cpu: 10m
+          memory: 50Mi
   ha:
     enabled: false
   tls:

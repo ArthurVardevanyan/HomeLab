@@ -56,7 +56,6 @@ stateful_workload_stop() {
 	kubectl scale --replicas=0 -n argocd deployment/argocd-operator-controller-manager
 	kubectl scale --replicas=0 -n argocd statefulset/argocd-application-controller
 	kubectl scale --replicas=0 -n argocd deployment/argocd-repo-server
-	kubectl scale --replicas=0 -n argocd deployment/argocd-dex-server
 	kubectl scale --replicas=0 -n argocd deployment/argocd-server
 	kubectl scale --replicas=0 -n argocd deployment/argocd-redis
 
@@ -98,7 +97,6 @@ stateful_workload_start() {
 	kubectl scale --replicas=1 -n argocd deployment/argocd-operator-controller-manager
 	kubectl scale --replicas=1 -n argocd statefulset/argocd-application-controller
 	kubectl scale --replicas=1 -n argocd deployment/argocd-repo-server
-	kubectl scale --replicas=1 -n argocd deployment/argocd-dex-server
 	kubectl scale --replicas=1 -n argocd deployment/argocd-server
 	kubectl scale --replicas=1 -n argocd deployment/argocd-redis
 
