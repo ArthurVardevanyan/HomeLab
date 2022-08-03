@@ -59,15 +59,17 @@ spec:
       requests:
         cpu: 50m
         memory: 150Mi
-  dex:
-    openShiftOAuth: true
-    resources:
-      limits:
-        cpu: 50m
-        memory: 100Mi
-      requests:
-        cpu: 10m
-        memory: 50Mi
+  sso:
+    provider: dex
+    dex:
+      openShiftOAuth: true
+      resources:
+        limits:
+          cpu: 50m
+          memory: 100Mi
+        requests:
+          cpu: 10m
+          memory: 50Mi
   ha:
     enabled: false
   tls:
