@@ -43,6 +43,8 @@ spec:
               mountPath: /tmp
             - name: data
               mountPath: /data
+            - name: gitea-cert
+              mountPath: /cert
           securityContext:
             allowPrivilegeEscalation: false
             capabilities:
@@ -75,6 +77,8 @@ spec:
               mountPath: /data
             - name: inline-config-sources
               mountPath: /env-to-ini-mounts/inlines/
+            - name: gitea-cert
+              mountPath: /cert
           securityContext:
             allowPrivilegeEscalation: false
             capabilities:
@@ -119,6 +123,8 @@ spec:
               mountPath: /tmp
             - name: data
               mountPath: /data
+            - name: gitea-cert
+              mountPath: /cert
       terminationGracePeriodSeconds: 60
       containers:
         - name: gitea
@@ -190,6 +196,8 @@ spec:
               mountPath: /tmp
             - name: data
               mountPath: /data
+            - name: gitea-cert
+              mountPath: /cert
       volumes:
         - name: init
           secret:
@@ -207,3 +215,6 @@ spec:
         - name: data
           persistentVolumeClaim:
             claimName: gitea-pvc
+        - name: gitea-cert
+          secret:
+            secretName: gitea-cert

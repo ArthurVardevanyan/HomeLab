@@ -1,0 +1,28 @@
+apiVersion: config.openshift.io/v1
+kind: OAuth
+metadata:
+  annotations:
+    include.release.openshift.io/ibm-cloud-managed: "true"
+    include.release.openshift.io/self-managed-high-availability: "true"
+    include.release.openshift.io/single-node-developer: "true"
+    release.openshift.io/create-only: "true"
+  labels:
+    app.kubernetes.io/instance: okd-configuration
+  name: cluster
+spec:
+  identityProviders:
+    - mappingMethod: claim
+      name: gitea
+      openID:
+        claims:
+          email:
+            - email
+          name:
+            - name
+          preferredUsername:
+            - preferred_username
+        clientID: <path:secret/data/homelab/gitea/okd#client_id>
+        clientSecret:
+          name: gitea-openid-client
+        issuer: https://git.<path:secret/data/homelab/domain#url>
+      type: OpenID

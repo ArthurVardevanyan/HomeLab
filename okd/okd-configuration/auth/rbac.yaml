@@ -1,0 +1,31 @@
+apiVersion: user.openshift.io/v1
+kind: Group
+metadata:
+  name: cluster-admins
+  labels:
+    app.kubernetes.io/instance: okd-configuration
+users:
+  - <path:secret/data/homelab/gitea#user>
+---
+kind: ClusterRoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: cluster-admins
+  annotations:
+    rbac.authorization.kubernetes.io/autoupdate: "true"
+  labels:
+    app.kubernetes.io/instance: okd-configuration
+subjects:
+  - kind: Group
+    apiGroup: rbac.authorization.k8s.io
+    name: "system:cluster-admins"
+  - kind: User
+    apiGroup: rbac.authorization.k8s.io
+    name: "system:admin"
+  - kind: Group
+    apiGroup: rbac.authorization.k8s.io
+    name: cluster-admins
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: cluster-admin
