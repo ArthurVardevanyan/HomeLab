@@ -1,0 +1,27 @@
+apiVersion: keycloak.org/v1alpha1
+kind: Keycloak
+metadata:
+  labels:
+    app: sso
+    app.kubernetes.io/instance: keycloak
+  name: keycloak
+  namespace: keycloak
+spec:
+  externalAccess:
+    enabled: true
+  externalDatabase:
+    enabled: true
+  instances: 2
+  keycloakDeploymentSpec:
+    imagePullPolicy: Always
+    resources:
+      limits:
+        cpu: 750m
+        memory: 1024Mi
+      requests:
+        cpu: 75m
+        memory: 512Mi
+  multiAvailablityZones:
+    enabled: true
+  podDisruptionBudget:
+    enabled: true

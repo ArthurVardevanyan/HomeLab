@@ -1,0 +1,35 @@
+apiVersion: longhorn.io/v1beta2
+kind: Volume
+metadata:
+  labels:
+    longhornvolume: clair-pgdata
+    recurring-job-group.longhorn.io/backup: enabled
+    app.kubernetes.io/instance: postgres
+  name: clair-pgdata
+  namespace: longhorn-system
+spec:
+  replicaAutoBalance: disabled
+  dataLocality: disabled
+  accessMode: rwo
+  engineImage: longhornio/longhorn-engine:v1.3.0
+  frontend: blockdev
+  numberOfReplicas: 2
+  size: "26843545600"
+---
+apiVersion: longhorn.io/v1beta2
+kind: Volume
+metadata:
+  labels:
+    longhornvolume: clair-repo1
+    recurring-job-group.longhorn.io/backup: enabled
+    app.kubernetes.io/instance: postgres
+  name: clair-repo1
+  namespace: longhorn-system
+spec:
+  replicaAutoBalance: disabled
+  dataLocality: disabled
+  accessMode: rwo
+  engineImage: longhornio/longhorn-engine:v1.3.0
+  frontend: blockdev
+  numberOfReplicas: 2
+  size: "21474836480"

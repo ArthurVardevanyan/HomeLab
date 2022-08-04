@@ -1,0 +1,56 @@
+apiVersion: postgres-operator.crunchydata.com/v1beta1
+kind: PostgresCluster
+metadata:
+  name: keycloak
+  namespace: postgres
+  labels:
+    app.kubernetes.io/instance: postgres
+spec:
+  backups:
+    pgbackrest:
+      sidecars:
+        pgbackrest:
+          resources:
+            limits:
+              memory: "64Mi"
+              cpu: "30m"
+            requests:
+              memory: "32Mi"
+              cpu: "15m"
+        pgbackrestConfig:
+          resources:
+            limits:
+              memory: "64Mi"
+              cpu: "30m"
+            requests:
+              memory: "32Mi"
+              cpu: "15m"
+      repos:
+        - name: repo1
+          volume:
+            volumeClaimSpec:
+              storageClassName: longhorn-static
+              accessModes:
+                - ReadWriteOnce
+              resources:
+                requests:
+                  storage: 1Gi
+  instances:
+    - dataVolumeClaimSpec:
+        storageClassName: longhorn-static
+        accessModes:
+          - ReadWriteOnce
+        resources:
+          requests:
+            storage: 1Gi
+      name: ""
+      replicas: 2
+      resources:
+        requests:
+          memory: "125Mi"
+          cpu: "25m"
+        limits:
+          memory: "250Mi"
+          cpu: "75m"
+  port: 5432
+  postgresVersion: 14

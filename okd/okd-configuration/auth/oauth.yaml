@@ -12,7 +12,7 @@ metadata:
 spec:
   identityProviders:
     - mappingMethod: claim
-      name: gitea
+      name: keycloak
       openID:
         claims:
           email:
@@ -21,8 +21,10 @@ spec:
             - name
           preferredUsername:
             - preferred_username
-        clientID: <path:secret/data/homelab/gitea/okd#client_id>
+        clientID: okd
         clientSecret:
-          name: gitea-openid-client
-        issuer: https://git.<path:secret/data/homelab/domain#url>
+          name: keycloak-openid-client
+        extraScopes: []
+        issuer: >-
+          https://keycloak-keycloak.apps.okd.<path:secret/data/homelab/domain#url>/auth/realms/master
       type: OpenID

@@ -2,10 +2,10 @@ apiVersion: longhorn.io/v1beta2
 kind: Volume
 metadata:
   labels:
-    longhornvolume: quay-pgdata
+    longhornvolume: keycloak-00-2q9c-pgdata
     recurring-job-group.longhorn.io/backup: enabled
     app.kubernetes.io/instance: postgres
-  name: quay-pgdata
+  name: keycloak-00-2q9c-pgdata
   namespace: longhorn-system
 spec:
   replicaAutoBalance: disabled
@@ -20,10 +20,10 @@ apiVersion: longhorn.io/v1beta2
 kind: Volume
 metadata:
   labels:
-    longhornvolume: quay-repo1
+    longhornvolume: keycloak-00-nj82-pgdata
     recurring-job-group.longhorn.io/backup: enabled
     app.kubernetes.io/instance: postgres
-  name: quay-repo1
+  name: keycloak-00-nj82-pgdata
   namespace: longhorn-system
 spec:
   replicaAutoBalance: disabled
@@ -38,10 +38,10 @@ apiVersion: longhorn.io/v1beta2
 kind: Volume
 metadata:
   labels:
-    longhornvolume: clair-pgdata
+    longhornvolume: keycloak-repo1
     recurring-job-group.longhorn.io/backup: enabled
     app.kubernetes.io/instance: postgres
-  name: clair-pgdata
+  name: keycloak-repo1
   namespace: longhorn-system
 spec:
   replicaAutoBalance: disabled
@@ -50,22 +50,4 @@ spec:
   engineImage: longhornio/longhorn-engine:v1.3.0
   frontend: blockdev
   numberOfReplicas: 2
-  size: "26843545600"
----
-apiVersion: longhorn.io/v1beta2
-kind: Volume
-metadata:
-  labels:
-    longhornvolume: clair-repo1
-    recurring-job-group.longhorn.io/backup: enabled
-    app.kubernetes.io/instance: postgres
-  name: clair-repo1
-  namespace: longhorn-system
-spec:
-  replicaAutoBalance: disabled
-  dataLocality: disabled
-  accessMode: rwo
-  engineImage: longhornio/longhorn-engine:v1.3.0
-  frontend: blockdev
-  numberOfReplicas: 2
-  size: "21474836480"
+  size: "1073741824"

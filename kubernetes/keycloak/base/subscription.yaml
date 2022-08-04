@@ -1,0 +1,23 @@
+apiVersion: operators.coreos.com/v1alpha1
+kind: Subscription
+metadata:
+  labels:
+    operators.coreos.com/keycloak-operator.keycloak: ""
+    app.kubernetes.io/instance: keycloak
+  name: keycloak-operator
+  namespace: keycloak
+spec:
+  channel: alpha
+  installPlanApproval: Manual
+  name: keycloak-operator
+  source: community-operators
+  sourceNamespace: openshift-marketplace
+  startingCSV: keycloak-operator.v19.0.0
+  config:
+    resources:
+      limits:
+        cpu: 50m
+        memory: 64Mi
+      requests:
+        cpu: 25m
+        memory: 32Mi
