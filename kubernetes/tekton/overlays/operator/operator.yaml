@@ -278,13 +278,13 @@ apiVersion: v1
 kind: ServiceAccount
 metadata:
   name: openshift-pipelines-operator
-  namespace: openshift-pipelines
+  namespace: openshift-pipelines-operator
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
   name: openshift-pipelines-operator-read
-  namespace: openshift-pipelines
+  namespace: openshift-pipelines-operator
 rules:
   - apiGroups:
       - ""
@@ -303,7 +303,7 @@ metadata:
   labels:
     app.kubernetes.io/instance: tekton
   name: tekton-operator-info
-  namespace: openshift-pipelines
+  namespace: openshift-pipelines-operator
 rules:
   - apiGroups:
       - ""
@@ -686,7 +686,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
   name: openshift-pipelines-operator-prometheus-k8s-read-binding
-  namespace: openshift-pipelines
+  namespace: openshift-pipelines-operator
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: Role
@@ -702,7 +702,7 @@ metadata:
   labels:
     app.kubernetes.io/instance: tekton
   name: tekton-operator-info
-  namespace: openshift-pipelines
+  namespace: openshift-pipelines-operator
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: Role
@@ -736,7 +736,7 @@ roleRef:
 subjects:
   - kind: ServiceAccount
     name: openshift-pipelines-operator
-    namespace: openshift-pipelines
+    namespace: openshift-pipelines-operator
 ---
 # apiVersion: v1
 # data:
@@ -810,18 +810,18 @@ subjects:
 #   labels:
 #     operator.tekton.dev/release: devel
 #   name: config-logging
-#   namespace: openshift-pipelines
+#   namespace: openshift-pipelines-operator
 ---
 apiVersion: v1
 data:
   AUTOINSTALL_COMPONENTS: "true"
-  DEFAULT_TARGET_NAMESPACE: openshift-pipelines
+  DEFAULT_TARGET_NAMESPACE: openshift-pipelines-operator
 kind: ConfigMap
 metadata:
   labels:
     operator.tekton.dev/release: devel
   name: tekton-config-defaults
-  namespace: openshift-pipelines
+  namespace: openshift-pipelines-operator
 ---
 apiVersion: v1
 data:
@@ -859,7 +859,7 @@ metadata:
   labels:
     app.kubernetes.io/instance: tekton
   name: tekton-config-observability
-  namespace: openshift-pipelines
+  namespace: openshift-pipelines-operator
 ---
 apiVersion: v1
 data:
@@ -869,7 +869,7 @@ metadata:
   labels:
     app.kubernetes.io/instance: tekton
   name: tekton-operator-info
-  namespace: openshift-pipelines
+  namespace: openshift-pipelines-operator
 ---
 apiVersion: v1
 kind: Secret
@@ -878,7 +878,7 @@ metadata:
     app: tekton-operator
     name: tekton-operator-webhook
   name: tekton-operator-webhook-certs
-  namespace: openshift-pipelines
+  namespace: openshift-pipelines-operator
 ---
 apiVersion: v1
 kind: Service
@@ -887,7 +887,7 @@ metadata:
     name: openshift-pipelines-operator
     version: v0.60.1
   name: tekton-operator
-  namespace: openshift-pipelines
+  namespace: openshift-pipelines-operator
 spec:
   ports:
     - name: http-metrics
@@ -907,7 +907,7 @@ metadata:
     operator.tekton.dev/release: v0.60.1
     version: v0.60.1
   name: tekton-operator-webhook
-  namespace: openshift-pipelines
+  namespace: openshift-pipelines-operator
 spec:
   ports:
     - name: https-webhook
@@ -924,7 +924,7 @@ metadata:
     operator.tekton.dev/release: v0.60.1
     version: v0.60.1
   name: openshift-pipelines-operator
-  namespace: openshift-pipelines
+  namespace: openshift-pipelines-operator
 spec:
   replicas: 1
   selector:
@@ -1041,7 +1041,7 @@ metadata:
     operator.tekton.dev/release: v0.60.1
     version: v0.60.1
   name: tekton-operator-webhook
-  namespace: openshift-pipelines
+  namespace: openshift-pipelines-operator
 spec:
   replicas: 1
   selector:
@@ -1089,7 +1089,7 @@ metadata:
   labels:
     name: openshift-pipelines-operator
   name: openshift-pipelines-operator-monitor
-  namespace: openshift-pipelines
+  namespace: openshift-pipelines-operator
 spec:
   endpoints:
     - interval: 10s
