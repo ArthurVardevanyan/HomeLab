@@ -73,7 +73,7 @@ bash main.bash get_dashboard_secret
 | ---------- | ----------------- | -------- | --- | --- | ----------------- | ------------- |
 | pfSense    | Hp t730           | RX-427BB | 4   | 4G  | 16G SSD           | N/A           |
 | Bare Metal | Hp t620           | GX-415GA | 4   | 6G  | 16G SSD & 16G USB | N/A           |
-| kvm-0      | N/A               | R7-5700G | 16  | 64G | 500G NVME x2      | N/A           |
+| kvm-0      | N/A               | R7-5700G | 16  | 96G | 500G NVME x2      | N/A           |
 | kvm-1      | Hp ProDesk 400 G3 | i5-6600  | 4   | 32G | 240G & 120G SSD   | N/A           |
 | ZFS        | Hp p7-1226s       | i3-2130  | 4   | 8G  | 240G SSD          | 2T ZFS Mirror |
 
@@ -88,12 +88,12 @@ bash main.bash get_dashboard_secret
 
 | NAME     | ROLES          | Machine | vCPU | Mem   | Storage |
 | -------- | -------------- | ------- | ---- | ----- | ------- |
-| server-1 | cp,etcd,master | kvm-0   | 4    | 14G   | N/A     |
+| server-1 | cp,etcd,master | kvm-0   | 4    | 15.5G | N/A     |
 | server-2 | cp,etcd,master | kvm-1   | 3    | 14G   | N/A     |
-| server-3 | cp,etcd,master | kvm-0   | 4    | 14G   | N/A     |
-| worker-1 | worker         | kvm-0   | 4    | 10.5G | LH NVME |
-| worker-2 | worker         | kvm-0   | 4    | 10.5G | LH SSD  |
-| worker-3 | worker         | kvm-0   | 4    | 10.5G | LH NVME |
+| server-3 | cp,etcd,master | kvm-0   | 4    | 15.5G | N/A     |
+| worker-1 | worker         | kvm-0   | 4    | 20G   | LH NVME |
+| worker-2 | worker         | kvm-0   | 4    | 20G   | LH SSD  |
+| worker-3 | worker         | kvm-0   | 4    | 20G   | LH NVME |
 | worker-4 | worker         | kvm-1   | 3    | 16G   | LH SSD  |
 
 #### OKD Longhorn Secondary Disk Setup
