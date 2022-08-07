@@ -853,12 +853,17 @@ install_okd() {
   ${OKD}/openshift-install --dir=${OKD}/okd wait-for install-complete --log-level debug
 
   export KUBECONFIG="${OKD}/okd/auth/kubeconfig"
-  ${OKD}/oc apply -f okd/okd-configuration/operator-hub.yaml
+  ${OKD}/oc apply -f "${HOMELAB}/okd/okd-configuration/operator-hub.yaml"
+  ${OKD}/oc apply -f "${HOMELAB}/okd/okd-configuration/operators"
 
   # https://github.com/openshift/okd/issues/963#issuecomment-1073120091
   ${OKD}/oc delete mc 99-master-okd-extensions 99-okd-master-disable-mitigations
 
-  single_server
+  echo -e "\n\n${BLUE}Install Complete:${NC}"
+  echo "export KUBECONFIG=${OKD}/okd/auth/kubeconfig"
+  echo "Kubeadmin Password: $(cat ${OKD}/okd/auth/kubeadmin-password)"
+
+  #single_server
 }
 
 single_server() {
