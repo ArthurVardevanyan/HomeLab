@@ -720,12 +720,18 @@ delete_okd() {
   export HOMELAB="${PWD}"
 
   echo -e "\n\n${BLUE}Delete OKD Install:${NC}"
+
   echo -e "\n\n${BLUE}Delete Bootstrap:${NC}"
   cd "${HOMELAB}/terraform/sandbox/cluster"
   terraform init
   export TF_VAR_base_volume_id=$(terraform output -raw base_volume_id)
   export TF_VAR_pool=$(terraform output -raw pool)
   cd "${HOMELAB}/terraform/sandbox/bootstrap"
+  terraform init
+  terraform destroy -auto-approve
+
+  echo -e "\n\n${BLUE}Delete Workers:${NC}"
+  cd "${HOMELAB}/terraform/sandbox/workers"
   terraform init
   terraform destroy -auto-approve
 
@@ -833,6 +839,12 @@ install_okd() {
   cd "${HOMELAB}/terraform/sandbox/bootstrap"
   mkdir -p ${OKD}/terraform/bootstrap
   terraform destroy -auto-approve
+
+  echo -e "\n\n${BLUE}Initialize Workers:${NC}"
+  cd "${HOMELAB}/terraform/sandbox/workers"
+  mkdir -p ${OKD}/terraform/workers
+  terraform init
+  terraform apply -auto-approve
 
   chown -R arthur:arthur ${OKD}
   chmod 777 -R ${OKD}
