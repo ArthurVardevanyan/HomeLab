@@ -41,7 +41,7 @@ machineConfigs/desktop/home/arthur/cura
 
 ```bash
 # Terminal 1
-# Generate Preseed Config Password and Startup Temporary Webserver
+# Generate Preseed Config Password and Startup Temporary Web Server
 bash kvm_k3s.bash preseed_server
 
 # Terminal 2
@@ -54,6 +54,22 @@ export KUBECONFIG=${HOME}/vm/sk3s/sk3s.yaml
 # Dashboard Secret
 bash main.bash get_dashboard_secret
 ```
+
+## KVM Sandbox Terraform
+
+TF Provider
+
+- <https://github.com/dmacvicar/terraform-provider-libvirt>
+- <https://registry.terraform.io/providers/dmacvicar/libvirt/latest/docs>
+
+OpenShift Terraform Example
+
+- <https://github.com/openshift/installer/blob/master/docs/dev/libvirt/README.md>
+- <https://github.com/openshift/installer/tree/master/data/data/libvirt/bootstrap>
+
+Permission Denied Issue
+
+- <https://github.com/jedi4ever/veewee/issues/996#issuecomment-497976612>
 
 ## Server
 
