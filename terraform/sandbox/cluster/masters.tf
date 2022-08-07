@@ -38,6 +38,5 @@ resource "libvirt_domain" "master" {
     network_name = "okd"
     addresses    = ["${var.master.ip}${count.index}"]
     mac          = "${var.master.mac}${count.index}"
-    #bridge=br0
   }
 }

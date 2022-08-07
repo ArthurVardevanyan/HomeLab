@@ -10,17 +10,6 @@ variable "path" {
   default     = "/mnt/storage/okd"
 }
 
-variable "bootstrap" {
-  type = object({
-    mac = string
-    ip  = string
-  })
-  default = {
-    mac = "10:10:00:00:00:09"
-    ip  = "10.10.10.9"
-  }
-}
-
 variable "master" {
   type = object({
     mac = string

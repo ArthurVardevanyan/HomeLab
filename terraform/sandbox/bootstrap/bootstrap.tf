@@ -1,15 +1,13 @@
-
-
 resource "libvirt_ignition" "bootstrap" {
   name    = "bootstrap-tf.ign"
-  pool    = libvirt_pool.okd.name
+  pool    = var.pool
   content = "${var.path}/okd/bootstrap.ign"
 }
 
 resource "libvirt_volume" "bootstrap" {
   name           = "bootstrap.raw"
-  base_volume_id = libvirt_volume.federoa.id
-  pool           = libvirt_pool.okd.name
+  base_volume_id = var.base_volume_id
+  pool           = var.pool
   size           = "17179869184" # 16 GIB
 }
 
@@ -36,6 +34,5 @@ resource "libvirt_domain" "bootstrap" {
     network_name = "okd"
     addresses    = ["${var.bootstrap.ip}"]
     mac          = var.bootstrap.mac
-    #bridge=br0
   }
 }
