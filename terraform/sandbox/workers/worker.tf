@@ -10,7 +10,14 @@ resource "libvirt_volume" "worker" {
   name           = "worker-${count.index}"
   base_volume_id = var.base_volume_id
   pool           = var.pool
-  size           = "55834574848" # 16 GIB
+  size           = "55834574848" # 52 GIB
+}
+
+resource "libvirt_volume" "worker-storage" {
+  count = var.worker_count
+  name  = "worker-storage-${count.index}"
+  pool  = var.pool
+  size  = "111669149696" # 104 GIB
 }
 
 resource "libvirt_domain" "worker" {
@@ -22,6 +29,9 @@ resource "libvirt_domain" "worker" {
   memory = "6144"
   disk {
     volume_id = element(libvirt_volume.worker.*.id, count.index)
+  }
+  disk {
+    volume_id = element(libvirt_volume.worker-storage.*.id, count.index)
   }
 
   console {
