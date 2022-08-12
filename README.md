@@ -17,7 +17,7 @@ ansible-playbook -i ansible/inventory --ask-become-pass ansible/desktop.yaml --a
   -e 'ansible_python_interpreter=/usr/bin/python3'
 
 git merge --no-ff
-scp -r /home/arthur/vm windowsBackup@10.0.0.4:/backup/WindowsBackup/vm
+scp -r /home/arthur/vm windowsBackup@10.0.0.4:/storage/WindowsBackup/vm
 sudo sensors-detect
 ```
 
@@ -85,13 +85,13 @@ Permission Denied Issue
 
 [CPU Benchmark](https://www.cpubenchmark.net/compare/Intel-i5-6600-vs-AMD-RX-427BB-vs-Intel-i3-2130-vs-AMD-GX-415GA-SOC-vs-AMD-Ryzen-7-5700G/2594vs2496vs755vs2081vs4323)
 
-| Machine    | Model             | CPU      | CPU | Mem | Storage           | ZFS Storage   |
-| ---------- | ----------------- | -------- | --- | --- | ----------------- | ------------- |
-| pfSense    | Hp t730           | RX-427BB | 4   | 4G  | 16G SSD           | N/A           |
-| Bare Metal | Hp t620           | GX-415GA | 4   | 6G  | 16G SSD & 16G USB | N/A           |
-| kvm-0      | N/A               | R7-5700G | 16  | 96G | 500G NVME x2      | N/A           |
-| kvm-1      | Hp ProDesk 400 G3 | i5-6600  | 4   | 32G | 240G & 120G SSD   | N/A           |
-| ZFS        | Hp p7-1226s       | i3-2130  | 4   | 8G  | 240G SSD          | 2T ZFS Mirror |
+| Machine    | Model             | CPU      | CPU | Mem | Storage           | ZFS Storage      |
+| ---------- | ----------------- | -------- | --- | --- | ----------------- | ---------------- |
+| pfSense    | Hp t730           | RX-427BB | 4   | 4G  | 16G SSD           | N/A              |
+| Bare Metal | Hp t620           | GX-415GA | 4   | 6G  | 16G SSD & 16G USB | N/A              |
+| kvm-0      | N/A               | R7-5700G | 16  | 96G | 500G NVME x2      | N/A              |
+| kvm-1      | Hp ProDesk 400 G3 | i5-6600  | 4   | 32G | 240G & 120G SSD   | N/A              |
+| ZFS        | Hp p7-1226s       | i3-2130  | 4   | 8G  | 240G SSD          | 2T,1T ZFS Mirror |
 
 **ZFS Storage:**
 
