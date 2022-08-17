@@ -44,7 +44,7 @@ spec:
           - ReadWriteOnce
         resources:
           requests:
-            storage: 25Gi
+            storage: 35Gi
       name: ""
       replicas: 1
       resources:
@@ -54,5 +54,10 @@ spec:
         limits:
           memory: "10Gi"
           cpu: "750m"
+  patroni:
+    dynamicConfiguration:
+      postgresql:
+        pg_hba:
+          - "host all all 0.0.0.0/0 trust"
   port: 5432
   postgresVersion: 14
