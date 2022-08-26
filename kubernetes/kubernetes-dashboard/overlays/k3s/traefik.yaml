@@ -4,23 +4,42 @@ metadata:
   labels:
     k8s-app: kubernetes-dashboard
     app.kubernetes.io/instance: kubernetes-dashboard
-  name: kubernetes-dashboard
+  name: kubernetes-dashboard-http
   namespace: kubernetes-dashboard
 spec:
   entryPoints:
     - web
-    - websecure
   routes:
-    - match: "Host(`dashboard.k3s.<path:secret/data/gitlab/domain#url>`)"
+    - match: "Host(`dashboard.k3s.<path:secret/data/homelab/domain#url>`)"
       kind: Rule
       services:
         - name: kubernetes-dashboard
+          scheme: https
           port: 443
       middlewares:
         - name: https-redirect
+---
+apiVersion: traefik.containo.us/v1alpha1
+kind: IngressRoute
+metadata:
+  labels:
+    k8s-app: kubernetes-dashboard
+    app.kubernetes.io/instance: kubernetes-dashboard
+  name: kubernetes-dashboard-https
+  namespace: kubernetes-dashboard
+spec:
+  entryPoints:
+    - websecure
+  routes:
+    - match: "Host(`dashboard.k3s.<path:secret/data/homelab/domain#url>`)"
+      kind: Rule
+      services:
+        - name: kubernetes-dashboard
+          scheme: https
+          port: 443
   tls:
     domains:
-      - main: dashboard.k3s.<path:secret/data/gitlab/domain#url>
+      - main: dashboard.k3s.<path:secret/data/homelab/domain#url>
 ---
 apiVersion: traefik.containo.us/v1alpha1
 kind: Middleware
