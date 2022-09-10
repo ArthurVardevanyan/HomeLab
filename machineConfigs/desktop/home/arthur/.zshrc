@@ -6,6 +6,8 @@ export VAULT_ADDR="https://vault.arthurvardevanyan.com"
 export AVP_TYPE=vault
 export AVP_AUTH_TYPE=token
 
+export USE_GKE_GCLOUD_AUTH_PLUGIN=True
+
 ZSH_THEME="custom"
 
 # Uncomment the following line to use case-sensitive completion.
