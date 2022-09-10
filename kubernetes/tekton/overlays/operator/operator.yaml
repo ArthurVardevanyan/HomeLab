@@ -1,16 +1,9 @@
-apiVersion: v1
-kind: Namespace
-metadata:
-  labels:
-    openshift.io/cluster-monitoring: "true"
-  name: openshift-operators
----
 apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   labels:
-    operator.tekton.dev/release: v0.60.1
-    version: v0.60.1
+    operator.tekton.dev/release: v0.61.0
+    version: v0.61.0
   name: tektonaddons.operator.tekton.dev
 spec:
   group: operator.tekton.dev
@@ -47,8 +40,8 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   labels:
-    operator.tekton.dev/release: v0.60.1
-    version: v0.60.1
+    operator.tekton.dev/release: v0.61.0
+    version: v0.61.0
   name: tektonchains.operator.tekton.dev
 spec:
   group: operator.tekton.dev
@@ -85,8 +78,8 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   labels:
-    operator.tekton.dev/release: v0.60.1
-    version: v0.60.1
+    operator.tekton.dev/release: v0.61.0
+    version: v0.61.0
   name: tektonconfigs.operator.tekton.dev
 spec:
   group: operator.tekton.dev
@@ -123,8 +116,8 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   labels:
-    operator.tekton.dev/release: v0.60.1
-    version: v0.60.1
+    operator.tekton.dev/release: v0.61.0
+    version: v0.61.0
   name: tektonhubs.operator.tekton.dev
 spec:
   group: operator.tekton.dev
@@ -167,8 +160,8 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   labels:
-    operator.tekton.dev/release: v0.60.1
-    version: v0.60.1
+    operator.tekton.dev/release: v0.61.0
+    version: v0.61.0
   name: tektoninstallersets.operator.tekton.dev
 spec:
   group: operator.tekton.dev
@@ -202,8 +195,8 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   labels:
-    operator.tekton.dev/release: v0.60.1
-    version: v0.60.1
+    operator.tekton.dev/release: v0.61.0
+    version: v0.61.0
   name: tektonpipelines.operator.tekton.dev
 spec:
   group: operator.tekton.dev
@@ -240,8 +233,8 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   labels:
-    operator.tekton.dev/release: v0.60.1
-    version: v0.60.1
+    operator.tekton.dev/release: v0.61.0
+    version: v0.61.0
   name: tektontriggers.operator.tekton.dev
 spec:
   group: operator.tekton.dev
@@ -863,7 +856,7 @@ metadata:
 ---
 apiVersion: v1
 data:
-  version: v0.60.1
+  version: v0.61.0
 kind: ConfigMap
 metadata:
   labels:
@@ -885,7 +878,7 @@ kind: Service
 metadata:
   labels:
     name: openshift-pipelines-operator
-    version: v0.60.1
+    version: v0.61.0
   name: tekton-operator
   namespace: openshift-pipelines-operator
 spec:
@@ -904,8 +897,8 @@ metadata:
   labels:
     app: tekton-operator
     name: tekton-operator-webhook
-    operator.tekton.dev/release: v0.60.1
-    version: v0.60.1
+    operator.tekton.dev/release: v0.61.0
+    version: v0.61.0
   name: tekton-operator-webhook
   namespace: openshift-pipelines-operator
 spec:
@@ -921,8 +914,8 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   labels:
-    operator.tekton.dev/release: v0.60.1
-    version: v0.60.1
+    operator.tekton.dev/release: v0.61.0
+    version: v0.61.0
   name: openshift-pipelines-operator
   namespace: openshift-pipelines-operator
 spec:
@@ -955,13 +948,13 @@ spec:
             - name: OPERATOR_NAME
               value: redhat-openshift-pipelines-operator
             - name: IMAGE_PIPELINES_PROXY
-              value: gcr.io/tekton-releases/github.com/tektoncd/operator/cmd/openshift/proxy-webhook:v0.60.1@sha256:f6f09254d7809a39bc095978655971b17b26cc39bbc44d2eeb7ed60b6ffce1e1
+              value: gcr.io/tekton-releases/github.com/tektoncd/operator/cmd/openshift/proxy-webhook:v0.61.0@sha256:c34da1716121d6edf34261b43956aec3fe3106ead0b4ae6ef57bfbc2a64e230a
             - name: IMAGE_JOB_PRUNER_TKN
               value: gcr.io/tekton-releases/dogfooding/tkn@sha256:025de221fb059ca24a3b2d988889ea34bce48dc76c0cf0d6b4499edb8c21325f
             - name: METRICS_DOMAIN
               value: tekton.dev/operator
             - name: VERSION
-              value: v0.60.1
+              value: v0.61.0
             - name: AUTOINSTALL_COMPONENTS
               valueFrom:
                 configMapKeyRef:
@@ -975,20 +968,20 @@ spec:
             - name: CONFIG_OBSERVABILITY_NAME
               value: tekton-config-observability
             - name: IMAGE_HUB_TEKTON_HUB_DB
-              value: registry.redhat.io/rhel8/postgresql-13@sha256:6032adb3eac903ee8aa61f296ca9aaa57f5709e5673504b609222e042823f195
+              value: registry.redhat.io/rhel8/postgresql-13@sha256:9fd7af383b4070866b7ae013f19e9c672de7dff14e1661fd24d763277ac1cfd3
             - name: IMAGE_ADDONS_PARAM_BUILDER_IMAGE
-              value: registry.redhat.io/rhel8/buildah@sha256:82aa9592f3262313ec52f7a2335641e2581b0d0d9807980846d0539bb77d0657
+              value: registry.redhat.io/rhel8/buildah@sha256:0a86ecbdfbe86e9d225b7fe4b090a0dd6d323f8afdfdf2bd933ff223ddb53320
             - name: IMAGE_ADDONS_PARAM_KN_IMAGE
-              value: registry.redhat.io/openshift-serverless-1/client-kn-rhel8@sha256:1d5291d00c3f85de57b921b7450e41ceb58d8c3104c36135a242f5993531af5c
+              value: registry.redhat.io/openshift-serverless-1/client-kn-rhel8@sha256:356a55c587203ae8205fd177f39cd1a6dbd8962c4dffcbc576d74009b668d256
             - name: IMAGE_ADDONS_MVN_SETTINGS
-              value: registry.redhat.io/ubi8/ubi-minimal@sha256:3f32ebba0cbf3849a48372d4fc3a4ce70816f248d39eb50da7ea5f15c7f9d120
+              value: registry.redhat.io/ubi8/ubi-minimal@sha256:c7b45019f4db32e536e69e102c4028b66bf5cde173cfff4ffd3281ccf7bb3863
             - name: IMAGE_ADDONS_SKOPEO_COPY
-              value: registry.redhat.io/rhel8/skopeo@sha256:3f16176d50e8132dd447aa5a513466a48d84e724bbb194d30501ae620a58172f
+              value: registry.redhat.io/rhel8/skopeo@sha256:5a83242e519a2b6e3387c3567ba799a94604be1b7d2e3cd134a631b9827c9762
             - name: IMAGE_ADDONS_GENERATE
               value: registry.redhat.io/ocp-tools-4-tech-preview/source-to-image-rhel8@sha256:98d8cb3a255641ca6a1bce854e5e2460c20de9fb9b28e3cc67eb459f122873dd
             - name: IMAGE_ADDONS_GEN_ENV_FILE
               value: registry.redhat.io/ocp-tools-4-tech-preview/source-to-image-rhel8@sha256:98d8cb3a255641ca6a1bce854e5e2460c20de9fb9b28e3cc67eb459f122873dd
-          image: gcr.io/tekton-releases/github.com/tektoncd/operator/cmd/openshift/operator:v0.60.1@sha256:1f52142bb4176c234c9e4c54fc066447066325de98d405f3f2da082ce10ba2ba
+          image: gcr.io/tekton-releases/github.com/tektoncd/operator/cmd/openshift/operator:v0.61.0@sha256:c394f9004cad1aa17946b1bdbb79c844b488113b3500037d08a6b4ecec7880a2
           imagePullPolicy: Always
           name: openshift-pipelines-operator-lifecycle
           resources:
@@ -1019,10 +1012,10 @@ spec:
             - name: PROFILING_PORT
               value: "9009"
             - name: VERSION
-              value: v0.60.1
+              value: v0.61.0
             - name: METRICS_DOMAIN
               value: tekton.dev/operator
-          image: gcr.io/tekton-releases/github.com/tektoncd/operator/cmd/openshift/operator:v0.60.1@sha256:1f52142bb4176c234c9e4c54fc066447066325de98d405f3f2da082ce10ba2ba
+          image: gcr.io/tekton-releases/github.com/tektoncd/operator/cmd/openshift/operator:v0.61.0@sha256:c394f9004cad1aa17946b1bdbb79c844b488113b3500037d08a6b4ecec7880a2
           imagePullPolicy: Always
           name: openshift-pipelines-operator-cluster-operations
           resources:
@@ -1038,8 +1031,8 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   labels:
-    operator.tekton.dev/release: v0.60.1
-    version: v0.60.1
+    operator.tekton.dev/release: v0.61.0
+    version: v0.61.0
   name: tekton-operator-webhook
   namespace: openshift-pipelines-operator
 spec:
@@ -1067,7 +1060,7 @@ spec:
               value: tekton-operator-webhook-certs
             - name: METRICS_DOMAIN
               value: tekton.dev/operator
-          image: gcr.io/tekton-releases/github.com/tektoncd/operator/cmd/openshift/webhook:v0.60.1@sha256:cfb7e5ef212bed9fe906566563fec5cabe766beca355e4e088eb4f43e0966046
+          image: gcr.io/tekton-releases/github.com/tektoncd/operator/cmd/openshift/webhook:v0.61.0@sha256:a3d3f50b4a2224c1b49605dbcf58a366f992ee55393d5a389f7243678610ac50
           name: tekton-operator-webhook
           ports:
             - containerPort: 8443
@@ -1097,7 +1090,7 @@ spec:
   jobLabel: name
   namespaceSelector:
     matchNames:
-      - openshift-operators
+      - openshift-pipelines-operator
   selector:
     matchLabels:
       name: openshift-pipelines-operator
