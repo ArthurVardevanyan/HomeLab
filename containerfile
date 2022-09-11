@@ -1,6 +1,8 @@
 FROM debian:bookworm-slim
 
-RUN apt-get update && apt-get install gnupg2 sshpass curl logrotate rsync git -y
+ENV ARGOCD_VAULT_VERSION=1.12.0
+
+RUN apt-get update && apt-get install gnupg2 curl -y
 
 RUN printf "deb http://ppa.launchpad.net/ansible/ansible/ubuntu focal main" > /etc/apt/sources.list.d/ansible.list
 RUN apt-key adv --keyserver keyserver.ubuntu.com --recv-keys 93C4A3FD7BB9C367
@@ -11,12 +13,20 @@ RUN echo "deb [arch=amd64] https://apt.releases.hashicorp.com bullseye main" | t
 RUN curl -fsSLo /usr/share/keyrings/kubernetes-archive-keyring.gpg https://packages.cloud.google.com/apt/doc/apt-key.gpg
 RUN echo "deb [signed-by=/usr/share/keyrings/kubernetes-archive-keyring.gpg] https://apt.kubernetes.io/ kubernetes-xenial main" | tee /etc/apt/sources.list.d/kubernetes.list
 
+RUN curl -L -o argocd-vault-plugin https://github.com/IBM/argocd-vault-plugin/releases/download/${ARGOCD_VAULT_VERSION}/argocd-vault-plugin_${ARGOCD_VAULT_VERSION}_linux_amd64
+RUN chmod +x argocd-vault-plugin
+RUN mv argocd-vault-plugin /usr/local/bin
+
+RUN curl -L -o yq https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64
+RUN chmod +x yq
+RUN mv yq /usr/local/bin
+
+RUN apt-get install gnupg2 sshpass curl logrotate rsync git iputils-ping jq -y
+
 RUN apt-get update && apt-get install mariadb-client kubectl ansible vault -y && \
 	apt-get clean && \
 	rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
-RUN curl -L -o argocd-vault-plugin https://github.com/IBM/argocd-vault-plugin/releases/download/v1.10.1/argocd-vault-plugin_1.10.1_linux_amd64
-RUN chmod +x argocd-vault-plugin
-RUN mv argocd-vault-plugin /usr/local/bin
+RUN setcap -r /usr/bin/vault
 
 CMD ["sleep", "infinity"]
