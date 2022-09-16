@@ -17,7 +17,7 @@ ansible-playbook -i ansible/inventory --ask-become-pass ansible/desktop.yaml --a
   -e 'ansible_python_interpreter=/usr/bin/python3'
 
 git merge --no-ff
-scp -r /home/arthur/vm windowsBackup@10.0.0.4:/storage/WindowsBackup/vm
+scp -r /mnt/storage/vm/*.img windowsBackup@10.0.0.4:/backup/WindowsBackup/vm
 sudo sensors-detect
 ```
 
