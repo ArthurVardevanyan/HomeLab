@@ -36,11 +36,14 @@ spec:
             - name: longhorn-rsync
               image: registry.<path:secret/data/homelab/domain#url>/homelab/toolbox:latest
               command:
-                [
-                  "/bin/bash",
-                  "-c",
-                  "rsync --stats --archive --verbose --human-readable --stats --delete /mnt/data/longhorn /mnt/backup/",
-                ]
+                - /bin/bash
+                - -c
+                - |
+                  #rsync --stats --archive --verbose --human-readable --delete /mnt/data/longhorn /mnt/backup/
+                  for d in /mnt/data/longhorn/backupstore/volumes/*; do
+                    rsync --stats --archive --verbose --human-readable --delete "$d" /mnt/backup/longhorn/backupstore/volumes &
+                  done
+                  wait
               resources:
                 limits:
                   cpu: 200m
