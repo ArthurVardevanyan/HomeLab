@@ -69,3 +69,39 @@ spec:
   frontend: blockdev
   numberOfReplicas: 2
   size: "52428800"
+---
+apiVersion: longhorn.io/v1beta2
+kind: Volume
+metadata:
+  labels:
+    longhornvolume: prometheus-user-workload-db-0
+    recurring-job-group.longhorn.io/default: enabled
+    app.kubernetes.io/instance: openshift-monitoring
+  name: prometheus-user-workload-db-0
+  namespace: longhorn-system
+spec:
+  replicaAutoBalance: disabled
+  dataLocality: disabled
+  accessMode: rwo
+  engineImage: longhornio/longhorn-engine:v1.3.1
+  frontend: blockdev
+  numberOfReplicas: 1
+  size: "5368709120"
+---
+apiVersion: longhorn.io/v1beta2
+kind: Volume
+metadata:
+  labels:
+    longhornvolume: prometheus-user-workload-db-1
+    recurring-job-group.longhorn.io/default: enabled
+    app.kubernetes.io/instance: openshift-monitoring
+  name: prometheus-user-workload-db-1
+  namespace: longhorn-system
+spec:
+  replicaAutoBalance: disabled
+  dataLocality: disabled
+  accessMode: rwo
+  engineImage: longhornio/longhorn-engine:v1.3.1
+  frontend: blockdev
+  numberOfReplicas: 1
+  size: "5368709120"

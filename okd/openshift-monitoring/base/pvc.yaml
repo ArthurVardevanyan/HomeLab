@@ -29,7 +29,7 @@ spec:
     volumeHandle: prometheus-k8s-db-prometheus-k8s-1
     fsType: ext4
     volumeAttributes:
-      numberOfReplicas: "2"
+      numberOfReplicas: "1"
   accessModes:
     - ReadWriteOnce
   claimRef:
@@ -71,7 +71,7 @@ spec:
     volumeHandle: prometheus-k8s-db-prometheus-k8s-0
     fsType: ext4
     volumeAttributes:
-      numberOfReplicas: "2"
+      numberOfReplicas: "1"
   accessModes:
     - ReadWriteOnce
   claimRef:
@@ -113,7 +113,7 @@ spec:
     volumeHandle: alertmanager-main-db-alertmanager-main-1
     fsType: ext4
     volumeAttributes:
-      numberOfReplicas: "2"
+      numberOfReplicas: "1"
   accessModes:
     - ReadWriteOnce
   claimRef:
@@ -155,13 +155,97 @@ spec:
     volumeHandle: alertmanager-main-db-alertmanager-main-0
     fsType: ext4
     volumeAttributes:
-      numberOfReplicas: "2"
+      numberOfReplicas: "1"
   accessModes:
     - ReadWriteOnce
   claimRef:
     kind: PersistentVolumeClaim
     name: alertmanager-main-db-alertmanager-main-0
     namespace: openshift-monitoring
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: longhorn-static
+  volumeMode: Filesystem
+---
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: prometheus-user-workload-db-prometheus-user-workload-1
+  namespace: openshift-user-workload-monitoring
+  labels:
+    app.kubernetes.io/instance: openshift-monitoring
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 5Gi
+  volumeName: prometheus-user-workload-db-prometheus-user-workload-1
+  storageClassName: longhorn-static
+  volumeMode: Filesystem
+---
+kind: PersistentVolume
+apiVersion: v1
+metadata:
+  name: prometheus-user-workload-db-prometheus-user-workload-1
+  labels:
+    app.kubernetes.io/instance: openshift-monitoring
+spec:
+  capacity:
+    storage: 5Gi
+  csi:
+    driver: driver.longhorn.io
+    volumeHandle: prometheus-user-workload-db-1
+    fsType: ext4
+    volumeAttributes:
+      numberOfReplicas: "1"
+  accessModes:
+    - ReadWriteOnce
+  claimRef:
+    kind: PersistentVolumeClaim
+    name: prometheus-user-workload-db-prometheus-user-workload-1
+    namespace: openshift-user-workload-monitoring
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: longhorn-static
+  volumeMode: Filesystem
+---
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: prometheus-user-workload-db-prometheus-user-workload-0
+  namespace: openshift-user-workload-monitoring
+  labels:
+    app.kubernetes.io/instance: openshift-monitoring
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 5Gi
+  volumeName: prometheus-user-workload-db-prometheus-user-workload-0
+  storageClassName: longhorn-static
+  volumeMode: Filesystem
+---
+kind: PersistentVolume
+apiVersion: v1
+metadata:
+  name: prometheus-user-workload-db-prometheus-user-workload-0
+  labels:
+    app.kubernetes.io/instance: openshift-monitoring
+spec:
+  capacity:
+    storage: 5Gi
+  csi:
+    driver: driver.longhorn.io
+    volumeHandle: prometheus-user-workload-db-0
+    fsType: ext4
+    volumeAttributes:
+      numberOfReplicas: "1"
+  accessModes:
+    - ReadWriteOnce
+  claimRef:
+    kind: PersistentVolumeClaim
+    name: prometheus-user-workload-db-prometheus-user-workload-0
+    namespace: openshift-user-workload-monitoring
   persistentVolumeReclaimPolicy: Retain
   storageClassName: longhorn-static
   volumeMode: Filesystem

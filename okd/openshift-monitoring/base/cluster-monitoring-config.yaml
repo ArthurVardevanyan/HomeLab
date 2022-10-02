@@ -47,3 +47,29 @@ data:
         limits:
           cpu: 200m
           memory: 256Mi
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: user-workload-monitoring-config
+  namespace: openshift-user-workload-monitoring
+  labels:
+    app.kubernetes.io/instance: openshift-monitoring
+data:
+  config.yaml: |
+    prometheus:
+      retention: 14d
+      resources:
+        requests:
+          cpu: 25m
+          memory: 256Mi
+        limits:
+          cpu: 50m
+          memory: 512Mi
+      volumeClaimTemplate:
+       spec:
+         storageClassName: longhorn-static
+         volumeMode: Filesystem
+         resources:
+           requests:
+             storage: 5Gi
