@@ -20,8 +20,8 @@ spec:
       annotations:
         enable.version-checker.io/gitea: "true"
     spec:
-      securityContext:
-        fsGroup: 1000
+      # securityContext:
+      #   fsGroup: 1000
       initContainers:
         - name: init-directories
           image: "gitea/gitea:1.17.2-rootless"
@@ -47,14 +47,16 @@ spec:
               mountPath: /cert
           securityContext:
             allowPrivilegeEscalation: false
+            seccompProfile:
+              type: RuntimeDefault
             capabilities:
               drop:
                 - ALL
             privileged: false
-            readOnlyRootFilesystem: false
-            runAsGroup: 1000
+            readOnlyRootFilesystem: true
+            # runAsGroup: 1000
             runAsNonRoot: true
-            runAsUser: 1000
+            # runAsUser: 1000
         - name: init-app-ini
           image: "gitea/gitea:1.17.2-rootless"
           imagePullPolicy: IfNotPresent
@@ -81,28 +83,32 @@ spec:
               mountPath: /cert
           securityContext:
             allowPrivilegeEscalation: false
+            seccompProfile:
+              type: RuntimeDefault
             capabilities:
               drop:
                 - ALL
             privileged: false
-            readOnlyRootFilesystem: false
-            runAsGroup: 1000
+            readOnlyRootFilesystem: true
+            # runAsGroup: 1000
             runAsNonRoot: true
-            runAsUser: 1000
+            # runAsUser: 1000
         - name: configure-gitea
           image: "gitea/gitea:1.17.2-rootless"
           command: ["/usr/sbin/configure_gitea.sh"]
           imagePullPolicy: IfNotPresent
           securityContext:
             allowPrivilegeEscalation: false
+            seccompProfile:
+              type: RuntimeDefault
             capabilities:
               drop:
                 - ALL
             privileged: false
-            readOnlyRootFilesystem: false
-            runAsGroup: 1000
+            readOnlyRootFilesystem: true
+            # runAsGroup: 1000
             runAsNonRoot: true
-            runAsUser: 1000
+            # runAsUser: 1000
           env:
             - name: GITEA_APP_INI
               value: /data/gitea/conf/app.ini
@@ -183,14 +189,16 @@ spec:
               memory: 192Mi
           securityContext:
             allowPrivilegeEscalation: false
+            seccompProfile:
+              type: RuntimeDefault
             capabilities:
               drop:
                 - ALL
             privileged: false
-            readOnlyRootFilesystem: false
-            runAsGroup: 1000
+            readOnlyRootFilesystem: true
+            # runAsGroup: 1000
             runAsNonRoot: true
-            runAsUser: 1000
+            # runAsUser: 1000
           volumeMounts:
             - name: temp
               mountPath: /tmp
@@ -198,6 +206,8 @@ spec:
               mountPath: /data
             - name: gitea-cert
               mountPath: /cert
+            - name: git
+              mountPath: /var/lib/gitea/git
       volumes:
         - name: init
           secret:
@@ -211,7 +221,11 @@ spec:
           secret:
             secretName: gitea-inline-config
         - name: temp
-          emptyDir: {}
+          emptyDir:
+            sizeLimit: 1Mi
+        - name: git
+          emptyDir:
+            sizeLimit: 1Mi
         - name: data
           persistentVolumeClaim:
             claimName: gitea-pvc
