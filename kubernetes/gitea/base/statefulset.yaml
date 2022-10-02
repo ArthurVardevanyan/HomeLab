@@ -154,31 +154,37 @@ spec:
           ports:
             - name: ssh
               containerPort: 2222
-            - name: http
+            - name: https
               containerPort: 3000
           livenessProbe:
             failureThreshold: 10
-            initialDelaySeconds: 60
-            periodSeconds: 10
+            initialDelaySeconds: 30
+            periodSeconds: 30
             successThreshold: 1
-            tcpSocket:
-              port: http
+            httpGet:
+              path: /api/healthz
+              port: https
+              scheme: HTTPS
             timeoutSeconds: 1
           readinessProbe:
             failureThreshold: 3
             initialDelaySeconds: 5
-            periodSeconds: 10
+            periodSeconds: 30
             successThreshold: 1
-            tcpSocket:
-              port: http
+            httpGet:
+              path: /api/healthz
+              port: https
+              scheme: HTTPS
             timeoutSeconds: 1
           startupProbe:
             failureThreshold: 10
-            initialDelaySeconds: 60
-            periodSeconds: 10
+            initialDelaySeconds: 30
+            periodSeconds: 30
             successThreshold: 1
-            tcpSocket:
-              port: http
+            httpGet:
+              path: /api/healthz
+              port: https
+              scheme: HTTPS
             timeoutSeconds: 1
           resources:
             limits:
