@@ -1,0 +1,80 @@
+kind: PersistentVolume
+apiVersion: v1
+metadata:
+  name: gitea-00-9ds5-pgdata
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+  labels:
+    app.kubernetes.io/instance: postgres
+spec:
+  capacity:
+    storage: 500Mi
+  csi:
+    driver: driver.longhorn.io
+    volumeHandle: gitea-00-9ds5-pgdata
+    fsType: ext4
+    volumeAttributes:
+      numberOfReplicas: "2"
+  accessModes:
+    - ReadWriteOnce
+  claimRef:
+    kind: PersistentVolumeClaim
+    name: gitea-00-9ds5-pgdata
+    namespace: postgres
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: longhorn-static
+  volumeMode: Filesystem
+---
+kind: PersistentVolume
+apiVersion: v1
+metadata:
+  name: gitea-00-z7gc-pgdata
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+  labels:
+    app.kubernetes.io/instance: postgres
+spec:
+  capacity:
+    storage: 500Mi
+  csi:
+    driver: driver.longhorn.io
+    volumeHandle: gitea-00-z7gc-pgdata
+    fsType: ext4
+    volumeAttributes:
+      numberOfReplicas: "2"
+  accessModes:
+    - ReadWriteOnce
+  claimRef:
+    kind: PersistentVolumeClaim
+    name: gitea-00-z7gc-pgdata
+    namespace: postgres
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: longhorn-static
+  volumeMode: Filesystem
+---
+kind: PersistentVolume
+apiVersion: v1
+metadata:
+  name: gitea-repo1
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+  labels:
+    app.kubernetes.io/instance: postgres
+spec:
+  capacity:
+    storage: 100Mi
+  csi:
+    driver: driver.longhorn.io
+    volumeHandle: gitea-repo1
+    fsType: ext4
+    volumeAttributes:
+      numberOfReplicas: "2"
+  accessModes:
+    - ReadWriteOnce
+  claimRef:
+    kind: PersistentVolumeClaim
+    name: gitea-repo1
+    namespace: postgres
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: longhorn-static
+  volumeMode: Filesystem

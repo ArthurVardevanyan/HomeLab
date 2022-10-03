@@ -1,0 +1,63 @@
+apiVersion: postgres-operator.crunchydata.com/v1beta1
+kind: PostgresCluster
+metadata:
+  name: gitea
+  namespace: postgres
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+  labels:
+    app.kubernetes.io/instance: postgres
+spec:
+  backups:
+    pgbackrest:
+      sidecars:
+        pgbackrest:
+          resources:
+            limits:
+              memory: "64Mi"
+              cpu: "30m"
+            requests:
+              memory: "32Mi"
+              cpu: "15m"
+        pgbackrestConfig:
+          resources:
+            limits:
+              memory: "64Mi"
+              cpu: "30m"
+            requests:
+              memory: "32Mi"
+              cpu: "15m"
+      repos:
+        - name: repo1
+          volume:
+            volumeClaimSpec:
+              storageClassName: longhorn-static
+              accessModes:
+                - ReadWriteOnce
+              resources:
+                requests:
+                  storage: 100Mi
+  instances:
+    - dataVolumeClaimSpec:
+        storageClassName: longhorn-static
+        accessModes:
+          - ReadWriteOnce
+        resources:
+          requests:
+            storage: 500Mi
+      name: ""
+      replicas: 2
+      resources:
+        requests:
+          memory: "125Mi"
+          cpu: "25m"
+        limits:
+          memory: "250Mi"
+          cpu: "75m"
+  patroni:
+    dynamicConfiguration:
+      postgresql:
+        pg_hba:
+          - "host all all 0.0.0.0/0 trust"
+  port: 5432
+  postgresVersion: 14

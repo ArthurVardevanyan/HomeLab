@@ -121,7 +121,7 @@ spec:
             - name: GITEA_ADMIN_USERNAME
               value: "gitea_admin"
             - name: GITEA_ADMIN_PASSWORD
-              value: "gitea_admin"
+              value: "<path:secret/data/homelab/gitea#admin_pass>"
           volumeMounts:
             - name: init
               mountPath: /usr/sbin
@@ -159,7 +159,7 @@ spec:
           livenessProbe:
             failureThreshold: 10
             initialDelaySeconds: 30
-            periodSeconds: 30
+            periodSeconds: 60
             successThreshold: 1
             httpGet:
               path: /api/healthz
@@ -169,7 +169,7 @@ spec:
           readinessProbe:
             failureThreshold: 3
             initialDelaySeconds: 5
-            periodSeconds: 30
+            periodSeconds: 60
             successThreshold: 1
             httpGet:
               path: /api/healthz
@@ -179,7 +179,7 @@ spec:
           startupProbe:
             failureThreshold: 10
             initialDelaySeconds: 30
-            periodSeconds: 30
+            periodSeconds: 60
             successThreshold: 1
             httpGet:
               path: /api/healthz
