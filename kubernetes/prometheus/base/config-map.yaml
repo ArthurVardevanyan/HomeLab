@@ -43,3 +43,12 @@ data:
         - source_labels: [__meta_kubernetes_pod_node_name]
           action: replace
           target_label: instance
+
+
+        metric_relabel_configs:
+        - source_labels: [ __name__ ]
+          regex: 'longhorn_rest_(.+)'
+          action: drop
+        - source_labels: [ __name__ ]
+          regex: 'longhorn_workqueue_(.+)'
+          action: drop
