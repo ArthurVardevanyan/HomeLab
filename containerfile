@@ -1,6 +1,6 @@
 FROM debian:bookworm-slim
 
-ENV ARGOCD_VAULT_VERSION=1.12.0
+ENV ARGOCD_VAULT_VERSION=1.13.0
 
 RUN apt-get update && apt-get install gnupg2 curl -y
 
@@ -13,7 +13,7 @@ RUN echo "deb [arch=amd64] https://apt.releases.hashicorp.com bullseye main" | t
 RUN curl -fsSLo /usr/share/keyrings/kubernetes-archive-keyring.gpg https://packages.cloud.google.com/apt/doc/apt-key.gpg
 RUN echo "deb [signed-by=/usr/share/keyrings/kubernetes-archive-keyring.gpg] https://apt.kubernetes.io/ kubernetes-xenial main" | tee /etc/apt/sources.list.d/kubernetes.list
 
-RUN curl -L -o argocd-vault-plugin https://github.com/IBM/argocd-vault-plugin/releases/download/${ARGOCD_VAULT_VERSION}/argocd-vault-plugin_${ARGOCD_VAULT_VERSION}_linux_amd64
+RUN curl -L -o argocd-vault-plugin https://github.com/argoproj-labs/argocd-vault-plugin/releases/download/v${ARGOCD_VAULT_VERSION}/argocd-vault-plugin_${ARGOCD_VAULT_VERSION}_linux_amd64
 RUN chmod +x argocd-vault-plugin
 RUN mv argocd-vault-plugin /usr/local/bin
 
