@@ -586,12 +586,12 @@ install_cluster() {
     echo -e "\n\n${BLUE}Creating: ${PREFIX}${NODE}${NC}"
 
     if [[ "${NODE}" =~ "master" || "${NODE}" =~ "server" ]]; then
-      CPU=2
-      MEMORY=2560
-      DISK=10
-    elif [[ "${NODE}" =~ "worker" || "${NODE}" =~ "agent" ]]; then
-      CPU=2
+      CPU=3
       MEMORY=4096
+      DISK=15
+    elif [[ "${NODE}" =~ "worker" || "${NODE}" =~ "agent" ]]; then
+      CPU=6
+      MEMORY=8192
       DISK=30
     fi
 
@@ -685,6 +685,75 @@ install_k3s_cluster() {
   echo " "
   echo "export KUBECONFIG=/mnt/storage/vm/${PREFIX}/${PREFIX}.yaml"
   echo "${PREFIX} k3s Install Complete!"
+}
+
+install_k8s() {
+  # Install & Setup k3s
+  echo -e "\n\n${BLUE}Install & Setup k8s:${NC}"
+
+  if [ -z "${PASSWORD}" ]; then
+    echo -n Password:
+    read -r -s PASSWORD
+    echo ""
+  fi
+
+  ansible-playbook -i /tmp/inventory ansible/playbooks/servers/k8s/k8sPackages.yaml --extra-vars \
+    "ansible_become_pass=${PASSWORD} ansible_ssh_pass=${PASSWORD}"
+  reboot_cluster
+
+  IP=${START_IP}
+
+  HAPROXY="echo ${PASSWORD} | sudo -S sed -i 's,10.0.0.100,10.10.10.1,g' '/mnt/kubeadm.yaml'"
+  sshpass -p "${PASSWORD}" ssh -t 10.10.10.${IP} "${HAPROXY}"
+
+  CERT_KEY=""
+  INSTALL="echo ${PASSWORD} | sudo -S kubeadm init --config /mnt/kubeadm.yaml"
+  SERVER=""
+  WORKER=""
+
+  for NODE in ${NODES}; do
+    KUBE=0
+    if [[ "${NODE}" =~ "master" || "${NODE}" =~ "server" ]]; then
+      if [ ${IP} -eq ${START_IP} ]; then
+        CONFIG=${INSTALL}
+        KUBE=1
+      else
+        CONFIG=${SERVER}
+      fi
+    elif [[ "${NODE}" =~ "worker" || "${NODE}" =~ "agent" ]]; then
+      CONFIG=${WORKER}
+    fi
+
+    echo "${PREFIX}${NODE}"
+    sshpass -p "${PASSWORD}" ssh -t 10.10.10.${IP} "${CONFIG}"
+
+    if [ ${KUBE} -eq 1 ]; then
+      CMD="echo ${PASSWORD} | sudo -S cp /etc/kubernetes/admin.conf /tmp; sudo chmod 777 /tmp/admin.conf"
+      sshpass -p "${PASSWORD}" ssh -t 10.10.10.${START_IP} "${CMD}"
+      sshpass -p "${PASSWORD}" scp 10.10.10.${START_IP}:/tmp/admin.conf "/mnt/storage/vm/${PREFIX}/${PREFIX}.yaml"
+
+      load_kubeconfig
+      rm -rf /tmp/k8s
+      cp -r k8s /tmp/
+      kubectl apply -f /tmp/k8s/kube-flannel
+
+      CERT_COMMAND="echo ${PASSWORD} | sudo -S kubeadm init phase upload-certs --upload-certs --config /mnt/kubeadm.yaml | tail -n1"
+      CERT_KEY=$(sshpass -p "${PASSWORD}" ssh -t 10.10.10.${START_IP} "${CERT_COMMAND}" | cut -d: -f2- | tr -d '\r')
+
+      TOKEN="echo ${PASSWORD} | sudo -S kubeadm token create --print-join-command"
+      JOIN_COMMAND=$(sshpass -p "${PASSWORD}" ssh -t 10.10.10.${START_IP} "${TOKEN}" | cut -d: -f2- | tr -d '\r')
+      WORKER="echo ${PASSWORD} | sudo -S ${JOIN_COMMAND}"
+
+      SERVER="${WORKER} --certificate-key ${CERT_KEY} --control-plane"
+
+      sleep 10s
+    fi
+    ((IP++))
+  done
+
+  echo -e "\n\n${BLUE}Install Complete!${NC}"
+  echo "export KUBECONFIG=/mnt/storage/vm/${PREFIX}/${PREFIX}.yaml"
+  echo "${PREFIX} k8s Install Complete!"
 }
 
 install_k8s_cluster() {
