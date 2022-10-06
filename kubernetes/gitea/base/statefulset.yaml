@@ -26,6 +26,13 @@ spec:
         - name: init-directories
           image: "gitea/gitea:1.17.2-rootless"
           imagePullPolicy: IfNotPresent
+          resources:
+            limits:
+              cpu: 50m
+              memory: 100M
+            requests:
+              cpu: 25m
+              memory: 50M
           command: ["/usr/sbin/init_directory_structure.sh"]
           env:
             - name: GITEA_APP_INI
@@ -60,6 +67,13 @@ spec:
         - name: init-app-ini
           image: "gitea/gitea:1.17.2-rootless"
           imagePullPolicy: IfNotPresent
+          resources:
+            limits:
+              cpu: 50m
+              memory: 100M
+            requests:
+              cpu: 25m
+              memory: 50M
           command: ["/usr/sbin/config_environment.sh"]
           env:
             - name: GITEA_APP_INI
@@ -95,6 +109,13 @@ spec:
             # runAsUser: 1000
         - name: configure-gitea
           image: "gitea/gitea:1.17.2-rootless"
+          resources:
+            limits:
+              cpu: 50m
+              memory: 100M
+            requests:
+              cpu: 25m
+              memory: 50M
           command: ["/usr/sbin/configure_gitea.sh"]
           imagePullPolicy: IfNotPresent
           securityContext:
@@ -158,8 +179,8 @@ spec:
               containerPort: 3000
           livenessProbe:
             failureThreshold: 10
-            initialDelaySeconds: 30
-            periodSeconds: 25
+            initialDelaySeconds: 45
+            periodSeconds: 60
             successThreshold: 1
             httpGet:
               path: /api/healthz
@@ -168,8 +189,8 @@ spec:
             timeoutSeconds: 1
           readinessProbe:
             failureThreshold: 3
-            initialDelaySeconds: 5
-            periodSeconds: 30
+            initialDelaySeconds: 30
+            periodSeconds: 35
             successThreshold: 1
             httpGet:
               path: /api/healthz
