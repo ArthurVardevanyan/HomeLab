@@ -51,13 +51,16 @@ stateful_workload_stop() {
   kubectl scale --replicas=0 -n keycloak deployment/keycloak-operator
   kubectl scale --replicas=0 -n keycloak statefulset/keycloak
 
-  kubectl scale --replicas=0 -n postgres statefulset clair-00-xll2
+  kubectl scale --replicas=0 -n postgres statefulset/clair-00-s8wv
   kubectl scale --replicas=0 -n postgres statefulset/clair-repo-host
   kubectl scale --replicas=0 -n postgres statefulset/quay-00-87fl
   kubectl scale --replicas=0 -n postgres statefulset/quay-repo-host
   kubectl scale --replicas=0 -n postgres statefulset/keycloak-00-2q9c
   kubectl scale --replicas=0 -n postgres statefulset/keycloak-00-nj82
   kubectl scale --replicas=0 -n postgres statefulset/keycloak-repo-host
+  kubectl scale --replicas=0 -n postgres statefulset/gitea-00-9ds5
+  kubectl scale --replicas=0 -n postgres statefulset/gitea-00-z7gc
+  kubectl scale --replicas=0 -n postgres statefulset/gitea-repo-host
 
   kubectl scale --replicas=0 -n argocd deployment/argocd-operator-controller-manager
   kubectl scale --replicas=0 -n argocd statefulset/argocd-application-controller
@@ -95,17 +98,20 @@ stateful_workload_start() {
   kubectl scale --replicas=1 -n quay deployment/quay-quay-app
   kubectl scale --replicas=1 -n quay deployment/quay-clair-app
   kubectl scale --replicas=1 -n gitea statefulset/gitea
-  kubectl scale --replicas=1 -n postgres deployment/pgo
+  #kubectl scale --replicas=1 -n postgres deployment/pgo
   kubectl scale --replicas=1 -n keycloak deployment/keycloak-operator
   kubectl scale --replicas=2 -n keycloak statefulset/keycloak
 
-  kubectl scale --replicas=1 -n postgres statefulset clair-00-xll2
+  kubectl scale --replicas=1 -n postgres statefulset/clair-00-s8wv
   kubectl scale --replicas=1 -n postgres statefulset/clair-repo-host
   kubectl scale --replicas=1 -n postgres statefulset/quay-00-87fl
   kubectl scale --replicas=1 -n postgres statefulset/quay-repo-host
   kubectl scale --replicas=1 -n postgres statefulset/keycloak-00-2q9c
   kubectl scale --replicas=1 -n postgres statefulset/keycloak-00-nj82
   kubectl scale --replicas=1 -n postgres statefulset/keycloak-repo-host
+  kubectl scale --replicas=1 -n postgres statefulset/gitea-00-9ds5
+  kubectl scale --replicas=1 -n postgres statefulset/gitea-00-z7gc
+  kubectl scale --replicas=1 -n postgres statefulset/gitea-repo-host
 
   kubectl scale --replicas=1 -n argocd deployment/argocd-operator-controller-manager
   kubectl scale --replicas=1 -n argocd statefulset/argocd-application-controller
