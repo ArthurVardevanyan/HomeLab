@@ -10,15 +10,23 @@ metadata:
 spec:
   backups:
     pgbackrest:
+      repoHost:
+        resources:
+          limits:
+            memory: "64Mi"
+            cpu: "30m"
+          requests:
+            memory: "32Mi"
+            cpu: "15m"
       sidecars:
         pgbackrest:
           resources:
             limits:
-              memory: "32Mi"
-              cpu: "20m"
+              memory: "64Mi"
+              cpu: "30m"
             requests:
-              memory: "16Mi"
-              cpu: "10m"
+              memory: "32Mi"
+              cpu: "15m"
         pgbackrestConfig:
           resources:
             limits:
@@ -46,7 +54,7 @@ spec:
           requests:
             storage: 1Gi
       name: ""
-      replicas: 1
+      replicas: 2
       resources:
         requests:
           memory: "350Mi"
