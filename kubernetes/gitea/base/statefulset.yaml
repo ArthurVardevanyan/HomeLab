@@ -4,6 +4,7 @@ metadata:
   name: gitea
   namespace: gitea
   labels:
+    app.kubernetes.io/name: gitea
     app.kubernetes.io/instance: gitea
 spec:
   replicas: 1
@@ -190,7 +191,7 @@ spec:
           readinessProbe:
             failureThreshold: 3
             initialDelaySeconds: 30
-            periodSeconds: 35
+            periodSeconds: 45
             successThreshold: 1
             httpGet:
               path: /api/healthz
