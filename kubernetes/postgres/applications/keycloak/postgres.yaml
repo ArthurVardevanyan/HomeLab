@@ -14,19 +14,19 @@ spec:
         pgbackrest:
           resources:
             limits:
-              memory: "64Mi"
-              cpu: "50m"
-            requests:
               memory: "32Mi"
-              cpu: "25m"
+              cpu: "20m"
+            requests:
+              memory: "16Mi"
+              cpu: "10m"
         pgbackrestConfig:
           resources:
             limits:
-              memory: "64Mi"
-              cpu: "50m"
-            requests:
               memory: "32Mi"
-              cpu: "25m"
+              cpu: "10m"
+            requests:
+              memory: "16Mi"
+              cpu: "5m"
       repos:
         - name: repo1
           volume:
@@ -54,5 +54,16 @@ spec:
         limits:
           memory: "250Mi"
           cpu: "75m"
+  monitoring:
+    pgmonitor:
+      exporter:
+        resources:
+          limits:
+            memory: "32Mi"
+            cpu: "10m"
+          requests:
+            memory: "16Mi"
+            cpu: "5m"
+  openshift: true
   port: 5432
   postgresVersion: 14
