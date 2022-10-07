@@ -98,7 +98,7 @@ stateful_workload_start() {
   kubectl scale --replicas=1 -n quay deployment/quay-quay-app
   kubectl scale --replicas=1 -n quay deployment/quay-clair-app
   kubectl scale --replicas=1 -n gitea statefulset/gitea
-  #kubectl scale --replicas=1 -n postgres deployment/pgo
+  kubectl scale --replicas=1 -n postgres deployment/pgo
   kubectl scale --replicas=1 -n keycloak deployment/keycloak-operator
   kubectl scale --replicas=2 -n keycloak statefulset/keycloak
 
