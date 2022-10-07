@@ -4,6 +4,7 @@ metadata:
   name: service-monitor
   namespace: postgres
   labels:
+    app.kubernetes.io/instance: postgres
     postgres-operator.crunchydata.com/crunchy-postgres-exporter: "true"
 spec:
   selector:
@@ -22,6 +23,8 @@ kind: ServiceMonitor
 metadata:
   name: service-monitor
   namespace: postgres
+  labels:
+    app.kubernetes.io/instance: postgres
 spec:
   endpoints:
     - path: /metrics
