@@ -23,7 +23,7 @@ RUN mv yq /usr/local/bin
 
 RUN apt-get install gnupg2 sshpass curl logrotate rsync git iputils-ping jq -y
 
-RUN apt-get update && apt-get install mariadb-client kubectl ansible vault -y && \
+RUN apt-get update && apt-get install mariadb-client kubectl ansible vault pgloader -y && \
 	apt-get clean && \
 	rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
