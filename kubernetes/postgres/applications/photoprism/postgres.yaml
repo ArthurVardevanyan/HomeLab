@@ -1,0 +1,82 @@
+apiVersion: postgres-operator.crunchydata.com/v1beta1
+kind: PostgresCluster
+metadata:
+  name: photoprism
+  namespace: postgres
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+  labels:
+    app.kubernetes.io/instance: postgres
+spec:
+  backups:
+    pgbackrest:
+      repoHost:
+        resources:
+          limits:
+            memory: "32Mi"
+            cpu: "45m"
+          requests:
+            memory: "16Mi"
+            cpu: "15m"
+      sidecars:
+        pgbackrest:
+          resources:
+            limits:
+              memory: "32Mi"
+              cpu: "45m"
+            requests:
+              memory: "16Mi"
+              cpu: "15m"
+        pgbackrestConfig:
+          resources:
+            limits:
+              memory: "32Mi"
+              cpu: "45m"
+            requests:
+              memory: "16Mi"
+              cpu: "15m"
+      repos:
+        - name: repo1
+          volume:
+            volumeClaimSpec:
+              storageClassName: longhorn-static
+              accessModes:
+                - ReadWriteOnce
+              resources:
+                requests:
+                  storage: 1Gi
+  instances:
+    - dataVolumeClaimSpec:
+        storageClassName: longhorn-static
+        accessModes:
+          - ReadWriteOnce
+        resources:
+          requests:
+            storage: 1Gi
+      name: ""
+      replicas: 2
+      resources:
+        requests:
+          memory: "150Mi"
+          cpu: "25m"
+        limits:
+          memory: "250Mi"
+          cpu: "100m"
+  patroni:
+    dynamicConfiguration:
+      postgresql:
+        pg_hba:
+          - "host all all 0.0.0.0/0 trust"
+  monitoring:
+    pgmonitor:
+      exporter:
+        resources:
+          limits:
+            memory: "32Mi"
+            cpu: "10m"
+          requests:
+            memory: "16Mi"
+            cpu: "5m"
+  openshift: true
+  port: 5432
+  postgresVersion: 14
