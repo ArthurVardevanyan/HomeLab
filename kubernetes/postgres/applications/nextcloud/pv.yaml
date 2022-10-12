@@ -1,0 +1,80 @@
+kind: PersistentVolume
+apiVersion: v1
+metadata:
+  name: nextcloud-00-7pnr-pgdata
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+  labels:
+    app.kubernetes.io/instance: postgres
+spec:
+  capacity:
+    storage: 2Gi
+  csi:
+    driver: driver.longhorn.io
+    volumeHandle: nextcloud-00-7pnr-pgdata
+    fsType: ext4
+    volumeAttributes:
+      numberOfReplicas: "2"
+  accessModes:
+    - ReadWriteOnce
+  claimRef:
+    kind: PersistentVolumeClaim
+    name: nextcloud-00-7pnr-pgdata
+    namespace: postgres
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: longhorn-static
+  volumeMode: Filesystem
+---
+kind: PersistentVolume
+apiVersion: v1
+metadata:
+  name: nextcloud-00-wdsz-pgdata
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+  labels:
+    app.kubernetes.io/instance: postgres
+spec:
+  capacity:
+    storage: 2Gi
+  csi:
+    driver: driver.longhorn.io
+    volumeHandle: nextcloud-00-wdsz-pgdata
+    fsType: ext4
+    volumeAttributes:
+      numberOfReplicas: "2"
+  accessModes:
+    - ReadWriteOnce
+  claimRef:
+    kind: PersistentVolumeClaim
+    name: nextcloud-00-wdsz-pgdata
+    namespace: postgres
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: longhorn-static
+  volumeMode: Filesystem
+---
+kind: PersistentVolume
+apiVersion: v1
+metadata:
+  name: nextcloud-repo1
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+  labels:
+    app.kubernetes.io/instance: postgres
+spec:
+  capacity:
+    storage: 2Gi
+  csi:
+    driver: driver.longhorn.io
+    volumeHandle: nextcloud-repo1
+    fsType: ext4
+    volumeAttributes:
+      numberOfReplicas: "2"
+  accessModes:
+    - ReadWriteOnce
+  claimRef:
+    kind: PersistentVolumeClaim
+    name: nextcloud-repo1
+    namespace: postgres
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: longhorn-static
+  volumeMode: Filesystem

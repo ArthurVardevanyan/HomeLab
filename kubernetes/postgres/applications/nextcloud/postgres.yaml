@@ -1,7 +1,7 @@
 apiVersion: postgres-operator.crunchydata.com/v1beta1
 kind: PostgresCluster
 metadata:
-  name: photoprism
+  name: nextcloud
   namespace: postgres
   annotations:
     argocd.argoproj.io/sync-wave: "1"
@@ -57,11 +57,11 @@ spec:
       replicas: 2
       resources:
         requests:
-          memory: "250Mi"
-          cpu: "25m"
-        limits:
           memory: "500Mi"
           cpu: "100m"
+        limits:
+          memory: "1000Mi"
+          cpu: "250m"
   patroni:
     dynamicConfiguration:
       postgresql:
