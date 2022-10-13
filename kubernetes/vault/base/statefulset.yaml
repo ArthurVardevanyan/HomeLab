@@ -19,12 +19,14 @@ spec:
         app: vault
       annotations:
         enable.version-checker.io/vault: "true"
-        seccomp.security.alpha.kubernetes.io/defaultProfileName: "runtime/default"
     spec:
       automountServiceAccountToken: false
       serviceAccountName: vault-sa
+      securityContext:
+        seccompProfile:
+          type: RuntimeDefault
       containers:
-        - image: vault:1.11.4
+        - image: vault:1.12.0
           imagePullPolicy: IfNotPresent
           name: vault
           readinessProbe:
@@ -53,8 +55,8 @@ spec:
             runAsNonRoot: true
             # runAsUser: 11000
             allowPrivilegeEscalation: false
-            # seccompProfile:
-            #   type: RuntimeDefault
+            seccompProfile:
+              type: RuntimeDefault
             capabilities:
               drop:
                 - all
