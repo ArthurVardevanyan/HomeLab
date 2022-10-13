@@ -37,7 +37,7 @@ spec:
       automountServiceAccountToken: false
       serviceAccountName: grafana-sa
       containers:
-        - image: grafana/grafana:9.1.5
+        - image: grafana/grafana:9.2.0
           imagePullPolicy: IfNotPresent
           name: grafana
           securityContext:
@@ -73,17 +73,9 @@ spec:
               ephemeral-storage: "15Mi"
               memory: "192Mi"
               cpu: "100m"
-          env:
-            - name: GF_DATABASE_TYPE
-              value: mysql
-            - name: GF_DATABASE_HOST
-              value: mariadb-galera.mariadb-galera
-            - name: GF_DATABASE_NAME
-              value: grafana
-            - name: GF_DATABASE_USER
-              value: grafana
-            - name: GF_DATABASE_PASSWORD
-              value: grafana
+          envFrom:
+            - secretRef:
+                name: database
           volumeMounts:
             - mountPath: /var/lib/grafana
               name: grafana-cache

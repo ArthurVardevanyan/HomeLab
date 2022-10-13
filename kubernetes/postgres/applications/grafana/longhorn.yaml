@@ -1,0 +1,59 @@
+apiVersion: longhorn.io/v1beta2
+kind: Volume
+metadata:
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+  labels:
+    longhornvolume: grafana-00-wl5n-pgdata
+    recurring-job-group.longhorn.io/backup: enabled
+    app.kubernetes.io/instance: postgres
+  name: grafana-00-wl5n-pgdata
+  namespace: longhorn-system
+spec:
+  replicaAutoBalance: disabled
+  dataLocality: disabled
+  accessMode: rwo
+  engineImage: longhornio/longhorn-engine:v1.3.1
+  frontend: blockdev
+  numberOfReplicas: 2
+  size: "367001600"
+---
+apiVersion: longhorn.io/v1beta2
+kind: Volume
+metadata:
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+  labels:
+    longhornvolume: grafana-00-zzbs-pgdata
+    recurring-job-group.longhorn.io/backup: enabled
+    app.kubernetes.io/instance: postgres
+  name: grafana-00-zzbs-pgdata
+  namespace: longhorn-system
+spec:
+  replicaAutoBalance: disabled
+  dataLocality: disabled
+  accessMode: rwo
+  engineImage: longhornio/longhorn-engine:v1.3.1
+  frontend: blockdev
+  numberOfReplicas: 2
+  size: "367001600"
+---
+apiVersion: longhorn.io/v1beta2
+kind: Volume
+metadata:
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+  labels:
+    longhornvolume: grafana-repo1
+    recurring-job-group.longhorn.io/backup: enabled
+    app.kubernetes.io/instance: postgres
+  name: grafana-repo1
+  namespace: longhorn-system
+spec:
+  replicaAutoBalance: disabled
+  dataLocality: disabled
+  accessMode: rwo
+  engineImage: longhornio/longhorn-engine:v1.3.1
+  frontend: blockdev
+  numberOfReplicas: 2
+  size: "104857600"

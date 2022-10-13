@@ -1,0 +1,80 @@
+kind: PersistentVolume
+apiVersion: v1
+metadata:
+  name: grafana-00-wl5n-pgdata
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+  labels:
+    app.kubernetes.io/instance: postgres
+spec:
+  capacity:
+    storage: 350Mi
+  csi:
+    driver: driver.longhorn.io
+    volumeHandle: grafana-00-wl5n-pgdata
+    fsType: ext4
+    volumeAttributes:
+      numberOfReplicas: "2"
+  accessModes:
+    - ReadWriteOnce
+  claimRef:
+    kind: PersistentVolumeClaim
+    name: grafana-00-wl5n-pgdata
+    namespace: postgres
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: longhorn-static
+  volumeMode: Filesystem
+---
+kind: PersistentVolume
+apiVersion: v1
+metadata:
+  name: grafana-00-zzbs-pgdata
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+  labels:
+    app.kubernetes.io/instance: postgres
+spec:
+  capacity:
+    storage: 350Mi
+  csi:
+    driver: driver.longhorn.io
+    volumeHandle: grafana-00-zzbs-pgdata
+    fsType: ext4
+    volumeAttributes:
+      numberOfReplicas: "2"
+  accessModes:
+    - ReadWriteOnce
+  claimRef:
+    kind: PersistentVolumeClaim
+    name: grafana-00-zzbs-pgdata
+    namespace: postgres
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: longhorn-static
+  volumeMode: Filesystem
+---
+kind: PersistentVolume
+apiVersion: v1
+metadata:
+  name: grafana-repo1
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+  labels:
+    app.kubernetes.io/instance: postgres
+spec:
+  capacity:
+    storage: 100Mi
+  csi:
+    driver: driver.longhorn.io
+    volumeHandle: grafana-repo1
+    fsType: ext4
+    volumeAttributes:
+      numberOfReplicas: "2"
+  accessModes:
+    - ReadWriteOnce
+  claimRef:
+    kind: PersistentVolumeClaim
+    name: grafana-repo1
+    namespace: postgres
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: longhorn-static
+  volumeMode: Filesystem
