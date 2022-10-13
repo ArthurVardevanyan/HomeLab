@@ -19,21 +19,28 @@ spec:
         app: uptime-kuma
       annotations:
         enable.version-checker.io/uptime-kuma: "true"
-        seccomp.security.alpha.kubernetes.io/defaultProfileName: "runtime/default"
     spec:
+      securityContext:
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
       hostname: uptime-kuma
       restartPolicy: Always
       automountServiceAccountToken: false
       serviceAccountName: uptime-kuma-sa
       containers:
-        - image: louislam/uptime-kuma:1.18.3
+        - image: quay.io/k3rnel-pan1c/uptime-kuma:1.18.5
           imagePullPolicy: IfNotPresent
           name: uptime-kuma
           securityContext:
+            runAsNonRoot: true
             readOnlyRootFilesystem: true
             allowPrivilegeEscalation: false
             seccompProfile:
               type: RuntimeDefault
+            capabilities:
+              drop:
+                - ALL
           ports:
             - containerPort: 3001
           resources:
