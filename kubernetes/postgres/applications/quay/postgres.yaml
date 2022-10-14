@@ -62,6 +62,22 @@ spec:
         limits:
           memory: "700Mi"
           cpu: "100m"
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - labelSelector:
+                matchLabels:
+                  postgres-operator.crunchydata.com/cluster: quay
+                  postgres-operator.crunchydata.com/instance-set: "00"
+              topologyKey: "kubernetes.io/hostname"
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              podAffinityTerm:
+                labelSelector:
+                  matchLabels:
+                    postgres-operator.crunchydata.com/cluster: quay
+                    postgres-operator.crunchydata.com/instance-set: "00"
+                topologyKey: topology.kubernetes.io/zone
   monitoring:
     pgmonitor:
       exporter:
@@ -72,6 +88,23 @@ spec:
           requests:
             memory: "16Mi"
             cpu: "5m"
+  # userInterface:
+  #   pgAdmin:
+  #     dataVolumeClaimSpec:
+  #       accessModes:
+  #         - ReadWriteOnce
+  #       resources:
+  #         requests:
+  #           storage: 25Mi
+  #       storageClassName: longhorn
+  #     replicas: 1
+  #     resources:
+  #       limits:
+  #         cpu: 150m
+  #         memory: 256Mi
+  #       requests:
+  #         cpu: 25m
+  #         memory: 128Mi
   openshift: true
   port: 5432
   postgresVersion: 14

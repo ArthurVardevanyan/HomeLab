@@ -53,14 +53,27 @@ stateful_workload_stop() {
 
   kubectl scale --replicas=0 -n postgres statefulset/clair-00-s8wv
   kubectl scale --replicas=0 -n postgres statefulset/clair-repo-host
-  kubectl scale --replicas=0 -n postgres statefulset/quay-00-87fl
-  kubectl scale --replicas=0 -n postgres statefulset/quay-repo-host
-  kubectl scale --replicas=0 -n postgres statefulset/keycloak-00-2q9c
-  kubectl scale --replicas=0 -n postgres statefulset/keycloak-00-nj82
-  kubectl scale --replicas=0 -n postgres statefulset/keycloak-repo-host
   kubectl scale --replicas=0 -n postgres statefulset/gitea-00-9ds5
   kubectl scale --replicas=0 -n postgres statefulset/gitea-00-z7gc
   kubectl scale --replicas=0 -n postgres statefulset/gitea-repo-host
+  kubectl scale --replicas=0 -n postgres statefulset/grafana-00-wl5n
+  kubectl scale --replicas=0 -n postgres statefulset/grafana-00-zzbs
+  kubectl scale --replicas=0 -n postgres statefulset/grafana-repo-host
+  kubectl scale --replicas=0 -n postgres statefulset/homeassistant-00-2ztd
+  kubectl scale --replicas=0 -n postgres statefulset/homeassistant-00-wnpj
+  kubectl scale --replicas=0 -n postgres statefulset/homeassistant-repo-host
+  kubectl scale --replicas=0 -n postgres statefulset/keycloak-00-2q9c
+  kubectl scale --replicas=0 -n postgres statefulset/keycloak-00-nj82
+  kubectl scale --replicas=0 -n postgres statefulset/keycloak-repo-host
+  kubectl scale --replicas=0 -n postgres statefulset/nextcloud-00-7pnr
+  kubectl scale --replicas=0 -n postgres statefulset/nextcloud-00-wdsz
+  kubectl scale --replicas=0 -n postgres statefulset/nextcloud-repo-host
+  kubectl scale --replicas=0 -n postgres statefulset/photoprism-00-v6f8
+  kubectl scale --replicas=0 -n postgres statefulset/photoprism-00-xkgp
+  kubectl scale --replicas=0 -n postgres statefulset/photoprism-repo-host
+  kubectl scale --replicas=0 -n postgres statefulset/quay-00-87fl
+  kubectl scale --replicas=0 -n postgres statefulset/quay-00-wg4m
+  kubectl scale --replicas=0 -n postgres statefulset/quay-repo-host
 
   kubectl scale --replicas=0 -n argocd deployment/argocd-operator-controller-manager
   kubectl scale --replicas=0 -n argocd statefulset/argocd-application-controller
@@ -104,14 +117,27 @@ stateful_workload_start() {
 
   kubectl scale --replicas=1 -n postgres statefulset/clair-00-s8wv
   kubectl scale --replicas=1 -n postgres statefulset/clair-repo-host
-  kubectl scale --replicas=1 -n postgres statefulset/quay-00-87fl
-  kubectl scale --replicas=1 -n postgres statefulset/quay-repo-host
-  kubectl scale --replicas=1 -n postgres statefulset/keycloak-00-2q9c
-  kubectl scale --replicas=1 -n postgres statefulset/keycloak-00-nj82
-  kubectl scale --replicas=1 -n postgres statefulset/keycloak-repo-host
   kubectl scale --replicas=1 -n postgres statefulset/gitea-00-9ds5
   kubectl scale --replicas=1 -n postgres statefulset/gitea-00-z7gc
   kubectl scale --replicas=1 -n postgres statefulset/gitea-repo-host
+  kubectl scale --replicas=1 -n postgres statefulset/grafana-00-wl5n
+  kubectl scale --replicas=1 -n postgres statefulset/grafana-00-zzbs
+  kubectl scale --replicas=1 -n postgres statefulset/grafana-repo-host
+  kubectl scale --replicas=1 -n postgres statefulset/homeassistant-00-2ztd
+  kubectl scale --replicas=1 -n postgres statefulset/homeassistant-00-wnpj
+  kubectl scale --replicas=1 -n postgres statefulset/homeassistant-repo-host
+  kubectl scale --replicas=1 -n postgres statefulset/keycloak-00-2q9c
+  kubectl scale --replicas=1 -n postgres statefulset/keycloak-00-nj82
+  kubectl scale --replicas=1 -n postgres statefulset/keycloak-repo-host
+  kubectl scale --replicas=1 -n postgres statefulset/nextcloud-00-7pnr
+  kubectl scale --replicas=1 -n postgres statefulset/nextcloud-00-wdsz
+  kubectl scale --replicas=1 -n postgres statefulset/nextcloud-repo-host
+  kubectl scale --replicas=1 -n postgres statefulset/photoprism-00-v6f8
+  kubectl scale --replicas=1 -n postgres statefulset/photoprism-00-xkgp
+  kubectl scale --replicas=1 -n postgres statefulset/photoprism-repo-host
+  kubectl scale --replicas=1 -n postgres statefulset/quay-00-87fl
+  kubectl scale --replicas=1 -n postgres statefulset/quay-00-wg4m
+  kubectl scale --replicas=1 -n postgres statefulset/quay-repo-host
 
   kubectl scale --replicas=1 -n argocd deployment/argocd-operator-controller-manager
   kubectl scale --replicas=1 -n argocd statefulset/argocd-application-controller
