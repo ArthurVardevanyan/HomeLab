@@ -175,7 +175,8 @@ vault auth enable kubernetes
 
 token_reviewer_jwt=$(kubectl get secrets -n argocd -o jsonpath="{.items[?(@.metadata.annotations.kubernetes.io/service-account.name=='default')].data.token}" |base64 -d)
 
-kubernetes_host=$(oc whoami --show-server)
+#kubernetes_host=$(oc whoami --show-server)
+kubernetes_host="https://kubernetes.default.svc:443"
 
 # Pod With Service Account Token Mounted
 kubectl cp -n argocd toolbox-0:/var/run/secrets/kubernetes.io/serviceaccount/..data/ca.crt /tmp/ca.crt
@@ -183,7 +184,8 @@ kubectl cp -n argocd toolbox-0:/var/run/secrets/kubernetes.io/serviceaccount/..d
 vault write auth/kubernetes/config \
    token_reviewer_jwt="${token_reviewer_jwt}" \
    kubernetes_host=${kubernetes_host} \
-   kubernetes_ca_cert=@/tmp/ca.crt
+   kubernetes_ca_cert=@/tmp/ca.crt \
+   disable_local_ca_jwt=true
 
 vault write auth/kubernetes/role/argocd \
     bound_service_account_names=default \

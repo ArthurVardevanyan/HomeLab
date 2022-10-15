@@ -14,6 +14,7 @@ data:
     compactor:
       shared_store: filesystem
       working_directory: /data/loki/boltdb-shipper-compactor
+      retention_enabled: true
     ingester:
       chunk_block_size: 262144
       chunk_idle_period: 3m
@@ -30,6 +31,7 @@ data:
       enforce_metric_name: false
       reject_old_samples: true
       reject_old_samples_max_age: 168h
+      retention_period: 744h
     schema_config:
       configs:
       - from: "2020-10-24"
@@ -49,6 +51,3 @@ data:
         shared_store: filesystem
       filesystem:
         directory: /data/loki/chunks
-    table_manager:
-      retention_deletes_enabled: true
-      retention_period: 240h
