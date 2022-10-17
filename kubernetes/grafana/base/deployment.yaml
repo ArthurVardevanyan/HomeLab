@@ -7,7 +7,7 @@ metadata:
     app: grafana
     app.kubernetes.io/instance: grafana
 spec:
-  replicas: 1
+  replicas: 2
   revisionHistoryLimit: 0
   selector:
     matchLabels:
@@ -20,6 +20,20 @@ spec:
         enable.version-checker.io/grafana: "true"
         seccomp.security.alpha.kubernetes.io/defaultProfileName: "runtime/default"
     spec:
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - labelSelector:
+                matchLabels:
+                  app: grafana
+              topologyKey: "kubernetes.io/hostname"
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              podAffinityTerm:
+                labelSelector:
+                  matchLabels:
+                    app: grafana
+                topologyKey: topology.kubernetes.io/zone
       tolerations:
         - key: node-role.kubernetes.io/control-plane
           effect: NoSchedule
@@ -67,12 +81,12 @@ spec:
           resources:
             requests:
               ephemeral-storage: "15Mi"
-              memory: "64Mi"
+              memory: "96Mi"
               cpu: "25m"
             limits:
               ephemeral-storage: "15Mi"
-              memory: "192Mi"
-              cpu: "100m"
+              memory: "288Mi"
+              cpu: "150m"
           envFrom:
             - secretRef:
                 name: database

@@ -61,6 +61,30 @@ spec:
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
+  name: allow-grafana-ingres
+  namespace: prometheus
+  annotations:
+    argocd.argoproj.io/sync-wave: "0"
+  labels:
+    app.kubernetes.io/instance: prometheus
+spec:
+  policyTypes:
+    - Ingress
+  podSelector:
+    matchLabels:
+      app: prometheus-server
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              app.kubernetes.io/instance: grafana
+          podSelector:
+            matchLabels:
+              app: grafana
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
   name: allow-from-prometheus-ingress
   namespace: prometheus
   annotations:
