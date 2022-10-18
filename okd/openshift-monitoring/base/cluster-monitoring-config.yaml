@@ -45,8 +45,8 @@ data:
           cpu: 100m
           memory: 128Mi
         limits:
-          cpu: 200m
-          memory: 256Mi
+           cpu: 350m
+           memory: 768Mi
 ---
 apiVersion: v1
 kind: ConfigMap
@@ -62,10 +62,10 @@ data:
       resources:
         requests:
           cpu: 50m
-          memory: 384Mi
+          memory: 512Mi
         limits:
-          cpu: 100m
-          memory: 768Mi
+          cpu: 250m
+          memory: 1024Mi
       volumeClaimTemplate:
        spec:
          storageClassName: longhorn-static
@@ -73,3 +73,11 @@ data:
          resources:
            requests:
              storage: 5Gi
+    thanosRuler:
+      resources:
+        requests:
+          cpu: 25m
+          memory: 64Mi
+        limits:
+          cpu: 50m
+          memory: 256Mi

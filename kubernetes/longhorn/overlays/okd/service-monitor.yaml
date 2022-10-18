@@ -15,8 +15,13 @@ spec:
   endpoints:
     - port: manager
       targetPort: 9500
+      interval: 60s
     - metricRelabelings:
         - action: drop
-          regex: "longhorn_rest_(.+)"
-        - regex: "longhorn_workqueue_(.+)"
-          action: drop
+          regex: longhorn_rest_(.+)
+          sourceLabels:
+            - __name__
+        - action: drop
+          regex: longhorn_workqueue_(.+)
+          sourceLabels:
+            - __name__
