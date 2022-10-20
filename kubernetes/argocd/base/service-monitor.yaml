@@ -1,0 +1,39 @@
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: service-monitor-argocd
+  namespace: argocd
+  labels:
+    app.kubernetes.io/instance: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "0"
+spec:
+  endpoints:
+    - path: /metrics
+      port: metrics
+  namespaceSelector:
+    matchNames:
+      - argocd
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: argocd-metrics
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: service-monitor-argocd-server
+  namespace: argocd
+  labels:
+    app.kubernetes.io/instance: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "0"
+spec:
+  endpoints:
+    - path: /metrics
+      port: metrics
+  namespaceSelector:
+    matchNames:
+      - argocd
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: argocd-server-metrics

@@ -1,0 +1,15 @@
+kind: Route
+apiVersion: route.openshift.io/v1
+metadata:
+  name: el
+  namespace: homelab
+  labels:
+    app: homelab
+    app.kubernetes.io/instance: homelab
+spec:
+  to:
+    kind: Service
+    name: el-webhook
+    weight: 100
+  port:
+    targetPort: 8080

@@ -1,0 +1,17 @@
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: grafana
+  namespace: grafana
+  labels:
+    app.kubernetes.io/instance: grafana
+spec:
+  namespaceSelector:
+    matchNames:
+      - grafana
+  selector:
+    matchLabels:
+      app.kubernetes.io/instance: grafana
+  endpoints:
+    - port: http
+      scheme: http

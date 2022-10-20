@@ -40,6 +40,8 @@ spec:
         - key: node-role.kubernetes.io/master
           effect: NoSchedule
       securityContext:
+        seccompProfile:
+          type: RuntimeDefault
         runAsNonRoot: true
         supplementalGroups:
           - 0
@@ -60,8 +62,8 @@ spec:
             runAsNonRoot: true
             readOnlyRootFilesystem: true
             allowPrivilegeEscalation: false
-            # seccompProfile:
-            #   type: RuntimeDefault
+            seccompProfile:
+              type: RuntimeDefault
             capabilities:
               drop:
                 - all

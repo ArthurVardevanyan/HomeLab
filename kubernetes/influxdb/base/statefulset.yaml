@@ -27,6 +27,8 @@ spec:
       terminationGracePeriodSeconds: 60
       serviceAccountName: influxdb-sa
       securityContext:
+        seccompProfile:
+          type: RuntimeDefault
         runAsNonRoot: true
         # fsGroup: 18086
         # runAsGroup: 18086
@@ -59,8 +61,8 @@ spec:
             runAsNonRoot: true
             readOnlyRootFilesystem: true
             allowPrivilegeEscalation: false
-            # seccompProfile:
-            #   type: RuntimeDefault
+            seccompProfile:
+              type: RuntimeDefault
             capabilities:
               drop:
                 - all
