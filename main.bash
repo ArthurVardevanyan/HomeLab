@@ -109,7 +109,7 @@ stateful_workload_start() {
 
   kubectl scale --replicas=1 -n minio deployment/minio
   kubectl scale --replicas=1 -n quay deployment/quay-quay-app
-  kubectl scale --replicas=1 -n quay deployment/quay-clair-app
+  kubectl scale --replicas=0 -n quay deployment/quay-clair-app
   kubectl scale --replicas=1 -n gitea statefulset/gitea
   kubectl scale --replicas=1 -n postgres deployment/pgo
   kubectl scale --replicas=1 -n keycloak deployment/keycloak-operator
@@ -894,8 +894,8 @@ install_okd() {
 
   echo -e "\n\n${BLUE}Download Dependencies:${NC}"
   # Download openshift-install and openshift-client
-  wget "$(curl https://api.github.com/repos/openshift/okd/releases/latest | grep openshift-install-linux | grep browser_download_url | cut -d\" -f4)" -P ${OKD}/
-  wget "$(curl https://api.github.com/repos/openshift/okd/releases/latest | grep openshift-client-linux | grep browser_download_url | cut -d\" -f4)" -P ${OKD}/
+  wget "$(curl https://api.github.com/repos/openshift/okd/releases/latest -L | grep openshift-install-linux | grep browser_download_url | cut -d\" -f4)" -P ${OKD}/
+  wget "$(curl https://api.github.com/repos/openshift/okd/releases/latest -L | grep openshift-client-linux | grep browser_download_url | cut -d\" -f4)" -P ${OKD}/
   tar xvzf ${OKD}/openshift-install-linux* -C ${OKD}
   tar xvzf ${OKD}/openshift-client-linux* -C ${OKD}
 
