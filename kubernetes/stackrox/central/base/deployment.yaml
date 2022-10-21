@@ -1,0 +1,559 @@
+# Source: stackrox-central-services/templates/01-central-13-deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: central
+  namespace: stackrox
+  labels:
+    app.kubernetes.io/component: central
+    app.kubernetes.io/instance: stackrox-central-services
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: stackrox
+    app.kubernetes.io/part-of: stackrox-central-services
+    app.kubernetes.io/version: 3.72.1
+    helm.sh/chart: stackrox-central-services-72.1.0
+    app: central
+  annotations:
+    email: support@stackrox.com
+    meta.helm.sh/release-name: stackrox-central-services
+    meta.helm.sh/release-namespace: stackrox
+    owner: stackrox
+spec:
+  replicas: 1
+  minReadySeconds: 15
+  selector:
+    matchLabels:
+      app: central
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      namespace: stackrox
+      labels:
+        app: central
+        app.kubernetes.io/component: central
+        app.kubernetes.io/instance: stackrox-central-services
+        app.kubernetes.io/managed-by: Helm
+        app.kubernetes.io/name: stackrox
+        app.kubernetes.io/part-of: stackrox-central-services
+        app.kubernetes.io/version: 3.72.1
+        helm.sh/chart: stackrox-central-services-72.1.0
+      annotations:
+        traffic.sidecar.istio.io/excludeInboundPorts: "8443"
+        email: support@stackrox.com
+        meta.helm.sh/release-name: stackrox-central-services
+        meta.helm.sh/release-namespace: stackrox
+        owner: stackrox
+    spec:
+      affinity:
+        nodeAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            # Central is single-homed, so avoid preemptible nodes.
+            - weight: 100
+              preference:
+                matchExpressions:
+                  - key: cloud.google.com/gke-preemptible
+                    operator: NotIn
+                    values:
+                      - "true"
+            - weight: 50
+              preference:
+                matchExpressions:
+                  - key: node-role.kubernetes.io/infra
+                    operator: Exists
+            - weight: 25
+              preference:
+                matchExpressions:
+                  - key: node-role.kubernetes.io/compute
+                    operator: Exists
+            # From v1.20 node-role.kubernetes.io/control-plane replaces node-role.kubernetes.io/master (removed in
+            # v1.25). We apply both because our goal is not to run pods on control plane nodes for any version of k8s.
+            - weight: 100
+              preference:
+                matchExpressions:
+                  - key: node-role.kubernetes.io/master
+                    operator: DoesNotExist
+            - weight: 100
+              preference:
+                matchExpressions:
+                  - key: node-role.kubernetes.io/control-plane
+                    operator: DoesNotExist
+      serviceAccountName: central
+      securityContext:
+        fsGroup: 4000
+        runAsUser: 4000
+      containers:
+        - name: central
+          image: "quay.io/stackrox-io/main:3.72.1"
+          command:
+            - /stackrox/central-entrypoint.sh
+          ports:
+            - containerPort: 8443
+              name: api
+          readinessProbe:
+            httpGet:
+              scheme: HTTPS
+              path: /v1/ping
+              port: 8443
+          resources:
+            limits:
+              cpu: 4000m
+              memory: 8Gi
+            requests:
+              cpu: 100m
+              memory: 1Gi
+          securityContext:
+            capabilities:
+              drop: ["NET_RAW"]
+            readOnlyRootFilesystem: true
+          env:
+            - name: ROX_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+            - name: ROX_INIT_TELEMETRY_ENABLED
+              value: "true"
+            - name: ROX_OFFLINE_MODE
+              value: "false"
+            - name: ROX_ENABLE_OPENSHIFT_AUTH
+              value: "true"
+
+          volumeMounts:
+            - name: varlog
+              mountPath: /var/log/stackrox/
+            - name: central-tmp-volume
+              mountPath: /tmp
+            - name: central-etc-ssl-volume
+              mountPath: /etc/ssl
+            - name: central-etc-pki-volume
+              mountPath: /etc/pki/ca-trust
+            - name: central-certs-volume
+              mountPath: /run/secrets/stackrox.io/certs/
+              readOnly: true
+            - name: central-default-tls-cert-volume
+              mountPath: /run/secrets/stackrox.io/default-tls-cert/
+              readOnly: true
+            - name: central-htpasswd-volume
+              mountPath: /run/secrets/stackrox.io/htpasswd/
+              readOnly: true
+            - name: central-jwt-volume
+              mountPath: /run/secrets/stackrox.io/jwt/
+              readOnly: true
+            - name: additional-ca-volume
+              mountPath: /usr/local/share/ca-certificates/
+              readOnly: true
+            - name: central-license-volume
+              mountPath: /run/secrets/stackrox.io/central-license/
+              readOnly: true
+            - name: stackrox-db
+              mountPath: /var/lib/stackrox
+            - name: central-config-volume
+              mountPath: /etc/stackrox
+            - name: proxy-config-volume
+              mountPath: /run/secrets/stackrox.io/proxy-config/
+              readOnly: true
+            - name: endpoints-config-volume
+              mountPath: /etc/stackrox.d/endpoints/
+              readOnly: true
+
+            - name: trusted-ca-volume
+              mountPath: /etc/pki/injected-ca-trust/
+              readOnly: true
+
+      volumes:
+        - name: varlog
+          emptyDir: {}
+        - name: central-tmp-volume
+          emptyDir: {}
+        - name: central-etc-ssl-volume
+          emptyDir: {}
+        - name: central-etc-pki-volume
+          emptyDir: {}
+        - name: central-certs-volume
+          secret:
+            secretName: central-tls
+        - name: central-default-tls-cert-volume
+          secret:
+            secretName: central-default-tls-cert
+            optional: true
+        - name: central-htpasswd-volume
+          secret:
+            secretName: central-htpasswd
+            optional: true
+        - name: central-jwt-volume
+          secret:
+            secretName: central-tls
+            items:
+              - key: jwt-key.pem
+                path: jwt-key.pem
+        - name: additional-ca-volume
+          secret:
+            secretName: additional-ca
+            optional: true
+        - name: central-license-volume
+          secret:
+            secretName: central-license
+            optional: true
+        - name: central-config-volume
+          configMap:
+            name: central-config
+            optional: true
+        - name: proxy-config-volume
+          secret:
+            secretName: proxy-config
+            optional: true
+        - name: endpoints-config-volume
+          configMap:
+            name: central-endpoints
+        - name: stackrox-db
+          persistentVolumeClaim:
+            claimName: stackrox-db
+
+        - name: trusted-ca-volume
+          configMap:
+            name: injected-cabundle-stackrox-central-services
+            items:
+              - key: ca-bundle.crt
+                path: tls-ca-bundle.pem
+            optional: true
+---
+# Source: stackrox-central-services/templates/02-scanner-06-deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: scanner
+  namespace: stackrox
+  labels:
+    app: scanner
+    app.kubernetes.io/component: scanner
+    app.kubernetes.io/instance: stackrox-central-services
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: stackrox
+    app.kubernetes.io/part-of: stackrox-central-services
+    app.kubernetes.io/version: 3.72.1
+    helm.sh/chart: stackrox-central-services-72.1.0
+  annotations:
+    email: support@stackrox.com
+    meta.helm.sh/release-name: stackrox-central-services
+    meta.helm.sh/release-namespace: stackrox
+    owner: stackrox
+spec:
+  replicas: 2
+  minReadySeconds: 15
+  selector:
+    matchLabels:
+      app: scanner
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      namespace: stackrox
+      labels:
+        app: scanner
+        app.kubernetes.io/component: scanner
+        app.kubernetes.io/instance: stackrox-central-services
+        app.kubernetes.io/managed-by: Helm
+        app.kubernetes.io/name: stackrox
+        app.kubernetes.io/part-of: stackrox-central-services
+        app.kubernetes.io/version: 3.72.1
+        helm.sh/chart: stackrox-central-services-72.1.0
+      annotations:
+        traffic.sidecar.istio.io/excludeInboundPorts: "8080,8443"
+        email: support@stackrox.com
+        meta.helm.sh/release-name: stackrox-central-services
+        meta.helm.sh/release-namespace: stackrox
+        owner: stackrox
+    spec:
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              podAffinityTerm:
+                labelSelector:
+                  matchLabels:
+                    app: scanner
+                topologyKey: kubernetes.io/hostname
+        nodeAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 50
+              preference:
+                matchExpressions:
+                  - key: node-role.kubernetes.io/infra
+                    operator: Exists
+            - weight: 25
+              preference:
+                matchExpressions:
+                  - key: node-role.kubernetes.io/compute
+                    operator: Exists
+            # From v1.20 node-role.kubernetes.io/control-plane replaces node-role.kubernetes.io/master (removed in
+            # v1.25). We apply both because our goal is not to run pods on control plane nodes for any version of k8s.
+            - weight: 100
+              preference:
+                matchExpressions:
+                  - key: node-role.kubernetes.io/master
+                    operator: DoesNotExist
+            - weight: 100
+              preference:
+                matchExpressions:
+                  - key: node-role.kubernetes.io/control-plane
+                    operator: DoesNotExist
+      containers:
+        - name: scanner
+
+          image: "quay.io/stackrox-io/scanner:3.72.1"
+          env:
+            - name: POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: POD_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+            - name: ROX_OPENSHIFT_API
+              value: "true"
+
+          resources:
+            limits:
+              cpu: 600m
+              memory: 1.5Gi
+            requests:
+              cpu: 200m
+              memory: 750Mi
+          command:
+            - /entrypoint.sh
+          ports:
+            - name: https
+              containerPort: 8080
+            - name: grpc
+              containerPort: 8443
+
+          securityContext:
+            capabilities:
+              drop: ["NET_RAW"]
+            runAsUser: 65534
+          readinessProbe:
+            httpGet:
+              scheme: HTTPS
+              path: /scanner/ping
+              port: 8080
+            timeoutSeconds: 10
+            periodSeconds: 10
+            failureThreshold: 6
+            successThreshold: 1
+          volumeMounts:
+            - name: scanner-etc-ssl-volume
+              mountPath: /etc/ssl
+            - name: scanner-etc-pki-volume
+              mountPath: /etc/pki/ca-trust
+            - name: additional-ca-volume
+              mountPath: /usr/local/share/ca-certificates/
+              readOnly: true
+            - name: scanner-config-volume
+              mountPath: /etc/scanner
+              readOnly: true
+            - name: scanner-tls-volume
+              mountPath: /run/secrets/stackrox.io/certs/
+              readOnly: true
+            - name: vuln-temp-db
+              mountPath: /var/lib/stackrox
+            - name: proxy-config-volume
+              mountPath: /run/secrets/stackrox.io/proxy-config/
+              readOnly: true
+            - name: scanner-db-password
+              mountPath: /run/secrets/stackrox.io/secrets
+              readOnly: true
+
+            - name: trusted-ca-volume
+              mountPath: /etc/pki/injected-ca-trust/
+              readOnly: true
+
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 65534
+      serviceAccountName: scanner
+      volumes:
+        - name: additional-ca-volume
+          secret:
+            defaultMode: 420
+            optional: true
+            secretName: additional-ca
+        - name: scanner-etc-ssl-volume
+          emptyDir: {}
+        - name: scanner-etc-pki-volume
+          emptyDir: {}
+        - name: scanner-config-volume
+          configMap:
+            name: scanner-config
+        - name: scanner-tls-volume
+          secret:
+            secretName: scanner-tls
+        - name: vuln-temp-db
+          emptyDir: {}
+        - name: proxy-config-volume
+          secret:
+            secretName: proxy-config
+            optional: true
+        - name: scanner-db-password
+          secret:
+            secretName: scanner-db-password
+
+        - name: trusted-ca-volume
+          configMap:
+            name: injected-cabundle-stackrox-central-services
+            items:
+              - key: ca-bundle.crt
+                path: tls-ca-bundle.pem
+            optional: true
+---
+# Source: stackrox-central-services/templates/02-scanner-06-deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: scanner-db
+  namespace: stackrox
+  labels:
+    app: scanner-db
+    app.kubernetes.io/component: scanner
+    app.kubernetes.io/instance: stackrox-central-services
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: stackrox
+    app.kubernetes.io/part-of: stackrox-central-services
+    app.kubernetes.io/version: 3.72.1
+    helm.sh/chart: stackrox-central-services-72.1.0
+  annotations:
+    email: support@stackrox.com
+    meta.helm.sh/release-name: stackrox-central-services
+    meta.helm.sh/release-namespace: stackrox
+    owner: stackrox
+spec:
+  replicas: 1
+  minReadySeconds: 15
+  selector:
+    matchLabels:
+      app: scanner-db
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      namespace: stackrox
+      labels:
+        app: scanner-db
+        app.kubernetes.io/component: scanner
+        app.kubernetes.io/instance: stackrox-central-services
+        app.kubernetes.io/managed-by: Helm
+        app.kubernetes.io/name: stackrox
+        app.kubernetes.io/part-of: stackrox-central-services
+        app.kubernetes.io/version: 3.72.1
+        helm.sh/chart: stackrox-central-services-72.1.0
+      annotations:
+        traffic.sidecar.istio.io/excludeInboundPorts: "5432"
+        email: support@stackrox.com
+        meta.helm.sh/release-name: stackrox-central-services
+        meta.helm.sh/release-namespace: stackrox
+        owner: stackrox
+    spec:
+      affinity:
+        nodeAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            # ScannerDB is single-homed, so avoid preemptible nodes.
+            - weight: 100
+              preference:
+                matchExpressions:
+                  - key: cloud.google.com/gke-preemptible
+                    operator: NotIn
+                    values:
+                      - "true"
+            - weight: 50
+              preference:
+                matchExpressions:
+                  - key: node-role.kubernetes.io/infra
+                    operator: Exists
+            - weight: 25
+              preference:
+                matchExpressions:
+                  - key: node-role.kubernetes.io/compute
+                    operator: Exists
+            # From v1.20 node-role.kubernetes.io/control-plane replaces node-role.kubernetes.io/master (removed in
+            # v1.25). We apply both because our goal is not to run pods on control plane nodes for any version of k8s.
+            - weight: 100
+              preference:
+                matchExpressions:
+                  - key: node-role.kubernetes.io/master
+                    operator: DoesNotExist
+            - weight: 100
+              preference:
+                matchExpressions:
+                  - key: node-role.kubernetes.io/control-plane
+                    operator: DoesNotExist
+      initContainers:
+        - name: init-db
+          image: "quay.io/stackrox-io/scanner-db:3.72.1"
+          env:
+            - name: POSTGRES_PASSWORD_FILE
+              value: "/run/secrets/stackrox.io/secrets/password"
+          resources:
+            limits:
+              cpu: 400m
+              memory: 3Gi
+            requests:
+              cpu: 200m
+              memory: 1536Mi
+          volumeMounts:
+            - name: scanner-db-data
+              mountPath: /var/lib/postgresql/data
+            - name: scanner-db-tls-volume
+              mountPath: /run/secrets/stackrox.io/certs
+              readOnly: true
+            - name: scanner-db-password
+              mountPath: /run/secrets/stackrox.io/secrets
+              readOnly: true
+      containers:
+        - name: db
+          image: "quay.io/stackrox-io/scanner-db:3.72.1"
+          ports:
+            - name: tcp-postgresql
+              protocol: TCP
+              containerPort: 5432
+          resources:
+            limits:
+              cpu: 400m
+              memory: 3Gi
+            requests:
+              cpu: 200m
+              memory: 1536Mi
+          volumeMounts:
+            - name: scanner-db-data
+              mountPath: /var/lib/postgresql/data
+            - name: scanner-db-tls-volume
+              mountPath: /run/secrets/stackrox.io/certs
+              readOnly: true
+      serviceAccountName: scanner
+      securityContext:
+        fsGroup: 70
+        runAsGroup: 70
+        runAsNonRoot: true
+        runAsUser: 70
+      volumes:
+        - name: scanner-config-volume
+          configMap:
+            name: scanner-config
+        - name: scanner-tls-volume
+          secret:
+            secretName: scanner-tls
+        - name: scanner-db-tls-volume
+          secret:
+            secretName: scanner-db-tls
+            defaultMode: 0640
+            items:
+              - key: cert.pem
+                path: server.crt
+              - key: key.pem
+                path: server.key
+              - key: ca.pem
+                path: root.crt
+        - name: scanner-db-data
+          emptyDir: {}
+        - name: scanner-db-password
+          secret:
+            secretName: scanner-db-password

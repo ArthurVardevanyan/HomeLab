@@ -1,0 +1,147 @@
+# Source: stackrox-central-services/templates/01-central-02-security.yaml
+kind: SecurityContextConstraints
+apiVersion: security.openshift.io/v1
+metadata:
+  name: stackrox-central
+  labels:
+    app.kubernetes.io/component: central
+    app.kubernetes.io/instance: stackrox-central-services
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: stackrox
+    app.kubernetes.io/part-of: stackrox-central-services
+    app.kubernetes.io/version: 3.72.1
+    helm.sh/chart: stackrox-central-services-72.1.0
+  annotations:
+    kubernetes.io/description: stackrox-central is the security constraint for the central server
+    email: support@stackrox.com
+    meta.helm.sh/release-name: stackrox-central-services
+    meta.helm.sh/release-namespace: stackrox
+    owner: stackrox
+allowHostDirVolumePlugin: false
+allowedCapabilities: []
+allowHostIPC: false
+allowHostNetwork: false
+allowHostPID: false
+allowHostPorts: false
+allowPrivilegeEscalation: false
+allowPrivilegedContainer: false
+defaultAddCapabilities: []
+fsGroup:
+  type: MustRunAs
+  ranges:
+    - max: 4000
+      min: 4000
+priority: 0
+readOnlyRootFilesystem: true
+requiredDropCapabilities: []
+runAsUser:
+  type: MustRunAs
+  uid: 4000
+seLinuxContext:
+  type: MustRunAs
+seccompProfiles:
+  - "*"
+users:
+  - system:serviceaccount:stackrox:central
+volumes:
+  #- "*"
+  - awsElasticBlockStore
+  - azureDisk
+  - azureFile
+  - cephFS
+  - cinder
+  - configMap
+  - csi
+  - downwardAPI
+  - emptyDir
+  - ephemeral
+  - fc
+  - flexVolume
+  - flocker
+  - gcePersistentDisk
+  - gitRepo
+  - glusterfs
+  - iscsi
+  - nfs
+  - persistentVolumeClaim
+  - photonPersistentDisk
+  - portworxVolume
+  - projected
+  - quobyte
+  - rbd
+  - scaleIO
+  - secret
+  - storageOS
+  - vsphere
+---
+# Source: stackrox-central-services/templates/02-scanner-01-security.yaml
+kind: SecurityContextConstraints
+apiVersion: security.openshift.io/v1
+metadata:
+  name: stackrox-scanner
+  labels:
+    app.kubernetes.io/component: scanner
+    app.kubernetes.io/instance: stackrox-central-services
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: stackrox
+    app.kubernetes.io/part-of: stackrox-central-services
+    app.kubernetes.io/version: 3.72.1
+    helm.sh/chart: stackrox-central-services-72.1.0
+  annotations:
+    email: support@stackrox.com
+    meta.helm.sh/release-name: stackrox-central-services
+    meta.helm.sh/release-namespace: stackrox
+    owner: stackrox
+    kubernetes.io/description: stackrox-scanner is the security constraint for the Scanner container
+priority: 0
+runAsUser:
+  type: RunAsAny
+seLinuxContext:
+  type: RunAsAny
+seccompProfiles:
+  - "*"
+users:
+  - system:serviceaccount:stackrox:scanner
+volumes:
+  #- "*"
+  - awsElasticBlockStore
+  - azureDisk
+  - azureFile
+  - cephFS
+  - cinder
+  - configMap
+  - csi
+  - downwardAPI
+  - emptyDir
+  - ephemeral
+  - fc
+  - flexVolume
+  - flocker
+  - gcePersistentDisk
+  - gitRepo
+  - glusterfs
+  - iscsi
+  - nfs
+  - persistentVolumeClaim
+  - photonPersistentDisk
+  - portworxVolume
+  - projected
+  - quobyte
+  - rbd
+  - scaleIO
+  - secret
+  - storageOS
+  - vsphere
+allowHostDirVolumePlugin: false
+allowedCapabilities: []
+allowHostIPC: false
+allowHostNetwork: false
+allowHostPID: false
+allowHostPorts: false
+allowPrivilegeEscalation: false
+allowPrivilegedContainer: false
+defaultAddCapabilities: []
+fsGroup:
+  type: RunAsAny
+readOnlyRootFilesystem: false
+requiredDropCapabilities: []

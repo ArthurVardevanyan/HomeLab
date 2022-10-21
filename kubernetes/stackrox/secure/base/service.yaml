@@ -1,0 +1,92 @@
+# Source: stackrox-secured-cluster-services/templates/admission-controller.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: admission-control
+  namespace: stackrox
+  labels:
+    app.kubernetes.io/component: admission-control
+    app.kubernetes.io/instance: stackrox-secured-cluster-services
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: stackrox
+    app.kubernetes.io/part-of: stackrox-secured-cluster-services
+    app.kubernetes.io/version: 3.72.1
+    helm.sh/chart: stackrox-secured-cluster-services-72.1.0
+    auto-upgrade.stackrox.io/component: "sensor"
+  annotations:
+    email: support@stackrox.com
+    meta.helm.sh/release-name: stackrox-secured-cluster-services
+    meta.helm.sh/release-namespace: stackrox
+    owner: stackrox
+spec:
+  ports:
+    - name: https
+      port: 443
+      targetPort: webhook
+      protocol: TCP
+  selector:
+    app: admission-control
+  type: ClusterIP
+  sessionAffinity: None
+---
+# Source: stackrox-secured-cluster-services/templates/sensor.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: sensor
+  namespace: stackrox
+  labels:
+    app.kubernetes.io/component: sensor
+    app.kubernetes.io/instance: stackrox-secured-cluster-services
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: stackrox
+    app.kubernetes.io/part-of: stackrox-secured-cluster-services
+    app.kubernetes.io/version: 3.72.1
+    helm.sh/chart: stackrox-secured-cluster-services-72.1.0
+    auto-upgrade.stackrox.io/component: "sensor"
+  annotations:
+    email: support@stackrox.com
+    meta.helm.sh/release-name: stackrox-secured-cluster-services
+    meta.helm.sh/release-namespace: stackrox
+    owner: stackrox
+spec:
+  ports:
+    - name: https
+      port: 443
+      targetPort: api
+      protocol: TCP
+  selector:
+    app: sensor
+  type: ClusterIP
+  sessionAffinity: None
+---
+# Source: stackrox-secured-cluster-services/templates/sensor.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: sensor-webhook
+  namespace: stackrox
+  labels:
+    app.kubernetes.io/component: sensor
+    app.kubernetes.io/instance: stackrox-secured-cluster-services
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: stackrox
+    app.kubernetes.io/part-of: stackrox-secured-cluster-services
+    app.kubernetes.io/version: 3.72.1
+    helm.sh/chart: stackrox-secured-cluster-services-72.1.0
+    auto-upgrade.stackrox.io/component: "sensor"
+  annotations:
+    email: support@stackrox.com
+    meta.helm.sh/release-name: stackrox-secured-cluster-services
+    meta.helm.sh/release-namespace: stackrox
+    owner: stackrox
+spec:
+  ports:
+    - name: https
+      port: 443
+      targetPort: webhook
+      protocol: TCP
+  selector:
+    app: sensor
+  type: ClusterIP
+  sessionAffinity: None

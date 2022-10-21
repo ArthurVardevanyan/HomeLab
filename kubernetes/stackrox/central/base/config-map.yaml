@@ -1,0 +1,164 @@
+# Source: stackrox-central-services/templates/00-injected-ca-bundle.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: injected-cabundle-stackrox-central-services
+  namespace: stackrox
+  labels:
+    app.kubernetes.io/instance: stackrox-central-services
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: stackrox
+    app.kubernetes.io/part-of: stackrox-central-services
+    app.kubernetes.io/version: 3.72.1
+    helm.sh/chart: stackrox-central-services-72.1.0
+    "config.openshift.io/inject-trusted-cabundle": "true"
+  annotations:
+    email: support@stackrox.com
+    meta.helm.sh/release-name: stackrox-central-services
+    meta.helm.sh/release-namespace: stackrox
+    owner: stackrox
+---
+# Source: stackrox-central-services/templates/01-central-08-configmap.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: central-config
+  namespace: stackrox
+  labels:
+    app.kubernetes.io/component: central
+    app.kubernetes.io/instance: stackrox-central-services
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: stackrox
+    app.kubernetes.io/part-of: stackrox-central-services
+    app.kubernetes.io/version: 3.72.1
+    helm.sh/chart: stackrox-central-services-72.1.0
+  annotations:
+    email: support@stackrox.com
+    meta.helm.sh/release-name: stackrox-central-services
+    meta.helm.sh/release-namespace: stackrox
+    owner: stackrox
+data:
+  central-config.yaml: |
+    maintenance:
+      safeMode: false # When set to true, Central will sleep forever on the next restart
+      compaction:
+        enabled: true
+        bucketFillFraction: .5 # This controls how densely to compact the buckets. Usually not advised to modify
+        freeFractionThreshold: 0.75 # This is the threshold for free bytes / total bytes after which compaction will occur
+      forceRollbackVersion: none # This is the config and target rollback version after upgrade complete.
+---
+# Source: stackrox-central-services/templates/01-central-09-endpoints-config.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: central-endpoints
+  namespace: stackrox
+  labels:
+    app.kubernetes.io/component: central
+    app.kubernetes.io/instance: stackrox-central-services
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: stackrox
+    app.kubernetes.io/part-of: stackrox-central-services
+    app.kubernetes.io/version: 3.72.1
+    helm.sh/chart: stackrox-central-services-72.1.0
+  annotations:
+    email: support@stackrox.com
+    meta.helm.sh/release-name: stackrox-central-services
+    meta.helm.sh/release-namespace: stackrox
+    owner: stackrox
+data:
+  endpoints.yaml: |
+    # Sample endpoints.yaml configuration for StackRox Central.
+    #
+    # # CAREFUL: If the following line is uncommented, do not expose the default endpoint on port 8443 by default.
+    # #          This will break normal operation.
+    # disableDefault: true # if true, don't serve on :8443
+    # endpoints:
+    #   # Serve plaintext HTTP only on port 8080
+    #   - listen: ":8080"
+    #     # Backend protocols, possible values are 'http' and 'grpc'. If unset or empty, assume both.
+    #     protocols:
+    #       - http
+    #     tls:
+    #       # Disable TLS. If this is not specified, assume TLS is enabled.
+    #       disable: true
+    #   # Serve HTTP and  gRPC for sensors only on port 8444
+    #   - listen: ":8444"
+    #     tls:
+    #       # Which TLS certificates to serve, possible values are 'service' (StackRox-generated service certificates)
+    #       # and 'default' (user-configured default TLS certificate). If unset or empty, assume both.
+    #       serverCerts:
+    #         - default
+    #         - service
+    #       # Client authentication settings.
+    #       clientAuth:
+    #         # Enforce TLS client authentication. If unset, do not enforce, only request certificates
+    #         # opportunistically.
+    #         required: true
+    #         # Which TLS client CAs to serve, possible values are 'service' (CA for StackRox-generated service
+    #         # certificates) and 'user' (CAs for PKI auth providers). If unset or empty, assume both.
+    #         certAuthorities: # if not set, assume ["user", "service"]
+    #           - service
+---
+# Source: stackrox-central-services/templates/02-scanner-04-scanner-config.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: scanner-config
+  namespace: stackrox
+  labels:
+    app.kubernetes.io/component: scanner
+    app.kubernetes.io/instance: stackrox-central-services
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: stackrox
+    app.kubernetes.io/part-of: stackrox-central-services
+    app.kubernetes.io/version: 3.72.1
+    helm.sh/chart: stackrox-central-services-72.1.0
+  annotations:
+    email: support@stackrox.com
+    meta.helm.sh/release-name: stackrox-central-services
+    meta.helm.sh/release-namespace: stackrox
+    owner: stackrox
+data:
+  config.yaml: |
+    # Configuration file for scanner.
+
+    scanner:
+      centralEndpoint: https://central.stackrox.svc
+      sensorEndpoint: https://sensor.stackrox.svc
+      database:
+        # Database driver
+        type: pgsql
+        options:
+          # PostgreSQL Connection string
+          # https://www.postgresql.org/docs/current/static/libpq-connect.html#LIBPQ-CONNSTRING
+          source: host=scanner-db.stackrox.svc port=5432 user=postgres sslmode=verify-full statement_timeout=60000
+
+          # Number of elements kept in the cache
+          # Values unlikely to change (e.g. namespaces) are cached in order to save prevent needless roundtrips to the database.
+          cachesize: 16384
+
+      api:
+        httpsPort: 8080
+        grpcPort: 8443
+
+      updater:
+        # Frequency with which the scanner will poll for vulnerability updates.
+        interval: 5m
+
+      logLevel: INFO
+
+      # The scanner intentionally avoids extracting or analyzing any files
+      # larger than the following default sizes to prevent DoS attacks.
+      # Leave these commented to use a reasonable default.
+
+      # The max size of files in images that are extracted.
+      # Increasing this number increases memory pressure.
+      # maxExtractableFileSizeMB: 200
+      # The max size of ELF executable files that are analyzed.
+      # Increasing this number may increase disk pressure.
+      # maxELFExecutableFileSizeMB: 800
+      # The max size of image file reader buffer. Image file data beyond this limit are overflowed to temporary files on disk.
+      # maxImageFileReaderBufferSizeMB: 100
+
+      exposeMonitoring: false

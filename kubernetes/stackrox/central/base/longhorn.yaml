@@ -1,0 +1,17 @@
+apiVersion: longhorn.io/v1beta2
+kind: Volume
+metadata:
+  labels:
+    longhornvolume: stackrox
+    recurring-job-group.longhorn.io/backup: enabled
+    app.kubernetes.io/instance: stackrox-central-services
+  name: stackrox
+  namespace: longhorn-system
+spec:
+  replicaAutoBalance: disabled
+  dataLocality: disabled
+  accessMode: rwo
+  engineImage: longhornio/longhorn-engine:v1.3.2
+  frontend: blockdev
+  numberOfReplicas: 2
+  size: "1073741824"
