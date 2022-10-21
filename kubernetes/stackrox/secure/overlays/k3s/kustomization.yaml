@@ -1,0 +1,17 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: stackrox
+resources:
+  - ../../base
+  - cluster-name.yaml
+patches:
+  - target:
+      kind: Deployment
+      name: sensor
+    patch: |-
+      - op: add
+        path: /spec/template/spec/containers/0/env/0
+        value: { "name": "ROX_CENTRAL_ENDPOINT", "value": "central-stackrox.apps.okd.<path:secret/data/homelab/domain#url>:443" }
+      - op: add
+        path: /spec/template/spec/containers/0/env/0
+        value: { "name": "ROX_HELM_CLUSTER_CONFIG_FP", "value": "<path:secret/data/homelab/stackrox/k3s#config-fingerprint>" }

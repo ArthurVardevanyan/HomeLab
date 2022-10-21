@@ -134,9 +134,7 @@ bash main.bash stateful_workload_start
 ```bash
 # Kubernetes Dashboard
 # https://upcloud.com/community/tutorials/deploy-kubernetes-dashboard
-kubectl get secret -n kubernetes-dashboard \
-$(kubectl get serviceaccount admin-user -n kubernetes-dashboard -o jsonpath="{.secrets[0].name}") \
--o jsonpath="{.data.token}" | base64 --decode
+kubectl get secret -n kubernetes-dashboard admin-user-token -o jsonpath="{.data.token}" | base64 --decode
 
 # Watch ALl Pods
 watch kubectl get pods -A -o wide --sort-by=.metadata.creationTimestamp
