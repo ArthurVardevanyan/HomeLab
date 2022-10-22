@@ -1,10 +1,9 @@
----
 apiVersion: tekton.dev/v1beta1
 kind: ClusterTask
 metadata:
   name: github-set-status
   labels:
-    app.kubernetes.io/version: "0.3"
+    app.kubernetes.io/version: "0.4"
   annotations:
     argocd.argoproj.io/sync-wave: "2"
     tekton.dev/categories: Git
@@ -15,7 +14,7 @@ metadata:
 spec:
   description: >-
     This task will set the status of the CI job to the specified value along
-    witha link to the specified target URL where developers can follow the
+    with a link to the specified target URL where developers can follow the
     progress of the CI job.
 
     The `github-set-status` task allows external services to mark GitHub commits
@@ -59,6 +58,14 @@ spec:
         Commit SHA to set the status for.
       type: string
 
+    - name: TARGET_URL
+      description: |
+        The target URL to associate with this status. This URL will be linked
+        from the GitHub UI to allow users to easily see the source of the
+        status.
+      type: string
+      default: ""
+
     - name: DESCRIPTION
       description: |
         A short description of the status.
@@ -83,6 +90,18 @@ spec:
       type: string
       default: Bearer
 
+    - name: IMAGE
+      description: |
+        Image providing the python binary which this task uses.
+      type: string
+      default: python:3.10.1-alpine3.15
+
+    - name: SHEBANG
+      description: |
+        Python path. Depends on the image.
+      type: string
+      default: /usr/bin/env python
+
   volumes:
     - name: githubtoken
       secret:
@@ -100,33 +119,68 @@ spec:
       volumeMounts:
         - name: githubtoken
           mountPath: /etc/github-set-status
+      env:
+        - name: GITHUB_HOST_URL
+          value: $(params.GITHUB_HOST_URL)
+        - name: API_PATH_PREFIX
+          value: $(params.API_PATH_PREFIX)
+        - name: REPO_FULL_NAME
+          value: $(params.REPO_FULL_NAME)
+        - name: GITHUB_TOKEN_SECRET_NAME
+          value: $(params.GITHUB_TOKEN_SECRET_NAME)
+        - name: GITHUB_TOKEN_SECRET_KEY
+          value: $(params.GITHUB_TOKEN_SECRET_KEY)
+        - name: SHA
+          value: $(params.SHA)
+        - name: TARGET_URL
+          value: $(params.TARGET_URL)
+        - name: DESCRIPTION
+          value: $(params.DESCRIPTION)
+        - name: CONTEXT
+          value: $(params.CONTEXT)
+        - name: STATE
+          value: $(params.STATE)
+        - name: AUTH_TYPE
+          value: $(params.AUTH_TYPE)
+        - name: SHEBANG
+          value: $(params.SHEBANG)
 
-      image: registry.access.redhat.com/ubi8/python-38:1-34.1599745032
+      image: $(params.IMAGE)
       script: |
-        #!/usr/libexec/platform-python
+        #!$(params.SHEBANG)
 
         """This script will set the CI status on GitHub PR"""
 
         import json
+        import os
         import sys
         import http.client
 
-        github_token = open("/etc/github-set-status/$(params.GITHUB_TOKEN_SECRET_KEY)", "r").read()
+        github_token_filename = "/etc/github-set-status/" + \
+            os.getenv("GITHUB_TOKEN_SECRET_KEY")
+        github_token = open(github_token_filename, "r").read()
 
-        status_url = "$(params.API_PATH_PREFIX)" + "/repos/$(params.REPO_FULL_NAME)/" + \
-            "statuses/$(params.SHA)"
+        status_url = os.getenv("API_PATH_PREFIX") + "/repos/" + \
+            os.getenv("REPO_FULL_NAME") + "/statuses/" + os.getenv("SHA")
 
         data = {
-            "state": "$(params.STATE)",
-            "description": "$(params.DESCRIPTION)",
-            "context": "$(params.CONTEXT)"
+            "state": os.getenv("STATE"),
+            "target_url": os.getenv("TARGET_URL"),
+            "description": os.getenv("DESCRIPTION"),
+            "context": os.getenv("CONTEXT")
         }
-        print("Sending this data to GitHub: ")
+        print("Sending this data to GitHub@{url}: ".format(
+          url=os.getenv("GITHUB_HOST_URL")))
         print(data)
 
-        authHeader = "$(params.AUTH_TYPE) " + github_token
+        authHeader = os.getenv("AUTH_TYPE") + " " + github_token
 
-        conn = http.client.HTTPSConnection("$(params.GITHUB_HOST_URL)")
+        # This is for our fake github server
+        if "$(params.GITHUB_HOST_URL)".startswith("http://"):
+          conn = http.client.HTTPConnection("$(params.GITHUB_HOST_URL)".replace("http://", ""))
+        else:
+          conn = http.client.HTTPSConnection("$(params.GITHUB_HOST_URL)")
+
         conn.request(
             "POST",
             status_url,
@@ -142,5 +196,7 @@ spec:
             print(resp.read())
             sys.exit(1)
         else:
-            print("GitHub status '$(params.STATE)' has been set on "
-                "$(params.REPO_FULL_NAME)#$(params.SHA) ")
+            print("GitHub status '{state}' has been set on {repo}#{sha} ".format(
+                state=os.getenv("STATE"),
+                repo=os.getenv("REPO_FULL_NAME"),
+                sha=os.getenv("SHA")))
