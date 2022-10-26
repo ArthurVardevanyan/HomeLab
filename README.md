@@ -237,7 +237,7 @@ kubectl scale --replicas=0 deployment.apps/quay-quay-config-editor -n quay
 # deployment/quay-quay-app
 resources:
   limits:
-    cpu: 500m
+    cpu: 750m
     memory: 6Gi
   requests:
     cpu: 150m
