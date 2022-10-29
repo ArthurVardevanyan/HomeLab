@@ -82,12 +82,15 @@ stateful_workload_stop() {
   kubectl scale --replicas=0 -n argocd deployment/argocd-server
   kubectl scale --replicas=0 -n argocd deployment/argocd-redis
 
+  kubectl scale --replicas=0 -n stackrox deployment/central
+  kubectl scale --replicas=0 -n stackrox deployment/scanner-db
+
 }
 
 stateful_workload_start() {
   kubectl patch cronjobs -n photoprism photoprism-cron -p '{"spec" : {"suspend" : false }}'
   kubectl patch cronjobs -n nextcloud nextcloud-preview -p '{"spec" : {"suspend" : false }}'
-  #kubectl patch cronjobs -n nextcloud nextcloud-rsync -p '{"spec" : {"suspend" : false }}'
+  kubectl patch cronjobs -n nextcloud nextcloud-rsync -p '{"spec" : {"suspend" : false }}'
   kubectl patch cronjobs -n nextcloud nextcloud-cron -p '{"spec" : {"suspend" : false }}'
   kubectl patch cronjobs -n mariadb-galera mysqldump-cron -p '{"spec" : {"suspend" : false }}'
 
@@ -109,7 +112,7 @@ stateful_workload_start() {
 
   kubectl scale --replicas=1 -n minio deployment/minio
   kubectl scale --replicas=1 -n quay deployment/quay-quay-app
-  kubectl scale --replicas=0 -n quay deployment/quay-clair-app
+  kubectl scale --replicas=1 -n quay deployment/quay-clair-app
   kubectl scale --replicas=1 -n gitea statefulset/gitea
   kubectl scale --replicas=1 -n postgres deployment/pgo
   kubectl scale --replicas=1 -n keycloak deployment/keycloak-operator
@@ -145,6 +148,9 @@ stateful_workload_start() {
   kubectl scale --replicas=1 -n argocd deployment/argocd-dex-server
   kubectl scale --replicas=1 -n argocd deployment/argocd-server
   kubectl scale --replicas=1 -n argocd deployment/argocd-redis
+
+  kubectl scale --replicas=1 -n stackrox deployment/central
+  kubectl scale --replicas=1 -n stackrox deployment/scanner-db
 
   echo -e "\nkubectl exec -it vault-0 -n vault -- vault operator unseal --tls-skip-verify"
 }
