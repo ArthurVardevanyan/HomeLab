@@ -85,13 +85,14 @@ Permission Denied Issue
 
 [CPU Benchmark](https://www.cpubenchmark.net/compare/Intel-i5-6600-vs-AMD-RX-427BB-vs-Intel-i3-2130-vs-AMD-GX-415GA-SOC-vs-AMD-Ryzen-7-5700G/2594vs2496vs755vs2081vs4323)
 
-| Machine    | Model             | CPU      | CPU | Mem | Storage           | ZFS Storage      |
-| ---------- | ----------------- | -------- | --- | --- | ----------------- | ---------------- |
-| pfSense    | Hp t730           | RX-427BB | 4   | 4G  | 16G SSD           | N/A              |
-| Bare Metal | Hp t620           | GX-415GA | 4   | 6G  | 16G SSD & 16G USB | N/A              |
-| kvm-0      | N/A               | R7-5700G | 16  | 96G | 500G NVME x2      | N/A              |
-| kvm-1      | Hp ProDesk 400 G3 | i5-6600  | 4   | 32G | 240G & 120G SSD   | N/A              |
-| ZFS        | Hp p7-1226s       | i3-2130  | 4   | 8G  | 240G SSD          | 2T,1T ZFS Mirror |
+| Machine    | Model             | CPU      | CPU | Mem | Storage                    | ZFS Storage               |
+| ---------- | ----------------- | -------- | --- | --- | -------------------------- | ------------------------- |
+| pfSense    | Hp t730           | RX-427BB | 4   | 4G  | 16G SSD                    | N/A                       |
+| Bare Metal | Hp t620           | GX-415GA | 4   | 6G  | 16G SSD & 16G USB          | N/A                       |
+| kvm-0      | N/A               | R7-5700G | 16  | 96G | 500G/1TB NVME 250GB SSD x2 | N/A                       |
+| kvm-1      | Hp ProDesk 400 G3 | R7-5700G | 16  | 64G | 500G/1TB NVME 250GB SSD x2 | N/A                       |
+| TrueNas    | Hp ProDesk 400 G3 | i5-6600  | 4   | 32G | 120G SSD x2 Boot Mirror    | 2T HDD ,1T SSD ZFS Mirror |
+| Spare      | Hp p7-1226s       | i3-2130  | 4   | 8G  | 240G SSD                   | N/A                       |
 
 **ZFS Storage:**
 
@@ -104,13 +105,15 @@ Permission Denied Issue
 
 | NAME     | ROLES          | Machine | vCPU | Mem   | Storage |
 | -------- | -------------- | ------- | ---- | ----- | ------- |
-| server-1 | cp,etcd,master | kvm-0   | 4    | 15.5G | N/A     |
-| server-2 | cp,etcd,master | kvm-1   | 3    | 14G   | N/A     |
-| server-3 | cp,etcd,master | kvm-0   | 4    | 15.5G | N/A     |
+| server-1 | cp,etcd,master | kvm-0   | 4    | 15G   | N/A     |
+| server-2 | cp,etcd,master | kvm-1   | 4    | 15G   | N/A     |
+| server-3 | cp,etcd,master | kvm-0   | 4    | 15G   | N/A     |
 | worker-1 | worker         | kvm-0   | 4    | 20G   | LH NVME |
-| worker-2 | worker         | kvm-0   | 4    | 20G   | LH SSD  |
+| worker-2 | worker         | kvm-1   | 4    | 15.5G | LH NVME |
 | worker-3 | worker         | kvm-0   | 4    | 20G   | LH NVME |
-| worker-4 | worker         | kvm-1   | 3    | 16G   | LH SSD  |
+| worker-4 | worker         | kvm-1   | 4    | 15.5G | LH NVME |
+| worker-5 | worker         | kvm-0   | 4    | 20G   | LH NVME |
+| worker-6 | worker         | kvm-1   | 4    | 15.5G | LH NVME |
 
 #### OKD Longhorn Secondary Disk Setup
 
@@ -146,6 +149,9 @@ kubectl drain k3s-worker --ignore-daemonsets --delete-emptydir-data
 kubectl exec -it vault-0 -n vault -- vault operator unseal --tls-skip-verify
 # Nextcloud
 kubectl exec -it nextcloud-0 -n nextcloud -- runuser -u www-data -- php -f /var/www/html/occ
+
+kubectl label node ${NODE} topology.kubernetes.io/zone=${ZONE} --overwrite
+kubectl label node ${NODE} .okd.arthurvardevanyan.com node.longhorn.io/create-default-disk=true --overwrite
 ```
 
 #### SSH Keyscan
