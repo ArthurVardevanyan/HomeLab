@@ -96,6 +96,14 @@ spec:
         cpu: 500m
         memory: 750Mi
     sharding: {}
+  resourceExclusions: |
+    - apiGroups:
+      - tekton.dev
+      clusters:
+      - '*'
+      kinds:
+      - TaskRun
+      - PipelineRun
   configManagementPlugins: |
     - name: argocd-vault-plugin
       generate:
