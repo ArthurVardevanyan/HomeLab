@@ -111,7 +111,7 @@ Permission Denied Issue
 | NAME     | ROLES          | Machine | vCPU | Mem   | Storage |
 | -------- | -------------- | ------- | ---- | ----- | ------- |
 | server-1 | cp,etcd,master | kvm-0   | 4    | 15.5G | N/A     |
-| server-2 | cp,etcd,master | kvm-1   | 4    | 15.5G | N/A     |
+| server-2 | cp,etcd,master | kvm-1   | 4    | 14G   | N/A     |
 | server-3 | cp,etcd,master | kvm-0   | 4    | 15.5G | N/A     |
 | worker-1 | worker         | kvm-0   | 4    | 20G   | LH NVME |
 | worker-2 | worker         | kvm-1   | 4    | 15.5G | LH NVME |
@@ -248,7 +248,7 @@ kubectl scale --replicas=0 deployment.apps/quay-quay-config-editor -n quay
 # deployment/quay-quay-app
 resources:
   limits:
-    cpu: 750m
+    cpu: 1000m
     memory: 6Gi
   requests:
     cpu: 150m
