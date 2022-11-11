@@ -9,6 +9,7 @@ metadata:
     app.kubernetes.io/instance: argocd
 spec:
   server:
+    replicas: 2
     host: argocd.apps.okd.<path:secret/data/homelab/domain#url>
     autoscale:
       enabled: false
@@ -22,7 +23,7 @@ spec:
         cpu: 100m
         memory: 200Mi
       requests:
-        cpu: 10m
+        cpu: 50m
         memory: 100Mi
     insecure: true
     route:
@@ -34,17 +35,12 @@ spec:
       type: ""
   grafana:
     enabled: false
-    ingress:
-      enabled: false
-    route:
-      enabled: false
+    service:
   prometheus:
     enabled: false
-    ingress:
-      enabled: false
-    route:
-      enabled: false
   initialSSHKnownHosts: {}
+  disableAdmin: true
+  usersAnonymousEnabled: false
   rbac:
     policy: |
       g, system:cluster-admins, role:admin
@@ -52,13 +48,14 @@ spec:
   image: registry.<path:secret/data/homelab/domain#url>/homelab/argocd
   version: v2.2.15
   repo:
+    replicas: 2
     image: registry.<path:secret/data/homelab/domain#url>/homelab/argocd
     version: v2.2.15
     mountsatoken: true
     serviceaccount: default
     resources:
       limits:
-        cpu: 750m
+        cpu: "1"
         memory: 1Gi
       requests:
         cpu: 50m
@@ -76,18 +73,31 @@ spec:
           memory: 50Mi
   ha:
     enabled: false
+    resources:
+      limits:
+        cpu: 50m
+        memory: 75Mi
+      requests:
+        cpu: 25m
+        memory: 20Mi
   tls:
     ca: {}
   redis:
     resources:
       limits:
-        cpu: 50m
+        cpu: 75m
         memory: 50Mi
       requests:
-        cpu: 10m
+        cpu: 25m
         memory: 25Mi
   controller:
-    processors: {}
+    parallelismLimit: 5
+    sharding:
+      enabled: true
+      replicas: 1
+    processors:
+      operation: 5
+      status: 3
     resources:
       limits:
         cpu: "2"
@@ -95,7 +105,6 @@ spec:
       requests:
         cpu: 500m
         memory: 750Mi
-    sharding: {}
   resourceExclusions: |
     - apiGroups:
       - tekton.dev
