@@ -73,6 +73,35 @@ Permission Denied Issue
 
 ## Server
 
+```mermaid
+graph TD
+ linkStyle default interpolate basis
+
+wan1[<center>WAN 500/50<br>192.168.100.1</center>]---router{<center>PfSense<br>10.0.0.2</center>}
+wan2[<center>LTE 100/25 Mb<br>192.168.1.1</center>]---router
+router---ap{<center>TP-AX1800<br>10.0.0.1</center>}
+ap---switch[<center>TL-SG1005D</center>]
+
+subgraph HomeLab
+    switch-.-kvm-1(<center>kvm-1<br>10.0.0.109</center>)
+    switch-.-kvm-2(<center>kvm-2<br>10.0.0.110</center>)
+    subgraph OKD ODD
+        kvm-1-.-server-1(<center>server-1<br>10.0.0.101</center>)
+        kvm-1-.-server-3(<center>server-3<br>10.0.0.103</center>)
+        kvm-1-.-worker-1(<center>worker-1<br>10.0.0.111</center>)
+        kvm-1-.-worker-3(<center>worker-3<br>10.0.0.113</center>)
+        kvm-1-.-worker-5(<center>worker-5<br>10.0.0.115</center>)
+    end
+    switch-.-truenas(<center>TrueNas<br>10.0.0.3</center>)
+    subgraph OKD EVEN
+        kvm-2-.-server-2(<center>server-2<br>10.0.0.102</center>)
+        kvm-2-.-worker-2(<center>worker-2<br>10.0.0.1112</center>)
+        kvm-2-.-worker-4(<center>worker-2<br>10.0.0.114</center>)
+        kvm-2-.-worker-6(<center>worker-6<br>10.0.0.116</center>)
+    end
+end
+```
+
 ### Kubernetes
 
 <https://www.okd.io/>
