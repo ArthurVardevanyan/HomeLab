@@ -8,30 +8,15 @@ metadata:
 data:
   config.yaml: |
     enableUserWorkload: true
-    alertmanagerMain:
-      resources:
-        requests:
-          cpu: 10m
-          memory: 50Mi
-        limits:
-          cpu: 30m
-          memory: 100Mi
-      volumeClaimTemplate:
-       spec:
-         storageClassName: longhorn-static
-         volumeMode: Filesystem
-         resources:
-           requests:
-             storage: 50Mi
     prometheusK8s:
       retention: 14d
       resources:
         requests:
           cpu: 1
-          memory: 7Gi
+          memory: 4Gi
         limits:
           cpu: 3
-          memory: 14Gi
+          memory: 8Gi
       volumeClaimTemplate:
        spec:
          storageClassName: longhorn-static
@@ -39,10 +24,25 @@ data:
          resources:
            requests:
              storage: 35Gi
+    alertmanagerMain:
+      resources:
+        requests:
+          cpu: 10m
+          memory: 32Mi
+        limits:
+          cpu: 30m
+          memory: 64Mi
+      volumeClaimTemplate:
+       spec:
+         storageClassName: longhorn-static
+         volumeMode: Filesystem
+         resources:
+           requests:
+             storage: 50Mi
     thanosQuerier:
       resources:
         requests:
-          cpu: 100m
+          cpu: 50m
           memory: 128Mi
         limits:
            cpu: 350m
@@ -76,7 +76,7 @@ data:
     thanosRuler:
       resources:
         requests:
-          cpu: 25m
+          cpu: 10m
           memory: 64Mi
         limits:
           cpu: 50m
