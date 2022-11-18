@@ -51,7 +51,7 @@ stateful_workload_stop() {
   kubectl scale --replicas=0 -n keycloak deployment/keycloak-operator
   kubectl scale --replicas=0 -n keycloak statefulset/keycloak
 
-  kubectl scale --replicas=0 -n postgres statefulset/clair-00-s8wv
+  kubectl scale --replicas=0 -n postgres statefulset/clair-00-w6wr
   kubectl scale --replicas=0 -n postgres statefulset/clair-repo-host
   kubectl scale --replicas=0 -n postgres statefulset/gitea-00-9ds5
   kubectl scale --replicas=0 -n postgres statefulset/gitea-00-z7gc
@@ -118,7 +118,7 @@ stateful_workload_start() {
   kubectl scale --replicas=1 -n keycloak deployment/keycloak-operator
   kubectl scale --replicas=2 -n keycloak statefulset/keycloak
 
-  kubectl scale --replicas=1 -n postgres statefulset/clair-00-s8wv
+  kubectl scale --replicas=1 -n postgres statefulset/clair-00-w6wr
   kubectl scale --replicas=1 -n postgres statefulset/clair-repo-host
   kubectl scale --replicas=1 -n postgres statefulset/gitea-00-9ds5
   kubectl scale --replicas=1 -n postgres statefulset/gitea-00-z7gc

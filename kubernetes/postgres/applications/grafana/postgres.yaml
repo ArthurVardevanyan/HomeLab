@@ -10,6 +10,9 @@ metadata:
 spec:
   backups:
     pgbackrest:
+      global:
+        repo1-retention-full: "2"
+        repo1-retention-full-type: count
       repoHost:
         resources:
           limits:
@@ -23,7 +26,7 @@ spec:
           resources:
             limits:
               memory: "32Mi"
-              cpu: "45m"
+              cpu: "100m"
             requests:
               memory: "16Mi"
               cpu: "15m"
@@ -37,6 +40,9 @@ spec:
               cpu: "15m"
       repos:
         - name: repo1
+          schedules:
+            full: "0 7 * * 0"
+            differential: "0 7 * * 1-6"
           volume:
             volumeClaimSpec:
               storageClassName: longhorn-static

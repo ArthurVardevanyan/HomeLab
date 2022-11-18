@@ -140,3 +140,28 @@ spec:
         - namespaceSelector:
             matchLabels:
               kubernetes.io/metadata.name: quay
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-api-server
+  namespace: quay
+  annotations:
+    argocd.argoproj.io/sync-wave: "0"
+  labels:
+    app.kubernetes.io/instance: quay
+spec:
+  podSelector: {}
+  policyTypes:
+    - Egress
+  egress:
+    - to:
+        - podSelector:
+            matchLabels:
+              app: openshift-kube-apiserver
+          namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: openshift-kube-apiserver
+      ports:
+        - protocol: TCP
+          port: 6443
