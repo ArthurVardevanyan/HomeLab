@@ -1,4 +1,4 @@
-<domain type='kvm' id='6' xmlns:qemu='http://libvirt.org/schemas/domain/qemu/1.0'>
+<domain type='kvm' id='7' xmlns:qemu='http://libvirt.org/schemas/domain/qemu/1.0'>
   <name>worker-6</name>
   <uuid>d1db76d3-323e-43ea-be74-ccfbdb77f5f5</uuid>
   <metadata>
@@ -6,8 +6,8 @@
       <libosinfo:os id="http://fedoraproject.org/coreos/stable" />
     </libosinfo:libosinfo>
   </metadata>
-  <memory unit='KiB'>16515072</memory>
-  <currentMemory unit='KiB'>16515072</currentMemory>
+  <memory unit='KiB'>15990784</memory>
+  <currentMemory unit='KiB'>15990784</currentMemory>
   <vcpu placement='static'>4</vcpu>
   <resource>
     <partition>/machine</partition>
@@ -62,10 +62,6 @@
     <controller type='pci' index='0' model='pcie-root'>
       <alias name='pcie.0' />
     </controller>
-    <controller type='virtio-serial' index='0'>
-      <alias name='virtio-serial0' />
-      <address type='pci' domain='0x0000' bus='0x03' slot='0x00' function='0x0' />
-    </controller>
     <controller type='pci' index='1' model='pcie-root-port'>
       <model name='pcie-root-port' />
       <target chassis='1' port='0x8' />
@@ -114,28 +110,32 @@
       <alias name='pci.8' />
       <address type='pci' domain='0x0000' bus='0x00' slot='0x01' function='0x7' />
     </controller>
+    <controller type='virtio-serial' index='0'>
+      <alias name='virtio-serial0' />
+      <address type='pci' domain='0x0000' bus='0x03' slot='0x00' function='0x0' />
+    </controller>
     <interface type='bridge'>
       <mac address='10:00:00:00:01:16' />
       <source bridge='br0' />
-      <target dev='vnet4' />
+      <target dev='vnet6' />
       <model type='virtio' />
       <alias name='net0' />
       <address type='pci' domain='0x0000' bus='0x01' slot='0x00' function='0x0' />
     </interface>
     <serial type='pty'>
-      <source path='/dev/pts/1' />
+      <source path='/dev/pts/0' />
       <target type='isa-serial' port='0'>
         <model name='isa-serial' />
       </target>
       <alias name='serial0' />
     </serial>
-    <console type='pty' tty='/dev/pts/1'>
-      <source path='/dev/pts/1' />
+    <console type='pty' tty='/dev/pts/0'>
+      <source path='/dev/pts/0' />
       <target type='serial' port='0' />
       <alias name='serial0' />
     </console>
     <channel type='unix'>
-      <source mode='bind' path='/var/lib/libvirt/qemu/channel/target/domain-6-worker-6/org.qemu.guest_agent.0' />
+      <source mode='bind' path='/var/lib/libvirt/qemu/channel/target/domain-7-worker-6/org.qemu.guest_agent.0' />
       <target type='virtio' name='org.qemu.guest_agent.0' state='connected' />
       <alias name='channel0' />
       <address type='virtio-serial' controller='0' bus='0' port='1' />
