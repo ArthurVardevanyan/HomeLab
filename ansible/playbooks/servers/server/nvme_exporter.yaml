@@ -1,0 +1,18 @@
+- hosts: servers
+  gather_facts: no
+  become: true
+  user: arthur
+  tasks:
+    - name: Download NVME Exporter
+      get_url:
+        url: https://git.REPLACE_ME/attachments/303631a0-06f0-498c-93f4-7bca9bc34b10
+        dest: /usr/local/bin/nvme_exporter
+        mode: a+x
+    - name: Create NVME Exporter Service
+      copy:
+        src: "../../../../machineConfigs/servers/server/etc/systemd/system/nvme_exporter.service"
+        dest: "/etc/systemd/system/nvme_exporter.service"
+      register: nvme_exporter_conf
+    - name: Enable Service
+      command: systemctl enable nvme_exporter.service
+      when: nvme_exporter_conf.changed
