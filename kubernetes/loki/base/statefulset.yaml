@@ -24,6 +24,8 @@ spec:
       serviceAccountName: loki
       securityContext:
         runAsNonRoot: true
+        fsGroupChangePolicy: "OnRootMismatch"
+
         # fsGroup: 10001
         # runAsGroup: 10001
         # runAsUser: 10001
@@ -35,16 +37,20 @@ spec:
             - "-config.file=/etc/loki/loki.yaml"
           resources:
             requests:
+              ephemeral-storage: "250Mi"
               memory: "512Mi"
               cpu: "50m"
             limits:
+              ephemeral-storage: "250Mi"
               memory: "1536Mi"
               cpu: "250m"
           volumeMounts:
             - name: config
               mountPath: /etc/loki
             - name: storage
-              mountPath: "/data"
+              mountPath: /data
+            - name: cache
+              mountPath: /tmp
           ports:
             - name: http-metrics
               containerPort: 3100
@@ -78,3 +84,6 @@ spec:
         - name: storage
           persistentVolumeClaim:
             claimName: loki-pvc
+        - name: cache
+          emptyDir:
+            sizeLimit: 250Mi

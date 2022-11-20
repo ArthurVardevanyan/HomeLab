@@ -25,6 +25,14 @@
 ##- name: Discord Bot
 ##  import_playbook: playbooks/servers/server/discord_bot.yaml
 - name: kvm-1 Bridge Network
-  import_playbook: playbooks/servers/kvm-1-network/network_bridge.yaml
-- name: KVM 1 Bridge Network
-  import_playbook: playbooks/servers/kvm-2-network/network_bridge.yaml
+  import_playbook: playbooks/servers/kvm-1/network_bridge.yaml
+- name: kvm-2 Bridge Network
+  import_playbook: playbooks/servers/kvm-2/network_bridge.yaml
+# Runs Through Pipeline
+##- name: kvm-1 Promtail Config
+##  import_playbook: playbooks/servers/kvm-1/promtail.yaml
+# Runs Through Pipeline
+##- name: kvm-2 Promtail Config
+##  import_playbook: playbooks/servers/kvm-2/promtail.yaml
+- name: Install Promtail
+  import_playbook: playbooks/servers/server/promtail.yaml

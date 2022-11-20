@@ -19,13 +19,13 @@ data:
       filename: /run/promtail/positions.yaml
 
     scrape_configs:
-      - job_name: system
-        static_configs:
-        - targets:
-            - localhost
+      - job_name: journal
+        journal:
+          json: false
+          max_age: 12h
+          path: /var/log/journal
           labels:
             job: ${HOSTNAME}
-            __path__: /var/log/*.log
 
       - job_name: kubernetes-pods
         pipeline_stages:
