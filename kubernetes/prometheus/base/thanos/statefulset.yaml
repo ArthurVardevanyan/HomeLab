@@ -1,0 +1,75 @@
+# https://hackernoon.com/kubernetes-monitoring-with-prometheus-and-thanos-z91w3uc2
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: thanos-store-gateway
+  namespace: prometheus
+  labels:
+    app: thanos-store-gateway
+    app.kubernetes.io/instance: prometheus
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: thanos-store-gateway
+  serviceName: thanos-store-gateway
+  template:
+    metadata:
+      labels:
+        app: thanos-store-gateway
+        thanos-store-api: "true"
+    spec:
+      containers:
+        - name: thanos-store-gateway
+          image: quay.io/thanos/thanos:v0.29.0
+          securityContext:
+            runAsNonRoot: true
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            seccompProfile:
+              type: RuntimeDefault
+            capabilities:
+              drop:
+                - all
+          resources:
+            requests:
+              cpu: 25m
+              memory: 512Mi
+              ephemeral-storage: 100Mi
+            limits:
+              cpu: 1000m
+              memory: 10Gi
+              ephemeral-storage: 100Mi
+          args:
+            - "store"
+            - "--log.level=debug"
+            - "--data-dir=/data"
+            - "--objstore.config-file=/etc/secret/truenas.yaml"
+            - "--index-cache-size=500MB"
+            - "--chunk-pool-size=500MB"
+          ports:
+            - name: http
+              containerPort: 10902
+            - name: grpc
+              containerPort: 10901
+          livenessProbe:
+            httpGet:
+              port: 10902
+              path: /-/healthy
+          readinessProbe:
+            httpGet:
+              port: 10902
+              path: /-/ready
+          volumeMounts:
+            - name: truenas
+              mountPath: /etc/secret
+              readOnly: false
+            - name: data
+              mountPath: /data
+      volumes:
+        - name: truenas
+          secret:
+            secretName: truenas
+        - name: data
+          emptyDir:
+            sizeLimit: 100Mi

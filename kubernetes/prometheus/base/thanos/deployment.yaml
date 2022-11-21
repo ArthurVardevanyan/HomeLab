@@ -1,0 +1,57 @@
+# https://hackernoon.com/kubernetes-monitoring-with-prometheus-and-thanos-z91w3uc2
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: thanos-querier
+  namespace: prometheus
+  labels:
+    app: thanos-querier
+    app.kubernetes.io/instance: prometheus
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: thanos-querier
+  template:
+    metadata:
+      labels:
+        app: thanos-querier
+    spec:
+      containers:
+        - name: thanos-querier
+          image: quay.io/thanos/thanos:v0.29.0
+          securityContext:
+            runAsNonRoot: true
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            seccompProfile:
+              type: RuntimeDefault
+            capabilities:
+              drop:
+                - all
+          resources:
+            requests:
+              cpu: 50m
+              memory: 512Mi
+            limits:
+              cpu: 500m
+              memory: 5Gi
+          args:
+            - query
+            - --log.level=debug
+            - --query.replica-label=replica
+            - --store=dnssrv+thanos-prometheus-headless.prometheus.svc.cluster.local:10901
+            - --store=dnssrv+thanos-store-gateway:10901
+          ports:
+            - name: http
+              containerPort: 10902
+            - name: grpc
+              containerPort: 10901
+          livenessProbe:
+            httpGet:
+              port: http
+              path: /-/healthy
+          readinessProbe:
+            httpGet:
+              port: http
+              path: /-/ready

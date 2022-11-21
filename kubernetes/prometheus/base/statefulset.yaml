@@ -35,8 +35,8 @@ spec:
             runAsNonRoot: true
             allowPrivilegeEscalation: false
             readOnlyRootFilesystem: true
-            # seccompProfile:
-            #   type: RuntimeDefault
+            seccompProfile:
+              type: RuntimeDefault
             capabilities:
               drop:
                 - all
@@ -45,6 +45,8 @@ spec:
             - "--storage.tsdb.path=/prometheus_data/"
             - "--storage.tsdb.retention.time=100y"
             - "--web.enable-admin-api"
+            - "--storage.tsdb.min-block-duration=2h"
+            - "--storage.tsdb.max-block-duration=2h"
           ports:
             - containerPort: 9090
           resources:
@@ -75,11 +77,52 @@ spec:
               mountPath: /etc/prometheus/
             - name: prometheus-pvc
               mountPath: /prometheus_data/
-      # securityContext:
-      #   fsGroup: 65534
-      #   runAsGroup: 65534
-      #   runAsNonRoot: true
-      #   runAsUser: 65534
+        # https://hackernoon.com/kubernetes-monitoring-with-prometheus-and-thanos-z91w3uc2
+        - name: thanos
+          image: quay.io/thanos/thanos:v0.29.0
+          securityContext:
+            runAsNonRoot: true
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            seccompProfile:
+              type: RuntimeDefault
+            capabilities:
+              drop:
+                - all
+          resources:
+            requests:
+              cpu: 25m
+              memory: 512Mi
+            limits:
+              cpu: 250m
+              memory: 1Gi
+          args:
+            - "sidecar"
+            - "--log.level=debug"
+            - "--tsdb.path=/prometheus_data"
+            - "--prometheus.url=http://127.0.0.1:9090"
+            - "--objstore.config-file=/etc/secret/truenas.yaml"
+          ports:
+            - name: http-sidecar
+              containerPort: 10902
+            - name: grpc
+              containerPort: 10901
+          livenessProbe:
+            httpGet:
+              port: 10902
+              path: /-/healthy
+          readinessProbe:
+            httpGet:
+              port: 10902
+              path: /-/ready
+          volumeMounts:
+            - name: prometheus-config-volume
+              mountPath: /etc/prometheus/
+            - name: prometheus-pvc
+              mountPath: /prometheus_data/
+            - name: truenas
+              mountPath: /etc/secret
+              readOnly: true
       volumes:
         - name: prometheus-config-volume
           configMap:
@@ -88,3 +131,9 @@ spec:
         - name: prometheus-pvc
           persistentVolumeClaim:
             claimName: prometheus-pvc
+        - name: thanos-gcs-credentials
+          secret:
+            secretName: thanos-gcs-credentials
+        - name: truenas
+          secret:
+            secretName: truenas

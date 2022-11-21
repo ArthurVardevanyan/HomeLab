@@ -18,3 +18,24 @@ spec:
     termination: edge
     insecureEdgeTerminationPolicy: Redirect
   wildcardPolicy: None
+---
+kind: Route
+apiVersion: route.openshift.io/v1
+metadata:
+  name: thanos-querier
+  namespace: prometheus
+  labels:
+    app: prometheus
+    app.kubernetes.io/instance: prometheus
+spec:
+  host: thanos-querier.apps.okd.<path:secret/data/gitlab/domain#url>
+  to:
+    kind: Service
+    name: thanos-querier
+    weight: 100
+  port:
+    targetPort: http
+  tls:
+    termination: edge
+    insecureEdgeTerminationPolicy: Redirect
+  wildcardPolicy: None

@@ -159,9 +159,17 @@ spec:
           podSelector:
             matchLabels:
               app: prometheus-server
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: prometheus
+          podSelector:
+            matchLabels:
+              app: thanos-querier
       ports:
         - protocol: TCP
           port: 9090
+        - protocol: TCP
+          port: 10902
 ---
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy

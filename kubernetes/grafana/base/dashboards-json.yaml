@@ -12,7 +12,10 @@ data:
         "list": [
           {
             "builtIn": 1,
-            "datasource": "-- Grafana --",
+            "datasource": {
+              "type": "datasource",
+              "uid": "grafana"
+            },
             "enable": true,
             "hide": true,
             "iconColor": "rgba(0, 211, 255, 1)",
@@ -32,13 +35,16 @@ data:
       "fiscalYearStartMonth": 0,
       "gnetId": 9871,
       "graphTooltip": 0,
-      "id": 15,
-      "iteration": 1643683396213,
+      "id": 4,
       "links": [],
       "liveNow": false,
       "panels": [
         {
           "collapsed": false,
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
           "gridPos": {
             "h": 1,
             "w": 24,
@@ -47,6 +53,15 @@ data:
           },
           "id": 5,
           "panels": [],
+          "targets": [
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "${datasource}"
+              },
+              "refId": "A"
+            }
+          ],
           "title": "Overall",
           "type": "row"
         },
@@ -59,6 +74,10 @@ data:
           "bars": false,
           "dashLength": 10,
           "dashes": false,
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
           "description": "This represents the total [CPU resource requests](https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/#meaning-of-cpu) in the cluster.\nFor comparison the total [allocatable CPU cores](https://github.com/kubernetes/community/blob/master/contributors/design-proposals/node-allocatable.md) is also shown.",
           "fill": 1,
           "fillGradient": 0,
@@ -88,7 +107,7 @@ data:
           },
           "paceLength": 10,
           "percentage": false,
-          "pluginVersion": "8.3.4",
+          "pluginVersion": "9.2.4",
           "pointradius": 0.5,
           "points": false,
           "renderer": "flot",
@@ -98,6 +117,10 @@ data:
           "steppedLine": false,
           "targets": [
             {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "${datasource}"
+              },
               "expr": "sum(eagle_node_resource_allocatable_cpu_cores{node=~\"$node_pool.*\", node=~\"$node.*\"})",
               "format": "time_series",
               "intervalFactor": 1,
@@ -105,6 +128,10 @@ data:
               "refId": "A"
             },
             {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "${datasource}"
+              },
               "expr": "sum(eagle_node_resource_requests_cpu_cores{node=~\"$node_pool.*\", node=~\"$node.*\"})",
               "format": "time_series",
               "intervalFactor": 1,
@@ -112,6 +139,10 @@ data:
               "refId": "B"
             },
             {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "${datasource}"
+              },
               "expr": "sum(eagle_node_resource_limits_cpu_cores{node=~\"$node_pool.*\", node=~\"$node.*\"})",
               "format": "time_series",
               "intervalFactor": 1,
@@ -119,6 +150,10 @@ data:
               "refId": "C"
             },
             {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "${datasource}"
+              },
               "expr": "sum(eagle_node_resource_usage_cpu_cores{node=~\"$node_pool.*\", node=~\"$node.*\"})",
               "format": "time_series",
               "intervalFactor": 1,
@@ -159,6 +194,10 @@ data:
           }
         },
         {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
           "fieldConfig": {
             "defaults": {
               "color": {
@@ -221,9 +260,13 @@ data:
             "showThresholdMarkers": true,
             "text": {}
           },
-          "pluginVersion": "8.3.4",
+          "pluginVersion": "9.2.4",
           "targets": [
             {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "${datasource}"
+              },
               "expr": "sum(eagle_node_resource_usage_cpu_cores{node=~\"$node_pool.*\", node=~\"$node.*\"}) / sum(eagle_node_resource_allocatable_cpu_cores{node=~\"$node_pool.*\", node=~\"$node.*\"})",
               "format": "time_series",
               "instant": true,
@@ -235,6 +278,10 @@ data:
           "type": "gauge"
         },
         {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
           "fieldConfig": {
             "defaults": {
               "color": {
@@ -297,9 +344,13 @@ data:
             "showThresholdMarkers": true,
             "text": {}
           },
-          "pluginVersion": "8.3.4",
+          "pluginVersion": "9.2.4",
           "targets": [
             {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "${datasource}"
+              },
               "exemplar": true,
               "expr": "sum(eagle_pod_container_resource_usage_memory_bytes{node=~\"$node_pool.*\", node=~\"$node.*\"}) / sum(eagle_node_resource_allocatable_memory_bytes{node=~\"$node_pool.*\", node=~\"$node.*\"})",
               "format": "time_series",
@@ -324,6 +375,10 @@ data:
           "bars": false,
           "dashLength": 10,
           "dashes": false,
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
           "description": "This represents the total [memory resource requests](https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/#meaning-of-memory) in the cluster.\nFor comparison the total [allocatable memory](https://github.com/kubernetes/community/blob/master/contributors/design-proposals/node-allocatable.md) is also shown.",
           "fill": 1,
           "fillGradient": 0,
@@ -353,7 +408,7 @@ data:
           },
           "paceLength": 10,
           "percentage": false,
-          "pluginVersion": "8.3.4",
+          "pluginVersion": "9.2.4",
           "pointradius": 0.5,
           "points": false,
           "renderer": "flot",
@@ -363,6 +418,10 @@ data:
           "steppedLine": false,
           "targets": [
             {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "${datasource}"
+              },
               "expr": "sum(eagle_node_resource_allocatable_memory_bytes{node=~\"$node_pool.*\", node=~\"$node.*\"})",
               "format": "time_series",
               "intervalFactor": 1,
@@ -370,6 +429,10 @@ data:
               "refId": "A"
             },
             {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "${datasource}"
+              },
               "expr": "sum(eagle_node_resource_requests_memory_bytes{node=~\"$node_pool.*\", node=~\"$node.*\"})",
               "format": "time_series",
               "intervalFactor": 1,
@@ -377,6 +440,10 @@ data:
               "refId": "B"
             },
             {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "${datasource}"
+              },
               "expr": "sum(eagle_node_resource_limits_memory_bytes{node=~\"$node_pool.*\", node=~\"$node.*\"})",
               "format": "time_series",
               "intervalFactor": 1,
@@ -384,6 +451,10 @@ data:
               "refId": "C"
             },
             {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "${datasource}"
+              },
               "exemplar": true,
               "expr": "sum(eagle_pod_container_resource_usage_memory_bytes{node=~\"$node_pool.*\", node=~\"$node.*\"})",
               "format": "time_series",
@@ -429,6 +500,10 @@ data:
         },
         {
           "collapsed": false,
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
           "gridPos": {
             "h": 1,
             "w": 24,
@@ -437,11 +512,24 @@ data:
           },
           "id": 10,
           "panels": [],
+          "targets": [
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "${datasource}"
+              },
+              "refId": "A"
+            }
+          ],
           "title": "CPU",
           "type": "row"
         },
         {
           "columns": [],
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
           "fontSize": "100%",
           "gridPos": {
             "h": 5,
@@ -606,6 +694,10 @@ data:
           ],
           "targets": [
             {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "${datasource}"
+              },
               "expr": "sum(eagle_node_resource_requests_cpu_cores{node=~\"$node_pool.*\", node=~\"$node.*\"}) by (node)",
               "format": "table",
               "instant": true,
@@ -614,6 +706,10 @@ data:
               "refId": "A"
             },
             {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "${datasource}"
+              },
               "expr": "sum(eagle_node_resource_limits_cpu_cores{node=~\"$node_pool.*\", node=~\"$node.*\"}) by (node)",
               "format": "table",
               "instant": true,
@@ -622,6 +718,10 @@ data:
               "refId": "B"
             },
             {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "${datasource}"
+              },
               "expr": "sum(eagle_node_resource_allocatable_cpu_cores{node=~\"$node_pool.*\", node=~\"$node.*\"}) by (node)",
               "format": "table",
               "instant": true,
@@ -630,6 +730,10 @@ data:
               "refId": "C"
             },
             {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "${datasource}"
+              },
               "expr": "sum(eagle_node_resource_requests_cpu_cores{node=~\"$node_pool.*\", node=~\"$node.*\"} / eagle_node_resource_allocatable_cpu_cores{node=~\"$node_pool.*\", node=~\"$node.*\"}) by (node)",
               "format": "table",
               "instant": true,
@@ -638,6 +742,10 @@ data:
               "refId": "D"
             },
             {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "${datasource}"
+              },
               "expr": "sum(eagle_node_resource_limits_cpu_cores{node=~\"$node_pool.*\", node=~\"$node.*\"} / eagle_node_resource_allocatable_cpu_cores{node=~\"$node_pool.*\", node=~\"$node.*\"}) by (node)",
               "format": "table",
               "instant": true,
@@ -645,6 +753,10 @@ data:
               "refId": "E"
             },
             {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "${datasource}"
+              },
               "expr": "sum(eagle_node_resource_usage_cpu_cores{node=~\"$node_pool.*\", node=~\"$node.*\"} / eagle_node_resource_allocatable_cpu_cores{node=~\"$node_pool.*\", node=~\"$node.*\"}) by (node)",
               "format": "table",
               "instant": true,
@@ -665,6 +777,10 @@ data:
           "bars": false,
           "dashLength": 10,
           "dashes": false,
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
           "description": "This represents the total [CPU resource requests](https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/#meaning-of-cpu) in the cluster.\nFor comparison the total [allocatable CPU cores](https://github.com/kubernetes/community/blob/master/contributors/design-proposals/node-allocatable.md) is also shown.",
           "fill": 1,
           "fillGradient": 0,
@@ -695,7 +811,7 @@ data:
           },
           "paceLength": 10,
           "percentage": false,
-          "pluginVersion": "8.3.4",
+          "pluginVersion": "9.2.4",
           "pointradius": 0.5,
           "points": false,
           "renderer": "flot",
@@ -705,6 +821,10 @@ data:
           "steppedLine": false,
           "targets": [
             {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "${datasource}"
+              },
               "exemplar": true,
               "expr": "sum (eagle_pod_container_resource_usage_cpu_cores{node=~\"$node_pool.*\", node=~\"$node.*\", namespace=~\"$namespace.*\"}) by (container)",
               "format": "time_series",
@@ -757,6 +877,10 @@ data:
           "bars": false,
           "dashLength": 10,
           "dashes": false,
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
           "description": "This represents the total [CPU resource requests](https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/#meaning-of-cpu) in the cluster.\nFor comparison the total [allocatable CPU cores](https://github.com/kubernetes/community/blob/master/contributors/design-proposals/node-allocatable.md) is also shown.",
           "fill": 1,
           "fillGradient": 0,
@@ -787,7 +911,7 @@ data:
           },
           "paceLength": 10,
           "percentage": false,
-          "pluginVersion": "8.3.4",
+          "pluginVersion": "9.2.4",
           "pointradius": 0.5,
           "points": false,
           "renderer": "flot",
@@ -797,6 +921,10 @@ data:
           "steppedLine": false,
           "targets": [
             {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "${datasource}"
+              },
               "exemplar": true,
               "expr": "sum (eagle_pod_container_resource_usage_memory_bytes{node=~\"$node_pool.*\", node=~\"$node.*\" , pod!~\"svclb.*\", namespace=~\"$namespace.*\"}) by ( container)",
               "format": "time_series",
@@ -807,6 +935,10 @@ data:
               "refId": "D"
             },
             {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "${datasource}"
+              },
               "exemplar": true,
               "expr": "",
               "hide": false,
@@ -851,6 +983,10 @@ data:
         },
         {
           "columns": [],
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
           "fontSize": "100%",
           "gridPos": {
             "h": 7,
@@ -987,6 +1123,10 @@ data:
           ],
           "targets": [
             {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "${datasource}"
+              },
               "exemplar": true,
               "expr": "sum (eagle_pod_container_resource_requests_cpu_cores{node=~\"$node_pool.*\", node=~\"$node.*\", namespace=~\"$namespace.*\"}) by (pod, container, namespace)",
               "format": "table",
@@ -997,6 +1137,10 @@ data:
               "refId": "A"
             },
             {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "${datasource}"
+              },
               "exemplar": true,
               "expr": "sum (eagle_pod_container_resource_limits_cpu_cores{node=~\"$node_pool.*\", node=~\"$node.*\", namespace=~\"$namespace.*\"}) by (pod, container, namespace)",
               "format": "table",
@@ -1007,6 +1151,10 @@ data:
               "refId": "B"
             },
             {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "${datasource}"
+              },
               "exemplar": true,
               "expr": "sum (eagle_pod_container_resource_usage_cpu_cores{node=~\"$node_pool.*\", node=~\"$node.*\", namespace=~\"$namespace.*\"}) by (pod, container, namespace)",
               "format": "table",
@@ -1023,6 +1171,10 @@ data:
         },
         {
           "collapsed": false,
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
           "gridPos": {
             "h": 1,
             "w": 24,
@@ -1031,11 +1183,24 @@ data:
           },
           "id": 12,
           "panels": [],
+          "targets": [
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "${datasource}"
+              },
+              "refId": "A"
+            }
+          ],
           "title": "Memory",
           "type": "row"
         },
         {
           "columns": [],
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
           "fontSize": "100%",
           "gridPos": {
             "h": 5,
@@ -1200,6 +1365,10 @@ data:
           ],
           "targets": [
             {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "${datasource}"
+              },
               "expr": "sum(eagle_node_resource_requests_memory_bytes{node=~\"$node_pool.*\", node=~\"$node.*\"}) by (node)",
               "format": "table",
               "instant": true,
@@ -1208,6 +1377,10 @@ data:
               "refId": "A"
             },
             {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "${datasource}"
+              },
               "expr": "sum(eagle_node_resource_limits_memory_bytes{node=~\"$node_pool.*\", node=~\"$node.*\"}) by (node)",
               "format": "table",
               "instant": true,
@@ -1216,6 +1389,10 @@ data:
               "refId": "B"
             },
             {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "${datasource}"
+              },
               "expr": "sum(eagle_node_resource_allocatable_memory_bytes{node=~\"$node_pool.*\", node=~\"$node.*\"}) by (node)",
               "format": "table",
               "instant": true,
@@ -1224,6 +1401,10 @@ data:
               "refId": "C"
             },
             {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "${datasource}"
+              },
               "expr": "sum(eagle_node_resource_requests_memory_bytes{node=~\"$node_pool.*\", node=~\"$node.*\"} / eagle_node_resource_allocatable_memory_bytes{node=~\"$node_pool.*\", node=~\"$node.*\"}) by (node)",
               "format": "table",
               "instant": true,
@@ -1232,6 +1413,10 @@ data:
               "refId": "D"
             },
             {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "${datasource}"
+              },
               "expr": "sum(eagle_node_resource_limits_memory_bytes{node=~\"$node_pool.*\", node=~\"$node.*\"} / eagle_node_resource_allocatable_memory_bytes{node=~\"$node_pool.*\", node=~\"$node.*\"}) by (node)",
               "format": "table",
               "instant": true,
@@ -1239,6 +1424,10 @@ data:
               "refId": "E"
             },
             {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "${datasource}"
+              },
               "expr": "sum(eagle_node_resource_usage_memory_bytes{node=~\"$node_pool.*\", node=~\"$node.*\"} / eagle_node_resource_allocatable_memory_bytes{node=~\"$node_pool.*\", node=~\"$node.*\"}) by (node)",
               "format": "table",
               "instant": true,
@@ -1252,6 +1441,10 @@ data:
         },
         {
           "columns": [],
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
           "fontSize": "100%",
           "gridPos": {
             "h": 7,
@@ -1388,6 +1581,10 @@ data:
           ],
           "targets": [
             {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "${datasource}"
+              },
               "exemplar": true,
               "expr": "sum (eagle_pod_container_resource_requests_memory_bytes{node=~\"$node_pool.*\", node=~\"$node.*\", namespace=~\"$namespace.*\"}) by (pod, container, namespace)",
               "format": "table",
@@ -1398,6 +1595,10 @@ data:
               "refId": "A"
             },
             {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "${datasource}"
+              },
               "exemplar": true,
               "expr": "sum (eagle_pod_container_resource_limits_memory_bytes{node=~\"$node_pool.*\", node=~\"$node.*\", namespace=~\"$namespace.*\"}) by (pod, container, namespace)",
               "format": "table",
@@ -1408,6 +1609,10 @@ data:
               "refId": "B"
             },
             {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "${datasource}"
+              },
               "exemplar": true,
               "expr": "sum (eagle_pod_container_resource_usage_memory_bytes{node=~\"$node_pool.*\", node=~\"$node.*\", namespace=~\"$namespace.*\"}) by (pod, container, namespace)",
               "format": "table",
@@ -1423,8 +1628,8 @@ data:
           "type": "table-old"
         }
       ],
-      "refresh": "10s",
-      "schemaVersion": 34,
+      "refresh": "30s",
+      "schemaVersion": 37,
       "style": "dark",
       "tags": [
         "resources",
@@ -1432,6 +1637,24 @@ data:
       ],
       "templating": {
         "list": [
+          {
+            "current": {
+              "selected": true,
+              "text": "Thanos",
+              "value": "Thanos"
+            },
+            "hide": 0,
+            "includeAll": false,
+            "multi": false,
+            "name": "datasource",
+            "options": [],
+            "query": "prometheus",
+            "queryValue": "",
+            "refresh": 1,
+            "regex": "",
+            "skipUrlSync": false,
+            "type": "datasource"
+          },
           {
             "allValue": ".*",
             "current": {
@@ -1493,6 +1716,10 @@ data:
               "text": "All",
               "value": "$__all"
             },
+            "datasource": {
+              "type": "prometheus",
+              "uid": "${datasource}"
+            },
             "definition": "label_values(eagle_pod_container_resource_usage_cpu_cores{node=~\"$namespace.*\"}, namespace)",
             "hide": 0,
             "includeAll": true,
@@ -1543,7 +1770,7 @@ data:
       "timezone": "",
       "title": "Kube Eagle (Kuberenetes)",
       "uid": "cDBYcRInk",
-      "version": 2,
+      "version": 4,
       "weekStart": ""
     }
 
@@ -3283,7 +3510,10 @@ data:
         "list": [
           {
             "builtIn": 1,
-            "datasource": "-- Grafana --",
+            "datasource": {
+              "type": "datasource",
+              "uid": "grafana"
+            },
             "enable": true,
             "hide": true,
             "iconColor": "rgba(0, 211, 255, 1)",
@@ -3303,8 +3533,7 @@ data:
       "fiscalYearStartMonth": 0,
       "gnetId": 13978,
       "graphTooltip": 0,
-      "id": 15,
-      "iteration": 1647912979928,
+      "id": 1,
       "links": [],
       "liveNow": false,
       "panels": [
@@ -3346,7 +3575,7 @@ data:
             "alertThreshold": true
           },
           "percentage": false,
-          "pluginVersion": "8.4.4",
+          "pluginVersion": "9.2.4",
           "pointradius": 5,
           "points": false,
           "renderer": "flot",
@@ -3441,7 +3670,7 @@ data:
             "alertThreshold": true
           },
           "percentage": false,
-          "pluginVersion": "8.4.4",
+          "pluginVersion": "9.2.4",
           "pointradius": 5,
           "points": false,
           "renderer": "flot",
@@ -3573,7 +3802,7 @@ data:
             "alertThreshold": true
           },
           "percentage": false,
-          "pluginVersion": "8.4.4",
+          "pluginVersion": "9.2.4",
           "pointradius": 5,
           "points": false,
           "renderer": "flot",
@@ -3732,7 +3961,7 @@ data:
             "showThresholdLabels": false,
             "showThresholdMarkers": true
           },
-          "pluginVersion": "8.4.4",
+          "pluginVersion": "9.2.4",
           "targets": [
             {
               "datasource": {
@@ -3789,7 +4018,7 @@ data:
             "alertThreshold": true
           },
           "percentage": false,
-          "pluginVersion": "8.4.4",
+          "pluginVersion": "9.2.4",
           "pointradius": 5,
           "points": false,
           "renderer": "flot",
@@ -3915,7 +4144,7 @@ data:
             "alertThreshold": true
           },
           "percentage": false,
-          "pluginVersion": "8.4.4",
+          "pluginVersion": "9.2.4",
           "pointradius": 5,
           "points": false,
           "renderer": "flot",
@@ -4030,7 +4259,7 @@ data:
             "alertThreshold": true
           },
           "percentage": false,
-          "pluginVersion": "8.4.4",
+          "pluginVersion": "9.2.4",
           "pointradius": 5,
           "points": false,
           "renderer": "flot",
@@ -4123,7 +4352,7 @@ data:
             "alertThreshold": true
           },
           "percentage": false,
-          "pluginVersion": "8.4.4",
+          "pluginVersion": "9.2.4",
           "pointradius": 5,
           "points": false,
           "renderer": "flot",
@@ -4180,16 +4409,16 @@ data:
         }
       ],
       "refresh": "30s",
-      "schemaVersion": 35,
+      "schemaVersion": 37,
       "style": "dark",
       "tags": [],
       "templating": {
         "list": [
           {
             "current": {
-              "selected": false,
-              "text": "Prometheus",
-              "value": "Prometheus"
+              "selected": true,
+              "text": "Thanos",
+              "value": "Thanos"
             },
             "hide": 0,
             "includeAll": false,
@@ -4197,6 +4426,7 @@ data:
             "name": "datasource",
             "options": [],
             "query": "prometheus",
+            "queryValue": "",
             "refresh": 1,
             "regex": "",
             "skipUrlSync": false,
@@ -4207,6 +4437,10 @@ data:
               "selected": false,
               "text": "kubernetes-pods",
               "value": "kubernetes-pods"
+            },
+            "datasource": {
+              "type": "prometheus",
+              "uid": "${datasource}"
             },
             "definition": "label_values(node_uname_info, job)",
             "hide": 0,
@@ -4228,8 +4462,12 @@ data:
           {
             "current": {
               "selected": false,
-              "text": "k3s-server-1",
-              "value": "k3s-server-1"
+              "text": "",
+              "value": ""
+            },
+            "datasource": {
+              "type": "prometheus",
+              "uid": "${datasource}"
             },
             "definition": "label_values(node_uname_info{job=\"$job\"}, instance)",
             "hide": 0,
@@ -4284,7 +4522,7 @@ data:
       "timezone": "browser",
       "title": "Node Exporter",
       "uid": "3Vkte6hnz",
-      "version": 2,
+      "version": 3,
       "weekStart": ""
     }
 
