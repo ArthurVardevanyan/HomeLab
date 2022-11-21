@@ -776,3 +776,371 @@ data:
         - source_labels: [ __name__ ]
           regex: 'process_start_time_seconds'
           action: drop
+
+
+      - job_name: 'truenas'
+        scrape_interval: 30s
+
+        static_configs:
+          - targets:
+            - 10.0.0.3:9100
+            - 10.0.0.3:9108
+
+        metric_relabel_configs:
+        - source_labels: [ __name__ ]
+          regex: 'go_(.+)'
+          action: drop
+        - source_labels: [ __name__ ]
+          regex: 'node_boot_time_seconds'
+          action: drop
+        - source_labels: [ __name__ ]
+          regex: 'node_cpu_guest_seconds_total'
+          action: drop
+        - source_labels: [ __name__ ]
+          regex: 'node_disk_discarded_sectors_total'
+          action: drop
+        - source_labels: [ __name__ ]
+          regex: 'node_disk_flush_requests_time_seconds_total'
+          action: drop
+        - source_labels: [ __name__ ]
+          regex: 'node_disk_flush_requests_total'
+          action: drop
+        - source_labels: [ __name__ ]
+          regex: 'node_disk_info'
+          action: drop
+        - source_labels: [ __name__ ]
+          regex: 'node_dmi_info'
+          action: drop
+        - source_labels: [ __name__ ]
+          regex: 'node_entropy_pool_size_bits'
+          action: drop
+        - source_labels: [ __name__ ]
+          regex: 'node_exporter_build_info'
+          action: drop
+        - source_labels: [ __name__ ]
+          regex: 'node_memory_CmaFree_bytes'
+          action: drop
+        - source_labels: [ __name__ ]
+          regex: 'node_memory_CmaTotal_bytes'
+          action: drop
+        - source_labels: [ __name__ ]
+          regex: 'node_memory_FileHugePages_bytes'
+          action: drop
+        - source_labels: [ __name__ ]
+          regex: 'node_memory_FilePmdMapped_bytes'
+          action: drop
+        - source_labels: [ __name__ ]
+          regex: 'node_memory_Hugetlb_bytes'
+          action: drop
+        - source_labels: [ __name__ ]
+          regex: 'node_memory_KReclaimable_bytes'
+          action: drop
+        - source_labels: [ __name__ ]
+          regex: 'node_memory_SwapFree_bytes'
+          action: drop
+        - source_labels: [ __name__ ]
+          regex: 'node_netstat_Icmp6_InErrors'
+          action: drop
+        - source_labels: [ __name__ ]
+          regex: 'node_netstat_Icmp6_InMsgs'
+          action: drop
+        - source_labels: [ __name__ ]
+          regex: 'node_netstat_Icmp6_OutMsgs'
+          action: drop
+        - source_labels: [ __name__ ]
+          regex: 'node_netstat_Ip6_InOctets'
+          action: drop
+        - source_labels: [ __name__ ]
+          regex: 'node_netstat_Ip6_OutOctets'
+          action: drop
+        - source_labels: [ __name__ ]
+          regex: 'node_netstat_TcpExt_TCPTimeouts'
+          action: drop
+        - source_labels: [ __name__ ]
+          regex: 'node_netstat_Tcp_OutRsts'
+          action: drop
+        - source_labels: [ __name__ ]
+          regex: 'node_netstat_Udp6_InDatagrams'
+          action: drop
+        - source_labels: [ __name__ ]
+          regex: 'node_netstat_Udp6_InErrors'
+          action: drop
+        - source_labels: [ __name__ ]
+          regex: 'node_netstat_Udp6_NoPorts'
+          action: drop
+        - source_labels: [ __name__ ]
+          regex: 'node_netstat_Udp6_OutDatagrams'
+          action: drop
+        - source_labels: [ __name__ ]
+          regex: 'node_netstat_Udp6_RcvbufErrors'
+          action: drop
+        - source_labels: [ __name__ ]
+          regex: 'node_netstat_Udp6_SndbufErrors'
+          action: drop
+        - source_labels: [ __name__ ]
+          regex: 'node_netstat_UdpLite6_InErrors'
+          action: drop
+        - source_labels: [ __name__ ]
+          regex: 'node_network_address_assign_type'
+          action: drop
+        - source_labels: [ __name__ ]
+          regex: 'node_network_carrier_changes_total'
+          action: drop
+        - source_labels: [ __name__ ]
+          regex: 'node_network_carrier_down_changes_total'
+          action: drop
+        - source_labels: [ __name__ ]
+          regex: 'node_network_carrier_up_changes_total'
+          action: drop
+        - source_labels: [ __name__ ]
+          regex: 'node_network_device_id'
+          action: drop
+        - source_labels: [ __name__ ]
+          regex: 'node_network_dormant'
+          action: drop
+        - source_labels: [ __name__ ]
+          regex: 'node_network_flags'
+          action: drop
+        - source_labels: [ __name__ ]
+          regex: 'node_network_iface_id'
+          action: drop
+        - source_labels: [ __name__ ]
+          regex: 'node_network_iface_link'
+          action: drop
+        - source_labels: [ __name__ ]
+          regex: 'node_network_iface_link_mode'
+          action: drop
+        - source_labels: [ __name__ ]
+          regex: 'node_network_info'
+          action: drop
+        - source_labels: [ __name__ ]
+          regex: 'node_network_name_assign_type'
+          action: drop
+        - source_labels: [ __name__ ]
+          regex: 'node_network_net_dev_group'
+          action: drop
+        - source_labels: [ __name__ ]
+          regex: 'node_network_protocol_type'
+          action: drop
+        - source_labels: [ __name__ ]
+          regex: 'node_nf_conntrack_stat_drop'
+          action: drop
+        - source_labels: [ __name__ ]
+          regex: 'node_nf_conntrack_stat_early_drop'
+          action: drop
+        - source_labels: [ __name__ ]
+          regex: 'node_nf_conntrack_stat_found'
+          action: drop
+        - source_labels: [ __name__ ]
+          regex: 'node_nf_conntrack_stat_ignore'
+          action: drop
+        - source_labels: [ __name__ ]
+          regex: 'node_nf_conntrack_stat_insert'
+          action: drop
+        - source_labels: [ __name__ ]
+          regex: 'node_nf_conntrack_stat_insert_failed'
+          action: drop
+        - source_labels: [ __name__ ]
+          regex: 'node_nf_conntrack_stat_invalid'
+          action: drop
+        - source_labels: [ __name__ ]
+          regex: 'node_nf_conntrack_stat_search_restart'
+          action: drop
+        - source_labels: [ __name__ ]
+          regex: 'node_os_version'
+          action: drop
+        - source_labels: [ __name__ ]
+          regex: 'node_pressure_cpu_waiting_seconds_total'
+          action: drop
+        - source_labels: [ __name__ ]
+          regex: 'node_pressure_io_stalled_seconds_total'
+          action: drop
+        - source_labels: [ __name__ ]
+          regex: 'node_pressure_io_waiting_seconds_total'
+          action: drop
+        - source_labels: [ __name__ ]
+          regex: 'node_pressure_memory_stalled_seconds_total'
+          action: drop
+        - source_labels: [ __name__ ]
+          regex: 'node_pressure_memory_waiting_seconds_total'
+          action: drop
+        - source_labels: [ __name__ ]
+          regex: 'node_sockstat_FRAG6_inuse'
+          action: drop
+        - source_labels: [ __name__ ]
+          regex: 'node_sockstat_FRAG6_memory'
+          action: drop
+        - source_labels: [ __name__ ]
+          regex: 'node_sockstat_RAW6_inuse'
+          action: drop
+        - source_labels: [ __name__ ]
+          regex: 'node_sockstat_TCP6_inuse'
+          action: drop
+        - source_labels: [ __name__ ]
+          regex: 'node_sockstat_UDP6_inuse'
+          action: drop
+        - source_labels: [ __name__ ]
+          regex: 'node_sockstat_UDPLITE6_inuse'
+          action: drop
+        - source_labels: [ __name__ ]
+          regex: 'node_time_clocksource_available_info'
+          action: drop
+        - source_labels: [ __name__ ]
+          regex: 'node_time_clocksource_current_info'
+          action: drop
+        - source_labels: [ __name__ ]
+          regex: 'node_time_zone_offset_seconds'
+          action: drop
+        - source_labels: [ __name__ ]
+          regex: 'node_timex_pps_calibration_total'
+          action: drop
+        - source_labels: [ __name__ ]
+          regex: 'node_timex_pps_error_total'
+          action: drop
+        - source_labels: [ __name__ ]
+          regex: 'node_timex_pps_frequency_hertz'
+          action: drop
+        - source_labels: [ __name__ ]
+          regex: 'node_timex_pps_jitter_seconds'
+          action: drop
+        - source_labels: [ __name__ ]
+          regex: 'node_timex_pps_jitter_total'
+          action: drop
+        - source_labels: [ __name__ ]
+          regex: 'node_timex_pps_shift_seconds'
+          action: drop
+        - source_labels: [ __name__ ]
+          regex: 'node_timex_pps_stability_exceeded_total'
+          action: drop
+        - source_labels: [ __name__ ]
+          regex: 'node_timex_pps_stability_hertz'
+          action: drop
+        - source_labels: [ __name__ ]
+          regex: 'node_timex_status'
+          action: drop
+        - source_labels: [ __name__ ]
+          regex: 'node_udp_queues'
+          action: drop
+        - source_labels: [ __name__ ]
+          regex: 'node_xfs_allocation_btree_compares_total'
+          action: drop
+        - source_labels: [ __name__ ]
+          regex: 'node_xfs_allocation_btree_lookups_total'
+          action: drop
+        - source_labels: [ __name__ ]
+          regex: 'node_xfs_allocation_btree_records_deleted_total'
+          action: drop
+        - source_labels: [ __name__ ]
+          regex: 'node_xfs_allocation_btree_records_inserted_total'
+          action: drop
+        - source_labels: [ __name__ ]
+          regex: 'node_xfs_block_map_btree_compares_total'
+          action: drop
+        - source_labels: [ __name__ ]
+          regex: 'node_xfs_block_map_btree_lookups_total'
+          action: drop
+        - source_labels: [ __name__ ]
+          regex: 'node_xfs_block_map_btree_records_deleted_total'
+          action: drop
+        - source_labels: [ __name__ ]
+          regex: 'node_xfs_block_map_btree_records_inserted_total'
+          action: drop
+        - source_labels: [ __name__ ]
+          regex: 'node_xfs_block_mapping_extent_list_compares_total'
+          action: drop
+        - source_labels: [ __name__ ]
+          regex: 'node_xfs_block_mapping_extent_list_deletions_total'
+          action: drop
+        - source_labels: [ __name__ ]
+          regex: 'node_xfs_block_mapping_extent_list_insertions_total'
+          action: drop
+        - source_labels: [ __name__ ]
+          regex: 'node_xfs_block_mapping_extent_list_lookups_total'
+          action: drop
+        - source_labels: [ __name__ ]
+          regex: 'node_xfs_block_mapping_reads_total'
+          action: drop
+        - source_labels: [ __name__ ]
+          regex: 'node_xfs_block_mapping_unmaps_total'
+          action: drop
+        - source_labels: [ __name__ ]
+          regex: 'node_xfs_block_mapping_writes_total'
+          action: drop
+        - source_labels: [ __name__ ]
+          regex: 'node_xfs_directory_operation_create_total'
+          action: drop
+        - source_labels: [ __name__ ]
+          regex: 'node_xfs_directory_operation_getdents_total'
+          action: drop
+        - source_labels: [ __name__ ]
+          regex: 'node_xfs_directory_operation_lookup_total'
+          action: drop
+        - source_labels: [ __name__ ]
+          regex: 'node_xfs_directory_operation_remove_total'
+          action: drop
+        - source_labels: [ __name__ ]
+          regex: 'node_xfs_extent_allocation_blocks_allocated_total'
+          action: drop
+        - source_labels: [ __name__ ]
+          regex: 'node_xfs_extent_allocation_blocks_freed_total'
+          action: drop
+        - source_labels: [ __name__ ]
+          regex: 'node_xfs_extent_allocation_extents_allocated_total'
+          action: drop
+        - source_labels: [ __name__ ]
+          regex: 'node_xfs_extent_allocation_extents_freed_total'
+          action: drop
+        - source_labels: [ __name__ ]
+          regex: 'node_xfs_inode_operation_attempts_total'
+          action: drop
+        - source_labels: [ __name__ ]
+          regex: 'node_xfs_inode_operation_attribute_changes_total'
+          action: drop
+        - source_labels: [ __name__ ]
+          regex: 'node_xfs_inode_operation_duplicates_total'
+          action: drop
+        - source_labels: [ __name__ ]
+          regex: 'node_xfs_inode_operation_found_total'
+          action: drop
+        - source_labels: [ __name__ ]
+          regex: 'node_xfs_inode_operation_missed_total'
+          action: drop
+        - source_labels: [ __name__ ]
+          regex: 'node_xfs_inode_operation_reclaims_total'
+          action: drop
+        - source_labels: [ __name__ ]
+          regex: 'node_xfs_inode_operation_recycled_total'
+          action: drop
+        - source_labels: [ __name__ ]
+          regex: 'node_xfs_read_calls_total'
+          action: drop
+        - source_labels: [ __name__ ]
+          regex: 'node_xfs_vnode_active_total'
+          action: drop
+        - source_labels: [ __name__ ]
+          regex: 'node_xfs_vnode_allocate_total'
+          action: drop
+        - source_labels: [ __name__ ]
+          regex: 'node_xfs_vnode_get_total'
+          action: drop
+        - source_labels: [ __name__ ]
+          regex: 'node_xfs_vnode_hold_total'
+          action: drop
+        - source_labels: [ __name__ ]
+          regex: 'node_xfs_vnode_reclaim_total'
+          action: drop
+        - source_labels: [ __name__ ]
+          regex: 'node_xfs_vnode_release_total'
+          action: drop
+        - source_labels: [ __name__ ]
+          regex: 'node_xfs_vnode_remove_total'
+          action: drop
+        - source_labels: [ __name__ ]
+          regex: 'node_xfs_write_calls_total'
+          action: drop
+        - source_labels: [ __name__ ]
+          regex: 'process_resident_memory_bytes'
+          action: drop
+        - source_labels: [ __name__ ]
+          regex: 'process_start_time_seconds'
+          action: drop
