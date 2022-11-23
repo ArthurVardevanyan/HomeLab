@@ -5,6 +5,7 @@ metadata:
   namespace: postgres
   annotations:
     argocd.argoproj.io/sync-wave: "1"
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
   labels:
     app.kubernetes.io/instance: postgres
 spec:
@@ -41,8 +42,8 @@ spec:
       repos:
         - name: repo1
           schedules:
-            full: "0 7 * * 0"
-            differential: "0 7 * * 1-6"
+            full: "0 7 * * 0,3"
+            differential: "0 7 * * 1-2,4,6"
           volume:
             volumeClaimSpec:
               storageClassName: longhorn-static
