@@ -1,7 +1,7 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: minio
+  name: minio-quay
   namespace: minio
   labels:
     app.kubernetes.io/instance: minio
@@ -14,12 +14,12 @@ spec:
   replicas: 1
   selector:
     matchLabels:
-      app: minio
+      app: minio-quay
   template:
     metadata:
-      name: minio
+      name: minio-quay
       labels:
-        app: minio
+        app: minio-quay
       annotations:
         enable.version-checker.io/minio: "true"
     spec:
@@ -31,8 +31,8 @@ spec:
       serviceAccountName: minio-sa
       automountServiceAccountToken: false
       containers:
-        - name: minio
-          image: "quay.io/minio/minio:RELEASE.2022-10-24T18-35-07Z"
+        - name: minio-quay
+          image: "quay.io/minio/minio:RELEASE.2022-11-17T23-20-09Z"
           imagePullPolicy: IfNotPresent
           command:
             - "/bin/sh"
@@ -72,7 +72,7 @@ spec:
       volumes:
         - name: export
           persistentVolumeClaim:
-            claimName: minio
+            claimName: minio-quay
         - name: minio-user
           secret:
             secretName: minio
