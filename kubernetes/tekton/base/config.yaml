@@ -1,16 +1,16 @@
 apiVersion: operator.tekton.dev/v1alpha1
 kind: TektonConfig
 metadata:
-  name: config
   annotations:
-    argocd.argoproj.io/sync-wave: "1"
     argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+    argocd.argoproj.io/sync-wave: "1"
   labels:
     app.kubernetes.io/instance: tekton
+    openshift-pipelines.tekton.dev/sa-created: "true"
+    operator.tekton.dev/release-version: devel
+  name: config
 spec:
-  targetNamespace: openshift-pipelines
   addon:
-    enablePipelinesAsCode: false
     params:
       - name: communityClusterTasks
         value: "false"
@@ -18,27 +18,46 @@ spec:
         value: "false"
       - name: pipelineTemplates
         value: "false"
-  profile: all
+  dashboard:
+    readonly: true
+  params:
+    - name: createRbacResource
+      value: "true"
   pipeline:
+    await-sidecar-readiness: true
+    default-service-account: pipeline
+    disable-affinity-assistant: true
+    disable-creds-init: false
+    embedded-status: full
+    enable-api-fields: stable
+    enable-bundles-resolver: true
+    enable-cluster-resolver: true
+    enable-custom-tasks: false
+    enable-git-resolver: true
+    enable-hub-resolver: true
+    enable-tekton-oci-bundles: true
+    metrics.pipelinerun.duration-type: lastvalue
+    metrics.pipelinerun.level: pipelinerun
+    metrics.taskrun.duration-type: lastvalue
+    metrics.taskrun.level: taskrun
     params:
       - name: enableMetrics
         value: "true"
-    disable-affinity-assistant: true
-    disable-creds-init: false
-    enable-api-fields: stable
-    enable-custom-tasks: false
-    enable-tekton-oci-bundles: true
-    metrics.taskrun.level: taskrun
-    metrics.pipelinerun.level: pipelinerun
-    metrics.taskrun.duration-type: lastvalue
-    metrics.pipelinerun.duration-type: lastvalue
     require-git-ssh-secret-known-hosts: false
     running-in-environment-with-injected-sidecars: true
+    send-cloudevents-for-runs: false
+  platforms:
+    openshift:
+      pipelinesAsCode:
+        enable: false
+  profile: all
   pruner:
+    keep: 3
     resources:
       - taskrun
       - pipelinerun
-    keep: 3
-    schedule: "0 * * * *"
-  dashboard:
-    readonly: true
+    schedule: 0 * * * *
+  targetNamespace: openshift-pipelines
+  trigger:
+    default-service-account: pipeline
+    enable-api-fields: stable

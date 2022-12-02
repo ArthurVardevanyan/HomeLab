@@ -2,8 +2,49 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   labels:
-    operator.tekton.dev/release: v0.62.0
-    version: v0.62.0
+    operator.tekton.dev/release: v0.63.0
+    version: v0.63.0
+  name: openshiftpipelinesascodes.operator.tekton.dev
+spec:
+  group: operator.tekton.dev
+  names:
+    kind: OpenShiftPipelinesAsCode
+    listKind: OpenShiftPipelinesAsCodeList
+    plural: openshiftpipelinesascodes
+    shortNames:
+      - opac
+      - pac
+    singular: openshiftpipelinesascode
+  preserveUnknownFields: false
+  scope: Cluster
+  versions:
+    - additionalPrinterColumns:
+        - jsonPath: .status.version
+          name: Version
+          type: string
+        - jsonPath: .status.conditions[?(@.type=="Ready")].status
+          name: Ready
+          type: string
+        - jsonPath: .status.conditions[?(@.type=="Ready")].message
+          name: Reason
+          type: string
+      name: v1alpha1
+      schema:
+        openAPIV3Schema:
+          description: Schema for the OpenShiftPipelinesAsCode API
+          type: object
+          x-kubernetes-preserve-unknown-fields: true
+      served: true
+      storage: true
+      subresources:
+        status: {}
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  labels:
+    operator.tekton.dev/release: v0.63.0
+    version: v0.63.0
   name: tektonaddons.operator.tekton.dev
 spec:
   group: operator.tekton.dev
@@ -22,7 +63,7 @@ spec:
         - jsonPath: .status.conditions[?(@.type=="Ready")].status
           name: Ready
           type: string
-        - jsonPath: .status.conditions[?(@.type=="Ready")].reason
+        - jsonPath: .status.conditions[?(@.type=="Ready")].message
           name: Reason
           type: string
       name: v1alpha1
@@ -40,8 +81,8 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   labels:
-    operator.tekton.dev/release: v0.62.0
-    version: v0.62.0
+    operator.tekton.dev/release: v0.63.0
+    version: v0.63.0
   name: tektonchains.operator.tekton.dev
 spec:
   group: operator.tekton.dev
@@ -60,7 +101,7 @@ spec:
         - jsonPath: .status.conditions[?(@.type=="Ready")].status
           name: Ready
           type: string
-        - jsonPath: .status.conditions[?(@.type=="Ready")].reason
+        - jsonPath: .status.conditions[?(@.type=="Ready")].message
           name: Reason
           type: string
       name: v1alpha1
@@ -78,8 +119,8 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   labels:
-    operator.tekton.dev/release: v0.62.0
-    version: v0.62.0
+    operator.tekton.dev/release: v0.63.0
+    version: v0.63.0
   name: tektonconfigs.operator.tekton.dev
 spec:
   group: operator.tekton.dev
@@ -98,7 +139,7 @@ spec:
         - jsonPath: .status.conditions[?(@.type=="Ready")].status
           name: Ready
           type: string
-        - jsonPath: .status.conditions[?(@.type=="Ready")].reason
+        - jsonPath: .status.conditions[?(@.type=="Ready")].message
           name: Reason
           type: string
       name: v1alpha1
@@ -116,8 +157,8 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   labels:
-    operator.tekton.dev/release: v0.62.0
-    version: v0.62.0
+    operator.tekton.dev/release: v0.63.0
+    version: v0.63.0
   name: tektonhubs.operator.tekton.dev
 spec:
   group: operator.tekton.dev
@@ -136,7 +177,7 @@ spec:
         - jsonPath: .status.conditions[?(@.type=="Ready")].status
           name: Ready
           type: string
-        - jsonPath: .status.conditions[?(@.type=="Ready")].reason
+        - jsonPath: .status.conditions[?(@.type=="Ready")].message
           name: Reason
           type: string
         - jsonPath: .status.apiUrl
@@ -160,8 +201,8 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   labels:
-    operator.tekton.dev/release: v0.62.0
-    version: v0.62.0
+    operator.tekton.dev/release: v0.63.0
+    version: v0.63.0
   name: tektoninstallersets.operator.tekton.dev
 spec:
   group: operator.tekton.dev
@@ -177,7 +218,7 @@ spec:
         - jsonPath: .status.conditions[?(@.type=="Ready")].status
           name: Ready
           type: string
-        - jsonPath: .status.conditions[?(@.type=="Ready")].reason
+        - jsonPath: .status.conditions[?(@.type=="Ready")].message
           name: Reason
           type: string
       name: v1alpha1
@@ -195,8 +236,8 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   labels:
-    operator.tekton.dev/release: v0.62.0
-    version: v0.62.0
+    operator.tekton.dev/release: v0.63.0
+    version: v0.63.0
   name: tektonpipelines.operator.tekton.dev
 spec:
   group: operator.tekton.dev
@@ -215,7 +256,7 @@ spec:
         - jsonPath: .status.conditions[?(@.type=="Ready")].status
           name: Ready
           type: string
-        - jsonPath: .status.conditions[?(@.type=="Ready")].reason
+        - jsonPath: .status.conditions[?(@.type=="Ready")].message
           name: Reason
           type: string
       name: v1alpha1
@@ -233,8 +274,8 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   labels:
-    operator.tekton.dev/release: v0.62.0
-    version: v0.62.0
+    operator.tekton.dev/release: v0.63.0
+    version: v0.63.0
   name: tektontriggers.operator.tekton.dev
 spec:
   group: operator.tekton.dev
@@ -253,7 +294,7 @@ spec:
         - jsonPath: .status.conditions[?(@.type=="Ready")].status
           name: Ready
           type: string
-        - jsonPath: .status.conditions[?(@.type=="Ready")].reason
+        - jsonPath: .status.conditions[?(@.type=="Ready")].message
           name: Reason
           type: string
       name: v1alpha1
@@ -856,7 +897,7 @@ metadata:
 ---
 apiVersion: v1
 data:
-  version: v0.62.0
+  version: v0.63.0
 kind: ConfigMap
 metadata:
   labels:
@@ -878,7 +919,7 @@ kind: Service
 metadata:
   labels:
     name: openshift-pipelines-operator
-    version: v0.62.0
+    version: v0.63.0
   name: tekton-operator
   namespace: openshift-pipelines-operator
 spec:
@@ -914,8 +955,8 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   labels:
-    operator.tekton.dev/release: v0.62.0
-    version: v0.62.0
+    operator.tekton.dev/release: v0.63.0
+    version: v0.63.0
   name: openshift-pipelines-operator
   namespace: openshift-pipelines-operator
 spec:
@@ -933,7 +974,7 @@ spec:
       containers:
         - args:
             - -controllers
-            - tektonconfig,tektonpipeline,tektontrigger,tektonhub,tektonchain,tektonaddon
+            - tektonconfig,tektonpipeline,tektontrigger,tektonhub,tektonchain,tektonaddon,openshiftpipelinesascode
             - -unique-process-name
             - tekton-operator-lifecycle
           env:
@@ -941,6 +982,8 @@ spec:
               valueFrom:
                 fieldRef:
                   fieldPath: metadata.namespace
+            - name: PLATFORM
+              value: openshift
             - name: POD_NAME
               valueFrom:
                 fieldRef:
@@ -948,7 +991,7 @@ spec:
             - name: OPERATOR_NAME
               value: redhat-openshift-pipelines-operator
             - name: IMAGE_PIPELINES_PROXY
-              value: gcr.io/tekton-releases/github.com/tektoncd/operator/cmd/openshift/proxy-webhook:v0.62.0@sha256:f6dd5df39e634a9502cf02513873de57199e49a0f5ad6ab763e86b6301d10c09
+              value: gcr.io/tekton-releases/github.com/tektoncd/operator/cmd/openshift/proxy-webhook:v0.63.0@sha256:0d765fb0c27260f4effb79803e7aaeb77ff7c357cbc3160353c838d8a82e60ca
             - name: IMAGE_JOB_PRUNER_TKN
               value: gcr.io/tekton-releases/dogfooding/tkn@sha256:025de221fb059ca24a3b2d988889ea34bce48dc76c0cf0d6b4499edb8c21325f
             - name: METRICS_DOMAIN
@@ -981,7 +1024,7 @@ spec:
               value: registry.redhat.io/ocp-tools-4-tech-preview/source-to-image-rhel8@sha256:98d8cb3a255641ca6a1bce854e5e2460c20de9fb9b28e3cc67eb459f122873dd
             - name: IMAGE_ADDONS_GEN_ENV_FILE
               value: registry.redhat.io/ocp-tools-4-tech-preview/source-to-image-rhel8@sha256:98d8cb3a255641ca6a1bce854e5e2460c20de9fb9b28e3cc67eb459f122873dd
-          image: gcr.io/tekton-releases/github.com/tektoncd/operator/cmd/openshift/operator:v0.62.0@sha256:da4ed0861bbd55fd51a0c740af4e0355a1ee567b73715cb5a2c576784468511e
+          image: gcr.io/tekton-releases/github.com/tektoncd/operator/cmd/openshift/operator:v0.63.0@sha256:24cce90ba6266ebe96acae9816f35d3b337e35da0c8173fc0da63033275b2c4f
           imagePullPolicy: Always
           name: openshift-pipelines-operator-lifecycle
           resources:
@@ -991,6 +1034,11 @@ spec:
             requests:
               cpu: 10m
               memory: 96Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
         - args:
             - -controllers
             - tektoninstallerset
@@ -1015,9 +1063,14 @@ spec:
               value: devel
             - name: METRICS_DOMAIN
               value: tekton.dev/operator
-          image: gcr.io/tekton-releases/github.com/tektoncd/operator/cmd/openshift/operator:v0.62.0@sha256:da4ed0861bbd55fd51a0c740af4e0355a1ee567b73715cb5a2c576784468511e
+          image: gcr.io/tekton-releases/github.com/tektoncd/operator/cmd/openshift/operator:v0.63.0@sha256:24cce90ba6266ebe96acae9816f35d3b337e35da0c8173fc0da63033275b2c4f
           imagePullPolicy: Always
           name: openshift-pipelines-operator-cluster-operations
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
           resources:
             limits:
               cpu: 30m
@@ -1025,6 +1078,10 @@ spec:
             requests:
               cpu: 10m
               memory: 96Mi
+      securityContext:
+        #runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
       serviceAccountName: openshift-pipelines-operator
       automountServiceAccountToken: true
 ---
@@ -1032,8 +1089,8 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   labels:
-    operator.tekton.dev/release: v0.62.0
-    version: v0.62.0
+    operator.tekton.dev/release: v0.63.0
+    version: v0.63.0
   name: tekton-operator-webhook
   namespace: openshift-pipelines-operator
 spec:
@@ -1061,11 +1118,18 @@ spec:
               value: tekton-operator-webhook-certs
             - name: METRICS_DOMAIN
               value: tekton.dev/operator
-          image: gcr.io/tekton-releases/github.com/tektoncd/operator/cmd/openshift/webhook:v0.62.0@sha256:61a89c859212764e70377f64eba6bd859471c5cf15c3ef8f102679f2641398d4
+            - name: PLATFORM
+              value: openshift
+          image: gcr.io/tekton-releases/github.com/tektoncd/operator/cmd/openshift/webhook:v0.63.0@sha256:cbd9a872bb8a33de8ca75a68b442297dcadae3b6d2added1620d36402711b876
           name: tekton-operator-webhook
           ports:
             - containerPort: 8443
               name: https-webhook
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
           resources:
             limits:
               cpu: 30m
@@ -1073,6 +1137,10 @@ spec:
             requests:
               cpu: 10m
               memory: 32Mi
+      securityContext:
+        #runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
       serviceAccountName: openshift-pipelines-operator
       automountServiceAccountToken: true
 ---
