@@ -43,7 +43,7 @@ stateful_workload_stop() {
   kubectl patch -n uptime-kuma statefulset/uptime-kuma --type='json' -p='[{"op": "replace", "path": "/spec/replicas", "value": 0}]'
   kubectl patch -n vault statefulset/vault --type='json' -p='[{"op": "replace", "path": "/spec/replicas", "value": 0}]'
 
-  kubectl scale --replicas=0 -n minio deployment/minio
+  kubectl scale --replicas=0 -n minio deployment/minio-quay
   kubectl scale --replicas=0 -n quay deployment/quay-quay-app
   kubectl scale --replicas=0 -n quay deployment/quay-clair-app
   kubectl scale --replicas=0 -n gitea statefulset/gitea
@@ -110,7 +110,7 @@ stateful_workload_start() {
   kubectl patch -n uptime-kuma statefulset/uptime-kuma --type='json' -p='[{"op": "replace", "path": "/spec/replicas", "value": 1}]'
   kubectl patch -n vault statefulset/vault --type='json' -p='[{"op": "replace", "path": "/spec/replicas", "value": 1}]'
 
-  kubectl scale --replicas=1 -n minio deployment/minio
+  kubectl scale --replicas=1 -n minio deployment/minio-quay
   kubectl scale --replicas=1 -n quay deployment/quay-quay-app
   kubectl scale --replicas=1 -n quay deployment/quay-clair-app
   kubectl scale --replicas=1 -n gitea statefulset/gitea
