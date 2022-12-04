@@ -2,11 +2,6 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
   - ../../base
-  - ./backup/backup-cron.yaml
-  - ./backup/backup-pv.yaml
-  - ./backup/backup-rsync.yaml
-  - ./backup/backup-target.yaml
-  - ./backup/backup-secret.yaml
 components:
   - ../../components/okd
 patches:
@@ -16,4 +11,4 @@ patches:
     patch: |-
       - op: replace
         path: /spec/host
-        value: longhorn.apps.okd.<path:secret/data/homelab/domain#url>
+        value: longhorn.apps.okd.sandbox.<path:secret/data/homelab/domain#url>
