@@ -6,9 +6,32 @@ HomeLab Server/Cluster, Virtual Sandbox Cluster, & Desktop Configuration
 - Desktop: Pop!\_OS Latest
 
   - Manual Patches Applied
-
     - <https://github.com/ArthurVardevanyan/pop-shell>
     - <https://github.com/ArthurVardevanyan/pop-cosmic>
+
+## Table of Contents
+
+- [HomeLab](#homelab)
+  - [Table of Contents](#table-of-contents)
+  - [Desktop](#desktop)
+    - [Gnome](#gnome)
+    - [Cura](#cura)
+  - [Virtual Sandbox](#virtual-sandbox)
+  - [KVM Sandbox Terraform](#kvm-sandbox-terraform)
+  - [Server](#server)
+    - [Kubernetes](#kubernetes)
+      - [OKD Longhorn Secondary Disk Setup](#okd-longhorn-secondary-disk-setup)
+      - [OKD Upgrade](#okd-upgrade)
+      - [OKD WIF](#okd-wif)
+      - [Kubernetes Commands](#kubernetes-commands)
+        - [Delete Pod Using Graceful Termination Eviction Request](#delete-pod-using-graceful-termination-eviction-request)
+      - [SSH Keyscan](#ssh-keyscan)
+      - [Vault Kubernetes Integration](#vault-kubernetes-integration)
+  - [Database](#database)
+    - [MariaDB](#mariadb)
+    - [Postgres](#postgres)
+  - [Quay](#quay)
+  - [Tekton](#tekton)
 
 ## Desktop
 
