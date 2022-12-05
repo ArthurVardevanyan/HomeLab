@@ -211,6 +211,20 @@ kubectl label node ${NODE} topology.kubernetes.io/zone=${ZONE} --overwrite
 kubectl label node ${NODE} .okd.arthurvardevanyan.com node.longhorn.io/create-default-disk=true --overwrite
 ```
 
+##### Delete Pod Using Graceful Termination Eviction Request
+
+```bash
+NAMESPACE=homelab
+POD=el-webhook-6b56cc5f84-clfc6
+
+curl --header "Authorization: Bearer $(oc whoami -t)" -H 'Content-type: application/json' \
+"$(oc whoami --show-server)/api/v1/namespaces/{$NAMESPACE}/pods/{$POD}/eviction" \
+-d '{"apiVersion": "policy/v1","kind": "Eviction","metadata": {"name": "'"${POD}"'","namespace": "'"${NAMESPACE}"'"}}'
+```
+
+- <https://docs.okd.io/latest/rest_api/policy_apis/eviction-policy-v1.html#eviction-policy-v1>
+- <https://unofficial-kubernetes.readthedocs.io/en/latest/tasks/configure-pod-container/configure-pod-disruption-budget/>
+
 #### SSH Keyscan
 
 ```bash

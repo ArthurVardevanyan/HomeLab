@@ -1,0 +1,12 @@
+kind: PodDisruptionBudget
+apiVersion: policy/v1
+metadata:
+  name: pipeline
+  namespace: homelab
+  labels:
+    app.kubernetes.io/instance: homelab
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/managed-by: tekton-pipelines
+  maxUnavailable: 0
