@@ -350,6 +350,14 @@ resources:
   requests:
     cpu: 150m
     memory: 750Mi
+# deployment/quay-quay-mirror
+resources:
+  limits:
+    cpu: 250m
+    memory: 300Mi
+  requests:
+    cpu: 50m
+    memory: 150Mi
 ```
 
 ## Tekton
