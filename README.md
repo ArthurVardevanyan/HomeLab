@@ -175,10 +175,16 @@ end
 #### OKD Longhorn Secondary Disk Setup
 
 ```bash
-sudo fdisk /dev/vdb
-sudo mkfs.ext4 -F /dev/vdb1
+sudo mkfs.ext4 -L longhorn /dev/vdb
+
+# Pre Machine Config
 sudo su
-echo "/dev/vdb1 /mnt/storage auto nofail" > /etc/fstab
+echo "/dev/vdb /var/mnt/longhorn auto nofail" > /etc/fstab
+sudo reboot
+
+export NODE=""
+oc annotate node ${NODE} --overwrite node.longhorn.io/default-disks-config='[{"path":"/var/mnt/longhorn","allowScheduling":true}]'
+oc label node ${NODE} node.longhorn.io/create-default-disk=config
 ```
 
 #### OKD Upgrade
@@ -231,7 +237,6 @@ kubectl exec -it vault-0 -n vault -- vault operator unseal --tls-skip-verify
 kubectl exec -it nextcloud-0 -n nextcloud -- runuser -u www-data -- php -f /var/www/html/occ
 
 kubectl label node ${NODE} topology.kubernetes.io/zone=${ZONE} --overwrite
-kubectl label node ${NODE} .okd.arthurvardevanyan.com node.longhorn.io/create-default-disk=true --overwrite
 ```
 
 ##### Delete Pod Using Graceful Termination Eviction Request

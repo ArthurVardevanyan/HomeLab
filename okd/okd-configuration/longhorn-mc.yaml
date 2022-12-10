@@ -1,0 +1,24 @@
+apiVersion: machineconfiguration.openshift.io/v1
+kind: MachineConfig
+metadata:
+  labels:
+    machineconfiguration.openshift.io/role: worker
+    app.kubernetes.io/instance: okd-configuration
+  name: 71-mount-storage-worker
+spec:
+  config:
+    ignition:
+      version: 3.2.0
+    systemd:
+      units:
+        - name: var-mnt-longhorn.mount
+          enabled: true
+          contents: |
+            [Unit]
+            Before=local-fs.target
+            [Mount]
+            Where=/var/mnt/longhorn
+            What=/dev/disk/by-label/longhorn
+            Options=rw,relatime,discard
+            [Install]
+            WantedBy=local-fs.target
