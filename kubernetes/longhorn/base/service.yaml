@@ -40,6 +40,26 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
+  name: longhorn-ui
+  namespace: longhorn-system
+  labels:
+    app.kubernetes.io/name: longhorn
+    app.kubernetes.io/instance: longhorn
+    app.kubernetes.io/version: v1.3.2
+    app: longhorn-ui
+  annotations:
+    service.alpha.openshift.io/serving-cert-secret-name: longhorn-ui-tls
+spec:
+  ports:
+    - name: longhorn-ui
+      port: 443
+      targetPort: 8443
+  selector:
+    app: longhorn-ui
+---
+apiVersion: v1
+kind: Service
+metadata:
   labels:
     app.kubernetes.io/name: longhorn
     app.kubernetes.io/instance: longhorn

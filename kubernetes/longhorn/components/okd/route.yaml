@@ -1,20 +1,19 @@
 kind: Route
 apiVersion: route.openshift.io/v1
 metadata:
-  name: ui
+  name: longhorn-ui
   namespace: longhorn-system
   labels:
-    app: longhorn-ui
+    app.kubernetes.io/name: longhorn
     app.kubernetes.io/instance: longhorn
+    app.kubernetes.io/version: v1.3.2
+    app: longhorn-ui
 spec:
   host: ""
   to:
     kind: Service
-    name: longhorn-frontend
-    weight: 100
-  port:
-    targetPort: http
+    name: longhorn-ui
   tls:
-    termination: edge
+    termination: reencrypt
     insecureEdgeTerminationPolicy: Redirect
   wildcardPolicy: None

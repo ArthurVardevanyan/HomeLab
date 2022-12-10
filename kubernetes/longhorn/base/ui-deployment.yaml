@@ -39,9 +39,33 @@ spec:
                     operator: In
                     values:
                       - ""
-      serviceAccountName: default
+      serviceAccountName: longhorn-service-account
       automountServiceAccountToken: true
       containers:
+        - name: oauth-proxy
+          image: quay.io/openshift/origin-oauth-proxy:4.11
+          imagePullPolicy: IfNotPresent
+          resources:
+            requests:
+              cpu: 25m
+              memory: 16Mi
+            limits:
+              cpu: 50m
+              memory: 32Mi
+          ports:
+            - containerPort: 8443
+              name: public
+          args:
+            - --https-address=:8443
+            - --provider=openshift
+            - --openshift-service-account=longhorn-service-account
+            - --upstream=http://localhost:8000
+            - --tls-cert=/etc/tls/private/tls.crt
+            - --tls-key=/etc/tls/private/tls.key
+            - --cookie-secret=SECRET
+          volumeMounts:
+            - mountPath: /etc/tls/private
+              name: longhorn-ui-tls
         - name: longhorn-ui
           image: longhornio/longhorn-ui:v1.3.2
           imagePullPolicy: IfNotPresent
@@ -73,6 +97,9 @@ spec:
             - name: LONGHORN_UI_PORT
               value: "8000"
       volumes:
+        - name: longhorn-ui-tls
+          secret:
+            secretName: longhorn-ui-tls
         - emptyDir: {}
           name: nginx-cache
         - emptyDir: {}
