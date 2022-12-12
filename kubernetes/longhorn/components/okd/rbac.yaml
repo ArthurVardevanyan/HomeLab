@@ -1,7 +1,7 @@
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
-  name: longhorn-role-okd
+  name: longhorn-ocp-privileged-role
   labels:
     app.kubernetes.io/instance: longhorn
 rules:
@@ -14,29 +14,21 @@ rules:
       - securitycontextconstraints
     verbs:
       - use
-  - apiGroups: ["longhorn.io"]
-    resources:
-      [
-        "engineimages/finalizers",
-        "instancemanagers/finalizers",
-        "nodes/finalizers",
-      ]
-    verbs: ["*"]
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
-  name: longhorn-bind-okd
+  name: longhorn-ocp-privileged-bind
   labels:
     app.kubernetes.io/instance: longhorn
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
-  name: longhorn-role-okd
+  name: longhorn-ocp-privileged-role
 subjects:
   - kind: ServiceAccount
     name: longhorn-service-account
     namespace: longhorn-system
   - kind: ServiceAccount
-    name: default
+    name: longhorn-ui-service-account
     namespace: longhorn-system

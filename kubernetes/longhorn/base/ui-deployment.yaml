@@ -39,7 +39,7 @@ spec:
                     operator: In
                     values:
                       - ""
-      serviceAccountName: longhorn-service-account
+      serviceAccountName: longhorn-ui-service-account
       automountServiceAccountToken: true
       containers:
         - name: oauth-proxy
@@ -58,11 +58,12 @@ spec:
           args:
             - --https-address=:8443
             - --provider=openshift
-            - --openshift-service-account=longhorn-service-account
+            - --openshift-service-account=longhorn-ui-service-account
             - --upstream=http://localhost:8000
             - --tls-cert=/etc/tls/private/tls.crt
             - --tls-key=/etc/tls/private/tls.key
             - --cookie-secret=SECRET
+            - --openshift-sar={"namespace":"longhorn-system","group":"longhorn.io","resource":"setting","verb":"delete"}
           volumeMounts:
             - mountPath: /etc/tls/private
               name: longhorn-ui-tls

@@ -7,6 +7,16 @@ metadata:
     app.kubernetes.io/name: longhorn
     app.kubernetes.io/instance: longhorn
     app.kubernetes.io/version: v1.3.2
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: longhorn-ui-service-account
+  namespace: longhorn-system
+  labels:
+    app.kubernetes.io/name: longhorn
+    app.kubernetes.io/instance: longhorn
+    app.kubernetes.io/version: v1.3.2
   annotations:
     serviceaccounts.openshift.io/oauth-redirectreference.primary: '{"kind":"OAuthRedirectReference","apiVersion":"v1","reference":{"kind":"Route","name":"longhorn-ui"}}'
 ---
@@ -88,10 +98,13 @@ rules:
         "settings",
         "engineimages",
         "engineimages/status",
+        "engineimages/finalizers",
         "nodes",
         "nodes/status",
+        "nodes/finalizers",
         "instancemanagers",
         "instancemanagers/status",
+        "instancemanagers/finalizers",
         "sharemanagers",
         "sharemanagers/status",
         "backingimages",
