@@ -21,11 +21,18 @@ RUN curl -L -o yq https://github.com/mikefarah/yq/releases/latest/download/yq_li
 RUN chmod +x yq
 RUN mv yq /usr/local/bin
 
-RUN apt-get install gnupg2 sshpass curl logrotate rsync git iputils-ping jq -y
+RUN apt-get install sshpass logrotate rsync git iputils-ping jq -y
 
-RUN apt-get update && apt-get install mariadb-client kubectl ansible vault pgloader -y && \
-	apt-get clean && \
-	rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+RUN apt-get update && apt-get install mariadb-client kubectl ansible vault -y && \
+  apt-get clean && \
+  rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+
+RUN cp /usr/bin/dpkg /tmp/dpkg && \
+  /tmp/dpkg -P --force-remove-essential --force-depends apt dpkg && \
+  rm -rf \
+  /tmp/dpkg /var/log/apt \
+  /var/lib/apt/lists/* /tmp/* /var/tmp/* \
+  /var/lib/dpkg/updates /var/lib/dpkg/info /var/lib/dpkg/alternatives /etc/dpkg/dpkg.cfg.d /etc/alternatives
 
 RUN setcap -r /usr/bin/vault
 

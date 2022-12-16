@@ -8,18 +8,22 @@ USER root
 # Install tools needed for your repo-server to retrieve & decrypt secrets, render manifests
 # (e.g. curl, awscli, gpg, sops)
 RUN apt-get update && \
-	apt-get install -y \
-	curl \
-	awscli \
-	gpg && \
-	apt-get clean && \
-	rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+  apt-get install -y curl && \
+  apt-get clean && \
+  rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
 # Install the AVP plugin (as root so we can copy to /usr/local/bin)
 ENV ARGOCD_VAULT_VERSION=1.13.1
 RUN curl -L -o argocd-vault-plugin https://github.com/argoproj-labs/argocd-vault-plugin/releases/download/v${ARGOCD_VAULT_VERSION}/argocd-vault-plugin_${ARGOCD_VAULT_VERSION}_linux_amd64
 RUN chmod +x argocd-vault-plugin
 RUN mv argocd-vault-plugin /usr/local/bin
+
+RUN cp /usr/bin/dpkg /tmp/dpkg && \
+  /tmp/dpkg -P --force-remove-essential --force-depends curl apt dpkg && \
+  rm -rf \
+  /tmp/dpkg /var/log/apt \
+  /var/lib/apt/lists/* /tmp/* /var/tmp/* \
+  /var/lib/dpkg/updates /var/lib/dpkg/info /var/lib/dpkg/alternatives /etc/dpkg/dpkg.cfg.d /etc/alternatives
 
 # Switch back to non-root user
 USER 999
