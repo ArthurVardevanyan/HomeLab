@@ -1,6 +1,6 @@
 FROM debian:bookworm-slim
 
-ENV ARGOCD_VAULT_VERSION=1.13.0
+ENV ARGOCD_VAULT_VERSION=1.13.1
 
 RUN apt-get update && apt-get install gnupg2 curl -y
 
