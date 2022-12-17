@@ -3085,13 +3085,16 @@ data:
       "fiscalYearStartMonth": 0,
       "gnetId": 10095,
       "graphTooltip": 0,
-      "id": 18,
-      "iteration": 1647919223055,
+      "id": 2,
       "links": [],
       "liveNow": false,
       "panels": [
         {
           "collapsed": false,
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PBFA97CFB590B2093"
+          },
           "gridPos": {
             "h": 1,
             "w": 24,
@@ -3100,6 +3103,15 @@ data:
           },
           "id": 20,
           "panels": [],
+          "targets": [
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "PBFA97CFB590B2093"
+              },
+              "refId": "A"
+            }
+          ],
           "title": "Network",
           "type": "row"
         },
@@ -3110,7 +3122,7 @@ data:
           "dashes": false,
           "datasource": {
             "type": "influxdb",
-            "uid": "InfluxDB-pfSense"
+            "uid": "qkg5VOI4z"
           },
           "fill": 1,
           "fillGradient": 0,
@@ -3141,7 +3153,7 @@ data:
             "alertThreshold": true
           },
           "percentage": false,
-          "pluginVersion": "8.4.4",
+          "pluginVersion": "9.3.1",
           "pointradius": 2,
           "points": false,
           "renderer": "flot",
@@ -3152,6 +3164,10 @@ data:
           "targets": [
             {
               "alias": "$tag_interface",
+              "datasource": {
+                "type": "influxdb",
+                "uid": "InfluxDB-pfSense"
+              },
               "groupBy": [
                 {
                   "params": [
@@ -3175,6 +3191,8 @@ data:
               "measurement": "net",
               "orderByTime": "ASC",
               "policy": "default",
+              "query": "SELECT derivative(mean(\"bytes_recv\"), 1s) * 8 As Recv FROM \"net\" WHERE (\"host\" =~ /^$server$/) AND $timeFilter GROUP BY time($__interval), \"interface\" fill(none)",
+              "rawQuery": true,
               "refId": "A",
               "resultFormat": "time_series",
               "select": [
@@ -3210,11 +3228,22 @@ data:
                   "value": "/^$server$/"
                 }
               ]
+            },
+            {
+              "datasource": {
+                "type": "influxdb",
+                "uid": "qkg5VOI4z"
+              },
+              "hide": false,
+              "query": "SELECT derivative(mean(\"bytes_sent\"), 1s) * 8 As Sent FROM \"net\" WHERE (\"host\" =~ /^$server$/) AND $timeFilter GROUP BY time($__interval), \"interface\" fill(none)",
+              "rawQuery": true,
+              "refId": "B",
+              "resultFormat": "time_series"
             }
           ],
           "thresholds": [],
           "timeRegions": [],
-          "title": "Network Rate In",
+          "title": "Network Rate",
           "tooltip": {
             "shared": true,
             "sort": 0,
@@ -3228,11 +3257,171 @@ data:
           },
           "yaxes": [
             {
+              "$$hashKey": "object:147",
               "format": "bps",
               "logBase": 1,
               "show": true
             },
             {
+              "$$hashKey": "object:148",
+              "format": "short",
+              "logBase": 1,
+              "show": true
+            }
+          ],
+          "yaxis": {
+            "align": false
+          }
+        },
+        {
+          "aliasColors": {},
+          "bars": false,
+          "dashLength": 10,
+          "dashes": false,
+          "datasource": {
+            "type": "influxdb",
+            "uid": "qkg5VOI4z"
+          },
+          "fill": 1,
+          "fillGradient": 0,
+          "gridPos": {
+            "h": 15,
+            "w": 24,
+            "x": 0,
+            "y": 16
+          },
+          "hiddenSeries": false,
+          "id": 23,
+          "legend": {
+            "avg": false,
+            "current": true,
+            "hideEmpty": true,
+            "hideZero": true,
+            "max": false,
+            "min": false,
+            "show": true,
+            "total": false,
+            "values": true
+          },
+          "lines": true,
+          "linewidth": 1,
+          "links": [],
+          "nullPointMode": "null",
+          "options": {
+            "alertThreshold": true
+          },
+          "percentage": false,
+          "pluginVersion": "9.3.1",
+          "pointradius": 2,
+          "points": false,
+          "renderer": "flot",
+          "seriesOverrides": [],
+          "spaceLength": 10,
+          "stack": false,
+          "steppedLine": false,
+          "targets": [
+            {
+              "alias": "$tag_interface",
+              "datasource": {
+                "type": "influxdb",
+                "uid": "InfluxDB-pfSense"
+              },
+              "groupBy": [
+                {
+                  "params": [
+                    "$__interval"
+                  ],
+                  "type": "time"
+                },
+                {
+                  "params": [
+                    "interface"
+                  ],
+                  "type": "tag"
+                },
+                {
+                  "params": [
+                    "none"
+                  ],
+                  "type": "fill"
+                }
+              ],
+              "measurement": "net",
+              "orderByTime": "ASC",
+              "policy": "default",
+              "query": "SELECT CUMULATIVE_SUM(SUM(recv)) as Recv FROM (SELECT derivative(mean(\"bytes_recv\"), 1s) * 8 AS recv  FROM \"net\" WHERE (\"host\" =~ /^$server$/) AND $timeFilter GROUP BY time(1s), \"interface\" fill(none) )  GROUP BY time($__interval), \"interface\" ",
+              "rawQuery": true,
+              "refId": "A",
+              "resultFormat": "time_series",
+              "select": [
+                [
+                  {
+                    "params": [
+                      "bytes_recv"
+                    ],
+                    "type": "field"
+                  },
+                  {
+                    "params": [],
+                    "type": "mean"
+                  },
+                  {
+                    "params": [
+                      "1s"
+                    ],
+                    "type": "derivative"
+                  },
+                  {
+                    "params": [
+                      "* 8"
+                    ],
+                    "type": "math"
+                  }
+                ]
+              ],
+              "tags": [
+                {
+                  "key": "host",
+                  "operator": "=~",
+                  "value": "/^$server$/"
+                }
+              ]
+            },
+            {
+              "datasource": {
+                "type": "influxdb",
+                "uid": "qkg5VOI4z"
+              },
+              "hide": false,
+              "query": "SELECT CUMULATIVE_SUM(SUM(sent)) as Sent FROM (SELECT derivative(mean(\"bytes_sent\"), 1s) * 8 AS sent  FROM \"net\" WHERE (\"host\" =~ /^$server$/) AND $timeFilter GROUP BY time(1s), \"interface\" fill(none) )  GROUP BY time($__interval), \"interface\" ",
+              "rawQuery": true,
+              "refId": "B",
+              "resultFormat": "time_series"
+            }
+          ],
+          "thresholds": [],
+          "timeRegions": [],
+          "title": "Data Over Time",
+          "tooltip": {
+            "shared": true,
+            "sort": 0,
+            "value_type": "individual"
+          },
+          "type": "graph",
+          "xaxis": {
+            "mode": "time",
+            "show": true,
+            "values": []
+          },
+          "yaxes": [
+            {
+              "$$hashKey": "object:98",
+              "format": "decbytes",
+              "logBase": 1,
+              "show": true
+            },
+            {
+              "$$hashKey": "object:99",
               "format": "short",
               "logBase": 1,
               "show": true
@@ -3244,7 +3433,7 @@ data:
         }
       ],
       "refresh": "30s",
-      "schemaVersion": 35,
+      "schemaVersion": 37,
       "style": "dark",
       "tags": [],
       "templating": {
@@ -3308,7 +3497,7 @@ data:
       "timezone": "",
       "title": "pfSense Lite",
       "uid": "YSZiSZ-nk",
-      "version": 2,
+      "version": 13,
       "weekStart": ""
     }
 
