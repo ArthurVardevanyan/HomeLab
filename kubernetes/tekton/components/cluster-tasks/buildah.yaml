@@ -48,7 +48,7 @@ spec:
     - name: PUSH_EXTRA_ARGS
       description: Extra parameters passed for the push command when pushing images.
       type: string
-      default: ""
+      default: "--compression-format zstd:chunked"
     - name: SKIP_PUSH
       description: Skip pushing the built image
       default: "false"
@@ -71,11 +71,11 @@ spec:
     - name: build
       resources:
         requests:
-          memory: 250Mi
+          memory: 500Mi
           cpu: 500m
         limits:
-          memory: 750Mi
-          cpu: "1500m"
+          cpu: "2"
+          memory: 3Gi
       image: $(params.BUILDER_IMAGE)
       workingDir: $(workspaces.source.path)
       script: |
