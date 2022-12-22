@@ -1,0 +1,25 @@
+apiVersion: operator.openshift.io/v1alpha1
+kind: ImageContentSourcePolicy
+metadata:
+  name: image-policy-0
+  labels:
+    app.kubernetes.io/instance: okd-configuration
+spec:
+  repositoryDigestMirrors:
+    - mirrors:
+        - registry.<path:secret/data/homelab/domain#url>/openshift/okd-content
+        - registry.<path:secret/data/homelab/domain#url>/openshift/okd
+      source: quay.io/openshift/okd
+---
+apiVersion: operator.openshift.io/v1alpha1
+kind: ImageContentSourcePolicy
+metadata:
+  name: image-policy-1
+  labels:
+    app.kubernetes.io/instance: okd-configuration
+spec:
+  repositoryDigestMirrors:
+    - mirrors:
+        - registry.<path:secret/data/homelab/domain#url>/openshift/okd-content
+        - registry.<path:secret/data/homelab/domain#url>/openshift/okd
+      source: quay.io/openshift/okd-content

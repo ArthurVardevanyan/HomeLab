@@ -877,6 +877,15 @@ install_okd() {
   fi
   echo "${URL}"
 
+  echo -e "\n\n${BLUE}Get Registry URL:${NC}"
+  REGISTRY=${REGISTRY:-}
+  if [ -z "${REGISTRY}" ]; then
+    echo -n REGISTRY:
+    read -r -s REGISTRY
+    echo ""
+  fi
+  echo "${REGISTRY}"
+
   # # Expand Swap Size on Host Computer
   # if ! test -f "/mnt/swapfile.img"; then
   # 	dd if=/dev/zero of=/mnt/swapfile.img bs=45056 count=1M
@@ -914,6 +923,7 @@ install_okd() {
   SSH=$(cat ${HOME}/.ssh/id_ed25519.pub)
   sed -i "s/<SSH>/${SSH}/g" ${OKD}/okd/install-config.yaml
   sed -i "s/<URL>/${URL}/g" ${OKD}/okd/install-config.yaml
+  sed -i "s/<REGISTRY>/${REGISTRY}/g" ${OKD}/okd/install-config.yaml
   sed -i "s/<MASTERS>/${MASTERS}/g" ${OKD}/okd/install-config.yaml
   sed -i "s/<WORKERS>/${WORKERS}/g" ${OKD}/okd/install-config.yaml
   cp ${OKD}/okd/install-config.yaml ${OKD}/okd/install-config_backup.yaml
