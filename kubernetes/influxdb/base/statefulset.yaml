@@ -72,9 +72,17 @@ spec:
             - name: INFLUXDB_MONITOR_STORE_ENABLED
               value: "false"
             - name: INFLUXDB_ADMIN_PASSWORD
-              value: adminpass
+              valueFrom:
+                secretKeyRef:
+                  name: influxdb-creds
+                  key: INFLUXDB_ADMIN_PASSWORD
+                  optional: false
             - name: INFLUXDB_ADMIN_USER
-              value: admin
+              valueFrom:
+                secretKeyRef:
+                  name: influxdb-creds
+                  key: INFLUXDB_ADMIN_USER
+                  optional: false
             - name: INFLUXDB_DATA_QUERY_LOG_ENABLED
               value: "false"
             - name: INFLUXDB_DB
