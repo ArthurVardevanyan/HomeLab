@@ -371,7 +371,7 @@ resources:
 kubectl delete replicaSet -n openshift-pipelines --all
 
 # Image Build
-tkn -n homelab pipeline start image-build -s pipeline-sa \
+tkn -n homelab pipeline start image-build -s pipeline \
   --param="git-url=https://git.arthurvardevanyan.com/ArthurVardevanyan/HomeLab" \
   --param="IMAGE=registry.arthurvardevanyan.com/homelab/toolbox:latest" \
   --param="git-commit=$(git log --format=oneline | cut -d ' ' -f 1 | head -n 1)" \
@@ -379,7 +379,7 @@ tkn -n homelab pipeline start image-build -s pipeline-sa \
   --workspace=name=data,volumeClaimTemplateFile=tekton/base/pvc.yaml \
   --showlog
 
-tkn -n homelab pipeline start image-build -s pipeline-sa \
+tkn -n homelab pipeline start image-build -s pipeline \
   --param="git-url=https://git.arthurvardevanyan.com/ArthurVardevanyan/HomeLab" \
   --param="IMAGE=registry.arthurvardevanyan.com/homelab/argocd:v2.5.4" \
   --param="git-commit=$(git log --format=oneline | cut -d ' ' -f 1 | head -n 1)" \
@@ -388,7 +388,7 @@ tkn -n homelab pipeline start image-build -s pipeline-sa \
   --showlog
 
 # Ansible
-tkn -n homelab pipeline start ansible -s pipeline-sa \
+tkn -n homelab pipeline start ansible -s pipeline \
   --workspace=name=data,volumeClaimTemplateFile=tekton/base/pvc.yaml \
   --param="git-url=https://git.arthurvardevanyan.com/ArthurVardevanyan/HomeLab" \
   --param="playbooks=desktop" \

@@ -17,13 +17,37 @@ spec:
   steps:
     - name: ansible
       image: "$(params.image)"
+      resources:
+        limits:
+          cpu: 750m
+          memory: 128Mi
+        requests:
+          cpu: 250m
+          memory: 64Mi
       securityContext:
-        privileged: true
+        runAsNonRoot: true
+        runAsUser: 65532
+        privileged: false
+        readOnlyRootFilesystem: true
+        allowPrivilegeEscalation: false
+        # seccompProfile:
+        #   type: RuntimeDefault
+        capabilities:
+          drop:
+            - ALL
+            - MKNOD
       env:
         - name: PLAYBOOKS
           value: "$(params.playbooks)"
         - name: WORKSPACE_DATA_PATH
           value: $(workspaces.data.path)
+      volumeMounts:
+        - name: ssh
+          mountPath: /.ssh
+        - name: ansible
+          mountPath: /.ansible
+        - name: tmp
+          mountPath: /tmp
       script: |
         #!/bin/bash
 
@@ -53,3 +77,13 @@ spec:
           --extra-vars "ansible_become_pass=${SUDO} ansible_ssh_pass=${SUDO} \
           ansible_python_interpreter=/usr/bin/python3" -e 'ansible_python_interpreter=/usr/bin/python3'
         done
+  volumes:
+    - name: ssh
+      emptyDir:
+        sizeLimit: 1Mi
+    - name: ansible
+      emptyDir:
+        sizeLimit: 2Mi
+    - name: tmp
+      emptyDir:
+        sizeLimit: 2Mi

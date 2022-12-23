@@ -1,44 +1,14 @@
 apiVersion: rbac.authorization.k8s.io/v1
-kind: ClusterRole
-metadata:
-  name: pipeline-cr
-  labels:
-    app.kubernetes.io/instance: homelab-system
-rules:
-  - apiGroups:
-      - security.openshift.io
-    resourceNames:
-      - pipelines-scc
-      - privileged
-    resources:
-      - securitycontextconstraints
-    verbs:
-      - use
-  - apiGroups:
-      - authentication.k8s.io
-    resources:
-      - tokenreviews
-    verbs:
-      - create
-  - apiGroups:
-      - triggers.tekton.dev
-    resources:
-      - clusterinterceptors
-    verbs:
-      - list
-      - get
----
-apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
-  name: homelab-crb
+  name: homelab-token-reviews
   labels:
-    app.kubernetes.io/instance: homelab-system
+    app.kubernetes.io/instance: homelab
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
-  name: pipeline-cr
+  name: system:auth-delegator
 subjects:
   - kind: ServiceAccount
-    name: pipeline-sa
+    name: pipeline
     namespace: homelab

@@ -29,7 +29,7 @@ spec:
       default: quay.io/buildah/stable:v1.28.0
     - name: STORAGE_DRIVER
       description: Set buildah storage driver
-      default: overlay
+      default: vfs #overlay
     - name: DOCKERFILE
       description: Path to the Dockerfile to build.
       default: ./Dockerfile
@@ -75,16 +75,21 @@ spec:
           cpu: 500m
         limits:
           cpu: "2"
-          memory: 3Gi
+          memory: 5Gi
       image: $(params.BUILDER_IMAGE)
       workingDir: $(workspaces.source.path)
       script: |
+        mkdir -p /home/build/.local/share/containers
+        mkdir -p /home/build/rundir/libpod
+        rm -rf $(workspaces.source.path)/lost+found
+
         [[ "$(workspaces.sslcertdir.bound)" == "true" ]] && CERT_DIR_FLAG="--cert-dir $(workspaces.sslcertdir.path)"
         [[ "$(workspaces.dockerconfig.bound)" == "true" ]] && export DOCKER_CONFIG="$(workspaces.dockerconfig.path)"
         buildah ${CERT_DIR_FLAG} --storage-driver=$(params.STORAGE_DRIVER) bud \
           $(params.BUILD_EXTRA_ARGS) --format=$(params.FORMAT) \
           --tls-verify=$(params.TLSVERIFY) --no-cache \
           -f $(params.DOCKERFILE) -t $(params.IMAGE) $(params.CONTEXT)
+
         [[ "$(params.SKIP_PUSH)" == "true" ]] && echo "Push skipped" && exit 0
         buildah ${CERT_DIR_FLAG} --storage-driver=$(params.STORAGE_DRIVER) push \
           $(params.PUSH_EXTRA_ARGS) --tls-verify=$(params.TLSVERIFY) \
@@ -95,8 +100,39 @@ spec:
       volumeMounts:
         - name: varlibcontainers
           mountPath: /var/lib/containers
+        - name: tmp
+          mountPath: /tmp
+        - name: var-tmp
+          mountPath: /var/tmp
+        - name: home
+          mountPath: /home
       securityContext:
-        privileged: true
+        runAsNonRoot: true
+        runAsUser: 1000 #65532
+        privileged: false
+        readOnlyRootFilesystem: true
+        allowPrivilegeEscalation: true
+        # seccompProfile:
+        #   type: RuntimeDefault
+        capabilities:
+          add:
+            - SETFCAP
+          drop:
+            - MKNOD
+            - KILL
+            # - SETUID
+            # - SETGID
+            #- ALL
   volumes:
     - name: varlibcontainers
-      emptyDir: {}
+      emptyDir:
+        sizeLimit: 1Mi
+    - name: home
+      emptyDir:
+        sizeLimit: 10Gi
+    - name: tmp
+      emptyDir:
+        sizeLimit: 2Mi
+    - name: var-tmp
+      emptyDir:
+        sizeLimit: 10Gi
