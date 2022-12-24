@@ -1,0 +1,43 @@
+FROM debian:bookworm-slim
+
+LABEL quay.expires-after=${quay_expiration}
+
+RUN apt-get update && apt-get install php php-mysql apache2 -y
+
+RUN cp /usr/bin/dpkg /tmp/dpkg && \
+	/tmp/dpkg -P --force-remove-essential --force-depends apt dpkg && \
+	rm -rf \
+	/tmp/dpkg /var/log/apt \
+	/var/lib/apt/lists/* /tmp/* /var/tmp/* \
+	/var/lib/dpkg/updates /var/lib/dpkg/info /var/lib/dpkg/alternatives /etc/dpkg/dpkg.cfg.d /etc/alternatives
+
+# Ports, Custom Apache Logs & Supress Apache Server Name Error
+RUN echo 'LogFormat "%{%a %b %d %H:%M:%S %Y}t %H %m %U" customLog' >> /etc/apache2/apache2.conf  && \
+	echo 'ErrorLogFormat "%t %M"' >> /etc/apache2/apache2.conf  && \
+	echo "ServerName 127.0.0.1" >> /etc/apache2/apache2.conf && \
+	sed -i "s,80,8080,g" /etc/apache2/ports.conf
+COPY ./containers/apache-php/000-default.conf /etc/apache2/sites-available/000-default.conf
+EXPOSE 8080
+
+# Required Read Only Root File System
+RUN sed -i "s,ErrorLog \${APACHE_LOG_DIR}/error.log,ErrorLog /proc/self/fd/1,g" /etc/apache2/apache2.conf  && \
+	sed -i "s,CustomLog \${APACHE_LOG_DIR}/other_vhosts_access.log,CustomLog /proc/self/fd/1,g" /etc/apache2/conf-available/other-vhosts-access-log.conf && \
+	sed -i "s,/var/run/apache2\$SUFFIX/,/dev/shm/,g" /etc/apache2/envvars  && \
+	sed -i "s,/var/run/apache2\$SUFFIX,/dev/shm/apache2\$SUFFIX,g" /etc/apache2/envvars
+
+# Non Root User Settings
+RUN sed -i "s,USER=www-data,USER=nobody,g" /etc/apache2/envvars && \
+	sed -i "s,GROUP=www-data,GROUP=nogroup,g" /etc/apache2/envvars && \
+	chown -R 65534:65534 /var/log/apache2/ && \
+	chown -R 65534:65534 /var/run/apache2/ && \
+	chown -R 65534:65534 /proc/self/fd/1 && \
+	sed -i "s,.*/socks.*,,g" /usr/sbin/apachectl
+# Rootless Apache2 stopped working after this socks change, undoing usptream change.
+# https://salsa.debian.org/apache-team/apache2/-/pipelines/395609
+# https://www.mail-archive.com/debian-bugs-dist@lists.debian.org/msg1860285.html
+# https://salsa.debian.org/apache-team/apache2/-/commit/41653076a91038f63b6fa4895a5add262f34f051
+
+# COPY . /var/www/html
+RUN chown -R 65534:65534 /var/www/html
+
+CMD ["/usr/sbin/apachectl", "-D", "FOREGROUND"]

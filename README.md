@@ -375,7 +375,7 @@ tkn -n homelab pipeline start image-build -s pipeline \
   --param="git-url=https://git.arthurvardevanyan.com/ArthurVardevanyan/HomeLab" \
   --param="IMAGE=registry.arthurvardevanyan.com/homelab/toolbox:latest" \
   --param="git-commit=$(git log --format=oneline | cut -d ' ' -f 1 | head -n 1)" \
-  --param="DOCKERFILE=./containerfile" \
+  --param="DOCKERFILE=./containers/toolbox/containerfile" \
   --workspace=name=data,volumeClaimTemplateFile=tekton/base/pvc.yaml \
   --showlog
 
@@ -383,7 +383,15 @@ tkn -n homelab pipeline start image-build -s pipeline \
   --param="git-url=https://git.arthurvardevanyan.com/ArthurVardevanyan/HomeLab" \
   --param="IMAGE=registry.arthurvardevanyan.com/homelab/argocd:v2.5.4" \
   --param="git-commit=$(git log --format=oneline | cut -d ' ' -f 1 | head -n 1)" \
-  --param="DOCKERFILE=./kubernetes/argocd/containerfile" \
+  --param="DOCKERFILE=./containers/argocd/containerfile" \
+  --workspace=name=data,volumeClaimTemplateFile=tekton/base/pvc.yaml \
+  --showlog
+
+tkn -n homelab pipeline start image-build -s pipeline \
+  --param="git-url=https://git.arthurvardevanyan.com/ArthurVardevanyan/HomeLab" \
+  --param="IMAGE=registry.arthurvardevanyan.com/homelab/apache-php:$(date --utc '+%Y%m%d-%H%M')" \
+  --param="git-commit=$(git log --format=oneline | cut -d ' ' -f 1 | head -n 1)" \
+  --param="DOCKERFILE=./containers/apache-php/containerfile" \
   --workspace=name=data,volumeClaimTemplateFile=tekton/base/pvc.yaml \
   --showlog
 
