@@ -1,0 +1,24 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: opencost
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+  labels:
+    app.kubernetes.io/instance: argocd
+spec:
+  destination:
+    namespace: opencost
+    server: https://kubernetes.default.svc
+  project: default
+  source:
+    path: kubernetes/opencost/overlays/okd
+    repoURL: https://git.<path:secret/data/homelab/domain#url>/ArthurVardevanyan/HomeLab
+    targetRevision: HEAD
+    plugin:
+      name: argocd-vault-plugin-kustomize
+  syncPolicy:
+    syncOptions:
+      - CreateNamespace=true
