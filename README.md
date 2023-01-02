@@ -22,6 +22,7 @@ HomeLab Server/Cluster, Virtual Sandbox Cluster, & Desktop Configuration
     - [Kubernetes](#kubernetes)
       - [OKD Longhorn Secondary Disk Setup](#okd-longhorn-secondary-disk-setup)
       - [OKD Upgrade](#okd-upgrade)
+      - [OKD Host Disk Expansion](#okd-host-disk-expansion)
       - [OKD WIF](#okd-wif)
       - [Kubernetes Commands](#kubernetes-commands)
         - [Delete Pod Using Graceful Termination Eviction Request](#delete-pod-using-graceful-termination-eviction-request)
@@ -193,6 +194,20 @@ oc label node ${NODE} node.longhorn.io/create-default-disk=config
 bash main.bash stateful_workload_stop
 kubectl delete pdb -n longhorn-system --all
 bash main.bash stateful_workload_start
+```
+
+#### OKD Host Disk Expansion
+
+```bash
+# https://access.redhat.com/discussions/6230831#comment-2163981
+sudo su
+growpart /dev/vda 4
+lsblk
+sudo su -
+unshare --mount
+mount -o remount,rw /sysroot
+xfs_growfs /sysroot
+df -h | grep vda
 ```
 
 #### OKD WIF

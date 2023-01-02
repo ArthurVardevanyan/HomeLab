@@ -4,7 +4,7 @@ export VCPUS=4
 export RAM_MB=14592
 export IMAGE="/mnt/${NODE}/${NODE}.raw"
 export IGNITION_CONFIG="${HOME}/vm/okd/master.ign"
-export SIZE="52G"
+export SIZE="72G"
 export MAC="10:00:00:00:01:02"
 
 qemu-img create "${IMAGE}" "${SIZE}" -f raw
