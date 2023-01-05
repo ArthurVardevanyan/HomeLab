@@ -4,7 +4,7 @@ metadata:
   labels:
     app.kubernetes.io/name: longhorn
     app.kubernetes.io/instance: longhorn
-    app.kubernetes.io/version: v1.3.2
+    app.kubernetes.io/version: v1.4.0
     app: longhorn-ui
   name: longhorn-ui
   namespace: longhorn-system
@@ -18,11 +18,10 @@ spec:
       labels:
         app.kubernetes.io/name: longhorn
         app.kubernetes.io/instance: longhorn
-        app.kubernetes.io/version: v1.3.2
+        app.kubernetes.io/version: v1.4.0
         app: longhorn-ui
       annotations:
         enable.version-checker.io/longhorn-ui: "true"
-        seccomp.security.alpha.kubernetes.io/defaultProfileName: runtime/default
     spec:
       tolerations:
         - key: node-role.kubernetes.io/control-plane
@@ -30,15 +29,17 @@ spec:
         - key: node-role.kubernetes.io/master
           effect: NoSchedule
       affinity:
-        nodeAffinity:
+        podAntiAffinity:
           preferredDuringSchedulingIgnoredDuringExecution:
             - weight: 1
-              preference:
-                matchExpressions:
-                  - key: node-role.kubernetes.io/master
-                    operator: In
-                    values:
-                      - ""
+              podAffinityTerm:
+                labelSelector:
+                  matchExpressions:
+                    - key: app
+                      operator: In
+                      values:
+                        - longhorn-ui
+                topologyKey: kubernetes.io/hostname
       serviceAccountName: longhorn-ui-service-account
       automountServiceAccountToken: true
       containers:
@@ -68,7 +69,7 @@ spec:
             - mountPath: /etc/tls/private
               name: longhorn-ui-tls
         - name: longhorn-ui
-          image: longhornio/longhorn-ui:v1.3.2
+          image: longhornio/longhorn-ui:v1.4.0
           imagePullPolicy: IfNotPresent
           volumeMounts:
             - name: nginx-cache

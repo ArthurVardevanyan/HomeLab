@@ -4,7 +4,7 @@ metadata:
   labels:
     app.kubernetes.io/name: longhorn
     app.kubernetes.io/instance: longhorn
-    app.kubernetes.io/version: v1.3.2
+    app.kubernetes.io/version: v1.4.0
     app: longhorn-manager
   name: longhorn-manager
   namespace: longhorn-system
@@ -17,7 +17,7 @@ spec:
       labels:
         app.kubernetes.io/name: longhorn
         app.kubernetes.io/instance: longhorn
-        app.kubernetes.io/version: v1.3.2
+        app.kubernetes.io/version: v1.4.0
         app: longhorn-manager
       annotations:
         prometheus.io/path: /metrics
@@ -27,7 +27,7 @@ spec:
     spec:
       initContainers:
         - name: wait-longhorn-admission-webhook
-          image: longhornio/longhorn-manager:v1.3.2
+          image: longhornio/longhorn-manager:v1.4.0
           command:
             [
               "sh",
@@ -36,7 +36,7 @@ spec:
             ]
       containers:
         - name: longhorn-manager
-          image: longhornio/longhorn-manager:v1.3.2
+          image: longhornio/longhorn-manager:v1.4.0
           imagePullPolicy: IfNotPresent
           securityContext:
             privileged: true
@@ -52,15 +52,17 @@ spec:
             - -d
             - daemon
             - --engine-image
-            - "longhornio/longhorn-engine:v1.3.2"
+            - "longhornio/longhorn-engine:v1.4.0"
             - --instance-manager-image
-            - "longhornio/longhorn-instance-manager:v1_20220808"
+            - "longhornio/longhorn-instance-manager:v1.4.0"
             - --share-manager-image
-            - "longhornio/longhorn-share-manager:v1_20220808"
+            - "longhornio/longhorn-share-manager:v1.4.0"
             - --backing-image-manager-image
-            - "longhornio/backing-image-manager:v3_20220808"
+            - "longhornio/backing-image-manager:v1.4.0"
+            - --support-bundle-manager-image
+            - "longhornio/support-bundle-kit:v0.0.17"
             - --manager-image
-            - "longhornio/longhorn-manager:v1.3.2"
+            - "longhornio/longhorn-manager:v1.4.0"
             - --service-account
             - longhorn-service-account
           ports:
