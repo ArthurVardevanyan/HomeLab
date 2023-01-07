@@ -297,7 +297,7 @@ k3s_setup() {
 k3s_image_cleanup() {
   export IP_LIST="5 102 103 111 112"
 
-  for IP in $(echo "$IP_LIST"); do
+  for IP in ${IP_LIST}; do
     ssh -t arthur@10.0.0."${IP}" "sudo k3s crictl rmi --prune"
   done
 }
@@ -528,7 +528,7 @@ install_addons() {
   kubectl patch daemonset -n longhorn-system longhorn-manager --type=json -p='[{"op": "remove", "path": "/spec/template/spec/tolerations"}]'
 
   echo -e "\n${BLUE}Waiting for Longhorn to Boot:${NC}"
-  while [ "$(kubectl get pods -n longhorn-system | grep -v Running | wc -l)" -ne 1 ]; do
+  while [ "$(kubectl get pods -n longhorn-system | grep -cv Running)" -ne 1 ]; do
     sleep 1
   done
 
@@ -581,6 +581,7 @@ install_addons_optional() {
 get_dashboard_secret() {
   load_kubeconfig
   echo -e "\n${BLUE}Kubernetes Dashboard Secret:${NC}"
+  # shellcheck disable=SC2046
   kubectl get secret -n kubernetes-dashboard \
     $(kubectl get serviceaccount admin-user -n kubernetes-dashboard -o jsonpath="{.secrets[0].name}") \
     -o jsonpath="{.data.token}" | base64 --decode
@@ -596,7 +597,7 @@ preseed_server() {
   mkdir -p /tmp/preseed/
   cp machineConfigs/preseed.cfg /tmp/preseed//preseed.cfg
   mkpasswd -m md5 "${PASSWORD}"
-  sed -i "s,#d-i passwd/user-password-crypted password <HASH>,d-i passwd/user-password-crypted password $(mkpasswd -s -m md5 ${PASSWORD}),g" "/tmp/preseed/preseed.cfg"
+  sed -i "s,#d-i passwd/user-password-crypted password <HASH>,d-i passwd/user-password-crypted password $(mkpasswd -s -m md5 "${PASSWORD}"),g" "/tmp/preseed/preseed.cfg"
   python3 -m http.server --directory /tmp/preseed/
 }
 
@@ -630,6 +631,7 @@ install_cluster() {
     # Install VM
     #--debug \
     #--wait=-1 \
+    # shellcheck disable=SC2140
     virt-install \
       --noautoconsole \
       --graphics vnc \
@@ -699,9 +701,9 @@ install_k3s_cluster() {
   # Install & Setup k3s
   install_k3s
 
-  export KUBECONFIG=/mnt/storage/vm/${PREFIX}/${PREFIX}.yaml
+  export KUBECONFIG="/mnt/storage/vm/${PREFIX}/${PREFIX}.yaml"
 
-  while [ "$(kubectl get nodes | wc -l)" -le "$(echo ${NODES} | wc -w)" ]; do
+  while [ "$(kubectl get nodes | wc -l)" -le "$(echo "${NODES}" | wc -w)" ]; do
     sleep 1
   done
 
@@ -800,7 +802,7 @@ install_k8s_cluster() {
 
   export KUBECONFIG=/mnt/storage/vm/${PREFIX}/${PREFIX}.yaml
 
-  while [ "$(kubectl get nodes | wc -l)" -le "$(echo ${NODES} | wc -w)" ]; do
+  while [ "$(kubectl get nodes | wc -l)" -le "$(echo "${NODES}" | wc -w)" ]; do
     sleep 1
   done
 
@@ -831,8 +833,10 @@ delete_okd() {
   echo -e "\n\n${BLUE}Delete Bootstrap:${NC}"
   cd "${HOMELAB}/terraform/sandbox/cluster"
   terraform init
-  export TF_VAR_base_volume_id=$(terraform output -raw base_volume_id)
-  export TF_VAR_pool=$(terraform output -raw pool)
+  export TF_VAR_base_volume_id
+  TF_VAR_base_volume_id=$(terraform output -raw base_volume_id)
+  export TF_VAR_pool
+  TF_VAR_pool=$(terraform output -raw pool)
   cd "${HOMELAB}/terraform/sandbox/bootstrap"
   terraform init
   terraform destroy -auto-approve
@@ -851,13 +855,16 @@ install_okd() {
   # https://blog.maumene.org/2020/11/18/OKD-or-OpenShit-in-one-box.html
   # ssh -i ~/.ssh/id_ed25519 core@10.10.10.10
   # journalctl -b -f -u kubelet.service -u ciro.service
+
+  # TODO: Fix Permissions:
+  # sudo vi /etc/libvirt/qemu.conf
+  # user = "root"
+  # group = "root"
+  # sudo systemctl restart libvirtd
+
   export HOME=/home/arthur
   export HOMELAB="${PWD}"
   export OKD=/mnt/storage/okd
-
-  mkdir -p /vm
-  chown -R arthur:arthur /mnt/storage/vm/
-  chmod 777 -R /mnt/storage/vm/
 
   export PREFIX=""
   export MASTERS=3
@@ -907,6 +914,11 @@ install_okd() {
     ${OKD}/*.qcow2 \
     ${OKD}/okd
 
+  mkdir -p "${OKD}/vm"
+  chown -R arthur:libvirt-qemu "${OKD}/vm"
+  chmod 777 -R "${OKD}/vm"
+  chmod g+s "${OKD}/vm"
+
   echo -e "\n\n${BLUE}Download Dependencies:${NC}"
   # Download openshift-install and openshift-client
   wget "$(curl https://api.github.com/repos/openshift/okd/releases/latest -L | grep openshift-install-linux | grep browser_download_url | cut -d\" -f4)" -P ${OKD}/
@@ -918,18 +930,18 @@ install_okd() {
   # Create okd directory of openshift-install files
   mkdir -p ${OKD}/okd
   # Copy the install-config.yaml
-  cp ${HOMELAB}/okd/install-config.yaml ${OKD}/okd/
+  cp "${HOMELAB}/okd/install-config.yaml" "${OKD}/okd/"
 
   SSH=$(cat ${HOME}/.ssh/id_ed25519.pub)
-  sed -i "s/<SSH>/${SSH}/g" ${OKD}/okd/install-config.yaml
-  sed -i "s/<URL>/${URL}/g" ${OKD}/okd/install-config.yaml
-  sed -i "s/<REGISTRY>/${REGISTRY}/g" ${OKD}/okd/install-config.yaml
-  sed -i "s/<MASTERS>/${MASTERS}/g" ${OKD}/okd/install-config.yaml
-  sed -i "s/<WORKERS>/${WORKERS}/g" ${OKD}/okd/install-config.yaml
-  cp ${OKD}/okd/install-config.yaml ${OKD}/okd/install-config_backup.yaml
+  sed -i "s/<SSH>/${SSH}/g" "${OKD}/okd/install-config.yaml"
+  sed -i "s/<URL>/${URL}/g" "${OKD}/okd/install-config.yaml"
+  sed -i "s/<REGISTRY>/${REGISTRY}/g" "${OKD}/okd/install-config.yaml"
+  sed -i "s/<MASTERS>/${MASTERS}/g" "${OKD}/okd/install-config.yaml"
+  sed -i "s/<WORKERS>/${WORKERS}/g" "${OKD}/okd/install-config.yaml"
+  cp "${OKD}/okd/install-config.yaml" "${OKD}/okd/install-config_backup.yaml"
 
   # Create the ignition files
-  ${OKD}/openshift-install create ignition-configs --dir=${OKD}/okd
+  "${OKD}/openshift-install" create ignition-configs --dir="${OKD}/okd"
 
   chown -R arthur:arthur ${OKD}
   chmod 777 -R ${OKD}
@@ -940,8 +952,10 @@ install_okd() {
   mkdir -p ${OKD}/terraform/cluster
   terraform init
   terraform apply -auto-approve
-  export TF_VAR_base_volume_id=$(terraform output -raw base_volume_id)
-  export TF_VAR_pool=$(terraform output -raw pool)
+  export TF_VAR_base_volume_id
+  TF_VAR_base_volume_id=$(terraform output -raw base_volume_id)
+  export TF_VAR_pool
+  TF_VAR_pool=$(terraform output -raw pool)
 
   echo -e "\n\n${BLUE}Initialize Bootstrap:${NC}"
   cd "${HOMELAB}/terraform/sandbox/bootstrap"
@@ -986,16 +1000,16 @@ install_okd() {
 single_server() {
   echo -e "\n\n${BLUE}Single Server Resource Adjustments:${NC}"
   export KUBECONFIG="${OKD}/okd/auth/kubeconfig"
-  ${OKD}/oc scale --replicas=1 ingresscontroller/default -n openshift-ingress-operator
-  ${OKD}/oc scale --replicas=1 deployment.apps/console -n openshift-console
-  ${OKD}/oc scale --replicas=1 deployment.apps/downloads -n openshift-console
-  ${OKD}/oc scale --replicas=1 deployment.apps/oauth-openshift -n openshift-authentication
-  ${OKD}/oc scale --replicas=1 deployment.apps/packageserver -n openshift-operator-lifecycle-manager
+  "${OKD}/oc" scale --replicas=1 ingresscontroller/default -n openshift-ingress-operator
+  "${OKD}/oc" scale --replicas=1 deployment.apps/console -n openshift-console
+  "${OKD}/oc" scale --replicas=1 deployment.apps/downloads -n openshift-console
+  "${OKD}/oc" scale --replicas=1 deployment.apps/oauth-openshift -n openshift-authentication
+  "${OKD}/oc" scale --replicas=1 deployment.apps/packageserver -n openshift-operator-lifecycle-manager
 
-  ${OKD}/oc scale --replicas=1 deployment.apps/prometheus-adapter -n openshift-monitoring
-  ${OKD}/oc scale --replicas=1 deployment.apps/thanos-querier -n openshift-monitoring
-  ${OKD}/oc scale --replicas=1 statefulset.apps/prometheus-k8s -n openshift-monitoring
-  ${OKD}/oc scale --replicas=1 statefulset.apps/alertmanager-main -n openshift-monitoring
+  "${OKD}/oc" scale --replicas=1 deployment.apps/prometheus-adapter -n openshift-monitoring
+  "${OKD}/oc" scale --replicas=1 deployment.apps/thanos-querier -n openshift-monitoring
+  "${OKD}/oc" scale --replicas=1 statefulset.apps/prometheus-k8s -n openshift-monitoring
+  "${OKD}/oc" scale --replicas=1 statefulset.apps/alertmanager-main -n openshift-monitoring
 }
 
 approve_csr() {
