@@ -3,6 +3,11 @@ kind: EventListener
 metadata:
   name: webhook
   namespace: homelab
+  labels:
+    app: homelab
+    app.kubernetes.io/instance: homelab
+  annotations:
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
 spec:
   triggers:
     - name: webhook
