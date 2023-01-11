@@ -1,0 +1,17 @@
+apiVersion: operators.coreos.com/v1alpha1
+kind: Subscription
+metadata:
+  labels:
+    app.kubernetes.io/instance: network-observability
+    operators.coreos.com/netobserv-operator.network-observability: ""
+  annotations:
+    argocd.argoproj.io/sync-wave: "0"
+  name: network-observability
+  namespace: network-observability
+spec:
+  channel: latest
+  installPlanApproval: Manual
+  name: netobserv-operator
+  source: community-operators
+  sourceNamespace: openshift-marketplace
+  startingCSV: netobserv-operator.v0.2.2

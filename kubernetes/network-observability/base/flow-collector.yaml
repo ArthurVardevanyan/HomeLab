@@ -1,0 +1,147 @@
+apiVersion: flows.netobserv.io/v1alpha1
+kind: FlowCollector
+metadata:
+  name: cluster
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+  labels:
+    app.kubernetes.io/instance: network-observability
+spec:
+  agent:
+    ebpf:
+      cacheActiveTimeout: 5s
+      cacheMaxFlows: 100000
+      excludeInterfaces:
+        - lo
+      imagePullPolicy: IfNotPresent
+      kafkaBatchSize: 10485760
+      logLevel: info
+      resources:
+        limits:
+          memory: 800Mi
+        requests:
+          cpu: 100m
+          memory: 50Mi
+      sampling: 50
+    ipfix:
+      cacheActiveTimeout: 20s
+      cacheMaxFlows: 400
+      clusterNetworkOperator:
+        namespace: openshift-network-operator
+      forceSampleAll: false
+      ovnKubernetes:
+        containerName: ovnkube-node
+        daemonSetName: ovnkube-node
+        namespace: ovn-kubernetes
+      sampling: 400
+    type: EBPF
+  consolePlugin:
+    autoscaler:
+      maxReplicas: 3
+      metrics:
+        - resource:
+            name: cpu
+            target:
+              averageUtilization: 50
+              type: Utilization
+          type: Resource
+      minReplicas: 1
+      status: DISABLED
+    imagePullPolicy: IfNotPresent
+    logLevel: info
+    port: 9001
+    portNaming:
+      enable: true
+      portNames:
+        "3100": loki
+    quickFilters:
+      - default: true
+        filter:
+          dst_namespace!: openshift-,network-observability
+          src_namespace!: openshift-,network-observability
+        name: Applications
+      - filter:
+          dst_namespace: openshift-,network-observability
+          src_namespace: openshift-,network-observability
+        name: Infrastructure
+      - default: true
+        filter:
+          dst_kind: Pod
+          src_kind: Pod
+        name: Pods network
+      - filter:
+          dst_kind: Service
+        name: Services network
+    register: true
+    replicas: 1
+    resources:
+      limits:
+        memory: 100Mi
+      requests:
+        cpu: 100m
+        memory: 50Mi
+  deploymentModel: DIRECT
+  kafka:
+    address: kafka-cluster-kafka-bootstrap.network-observability
+    tls:
+      caCert:
+        certFile: ca.crt
+        name: kafka-cluster-cluster-ca-cert
+        type: secret
+      enable: false
+      insecureSkipVerify: false
+      userCert:
+        certFile: user.crt
+        certKey: user.key
+        name: flp-kafka
+        type: secret
+    topic: network-flows
+  loki:
+    authToken: DISABLED
+    batchSize: 10485760
+    batchWait: 1s
+    maxBackoff: 5s
+    maxRetries: 2
+    minBackoff: 1s
+    staticLabels:
+      app: netobserv-flowcollector
+    tenantID: netobserv
+    timeout: 10s
+    tls:
+      caCert:
+        certFile: service-ca.crt
+        name: loki-ca-bundle
+        type: configmap
+      enable: false
+      insecureSkipVerify: true
+    url: http://loki.loki.svc:3100/
+  namespace: network-observability
+  processor:
+    dropUnusedFields: true
+    enableKubeProbes: true
+    healthPort: 8080
+    imagePullPolicy: IfNotPresent
+    kafkaConsumerAutoscaler:
+      maxReplicas: 0
+      status: DISABLED
+    kafkaConsumerBatchSize: 10485760
+    kafkaConsumerQueueCapacity: 1000
+    kafkaConsumerReplicas: 3
+    logLevel: info
+    metrics:
+      ignoreTags:
+        - egress
+        - packets
+      server:
+        port: 9102
+        tls:
+          type: DISABLED
+    port: 2055
+    profilePort: 6060
+    resources:
+      limits:
+        memory: 800Mi
+      requests:
+        cpu: 100m
+        memory: 100Mi
