@@ -10,47 +10,32 @@ metadata:
 spec:
   agent:
     ebpf:
-      cacheActiveTimeout: 5s
-      cacheMaxFlows: 100000
-      excludeInterfaces:
-        - lo
-      imagePullPolicy: IfNotPresent
-      kafkaBatchSize: 10485760
       logLevel: info
+      cacheMaxFlows: 100000
       resources:
         limits:
           memory: 800Mi
         requests:
           cpu: 100m
           memory: 50Mi
-      sampling: 50
-    ipfix:
-      cacheActiveTimeout: 20s
-      cacheMaxFlows: 400
-      clusterNetworkOperator:
-        namespace: openshift-network-operator
-      forceSampleAll: false
-      ovnKubernetes:
-        containerName: ovnkube-node
-        daemonSetName: ovnkube-node
-        namespace: ovn-kubernetes
-      sampling: 400
+      sampling: 0 # Send All Flows
+      imagePullPolicy: IfNotPresent
+      debug: {}
+      excludeInterfaces:
+        - lo
+      kafkaBatchSize: 10485760
+      cacheActiveTimeout: 5s
     type: EBPF
   consolePlugin:
-    autoscaler:
-      maxReplicas: 3
-      metrics:
-        - resource:
-            name: cpu
-            target:
-              averageUtilization: 50
-              type: Utilization
-          type: Resource
-      minReplicas: 1
-      status: DISABLED
-    imagePullPolicy: IfNotPresent
     logLevel: info
     port: 9001
+    register: true
+    resources:
+      limits:
+        memory: 100Mi
+      requests:
+        cpu: 100m
+        memory: 50Mi
     portNaming:
       enable: true
       portNames:
@@ -58,12 +43,12 @@ spec:
     quickFilters:
       - default: true
         filter:
-          dst_namespace!: openshift-,network-observability
-          src_namespace!: openshift-,network-observability
+          dst_namespace!: "openshift-,network-observability"
+          src_namespace!: "openshift-,network-observability"
         name: Applications
       - filter:
-          dst_namespace: openshift-,network-observability
-          src_namespace: openshift-,network-observability
+          dst_namespace: "openshift-,network-observability"
+          src_namespace: "openshift-,network-observability"
         name: Infrastructure
       - default: true
         filter:
@@ -73,62 +58,39 @@ spec:
       - filter:
           dst_kind: Service
         name: Services network
-    register: true
-    replicas: 1
-    resources:
-      limits:
-        memory: 100Mi
-      requests:
-        cpu: 100m
-        memory: 50Mi
+    imagePullPolicy: IfNotPresent
+    autoscaler:
+      maxReplicas: 3
+      metrics:
+        - resource:
+            name: cpu
+            target:
+              averageUtilization: 50
+              type: Utilization
+          type: Resource
+      minReplicas: 2
+      status: DISABLED
+    replicas: 2
   deploymentModel: DIRECT
-  kafka:
-    address: kafka-cluster-kafka-bootstrap.network-observability
-    tls:
-      caCert:
-        certFile: ca.crt
-        name: kafka-cluster-cluster-ca-cert
-        type: secret
-      enable: false
-      insecureSkipVerify: false
-      userCert:
-        certFile: user.crt
-        certKey: user.key
-        name: flp-kafka
-        type: secret
-    topic: network-flows
   loki:
-    authToken: DISABLED
-    batchSize: 10485760
-    batchWait: 1s
-    maxBackoff: 5s
+    timeout: 10s
     maxRetries: 2
-    minBackoff: 1s
+    maxBackoff: 5s
+    tenantID: netobserv
     staticLabels:
       app: netobserv-flowcollector
-    tenantID: netobserv
-    timeout: 10s
+    url: "http://loki.loki.svc:3100/"
+    batchWait: 1s
+    authToken: DISABLED
+    minBackoff: 1s
     tls:
-      caCert:
-        certFile: service-ca.crt
-        name: loki-ca-bundle
-        type: configmap
       enable: false
       insecureSkipVerify: true
-    url: http://loki.loki.svc:3100/
+    batchSize: 10485760
   namespace: network-observability
   processor:
-    dropUnusedFields: true
-    enableKubeProbes: true
-    healthPort: 8080
-    imagePullPolicy: IfNotPresent
-    kafkaConsumerAutoscaler:
-      maxReplicas: 0
-      status: DISABLED
-    kafkaConsumerBatchSize: 10485760
-    kafkaConsumerQueueCapacity: 1000
-    kafkaConsumerReplicas: 3
     logLevel: info
+    port: 2055
     metrics:
       ignoreTags:
         - egress
@@ -137,11 +99,19 @@ spec:
         port: 9102
         tls:
           type: DISABLED
-    port: 2055
-    profilePort: 6060
     resources:
       limits:
-        memory: 800Mi
+        memory: 200Mi
+        cpu: 250m
       requests:
         cpu: 100m
         memory: 100Mi
+    profilePort: 6060
+    kafkaConsumerQueueCapacity: 1000
+    imagePullPolicy: IfNotPresent
+    enableKubeProbes: true
+    debug: {}
+    kafkaConsumerReplicas: 3
+    healthPort: 8080
+    dropUnusedFields: true
+    kafkaConsumerBatchSize: 10485760
