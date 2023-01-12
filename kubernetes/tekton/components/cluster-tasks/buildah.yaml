@@ -27,7 +27,7 @@ spec:
       description: Reference of the image buildah will produce.
     - name: BUILDER_IMAGE
       description: The location of the buildah builder image.
-      default: quay.io/buildah/stable:v1.28.0
+      default: registry.access.redhat.com/ubi9/buildah:9.1.0-5
     - name: STORAGE_DRIVER
       description: Set buildah storage driver
       default: vfs #overlay
@@ -107,12 +107,18 @@ spec:
           mountPath: /var/tmp
         - name: home
           mountPath: /home
+        - name: root
+          mountPath: /root
+        - name: run
+          mountPath: /var/run
+        - name: cache
+          mountPath: /var/cache
       securityContext:
-        runAsNonRoot: true
-        runAsUser: 1000 #65532
+        runAsNonRoot: false
+        #runAsUser: 1000 #65532
         privileged: false
         readOnlyRootFilesystem: true
-        allowPrivilegeEscalation: true
+        allowPrivilegeEscalation: false
         # seccompProfile:
         #   type: RuntimeDefault
         capabilities:
@@ -127,13 +133,22 @@ spec:
   volumes:
     - name: varlibcontainers
       emptyDir:
-        sizeLimit: 1Mi
+        sizeLimit: 10Gi
     - name: home
       emptyDir:
-        sizeLimit: 10Gi
+        sizeLimit: 1Mi
     - name: tmp
       emptyDir:
         sizeLimit: 2Mi
     - name: var-tmp
       emptyDir:
         sizeLimit: 10Gi
+    - name: root
+      emptyDir:
+        sizeLimit: 1Mi
+    - name: run
+      emptyDir:
+        sizeLimit: 1Mi
+    - name: cache
+      emptyDir:
+        sizeLimit: 1Mi
