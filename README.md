@@ -396,7 +396,7 @@ tkn -n homelab pipeline start image-build -s pipeline \
 
 tkn -n homelab pipeline start image-build -s pipeline \
   --param="git-url=https://git.arthurvardevanyan.com/ArthurVardevanyan/HomeLab" \
-  --param="IMAGE=registry.arthurvardevanyan.com/homelab/argocd:v2.5.4" \
+  --param="IMAGE=registry.arthurvardevanyan.com/homelab/argocd:v2.5.6" \
   --param="git-commit=$(git log --format=oneline | cut -d ' ' -f 1 | head -n 1)" \
   --param="DOCKERFILE=./containers/argocd/containerfile" \
   --workspace=name=data,volumeClaimTemplateFile=tekton/base/pvc.yaml \

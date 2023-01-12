@@ -60,11 +60,19 @@ spec:
               path: /ready
               port: http-metrics
             initialDelaySeconds: 45
+            timeoutSeconds: 1
+            periodSeconds: 45
+            successThreshold: 1
+            failureThreshold: 10
           readinessProbe:
             httpGet:
               path: /ready
               port: http-metrics
             initialDelaySeconds: 45
+            timeoutSeconds: 1
+            periodSeconds: 10
+            successThreshold: 1
+            failureThreshold: 3
           securityContext:
             # runAsGroup: 10001
             # runAsUser: 10001
