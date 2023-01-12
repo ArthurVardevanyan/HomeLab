@@ -36,7 +36,6 @@ spec:
       type: ""
   grafana:
     enabled: false
-    service:
   prometheus:
     enabled: false
   initialSSHKnownHosts: {}
@@ -46,11 +45,9 @@ spec:
     policy: |
       g, system:cluster-admins, role:admin
       g, cluster-admins, role:admin
-  image: registry.<path:secret/data/homelab/domain#url>/homelab/argocd
   version: v2.5.6
   repo:
     replicas: 2
-    image: registry.<path:secret/data/homelab/domain#url>/homelab/argocd
     version: v2.5.6
     mountsatoken: true
     serviceaccount: default
@@ -61,6 +58,71 @@ spec:
       requests:
         cpu: 50m
         memory: 150Mi
+    initContainers:
+      - name: download-tools
+        image: registry.access.redhat.com/ubi9
+        env:
+          - name: AVP_VERSION
+            value: 1.13.1
+          - name: KUSTOMIZE_VERSION
+            value: 4.5.7
+        command: [sh, -c]
+        args:
+          - >-
+            cd /custom-tools &&
+            curl -L https://github.com/argoproj-labs/argocd-vault-plugin/releases/download/v$(AVP_VERSION)/argocd-vault-plugin_$(AVP_VERSION)_linux_amd64 -o argocd-vault-plugin &&
+            chmod +x argocd-vault-plugin &&
+            curl -L https://github.com/kubernetes-sigs/kustomize/releases/download/kustomize%2Fv$(KUSTOMIZE_VERSION)/kustomize_v$(KUSTOMIZE_VERSION)_linux_amd64.tar.gz -o kustomize_v${KUSTOMIZE_VERSION}_linux_amd64.tar.gz &&
+            tar -xzf kustomize_v${KUSTOMIZE_VERSION}_linux_amd64.tar.gz --no-same-owner &&
+            chmod +x kustomize &&
+            rm kustomize_v${KUSTOMIZE_VERSION}_linux_amd64.tar.gz
+        volumeMounts:
+          - mountPath: /custom-tools
+            name: custom-tools
+    sidecarContainers:
+      - name: avp-kustomize
+        command: [/var/run/argocd/argocd-cmp-server]
+        image: registry.access.redhat.com/ubi9
+        resources:
+          limits:
+            cpu: "1"
+            memory: 1Gi
+          requests:
+            cpu: 50m
+            memory: 150Mi
+        env:
+          - name: AVP_TYPE
+            value: vault
+          - name: AVP_AUTH_TYPE
+            value: k8s
+          - name: AVP_K8S_ROLE
+            value: argocd
+          - name: VAULT_ADDR
+            value: https://vault.<path:secret/data/homelab/domain#url>
+        volumeMounts:
+          - name: custom-tools
+            subPath: argocd-vault-plugin
+            mountPath: /usr/local/bin/argocd-vault-plugin
+          - name: custom-tools
+            subPath: kustomize
+            mountPath: /usr/local/bin/kustomize
+          - mountPath: /var/run/argocd
+            name: var-files
+          - mountPath: /home/argocd/cmp-server/plugins
+            name: plugins
+          - mountPath: /home/argocd/cmp-server/config/plugin.yaml
+            subPath: avp-kustomize.yaml
+            name: cmp-plugin
+          - mountPath: /tmp
+            name: cmp-tmp
+    volumes:
+      - configMap:
+          name: cmp-plugin
+        name: cmp-plugin
+      - emptyDir: {}
+        name: cmp-tmp
+      - name: custom-tools
+        emptyDir: {}
   sso:
     provider: dex
     dex:
@@ -114,12 +176,3 @@ spec:
       kinds:
       - TaskRun
       - PipelineRun
-  configManagementPlugins: |
-    - name: argocd-vault-plugin
-      generate:
-        command: ["argocd-vault-plugin"]
-        args: ["-s", "argocd-vault-plugin-credentials", "generate", "./"]
-    - name: argocd-vault-plugin-kustomize
-      generate:
-        command: ["sh", "-c"]
-        args: ["kustomize build . > all.yaml && argocd-vault-plugin -s argocd-vault-plugin-credentials generate all.yaml"]
