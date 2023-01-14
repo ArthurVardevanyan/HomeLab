@@ -3,13 +3,13 @@
   become: true
   user: arthur
   tasks:
-    # - name: Add grafana key
-    #   apt_key:
-    #     url: https://packages.grafana.com/gpg.key
-    #     state: present
+    - name: Add grafana key
+      apt_key:
+        url: https://apt.grafana.com/gpg.key
+        state: present
     - name: Add grafana Repo
       apt_repository:
-        repo: deb https://packages.grafana.com/enterprise/deb stable main
+        repo: deb https://apt.grafana.com stable main
         state: present
         update_cache: True
         filename: grafana

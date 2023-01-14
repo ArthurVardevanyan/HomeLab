@@ -19,37 +19,37 @@ spec:
       name: redhat-marketplace
     - disabled: false
       name: community-operators
----
-apiVersion: operators.coreos.com/v1alpha1
-kind: CatalogSource
-metadata:
-  name: operator-hub
-  namespace: openshift-marketplace
-  labels:
-    app.kubernetes.io/instance: okd-configuration
-spec:
-  displayName: OperatorHub.io
-  image: "quay.io/operatorhubio/catalog:latest"
-  publisher: OperatorHub.io
-  sourceType: grpc
-  priority: -500
-  updateStrategy:
-    registryPoll:
-      interval: 120m0s
-  grpcPodConfig:
-    nodeSelector:
-      kubernetes.io/os: linux
-      node-role.kubernetes.io/master: ""
-    priorityClassName: system-cluster-critical
-    tolerations:
-      - effect: NoSchedule
-        key: node-role.kubernetes.io/master
-        operator: Exists
-      - effect: NoExecute
-        key: node.kubernetes.io/unreachable
-        operator: Exists
-        tolerationSeconds: 120
-      - effect: NoExecute
-        key: node.kubernetes.io/not-ready
-        operator: Exists
-        tolerationSeconds: 120
+# ---
+# apiVersion: operators.coreos.com/v1alpha1
+# kind: CatalogSource
+# metadata:
+#   name: operator-hub
+#   namespace: openshift-marketplace
+#   labels:
+#     app.kubernetes.io/instance: okd-configuration
+# spec:
+#   displayName: OperatorHub.io
+#   image: "quay.io/operatorhubio/catalog:latest"
+#   publisher: OperatorHub.io
+#   sourceType: grpc
+#   priority: -500
+#   updateStrategy:
+#     registryPoll:
+#       interval: 120m0s
+#   grpcPodConfig:
+#     nodeSelector:
+#       kubernetes.io/os: linux
+#       node-role.kubernetes.io/master: ""
+#     priorityClassName: system-cluster-critical
+#     tolerations:
+#       - effect: NoSchedule
+#         key: node-role.kubernetes.io/master
+#         operator: Exists
+#       - effect: NoExecute
+#         key: node.kubernetes.io/unreachable
+#         operator: Exists
+#         tolerationSeconds: 120
+#       - effect: NoExecute
+#         key: node.kubernetes.io/not-ready
+#         operator: Exists
+#         tolerationSeconds: 120
