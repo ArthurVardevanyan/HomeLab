@@ -45,10 +45,10 @@ spec:
     policy: |
       g, system:cluster-admins, role:admin
       g, cluster-admins, role:admin
-  version: v2.5.6
+  version: v2.5.7
   repo:
     replicas: 2
-    version: v2.5.6
+    version: v2.5.7
     mountsatoken: true
     serviceaccount: default
     resources:
@@ -60,6 +60,7 @@ spec:
         memory: 150Mi
     initContainers:
       - name: download-tools
+        imagePullPolicy: Always
         image: registry.access.redhat.com/ubi9
         env:
           - name: AVP_VERSION
@@ -83,6 +84,7 @@ spec:
       - name: avp-kustomize
         command: [/var/run/argocd/argocd-cmp-server]
         image: registry.access.redhat.com/ubi9
+        imagePullPolicy: Always
         resources:
           limits:
             cpu: "1"
