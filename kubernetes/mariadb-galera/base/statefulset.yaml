@@ -26,16 +26,12 @@ spec:
       automountServiceAccountToken: false
       affinity:
         podAntiAffinity:
-          preferredDuringSchedulingIgnoredDuringExecution:
-            - podAffinityTerm:
-                labelSelector:
-                  matchLabels:
-                    app.kubernetes.io/name: mariadb-galera
-                    app.kubernetes.io/instance: mariadb-galera
-                namespaces:
-                  - mariadb-galera
-                topologyKey: kubernetes.io/hostname
-              weight: 1
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - labelSelector:
+                matchLabels:
+                  app.kubernetes.io/instance: mariadb-galera
+                  app.kubernetes.io/name: mariadb-galera
+              topologyKey: kubernetes.io/hostname
       containers:
         - name: "mariadb-galera"
           image: docker.io/bitnami/mariadb-galera:10.10.2-debian-11-r11
