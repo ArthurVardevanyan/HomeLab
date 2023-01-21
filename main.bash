@@ -922,7 +922,7 @@ install_okd() {
   echo -e "\n\n${BLUE}Download Dependencies:${NC}"
   # Download openshift-install and openshift-client
   wget "$(curl https://api.github.com/repos/openshift/okd/releases/latest -L | grep openshift-install-linux | grep browser_download_url | cut -d\" -f4)" -P ${OKD}/
-  wget "$(curl https://api.github.com/repos/openshift/okd/releases/latest -L | grep openshift-client-linux | grep browser_download_url | cut -d\" -f4)" -P ${OKD}/
+  wget "$(curl https://api.github.com/repos/openshift/okd/releases/latest -L | grep openshift-client-linux | grep -v arm | grep browser_download_url | cut -d\" -f4)" -P ${OKD}/
   tar xvzf ${OKD}/openshift-install-linux* -C ${OKD}
   tar xvzf ${OKD}/openshift-client-linux* -C ${OKD}
 
