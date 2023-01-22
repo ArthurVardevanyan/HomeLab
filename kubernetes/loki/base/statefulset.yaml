@@ -37,11 +37,11 @@ spec:
             - "-config.file=/etc/loki/loki.yaml"
           resources:
             requests:
-              ephemeral-storage: "250Mi"
+              ephemeral-storage: "256Mi"
               memory: "5Gi"
               cpu: "250m"
             limits:
-              ephemeral-storage: "250Mi"
+              ephemeral-storage: "256Mi"
               memory: "10Gi"
               cpu: "750m"
           volumeMounts:
@@ -51,6 +51,8 @@ spec:
               mountPath: /data
             - name: cache
               mountPath: /tmp
+            - name: index
+              mountPath: /index
           ports:
             - name: http-metrics
               containerPort: 3100
@@ -77,10 +79,11 @@ spec:
             # runAsGroup: 10001
             # runAsUser: 10001
             runAsNonRoot: true
+            privileged: false
             readOnlyRootFilesystem: true
             allowPrivilegeEscalation: false
-            # seccompProfile:
-            #   type: RuntimeDefault
+            seccompProfile:
+              type: RuntimeDefault
             capabilities:
               drop:
                 - all
@@ -94,4 +97,7 @@ spec:
             claimName: loki-pvc
         - name: cache
           emptyDir:
-            sizeLimit: 250Mi
+            sizeLimit: 128Mi
+        - name: index
+          emptyDir:
+            sizeLimit: 128Mi

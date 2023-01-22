@@ -143,7 +143,7 @@ end
 | pfSense    | Hp t730     | RX-427BB | 4   | 4G  | 16G SSD               | N/A            |
 | Bare Metal | Hp t620     | GX-415GA | 4   | 6G  | 16G SSD & 16G USB     | N/A            |
 | kvm-1      | N/A         | R7-5700G | 16  | 96G | 1.5 TB NVME, .5TB SSD | N/A            |
-| kvm-2      | N/A         | R7-5700G | 16  | 64G | 1.5 TB NVME, .5TB SSD | N/A            |
+| kvm-2      | N/A         | R7-5700G | 16  | 96G | 1.5 TB NVME, .5TB SSD | N/A            |
 | TrueNas    | Hp ProDesk  | i5-6600  | 4   | 32G | 120G SSD Boot Mirror  | 2T HDD, 1T SSD |
 | Spare      | Hp p7-1226s | i3-2130  | 4   | 8G  | 240G SSD              | N/A            |
 
@@ -164,14 +164,14 @@ end
 | NAME     | ROLES          | Machine | vCPU | Mem   | Storage |
 | -------- | -------------- | ------- | ---- | ----- | ------- |
 | server-1 | cp,etcd,master | kvm-1   | 4    | 15.5G | N/A     |
-| server-2 | cp,etcd,master | kvm-2   | 4    | 13.5G | N/A     |
+| server-2 | cp,etcd,master | kvm-2   | 4    | 22G   | N/A     |
 | server-3 | cp,etcd,master | kvm-1   | 4    | 15.5G | N/A     |
 | worker-1 | worker         | kvm-1   | 4    | 20G   | LH NVME |
-| worker-2 | worker         | kvm-2   | 4    | 15.5G | LH NVME |
+| worker-2 | worker         | kvm-2   | 4    | 24G   | LH NVME |
 | worker-3 | worker         | kvm-1   | 4    | 20G   | LH NVME |
-| worker-4 | worker         | kvm-2   | 4    | 15.5G | LH NVME |
+| worker-4 | worker         | kvm-2   | 4    | 24G   | LH NVME |
 | worker-5 | worker         | kvm-1   | 4    | 20G   | LH NVME |
-| worker-6 | worker         | kvm-2   | 4    | 15.5G | LH NVME |
+| worker-6 | worker         | kvm-2   | 4    | 24G   | LH NVME |
 
 #### OKD Longhorn Secondary Disk Setup
 

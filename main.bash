@@ -98,7 +98,7 @@ stateful_workload_start() {
 
   kubectl patch -n bitwarden statefulset/bitwarden --type='json' -p='[{"op": "replace", "path": "/spec/replicas", "value": 1}]'
   kubectl patch -n gitea statefulset/gitea --type='json' -p='[{"op": "replace", "path": "/spec/replicas", "value": 1}]'
-  kubectl patch -n grafana deployment/grafana --type='json' -p='[{"op": "replace", "path": "/spec/replicas", "value": 1}]'
+  kubectl patch -n grafana deployment/grafana --type='json' -p='[{"op": "replace", "path": "/spec/replicas", "value": 2}]'
   kubectl patch -n heimdall statefulset/heimdall --type='json' -p='[{"op": "replace", "path": "/spec/replicas", "value": 1}]'
   kubectl patch -n homeassistant statefulset/homeassistant --type='json' -p='[{"op": "replace", "path": "/spec/replicas", "value": 1}]'
   kubectl patch -n influxdb statefulset/influxdb --type='json' -p='[{"op": "replace", "path": "/spec/replicas", "value": 1}]'
@@ -111,8 +111,8 @@ stateful_workload_start() {
   kubectl patch -n vault statefulset/vault --type='json' -p='[{"op": "replace", "path": "/spec/replicas", "value": 1}]'
 
   kubectl scale --replicas=1 -n minio deployment/minio-quay
-  kubectl scale --replicas=1 -n quay deployment/quay-quay-app
-  kubectl scale --replicas=1 -n quay deployment/quay-clair-app
+  kubectl scale --replicas=2 -n quay deployment/quay-quay-app
+  kubectl scale --replicas=2 -n quay deployment/quay-clair-app
   kubectl scale --replicas=1 -n gitea statefulset/gitea
   kubectl scale --replicas=1 -n postgres deployment/pgo
   kubectl scale --replicas=1 -n keycloak deployment/keycloak-operator
