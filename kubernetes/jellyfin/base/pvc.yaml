@@ -1,0 +1,123 @@
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: jellyfin-config-pvc
+  namespace: jellyfin
+  labels:
+    app.kubernetes.io/instance: jellyfin
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 3Gi
+  volumeName: jellyfin-config-pv
+  storageClassName: longhorn-static
+  volumeMode: Filesystem
+---
+kind: PersistentVolume
+apiVersion: v1
+metadata:
+  name: jellyfin-config-pv
+  labels:
+    app.kubernetes.io/instance: jellyfin
+spec:
+  capacity:
+    storage: 3Gi
+  csi:
+    driver: driver.longhorn.io
+    volumeHandle: jellyfin-config
+    fsType: ext4
+    volumeAttributes:
+      numberOfReplicas: "2"
+  accessModes:
+    - ReadWriteOnce
+  claimRef:
+    kind: PersistentVolumeClaim
+    name: jellyfin-config-pvc
+    namespace: jellyfin
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: longhorn-static
+  volumeMode: Filesystem
+---
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: jellyfin-cache-pvc
+  namespace: jellyfin
+  labels:
+    app.kubernetes.io/instance: jellyfin
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 5Gi
+  volumeName: jellyfin-cache-pv
+  storageClassName: longhorn-static
+  volumeMode: Filesystem
+---
+kind: PersistentVolume
+apiVersion: v1
+metadata:
+  name: jellyfin-cache-pv
+  labels:
+    app.kubernetes.io/instance: jellyfin
+spec:
+  capacity:
+    storage: 5Gi
+  csi:
+    driver: driver.longhorn.io
+    volumeHandle: jellyfin-cache
+    fsType: ext4
+    volumeAttributes:
+      numberOfReplicas: "2"
+  accessModes:
+    - ReadWriteOnce
+  claimRef:
+    kind: PersistentVolumeClaim
+    name: jellyfin-cache-pvc
+    namespace: jellyfin
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: longhorn-static
+  volumeMode: Filesystem
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  namespace: jellyfin
+  name: jellyfin-media
+  labels:
+    app.kubernetes.io/instance: jellyfin
+    type: local
+spec:
+  storageClassName: nfs
+  capacity:
+    storage: 750G
+  accessModes:
+    - ReadWriteOnce
+  mountOptions:
+    - hard
+    - nfsvers=4.1
+  nfs:
+    path: /mnt/storage/File_Storage/Nextcloud
+    server: 10.0.0.3
+  claimRef:
+    name: jellyfin-media
+    namespace: jellyfin
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  namespace: jellyfin
+  name: jellyfin-media
+  labels:
+    app.kubernetes.io/instance: jellyfin
+spec:
+  storageClassName: nfs
+  volumeName: jellyfin-media
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 750G

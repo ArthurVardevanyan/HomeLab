@@ -1,0 +1,22 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: jellyfin
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+  labels:
+    app.kubernetes.io/instance: argocd
+spec:
+  destination:
+    namespace: jellyfin
+    server: https://kubernetes.default.svc
+  project: default
+  source:
+    path: kubernetes/jellyfin/overlays/okd
+    repoURL: https://git.<path:secret/data/homelab/domain#url>/ArthurVardevanyan/HomeLab
+    targetRevision: HEAD
+  syncPolicy:
+    syncOptions:
+      - CreateNamespace=true
