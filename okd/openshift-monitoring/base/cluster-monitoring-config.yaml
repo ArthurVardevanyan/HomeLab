@@ -25,6 +25,7 @@ data:
            requests:
              storage: 40Gi
     alertmanagerMain:
+      enableUserAlertmanagerConfig: false
       resources:
         requests:
           cpu: 10m
@@ -57,6 +58,9 @@ metadata:
     app.kubernetes.io/instance: openshift-monitoring
 data:
   config.yaml: |
+    alertmanager:
+      enabled: true
+      enableAlertmanagerConfig: true
     prometheus:
       retention: 26d
       resources:
