@@ -1,10 +1,10 @@
 export HOME=/home/arthur
 export NODE=worker-2
 export VCPUS=4
-export RAM_MB=24576
+export RAM_MB=24064
 export IMAGE="${HOME}/vm/okd/${NODE}.raw"
 export IGNITION_CONFIG="${HOME}/vm/okd/worker.ign"
-export SIZE="72G"
+export SIZE="64G"
 export MAC="10:00:00:00:01:12"
 
 STORAGE_PATH="${HOME}/vm/okd/${NODE}_storage.raw"

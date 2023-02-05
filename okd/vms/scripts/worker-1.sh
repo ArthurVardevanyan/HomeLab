@@ -4,7 +4,7 @@ export VCPUS=4
 export RAM_MB=20480
 export IMAGE="${HOME}/vm/okd/${NODE}.raw"
 export IGNITION_CONFIG="${HOME}/vm/okd/worker.ign"
-export SIZE="72G"
+export SIZE="64G"
 export MAC="10:00:00:00:01:11"
 
 STORAGE_PATH="${HOME}/vm/okd/${NODE}_storage.raw"

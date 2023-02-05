@@ -20,6 +20,7 @@ HomeLab Server/Cluster, Virtual Sandbox Cluster, & Desktop Configuration
   - [KVM Sandbox Terraform](#kvm-sandbox-terraform)
   - [Server](#server)
     - [Kubernetes](#kubernetes)
+      - [KVM Config Dump](#kvm-config-dump)
       - [OKD Longhorn Secondary Disk Setup](#okd-longhorn-secondary-disk-setup)
       - [OKD Upgrade](#okd-upgrade)
       - [OKD Host Disk Expansion](#okd-host-disk-expansion)
@@ -173,6 +174,20 @@ end
 | worker-5 | worker         | kvm-1   | 4    | 20G   | LH NVME |
 | worker-6 | worker         | kvm-2   | 4    | 24G   | LH NVME |
 
+#### KVM Config Dump
+
+```bash
+sudo virsh dumpxml server-1 > server-1.xml
+sudo virsh dumpxml worker-1 > worker-1.xml
+sudo virsh dumpxml worker-3 > worker-3.xml
+sudo virsh dumpxml worker-5 > worker-5.xml
+
+sudo virsh dumpxml server-2 > server-2.xml
+sudo virsh dumpxml worker-2 > worker-2.xml
+sudo virsh dumpxml worker-4 > worker-4.xml
+sudo virsh dumpxml worker-6 > worker-6.xml
+```
+
 #### OKD Longhorn Secondary Disk Setup
 
 ```bash
@@ -199,6 +214,10 @@ bash main.bash stateful_workload_start
 #### OKD Host Disk Expansion
 
 ```bash
+# KVM
+sudo qemu-img resize X.raw +XG
+
+# Node
 # https://access.redhat.com/discussions/6230831#comment-2163981
 sudo su
 growpart /dev/vda 4
