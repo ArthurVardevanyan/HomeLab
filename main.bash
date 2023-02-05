@@ -46,6 +46,7 @@ stateful_workload_stop() {
   kubectl scale --replicas=0 -n minio deployment/minio-quay
   kubectl scale --replicas=0 -n quay deployment/quay-quay-app
   kubectl scale --replicas=0 -n quay deployment/quay-clair-app
+  kubectl scale --replicas=0 -n quay deployment/quay-quay-mirror
   kubectl scale --replicas=0 -n gitea statefulset/gitea
   kubectl scale --replicas=0 -n postgres deployment/pgo
   kubectl scale --replicas=0 -n keycloak deployment/keycloak-operator
@@ -114,6 +115,7 @@ stateful_workload_start() {
   kubectl scale --replicas=1 -n minio deployment/minio-quay
   kubectl scale --replicas=2 -n quay deployment/quay-quay-app
   kubectl scale --replicas=2 -n quay deployment/quay-clair-app
+  kubectl scale --replicas=2 -n quay deployment/quay-quay-mirror
   kubectl scale --replicas=1 -n gitea statefulset/gitea
   kubectl scale --replicas=1 -n postgres deployment/pgo
   kubectl scale --replicas=1 -n keycloak deployment/keycloak-operator

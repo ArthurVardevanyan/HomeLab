@@ -368,35 +368,15 @@ CREATE EXTENSION pg_trgm;
 ## Quay
 
 ```bash
-kubectl scale --replicas=0 deployment.apps/quay-operator-tng -n quay
-kubectl scale --replicas=0 deployment.apps/quay-quay-config-editor -n quay
-```
+kubectl scale --replicas=1 -n quay deployment/quay-operator-tng
 
-```yaml
-# deployment/quay-quay-app
-resources:
-  limits:
-    cpu: 1000m
-    memory: 6Gi
-  requests:
-    cpu: 150m
-    memory: 3Gi
-# deployment/quay-clair-app
-resources:
-  limits:
-    cpu: 500m
-    memory: 2.5Gi
-  requests:
-    cpu: 150m
-    memory: 750Mi
-# deployment/quay-quay-mirror
-resources:
-  limits:
-    cpu: 250m
-    memory: 300Mi
-  requests:
-    cpu: 50m
-    memory: 150Mi
+kubectl scale --replicas=0 -n quay deployment/quay-operator-tng
+kubectl patch -n quay deployment/quay-quay-app --type='json' \
+  -p='[{"op": "replace", "path": "/spec/template/spec/containers/0/resources", "value": {"limits": {"cpu": "1000m","memory": "6Gi"},"requests": {"cpu": "150m","memory": "3Gi"}}}]'
+kubectl patch -n quay deployment/quay-clair-app --type='json' \
+  -p='[{"op": "replace", "path": "/spec/template/spec/containers/0/resources", "value": {"limits": {"cpu": "500m","memory": "2.5Gi"},"requests": {"cpu": "150m","memory": "750Mi"}}}]'
+kubectl patch -n quay deployment/quay-quay-mirror --type='json' \
+  -p='[{"op": "replace", "path": "/spec/template/spec/containers/0/resources", "value": {"limits": {"cpu": "250m","memory": "300Mi"},"requests": {"cpu": "50m","memory": "150Mi"}}}]'
 ```
 
 ## Tekton
