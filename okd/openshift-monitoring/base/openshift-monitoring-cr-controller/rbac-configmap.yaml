@@ -1,0 +1,64 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: openshift-monitoring-cr-manager-role-config-map
+  labels:
+    app.kubernetes.io/instance: openshift-monitoring
+rules:
+  - apiGroups:
+      - ""
+    resourceNames:
+      - cluster-monitoring-config
+      - user-workload-monitoring-config
+    resources:
+      - configmaps
+    verbs:
+      - create
+      - delete
+      - get
+      - list
+      - patch
+      - update
+      - watch
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  labels:
+    app.kubernetes.io/component: rbac
+    app.kubernetes.io/created-by: openshift-monitoring-cr-controller
+    app.kubernetes.io/instance: openshift-monitoring
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/name: clusterrolebinding
+    app.kubernetes.io/part-of: openshift-monitoring-cr-controller
+  name: openshift-monitoring-cr-manager-rolebinding-cluster-config-map
+  namespace: openshift-monitoring
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: openshift-monitoring-cr-manager-role-config-map
+subjects:
+  - kind: ServiceAccount
+    name: openshift-monitoring-cr-controller-manager
+    namespace: openshift-monitoring
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  labels:
+    app.kubernetes.io/component: rbac
+    app.kubernetes.io/created-by: openshift-monitoring-cr-controller
+    app.kubernetes.io/instance: openshift-monitoring
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/name: clusterrolebinding
+    app.kubernetes.io/part-of: openshift-monitoring-cr-controller
+  name: openshift-monitoring-cr-manager-rolebinding-user-config-map
+  namespace: openshift-user-workload-monitoring
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: openshift-monitoring-cr-manager-role-config-map
+subjects:
+  - kind: ServiceAccount
+    name: openshift-monitoring-cr-controller-manager
+    namespace: openshift-monitoring

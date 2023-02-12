@@ -1,0 +1,158 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  labels:
+    app.kubernetes.io/component: rbac
+    app.kubernetes.io/created-by: openshift-monitoring-cr-controller
+    app.kubernetes.io/instance: openshift-monitoring
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/name: serviceaccount
+    app.kubernetes.io/part-of: openshift-monitoring-cr-controller
+  name: openshift-monitoring-cr-controller-manager
+  namespace: openshift-monitoring
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  labels:
+    app.kubernetes.io/component: rbac
+    app.kubernetes.io/created-by: openshift-monitoring-cr-controller
+    app.kubernetes.io/instance: openshift-monitoring
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/name: role
+    app.kubernetes.io/part-of: openshift-monitoring-cr-controller
+  name: openshift-monitoring-cr-leader-election-role
+  namespace: openshift-monitoring
+rules:
+  - apiGroups:
+      - ""
+    resources:
+      - configmaps
+    verbs:
+      - get
+      - list
+      - watch
+      - create
+      - update
+      - patch
+      - delete
+  - apiGroups:
+      - coordination.k8s.io
+    resources:
+      - leases
+    verbs:
+      - get
+      - list
+      - watch
+      - create
+      - update
+      - patch
+      - delete
+  - apiGroups:
+      - ""
+    resources:
+      - events
+    verbs:
+      - create
+      - patch
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: openshift-monitoring-cr-manager-role
+  labels:
+    app.kubernetes.io/instance: openshift-monitoring
+rules:
+  - apiGroups:
+      - monitoring.arthurvardevanyan.com
+    resources:
+      - clusters
+    verbs:
+      - create
+      - delete
+      - get
+      - list
+      - patch
+      - update
+      - watch
+  - apiGroups:
+      - monitoring.arthurvardevanyan.com
+    resources:
+      - clusters/finalizers
+    verbs:
+      - update
+  - apiGroups:
+      - monitoring.arthurvardevanyan.com
+    resources:
+      - clusters/status
+    verbs:
+      - get
+      - patch
+      - update
+  - apiGroups:
+      - monitoring.arthurvardevanyan.com
+    resources:
+      - users
+    verbs:
+      - create
+      - delete
+      - get
+      - list
+      - patch
+      - update
+      - watch
+  - apiGroups:
+      - monitoring.arthurvardevanyan.com
+    resources:
+      - users/finalizers
+    verbs:
+      - update
+  - apiGroups:
+      - monitoring.arthurvardevanyan.com
+    resources:
+      - users/status
+    verbs:
+      - get
+      - patch
+      - update
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  labels:
+    app.kubernetes.io/component: rbac
+    app.kubernetes.io/created-by: openshift-monitoring-cr-controller
+    app.kubernetes.io/instance: openshift-monitoring
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/name: rolebinding
+    app.kubernetes.io/part-of: openshift-monitoring-cr-controller
+  name: openshift-monitoring-cr-leader-election-rolebinding
+  namespace: openshift-monitoring
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: openshift-monitoring-cr-leader-election-role
+subjects:
+  - kind: ServiceAccount
+    name: openshift-monitoring-cr-controller-manager
+    namespace: openshift-monitoring
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  labels:
+    app.kubernetes.io/component: rbac
+    app.kubernetes.io/created-by: openshift-monitoring-cr-controller
+    app.kubernetes.io/instance: openshift-monitoring
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/name: clusterrolebinding
+    app.kubernetes.io/part-of: openshift-monitoring-cr-controller
+  name: openshift-monitoring-cr-manager-rolebinding
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: openshift-monitoring-cr-manager-role
+subjects:
+  - kind: ServiceAccount
+    name: openshift-monitoring-cr-controller-manager
+    namespace: openshift-monitoring

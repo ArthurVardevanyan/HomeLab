@@ -1,0 +1,90 @@
+---
+apiVersion: monitoring.arthurvardevanyan.com/v1beta1
+kind: Cluster
+metadata:
+  name: cluster-monitoring-config
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+  labels:
+    app.kubernetes.io/instance: openshift-monitoring
+spec:
+  enableUserWorkload: true
+  prometheusK8s:
+    retention: 10d
+    resources:
+      requests:
+        cpu: 1
+        memory: 4Gi
+      limits:
+        cpu: 3
+        memory: 8Gi
+    volumeClaimTemplate:
+      spec:
+        storageClassName: longhorn-static
+        volumeMode: Filesystem
+        resources:
+          requests:
+            storage: 40Gi
+  alertmanagerMain:
+    enableUserAlertmanagerConfig: false
+    resources:
+      requests:
+        cpu: 10m
+        memory: 32Mi
+      limits:
+        cpu: 30m
+        memory: 64Mi
+    volumeClaimTemplate:
+      spec:
+        storageClassName: longhorn-static
+        volumeMode: Filesystem
+        resources:
+          requests:
+            storage: 50Mi
+  thanosQuerier:
+    resources:
+      requests:
+        cpu: 50m
+        memory: 128Mi
+      limits:
+        cpu: 350m
+        memory: 768Mi
+---
+apiVersion: monitoring.arthurvardevanyan.com/v1beta1
+kind: User
+metadata:
+  name: user-workload-monitoring-config
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+  labels:
+    app.kubernetes.io/instance: openshift-monitoring
+spec:
+  alertmanager:
+    enabled: true
+    enableAlertmanagerConfig: true
+  prometheus:
+    retention: 26d
+    resources:
+      requests:
+        cpu: 50m
+        memory: 512Mi
+      limits:
+        cpu: 250m
+        memory: 1024Mi
+    volumeClaimTemplate:
+      spec:
+        storageClassName: longhorn-static
+        volumeMode: Filesystem
+        resources:
+          requests:
+            storage: 5Gi
+  thanosRuler:
+    resources:
+      requests:
+        cpu: 10m
+        memory: 64Mi
+      limits:
+        cpu: 50m
+        memory: 256Mi
