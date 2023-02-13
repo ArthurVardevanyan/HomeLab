@@ -13,7 +13,7 @@ metadata:
   name: openshift-monitoring-cr-controller-manager
   namespace: openshift-monitoring
 spec:
-  replicas: 1
+  replicas: 2
   selector:
     matchLabels:
       control-plane: controller-manager
@@ -43,17 +43,19 @@ spec:
             periodSeconds: 10
           resources:
             limits:
-              cpu: 500m
+              cpu: 100m
               memory: 128Mi
             requests:
               cpu: 10m
               memory: 64Mi
           securityContext:
+            runAsNonRoot: true
+            readOnlyRootFilesystem: true
             allowPrivilegeEscalation: false
+            seccompProfile:
+              type: RuntimeDefault
             capabilities:
               drop:
-                - ALL
-      securityContext:
-        runAsNonRoot: true
+                - all
       serviceAccountName: openshift-monitoring-cr-controller-manager
       terminationGracePeriodSeconds: 10
