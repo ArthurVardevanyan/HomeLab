@@ -1,7 +1,7 @@
 kind: PersistentVolume
 apiVersion: v1
 metadata:
-  name: homeassistant-00-2ztd-pgdata
+  name: homeassistant-00-ndpc-pgdata
   annotations:
     argocd.argoproj.io/sync-wave: "1"
   labels:
@@ -11,7 +11,7 @@ spec:
     storage: 10Gi
   csi:
     driver: driver.longhorn.io
-    volumeHandle: homeassistant-00-2ztd-pgdata
+    volumeHandle: homeassistant-00-ndpc-pgdata
     fsType: ext4
     volumeAttributes:
       numberOfReplicas: "2"
@@ -19,7 +19,7 @@ spec:
     - ReadWriteOnce
   claimRef:
     kind: PersistentVolumeClaim
-    name: homeassistant-00-2ztd-pgdata
+    name: homeassistant-00-ndpc-pgdata
     namespace: postgres
   persistentVolumeReclaimPolicy: Retain
   storageClassName: longhorn-static
@@ -28,7 +28,7 @@ spec:
 kind: PersistentVolume
 apiVersion: v1
 metadata:
-  name: homeassistant-00-wnpj-pgdata
+  name: homeassistant-00-jpzn-pgdata
   annotations:
     argocd.argoproj.io/sync-wave: "1"
   labels:
@@ -38,7 +38,7 @@ spec:
     storage: 10Gi
   csi:
     driver: driver.longhorn.io
-    volumeHandle: homeassistant-00-wnpj-pgdata
+    volumeHandle: homeassistant-00-jpzn-pgdata
     fsType: ext4
     volumeAttributes:
       numberOfReplicas: "2"
@@ -46,7 +46,7 @@ spec:
     - ReadWriteOnce
   claimRef:
     kind: PersistentVolumeClaim
-    name: homeassistant-00-wnpj-pgdata
+    name: homeassistant-00-jpzn-pgdata
     namespace: postgres
   persistentVolumeReclaimPolicy: Retain
   storageClassName: longhorn-static
@@ -62,7 +62,7 @@ metadata:
     app.kubernetes.io/instance: postgres
 spec:
   capacity:
-    storage: 20Gi
+    storage: 5Gi
   csi:
     driver: driver.longhorn.io
     volumeHandle: homeassistant-repo1

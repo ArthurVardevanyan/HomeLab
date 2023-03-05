@@ -8,10 +8,14 @@ spec:
   machineConfigPoolSelector:
     matchLabels:
       pools.operator.machineconfiguration.openshift.io/master: ""
+  autoSizingReserved: true
   kubeletConfig:
-    systemReserved:
-      cpu: 250m
-      memory: 512Mi
+    imageMinimumGCAge: 75m
+    imageGCHighThresholdPercent: 75
+    imageGCLowThresholdPercent: 50
+    #systemReserved:
+    # cpu: 250m
+    # memory: 512Mi
 ---
 apiVersion: machineconfiguration.openshift.io/v1
 kind: KubeletConfig
@@ -23,10 +27,11 @@ spec:
   machineConfigPoolSelector:
     matchLabels:
       pools.operator.machineconfiguration.openshift.io/worker: ""
+  autoSizingReserved: true
   kubeletConfig:
     imageMinimumGCAge: 75m
     imageGCHighThresholdPercent: 75
     imageGCLowThresholdPercent: 50
-    systemReserved:
-      cpu: 250m
-      memory: 2Gi
+    # systemReserved:
+    #   cpu: 250m
+    #   memory: 2Gi

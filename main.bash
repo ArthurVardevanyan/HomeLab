@@ -61,8 +61,8 @@ stateful_workload_stop() {
   kubectl scale --replicas=0 -n postgres statefulset/grafana-00-wl5n
   kubectl scale --replicas=0 -n postgres statefulset/grafana-00-zzbs
   kubectl scale --replicas=0 -n postgres statefulset/grafana-repo-host
-  kubectl scale --replicas=0 -n postgres statefulset/homeassistant-00-2ztd
-  kubectl scale --replicas=0 -n postgres statefulset/homeassistant-00-wnpj
+  kubectl scale --replicas=0 -n postgres statefulset/homeassistant-00-ndpc
+  kubectl scale --replicas=0 -n postgres statefulset/homeassistant-00-jpzn
   kubectl scale --replicas=0 -n postgres statefulset/homeassistant-repo-host
   kubectl scale --replicas=0 -n postgres statefulset/keycloak-00-2q9c
   kubectl scale --replicas=0 -n postgres statefulset/keycloak-00-nj82
@@ -130,8 +130,8 @@ stateful_workload_start() {
   kubectl scale --replicas=1 -n postgres statefulset/grafana-00-wl5n
   kubectl scale --replicas=1 -n postgres statefulset/grafana-00-zzbs
   kubectl scale --replicas=1 -n postgres statefulset/grafana-repo-host
-  kubectl scale --replicas=1 -n postgres statefulset/homeassistant-00-2ztd
-  kubectl scale --replicas=1 -n postgres statefulset/homeassistant-00-wnpj
+  kubectl scale --replicas=1 -n postgres statefulset/homeassistant-00-ndpc
+  kubectl scale --replicas=1 -n postgres statefulset/homeassistant-00-jpzn
   kubectl scale --replicas=1 -n postgres statefulset/homeassistant-repo-host
   kubectl scale --replicas=1 -n postgres statefulset/keycloak-00-2q9c
   kubectl scale --replicas=1 -n postgres statefulset/keycloak-00-nj82
