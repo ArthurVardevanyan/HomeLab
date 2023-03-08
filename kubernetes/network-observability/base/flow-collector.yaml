@@ -10,26 +10,36 @@ metadata:
 spec:
   agent:
     ebpf:
-      logLevel: info
+      cacheActiveTimeout: 5s
       cacheMaxFlows: 100000
+      excludeInterfaces:
+        - lo
+      imagePullPolicy: IfNotPresent
+      kafkaBatchSize: 10485760
+      logLevel: info
       resources:
         limits:
           memory: 800Mi
         requests:
           cpu: 100m
           memory: 50Mi
-      sampling: 5 # 0 # Send All Flows, 50 Default
-      imagePullPolicy: IfNotPresent
-      debug: {}
-      excludeInterfaces:
-        - lo
-      kafkaBatchSize: 10485760
-      cacheActiveTimeout: 5s
+      sampling: 0 # 5 # Send All Flows, 50 Default
     type: EBPF
   consolePlugin:
+    autoscaler:
+      maxReplicas: 3
+      metrics:
+        - resource:
+            name: cpu
+            target:
+              averageUtilization: 50
+              type: Utilization
+          type: Resource
+      minReplicas: 2
+      status: DISABLED
+    imagePullPolicy: IfNotPresent
     logLevel: info
     port: 9001
-    register: true
     resources:
       limits:
         memory: 100Mi
@@ -58,39 +68,29 @@ spec:
       - filter:
           dst_kind: Service
         name: Services network
-    imagePullPolicy: IfNotPresent
-    autoscaler:
-      maxReplicas: 3
-      metrics:
-        - resource:
-            name: cpu
-            target:
-              averageUtilization: 50
-              type: Utilization
-          type: Resource
-      minReplicas: 2
-      status: DISABLED
-    replicas: 2
+    register: true
   deploymentModel: DIRECT
+  exporters: []
+  kafka: {}
   loki:
-    timeout: 10s
-    maxRetries: 2
-    maxBackoff: 5s
-    tenantID: netobserv
-    staticLabels:
-      app: netobserv-flowcollector
-    url: "http://loki.loki.svc:3100/"
+    batchSize: 10485760
     batchWait: 1s
-    authToken: DISABLED
+    maxBackoff: 5s
+    maxRetries: 2
     minBackoff: 1s
     tls:
       enable: false
       insecureSkipVerify: true
-    batchSize: 10485760
+    url: "http://loki.loki.svc:3100/"
   namespace: network-observability
   processor:
+    dropUnusedFields: true
+    imagePullPolicy: IfNotPresent
+    kafkaConsumerAutoscaler: null
+    kafkaConsumerBatchSize: 10485760
+    kafkaConsumerQueueCapacity: 1000
+    kafkaConsumerReplicas: 3
     logLevel: info
-    port: 2055
     metrics:
       ignoreTags:
         - egress
@@ -99,6 +99,8 @@ spec:
         port: 9102
         tls:
           type: DISABLED
+    port: 2055
+    profilePort: 6060
     resources:
       limits:
         memory: 200Mi
@@ -106,12 +108,3 @@ spec:
       requests:
         cpu: 100m
         memory: 100Mi
-    profilePort: 6060
-    kafkaConsumerQueueCapacity: 1000
-    imagePullPolicy: IfNotPresent
-    enableKubeProbes: true
-    debug: {}
-    kafkaConsumerReplicas: 3
-    healthPort: 8080
-    dropUnusedFields: true
-    kafkaConsumerBatchSize: 10485760
