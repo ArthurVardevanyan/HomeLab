@@ -5,11 +5,13 @@ metadata:
   namespace: openshift-monitoring
   labels:
     app.kubernetes.io/instance: openshift-monitoring
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
 data:
   config.yaml: |
     enableUserWorkload: true
     prometheusK8s:
-      retention: 10d
+      retention: 14d
       resources:
         requests:
           cpu: 1
@@ -56,13 +58,15 @@ metadata:
   namespace: openshift-user-workload-monitoring
   labels:
     app.kubernetes.io/instance: openshift-monitoring
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
 data:
   config.yaml: |
     alertmanager:
       enabled: true
       enableAlertmanagerConfig: true
     prometheus:
-      retention: 26d
+      retention: 28d
       resources:
         requests:
           cpu: 50m
