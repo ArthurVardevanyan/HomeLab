@@ -1,3 +1,4 @@
+---
 # Source: stackrox-secured-cluster-services/templates/collector.yaml
 apiVersion: apps/v1
 kind: DaemonSet
@@ -8,12 +9,13 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: stackrox
     app.kubernetes.io/part-of: stackrox-secured-cluster-services
-    app.kubernetes.io/version: 3.73.1
-    helm.sh/chart: stackrox-secured-cluster-services-72.1.0
+    app.kubernetes.io/version: 3.74.0
+    helm.sh/chart: stackrox-secured-cluster-services-74.0.0
     service: collector
     app: collector
     auto-upgrade.stackrox.io/component: "sensor"
   annotations:
+    argocd.argoproj.io/sync-wave: "2"
     email: support@stackrox.com
     meta.helm.sh/release-name: stackrox-secured-cluster-services
     meta.helm.sh/release-namespace: stackrox
@@ -35,8 +37,8 @@ spec:
         app.kubernetes.io/managed-by: Helm
         app.kubernetes.io/name: stackrox
         app.kubernetes.io/part-of: stackrox-secured-cluster-services
-        app.kubernetes.io/version: 3.73.1
-        helm.sh/chart: stackrox-secured-cluster-services-72.1.0
+        app.kubernetes.io/version: 3.74.0
+        helm.sh/chart: stackrox-secured-cluster-services-74.0.0
       annotations:
         email: support@stackrox.com
         meta.helm.sh/release-name: stackrox-secured-cluster-services
@@ -48,7 +50,7 @@ spec:
       serviceAccountName: collector
       containers:
         - name: collector
-          image: "quay.io/stackrox-io/collector-slim:3.73.1"
+          image: "quay.io/stackrox-io/collector-slim:3.74.0"
           imagePullPolicy: IfNotPresent
           env:
             - name: COLLECTOR_CONFIG
@@ -108,7 +110,7 @@ spec:
             - name: ROX_ADVERTISED_ENDPOINT
               value: "sensor.stackrox.svc:443"
 
-          image: "quay.io/stackrox-io/main:3.73.1"
+          image: "quay.io/stackrox-io/main:3.74.0"
           imagePullPolicy: IfNotPresent
           name: compliance
           resources:
@@ -136,6 +138,8 @@ spec:
             - mountPath: /run/secrets/stackrox.io/certs/
               name: certs
               readOnly: true
+            - mountPath: /tmp/
+              name: tmp-volume
       volumes:
         - hostPath:
             path: /var/run/docker.sock
@@ -174,4 +178,6 @@ spec:
         - name: etc-ssl
           emptyDir: {}
         - name: etc-pki-volume
+          emptyDir: {}
+        - name: tmp-volume
           emptyDir: {}

@@ -110,6 +110,42 @@ rules:
       - get
       - list
       - watch
+  - apiGroups:
+      - ""
+    resources:
+      - serviceaccounts
+    verbs:
+      - get
+      - list
+      - watch
+  - apiGroups:
+      - dashboard.tekton.dev
+    resources:
+      - extensions
+    verbs:
+      - create
+      - update
+      - delete
+      - patch
+  - apiGroups:
+      - tekton.dev
+    resources:
+      - clustertasks
+    verbs:
+      - create
+      - update
+      - delete
+      - patch
+  - apiGroups:
+      - triggers.tekton.dev
+    resources:
+      - clusterinterceptors
+      - clustertriggerbindings
+    verbs:
+      - create
+      - update
+      - delete
+      - patch
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
@@ -146,8 +182,7 @@ rules:
       - taskruns
       - pipelines
       - pipelineruns
-      - pipelineresources
-      - runs
+      - customruns
     verbs:
       - get
       - list
@@ -156,6 +191,7 @@ rules:
       - triggers.tekton.dev
     resources:
       - eventlisteners
+      - interceptors
       - triggerbindings
       - triggers
       - triggertemplates
@@ -163,6 +199,32 @@ rules:
       - get
       - list
       - watch
+  - apiGroups:
+      - tekton.dev
+    resources:
+      - tasks
+      - taskruns
+      - pipelines
+      - pipelineruns
+      - customruns
+    verbs:
+      - create
+      - update
+      - delete
+      - patch
+  - apiGroups:
+      - triggers.tekton.dev
+    resources:
+      - eventlisteners
+      - interceptors
+      - triggerbindings
+      - triggers
+      - triggertemplates
+    verbs:
+      - create
+      - update
+      - delete
+      - patch
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
@@ -201,7 +263,7 @@ subjects:
 ---
 apiVersion: v1
 data:
-  version: v0.30.0
+  version: v0.33.0
 kind: ConfigMap
 metadata:
   labels:
@@ -219,9 +281,9 @@ metadata:
     app.kubernetes.io/instance: tekton
     app.kubernetes.io/name: dashboard
     app.kubernetes.io/part-of: tekton-dashboard
-    app.kubernetes.io/version: v0.30.0
-    dashboard.tekton.dev/release: v0.30.0
-    version: v0.30.0
+    app.kubernetes.io/version: v0.33.0
+    dashboard.tekton.dev/release: v0.33.0
+    version: v0.33.0
   name: tekton-dashboard
   namespace: openshift-pipelines
 spec:
@@ -245,9 +307,9 @@ metadata:
     app.kubernetes.io/instance: tekton
     app.kubernetes.io/name: dashboard
     app.kubernetes.io/part-of: tekton-dashboard
-    app.kubernetes.io/version: v0.30.0
-    dashboard.tekton.dev/release: v0.30.0
-    version: v0.30.0
+    app.kubernetes.io/version: v0.33.0
+    dashboard.tekton.dev/release: v0.33.0
+    version: v0.33.0
   name: tekton-dashboard
   namespace: openshift-pipelines
 spec:
@@ -266,7 +328,7 @@ spec:
         app.kubernetes.io/instance: tekton
         app.kubernetes.io/name: dashboard
         app.kubernetes.io/part-of: tekton-dashboard
-        app.kubernetes.io/version: v0.30.0
+        app.kubernetes.io/version: v0.33.0
       name: tekton-dashboard
     spec:
       containers:
@@ -275,7 +337,7 @@ spec:
             - --logout-url=
             - --pipelines-namespace=openshift-pipelines
             - --triggers-namespace=openshift-pipelines
-            - --read-only=true
+            - --read-only=false
             - --log-level=info
             - --log-format=json
             - --namespace=
@@ -293,7 +355,7 @@ spec:
               valueFrom:
                 fieldRef:
                   fieldPath: metadata.namespace
-          image: gcr.io/tekton-releases/github.com/tektoncd/dashboard/cmd/dashboard:v0.30.0@sha256:85f7d38086fadb07556052ce873d44861c29ef690f47735f32d7e6a153ca8a92
+          image: gcr.io/tekton-releases/github.com/tektoncd/dashboard/cmd/dashboard:v0.33.0@sha256:02dd3b2f4aa17038991de5032b6da790080a7e663510da673464bba9c74ef900
           livenessProbe:
             httpGet:
               path: /health
@@ -306,16 +368,17 @@ spec:
               path: /readiness
               port: 9097
           securityContext:
-            seccompProfile:
-              type: RuntimeDefault
             allowPrivilegeEscalation: false
             capabilities:
               drop:
                 - ALL
+            runAsGroup: 65532
+            runAsNonRoot: true
+            runAsUser: 65532
+            seccompProfile:
+              type: RuntimeDefault
       nodeSelector:
         kubernetes.io/os: linux
-      securityContext:
-        runAsNonRoot: true
       serviceAccountName: tekton-dashboard
       volumes: []
 ---

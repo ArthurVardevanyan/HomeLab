@@ -1,3 +1,4 @@
+---
 # Source: stackrox-central-services/templates/01-central-13-deployment.yaml
 apiVersion: apps/v1
 kind: Deployment
@@ -10,10 +11,11 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: stackrox
     app.kubernetes.io/part-of: stackrox-central-services
-    app.kubernetes.io/version: 3.73.1
-    helm.sh/chart: stackrox-central-services-72.1.0
+    app.kubernetes.io/version: 3.74.0
+    helm.sh/chart: stackrox-central-services-74.0.0
     app: central
   annotations:
+    argocd.argoproj.io/sync-wave: "2"
     email: support@stackrox.com
     meta.helm.sh/release-name: stackrox-central-services
     meta.helm.sh/release-namespace: stackrox
@@ -36,8 +38,8 @@ spec:
         app.kubernetes.io/managed-by: Helm
         app.kubernetes.io/name: stackrox
         app.kubernetes.io/part-of: stackrox-central-services
-        app.kubernetes.io/version: 3.73.1
-        helm.sh/chart: stackrox-central-services-72.1.0
+        app.kubernetes.io/version: 3.74.0
+        helm.sh/chart: stackrox-central-services-74.0.0
       annotations:
         traffic.sidecar.istio.io/excludeInboundPorts: "8443"
         email: support@stackrox.com
@@ -84,7 +86,7 @@ spec:
         runAsUser: 4000
       containers:
         - name: central
-          image: "quay.io/stackrox-io/main:3.73.1"
+          image: "quay.io/stackrox-io/main:3.74.0"
           command:
             - /stackrox/central-entrypoint.sh
           ports:
@@ -111,11 +113,11 @@ spec:
               valueFrom:
                 fieldRef:
                   fieldPath: metadata.namespace
-            - name: ROX_INIT_TELEMETRY_ENABLED
-              value: "true"
             - name: ROX_OFFLINE_MODE
               value: "false"
             - name: ROX_ENABLE_OPENSHIFT_AUTH
+              value: "true"
+            - name: ROX_OPENSHIFT
               value: "true"
 
           volumeMounts:
@@ -230,15 +232,16 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: stackrox
     app.kubernetes.io/part-of: stackrox-central-services
-    app.kubernetes.io/version: 3.73.1
-    helm.sh/chart: stackrox-central-services-72.1.0
+    app.kubernetes.io/version: 3.74.0
+    helm.sh/chart: stackrox-central-services-74.0.0
   annotations:
+    argocd.argoproj.io/sync-wave: "2"
     email: support@stackrox.com
     meta.helm.sh/release-name: stackrox-central-services
     meta.helm.sh/release-namespace: stackrox
     owner: stackrox
 spec:
-  replicas: 2
+  replicas: 2 #3
   minReadySeconds: 15
   selector:
     matchLabels:
@@ -255,8 +258,8 @@ spec:
         app.kubernetes.io/managed-by: Helm
         app.kubernetes.io/name: stackrox
         app.kubernetes.io/part-of: stackrox-central-services
-        app.kubernetes.io/version: 3.73.1
-        helm.sh/chart: stackrox-central-services-72.1.0
+        app.kubernetes.io/version: 3.74.0
+        helm.sh/chart: stackrox-central-services-74.0.0
       annotations:
         traffic.sidecar.istio.io/excludeInboundPorts: "8080,8443"
         email: support@stackrox.com
@@ -300,7 +303,7 @@ spec:
       containers:
         - name: scanner
 
-          image: "quay.io/stackrox-io/scanner:3.73.1"
+          image: "quay.io/stackrox-io/scanner:3.74.0"
           env:
             - name: POD_NAME
               valueFrom:
@@ -419,9 +422,10 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: stackrox
     app.kubernetes.io/part-of: stackrox-central-services
-    app.kubernetes.io/version: 3.73.1
-    helm.sh/chart: stackrox-central-services-72.1.0
+    app.kubernetes.io/version: 3.74.0
+    helm.sh/chart: stackrox-central-services-74.0.0
   annotations:
+    argocd.argoproj.io/sync-wave: "2"
     email: support@stackrox.com
     meta.helm.sh/release-name: stackrox-central-services
     meta.helm.sh/release-namespace: stackrox
@@ -444,8 +448,8 @@ spec:
         app.kubernetes.io/managed-by: Helm
         app.kubernetes.io/name: stackrox
         app.kubernetes.io/part-of: stackrox-central-services
-        app.kubernetes.io/version: 3.73.1
-        helm.sh/chart: stackrox-central-services-72.1.0
+        app.kubernetes.io/version: 3.74.0
+        helm.sh/chart: stackrox-central-services-74.0.0
       annotations:
         traffic.sidecar.istio.io/excludeInboundPorts: "5432"
         email: support@stackrox.com
@@ -488,10 +492,12 @@ spec:
                     operator: DoesNotExist
       initContainers:
         - name: init-db
-          image: "quay.io/stackrox-io/scanner-db:3.73.1"
+          image: "quay.io/stackrox-io/scanner-db:3.74.0"
           env:
             - name: POSTGRES_PASSWORD_FILE
               value: "/run/secrets/stackrox.io/secrets/password"
+            - name: ROX_SCANNER_DB_INIT
+              value: "true"
           resources:
             limits:
               cpu: 300m
@@ -510,7 +516,7 @@ spec:
               readOnly: true
       containers:
         - name: db
-          image: "quay.io/stackrox-io/scanner-db:3.73.1"
+          image: "quay.io/stackrox-io/scanner-db:3.74.0"
           ports:
             - name: tcp-postgresql
               protocol: TCP

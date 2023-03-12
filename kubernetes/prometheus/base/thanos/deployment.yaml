@@ -16,11 +16,13 @@ spec:
     metadata:
       labels:
         app: thanos-querier
+      annotations:
+        enable.version-checker.io/thanos-querier: "true"
     spec:
       automountServiceAccountToken: false
       containers:
         - name: thanos-querier
-          image: quay.io/thanos/thanos:v0.29.0
+          image: quay.io/thanos/thanos:v0.30.2
           securityContext:
             runAsNonRoot: true
             allowPrivilegeEscalation: false

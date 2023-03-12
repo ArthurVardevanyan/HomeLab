@@ -18,11 +18,13 @@ spec:
       labels:
         app: thanos-store-gateway
         thanos-store-api: "true"
+      annotations:
+        enable.version-checker.io/thanos-store-gateway: "true"
     spec:
       automountServiceAccountToken: false
       containers:
         - name: thanos-store-gateway
-          image: quay.io/thanos/thanos:v0.29.0
+          image: quay.io/thanos/thanos:v0.30.2
           securityContext:
             runAsNonRoot: true
             allowPrivilegeEscalation: false

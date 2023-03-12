@@ -1,3 +1,4 @@
+---
 # Source: stackrox-secured-cluster-services/templates/admission-controller.yaml
 apiVersion: apps/v1
 kind: Deployment
@@ -10,17 +11,18 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: stackrox
     app.kubernetes.io/part-of: stackrox-secured-cluster-services
-    app.kubernetes.io/version: 3.73.1
-    helm.sh/chart: stackrox-secured-cluster-services-72.1.0
+    app.kubernetes.io/version: 3.74.0
+    helm.sh/chart: stackrox-secured-cluster-services-74.0.0
     app: admission-control
     auto-upgrade.stackrox.io/component: "sensor"
   annotations:
+    argocd.argoproj.io/sync-wave: "2"
     email: support@stackrox.com
     meta.helm.sh/release-name: stackrox-secured-cluster-services
     meta.helm.sh/release-namespace: stackrox
     owner: stackrox
 spec:
-  replicas: 1
+  replicas: 1 # 3
   minReadySeconds: 0
   selector:
     matchLabels:
@@ -35,8 +37,8 @@ spec:
         app.kubernetes.io/managed-by: Helm
         app.kubernetes.io/name: stackrox
         app.kubernetes.io/part-of: stackrox-secured-cluster-services
-        app.kubernetes.io/version: 3.73.1
-        helm.sh/chart: stackrox-secured-cluster-services-72.1.0
+        app.kubernetes.io/version: 3.74.0
+        helm.sh/chart: stackrox-secured-cluster-services-74.0.0
       annotations:
         traffic.sidecar.istio.io/excludeInboundPorts: "8443"
         email: support@stackrox.com
@@ -69,12 +71,9 @@ spec:
                 labelSelector:
                   matchLabels:
                     app: admission-control
-      securityContext:
-        runAsUser: 4000
-        fsGroup: 4000
       serviceAccountName: admission-control
       containers:
-        - image: "quay.io/stackrox-io/main:3.73.1"
+        - image: "quay.io/stackrox-io/main:3.74.0"
           imagePullPolicy: IfNotPresent
           name: admission-control
           readinessProbe:
@@ -179,11 +178,12 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: stackrox
     app.kubernetes.io/part-of: stackrox-secured-cluster-services
-    app.kubernetes.io/version: 3.73.1
-    helm.sh/chart: stackrox-secured-cluster-services-72.1.0
+    app.kubernetes.io/version: 3.74.0
+    helm.sh/chart: stackrox-secured-cluster-services-74.0.0
     app: sensor
     auto-upgrade.stackrox.io/component: "sensor"
   annotations:
+    argocd.argoproj.io/sync-wave: "2"
     email: support@stackrox.com
     meta.helm.sh/release-name: stackrox-secured-cluster-services
     meta.helm.sh/release-namespace: stackrox
@@ -205,8 +205,8 @@ spec:
         app.kubernetes.io/managed-by: Helm
         app.kubernetes.io/name: stackrox
         app.kubernetes.io/part-of: stackrox-secured-cluster-services
-        app.kubernetes.io/version: 3.73.1
-        helm.sh/chart: stackrox-secured-cluster-services-72.1.0
+        app.kubernetes.io/version: 3.74.0
+        helm.sh/chart: stackrox-secured-cluster-services-74.0.0
       annotations:
         traffic.sidecar.istio.io/excludeInboundPorts: "8443,9443"
         email: support@stackrox.com
@@ -247,12 +247,9 @@ spec:
                 matchExpressions:
                   - key: node-role.kubernetes.io/control-plane
                     operator: DoesNotExist
-      securityContext:
-        runAsUser: 4000
-        fsGroup: 4000
       serviceAccountName: sensor
       containers:
-        - image: "quay.io/stackrox-io/main:3.73.1"
+        - image: "quay.io/stackrox-io/main:3.74.0"
           imagePullPolicy: IfNotPresent
           name: sensor
           readinessProbe:
@@ -290,8 +287,15 @@ spec:
               valueFrom:
                 fieldRef:
                   fieldPath: metadata.name
+            - name: ROX_CENTRAL_ENDPOINT
+              value: central.stackrox.svc:443
             - name: ROX_ADVERTISED_ENDPOINT
               value: sensor.stackrox.svc:443
+            - name: ROX_OPENSHIFT_API
+              value: "true"
+            - name: ROX_HELM_CLUSTER_CONFIG_FP
+              value: "<path:secret/data/homelab/stackrox/homelab#config-fingerprint>"
+
           volumeMounts:
             - name: varlog
               mountPath: /var/log/stackrox/
