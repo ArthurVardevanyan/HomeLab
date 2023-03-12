@@ -28,7 +28,7 @@ spec:
 kind: PersistentVolume
 apiVersion: v1
 metadata:
-  name: quay-00-wg4m-pgdata
+  name: quay-00-cwbc-pgdata
   annotations:
     argocd.argoproj.io/sync-wave: "1"
   labels:
@@ -38,7 +38,7 @@ spec:
     storage: 1Gi
   csi:
     driver: driver.longhorn.io
-    volumeHandle: quay-00-wg4m-pgdata
+    volumeHandle: quay-00-cwbc-pgdata
     fsType: ext4
     volumeAttributes:
       numberOfReplicas: "2"
@@ -46,7 +46,7 @@ spec:
     - ReadWriteOnce
   claimRef:
     kind: PersistentVolumeClaim
-    name: quay-00-wg4m-pgdata
+    name: quay-00-cwbc-pgdata
     namespace: postgres
   persistentVolumeReclaimPolicy: Retain
   storageClassName: longhorn-static

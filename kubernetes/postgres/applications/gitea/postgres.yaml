@@ -118,4 +118,29 @@ spec:
   #         memory: 128Mi
   openshift: true
   port: 5432
-  postgresVersion: 14
+  postgresVersion: 15
+# ---
+# apiVersion: postgres-operator.crunchydata.com/v1beta1
+# kind: PGUpgrade
+# metadata:
+#   name: gitea-upgrade
+#   namespace: postgres
+# spec:
+#   fromPostgresVersion: 14
+#   postgresClusterName: gitea
+#   toPostgresVersion: 15
+
+# kubectl delete ResourceQuota -n postgres --all
+# kubectl delete LimitRange -n postgres --all
+
+# kubectl patch postgrescluster gitea -n postgres --type=merge \
+#     -p '{"spec":{"shutdown":true}}'
+
+# kubectl annotate postgrescluster gitea -n postgres  \
+#     postgres-operator.crunchydata.com/allow-upgrade=gitea-upgrade
+
+# kubectl patch postgrescluster gitea -n postgres --type "json" -p \
+# '[{"op":"replace","path":"/spec/postgresVersion","value":15}]'
+
+# kubectl patch postgrescluster gitea -n postgres --type=merge \
+#     -p '{"spec":{"shutdown":false}}'

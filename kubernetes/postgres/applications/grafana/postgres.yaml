@@ -119,4 +119,29 @@ spec:
   #         memory: 128Mi
   openshift: true
   port: 5432
-  postgresVersion: 14
+  postgresVersion: 15
+# ---
+# apiVersion: postgres-operator.crunchydata.com/v1beta1
+# kind: PGUpgrade
+# metadata:
+#   name: grafana-upgrade
+#   namespace: postgres
+# spec:
+#   fromPostgresVersion: 14
+#   postgresClusterName: grafana
+#   toPostgresVersion: 15
+
+# kubectl delete ResourceQuota -n postgres --all
+# kubectl delete LimitRange -n postgres --all
+
+# kubectl patch postgrescluster grafana -n postgres --type=merge \
+#     -p '{"spec":{"shutdown":true}}'
+
+# kubectl annotate postgrescluster grafana -n postgres  \
+#     postgres-operator.crunchydata.com/allow-upgrade=grafana-upgrade
+
+# kubectl patch postgrescluster grafana -n postgres --type "json" -p \
+# '[{"op":"replace","path":"/spec/postgresVersion","value":15}]'
+
+# kubectl patch postgrescluster grafana -n postgres --type=merge \
+#     -p '{"spec":{"shutdown":false}}'
