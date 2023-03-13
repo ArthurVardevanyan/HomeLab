@@ -991,8 +991,8 @@ install_okd() {
   ${OKD}/oc apply -f "${HOMELAB}/okd/okd-configuration/operator-hub.yaml"
   ${OKD}/oc apply -f "${HOMELAB}/okd/okd-configuration/operators"
 
-  # https://github.com/openshift/okd/issues/963#issuecomment-1073120091
-  ${OKD}/oc delete mc 99-master-okd-extensions 99-okd-master-disable-mitigations
+  # # https://github.com/openshift/okd/issues/963#issuecomment-1073120091
+  # ${OKD}/oc delete mc 99-master-okd-extensions 99-okd-master-disable-mitigations
 
   echo -e "\n\n${BLUE}Install Complete:${NC}"
   echo "export KUBECONFIG=${OKD}/okd/auth/kubeconfig"
