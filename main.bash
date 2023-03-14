@@ -871,8 +871,8 @@ install_okd() {
   export OKD=/mnt/storage/okd
 
   export PREFIX=""
-  export MASTERS=3
-  export WORKERS=1
+  export TF_VAR_master_count=3
+  export TF_VAR_worker_count=3
 
   if [[ $(/usr/bin/id -u) -ne 0 ]]; then
     echo "Not running as root"
@@ -940,8 +940,8 @@ install_okd() {
   sed -i "s/<SSH>/${SSH}/g" "${OKD}/okd/install-config.yaml"
   sed -i "s/<URL>/${URL}/g" "${OKD}/okd/install-config.yaml"
   sed -i "s/<REGISTRY>/${REGISTRY}/g" "${OKD}/okd/install-config.yaml"
-  sed -i "s/<MASTERS>/${MASTERS}/g" "${OKD}/okd/install-config.yaml"
-  sed -i "s/<WORKERS>/${WORKERS}/g" "${OKD}/okd/install-config.yaml"
+  sed -i "s/<MASTERS>/${TF_VAR_master_count}/g" "${OKD}/okd/install-config.yaml"
+  sed -i "s/<WORKERS>/${TF_VAR_worker_count}/g" "${OKD}/okd/install-config.yaml"
   cp "${OKD}/okd/install-config.yaml" "${OKD}/okd/install-config_backup.yaml"
 
   # Create the ignition files
