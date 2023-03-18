@@ -1,10 +1,11 @@
+# Source: longhorn/templates/deployment-webhook.yaml
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   labels:
     app.kubernetes.io/name: longhorn
     app.kubernetes.io/instance: longhorn
-    app.kubernetes.io/version: v1.4.0
+    app.kubernetes.io/version: v1.4.1
     app: longhorn-conversion-webhook
   name: longhorn-conversion-webhook
   namespace: longhorn-system
@@ -18,7 +19,7 @@ spec:
       labels:
         app.kubernetes.io/name: longhorn
         app.kubernetes.io/instance: longhorn
-        app.kubernetes.io/version: v1.4.0
+        app.kubernetes.io/version: v1.4.1
         app: longhorn-conversion-webhook
     spec:
       affinity:
@@ -35,7 +36,7 @@ spec:
                 topologyKey: kubernetes.io/hostname
       containers:
         - name: longhorn-conversion-webhook
-          image: longhornio/longhorn-manager:v1.4.0
+          image: longhornio/longhorn-manager:v1.4.1
           resources:
             requests:
               cpu: 25m
@@ -65,13 +66,14 @@ spec:
       serviceAccountName: longhorn-service-account
       automountServiceAccountToken: true
 ---
+# Source: longhorn/templates/deployment-webhook.yaml
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   labels:
     app.kubernetes.io/name: longhorn
     app.kubernetes.io/instance: longhorn
-    app.kubernetes.io/version: v1.4.0
+    app.kubernetes.io/version: v1.4.1
     app: longhorn-admission-webhook
   name: longhorn-admission-webhook
   namespace: longhorn-system
@@ -85,7 +87,7 @@ spec:
       labels:
         app.kubernetes.io/name: longhorn
         app.kubernetes.io/instance: longhorn
-        app.kubernetes.io/version: v1.4.0
+        app.kubernetes.io/version: v1.4.1
         app: longhorn-admission-webhook
     spec:
       affinity:
@@ -102,7 +104,7 @@ spec:
                 topologyKey: kubernetes.io/hostname
       initContainers:
         - name: wait-longhorn-conversion-webhook
-          image: longhornio/longhorn-manager:v1.4.0
+          image: longhornio/longhorn-manager:v1.4.1
           command:
             [
               "sh",
@@ -114,7 +116,7 @@ spec:
             runAsUser: 2000
       containers:
         - name: longhorn-admission-webhook
-          image: longhornio/longhorn-manager:v1.4.0
+          image: longhornio/longhorn-manager:v1.4.1
           resources:
             requests:
               cpu: 25m

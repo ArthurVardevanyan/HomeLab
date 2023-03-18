@@ -1,10 +1,11 @@
+# Source: longhorn/templates/daemonset-sa.yaml
 apiVersion: v1
 kind: Service
 metadata:
   labels:
     app.kubernetes.io/name: longhorn
     app.kubernetes.io/instance: longhorn
-    app.kubernetes.io/version: v1.4.0
+    app.kubernetes.io/version: v1.4.1
     app: longhorn-manager
   name: longhorn-backend
   namespace: longhorn-system
@@ -18,13 +19,14 @@ spec:
       port: 9500
       targetPort: manager
 ---
+# Source: longhorn/templates/deployment-ui.yaml
 kind: Service
 apiVersion: v1
 metadata:
   labels:
     app.kubernetes.io/name: longhorn
     app.kubernetes.io/instance: longhorn
-    app.kubernetes.io/version: v1.4.0
+    app.kubernetes.io/version: v1.4.1
     app: longhorn-ui
   name: longhorn-frontend
   namespace: longhorn-system
@@ -36,6 +38,7 @@ spec:
     - name: http
       port: 80
       targetPort: http
+      #nodePort: null
 ---
 apiVersion: v1
 kind: Service
@@ -57,13 +60,14 @@ spec:
   selector:
     app: longhorn-ui
 ---
+# Source: longhorn/templates/services.yaml
 apiVersion: v1
 kind: Service
 metadata:
   labels:
     app.kubernetes.io/name: longhorn
     app.kubernetes.io/instance: longhorn
-    app.kubernetes.io/version: v1.4.0
+    app.kubernetes.io/version: v1.4.1
     app: longhorn-conversion-webhook
   name: longhorn-conversion-webhook
   namespace: longhorn-system
@@ -77,13 +81,14 @@ spec:
       port: 9443
       targetPort: conversion-wh
 ---
+# Source: longhorn/templates/services.yaml
 apiVersion: v1
 kind: Service
 metadata:
   labels:
     app.kubernetes.io/name: longhorn
     app.kubernetes.io/instance: longhorn
-    app.kubernetes.io/version: v1.4.0
+    app.kubernetes.io/version: v1.4.1
     app: longhorn-admission-webhook
   name: longhorn-admission-webhook
   namespace: longhorn-system
@@ -97,13 +102,14 @@ spec:
       port: 9443
       targetPort: admission-wh
 ---
+# Source: longhorn/templates/services.yaml
 apiVersion: v1
 kind: Service
 metadata:
   labels:
     app.kubernetes.io/name: longhorn
     app.kubernetes.io/instance: longhorn
-    app.kubernetes.io/version: v1.4.0
+    app.kubernetes.io/version: v1.4.1
     app: longhorn-recovery-backend
   name: longhorn-recovery-backend
   namespace: longhorn-system
@@ -117,13 +123,14 @@ spec:
       port: 9600
       targetPort: recov-backend
 ---
+# Source: longhorn/templates/services.yaml
 apiVersion: v1
 kind: Service
 metadata:
   labels:
     app.kubernetes.io/name: longhorn
     app.kubernetes.io/instance: longhorn
-    app.kubernetes.io/version: v1.4.0
+    app.kubernetes.io/version: v1.4.1
   name: longhorn-engine-manager
   namespace: longhorn-system
 spec:
@@ -132,13 +139,14 @@ spec:
     longhorn.io/component: instance-manager
     longhorn.io/instance-manager-type: engine
 ---
+# Source: longhorn/templates/services.yaml
 apiVersion: v1
 kind: Service
 metadata:
   labels:
     app.kubernetes.io/name: longhorn
     app.kubernetes.io/instance: longhorn
-    app.kubernetes.io/version: v1.4.0
+    app.kubernetes.io/version: v1.4.1
   name: longhorn-replica-manager
   namespace: longhorn-system
 spec:

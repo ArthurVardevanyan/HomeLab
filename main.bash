@@ -27,21 +27,28 @@ stateful_workload_stop() {
   kubectl patch cronjobs -n nextcloud nextcloud-cron -p '{"spec" : {"suspend" : true }}'
   kubectl patch cronjobs -n mariadb-galera mysqldump-cron -p '{"spec" : {"suspend" : true }}'
 
-  kubectl delete configmap -n openshift-monitoring cluster-monitoring-config --ignore-not-found
+  kubectl scale --replicas=0 -n openshift-monitoring deployment/cluster-monitoring-operator
+  kubectl scale --replicas=0 -n openshift-monitoring deployment/prometheus-operator
+  kubectl scale --replicas=0 -n openshift-monitoring statefulset/alertmanager-main
+  kubectl scale --replicas=0 -n openshift-monitoring statefulset/prometheus-k8s
+  kubectl scale --replicas=0 -n openshift-user-workload-monitoring deployment/prometheus-operator
+  kubectl scale --replicas=0 -n openshift-user-workload-monitoring statefulset/alertmanager-user-workload
+  kubectl scale --replicas=0 -n openshift-user-workload-monitoring statefulset/prometheus-user-workload
+  kubectl scale --replicas=0 -n openshift-user-workload-monitoring statefulset/thanos-ruler-user-workload
 
-  kubectl patch -n bitwarden statefulset/bitwarden --type='json' -p='[{"op": "replace", "path": "/spec/replicas", "value": 0}]'
-  kubectl patch -n gitea statefulset/gitea --type='json' -p='[{"op": "replace", "path": "/spec/replicas", "value": 0}]'
-  kubectl patch -n grafana deployment/grafana --type='json' -p='[{"op": "replace", "path": "/spec/replicas", "value": 0}]'
-  kubectl patch -n heimdall statefulset/heimdall --type='json' -p='[{"op": "replace", "path": "/spec/replicas", "value": 0}]'
-  kubectl patch -n homeassistant statefulset/homeassistant --type='json' -p='[{"op": "replace", "path": "/spec/replicas", "value": 0}]'
-  kubectl patch -n influxdb statefulset/influxdb --type='json' -p='[{"op": "replace", "path": "/spec/replicas", "value": 0}]'
-  kubectl patch -n loki statefulset/loki --type='json' -p='[{"op": "replace", "path": "/spec/replicas", "value": 0}]'
-  kubectl patch -n mariadb-galera statefulset/mariadb-galera --type='json' -p='[{"op": "replace", "path": "/spec/replicas", "value": 0}]'
-  kubectl patch -n nextcloud statefulset/nextcloud --type='json' -p='[{"op": "replace", "path": "/spec/replicas", "value": 0}]'
-  kubectl patch -n photoprism statefulset/photoprism --type='json' -p='[{"op": "replace", "path": "/spec/replicas", "value": 0}]'
-  kubectl patch -n prometheus statefulset/prometheus --type='json' -p='[{"op": "replace", "path": "/spec/replicas", "value": 0}]'
-  kubectl patch -n uptime-kuma statefulset/uptime-kuma --type='json' -p='[{"op": "replace", "path": "/spec/replicas", "value": 0}]'
-  kubectl patch -n vault statefulset/vault --type='json' -p='[{"op": "replace", "path": "/spec/replicas", "value": 0}]'
+  kubectl scale --replicas=0 -n bitwarden statefulset/bitwarden
+  kubectl scale --replicas=0 -n gitea statefulset/gitea
+  kubectl scale --replicas=0 -n grafana deployment/grafana
+  kubectl scale --replicas=0 -n heimdall statefulset/heimdall
+  kubectl scale --replicas=0 -n homeassistant statefulset/homeassistant
+  kubectl scale --replicas=0 -n influxdb statefulset/influxdb
+  kubectl scale --replicas=0 -n loki statefulset/loki
+  kubectl scale --replicas=0 -n mariadb-galera statefulset/mariadb-galera
+  kubectl scale --replicas=0 -n nextcloud statefulset/nextcloud
+  kubectl scale --replicas=0 -n photoprism statefulset/photoprism
+  kubectl scale --replicas=0 -n prometheus statefulset/prometheus
+  kubectl scale --replicas=0 -n uptime-kuma statefulset/uptime-kuma
+  kubectl scale --replicas=0 -n vault statefulset/vault
 
   kubectl scale --replicas=0 -n minio deployment/minio-quay
   kubectl scale --replicas=0 -n quay deployment/quay-quay-app
@@ -53,29 +60,15 @@ stateful_workload_stop() {
   kubectl scale --replicas=0 -n keycloak statefulset/keycloak
   kubectl scale --replicas=0 -n jellyfin statefulset/jellyfin
 
-  kubectl scale --replicas=0 -n postgres statefulset/clair-00-tcwm
-  kubectl scale --replicas=0 -n postgres statefulset/clair-repo-host
-  kubectl scale --replicas=0 -n postgres statefulset/gitea-00-9ds5
-  kubectl scale --replicas=0 -n postgres statefulset/gitea-00-q5xl
-  kubectl scale --replicas=0 -n postgres statefulset/gitea-repo-host
-  kubectl scale --replicas=0 -n postgres statefulset/grafana-00-wl5n
-  kubectl scale --replicas=0 -n postgres statefulset/grafana-00-zzbs
-  kubectl scale --replicas=0 -n postgres statefulset/grafana-repo-host
-  kubectl scale --replicas=0 -n postgres statefulset/homeassistant-00-2tpr
-  kubectl scale --replicas=0 -n postgres statefulset/homeassistant-00-v9n6
-  kubectl scale --replicas=0 -n postgres statefulset/homeassistant-repo-host
-  kubectl scale --replicas=0 -n postgres statefulset/keycloak-00-mjw4
-  kubectl scale --replicas=0 -n postgres statefulset/keycloak-00-nj82
-  kubectl scale --replicas=0 -n postgres statefulset/keycloak-repo-host
-  kubectl scale --replicas=0 -n postgres statefulset/nextcloud-00-7pnr
-  kubectl scale --replicas=0 -n postgres statefulset/nextcloud-00-wdsz
-  kubectl scale --replicas=0 -n postgres statefulset/nextcloud-repo-host
-  kubectl scale --replicas=0 -n postgres statefulset/photoprism-00-v6f8
-  kubectl scale --replicas=0 -n postgres statefulset/photoprism-00-xkgp
-  kubectl scale --replicas=0 -n postgres statefulset/photoprism-repo-host
-  kubectl scale --replicas=0 -n postgres statefulset/quay-00-87fl
-  kubectl scale --replicas=0 -n postgres statefulset/quay-00-cwbc
-  kubectl scale --replicas=0 -n postgres statefulset/quay-repo-host
+  kubectl patch postgresCluster gitea -n clair --type=merge -p '{"spec":{"shutdown":true}}'
+  kubectl patch postgresCluster gitea -n gitea --type=merge -p '{"spec":{"shutdown":true}}'
+  kubectl patch postgresCluster gitea -n grafana --type=merge -p '{"spec":{"shutdown":true}}'
+  kubectl patch postgresCluster gitea -n postgres --type=merge -p '{"spec":{"shutdown":true}}'
+  kubectl patch postgresCluster gitea -n homeassistant --type=merge -p '{"spec":{"shutdown":true}}'
+  kubectl patch postgresCluster gitea -n keycloak --type=merge -p '{"spec":{"shutdown":true}}'
+  kubectl patch postgresCluster gitea -n nextcloud --type=merge -p '{"spec":{"shutdown":true}}'
+  kubectl patch postgresCluster gitea -n photoprism --type=merge -p '{"spec":{"shutdown":true}}'
+  kubectl patch postgresCluster gitea -n quay --type=merge -p '{"spec":{"shutdown":true}}'
 
   kubectl scale --replicas=0 -n argocd deployment/argocd-operator-controller-manager
   kubectl scale --replicas=0 -n argocd statefulset/argocd-application-controller
@@ -86,7 +79,6 @@ stateful_workload_stop() {
 
   kubectl scale --replicas=0 -n stackrox deployment/central
   kubectl scale --replicas=0 -n stackrox deployment/scanner-db
-
 }
 
 stateful_workload_start() {
@@ -96,21 +88,21 @@ stateful_workload_start() {
   kubectl patch cronjobs -n nextcloud nextcloud-cron -p '{"spec" : {"suspend" : false }}'
   kubectl patch cronjobs -n mariadb-galera mysqldump-cron -p '{"spec" : {"suspend" : false }}'
 
-  kubectl apply -f okd/openshift-monitoring/base/cluster-monitoring-config.yaml
+  kubectl scale --replicas=1 -n openshift-monitoring deployment/cluster-monitoring-operator
 
-  kubectl patch -n bitwarden statefulset/bitwarden --type='json' -p='[{"op": "replace", "path": "/spec/replicas", "value": 1}]'
-  kubectl patch -n gitea statefulset/gitea --type='json' -p='[{"op": "replace", "path": "/spec/replicas", "value": 1}]'
-  kubectl patch -n grafana deployment/grafana --type='json' -p='[{"op": "replace", "path": "/spec/replicas", "value": 2}]'
-  kubectl patch -n heimdall statefulset/heimdall --type='json' -p='[{"op": "replace", "path": "/spec/replicas", "value": 1}]'
-  kubectl patch -n homeassistant statefulset/homeassistant --type='json' -p='[{"op": "replace", "path": "/spec/replicas", "value": 1}]'
-  kubectl patch -n influxdb statefulset/influxdb --type='json' -p='[{"op": "replace", "path": "/spec/replicas", "value": 1}]'
-  kubectl patch -n loki statefulset/loki --type='json' -p='[{"op": "replace", "path": "/spec/replicas", "value": 1}]'
-  kubectl patch -n mariadb-galera statefulset/mariadb-galera --type='json' -p='[{"op": "replace", "path": "/spec/replicas", "value": 3}]'
-  kubectl patch -n nextcloud statefulset/nextcloud --type='json' -p='[{"op": "replace", "path": "/spec/replicas", "value": 1}]'
-  kubectl patch -n photoprism statefulset/photoprism --type='json' -p='[{"op": "replace", "path": "/spec/replicas", "value": 1}]'
-  kubectl patch -n prometheus statefulset/prometheus --type='json' -p='[{"op": "replace", "path": "/spec/replicas", "value": 1}]'
-  kubectl patch -n uptime-kuma statefulset/uptime-kuma --type='json' -p='[{"op": "replace", "path": "/spec/replicas", "value": 1}]'
-  kubectl patch -n vault statefulset/vault --type='json' -p='[{"op": "replace", "path": "/spec/replicas", "value": 1}]'
+  kubectl scale --replicas=1 -n bitwarden statefulset/bitwarden
+  kubectl scale --replicas=1 -n gitea statefulset/gitea
+  kubectl scale --replicas=2 -n grafana deployment/grafana
+  kubectl scale --replicas=1 -n heimdall statefulset/heimdall
+  kubectl scale --replicas=1 -n homeassistant statefulset/homeassistant
+  kubectl scale --replicas=1 -n influxdb statefulset/influxdb
+  kubectl scale --replicas=1 -n loki statefulset/loki
+  kubectl scale --replicas=3 -n mariadb-galera statefulset/mariadb-galera
+  kubectl scale --replicas=1 -n nextcloud statefulset/nextcloud
+  kubectl scale --replicas=1 -n photoprism statefulset/photoprism
+  kubectl scale --replicas=1 -n prometheus statefulset/prometheus
+  kubectl scale --replicas=1 -n uptime-kuma statefulset/uptime-kuma
+  kubectl scale --replicas=1 -n vault statefulset/vault
 
   kubectl scale --replicas=1 -n minio deployment/minio-quay
   kubectl scale --replicas=2 -n quay deployment/quay-quay-app
@@ -119,39 +111,19 @@ stateful_workload_start() {
   kubectl scale --replicas=1 -n gitea statefulset/gitea
   kubectl scale --replicas=1 -n postgres deployment/pgo
   kubectl scale --replicas=1 -n keycloak deployment/keycloak-operator
-  kubectl scale --replicas=2 -n keycloak statefulset/keycloak
   kubectl scale --replicas=1 -n jellyfin statefulset/jellyfin
 
-  kubectl scale --replicas=1 -n postgres statefulset/clair-00-tcwm
-  kubectl scale --replicas=1 -n postgres statefulset/clair-repo-host
-  kubectl scale --replicas=1 -n postgres statefulset/gitea-00-9ds5
-  kubectl scale --replicas=1 -n postgres statefulset/gitea-00-q5xl
-  kubectl scale --replicas=1 -n postgres statefulset/gitea-repo-host
-  kubectl scale --replicas=1 -n postgres statefulset/grafana-00-wl5n
-  kubectl scale --replicas=1 -n postgres statefulset/grafana-00-zzbs
-  kubectl scale --replicas=1 -n postgres statefulset/grafana-repo-host
-  kubectl scale --replicas=1 -n postgres statefulset/homeassistant-00-2tpr
-  kubectl scale --replicas=1 -n postgres statefulset/homeassistant-00-v9n6
-  kubectl scale --replicas=1 -n postgres statefulset/homeassistant-repo-host
-  kubectl scale --replicas=1 -n postgres statefulset/keycloak-00-mjw4
-  kubectl scale --replicas=1 -n postgres statefulset/keycloak-00-nj82
-  kubectl scale --replicas=1 -n postgres statefulset/keycloak-repo-host
-  kubectl scale --replicas=1 -n postgres statefulset/nextcloud-00-7pnr
-  kubectl scale --replicas=1 -n postgres statefulset/nextcloud-00-wdsz
-  kubectl scale --replicas=1 -n postgres statefulset/nextcloud-repo-host
-  kubectl scale --replicas=1 -n postgres statefulset/photoprism-00-v6f8
-  kubectl scale --replicas=1 -n postgres statefulset/photoprism-00-xkgp
-  kubectl scale --replicas=1 -n postgres statefulset/photoprism-repo-host
-  kubectl scale --replicas=1 -n postgres statefulset/quay-00-87fl
-  kubectl scale --replicas=1 -n postgres statefulset/quay-00-cwbc
-  kubectl scale --replicas=1 -n postgres statefulset/quay-repo-host
+  kubectl patch postgresCluster gitea -n clair --type=merge -p '{"spec":{"shutdown":false}}'
+  kubectl patch postgresCluster gitea -n gitea --type=merge -p '{"spec":{"shutdown":false}}'
+  kubectl patch postgresCluster gitea -n grafana --type=merge -p '{"spec":{"shutdown":false}}'
+  kubectl patch postgresCluster gitea -n postgres --type=merge -p '{"spec":{"shutdown":false}}'
+  kubectl patch postgresCluster gitea -n homeassistant --type=merge -p '{"spec":{"shutdown":false}}'
+  kubectl patch postgresCluster gitea -n keycloak --type=merge -p '{"spec":{"shutdown":false}}'
+  kubectl patch postgresCluster gitea -n nextcloud --type=merge -p '{"spec":{"shutdown":false}}'
+  kubectl patch postgresCluster gitea -n photoprism --type=merge -p '{"spec":{"shutdown":false}}'
+  kubectl patch postgresCluster gitea -n quay --type=merge -p '{"spec":{"shutdown":false}}'
 
   kubectl scale --replicas=1 -n argocd deployment/argocd-operator-controller-manager
-  kubectl scale --replicas=1 -n argocd statefulset/argocd-application-controller
-  kubectl scale --replicas=1 -n argocd deployment/argocd-repo-server
-  kubectl scale --replicas=1 -n argocd deployment/argocd-dex-server
-  kubectl scale --replicas=1 -n argocd deployment/argocd-server
-  kubectl scale --replicas=1 -n argocd deployment/argocd-redis
 
   kubectl scale --replicas=1 -n stackrox deployment/central
   kubectl scale --replicas=1 -n stackrox deployment/scanner-db

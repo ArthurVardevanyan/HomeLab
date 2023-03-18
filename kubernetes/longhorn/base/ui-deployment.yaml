@@ -1,10 +1,11 @@
+# Source: longhorn/templates/deployment-ui.yaml
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   labels:
     app.kubernetes.io/name: longhorn
     app.kubernetes.io/instance: longhorn
-    app.kubernetes.io/version: v1.4.0
+    app.kubernetes.io/version: v1.4.1
     app: longhorn-ui
   name: longhorn-ui
   namespace: longhorn-system
@@ -18,7 +19,7 @@ spec:
       labels:
         app.kubernetes.io/name: longhorn
         app.kubernetes.io/instance: longhorn
-        app.kubernetes.io/version: v1.4.0
+        app.kubernetes.io/version: v1.4.1
         app: longhorn-ui
       annotations:
         enable.version-checker.io/longhorn-ui: "true"
@@ -69,7 +70,7 @@ spec:
             - mountPath: /etc/tls/private
               name: longhorn-ui-tls
         - name: longhorn-ui
-          image: longhornio/longhorn-ui:v1.4.0
+          image: longhornio/longhorn-ui:v1.4.1
           imagePullPolicy: IfNotPresent
           volumeMounts:
             - name: nginx-cache
