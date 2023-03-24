@@ -1,0 +1,58 @@
+apiVersion: tekton.dev/v1beta1
+kind: Task
+metadata:
+  name: overlay-test
+  namespace: homelab
+  labels:
+    app: homelab
+    app.kubernetes.io/instance: homelab
+  annotations:
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+spec:
+  params:
+    - name: image
+      type: string
+      default: "registry.<path:secret/data/homelab/domain#url>/homelab/toolbox"
+
+  workspaces:
+    - name: data
+
+  steps:
+    - name: overlay-test
+      image: "$(params.image)"
+      resources:
+        limits:
+          cpu: 1500m
+          memory: 512Mi
+        requests:
+          cpu: 250m
+          memory: 256Mi
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 65532
+        privileged: false
+        readOnlyRootFilesystem: true
+        allowPrivilegeEscalation: false
+        # seccompProfile:
+        #   type: RuntimeDefault
+        capabilities:
+          drop:
+            - ALL
+            - MKNOD
+      env:
+        - name: WORKSPACE_DATA_PATH
+          value: $(workspaces.data.path)
+      script: |
+        #!/bin/bash
+
+        export URL=<path:secret/data/homelab/domain#url>
+
+        export AVP_TYPE=vault
+        export AVP_AUTH_TYPE=token
+        export VAULT_ADDR=https://vault.${URL}
+        export KUBERNETES_TOKEN="$(cat /var/run/secrets/kubernetes.io/serviceaccount/token)"
+        export VAULT_TOKEN="$(vault write -field=token auth/homelab/login role=homelab jwt=${KUBERNETES_TOKEN})"
+
+
+        cd $(workspaces.data.path)
+        ./main.bash test_overlays

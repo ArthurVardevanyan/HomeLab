@@ -65,6 +65,17 @@ spec:
         - name: data
           workspace: data
 
+    - name: overlay-test
+      runAfter:
+        - git-pending
+        - git-clone
+      taskRef:
+        name: overlay-test
+        kind: task
+      workspaces:
+        - name: data
+          workspace: data
+
   finally:
     - name: git-success
       when:

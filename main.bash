@@ -20,6 +20,27 @@ ansible() {
     -e 'ansible_python_interpreter=/usr/bin/python3'
 }
 
+test_overlays() {
+
+  if [ -n "$VAULT_ADDR" ] && [ -n "$VAULT_TOKEN" ]; then
+    for OVERLAY in ./kubernetes/*/overlays/*; do
+      echo "${OVERLAY}"
+      kubectl kustomize "${OVERLAY}" | argocd-vault-plugin generate - | kubectl apply --dry-run=server -f - 1>/dev/null
+    done
+    for OVERLAY in ./okd/*/overlays/*; do
+      echo "${OVERLAY}"
+      kubectl kustomize "${OVERLAY}" | argocd-vault-plugin generate - | kubectl apply --dry-run=server -f - 1>/dev/null
+    done
+    for OVERLAY in ./tekton/overlays/*; do
+      echo "${OVERLAY}"
+      kubectl kustomize "${OVERLAY}" | argocd-vault-plugin generate - | kubectl apply --dry-run=server -f - 1>/dev/null
+    done
+  else
+    echo "Vault Variables Missing"
+    exit 1
+  fi
+}
+
 stateful_workload_stop() {
   kubectl patch cronjobs -n photoprism photoprism-cron -p '{"spec" : {"suspend" : true }}'
   kubectl patch cronjobs -n nextcloud nextcloud-preview -p '{"spec" : {"suspend" : true }}'
