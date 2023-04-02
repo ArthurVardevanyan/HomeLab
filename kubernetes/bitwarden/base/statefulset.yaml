@@ -27,7 +27,7 @@ spec:
       #   runAsUser: 11024
       #   runAsNonRoot: true
       containers:
-        - image: vaultwarden/server:1.27.0
+        - image: vaultwarden/server:1.28.0
           imagePullPolicy: IfNotPresent
           name: bitwarden
           # Only Needed For Setup
@@ -43,9 +43,11 @@ spec:
             runAsNonRoot: true
             readOnlyRootFilesystem: true
             allowPrivilegeEscalation: false
-            # seccompProfile:
-            #   type: RuntimeDefault
+            seccompProfile:
+              type: RuntimeDefault
             capabilities:
+              add: # https://github.com/dani-garcia/vaultwarden/discussions/3374#discussioncomment-5441347
+                - NET_BIND_SERVICE
               drop:
                 - all
           livenessProbe:
