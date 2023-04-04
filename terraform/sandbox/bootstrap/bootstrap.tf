@@ -9,6 +9,7 @@ resource "libvirt_volume" "bootstrap" {
   base_volume_id = var.base_volume_id
   pool           = var.pool
   size           = "17179869184" # 16 GIB
+  # format         = "raw" # TODO
 }
 
 resource "libvirt_domain" "bootstrap" {

@@ -11,13 +11,15 @@ resource "libvirt_volume" "worker" {
   base_volume_id = var.base_volume_id
   pool           = var.pool
   size           = "55834574848" # 52 GIB
+  # format         = "raw" # TODO
 }
 
 resource "libvirt_volume" "worker-storage" {
-  count = var.worker_count
-  name  = "worker-storage-${count.index}"
-  pool  = var.pool
-  size  = "111669149696" # 104 GIB
+  count  = var.worker_count
+  name   = "worker-storage-${count.index}"
+  pool   = var.pool
+  size   = "111669149696" # 104 GIB
+  format = "raw"
 }
 
 resource "libvirt_domain" "worker" {

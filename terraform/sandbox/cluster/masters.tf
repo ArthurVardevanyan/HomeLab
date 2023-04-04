@@ -12,6 +12,7 @@ resource "libvirt_volume" "master" {
   base_volume_id = libvirt_volume.federoa.id
   pool           = libvirt_pool.okd.name
   size           = "55834574848" # 16 GIB
+  # format         = "raw" # TODO
 }
 
 resource "libvirt_domain" "master" {

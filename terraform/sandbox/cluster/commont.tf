@@ -36,6 +36,7 @@ resource "libvirt_volume" "federoa" {
   name   = "federoa"
   pool   = libvirt_pool.okd.name
   source = "${var.path}/fedora-coreos-${var.os}-qemu.x86_64.qcow2"
+  #format = "raw"
 
   depends_on = [
     null_resource.extract_federoa
