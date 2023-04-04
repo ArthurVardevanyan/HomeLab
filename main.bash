@@ -14,6 +14,25 @@ NC='\033[0m'
 export LIBVIRT_DEFAULT_URI=qemu:///system
 
 # HomeLab Functions
+function retry {
+  local retries=$1
+  shift
+
+  local count=0
+  until "$@"; do
+    exit=$?
+    wait=$((3 ** count))
+    count=$((count + 1))
+    if [ $count -lt "$retries" ]; then
+      echo "Retry $count/$retries exited $exit, retrying in $wait seconds..."
+      sleep $wait
+    else
+      echo "Retry $count/$retries exited $exit, no more retries left."
+      return $exit
+    fi
+  done
+  return 0
+}
 
 ansible() {
   ansible-playbook -i ansible/inventory --ask-become-pass ansible/servers.yaml --ask-pass \
@@ -1007,6 +1026,69 @@ single_server() {
   "${OKD}/oc" scale --replicas=1 deployment.apps/thanos-querier -n openshift-monitoring
   "${OKD}/oc" scale --replicas=1 statefulset.apps/prometheus-k8s -n openshift-monitoring
   "${OKD}/oc" scale --replicas=1 statefulset.apps/alertmanager-main -n openshift-monitoring
+}
+
+install_addons_okd() {
+  # Tweak Settings from Physical HomeLab
+  export OKD=/mnt/storage/okd
+  export KUBECONFIG="${OKD}/okd/auth/kubeconfig"
+  export HOMELAB="${PWD}"
+
+  echo -e "\n${BLUE}Installing Cluster Addons:${NC}"
+  echo -e "\n\n${BLUE}Get URL:${NC}"
+  URL=${URL:-}
+  if [ -z "${URL}" ]; then
+    echo -n URL:
+    read -r -s URL
+    echo ""
+  fi
+  echo "${URL}"
+
+  export AVP_TYPE=vault
+  export AVP_AUTH_TYPE=token
+  if [ -z "${VAULT_TOKEN}" ]; then
+    export VAULT_TOKEN
+    VAULT_TOKEN=$(vault login --tls-skip-verify -address="${URL}" -method=userpass -token-only username=arthur)
+  fi
+
+  kubectl label node "worker-0" node.longhorn.io/create-default-disk=true --overwrite
+  kubectl label node "worker-1" node.longhorn.io/create-default-disk=true --overwrite
+  kubectl label node "worker-2" node.longhorn.io/create-default-disk=true --overwrite
+
+  echo -e "\n${BLUE}Longhorn:${NC}"
+  # shellcheck disable=SC2317
+  longhorn() {
+    kubectl kustomize "${HOMELAB}"/kubernetes/longhorn/overlays/okd-sandbox | argocd-vault-plugin generate - | kubectl apply -f -
+  }
+  retry 5 longhorn
+
+  echo -e "\n${BLUE}Waiting for Longhorn to Boot:${NC}"
+  while [ "$(kubectl get pods -n longhorn-system | grep -cv Running)" -ne 1 ]; do
+    sleep 1
+  done
+
+  echo -e "\n${BLUE}OKD Monitoring:${NC}"
+  # shellcheck disable=SC2317
+  okd_monitoring() {
+    kubectl kustomize "${HOMELAB}"/okd/openshift-monitoring/overlays/sandbox | argocd-vault-plugin generate - | kubectl apply -f -
+  }
+  retry 5 okd_monitoring
+
+  echo -e "\n${BLUE}Cert Manager:${NC}"
+  # shellcheck disable=SC2317
+  cert_manager() {
+    kubectl kustomize "${HOMELAB}"/kubernetes/cert-manager/overlays/okd-sandbox | argocd-vault-plugin generate - | kubectl apply -f -
+  }
+  retry 5 cert_manager
+
+  echo -e "\n${BLUE}OKD Configuration:${NC}"
+  # shellcheck disable=SC2317
+  okd_configuration() {
+    kubectl kustomize "${HOMELAB}"/okd/okd-configuration/overlays/sandbox | argocd-vault-plugin generate - | kubectl apply -f -
+  }
+  retry 5 okd_configuration
+
+  echo -e "\n\n${BLUE}Addons Installed!${NC}"
 }
 
 approve_csr() {

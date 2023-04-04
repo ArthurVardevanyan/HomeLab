@@ -1,4 +1,40 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
-  - ./cluster-monitoring-config.yaml
+  - ../../base
+patches:
+  - target:
+      kind: Secret
+      name: discord-webhook
+    patch: |-
+      - op: replace
+        path: /stringData/DISCORD_WEBHOOK
+        value: https://discord.com/api/webhooks/<path:secret/data/gitlab/discord#alert-webhook-sandbox>
+  - target:
+      kind: Cluster
+      group: monitoring.arthurvardevanyan.com
+      name: cluster-monitoring-config
+    patch: |-
+      - op: replace
+        path: /spec/prometheusK8s/retention
+        value: 7d
+      - op: replace
+        path: /spec/prometheusK8s/resources
+        value: {"requests": {"cpu": "100m","memory": "1Gi"},"limits": {"cpu": 1,"memory": "4Gi"}}
+      - op: replace
+        path: /spec/prometheusK8s/volumeClaimTemplate/spec/resources/requests/storage
+        value: 15Gi
+  - target:
+      kind: User
+      group: monitoring.arthurvardevanyan.com
+      name: user-workload-monitoring-config
+    patch: |-
+      - op: replace
+        path: /spec/prometheus/retention
+        value: 14d
+      - op: replace
+        path: /spec/prometheus/resources
+        value: {"requests": {"cpu": "50m","memory": "256Gi"},"limits": {"cpu": "250m","memory": "1024Mi"}}
+      - op: replace
+        path: /spec/prometheus/volumeClaimTemplate/spec/resources/requests/storage
+        value: 5Gi

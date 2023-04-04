@@ -7,7 +7,7 @@ metadata:
     app.kubernetes.io/instance: openshift-monitoring
 spec:
   progressDeadlineSeconds: 600
-  replicas: 1
+  replicas: 2
   revisionHistoryLimit: 10
   selector:
     matchLabels:
@@ -22,6 +22,13 @@ spec:
       labels:
         app: alert-manager-discord
     spec:
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - labelSelector:
+                matchLabels:
+                  app: alert-manager-discord
+              topologyKey: "kubernetes.io/hostname"
       containers:
         - image: benjojo/alertmanager-discord
           envFrom:
