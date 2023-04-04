@@ -997,6 +997,7 @@ install_okd() {
   chmod 777 -R ${OKD}
 
   echo -e "\n\n${BLUE}Wait for Install To Complete:${NC}"
+  ${OKD}/oc patch IngressController default -n openshift-ingress-operator --type='json' -p='[{"op" : "add" ,"path" : "/spec/endpointPublishingStrategy/hostNetwork/protocol" ,"value" : "PROXY"}]'
   ${OKD}/openshift-install --dir=${OKD}/okd wait-for install-complete --log-level debug
 
   export KUBECONFIG="${OKD}/okd/auth/kubeconfig"
