@@ -21,7 +21,7 @@ function retry {
   local count=0
   until "$@"; do
     exit=$?
-    wait=$((3 ** count))
+    wait=$((10 + 5 ** count))
     count=$((count + 1))
     if [ $count -lt "$retries" ]; then
       echo "Retry $count/$retries exited $exit, retrying in $wait seconds..."
@@ -881,6 +881,7 @@ install_okd() {
   export HOME=/home/arthur
   export HOMELAB="${PWD}"
   export OKD=/mnt/storage/okd
+  export KUBECONFIG="${OKD}/okd/auth/kubeconfig"
 
   export PREFIX=""
   export TF_VAR_master_count=3
@@ -997,12 +998,11 @@ install_okd() {
   chmod 777 -R ${OKD}
 
   echo -e "\n\n${BLUE}Wait for Install To Complete:${NC}"
-  ${OKD}/oc patch IngressController default -n openshift-ingress-operator --type='json' -p='[{"op" : "add" ,"path" : "/spec/endpointPublishingStrategy/hostNetwork/protocol" ,"value" : "PROXY"}]'
+  yq 'del(.spec.defaultCertificate)' "${HOMELAB}/okd/okd-configuration/base/certificates/ingress-controller.yaml" | ${OKD}/oc apply -f -
   ${OKD}/openshift-install --dir=${OKD}/okd wait-for install-complete --log-level debug
 
-  export KUBECONFIG="${OKD}/okd/auth/kubeconfig"
-  ${OKD}/oc apply -f "${HOMELAB}/okd/okd-configuration/operator-hub.yaml"
-  ${OKD}/oc apply -f "${HOMELAB}/okd/okd-configuration/operators"
+  ${OKD}/oc apply -f "${HOMELAB}/okd/okd-configuration/base/operator-hub.yaml"
+  ${OKD}/oc apply -f "${HOMELAB}/okd/okd-configuration/base/operators"
 
   # # https://github.com/openshift/okd/issues/963#issuecomment-1073120091
   # ${OKD}/oc delete mc 99-master-okd-extensions 99-okd-master-disable-mitigations
@@ -1052,9 +1052,29 @@ install_addons_okd() {
     VAULT_TOKEN=$(vault login --tls-skip-verify -address="${URL}" -method=userpass -token-only username=arthur)
   fi
 
-  kubectl label node "worker-0" node.longhorn.io/create-default-disk=true --overwrite
-  kubectl label node "worker-1" node.longhorn.io/create-default-disk=true --overwrite
-  kubectl label node "worker-2" node.longhorn.io/create-default-disk=true --overwrite
+  oc debug node/worker-0 -t -- chroot /host sudo mkfs.ext4 -L longhorn /dev/vdb
+  oc debug node/worker-1 -t -- chroot /host sudo mkfs.ext4 -L longhorn /dev/vdb
+  oc debug node/worker-2 -t -- chroot /host sudo mkfs.ext4 -L longhorn /dev/vdb
+
+  kubectl label node worker-0 topology.kubernetes.io/zone="even" --overwrite
+  kubectl label node worker-1 topology.kubernetes.io/zone="odd" --overwrite
+  kubectl label node worker-2 topology.kubernetes.io/zone="even" --overwrite
+
+  kubectl annotate node "worker-0" node.longhorn.io/default-disks-config='[{"path":"/var/mnt/longhorn","allowScheduling":true}]' --overwrite
+  kubectl annotate node "worker-1" node.longhorn.io/default-disks-config='[{"path":"/var/mnt/longhorn","allowScheduling":true}]' --overwrite
+  kubectl annotate node "worker-2" node.longhorn.io/default-disks-config='[{"path":"/var/mnt/longhorn","allowScheduling":true}]' --overwrite
+
+  kubectl label node "worker-0" node.longhorn.io/create-default-disk=config --overwrite
+  kubectl label node "worker-1" node.longhorn.io/create-default-disk=config --overwrite
+  kubectl label node "worker-2" node.longhorn.io/create-default-disk=config --overwrite
+
+  kubectl apply -f "${HOMELAB}"/okd/okd-configuration/base/longhorn-mc.yaml
+
+  sleep 15s
+  while [ "$(kubectl get mcp worker -o yaml | yq '.status.conditions[] | select(.type == "Updating") | .status')" == "True" ]; do
+    echo "Waiting for MCPs"
+    sleep 30s
+  done
 
   echo -e "\n${BLUE}Longhorn:${NC}"
   # shellcheck disable=SC2317
@@ -1081,6 +1101,16 @@ install_addons_okd() {
     kubectl kustomize "${HOMELAB}"/kubernetes/cert-manager/overlays/okd-sandbox | argocd-vault-plugin generate - | kubectl apply -f -
   }
   retry 5 cert_manager
+
+  while [ "$(kubectl get certificate -n openshift-config api-certificate -o yaml | yq '.status.conditions[] | select(.type == "Ready") | .status')" == "False" ]; do
+    echo "Waiting for API Certificate to Generate"
+    sleep 30s
+  done
+
+  while [ "$(kubectl get certificate -n openshift-ingress ingress-certificate -o yaml | yq '.status.conditions[] | select(.type == "Ready") | .status')" == "False" ]; do
+    echo "Waiting for Ingress Certificate to Generate"
+    sleep 30s
+  done
 
   echo -e "\n${BLUE}OKD Configuration:${NC}"
   # shellcheck disable=SC2317

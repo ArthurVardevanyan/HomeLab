@@ -10,7 +10,7 @@ resource "libvirt_volume" "worker" {
   name           = "worker-${count.index}"
   base_volume_id = var.base_volume_id
   pool           = var.pool
-  size           = "55834574848" # 52 GIB
+  size           = "68719476736" # 64 GIB
   # format         = "raw" # TODO
 }
 
@@ -18,7 +18,7 @@ resource "libvirt_volume" "worker-storage" {
   count  = var.worker_count
   name   = "worker-storage-${count.index}"
   pool   = var.pool
-  size   = "111669149696" # 104 GIB
+  size   = "103079215104" # 96 GIB
   format = "raw"
 }
 
@@ -28,7 +28,7 @@ resource "libvirt_domain" "worker" {
   coreos_ignition = libvirt_ignition.worker.id
 
   vcpu   = "4"
-  memory = "6144"
+  memory = "8192"
   disk {
     volume_id = element(libvirt_volume.worker.*.id, count.index)
   }
