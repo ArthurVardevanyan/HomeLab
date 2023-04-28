@@ -25,3 +25,9 @@ resource "google_project_service" "compute" {
   service            = "compute.googleapis.com"
   disable_on_destroy = false
 }
+
+resource "google_project_service" "secretmanager" {
+  project            = "homelab-${local.project_id}"
+  service            = "secretmanager.googleapis.com"
+  disable_on_destroy = false
+}

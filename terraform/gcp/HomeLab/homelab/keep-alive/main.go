@@ -12,13 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package main
+package KeepAlive
 
 // [START storage_list_files]
 import (
 	"context"
 	"fmt"
 	"log"
+	"net/http"
 	"os"
 	"strconv"
 	"time"
@@ -92,6 +93,6 @@ func listFiles(bucket string, allowed_delta string) error {
 
 // [END storage_list_files]
 
-func main() {
+func KeepAlive(w http.ResponseWriter, r *http.Request) {
 	listFiles(os.Getenv("GCS_BUCKET"), os.Getenv("ALLOWED_DELTA"))
 }
