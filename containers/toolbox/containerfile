@@ -1,6 +1,7 @@
 FROM debian:bookworm-slim
 
 ENV ARGOCD_VAULT_VERSION=1.14.0
+ENV HOME=/tmp
 
 RUN apt-get update && apt-get install gnupg2 curl -y
 
@@ -9,6 +10,10 @@ RUN apt-key adv --keyserver keyserver.ubuntu.com --recv-keys 93C4A3FD7BB9C367
 
 RUN curl -fsSL https://apt.releases.hashicorp.com/gpg | apt-key add -
 RUN echo "deb [arch=amd64] https://apt.releases.hashicorp.com bullseye main" | tee /etc/apt/sources.list.d/vault.list
+
+RUN echo "deb [signed-by=/usr/share/keyrings/cloud.google.gpg] https://packages.cloud.google.com/apt cloud-sdk main" | tee -a /etc/apt/sources.list.d/google-cloud-sdk.list
+RUN echo "deb [signed-by=/usr/share/keyrings/cloud.google.gpg] https://packages.cloud.google.com/apt cloud-sdk main" | tee -a /etc/apt/sources.list.d/google-cloud-sdk.list
+RUN curl https://packages.cloud.google.com/apt/doc/apt-key.gpg | apt-key --keyring /usr/share/keyrings/cloud.google.gpg add -
 
 RUN curl -fsSLo /usr/share/keyrings/kubernetes-archive-keyring.gpg https://packages.cloud.google.com/apt/doc/apt-key.gpg
 RUN echo "deb [signed-by=/usr/share/keyrings/kubernetes-archive-keyring.gpg] https://apt.kubernetes.io/ kubernetes-xenial main" | tee /etc/apt/sources.list.d/kubernetes.list
@@ -23,7 +28,7 @@ RUN mv yq /usr/local/bin
 
 RUN apt-get install sshpass logrotate rsync git iputils-ping jq -y
 
-RUN apt-get update && apt-get install mariadb-client kubectl ansible vault -y && \
+RUN apt-get update && apt-get install mariadb-client kubectl ansible vault google-cloud-cli -y && \
   apt-get clean && \
   rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
