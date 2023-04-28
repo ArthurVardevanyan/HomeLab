@@ -7,7 +7,7 @@ metadata:
     app: version-checker
     app.kubernetes.io/instance: version-checker
 spec:
-  schedule: "00 05,11,17,23 * * *"
+  schedule: "*/10 * * * *"
   concurrencyPolicy: Replace
   suspend: false
   startingDeadlineSeconds: 60
@@ -49,6 +49,9 @@ spec:
           containers:
             - name: version-checker
               image: registry.<path:secret/data/homelab/domain#url>/homelab/version-checker:v0.2.2
+              env:
+                - name: GCS_BUCKET
+                  value: "okd_homelab_keep_alive"
               securityContext:
                 # runAsGroup: 65554
                 # runAsUser: 65554
