@@ -108,7 +108,7 @@ resource "google_storage_bucket_iam_member" "okd_homelab_keep_alive_cloud_functi
 resource "google_cloudfunctions_function" "okd_homelab_keep_alive_cloud_function" {
   available_memory_mb   = "128"
   entry_point           = "KeepAlive"
-  ingress_settings      = "ALLOW_INTERNAL_ONLY"
+  ingress_settings      = "ALLOW_ALL"
   source_archive_bucket = google_storage_bucket.okd_homelab_keep_alive_cloud_function.name
   source_archive_object = "${data.archive_file.keep_alive.output_md5}.zip"
   max_instances         = "3"
@@ -128,5 +128,40 @@ resource "google_cloudfunctions_function" "okd_homelab_keep_alive_cloud_function
     key     = "DISCORD"
     secret  = "discord_keep_alive"
     version = "latest"
+  }
+}
+
+resource "google_cloudfunctions_function_iam_member" "member" {
+  project        = "homelab-${local.project_id}"
+  region         = "us-central1"
+  cloud_function = google_cloudfunctions_function.okd_homelab_keep_alive_cloud_function.name
+  role           = "roles/cloudfunctions.invoker"
+  member         = google_service_account.keep_alive.member
+}
+
+resource "google_cloud_scheduler_job" "okd_homelab_keep_alive_cloud_function" {
+  name             = "okd_homelab_keep_alive_cloud_function"
+  description      = "okd_homelab_keep_alive_cloud_function"
+  schedule         = "*/15 * * * *"
+  time_zone        = "America/New_York"
+  attempt_deadline = "60s"
+  project          = "homelab-${local.project_id}"
+  region           = "us-central1"
+
+  retry_config {
+    retry_count = 1
+  }
+
+
+
+  http_target {
+    http_method = "POST"
+    uri         = google_cloudfunctions_function.okd_homelab_keep_alive_cloud_function.https_trigger_url
+    body        = base64encode("{}")
+
+    oidc_token {
+      service_account_email = google_service_account.keep_alive.email
+    }
+
   }
 }
