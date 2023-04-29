@@ -121,7 +121,7 @@ resource "google_cloudfunctions_function" "okd_homelab_keep_alive_cloud_function
 
   environment_variables = {
     GCS_BUCKET    = "okd_homelab_keep_alive"
-    ALLOWED_DELTA = "900" # 15 Minutes
+    ALLOWED_DELTA = "630" # 10.5 Minutes
   }
 
   secret_environment_variables {

@@ -8,7 +8,7 @@ Used to check if HomeLab is no longer able to reach out to send notifications, w
 
 ```bash
 export GCS_BUCKET=okd_homelab_keep_alive
-export ALLOWED_DELTA=900 # 15 Minutes
+export ALLOWED_DELTA=630 # 10.5 Minutes
 export DISCORD="$(vault kv get -field=discord secret/homelab/keep-alive)"
 ```
 
