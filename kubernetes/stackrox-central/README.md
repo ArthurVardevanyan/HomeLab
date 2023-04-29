@@ -13,4 +13,6 @@ helm template -n stackrox --create-namespace stackrox-central-services stackrox/
 kubectl -n stackrox exec deploy/central -- roxctl --insecure-skip-tls-verify \
  --password "${ADMIN_PASSWORD}" \
  central init-bundles generate stackrox-init-bundle --output - >stackrox-init-bundle.yaml
+
+kubectl kustomize kubernetes/stackrox-central/overlays/okd | argocd-vault-plugin generate - | kubectl apply -f -
 ```
