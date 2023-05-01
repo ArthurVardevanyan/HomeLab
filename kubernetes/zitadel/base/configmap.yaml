@@ -1,0 +1,39 @@
+# Source: zitadel/templates/configmap.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: zitadel-config-yaml
+  labels:
+    helm.sh/chart: zitadel-4.3.0
+    app.kubernetes.io/name: zitadel
+    app.kubernetes.io/instance: zitadel
+    app.kubernetes.io/version: "v2.23.1"
+    app.kubernetes.io/managed-by: Helm
+data:
+  zitadel-config-yaml: |-
+
+    Database:
+      cockroach:
+        Admin:
+          SSL:
+            Mode: verify-full
+        Host: crdb-public
+        User:
+          SSL:
+            Mode: verify-full
+    ExternalDomain: zitadel.apps.okd.<path:secret/data/homelab/domain#url>
+    ExternalPort: 443
+    ExternalSecure: true
+    FirstInstance:
+      Org:
+        Machine: false
+    Machine:
+      Identification:
+        Hostname:
+          Enabled: true
+        Webhook:
+          Enabled: false
+    TLS:
+      Enabled: false
+      dbSslClientCrtSecret: crdb-root
+    dbSslRootCrtSecret: crdb-ca
