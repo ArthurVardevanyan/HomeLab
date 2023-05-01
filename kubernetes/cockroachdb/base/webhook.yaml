@@ -1,0 +1,53 @@
+apiVersion: admissionregistration.k8s.io/v1
+kind: MutatingWebhookConfiguration
+metadata:
+  creationTimestamp: null
+  name: cockroach-operator-mutating-webhook-configuration
+webhooks:
+  - admissionReviewVersions:
+      - v1
+    clientConfig:
+      service:
+        name: cockroach-operator-webhook-service
+        namespace: cockroach-operator-system
+        path: /mutate-crdb-cockroachlabs-com-v1alpha1-crdbcluster
+    failurePolicy: Fail
+    name: mcrdbcluster.kb.io
+    rules:
+      - apiGroups:
+          - crdb.cockroachlabs.com
+        apiVersions:
+          - v1alpha1
+        operations:
+          - CREATE
+          - UPDATE
+        resources:
+          - crdbclusters
+    sideEffects: None
+---
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingWebhookConfiguration
+metadata:
+  creationTimestamp: null
+  name: cockroach-operator-validating-webhook-configuration
+webhooks:
+  - admissionReviewVersions:
+      - v1
+    clientConfig:
+      service:
+        name: cockroach-operator-webhook-service
+        namespace: cockroach-operator-system
+        path: /validate-crdb-cockroachlabs-com-v1alpha1-crdbcluster
+    failurePolicy: Fail
+    name: vcrdbcluster.kb.io
+    rules:
+      - apiGroups:
+          - crdb.cockroachlabs.com
+        apiVersions:
+          - v1alpha1
+        operations:
+          - CREATE
+          - UPDATE
+        resources:
+          - crdbclusters
+    sideEffects: None

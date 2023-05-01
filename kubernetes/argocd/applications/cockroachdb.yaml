@@ -1,7 +1,7 @@
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: keycloak
+  name: cockroachdb
   namespace: argocd
   annotations:
     argocd.argoproj.io/sync-wave: "1"
@@ -10,11 +10,11 @@ metadata:
     app.kubernetes.io/instance: argocd
 spec:
   destination:
-    namespace: keycloak
+    namespace: cockroachdb
     server: https://kubernetes.default.svc
   project: default
   source:
-    path: kubernetes/keycloak/overlays/okd
+    path: kubernetes/cockroachdb/overlays/okd
     repoURL: https://git.<path:secret/data/homelab/domain#url>/ArthurVardevanyan/HomeLab
     targetRevision: HEAD
   syncPolicy:

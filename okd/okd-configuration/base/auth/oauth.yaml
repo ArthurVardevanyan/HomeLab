@@ -12,7 +12,7 @@ metadata:
 spec:
   identityProviders:
     - mappingMethod: claim
-      name: keycloak
+      name: zitadel
       openID:
         claims:
           email:
@@ -21,10 +21,11 @@ spec:
             - name
           preferredUsername:
             - preferred_username
-        clientID: okd
+        clientID: <path:secret/data/homelab/zitadel/okd#client_id>
         clientSecret:
-          name: keycloak-openid-client
-        extraScopes: []
+          name: zitadel-openid-client
+        extraScopes:
+          - profile
         issuer: >-
-          https://keycloak-keycloak.apps.okd.<path:secret/data/homelab/domain#url>/auth/realms/master
+          https://zitadel.apps.okd.<path:secret/data/homelab/domain#url>
       type: OpenID

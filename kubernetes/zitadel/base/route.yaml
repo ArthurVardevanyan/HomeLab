@@ -1,0 +1,35 @@
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  name: crdb
+  namespace: zitadel
+spec:
+  host: db-zitadel.apps.okd.<path:secret/data/homelab/domain#url>
+  port:
+    targetPort: http
+  tls:
+    insecureEdgeTerminationPolicy: Redirect
+    termination: passthrough
+  to:
+    kind: Service
+    name: crdb-public
+    weight: 100
+  wildcardPolicy: None
+---
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  name: zitadel
+  namespace: zitadel
+spec:
+  host: zitadel.apps.okd.<path:secret/data/homelab/domain#url>
+  port:
+    targetPort: http2-server
+  tls:
+    insecureEdgeTerminationPolicy: Redirect
+    termination: edge
+  to:
+    kind: Service
+    name: zitadel
+    weight: 100
+  wildcardPolicy: None

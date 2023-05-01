@@ -1,20 +1,20 @@
 apiVersion: v1
 kind: LimitRange
 metadata:
-  name: keycloak-lr
-  namespace: keycloak
+  name: zitadel-lr
+  namespace: zitadel
   annotations:
     argocd.argoproj.io/sync-wave: "0"
   labels:
-    app.kubernetes.io/instance: keycloak
+    app.kubernetes.io/instance: zitadel
 spec:
   limits:
     - type: Container
       default:
-        cpu: 30m
-        memory: 64Mi
+        cpu: 50m
+        memory: 300M
         ephemeral-storage: 256Mi
       defaultRequest:
-        cpu: 15m
-        memory: 32Mi
+        cpu: 25m
+        memory: 150M
         ephemeral-storage: 128Mi

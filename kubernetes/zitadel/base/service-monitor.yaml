@@ -1,0 +1,25 @@
+# Source: zitadel/templates/servicemonitor.yaml
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: zitadel
+  labels:
+    helm.sh/chart: zitadel-4.3.0
+    app.kubernetes.io/name: zitadel
+    app.kubernetes.io/instance: zitadel
+    app.kubernetes.io/version: "v2.23.1"
+    app.kubernetes.io/managed-by: Helm
+spec:
+  endpoints:
+    - port: http2-server
+      path: /debug/metrics
+      honorLabels: false
+      honorTimestamps: true
+  jobLabel: zitadel
+  namespaceSelector:
+    matchNames:
+      - "zitadel"
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: zitadel
+      app.kubernetes.io/instance: zitadel
