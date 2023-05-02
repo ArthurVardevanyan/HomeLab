@@ -20,8 +20,8 @@ resource "libvirt_domain" "master" {
   name            = "master-${count.index}"
   coreos_ignition = libvirt_ignition.master.id
 
-  vcpu   = "4"
-  memory = "12288"
+  vcpu   = "3"
+  memory = "10752"
   disk {
     volume_id = element(libvirt_volume.master.*.id, count.index)
   }

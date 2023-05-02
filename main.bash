@@ -885,7 +885,7 @@ install_okd() {
 
   export PREFIX=""
   export TF_VAR_master_count=3
-  export TF_VAR_worker_count=3
+  export TF_VAR_worker_count=4
 
   if [[ $(/usr/bin/id -u) -ne 0 ]]; then
     echo "Not running as root"
@@ -1055,18 +1055,22 @@ install_addons_okd() {
   oc debug node/worker-0 -t -- chroot /host sudo mkfs.ext4 -L longhorn /dev/vdb
   oc debug node/worker-1 -t -- chroot /host sudo mkfs.ext4 -L longhorn /dev/vdb
   oc debug node/worker-2 -t -- chroot /host sudo mkfs.ext4 -L longhorn /dev/vdb
+  oc debug node/worker-3 -t -- chroot /host sudo mkfs.ext4 -L longhorn /dev/vdb
 
   kubectl label node worker-0 topology.kubernetes.io/zone="even" --overwrite
   kubectl label node worker-1 topology.kubernetes.io/zone="odd" --overwrite
   kubectl label node worker-2 topology.kubernetes.io/zone="even" --overwrite
+  kubectl label node worker-3 topology.kubernetes.io/zone="odd" --overwrite
 
   kubectl annotate node "worker-0" node.longhorn.io/default-disks-config='[{"path":"/var/mnt/longhorn","allowScheduling":true}]' --overwrite
   kubectl annotate node "worker-1" node.longhorn.io/default-disks-config='[{"path":"/var/mnt/longhorn","allowScheduling":true}]' --overwrite
   kubectl annotate node "worker-2" node.longhorn.io/default-disks-config='[{"path":"/var/mnt/longhorn","allowScheduling":true}]' --overwrite
+  kubectl annotate node "worker-3" node.longhorn.io/default-disks-config='[{"path":"/var/mnt/longhorn","allowScheduling":true}]' --overwrite
 
   kubectl label node "worker-0" node.longhorn.io/create-default-disk=config --overwrite
   kubectl label node "worker-1" node.longhorn.io/create-default-disk=config --overwrite
   kubectl label node "worker-2" node.longhorn.io/create-default-disk=config --overwrite
+  kubectl label node "worker-3" node.longhorn.io/create-default-disk=config --overwrite
 
   kubectl apply -f "${HOMELAB}"/okd/okd-configuration/base/longhorn-mc.yaml
 
@@ -1102,15 +1106,8 @@ install_addons_okd() {
   }
   retry 5 cert_manager
 
-  while [ "$(kubectl get certificate -n openshift-config api-certificate -o yaml | yq '.status.conditions[] | select(.type == "Ready") | .status')" == "False" ]; do
-    echo "Waiting for API Certificate to Generate"
-    sleep 30s
-  done
-
-  while [ "$(kubectl get certificate -n openshift-ingress ingress-certificate -o yaml | yq '.status.conditions[] | select(.type == "Ready") | .status')" == "False" ]; do
-    echo "Waiting for Ingress Certificate to Generate"
-    sleep 30s
-  done
+  oc patch --type=merge --patch='{"spec":{"paused":true}}' machineconfigpool/master
+  oc patch --type=merge --patch='{"spec":{"paused":true}}' machineconfigpool/worker
 
   echo -e "\n${BLUE}OKD Configuration:${NC}"
   # shellcheck disable=SC2317
@@ -1118,6 +1115,30 @@ install_addons_okd() {
     kubectl kustomize "${HOMELAB}"/okd/okd-configuration/overlays/sandbox | argocd-vault-plugin generate - | kubectl apply -f -
   }
   retry 5 okd_configuration
+
+  cert_check() {
+
+    # shellcheck disable=SC2317
+    while [ "$(kubectl get certificate -n openshift-config api-certificate -o yaml | yq '.status.conditions[] | select(.type == "Ready") | .status')" == "False" ]; do
+      echo "Waiting for API Certificate to Generate"
+      sleep 30
+    done
+
+    # shellcheck disable=SC2317
+    while [ "$(kubectl get certificate -n openshift-ingress ingress-certificate -o yaml | yq '.status.conditions[] | select(.type == "Ready") | .status')" == "False" ]; do
+      echo "Waiting for Ingress Certificate to Generate"
+      sleep 30
+    done
+  }
+
+  sleep 30
+
+  retry 5 cert_check
+
+  sleep 120
+
+  oc patch --type=merge --patch='{"spec":{"paused":false}}' machineconfigpool/master
+  oc patch --type=merge --patch='{"spec":{"paused":false}}' machineconfigpool/worker
 
   echo -e "\n\n${BLUE}Addons Installed!${NC}"
 }

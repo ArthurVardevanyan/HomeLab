@@ -19,7 +19,7 @@ variable "worker" {
 variable "worker_count" {
   type        = string
   description = "The number of worker nodes."
-  default     = "3"
+  default     = "4"
 }
 
 variable "pool" {
