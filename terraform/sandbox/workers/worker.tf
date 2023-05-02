@@ -18,7 +18,7 @@ resource "libvirt_volume" "worker-storage" {
   count  = var.worker_count
   name   = "worker-storage-${count.index}"
   pool   = var.pool
-  size   = "103079215104" # 96 GIB
+  size   = "68719476736" # 64 GIB
   format = "raw"
 }
 
