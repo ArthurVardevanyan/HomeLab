@@ -1,4 +1,3 @@
----
 # Source: stackrox-central-services/templates/01-central-13-deployment.yaml
 apiVersion: apps/v1
 kind: Deployment
@@ -11,8 +10,8 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: stackrox
     app.kubernetes.io/part-of: stackrox-central-services
-    app.kubernetes.io/version: 3.74.3
-    helm.sh/chart: stackrox-central-services-74.0.0
+    app.kubernetes.io/version: 4.0.0
+    helm.sh/chart: stackrox-central-services-400.0.0
     app: central
   annotations:
     argocd.argoproj.io/sync-wave: "2"
@@ -38,8 +37,8 @@ spec:
         app.kubernetes.io/managed-by: Helm
         app.kubernetes.io/name: stackrox
         app.kubernetes.io/part-of: stackrox-central-services
-        app.kubernetes.io/version: 3.74.3
-        helm.sh/chart: stackrox-central-services-74.0.0
+        app.kubernetes.io/version: 4.0.0
+        helm.sh/chart: stackrox-central-services-400.0.0
       annotations:
         traffic.sidecar.istio.io/excludeInboundPorts: "8443"
         email: support@stackrox.com
@@ -86,7 +85,7 @@ spec:
         runAsUser: 4000
       containers:
         - name: central
-          image: "quay.io/stackrox-io/main:3.74.3"
+          image: "quay.io/stackrox-io/main:4.0.0"
           command:
             - /stackrox/central-entrypoint.sh
           ports:
@@ -109,6 +108,14 @@ spec:
               drop: ["NET_RAW"]
             readOnlyRootFilesystem: true
           env:
+            - name: GOMEMLIMIT
+              valueFrom:
+                resourceFieldRef:
+                  resource: limits.memory
+            - name: GOMAXPROCS
+              valueFrom:
+                resourceFieldRef:
+                  resource: limits.cpu
             - name: ROX_NAMESPACE
               valueFrom:
                 fieldRef:
@@ -157,6 +164,10 @@ spec:
             - name: endpoints-config-volume
               mountPath: /etc/stackrox.d/endpoints/
               readOnly: true
+            - name: central-db-password
+              mountPath: /run/secrets/stackrox.io/db-password
+            - name: central-external-db-volume
+              mountPath: /etc/ext-db
 
             - name: trusted-ca-volume
               mountPath: /etc/pki/injected-ca-trust/
@@ -207,6 +218,13 @@ spec:
         - name: endpoints-config-volume
           configMap:
             name: central-endpoints
+        - name: central-db-password
+          secret:
+            secretName: central-db-password
+        - name: central-external-db-volume
+          configMap:
+            name: central-external-db
+            optional: true
         - name: stackrox-db
           persistentVolumeClaim:
             claimName: stackrox-db
@@ -232,8 +250,8 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: stackrox
     app.kubernetes.io/part-of: stackrox-central-services
-    app.kubernetes.io/version: 3.74.3
-    helm.sh/chart: stackrox-central-services-74.0.0
+    app.kubernetes.io/version: 4.0.0
+    helm.sh/chart: stackrox-central-services-400.0.0
   annotations:
     argocd.argoproj.io/sync-wave: "2"
     email: support@stackrox.com
@@ -241,7 +259,7 @@ metadata:
     meta.helm.sh/release-namespace: stackrox
     owner: stackrox
 spec:
-  replicas: 2 #3
+  #replicas: 2 #3
   minReadySeconds: 15
   selector:
     matchLabels:
@@ -258,8 +276,8 @@ spec:
         app.kubernetes.io/managed-by: Helm
         app.kubernetes.io/name: stackrox
         app.kubernetes.io/part-of: stackrox-central-services
-        app.kubernetes.io/version: 3.74.3
-        helm.sh/chart: stackrox-central-services-74.0.0
+        app.kubernetes.io/version: 4.0.0
+        helm.sh/chart: stackrox-central-services-400.0.0
       annotations:
         traffic.sidecar.istio.io/excludeInboundPorts: "8080,8443"
         email: support@stackrox.com
@@ -303,8 +321,16 @@ spec:
       containers:
         - name: scanner
 
-          image: "quay.io/stackrox-io/scanner:3.74.3"
+          image: "quay.io/stackrox-io/scanner:4.0.0"
           env:
+            - name: GOMEMLIMIT
+              valueFrom:
+                resourceFieldRef:
+                  resource: limits.memory
+            - name: GOMAXPROCS
+              valueFrom:
+                resourceFieldRef:
+                  resource: limits.cpu
             - name: POD_NAME
               valueFrom:
                 fieldRef:
@@ -422,8 +448,8 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: stackrox
     app.kubernetes.io/part-of: stackrox-central-services
-    app.kubernetes.io/version: 3.74.3
-    helm.sh/chart: stackrox-central-services-74.0.0
+    app.kubernetes.io/version: 4.0.0
+    helm.sh/chart: stackrox-central-services-400.0.0
   annotations:
     argocd.argoproj.io/sync-wave: "2"
     email: support@stackrox.com
@@ -448,8 +474,8 @@ spec:
         app.kubernetes.io/managed-by: Helm
         app.kubernetes.io/name: stackrox
         app.kubernetes.io/part-of: stackrox-central-services
-        app.kubernetes.io/version: 3.74.3
-        helm.sh/chart: stackrox-central-services-74.0.0
+        app.kubernetes.io/version: 4.0.0
+        helm.sh/chart: stackrox-central-services-400.0.0
       annotations:
         traffic.sidecar.istio.io/excludeInboundPorts: "5432"
         email: support@stackrox.com
@@ -492,7 +518,7 @@ spec:
                     operator: DoesNotExist
       initContainers:
         - name: init-db
-          image: "quay.io/stackrox-io/scanner-db:3.74.3"
+          image: "quay.io/stackrox-io/scanner-db:4.0.0"
           env:
             - name: POSTGRES_PASSWORD_FILE
               value: "/run/secrets/stackrox.io/secrets/password"
@@ -500,11 +526,11 @@ spec:
               value: "true"
           resources:
             limits:
-              cpu: 300m
-              memory: 3Gi
+              cpu: 2000m
+              memory: 4Gi
             requests:
-              cpu: 100m
-              memory: 1536Mi
+              cpu: 200m
+              memory: 200Mi
           volumeMounts:
             - name: scanner-db-data
               mountPath: /var/lib/postgresql/data
@@ -516,7 +542,9 @@ spec:
               readOnly: true
       containers:
         - name: db
-          image: "quay.io/stackrox-io/scanner-db:3.74.3"
+          image: "quay.io/stackrox-io/scanner-db:4.0.0"
+          #env:
+
           ports:
             - name: tcp-postgresql
               protocol: TCP

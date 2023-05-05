@@ -1,0 +1,152 @@
+# StackroxDB Tweak
+# alter user stackrox createdb;
+# PSQL 15 Public Scheme Tweak
+# \c stackrox
+# GRANT CREATE ON SCHEMA public TO stackrox;
+apiVersion: postgres-operator.crunchydata.com/v1beta1
+kind: PostgresCluster
+metadata:
+  name: stackrox
+  namespace: postgres
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+  labels:
+    app.kubernetes.io/instance: postgres
+spec:
+  backups:
+    pgbackrest:
+      global:
+        repo1-retention-full: "2"
+        repo1-retention-full-type: count
+      repoHost:
+        resources:
+          limits:
+            memory: "32Mi"
+            cpu: "45m"
+          requests:
+            memory: "16Mi"
+            cpu: "15m"
+      sidecars:
+        pgbackrest:
+          resources:
+            limits:
+              memory: "32Mi"
+              cpu: "100m"
+            requests:
+              memory: "16Mi"
+              cpu: "15m"
+        pgbackrestConfig:
+          resources:
+            limits:
+              memory: "32Mi"
+              cpu: "45m"
+            requests:
+              memory: "16Mi"
+              cpu: "15m"
+      repos:
+        - name: repo1
+          schedules:
+            full: "0 7 * * 0"
+            differential: "0 7 * * 1-6"
+          volume:
+            volumeClaimSpec:
+              storageClassName: longhorn-static
+              accessModes:
+                - ReadWriteOnce
+              resources:
+                requests:
+                  storage: 1Gi
+  instances:
+    - dataVolumeClaimSpec:
+        storageClassName: longhorn-static
+        accessModes:
+          - ReadWriteOnce
+        resources:
+          requests:
+            storage: 2Gi
+      name: ""
+      replicas: 2
+      resources:
+        requests:
+          memory: "250Mi"
+          cpu: "50m"
+        limits:
+          memory: "500Mi"
+          cpu: "100m"
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - labelSelector:
+                matchLabels:
+                  postgres-operator.crunchydata.com/cluster: stackrox
+                  postgres-operator.crunchydata.com/instance-set: "00"
+              topologyKey: "kubernetes.io/hostname"
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              podAffinityTerm:
+                labelSelector:
+                  matchLabels:
+                    postgres-operator.crunchydata.com/cluster: stackrox
+                    postgres-operator.crunchydata.com/instance-set: "00"
+                topologyKey: topology.kubernetes.io/zone
+  patroni:
+    dynamicConfiguration:
+      postgresql:
+        pg_hba:
+          - "host all all 0.0.0.0/0 trust"
+  monitoring:
+    pgmonitor:
+      exporter:
+        resources:
+          limits:
+            memory: "32Mi"
+            cpu: "10m"
+          requests:
+            memory: "16Mi"
+            cpu: "5m"
+  # userInterface:
+  #   pgAdmin:
+  #     dataVolumeClaimSpec:
+  #       accessModes:
+  #         - ReadWriteOnce
+  #       resources:
+  #         requests:
+  #           storage: 25Mi
+  #       storageClassName: longhorn
+  #     replicas: 1
+  #     resources:
+  #       limits:
+  #         cpu: 150m
+  #         memory: 256Mi
+  #       requests:
+  #         cpu: 25m
+  #         memory: 128Mi
+  openshift: true
+  port: 5432
+  postgresVersion: 15
+# ---
+# apiVersion: postgres-operator.crunchydata.com/v1beta1
+# kind: PGUpgrade
+# metadata:
+#   name: stackrox-upgrade
+#   namespace: postgres
+# spec:
+#   fromPostgresVersion: 14
+#   postgresClusterName: stackrox
+#   toPostgresVersion: 15
+
+# kubectl delete ResourceQuota -n postgres --all
+# kubectl delete LimitRange -n postgres --all
+
+# kubectl patch postgrescluster stackrox -n postgres --type=merge \
+#     -p '{"spec":{"shutdown":true}}'
+
+# kubectl annotate postgrescluster stackrox -n postgres  \
+#     postgres-operator.crunchydata.com/allow-upgrade=stackrox-upgrade
+
+# kubectl patch postgrescluster stackrox -n postgres --type "json" -p \
+# '[{"op":"replace","path":"/spec/postgresVersion","value":15}]'
+
+# kubectl patch postgrescluster stackrox -n postgres --type=merge \
+#     -p '{"spec":{"shutdown":false}}'

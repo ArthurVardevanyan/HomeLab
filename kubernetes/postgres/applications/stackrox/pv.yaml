@@ -1,0 +1,80 @@
+kind: PersistentVolume
+apiVersion: v1
+metadata:
+  name: stackrox-00-mtzw-pgdata
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+  labels:
+    app.kubernetes.io/instance: postgres
+spec:
+  capacity:
+    storage: 2Gi
+  csi:
+    driver: driver.longhorn.io
+    volumeHandle: stackrox-00-mtzw-pgdata
+    fsType: ext4
+    volumeAttributes:
+      numberOfReplicas: "2"
+  accessModes:
+    - ReadWriteOnce
+  claimRef:
+    kind: PersistentVolumeClaim
+    name: stackrox-00-mtzw-pgdata
+    namespace: postgres
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: longhorn-static
+  volumeMode: Filesystem
+---
+kind: PersistentVolume
+apiVersion: v1
+metadata:
+  name: stackrox-00-8h5r-pgdata
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+  labels:
+    app.kubernetes.io/instance: postgres
+spec:
+  capacity:
+    storage: 2Gi
+  csi:
+    driver: driver.longhorn.io
+    volumeHandle: stackrox-00-8h5r-pgdata
+    fsType: ext4
+    volumeAttributes:
+      numberOfReplicas: "2"
+  accessModes:
+    - ReadWriteOnce
+  claimRef:
+    kind: PersistentVolumeClaim
+    name: stackrox-00-8h5r-pgdata
+    namespace: postgres
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: longhorn-static
+  volumeMode: Filesystem
+---
+kind: PersistentVolume
+apiVersion: v1
+metadata:
+  name: stackrox-repo1
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+  labels:
+    app.kubernetes.io/instance: postgres
+spec:
+  capacity:
+    storage: 1Gi
+  csi:
+    driver: driver.longhorn.io
+    volumeHandle: stackrox-repo1
+    fsType: ext4
+    volumeAttributes:
+      numberOfReplicas: "2"
+  accessModes:
+    - ReadWriteOnce
+  claimRef:
+    kind: PersistentVolumeClaim
+    name: stackrox-repo1
+    namespace: postgres
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: longhorn-static
+  volumeMode: Filesystem
