@@ -1,5 +1,5 @@
 kind: HorizontalPodAutoscaler
-apiVersion: autoscaling/v2beta2
+apiVersion: autoscaling/v1
 metadata:
   name: thanos-querier
   namespace: prometheus
@@ -12,10 +12,4 @@ spec:
     apiVersion: apps/v1
   minReplicas: 1
   maxReplicas: 3
-  metrics:
-    - type: Resource
-      resource:
-        name: cpu
-        target:
-          type: Utilization
-          averageUtilization: 500
+  targetCPUUtilizationPercentage: 500
