@@ -10,8 +10,8 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: stackrox
     app.kubernetes.io/part-of: stackrox-central-services
-    app.kubernetes.io/version: 3.74.3
-    helm.sh/chart: stackrox-central-services-74.0.0
+    app.kubernetes.io/version: 4.0.0
+    helm.sh/chart: stackrox-central-services-400.0.0
     "config.openshift.io/inject-trusted-cabundle": "true"
   annotations:
     email: support@stackrox.com
@@ -31,8 +31,8 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: stackrox
     app.kubernetes.io/part-of: stackrox-central-services
-    app.kubernetes.io/version: 3.74.3
-    helm.sh/chart: stackrox-central-services-74.0.0
+    app.kubernetes.io/version: 4.0.0
+    helm.sh/chart: stackrox-central-services-400.0.0
   annotations:
     email: support@stackrox.com
     meta.helm.sh/release-name: stackrox-central-services
@@ -48,6 +48,30 @@ data:
         freeFractionThreshold: 0.75 # This is the threshold for free bytes / total bytes after which compaction will occur
       forceRollbackVersion: none # This is the config and target rollback version after upgrade complete.
 ---
+# Source: stackrox-central-services/templates/01-central-08-external-db-configmap.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: central-external-db
+  namespace: stackrox
+  labels:
+    app.kubernetes.io/component: central
+    app.kubernetes.io/instance: stackrox-central-services
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: stackrox
+    app.kubernetes.io/part-of: stackrox-central-services
+    app.kubernetes.io/version: 4.0.0
+    helm.sh/chart: stackrox-central-services-400.0.0
+  annotations:
+    email: support@stackrox.com
+    meta.helm.sh/release-name: stackrox-central-services
+    meta.helm.sh/release-namespace: stackrox
+    owner: stackrox
+data:
+  central-external-db.yaml: |
+    centralDB:
+      source: host=stackrox-primary.postgres.svc port=5432 dbname=stackrox user=stackrox statement_timeout=1.2e+06 pool_min_conns=10 pool_max_conns=90
+---
 # Source: stackrox-central-services/templates/01-central-09-endpoints-config.yaml
 apiVersion: v1
 kind: ConfigMap
@@ -60,8 +84,8 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: stackrox
     app.kubernetes.io/part-of: stackrox-central-services
-    app.kubernetes.io/version: 3.74.3
-    helm.sh/chart: stackrox-central-services-74.0.0
+    app.kubernetes.io/version: 4.0.0
+    helm.sh/chart: stackrox-central-services-400.0.0
   annotations:
     email: support@stackrox.com
     meta.helm.sh/release-name: stackrox-central-services
@@ -113,8 +137,8 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: stackrox
     app.kubernetes.io/part-of: stackrox-central-services
-    app.kubernetes.io/version: 3.74.3
-    helm.sh/chart: stackrox-central-services-74.0.0
+    app.kubernetes.io/version: 4.0.0
+    helm.sh/chart: stackrox-central-services-400.0.0
   annotations:
     email: support@stackrox.com
     meta.helm.sh/release-name: stackrox-central-services
