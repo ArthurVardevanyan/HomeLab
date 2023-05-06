@@ -6,6 +6,8 @@ metadata:
   annotations:
     argocd.argoproj.io/sync-wave: "1"
     argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+  labels:
+    app.kubernetes.io/instance: zitadel
 spec:
   dataStore:
     pvc:
@@ -14,7 +16,7 @@ spec:
           - ReadWriteOnce
         resources:
           requests:
-            storage: "1Gi"
+            storage: 1536Mi
         volumeMode: Filesystem
         storageClassName: longhorn-static
   resources:
