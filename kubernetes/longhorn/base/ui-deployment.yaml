@@ -5,7 +5,7 @@ metadata:
   labels:
     app.kubernetes.io/name: longhorn
     app.kubernetes.io/instance: longhorn
-    app.kubernetes.io/version: v1.4.1
+    app.kubernetes.io/version: v1.4.2
     app: longhorn-ui
   name: longhorn-ui
   namespace: longhorn-system
@@ -19,7 +19,7 @@ spec:
       labels:
         app.kubernetes.io/name: longhorn
         app.kubernetes.io/instance: longhorn
-        app.kubernetes.io/version: v1.4.1
+        app.kubernetes.io/version: v1.4.2
         app: longhorn-ui
       annotations:
         enable.version-checker.io/longhorn-ui: "true"
@@ -45,7 +45,7 @@ spec:
       automountServiceAccountToken: true
       containers:
         - name: oauth-proxy
-          image: quay.io/openshift/origin-oauth-proxy:4.12
+          image: quay.io/openshift/origin-oauth-proxy:4.13
           imagePullPolicy: IfNotPresent
           resources:
             requests:
@@ -70,7 +70,7 @@ spec:
             - mountPath: /etc/tls/private
               name: longhorn-ui-tls
         - name: longhorn-ui
-          image: longhornio/longhorn-ui:v1.4.1
+          image: longhornio/longhorn-ui:v1.4.2
           imagePullPolicy: IfNotPresent
           volumeMounts:
             - name: nginx-cache

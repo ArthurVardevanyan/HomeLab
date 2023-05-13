@@ -7,7 +7,7 @@ metadata:
   labels:
     app.kubernetes.io/name: longhorn
     app.kubernetes.io/instance: longhorn
-    app.kubernetes.io/version: v1.4.1
+    app.kubernetes.io/version: v1.4.2
 spec:
   replicas: 1
   selector:
@@ -18,7 +18,7 @@ spec:
       labels:
         app.kubernetes.io/name: longhorn
         app.kubernetes.io/instance: longhorn
-        app.kubernetes.io/version: v1.4.1
+        app.kubernetes.io/version: v1.4.2
         app: longhorn-driver-deployer
       annotations:
         enable.version-checker.io/longhorn-driver-deployer: "true"
@@ -43,7 +43,7 @@ spec:
         runAsUser: 19500
       initContainers:
         - name: wait-longhorn-manager
-          image: longhornio/longhorn-manager:v1.4.1
+          image: longhornio/longhorn-manager:v1.4.2
           command:
             [
               "sh",
@@ -52,7 +52,7 @@ spec:
             ]
       containers:
         - name: longhorn-driver-deployer
-          image: longhornio/longhorn-manager:v1.4.1
+          image: longhornio/longhorn-manager:v1.4.2
           imagePullPolicy: IfNotPresent
           securityContext:
             runAsGroup: 19500
@@ -77,7 +77,7 @@ spec:
             - -d
             - deploy-driver
             - --manager-image
-            - "longhornio/longhorn-manager:v1.4.1"
+            - "longhornio/longhorn-manager:v1.4.2"
             - --manager-url
             - http://longhorn-backend:9500/v1
           env:
