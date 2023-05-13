@@ -25,6 +25,9 @@ spec:
         - name: homeassistant-pvc
           persistentVolumeClaim:
             claimName: homeassistant-pvc
+        - name: certificate
+          secret:
+            secretName: homeassistant-cert
       serviceAccountName: homeassistant-sa
       containers:
         - name: homeassistant
@@ -48,6 +51,8 @@ spec:
           volumeMounts:
             - name: homeassistant-pvc
               mountPath: /config
+            - name: certificate
+              mountPath: /ssl
           livenessProbe:
             tcpSocket:
               port: 8123

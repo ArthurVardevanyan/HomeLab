@@ -3,12 +3,13 @@ default_config:
 
 http:
   use_x_forwarded_for: true
+  ssl_certificate: /ssl/tls.crt
+  ssl_key: /ssl/tls.key
   trusted_proxies:
-    - 10.0.0.2
     - 10.0.0.3
     - 10.0.0.4
     - 10.0.0.5
-    - 10.42.0.0/16
+    - 10.0.0.0/8
 
 # Text to speech
 tts:
@@ -20,12 +21,12 @@ script: !include scripts.yaml
 scene: !include scenes.yaml
 
 recorder:
-  db_url: mysql://homeAssistant:<myql_password>@mariadb-galera.mariadb-galera/homeAssistant?charset=utf8
+  db_url: postgresql://homeassistant:password@homeassistant-primary.postgres.svc:5432/homeassistant
   purge_keep_days: 31
 
 influxdb:
   host: influxdb.influxdb
-  port: 80
+  port: 8086
   database: home_assistant
   username: admin
   password: <influxdb_password>
