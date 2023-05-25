@@ -12,6 +12,7 @@ resource "google_storage_bucket" "okd_homelab_wif_oidc" {
   project       = "homelab-${local.project_id}"
   force_destroy = true
 
+  public_access_prevention    = "inherited"
   uniform_bucket_level_access = true
 }
 

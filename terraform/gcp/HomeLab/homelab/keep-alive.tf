@@ -33,6 +33,7 @@ resource "google_storage_bucket" "okd_homelab_keep_alive" {
     }
   }
 
+  public_access_prevention    = "enforced"
   uniform_bucket_level_access = true
 }
 
@@ -77,6 +78,7 @@ resource "google_storage_bucket" "okd_homelab_keep_alive_cloud_function" {
   project       = "homelab-${local.project_id}"
   force_destroy = true
 
+  public_access_prevention    = "enforced"
   uniform_bucket_level_access = true
 }
 
