@@ -10,21 +10,21 @@ patches:
       - op: replace
         path: /spec/servingCerts/namedCertificates/0/names
         value:
-          -  api.okd.sandbox.<path:secret/data/gitlab/domain#url>
+          -  api.okd.sandbox.<path:secret/data/homelab/domain#url>
   - target:
       kind: Certificate
       name: api-certificate
     patch: |-
       - op: replace
         path: /spec/dnsNames/0
-        value: api.okd.sandbox.<path:secret/data/gitlab/domain#url>
+        value: api.okd.sandbox.<path:secret/data/homelab/domain#url>
   - target:
       kind: Certificate
       name: ingress-certificate
     patch: |-
       - op: replace
         path: /spec/dnsNames/0
-        value: "*.apps.okd.sandbox.<path:secret/data/gitlab/domain#url>"
+        value: "*.apps.okd.sandbox.<path:secret/data/homelab/domain#url>"
       - op: replace
         path: /spec/dnsNames/1
-        value: "*.sandbox.<path:secret/data/gitlab/domain#url>"
+        value: "*.sandbox.<path:secret/data/homelab/domain#url>"
