@@ -104,7 +104,7 @@ spec:
     - name: gitInitImage
       description: The image providing the git-init binary that this Task runs.
       type: string
-      default: "gcr.io/tekton-releases/github.com/tektoncd/pipeline/cmd/git-init:v0.40.2"
+      default: "gcr.io/tekton-releases/github.com/tektoncd/pipeline/cmd/git-init:v0.44.2"
     - name: userHome
       description: |
         Absolute path to the user's home directory.
@@ -174,12 +174,12 @@ spec:
           value: $(workspaces.ssl-ca-directory.path)
       securityContext:
         runAsNonRoot: true
-        runAsUser: 65532
+        #runAsUser: 65532
         privileged: false
         readOnlyRootFilesystem: true
         allowPrivilegeEscalation: false
-        # seccompProfile:
-        #   type: RuntimeDefault
+        seccompProfile:
+          type: RuntimeDefault
         capabilities:
           drop:
             - ALL
