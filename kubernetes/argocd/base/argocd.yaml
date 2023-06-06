@@ -9,6 +9,8 @@ metadata:
   labels:
     app.kubernetes.io/instance: argocd
 spec:
+  monitoring:
+    enabled: true
   server:
     replicas: 2
     host: argocd.apps.okd.<path:secret/data/homelab/domain#url>
@@ -45,10 +47,10 @@ spec:
     policy: |
       g, system:cluster-admins, role:admin
       g, cluster-admins, role:admin
-  version: v2.7.3
+  version: v2.7.4
   repo:
     replicas: 2
-    version: v2.7.3
+    version: v2.7.4
     mountsatoken: true
     serviceaccount: default
     resources:
