@@ -1,0 +1,16 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: installplan-approver
+  labels:
+    app.kubernetes.io/instance: okd-configuration
+rules:
+  - apiGroups:
+      - operators.coreos.com
+    resources:
+      - installplans
+      - subscriptions
+    verbs:
+      - get
+      - list
+      - patch
