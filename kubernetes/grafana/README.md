@@ -1,7 +1,7 @@
 # Grafana
 
 ```bash
-kubectl kustomize kubernetes/grana/overlays/okd | argocd-vault-plugin generate - | kubectl apply -f -
+kubectl kustomize kubernetes/grafana/overlays/okd | argocd-vault-plugin generate - | kubectl apply -f -
 ```
 
 ## REF
