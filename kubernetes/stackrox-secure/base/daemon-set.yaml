@@ -9,7 +9,7 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: stackrox
     app.kubernetes.io/part-of: stackrox-secured-cluster-services
-    app.kubernetes.io/version: 4.1.0
+    app.kubernetes.io/version: 4.1.1
     helm.sh/chart: stackrox-secured-cluster-services-400.0.0
     service: collector
     app: collector
@@ -37,7 +37,7 @@ spec:
         app.kubernetes.io/managed-by: Helm
         app.kubernetes.io/name: stackrox
         app.kubernetes.io/part-of: stackrox-secured-cluster-services
-        app.kubernetes.io/version: 4.1.0
+        app.kubernetes.io/version: 4.1.1
         helm.sh/chart: stackrox-secured-cluster-services-400.0.0
       annotations:
         email: support@stackrox.com
@@ -50,7 +50,7 @@ spec:
       serviceAccountName: collector
       containers:
         - name: collector
-          image: "quay.io/stackrox-io/collector-slim:4.1.0"
+          image: "quay.io/stackrox-io/collector-slim:4.1.1"
           imagePullPolicy: IfNotPresent
           env:
             - name: COLLECTOR_CONFIG
@@ -124,7 +124,7 @@ spec:
             - name: ROX_NODE_SCANNING_ENDPOINT
               value: "127.0.0.1:8444"
 
-          image: "quay.io/stackrox-io/main:4.1.0"
+          image: "quay.io/stackrox-io/main:4.1.1"
           imagePullPolicy: IfNotPresent
           name: compliance
           resources:
@@ -153,7 +153,7 @@ spec:
               name: certs
               readOnly: true
         - name: node-inventory
-          image: "quay.io/stackrox-io/scanner-slim:4.1.0"
+          image: "quay.io/stackrox-io/scanner-slim:4.1.1"
           imagePullPolicy: IfNotPresent
           command: ["/scanner", "--nodeinventory", "--config=", ""]
           ports:
