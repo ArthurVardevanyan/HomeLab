@@ -1,3 +1,4 @@
+---
 # Source: longhorn/templates/daemonset-sa.yaml
 apiVersion: apps/v1
 kind: DaemonSet
@@ -5,7 +6,7 @@ metadata:
   labels:
     app.kubernetes.io/name: longhorn
     app.kubernetes.io/instance: longhorn
-    app.kubernetes.io/version: v1.4.2
+    app.kubernetes.io/version: v1.5.0
     app: longhorn-manager
   name: longhorn-manager
   namespace: longhorn-system
@@ -18,7 +19,7 @@ spec:
       labels:
         app.kubernetes.io/name: longhorn
         app.kubernetes.io/instance: longhorn
-        app.kubernetes.io/version: v1.4.2
+        app.kubernetes.io/version: v1.5.0
         app: longhorn-manager
       annotations:
         prometheus.io/path: /metrics
@@ -26,18 +27,9 @@ spec:
         prometheus.io/scrape: "true"
         enable.version-checker.io/longhorn-manager: "true"
     spec:
-      initContainers:
-        - name: wait-longhorn-admission-webhook
-          image: longhornio/longhorn-manager:v1.4.2
-          command:
-            [
-              "sh",
-              "-c",
-              'while [ $(curl -m 1 -s -o /dev/null -w "%{http_code}" -k https://longhorn-admission-webhook:9443/v1/healthz) != "200" ]; do echo waiting; sleep 2; done',
-            ]
       containers:
         - name: longhorn-manager
-          image: longhornio/longhorn-manager:v1.4.2
+          image: longhornio/longhorn-manager:v1.5.0
           imagePullPolicy: IfNotPresent
           securityContext:
             privileged: true
@@ -53,25 +45,33 @@ spec:
             - -d
             - daemon
             - --engine-image
-            - "longhornio/longhorn-engine:v1.4.2"
+            - "longhornio/longhorn-engine:v1.5.0"
             - --instance-manager-image
-            - "longhornio/longhorn-instance-manager:v1.4.2"
+            - "longhornio/longhorn-instance-manager:v1.5.0"
             - --share-manager-image
-            - "longhornio/longhorn-share-manager:v1.4.2"
+            - "longhornio/longhorn-share-manager:v1.5.0"
             - --backing-image-manager-image
-            - "longhornio/backing-image-manager:v1.4.2"
+            - "longhornio/backing-image-manager:v1.5.0"
             - --support-bundle-manager-image
             - "longhornio/support-bundle-kit:v0.0.24"
             - --manager-image
-            - "longhornio/longhorn-manager:v1.4.2"
+            - "longhornio/longhorn-manager:v1.5.0"
             - --service-account
             - longhorn-service-account
           ports:
             - containerPort: 9500
               name: manager
+            - containerPort: 9501
+              name: conversion-wh
+            - containerPort: 9502
+              name: admission-wh
+            - containerPort: 9503
+              name: recov-backend
           readinessProbe:
-            tcpSocket:
-              port: 9500
+            httpGet:
+              path: /v1/healthz
+              port: 9501
+              scheme: HTTPS
           volumeMounts:
             - name: dev
               mountPath: /host/dev/

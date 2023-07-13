@@ -5,7 +5,7 @@ metadata:
   labels:
     app.kubernetes.io/name: longhorn
     app.kubernetes.io/instance: longhorn
-    app.kubernetes.io/version: v1.4.2
+    app.kubernetes.io/version: v1.5.0
     app: longhorn-manager
   name: longhorn-backend
   namespace: longhorn-system
@@ -26,7 +26,7 @@ metadata:
   labels:
     app.kubernetes.io/name: longhorn
     app.kubernetes.io/instance: longhorn
-    app.kubernetes.io/version: v1.4.2
+    app.kubernetes.io/version: v1.5.0
     app: longhorn-ui
   name: longhorn-frontend
   namespace: longhorn-system
@@ -67,7 +67,7 @@ metadata:
   labels:
     app.kubernetes.io/name: longhorn
     app.kubernetes.io/instance: longhorn
-    app.kubernetes.io/version: v1.4.2
+    app.kubernetes.io/version: v1.5.0
     app: longhorn-conversion-webhook
   name: longhorn-conversion-webhook
   namespace: longhorn-system
@@ -75,10 +75,10 @@ spec:
   type: ClusterIP
   sessionAffinity: ClientIP
   selector:
-    app: longhorn-conversion-webhook
+    app: longhorn-manager
   ports:
     - name: conversion-webhook
-      port: 9443
+      port: 9501
       targetPort: conversion-wh
 ---
 # Source: longhorn/templates/services.yaml
@@ -88,7 +88,7 @@ metadata:
   labels:
     app.kubernetes.io/name: longhorn
     app.kubernetes.io/instance: longhorn
-    app.kubernetes.io/version: v1.4.2
+    app.kubernetes.io/version: v1.5.0
     app: longhorn-admission-webhook
   name: longhorn-admission-webhook
   namespace: longhorn-system
@@ -96,10 +96,10 @@ spec:
   type: ClusterIP
   sessionAffinity: ClientIP
   selector:
-    app: longhorn-admission-webhook
+    app: longhorn-manager
   ports:
     - name: admission-webhook
-      port: 9443
+      port: 9502
       targetPort: admission-wh
 ---
 # Source: longhorn/templates/services.yaml
@@ -109,7 +109,7 @@ metadata:
   labels:
     app.kubernetes.io/name: longhorn
     app.kubernetes.io/instance: longhorn
-    app.kubernetes.io/version: v1.4.2
+    app.kubernetes.io/version: v1.5.0
     app: longhorn-recovery-backend
   name: longhorn-recovery-backend
   namespace: longhorn-system
@@ -117,10 +117,10 @@ spec:
   type: ClusterIP
   sessionAffinity: ClientIP
   selector:
-    app: longhorn-recovery-backend
+    app: longhorn-manager
   ports:
     - name: recovery-backend
-      port: 9600
+      port: 9503
       targetPort: recov-backend
 ---
 # Source: longhorn/templates/services.yaml
@@ -130,7 +130,7 @@ metadata:
   labels:
     app.kubernetes.io/name: longhorn
     app.kubernetes.io/instance: longhorn
-    app.kubernetes.io/version: v1.4.2
+    app.kubernetes.io/version: v1.5.0
   name: longhorn-engine-manager
   namespace: longhorn-system
 spec:
@@ -146,7 +146,7 @@ metadata:
   labels:
     app.kubernetes.io/name: longhorn
     app.kubernetes.io/instance: longhorn
-    app.kubernetes.io/version: v1.4.2
+    app.kubernetes.io/version: v1.5.0
   name: longhorn-replica-manager
   namespace: longhorn-system
 spec:

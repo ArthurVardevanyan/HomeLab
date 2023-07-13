@@ -7,7 +7,7 @@ metadata:
   labels:
     app.kubernetes.io/name: longhorn
     app.kubernetes.io/instance: longhorn
-    app.kubernetes.io/version: v1.4.2
+    app.kubernetes.io/version: v1.5.0
     longhorn-manager: ""
   name: backingimagedatasources.longhorn.io
 spec:
@@ -177,7 +177,7 @@ metadata:
   labels:
     app.kubernetes.io/name: longhorn
     app.kubernetes.io/instance: longhorn
-    app.kubernetes.io/version: v1.4.2
+    app.kubernetes.io/version: v1.5.0
     longhorn-manager: ""
   name: backingimagemanagers.longhorn.io
 spec:
@@ -302,12 +302,6 @@ spec:
                     properties:
                       currentChecksum:
                         type: string
-                      directory:
-                        description: "Deprecated: This field is useless."
-                        type: string
-                      downloadProgress:
-                        description: "Deprecated: This field is renamed to `Progress`."
-                        type: integer
                       message:
                         type: string
                       name:
@@ -322,9 +316,6 @@ spec:
                         format: int64
                         type: integer
                       state:
-                        type: string
-                      url:
-                        description: "Deprecated: This field is useless now. The manager of backing image files doesn't care if a file is downloaded and how."
                         type: string
                       uuid:
                         type: string
@@ -361,7 +352,7 @@ metadata:
   labels:
     app.kubernetes.io/name: longhorn
     app.kubernetes.io/instance: longhorn
-    app.kubernetes.io/version: v1.4.2
+    app.kubernetes.io/version: v1.5.0
     longhorn-manager: ""
   name: backingimages.longhorn.io
 spec:
@@ -373,7 +364,7 @@ spec:
           name: longhorn-conversion-webhook
           namespace: longhorn-system
           path: /v1/webhook/conversion
-          port: 9443
+          port: 9501
       conversionReviewVersions:
         - v1beta2
         - v1beta1
@@ -455,9 +446,6 @@ spec:
                   additionalProperties:
                     type: string
                   type: object
-                imageURL:
-                  description: "Deprecated: This kind of info will be included in the related BackingImageDataSource."
-                  type: string
                 sourceParameters:
                   additionalProperties:
                     type: string
@@ -474,19 +462,6 @@ spec:
               properties:
                 checksum:
                   type: string
-                diskDownloadProgressMap:
-                  additionalProperties:
-                    type: integer
-                  description: "Deprecated: Replaced by field `Progress` in `DiskFileStatusMap`."
-                  nullable: true
-                  type: object
-                diskDownloadStateMap:
-                  additionalProperties:
-                    description: BackingImageDownloadState is replaced by BackingImageState.
-                    type: string
-                  description: "Deprecated: Replaced by field `State` in `DiskFileStatusMap`."
-                  nullable: true
-                  type: object
                 diskFileStatusMap:
                   additionalProperties:
                     properties:
@@ -535,7 +510,7 @@ metadata:
   labels:
     app.kubernetes.io/name: longhorn
     app.kubernetes.io/instance: longhorn
-    app.kubernetes.io/version: v1.4.2
+    app.kubernetes.io/version: v1.5.0
     longhorn-manager: ""
   name: backups.longhorn.io
 spec:
@@ -649,6 +624,9 @@ spec:
                 backupCreatedAt:
                   description: The snapshot backup upload finished time.
                   type: string
+                compressionMethod:
+                  description: Compression method
+                  type: string
                 error:
                   description: The error message when taking the snapshot backup.
                   type: string
@@ -727,7 +705,7 @@ metadata:
   labels:
     app.kubernetes.io/name: longhorn
     app.kubernetes.io/instance: longhorn
-    app.kubernetes.io/version: v1.4.2
+    app.kubernetes.io/version: v1.5.0
     longhorn-manager: ""
   name: backuptargets.longhorn.io
 spec:
@@ -739,7 +717,7 @@ spec:
           name: longhorn-conversion-webhook
           namespace: longhorn-system
           path: /v1/webhook/conversion
-          port: 9443
+          port: 9501
       conversionReviewVersions:
         - v1beta2
         - v1beta1
@@ -909,7 +887,7 @@ metadata:
   labels:
     app.kubernetes.io/name: longhorn
     app.kubernetes.io/instance: longhorn
-    app.kubernetes.io/version: v1.4.2
+    app.kubernetes.io/version: v1.5.0
     longhorn-manager: ""
   name: backupvolumes.longhorn.io
 spec:
@@ -1050,6 +1028,9 @@ spec:
                 size:
                   description: The backup volume size.
                   type: string
+                storageClassName:
+                  description: the storage class name of pv/pvc binding with the volume.
+                  type: string
               type: object
           type: object
       served: true
@@ -1072,7 +1053,7 @@ metadata:
   labels:
     app.kubernetes.io/name: longhorn
     app.kubernetes.io/instance: longhorn
-    app.kubernetes.io/version: v1.4.2
+    app.kubernetes.io/version: v1.5.0
     longhorn-manager: ""
   name: engineimages.longhorn.io
 spec:
@@ -1085,7 +1066,7 @@ spec:
           name: longhorn-conversion-webhook
           namespace: longhorn-system
           path: /v1/webhook/conversion
-          port: 9443
+          port: 9501
       conversionReviewVersions:
         - v1beta2
         - v1beta1
@@ -1263,7 +1244,7 @@ metadata:
   labels:
     app.kubernetes.io/name: longhorn
     app.kubernetes.io/instance: longhorn
-    app.kubernetes.io/version: v1.4.2
+    app.kubernetes.io/version: v1.5.0
     longhorn-manager: ""
   name: engines.longhorn.io
 spec:
@@ -1357,6 +1338,11 @@ spec:
               properties:
                 active:
                   type: boolean
+                backendStoreDriver:
+                  enum:
+                    - v1
+                    - v2
+                  type: string
                 backupVolume:
                   type: string
                 desireState:
@@ -1369,6 +1355,7 @@ spec:
                   enum:
                     - blockdev
                     - iscsi
+                    - nvmf
                     - ""
                   type: string
                 logRequested:
@@ -1611,7 +1598,7 @@ metadata:
   labels:
     app.kubernetes.io/name: longhorn
     app.kubernetes.io/instance: longhorn
-    app.kubernetes.io/version: v1.4.2
+    app.kubernetes.io/version: v1.5.0
     longhorn-manager: ""
   name: instancemanagers.longhorn.io
 spec:
@@ -1695,15 +1682,13 @@ spec:
             spec:
               description: InstanceManagerSpec defines the desired state of the Longhorn instancer manager
               properties:
-                engineImage:
-                  description: "Deprecated: This field is useless."
-                  type: string
                 image:
                   type: string
                 nodeID:
                   type: string
                 type:
                   enum:
+                    - aio
                     - engine
                     - replica
                   type: string
@@ -1721,11 +1706,13 @@ spec:
                   type: integer
                 currentState:
                   type: string
-                instances:
+                instanceEngines:
                   additionalProperties:
                     properties:
                       spec:
                         properties:
+                          backendStoreDriver:
+                            type: string
                           name:
                             type: string
                         type: object
@@ -1754,6 +1741,77 @@ spec:
                     type: object
                   nullable: true
                   type: object
+                instanceReplicas:
+                  additionalProperties:
+                    properties:
+                      spec:
+                        properties:
+                          backendStoreDriver:
+                            type: string
+                          name:
+                            type: string
+                        type: object
+                      status:
+                        properties:
+                          endpoint:
+                            type: string
+                          errorMsg:
+                            type: string
+                          listen:
+                            type: string
+                          portEnd:
+                            format: int32
+                            type: integer
+                          portStart:
+                            format: int32
+                            type: integer
+                          resourceVersion:
+                            format: int64
+                            type: integer
+                          state:
+                            type: string
+                          type:
+                            type: string
+                        type: object
+                    type: object
+                  nullable: true
+                  type: object
+                instances:
+                  additionalProperties:
+                    properties:
+                      spec:
+                        properties:
+                          backendStoreDriver:
+                            type: string
+                          name:
+                            type: string
+                        type: object
+                      status:
+                        properties:
+                          endpoint:
+                            type: string
+                          errorMsg:
+                            type: string
+                          listen:
+                            type: string
+                          portEnd:
+                            format: int32
+                            type: integer
+                          portStart:
+                            format: int32
+                            type: integer
+                          resourceVersion:
+                            format: int64
+                            type: integer
+                          state:
+                            type: string
+                          type:
+                            type: string
+                        type: object
+                    type: object
+                  nullable: true
+                  description: "Deprecated: Replaced by InstanceEngines and InstanceReplicas"
+                  type: object
                 ip:
                   type: string
                 ownerID:
@@ -1780,7 +1838,7 @@ metadata:
   labels:
     app.kubernetes.io/name: longhorn
     app.kubernetes.io/instance: longhorn
-    app.kubernetes.io/version: v1.4.2
+    app.kubernetes.io/version: v1.5.0
     longhorn-manager: ""
   name: nodes.longhorn.io
 spec:
@@ -1793,7 +1851,7 @@ spec:
           name: longhorn-conversion-webhook
           namespace: longhorn-system
           path: /v1/webhook/conversion
-          port: 9443
+          port: 9501
       conversionReviewVersions:
         - v1beta2
         - v1beta1
@@ -1895,16 +1953,19 @@ spec:
                         items:
                           type: string
                         type: array
+                      diskType:
+                        enum:
+                          - filesystem
+                          - block
+                        type: string
                     type: object
                   type: object
-                engineManagerCPURequest:
-                  type: integer
                 evictionRequested:
                   type: boolean
+                instanceManagerCPURequest:
+                  type: integer
                 name:
                   type: string
-                replicaManagerCPURequest:
-                  type: integer
                 tags:
                   items:
                     type: string
@@ -1964,6 +2025,8 @@ spec:
                           type: object
                         nullable: true
                         type: array
+                      diskType:
+                        type: string
                       diskUUID:
                         type: string
                       scheduledReplica:
@@ -2018,7 +2081,7 @@ metadata:
   labels:
     app.kubernetes.io/name: longhorn
     app.kubernetes.io/instance: longhorn
-    app.kubernetes.io/version: v1.4.2
+    app.kubernetes.io/version: v1.5.0
     longhorn-manager: ""
   name: orphans.longhorn.io
 spec:
@@ -2186,7 +2249,7 @@ spec:
           jsonPath: .spec.groups
           name: Groups
           type: string
-        - description: Should be one of "snapshot", "snapshot-force-create", "snapshot-cleanup", "snapshot-delete", "backup" or "backup-force-create"
+        - description: Should be one of "snapshot", "snapshot-force-create", "snapshot-cleanup", "snapshot-delete", "backup", "backup-force-create" or "filesystem-trim"
           jsonPath: .spec.task
           name: Task
           type: string
@@ -2248,7 +2311,7 @@ spec:
                   description: The retain count of the snapshot/backup.
                   type: integer
                 task:
-                  description: The recurring job task. Can be "snapshot", "snapshot-force-create", "snapshot-cleanup", "snapshot-delete", "backup" or "backup-force-create".
+                  description: The recurring job task. Can be "snapshot", "snapshot-force-create", "snapshot-cleanup", "snapshot-delete", "backup", "backup-force-create" or "filesystem-trim"
                   enum:
                     - snapshot
                     - snapshot-force-create
@@ -2256,6 +2319,7 @@ spec:
                     - snapshot-delete
                     - backup
                     - backup-force-create
+                    - filesystem-trim
                   type: string
               type: object
             status:
@@ -2286,7 +2350,7 @@ metadata:
   labels:
     app.kubernetes.io/name: longhorn
     app.kubernetes.io/instance: longhorn
-    app.kubernetes.io/version: v1.4.2
+    app.kubernetes.io/version: v1.5.0
     longhorn-manager: ""
   name: replicas.longhorn.io
 spec:
@@ -2388,15 +2452,14 @@ spec:
               properties:
                 active:
                   type: boolean
+                backendStoreDriver:
+                  enum:
+                    - v1
+                    - v2
+                  type: string
                 backingImage:
                   type: string
-                baseImage:
-                  description: Deprecated. Rename to BackingImage
-                  type: string
                 dataDirectoryName:
-                  type: string
-                dataPath:
-                  description: Deprecated
                   type: string
                 desireState:
                   type: string
@@ -2503,7 +2566,7 @@ metadata:
   labels:
     app.kubernetes.io/name: longhorn
     app.kubernetes.io/instance: longhorn
-    app.kubernetes.io/version: v1.4.2
+    app.kubernetes.io/version: v1.5.0
     longhorn-manager: ""
   name: settings.longhorn.io
 spec:
@@ -2593,7 +2656,7 @@ metadata:
   labels:
     app.kubernetes.io/name: longhorn
     app.kubernetes.io/instance: longhorn
-    app.kubernetes.io/version: v1.4.2
+    app.kubernetes.io/version: v1.5.0
     longhorn-manager: ""
   name: sharemanagers.longhorn.io
 spec:
@@ -2670,16 +2733,20 @@ spec:
               description: ShareManagerSpec defines the desired state of the Longhorn share manager
               properties:
                 image:
+                  description: Share manager image used for creating a share manager pod
                   type: string
               type: object
             status:
               description: ShareManagerStatus defines the observed state of the Longhorn share manager
               properties:
                 endpoint:
+                  description: NFS endpoint that can access the mounted filesystem of the volume
                   type: string
                 ownerID:
+                  description: The node ID on which the controller is responsible to reconcile this share manager resource
                   type: string
                 state:
+                  description: The state of the share manager resource
                   type: string
               type: object
           type: object
@@ -2703,7 +2770,7 @@ metadata:
   labels:
     app.kubernetes.io/name: longhorn
     app.kubernetes.io/instance: longhorn
-    app.kubernetes.io/version: v1.4.2
+    app.kubernetes.io/version: v1.5.0
     longhorn-manager: ""
   name: snapshots.longhorn.io
 spec:
@@ -2829,7 +2896,7 @@ metadata:
   labels:
     app.kubernetes.io/name: longhorn
     app.kubernetes.io/instance: longhorn
-    app.kubernetes.io/version: v1.4.2
+    app.kubernetes.io/version: v1.5.0
     longhorn-manager: ""
   name: supportbundles.longhorn.io
 spec:
@@ -2954,7 +3021,7 @@ metadata:
   labels:
     app.kubernetes.io/name: longhorn
     app.kubernetes.io/instance: longhorn
-    app.kubernetes.io/version: v1.4.2
+    app.kubernetes.io/version: v1.5.0
     longhorn-manager: ""
   name: systembackups.longhorn.io
 spec:
@@ -3000,6 +3067,11 @@ spec:
               type: object
             spec:
               description: SystemBackupSpec defines the desired state of the Longhorn SystemBackup
+              properties:
+                volumeBackupPolicy:
+                  description: The create volume backup policy Can be "if-not-present", "always" or "disabled"
+                  nullable: true
+                  type: string
               type: object
             status:
               description: SystemBackupStatus defines the observed state of the Longhorn SystemBackup
@@ -3076,7 +3148,7 @@ metadata:
   labels:
     app.kubernetes.io/name: longhorn
     app.kubernetes.io/instance: longhorn
-    app.kubernetes.io/version: v1.4.2
+    app.kubernetes.io/version: v1.5.0
     longhorn-manager: ""
   name: systemrestores.longhorn.io
 spec:
@@ -3178,7 +3250,7 @@ metadata:
   labels:
     app.kubernetes.io/name: longhorn
     app.kubernetes.io/instance: longhorn
-    app.kubernetes.io/version: v1.4.2
+    app.kubernetes.io/version: v1.5.0
     longhorn-manager: ""
   name: volumes.longhorn.io
 spec:
@@ -3191,7 +3263,7 @@ spec:
           name: longhorn-conversion-webhook
           namespace: longhorn-system
           path: /v1/webhook/conversion
-          port: 9443
+          port: 9501
       conversionReviewVersions:
         - v1beta2
         - v1beta1
@@ -3298,10 +3370,18 @@ spec:
                     - rwo
                     - rwx
                   type: string
+                backendStoreDriver:
+                  enum:
+                    - v1
+                    - v2
+                  type: string
                 backingImage:
                   type: string
-                baseImage:
-                  description: Deprecated. Rename to BackingImage
+                backupCompressionMethod:
+                  enum:
+                    - none
+                    - lz4
+                    - gzip
                   type: string
                 dataLocality:
                   enum:
@@ -3323,16 +3403,11 @@ spec:
                   type: string
                 fromBackup:
                   type: string
-                restoreVolumeRecurringJob:
-                  enum:
-                    - ignored
-                    - enabled
-                    - disabled
-                  type: string
                 frontend:
                   enum:
                     - blockdev
                     - iscsi
+                    - nvmf
                     - ""
                   type: string
                 lastAttachedBy:
@@ -3349,44 +3424,39 @@ spec:
                   type: array
                 numberOfReplicas:
                   type: integer
-                recurringJobs:
-                  description: Deprecated. Replaced by a separate resource named "RecurringJob"
-                  items:
-                    description: "Deprecated: This field is useless and has been replaced by the RecurringJob CRD"
-                    properties:
-                      concurrency:
-                        type: integer
-                      cron:
-                        type: string
-                      groups:
-                        items:
-                          type: string
-                        type: array
-                      labels:
-                        additionalProperties:
-                          type: string
-                        type: object
-                      name:
-                        type: string
-                      retain:
-                        type: integer
-                      task:
-                        enum:
-                          - snapshot
-                          - snapshot-force-create
-                          - snapshot-cleanup
-                          - snapshot-delete
-                          - backup
-                          - backup-force-create
-                        type: string
-                    type: object
-                  type: array
+                offlineReplicaRebuilding:
+                  description: OfflineReplicaRebuilding is used to determine if the offline replica rebuilding feature is enabled or not
+                  enum:
+                    - ignored
+                    - disabled
+                    - enabled
+                  type: string
                 replicaAutoBalance:
                   enum:
                     - ignored
                     - disabled
                     - least-effort
                     - best-effort
+                  type: string
+                replicaSoftAntiAffinity:
+                  description: Replica soft anti affinity of the volume. Set enabled to allow replicas to be scheduled on the same node
+                  enum:
+                    - ignored
+                    - enabled
+                    - disabled
+                  type: string
+                replicaZoneSoftAntiAffinity:
+                  description: Replica zone soft anti affinity of the volume. Set enabled to allow replicas to be scheduled in the same zone
+                  enum:
+                    - ignored
+                    - enabled
+                    - disabled
+                  type: string
+                restoreVolumeRecurringJob:
+                  enum:
+                    - ignored
+                    - enabled
+                    - disabled
                   type: string
                 revisionCounterDisabled:
                   type: boolean
@@ -3450,6 +3520,9 @@ spec:
                   type: array
                 currentImage:
                   type: string
+                currentMigrationNodeID:
+                  description: the node that this volume is currently migrating to
+                  type: string
                 currentNodeID:
                   type: string
                 expansionRequired:
@@ -3495,9 +3568,12 @@ spec:
                   type: string
                 lastDegradedAt:
                   type: string
+                offlineReplicaRebuildingRequired:
+                  type: boolean
                 ownerID:
                   type: string
                 pendingNodeID:
+                  description: Deprecated.
                   type: string
                 remountRequestedAt:
                   type: string
@@ -3513,6 +3589,136 @@ spec:
                   type: string
                 state:
                   type: string
+              type: object
+          type: object
+      served: true
+      storage: true
+      subresources:
+        status: {}
+status:
+  acceptedNames:
+    kind: ""
+    plural: ""
+  conditions: []
+  storedVersions: []
+---
+# Source: longhorn/templates/crds.yaml
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.7.0
+  labels:
+    app.kubernetes.io/name: longhorn
+    app.kubernetes.io/instance: longhorn
+    app.kubernetes.io/version: v1.5.0
+    longhorn-manager: ""
+  name: volumeattachments.longhorn.io
+spec:
+  group: longhorn.io
+  names:
+    kind: VolumeAttachment
+    listKind: VolumeAttachmentList
+    plural: volumeattachments
+    shortNames:
+      - lhva
+    singular: volumeattachment
+  scope: Namespaced
+  versions:
+    - additionalPrinterColumns:
+        - jsonPath: .metadata.creationTimestamp
+          name: Age
+          type: date
+      name: v1beta2
+      schema:
+        openAPIV3Schema:
+          description: VolumeAttachment stores attachment information of a Longhorn volume
+          properties:
+            apiVersion:
+              description: "APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources"
+              type: string
+            kind:
+              description: "Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds"
+              type: string
+            metadata:
+              type: object
+            spec:
+              description: VolumeAttachmentSpec defines the desired state of Longhorn VolumeAttachment
+              properties:
+                attachmentTickets:
+                  additionalProperties:
+                    properties:
+                      generation:
+                        description: A sequence number representing a specific generation of the desired state. Populated by the system. Read-only.
+                        format: int64
+                        type: integer
+                      id:
+                        description: The unique ID of this attachment. Used to differentiate different attachments of the same volume.
+                        type: string
+                      nodeID:
+                        description: The node that this attachment is requesting
+                        type: string
+                      parameters:
+                        additionalProperties:
+                          type: string
+                        description: Optional additional parameter for this attachment
+                        type: object
+                      type:
+                        type: string
+                    type: object
+                  type: object
+                volume:
+                  description: The name of Longhorn volume of this VolumeAttachment
+                  type: string
+              required:
+                - volume
+              type: object
+            status:
+              description: VolumeAttachmentStatus defines the observed state of Longhorn VolumeAttachment
+              properties:
+                attachmentTicketStatuses:
+                  additionalProperties:
+                    properties:
+                      conditions:
+                        description: Record any error when trying to fulfill this attachment
+                        items:
+                          properties:
+                            lastProbeTime:
+                              description: Last time we probed the condition.
+                              type: string
+                            lastTransitionTime:
+                              description: Last time the condition transitioned from one status to another.
+                              type: string
+                            message:
+                              description: Human-readable message indicating details about last transition.
+                              type: string
+                            reason:
+                              description: Unique, one-word, CamelCase reason for the condition's last transition.
+                              type: string
+                            status:
+                              description: Status is the status of the condition. Can be True, False, Unknown.
+                              type: string
+                            type:
+                              description: Type is the type of the condition.
+                              type: string
+                          type: object
+                        nullable: true
+                        type: array
+                      generation:
+                        description: A sequence number representing a specific generation of the desired state. Populated by the system. Read-only.
+                        format: int64
+                        type: integer
+                      id:
+                        description: The unique ID of this attachment. Used to differentiate different attachments of the same volume.
+                        type: string
+                      satisfied:
+                        description: Indicate whether this attachment ticket has been satisfied
+                        type: boolean
+                    required:
+                      - conditions
+                      - satisfied
+                    type: object
+                  type: object
               type: object
           type: object
       served: true
