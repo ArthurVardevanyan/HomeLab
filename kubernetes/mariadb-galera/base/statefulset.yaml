@@ -37,7 +37,7 @@ spec:
               topologyKey: kubernetes.io/hostname
       containers:
         - name: "mariadb-galera"
-          image: docker.io/bitnami/mariadb-galera:10.10.4-debian-11-r6
+          image: docker.io/bitnami/mariadb-galera:10.10.5-debian-11-r11
           imagePullPolicy: "IfNotPresent"
           securityContext:
             allowPrivilegeEscalation: false
@@ -160,7 +160,7 @@ spec:
               subPath: my.cnf
         - name: metrics
           image: docker.io/bitnami/mysqld-exporter:0.14.0
-          imagePullPolicy: "IfNotPresent"
+          imagePullPolicy: "Always" # Temp
           env:
             - name: MARIADB_METRICS_EXTRA_FLAGS
               value: ""
