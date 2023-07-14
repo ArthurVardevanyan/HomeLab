@@ -1,0 +1,81 @@
+---
+apiVersion: tekton.dev/v1beta1
+kind: PipelineRun
+metadata:
+  name: toolbox-image
+  annotations:
+    pipelinesascode.tekton.dev/max-keep-runs: "1"
+    pipelinesascode.tekton.dev/on-cel-expression: |
+      event == "pull_request" && target_branch == "production" && "containers/toolbox/containerfile".pathChanged()
+    pipelinesascode.tekton.dev/target-namespace: "homelab"
+spec:
+  params:
+    - name: git-url
+      value: "{{ repo_url }}"
+    - name: git-commit
+      value: "{{ revision }}"
+    - name: DOCKERFILE
+      value: "./containers/toolbox/containerfile"
+    - name: IMAGE
+      value: "registry.arthurvardevanyan.com/homelab/toolbox:latest"
+  pipelineSpec:
+    params:
+      - name: git-url
+        description: Repository URL to clone from.
+        type: string
+      - name: git-commit
+        type: string
+      - name: IMAGE
+        description: Reference of the image buildah will produce.
+      - name: DOCKERFILE
+        description: Path to the Dockerfile to build.
+        type: string
+        default: ./Dockerfile
+
+    workspaces:
+      - name: data
+
+    tasks:
+      - name: git-clone
+        taskRef:
+          name: git-clone
+          kind: ClusterTask
+        params:
+          - name: url
+            value: $(params.git-url)
+          - name: revision
+            value: $(params.git-commit)
+        workspaces:
+          - name: output
+            workspace: data
+
+      - name: buildah
+        runAfter:
+          - git-clone
+        taskRef:
+          name: buildah
+          kind: ClusterTask
+        params:
+          - name: IMAGE
+            value: $(params.IMAGE)
+          - name: DOCKERFILE
+            value: $(params.DOCKERFILE)
+        workspaces:
+          - name: source
+            workspace: data
+
+  serviceAccountName: pipeline
+  workspaces:
+    - name: data
+      volumeClaimTemplate:
+        apiVersion: v1
+        kind: PersistentVolumeClaim
+        metadata:
+          name: data
+        spec:
+          accessModes:
+            - ReadWriteOnce
+          resources:
+            requests:
+              storage: "100Mi"
+          storageClassName: longhorn
