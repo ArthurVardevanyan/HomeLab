@@ -1,0 +1,12 @@
+kind: Secret
+apiVersion: v1
+metadata:
+  name: pipelines-as-code-secret
+  namespace: openshift-pipelines
+  annotations:
+    argocd.argoproj.io/sync-wave: "2"
+stringData:
+  github-application-id: <path:secret/data/homelab/tekton#github_app>
+  github-private-key: <path:secret/data/homelab/tekton#github_pk>
+  webhook.secret: <path:secret/data/homelab/tekton#webhook>
+type: Opaque

@@ -1,0 +1,35 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: gosmee
+  namespace: openshift-pipelines
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: gosmee
+  template:
+    metadata:
+      labels:
+        app: gosmee
+    spec:
+      containers:
+        - name: gosmeed
+          image: ghcr.io/chmouel/gosmee:latest
+          imagePullPolicy: Always
+          args:
+            - client
+            - "http://<path:secret/data/homelab/tekton#gosmee_ip>:3333/<path:secret/data/homelab/tekton#gosmee_hash>"
+            - >-
+              https://pipelines-as-code-controller-openshift-pipelines.apps.okd.arthurvardevanyan.com
+          ports:
+            - name: http
+              containerPort: 3333
+              protocol: TCP
+          resources:
+            limits:
+              cpu: 100m
+              memory: 64Mi
+            requests:
+              cpu: 10m
+              memory: 32Mi
