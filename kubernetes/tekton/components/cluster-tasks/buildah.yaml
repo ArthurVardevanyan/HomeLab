@@ -27,7 +27,7 @@ spec:
       description: Reference of the image buildah will produce.
     - name: BUILDER_IMAGE
       description: The location of the buildah builder image.
-      default: quay.io/buildah/stable:v1.30.0
+      default: quay.io/buildah/stable:v1.31.0
     - name: STORAGE_DRIVER
       description: Set buildah storage driver
       default: vfs #overlay
@@ -113,16 +113,19 @@ spec:
           mountPath: /var/run
         - name: cache
           mountPath: /var/cache
+        - name: networks # TODO Circle Back to This.
+          mountPath: /etc/containers/networks
       securityContext:
         runAsNonRoot: false
         runAsUser: 0 #1000 #65532
-        privileged: false
+        privileged: true # TODO Circle Back to This.
         readOnlyRootFilesystem: true
-        allowPrivilegeEscalation: false
+        allowPrivilegeEscalation: true
         # seccompProfile:
         #   type: RuntimeDefault
         capabilities:
           add:
+            - CAP_SYS_ADMIN # TODO Circle Back to This.
             - SETFCAP
           drop:
             - MKNOD
@@ -150,5 +153,8 @@ spec:
       emptyDir:
         sizeLimit: 1Mi
     - name: cache
+      emptyDir:
+        sizeLimit: 1Mi
+    - name: networks # TODO Circle Back to This.
       emptyDir:
         sizeLimit: 1Mi
