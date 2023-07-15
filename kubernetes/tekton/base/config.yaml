@@ -35,6 +35,7 @@ spec:
     enable-custom-tasks: false
     enable-git-resolver: true
     enable-hub-resolver: true
+    enable-provenance-in-status: false
     enable-tekton-oci-bundles: true
     metrics.pipelinerun.duration-type: lastvalue
     metrics.pipelinerun.level: pipelinerun
@@ -43,15 +44,36 @@ spec:
     params:
       - name: enableMetrics
         value: "true"
+    performance:
+      disable-ha: false
     require-git-ssh-secret-known-hosts: false
     running-in-environment-with-injected-sidecars: true
     send-cloudevents-for-runs: false
+    trusted-resources-verification-no-match-policy: ignore
   platforms:
     openshift:
       pipelinesAsCode:
         enable: true
+        settings:
+          application-name: Pipelines as Code
+          auto-configure-new-github-repo: "false"
+          bitbucket-cloud-check-source-ip: "true"
+          custom-console-name: ""
+          custom-console-url: ""
+          custom-console-url-pr-details: ""
+          custom-console-url-pr-tasklog: ""
+          error-detection-from-container-logs: "false"
+          error-detection-max-number-of-lines: "50"
+          error-detection-simple-regexp: ^(?P<filename>[^:]*):(?P<line>[0-9]+):(?P<column>[0-9]+):([ ]*)?(?P<error>.*)
+          error-log-snippet: "false"
+          hub-catalog-name: tekton
+          hub-url: https://api.hub.tekton.dev/v1
+          remote-tasks: "true"
+          secret-auto-create: "true"
+          secret-github-app-token-scoped: "true"
   profile: all
   pruner:
+    disabled: false
     keep: 3
     resources:
       - taskrun

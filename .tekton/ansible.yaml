@@ -2,36 +2,33 @@
 apiVersion: tekton.dev/v1beta1
 kind: PipelineRun
 metadata:
-  name: apache-php-image
+  name: ansible
   annotations:
     pipelinesascode.tekton.dev/max-keep-runs: "1"
     pipelinesascode.tekton.dev/on-cel-expression: |
-      target_branch == "production" && "containers/apache-php/containerfile".pathChanged()
+      target_branch == "production"
     # event == "pull_request" &&
+    # && "containers/toolbox/containerfile".pathChanged()
     pipelinesascode.tekton.dev/target-namespace: "homelab"
+    pipelinesascode.tekton.dev/task: "[tekton/base/ansible-task.yaml]"
 spec:
   params:
-    - name: git-url
-      value: "{{ repo_url }}"
+    - name: playbooks
+      value: servers
     - name: git-commit
       value: "{{ revision }}"
-    - name: DOCKERFILE
-      value: "./containers/apache-php/containerfile"
-    - name: IMAGE
-      value: "registry.arthurvardevanyan.com/homelab/apache-php:latest"
+    - name: git-url
+      value: "{{ repo_url }}"
+
   pipelineSpec:
     params:
-      - name: git-url
-        description: Repository URL to clone from.
+      - name: playbooks
         type: string
       - name: git-commit
         type: string
-      - name: IMAGE
-        description: Reference of the image buildah will produce.
-      - name: DOCKERFILE
-        description: Path to the Dockerfile to build.
+      - name: git-url
         type: string
-        default: ./Dockerfile
+        description: Repository URL to clone from.
 
     workspaces:
       - name: data
@@ -44,25 +41,21 @@ spec:
         params:
           - name: url
             value: $(params.git-url)
-          - name: revision
-            value: $(params.git-commit)
         workspaces:
           - name: output
             workspace: data
 
-      - name: buildah
+      - name: ansible
         runAfter:
           - git-clone
         taskRef:
-          name: buildah
-          kind: ClusterTask
+          name: ansible
+          kind: Task
         params:
-          - name: IMAGE
-            value: $(params.IMAGE)
-          - name: DOCKERFILE
-            value: $(params.DOCKERFILE)
+          - name: playbooks
+            value: $(params.playbooks)
         workspaces:
-          - name: source
+          - name: data
             workspace: data
 
   serviceAccountName: pipeline
