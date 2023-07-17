@@ -1,4 +1,4 @@
-<domain type='kvm' id='6' xmlns:qemu='http://libvirt.org/schemas/domain/qemu/1.0'>
+<domain type='kvm' id='14' xmlns:qemu='http://libvirt.org/schemas/domain/qemu/1.0'>
   <name>server-1</name>
   <uuid>56c0a13c-d703-4f1e-af7f-d9bfc774aff8</uuid>
   <metadata>
@@ -6,8 +6,8 @@
       <libosinfo:os id="http://fedoraproject.org/coreos/stable" />
     </libosinfo:libosinfo>
   </metadata>
-  <memory unit='KiB'>16252928</memory>
-  <currentMemory unit='KiB'>16252928</currentMemory>
+  <memory unit='KiB'>18350080</memory>
+  <currentMemory unit='KiB'>18350080</currentMemory>
   <vcpu placement='static'>4</vcpu>
   <resource>
     <partition>/machine</partition>
@@ -103,26 +103,26 @@
     <interface type='bridge'>
       <mac address='10:00:00:00:01:01' />
       <source bridge='br0' />
-      <target dev='vnet5' />
+      <target dev='vnet13' />
       <model type='virtio' />
       <alias name='net0' />
       <address type='pci' domain='0x0000' bus='0x01' slot='0x00' function='0x0' />
     </interface>
     <serial type='pty'>
-      <source path='/dev/pts/5' />
+      <source path='/dev/pts/1' />
       <target type='isa-serial' port='0'>
         <model name='isa-serial' />
       </target>
       <alias name='serial0' />
     </serial>
-    <console type='pty' tty='/dev/pts/5'>
-      <source path='/dev/pts/5' />
+    <console type='pty' tty='/dev/pts/1'>
+      <source path='/dev/pts/1' />
       <target type='serial' port='0' />
       <alias name='serial0' />
     </console>
     <channel type='unix'>
       <source mode='bind'
-        path='/var/lib/libvirt/qemu/channel/target/domain-6-server-1/org.qemu.guest_agent.0' />
+        path='/var/lib/libvirt/qemu/channel/target/domain-14-server-1/org.qemu.guest_agent.0' />
       <target type='virtio' name='org.qemu.guest_agent.0' state='connected' />
       <alias name='channel0' />
       <address type='virtio-serial' controller='0' bus='0' port='1' />

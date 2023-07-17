@@ -164,15 +164,15 @@ end
 
 | NAME     | ROLES          | Machine | vCPU | Mem   | Storage |
 | -------- | -------------- | ------- | ---- | ----- | ------- |
-| server-1 | cp,etcd,master | kvm-1   | 4    | 15.5G | N/A     |
-| server-2 | cp,etcd,master | kvm-2   | 4    | 22G   | N/A     |
-| server-3 | cp,etcd,master | kvm-1   | 4    | 15.5G | N/A     |
-| worker-1 | worker         | kvm-1   | 4    | 20G   | LH NVME |
-| worker-2 | worker         | kvm-2   | 4    | 24G   | LH NVME |
-| worker-3 | worker         | kvm-1   | 4    | 20G   | LH NVME |
-| worker-4 | worker         | kvm-2   | 4    | 24G   | LH NVME |
-| worker-5 | worker         | kvm-1   | 4    | 20G   | LH NVME |
-| worker-6 | worker         | kvm-2   | 4    | 24G   | LH NVME |
+| server-1 | cp,etcd,master | kvm-1   | 4    | 17.5G | N/A     |
+| server-2 | cp,etcd,master | kvm-2   | 4    | 19G   | N/A     |
+| server-3 | cp,etcd,master | kvm-1   | 4    | 17.5G | N/A     |
+| worker-1 | worker         | kvm-1   | 4    | 19G   | LH NVME |
+| worker-2 | worker         | kvm-2   | 4    | 23.5G | LH NVME |
+| worker-3 | worker         | kvm-1   | 4    | 19G   | LH NVME |
+| worker-4 | worker         | kvm-2   | 4    | 23.5G | LH NVME |
+| worker-5 | worker         | kvm-1   | 4    | 19G   | LH NVME |
+| worker-6 | worker         | kvm-2   | 4    | 23.5G | LH NVME |
 
 #### KVM Config Dump
 
