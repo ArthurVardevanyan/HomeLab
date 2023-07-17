@@ -1,4 +1,3 @@
----
 # Source: stackrox-secured-cluster-services/templates/admission-controller.yaml
 apiVersion: apps/v1
 kind: Deployment
@@ -12,17 +11,16 @@ metadata:
     app.kubernetes.io/name: stackrox
     app.kubernetes.io/part-of: stackrox-secured-cluster-services
     app.kubernetes.io/version: 4.1.1
-    helm.sh/chart: stackrox-secured-cluster-services-400.0.0
+    helm.sh/chart: stackrox-secured-cluster-services-400.1.1
     app: admission-control
     auto-upgrade.stackrox.io/component: "sensor"
   annotations:
-    argocd.argoproj.io/sync-wave: "2"
     email: support@stackrox.com
     meta.helm.sh/release-name: stackrox-secured-cluster-services
     meta.helm.sh/release-namespace: stackrox
     owner: stackrox
 spec:
-  replicas: 2 # 3
+  #replicas: 3
   minReadySeconds: 0
   selector:
     matchLabels:
@@ -38,7 +36,7 @@ spec:
         app.kubernetes.io/name: stackrox
         app.kubernetes.io/part-of: stackrox-secured-cluster-services
         app.kubernetes.io/version: 4.1.1
-        helm.sh/chart: stackrox-secured-cluster-services-400.0.0
+        helm.sh/chart: stackrox-secured-cluster-services-400.1.1
       annotations:
         traffic.sidecar.istio.io/excludeInboundPorts: "8443"
         email: support@stackrox.com
@@ -187,7 +185,7 @@ metadata:
     app.kubernetes.io/name: stackrox
     app.kubernetes.io/part-of: stackrox-secured-cluster-services
     app.kubernetes.io/version: 4.1.1
-    helm.sh/chart: stackrox-secured-cluster-services-400.0.0
+    helm.sh/chart: stackrox-secured-cluster-services-400.1.1
     app: sensor
     auto-upgrade.stackrox.io/component: "sensor"
   annotations:
@@ -214,7 +212,7 @@ spec:
         app.kubernetes.io/name: stackrox
         app.kubernetes.io/part-of: stackrox-secured-cluster-services
         app.kubernetes.io/version: 4.1.1
-        helm.sh/chart: stackrox-secured-cluster-services-400.0.0
+        helm.sh/chart: stackrox-secured-cluster-services-400.1.1
       annotations:
         traffic.sidecar.istio.io/excludeInboundPorts: "8443,9443"
         email: support@stackrox.com
