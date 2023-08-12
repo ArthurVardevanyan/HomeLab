@@ -27,8 +27,8 @@ resource "libvirt_domain" "worker" {
   name            = "worker-${count.index}"
   coreos_ignition = libvirt_ignition.worker.id
 
-  vcpu   = "3"
-  memory = "7168"
+  vcpu   = "4"
+  memory = "8192"
   disk {
     volume_id = element(libvirt_volume.worker.*.id, count.index)
   }
