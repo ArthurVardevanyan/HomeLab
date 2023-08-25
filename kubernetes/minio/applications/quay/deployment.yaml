@@ -7,10 +7,7 @@ metadata:
     app.kubernetes.io/instance: minio
 spec:
   strategy:
-    type: RollingUpdate
-    rollingUpdate:
-      maxSurge: 100%
-      maxUnavailable: 0
+    type: Recreate
   replicas: 1
   selector:
     matchLabels:
@@ -32,7 +29,7 @@ spec:
       automountServiceAccountToken: false
       containers:
         - name: minio-quay
-          image: "quay.io/minio/minio:RELEASE.2023-07-11T21-29-34Z"
+          image: "quay.io/minio/minio:RELEASE.2023-08-23T10-07-06Z"
           imagePullPolicy: IfNotPresent
           command:
             - "/bin/sh"
