@@ -1,0 +1,14 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: minio-crb
+  labels:
+    app.kubernetes.io/instance: quay
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: minio-cr
+subjects:
+  - kind: ServiceAccount
+    name: quay-sa
+    namespace: quay
