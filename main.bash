@@ -90,7 +90,8 @@ stateful_workload_stop() {
   kubectl scale --replicas=0 -n uptime-kuma statefulset/uptime-kuma
   kubectl scale --replicas=0 -n vault statefulset/vault
 
-  kubectl scale --replicas=0 -n minio deployment/minio-quay
+  kubectl scale --replicas=0 -n minio-operator deployment/minio-operator
+  kubectl scale --replicas=0 -n quay statefulset/quay-pool-0
   kubectl scale --replicas=0 -n quay deployment/quay-quay-app
   kubectl scale --replicas=0 -n quay deployment/quay-clair-app
   kubectl scale --replicas=0 -n quay deployment/quay-quay-mirror
@@ -146,7 +147,8 @@ stateful_workload_start() {
   kubectl scale --replicas=1 -n uptime-kuma statefulset/uptime-kuma
   kubectl scale --replicas=1 -n vault statefulset/vault
 
-  kubectl scale --replicas=1 -n minio deployment/minio-quay
+  kubectl scale --replicas=1 -n minio-operator deployment/minio-operator
+  kubectl scale --replicas=3 -n quay statefulset/quay-pool-0
   kubectl scale --replicas=2 -n quay deployment/quay-quay-app
   kubectl scale --replicas=2 -n quay deployment/quay-clair-app
   kubectl scale --replicas=2 -n quay deployment/quay-quay-mirror
