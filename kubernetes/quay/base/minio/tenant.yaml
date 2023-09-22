@@ -1,0 +1,64 @@
+apiVersion: minio.min.io/v2
+kind: Tenant
+metadata:
+  name: quay
+  namespace: quay
+  labels:
+    app.kubernetes.io/instance: quay
+scheduler:
+  name: ""
+spec:
+  configuration:
+    name: quay-env-configuration
+  credsSecret:
+    name: quay-secret
+  exposeServices:
+    console: true
+    minio: true
+  image: minio/minio:RELEASE.2023-09-20T22-49-55Z
+  mountPath: /export
+  pools:
+    - affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - labelSelector:
+                matchExpressions:
+                  - key: v1.min.io/tenant
+                    operator: In
+                    values:
+                      - quay
+                  - key: v1.min.io/pool
+                    operator: In
+                    values:
+                      - pool-0
+              topologyKey: kubernetes.io/hostname
+      name: pool-0
+      resources:
+        limits:
+          cpu: 300m
+          memory: 1Gi
+        requests:
+          cpu: 100m
+          memory: 512Mi
+      runtimeClassName: ""
+      securityContext:
+        fsGroup: 1000
+        fsGroupChangePolicy: Always
+        runAsGroup: 1000
+        runAsNonRoot: true
+        runAsUser: 1000
+      servers: 3
+      volumeClaimTemplate:
+        metadata:
+          name: data
+        spec:
+          accessModes:
+            - ReadWriteOnce
+          resources:
+            requests:
+              storage: "17895697066"
+          storageClassName: longhorn
+      volumesPerServer: 2
+  requestAutoCert: false
+  users:
+    - name: quay-user-0

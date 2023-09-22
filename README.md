@@ -376,7 +376,7 @@ kubectl patch -n quay deployment/quay-quay-app --type='json' \
 kubectl patch -n quay deployment/quay-clair-app --type='json' \
   -p='[{"op": "replace", "path": "/spec/template/spec/containers/0/resources", "value": {"limits": {"cpu": "500m","memory": "2.5Gi", "ephemeral-storage": "3Gi"},"requests": {"cpu": "150m","memory": "756Mi", "ephemeral-storage": "1Gi"}}}]'
 kubectl patch -n quay deployment/quay-quay-mirror --type='json' \
-  -p='[{"op": "replace", "path": "/spec/template/spec/containers/0/resources", "value": {"limits": {"cpu": "250m","memory": "300Mi"},"requests": {"cpu": "50m","memory": "150Mi"}}}]'
+  -p='[{"op": "replace", "path": "/spec/template/spec/containers/0/resources", "value": {"limits": {"cpu": "250m","memory": "512Mi"},"requests": {"cpu": "50m","memory": "256Mi"}}}]'
 ```
 
 ## Tekton
