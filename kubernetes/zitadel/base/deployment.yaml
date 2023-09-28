@@ -3,11 +3,12 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: zitadel
+  namespace: zitadel
   labels:
     helm.sh/chart: zitadel-6.2.0
     app.kubernetes.io/name: zitadel
     app.kubernetes.io/instance: zitadel
-    app.kubernetes.io/version: "v2.36.3"
+    app.kubernetes.io/version: "v2.37.2"
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/component: start
   annotations:
@@ -72,7 +73,7 @@ spec:
             capabilities:
               drop:
                 - all
-          image: "ghcr.io/zitadel/zitadel:v2.36.3"
+          image: "ghcr.io/zitadel/zitadel:v2.37.2"
           imagePullPolicy: IfNotPresent
           args:
             - start
