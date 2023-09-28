@@ -15,8 +15,13 @@ data "vault_generic_secret" "homelab" {
   path = "secret/gcp/org/av/folders/homelab"
 }
 
+data "vault_generic_secret" "projects" {
+  path = "secret/gcp/org/av/projects"
+}
+
 locals {
   project_id          = data.vault_generic_secret.org.data["project_id"]
+  bucket_id           = data.vault_generic_secret.projects.data["bucket_id"]
   homelab_project_num = data.vault_generic_secret.homelab.data["homelab_project_num"]
 }
 
