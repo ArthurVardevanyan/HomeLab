@@ -1,19 +1,16 @@
 kind: PersistentVolumeClaim
 apiVersion: v1
 metadata:
-  name: gitea-pvc
+  name: gitea-shared-storage
   namespace: gitea
-  labels:
-    app.kubernetes.io/instance: gitea
 spec:
   accessModes:
-    - ReadWriteOnce
+    - ReadWriteMany
+  volumeMode: Filesystem
+  storageClassName: longhorn-static
   resources:
     requests:
-      storage: 3Gi
-  volumeName: gitea-pv
-  storageClassName: longhorn-static
-  volumeMode: Filesystem
+      storage: 1Gi
 ---
 kind: PersistentVolume
 apiVersion: v1
@@ -23,7 +20,7 @@ metadata:
     app.kubernetes.io/instance: gitea
 spec:
   capacity:
-    storage: 3Gi
+    storage: 1Gi
   csi:
     driver: driver.longhorn.io
     volumeHandle: gitea
@@ -31,10 +28,10 @@ spec:
     volumeAttributes:
       numberOfReplicas: "2"
   accessModes:
-    - ReadWriteOnce
+    - ReadWriteMany
   claimRef:
     kind: PersistentVolumeClaim
-    name: gitea-pvc
+    name: gitea-shared-storage
     namespace: gitea
   persistentVolumeReclaimPolicy: Retain
   storageClassName: longhorn-static
