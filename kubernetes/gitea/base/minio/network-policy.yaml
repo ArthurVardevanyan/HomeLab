@@ -1,7 +1,7 @@
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
-  name: gitea-app
+  name: minio-internal
   namespace: gitea
   annotations:
     argocd.argoproj.io/sync-wave: "1"
@@ -10,7 +10,50 @@ metadata:
 spec:
   podSelector:
     matchLabels:
-      postgres-operator.crunchydata.com/cluster: gitea
+      v1.min.io/pool: pool-0
+      v1.min.io/tenant: gitea
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: gitea
+          podSelector:
+            matchLabels:
+              v1.min.io/pool: pool-0
+              v1.min.io/tenant: gitea
+      ports:
+        - protocol: TCP
+          port: 9000
+  egress:
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: gitea
+          podSelector:
+            matchLabels:
+              v1.min.io/pool: pool-0
+              v1.min.io/tenant: gitea
+      ports:
+        - protocol: TCP
+          port: 9000
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: minio-gitea
+  namespace: gitea
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+  labels:
+    app.kubernetes.io/instance: gitea
+spec:
+  podSelector:
+    matchLabels:
+      v1.min.io/pool: pool-0
+      v1.min.io/tenant: gitea
   policyTypes:
     - Ingress
   ingress:
@@ -20,15 +63,17 @@ spec:
               kubernetes.io/metadata.name: gitea
           podSelector:
             matchLabels:
+              app: gitea
+              app.kubernetes.io/instance: gitea
               app.kubernetes.io/name: gitea
       ports:
         - protocol: TCP
-          port: 5432
+          port: 9000
 ---
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
-  name: allow-postgres
+  name: minio-gitea-egress
   namespace: gitea
   annotations:
     argocd.argoproj.io/sync-wave: "0"
@@ -47,15 +92,17 @@ spec:
               kubernetes.io/metadata.name: gitea
           podSelector:
             matchLabels:
-              postgres-operator.crunchydata.com/cluster: gitea
+              v1.min.io/pool: pool-0
+              v1.min.io/tenant: gitea
       ports:
-        - port: 5432
+        - port: 9000
           protocol: TCP
+
 ---
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
-  name: gitea-postgres
+  name: minio-console-gitea
   namespace: gitea
   annotations:
     argocd.argoproj.io/sync-wave: "1"
@@ -64,50 +111,20 @@ metadata:
 spec:
   podSelector:
     matchLabels:
-      postgres-operator.crunchydata.com/cluster: gitea
+      v1.min.io/pool: pool-0
+      v1.min.io/tenant: gitea
   policyTypes:
     - Ingress
-    - Egress
   ingress:
     - from:
         - namespaceSelector:
             matchLabels:
-              kubernetes.io/metadata.name: gitea
+              kubernetes.io/metadata.name: minio-operator
           podSelector:
             matchLabels:
-              postgres-operator.crunchydata.com/cluster: gitea
-  egress:
-    - to:
-        - namespaceSelector:
-            matchLabels:
-              kubernetes.io/metadata.name: gitea
-          podSelector:
-            matchLabels:
-              postgres-operator.crunchydata.com/cluster: gitea
----
-apiVersion: networking.k8s.io/v1
-kind: NetworkPolicy
-metadata:
-  name: allow-api-server
-  namespace: gitea
-  annotations:
-    argocd.argoproj.io/sync-wave: "0"
-  labels:
-    app.kubernetes.io/instance: gitea
-spec:
-  podSelector:
-    matchLabels:
-      postgres-operator.crunchydata.com/cluster: gitea
-  policyTypes:
-    - Egress
-  egress:
-    - to:
-        - podSelector:
-            matchLabels:
-              app: openshift-kube-apiserver
-          namespaceSelector:
-            matchLabels:
-              kubernetes.io/metadata.name: openshift-kube-apiserver
+              app: console
+              app.kubernetes.io/instance: minio-operator-console
+              app.kubernetes.io/name: operator
       ports:
         - protocol: TCP
-          port: 6443
+          port: 9090
