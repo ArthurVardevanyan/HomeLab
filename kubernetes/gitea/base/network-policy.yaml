@@ -94,32 +94,7 @@ spec:
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
-  name: internal-communication
-  namespace: gitea
-  annotations:
-    argocd.argoproj.io/sync-wave: "1"
-  labels:
-    app.kubernetes.io/instance: gitea
-spec:
-  podSelector: {}
-  policyTypes:
-    - Ingress
-    - Egress
-  ingress:
-    - from:
-        - namespaceSelector:
-            matchLabels:
-              kubernetes.io/metadata.name: gitea
-  egress:
-    - to:
-        - namespaceSelector:
-            matchLabels:
-              kubernetes.io/metadata.name: gitea
----
-apiVersion: networking.k8s.io/v1
-kind: NetworkPolicy
-metadata:
-  name: allow-postgres
+  name: allow-internet-egress-gitea
   namespace: gitea
   annotations:
     argocd.argoproj.io/sync-wave: "0"
@@ -128,32 +103,11 @@ metadata:
 spec:
   policyTypes:
     - Egress
-  podSelector: {}
-  egress:
-    - to:
-        - namespaceSelector:
-            matchLabels:
-              kubernetes.io/metadata.name: postgres
-          podSelector:
-            matchLabels:
-              postgres-operator.crunchydata.com/cluster: gitea
-      ports:
-        - port: 5432
-          protocol: TCP
----
-apiVersion: networking.k8s.io/v1
-kind: NetworkPolicy
-metadata:
-  name: allow-internet-egress
-  namespace: gitea
-  annotations:
-    argocd.argoproj.io/sync-wave: "0"
-  labels:
-    app.kubernetes.io/instance: gitea
-spec:
-  policyTypes:
-    - Egress
-  podSelector: {}
+  podSelector:
+    matchLabels:
+      app: gitea
+      app.kubernetes.io/instance: gitea
+      app.kubernetes.io/name: gitea
   egress:
     - to:
         - ipBlock:

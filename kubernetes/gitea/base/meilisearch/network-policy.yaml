@@ -1,0 +1,57 @@
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: melisearch-gitea
+  namespace: gitea
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+  labels:
+    app.kubernetes.io/instance: gitea
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/part-of: meilisearch
+      app.kubernetes.io/instance: gitea
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: gitea
+          podSelector:
+            matchLabels:
+              app: gitea
+              app.kubernetes.io/instance: gitea
+              app.kubernetes.io/name: gitea
+      ports:
+        - protocol: TCP
+          port: 7700
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: meilisearch-gitea-egress
+  namespace: gitea
+  annotations:
+    argocd.argoproj.io/sync-wave: "0"
+  labels:
+    app.kubernetes.io/instance: gitea
+spec:
+  policyTypes:
+    - Egress
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: gitea
+  egress:
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: gitea
+          podSelector:
+            matchLabels:
+              app.kubernetes.io/part-of: meilisearch
+              app.kubernetes.io/instance: gitea
+      ports:
+        - port: 7700
+          protocol: TCP

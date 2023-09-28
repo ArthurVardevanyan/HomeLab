@@ -1,13 +1,16 @@
+# PSQL 15 Public Scheme Tweak
+# \c gitea
+# GRANT CREATE ON SCHEMA public TO gitea;
 apiVersion: postgres-operator.crunchydata.com/v1beta1
 kind: PostgresCluster
 metadata:
   name: gitea
-  namespace: postgres
+  namespace: gitea
   annotations:
     argocd.argoproj.io/sync-wave: "1"
     argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
   labels:
-    app.kubernetes.io/instance: postgres
+    app.kubernetes.io/instance: gitea
 spec:
   backups:
     pgbackrest:
@@ -50,7 +53,7 @@ spec:
                 - ReadWriteOnce
               resources:
                 requests:
-                  storage: 2Gi
+                  storage: 1Gi
   instances:
     - dataVolumeClaimSpec:
         storageClassName: longhorn-static
@@ -58,7 +61,7 @@ spec:
           - ReadWriteOnce
         resources:
           requests:
-            storage: 3Gi
+            storage: 2Gi
       name: ""
       replicas: 2
       resources:
@@ -107,7 +110,7 @@ spec:
   #       resources:
   #         requests:
   #           storage: 25Mi
-  #       storageClassName: longhorn
+  #       storageClassName: longhorn-static
   #     replicas: 1
   #     resources:
   #       limits:

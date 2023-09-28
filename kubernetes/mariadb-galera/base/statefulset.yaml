@@ -158,50 +158,50 @@ spec:
             - name: mariadb-galera-config
               mountPath: /bitnami/conf/my.cnf
               subPath: my.cnf
-        - name: metrics
-          image: docker.io/bitnami/mysqld-exporter:0.15.0
-          imagePullPolicy: "Always" # Temp
-          env:
-            - name: MARIADB_METRICS_EXTRA_FLAGS
-              value: ""
-            - name: MARIADB_ROOT_USER
-              value: "root"
-            - name: MARIADB_ROOT_PASSWORD
-              valueFrom:
-                secretKeyRef:
-                  name: mariadb-galera
-                  key: mariadb-root-password
-          command:
-            - /bin/bash
-            - -ec
-            - |
-              password_aux="${MARIADB_ROOT_PASSWORD:-}"
-              if [[ -f "${MARIADB_ROOT_PASSWORD_FILE:-}" ]]; then
-                  password_aux=$(cat "$MARIADB_ROOT_PASSWORD_FILE")
-              fi
-              DATA_SOURCE_NAME="${MARIADB_ROOT_USER}:${password_aux}@(localhost:3306)/" /bin/mysqld_exporter $MARIADB_METRICS_EXTRA_FLAGS
-          ports:
-            - name: metrics
-              containerPort: 9104
-          livenessProbe:
-            httpGet:
-              path: /
-              port: metrics
-            initialDelaySeconds: 30
-            timeoutSeconds: 5
-          readinessProbe:
-            httpGet:
-              path: /
-              port: metrics
-            initialDelaySeconds: 5
-            timeoutSeconds: 1
-          resources:
-            limits:
-              cpu: 50m
-              memory: 50Mi
-            requests:
-              cpu: 25m
-              memory: 25Mi
+      #   - name: metrics
+      #     image: docker.io/bitnami/mysqld-exporter:0.15.0
+      #     imagePullPolicy: "Always" # Temp
+      #     env:
+      #       - name: MARIADB_METRICS_EXTRA_FLAGS
+      #         value: ""
+      #       - name: MARIADB_ROOT_USER
+      #         value: "root"
+      #       - name: MARIADB_ROOT_PASSWORD
+      #         valueFrom:
+      #           secretKeyRef:
+      #             name: mariadb-galera
+      #             key: mariadb-root-password
+      #     command:
+      #       - /bin/bash
+      #       - -ec
+      #       - |
+      #         password_aux="${MARIADB_ROOT_PASSWORD:-}"
+      #         if [[ -f "${MARIADB_ROOT_PASSWORD_FILE:-}" ]]; then
+      #             password_aux=$(cat "$MARIADB_ROOT_PASSWORD_FILE")
+      #         fi
+      #         DATA_SOURCE_NAME="${MARIADB_ROOT_USER}:${password_aux}@(localhost:3306)/" /bin/mysqld_exporter $MARIADB_METRICS_EXTRA_FLAGS
+      #     ports:
+      #       - name: metrics
+      #         containerPort: 9104
+      #     livenessProbe:
+      #       httpGet:
+      #         path: /
+      #         port: metrics
+      #       initialDelaySeconds: 30
+      #       timeoutSeconds: 5
+      #     readinessProbe:
+      #       httpGet:
+      #         path: /
+      #         port: metrics
+      #       initialDelaySeconds: 5
+      #       timeoutSeconds: 1
+      #     resources:
+      #       limits:
+      #         cpu: 50m
+      #         memory: 50Mi
+      #       requests:
+      #         cpu: 25m
+      #         memory: 25Mi
       volumes:
         - name: previous-boot
           emptyDir: {}

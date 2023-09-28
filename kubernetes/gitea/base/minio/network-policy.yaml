@@ -1,0 +1,183 @@
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: minio-internal
+  namespace: gitea
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+  labels:
+    app.kubernetes.io/instance: gitea
+spec:
+  podSelector:
+    matchLabels:
+      v1.min.io/pool: pool-0
+      v1.min.io/tenant: gitea
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: gitea
+          podSelector:
+            matchLabels:
+              v1.min.io/pool: pool-0
+              v1.min.io/tenant: gitea
+      ports:
+        - protocol: TCP
+          port: 9000
+  egress:
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: gitea
+          podSelector:
+            matchLabels:
+              v1.min.io/pool: pool-0
+              v1.min.io/tenant: gitea
+      ports:
+        - protocol: TCP
+          port: 9000
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: minio-gitea
+  namespace: gitea
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+  labels:
+    app.kubernetes.io/instance: gitea
+spec:
+  podSelector:
+    matchLabels:
+      v1.min.io/pool: pool-0
+      v1.min.io/tenant: gitea
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: gitea
+          podSelector:
+            matchLabels:
+              app: gitea
+              app.kubernetes.io/instance: gitea
+              app.kubernetes.io/name: gitea
+      ports:
+        - protocol: TCP
+          port: 9000
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: minio-gitea-egress
+  namespace: gitea
+  annotations:
+    argocd.argoproj.io/sync-wave: "0"
+  labels:
+    app.kubernetes.io/instance: gitea
+spec:
+  policyTypes:
+    - Egress
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: gitea
+  egress:
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: gitea
+          podSelector:
+            matchLabels:
+              v1.min.io/pool: pool-0
+              v1.min.io/tenant: gitea
+      ports:
+        - port: 9000
+          protocol: TCP
+
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: minio-console-gitea
+  namespace: gitea
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+  labels:
+    app.kubernetes.io/instance: gitea
+spec:
+  podSelector:
+    matchLabels:
+      v1.min.io/pool: pool-0
+      v1.min.io/tenant: gitea
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: minio-operator
+          podSelector:
+            matchLabels:
+              app: console
+              app.kubernetes.io/instance: minio-operator-console
+              app.kubernetes.io/name: operator
+      ports:
+        - protocol: TCP
+          port: 9090
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-minio-operator-traffic
+  namespace: gitea
+  annotations:
+    argocd.argoproj.io/sync-wave: "0"
+  labels:
+    app.kubernetes.io/instance: gitea
+spec:
+  policyTypes:
+    - Ingress
+  podSelector:
+    matchLabels:
+      v1.min.io/tenant: gitea
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: minio-operator
+      ports:
+        - port: 9000
+          protocol: TCP
+        - port: 9090
+          protocol: TCP
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-api-server-minio
+  namespace: gitea
+  annotations:
+    argocd.argoproj.io/sync-wave: "0"
+  labels:
+    app.kubernetes.io/instance: gitea
+spec:
+  podSelector:
+    matchLabels:
+      v1.min.io/tenant: gitea
+  policyTypes:
+    - Egress
+  egress:
+    - to:
+        - podSelector:
+            matchLabels:
+              app: openshift-kube-apiserver
+          namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: openshift-kube-apiserver
+      ports:
+        - protocol: TCP
+          port: 6443

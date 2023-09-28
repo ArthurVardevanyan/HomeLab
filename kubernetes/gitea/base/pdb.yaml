@@ -1,7 +1,8 @@
-apiVersion: monitoring.coreos.com/v1
-kind: ServiceMonitor
+apiVersion: policy/v1
+kind: PodDisruptionBudget
 metadata:
   name: gitea
+  namespace: gitea
   labels:
     helm.sh/chart: gitea-9.4.0
     app: gitea
@@ -15,12 +16,4 @@ spec:
     matchLabels:
       app.kubernetes.io/name: gitea
       app.kubernetes.io/instance: gitea
-  namespaceSelector:
-    matchNames:
-      - gitea
-  endpoints:
-    - port: http
-      scheme: https
-      interval: 60s
-      tlsConfig:
-        serverName: "git.<path:secret/data/homelab/domain#url>"
+  minAvailable: 1

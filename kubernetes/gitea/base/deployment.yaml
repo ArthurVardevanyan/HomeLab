@@ -1,77 +1,253 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: gitea-memcached
-  namespace: gitea
+  name: gitea
   labels:
+    helm.sh/chart: gitea-9.4.0
+    app: gitea
+    app.kubernetes.io/name: gitea
     app.kubernetes.io/instance: gitea
+    app.kubernetes.io/version: "1.20.4"
+    version: "1.20.4"
+    app.kubernetes.io/managed-by: Helm
 spec:
+  replicas: 2
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 100%
   selector:
     matchLabels:
-      app.kubernetes.io/name: memcached
+      app.kubernetes.io/name: gitea
       app.kubernetes.io/instance: gitea
-  replicas: 3
   template:
     metadata:
       labels:
-        app.kubernetes.io/name: memcached
+        helm.sh/chart: gitea-9.4.0
+        app: gitea
+        app.kubernetes.io/name: gitea
         app.kubernetes.io/instance: gitea
-      annotations:
-        enable.version-checker.io/memcached: "true"
+        app.kubernetes.io/version: "1.20.4"
+        version: "1.20.4"
+        app.kubernetes.io/managed-by: Helm
     spec:
-      affinity:
-        podAntiAffinity:
-          preferredDuringSchedulingIgnoredDuringExecution:
-            - podAffinityTerm:
-                labelSelector:
-                  matchLabels:
-                    app.kubernetes.io/name: memcached
-                    app.kubernetes.io/instance: gitea
-                namespaces:
-                  - "gitea"
-                topologyKey: kubernetes.io/hostname
-              weight: 1
       # securityContext:
-      #   fsGroup: 1001
-      #   runAsUser: 1001
-      serviceAccountName: gitea-memcached
-      automountServiceAccountToken: false
-      containers:
-        - name: memcached
-          image: docker.io/bitnami/memcached:1.6.21-debian-11-r64
-          imagePullPolicy: "IfNotPresent"
-          args:
-            - /run.sh
+      #   fsGroup: 1000
+      initContainers:
+        - name: init-directories
+          image: "gitea/gitea:1.20.4-rootless"
+          imagePullPolicy: IfNotPresent
+          command: ["/usr/sbin/init_directory_structure.sh"]
           env:
-            - name: BITNAMI_DEBUG
-              value: "false"
-          ports:
-            - name: memcache
-              containerPort: 11211
-          livenessProbe:
-            tcpSocket:
-              port: memcache
-            initialDelaySeconds: 30
-            timeoutSeconds: 5
-            failureThreshold: 6
-          readinessProbe:
-            tcpSocket:
-              port: memcache
-            initialDelaySeconds: 5
-            timeoutSeconds: 3
-            periodSeconds: 5
+            - name: GITEA_APP_INI
+              value: /data/gitea/conf/app.ini
+            - name: GITEA_CUSTOM
+              value: /data/gitea
+            - name: GITEA_WORK_DIR
+              value: /data
+            - name: GITEA_TEMP
+              value: /tmp/gitea
+          volumeMounts:
+            - name: init
+              mountPath: /usr/sbin
+            - name: temp
+              mountPath: /tmp
+            - name: data
+              mountPath: /data
+            - mountPath: /cert
+              name: gitea-cert
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+            privileged: false
+            readOnlyRootFilesystem: true
+            runAsNonRoot: true
+            seccompProfile:
+              type: RuntimeDefault
           resources:
             limits:
               cpu: 250m
-              memory: 50Mi
+              memory: 128Mi
             requests:
               cpu: 25m
-              memory: 25Mi
+              memory: 64Mi
+        - name: init-app-ini
+          image: "gitea/gitea:1.20.4-rootless"
+          imagePullPolicy: IfNotPresent
+          command: ["/usr/sbin/config_environment.sh"]
+          env:
+            - name: GITEA_APP_INI
+              value: /data/gitea/conf/app.ini
+            - name: GITEA_CUSTOM
+              value: /data/gitea
+            - name: GITEA_WORK_DIR
+              value: /data
+            - name: GITEA_TEMP
+              value: /tmp/gitea
           volumeMounts:
-            - name: tmp
+            - name: config
+              mountPath: /usr/sbin
+            - name: temp
               mountPath: /tmp
+            - name: data
+              mountPath: /data
+            - name: inline-config-sources
+              mountPath: /env-to-ini-mounts/inlines/
+            - mountPath: /cert
+              name: gitea-cert
           securityContext:
-            readOnlyRootFilesystem: false
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+            privileged: false
+            readOnlyRootFilesystem: true
+            runAsNonRoot: true
+            seccompProfile:
+              type: RuntimeDefault
+          resources:
+            limits:
+              cpu: 250m
+              memory: 128Mi
+            requests:
+              cpu: 25m
+              memory: 64Mi
+        - name: configure-gitea
+          image: "gitea/gitea:1.20.4-rootless"
+          command: ["/usr/sbin/configure_gitea.sh"]
+          imagePullPolicy: IfNotPresent
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+            privileged: false
+            readOnlyRootFilesystem: true
+            runAsNonRoot: true
+            #runAsUser: 1000
+            seccompProfile:
+              type: RuntimeDefault
+          env:
+            - name: GITEA_APP_INI
+              value: /data/gitea/conf/app.ini
+            - name: GITEA_CUSTOM
+              value: /data/gitea
+            - name: GITEA_WORK_DIR
+              value: /data
+            - name: GITEA_TEMP
+              value: /tmp/gitea
+            - name: HOME
+              value: /data/gitea/git
+            - name: GITEA_ADMIN_USERNAME
+              value: "gitea_admin"
+            - name: GITEA_ADMIN_PASSWORD
+              value: "<path:secret/data/homelab/gitea/gitea#admin_pass>"
+          volumeMounts:
+            - name: init
+              mountPath: /usr/sbin
+            - name: temp
+              mountPath: /tmp
+            - name: data
+              mountPath: /data
+            - mountPath: /cert
+              name: gitea-cert
+          resources:
+            limits:
+              cpu: 250m
+              memory: 128Mi
+            requests:
+              cpu: 25m
+              memory: 64Mi
+      terminationGracePeriodSeconds: 60
+      containers:
+        - name: gitea
+          image: "gitea/gitea:1.20.4-rootless"
+          imagePullPolicy: IfNotPresent
+          env:
+            # SSH Port values have to be set here as well for openssh configuration
+            - name: SSH_LISTEN_PORT
+              value: "2222"
+            - name: SSH_PORT
+              value: "22"
+            - name: GITEA_APP_INI
+              value: /data/gitea/conf/app.ini
+            - name: GITEA_CUSTOM
+              value: /data/gitea
+            - name: GITEA_WORK_DIR
+              value: /data
+            - name: GITEA_TEMP
+              value: /tmp/gitea
+            - name: TMPDIR
+              value: /tmp/gitea
+            - name: HOME
+              value: /data/gitea/git
+          ports:
+            - name: ssh
+              containerPort: 2222
+            - name: http
+              containerPort: 3000
+            - name: profiler
+              containerPort: 6060
+          livenessProbe:
+            failureThreshold: 10
+            initialDelaySeconds: 200
+            periodSeconds: 10
+            successThreshold: 1
+            tcpSocket:
+              port: http
+            timeoutSeconds: 1
+          readinessProbe:
+            failureThreshold: 3
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            successThreshold: 1
+            tcpSocket:
+              port: http
+            timeoutSeconds: 1
+          resources:
+            limits:
+              cpu: 500m
+              memory: 512Mi
+            requests:
+              cpu: 50m
+              memory: 256Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+            privileged: false
+            readOnlyRootFilesystem: true
+            runAsNonRoot: true
+            seccompProfile:
+              type: RuntimeDefault
+          volumeMounts:
+            - name: temp
+              mountPath: /tmp
+            - name: data
+              mountPath: /data
+            - mountPath: /cert
+              name: gitea-cert
       volumes:
-        - name: tmp
+        - name: init
+          secret:
+            secretName: gitea-init
+            defaultMode: 110
+        - name: config
+          secret:
+            secretName: gitea
+            defaultMode: 110
+        - name: gitea-cert
+          secret:
+            secretName: gitea-cert
+        - name: inline-config-sources
+          secret:
+            secretName: gitea-inline-config
+        - name: temp
           emptyDir: {}
+        - name: data
+          persistentVolumeClaim:
+            claimName: gitea-shared-storage
