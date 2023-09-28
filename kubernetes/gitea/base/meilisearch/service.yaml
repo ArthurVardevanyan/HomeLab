@@ -1,0 +1,22 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: gitea-meilisearch
+  labels:
+    helm.sh/chart: meilisearch-0.2.5
+    app.kubernetes.io/name: meilisearch
+    app.kubernetes.io/instance: gitea
+    app.kubernetes.io/version: "v1.3.0"
+    app.kubernetes.io/component: search-engine
+    app.kubernetes.io/part-of: meilisearch
+    app.kubernetes.io/managed-by: Helm
+spec:
+  type: ClusterIP
+  ports:
+    - port: 7700
+      targetPort: http
+      protocol: TCP
+      name: http
+  selector:
+    app.kubernetes.io/name: meilisearch
+    app.kubernetes.io/instance: gitea
