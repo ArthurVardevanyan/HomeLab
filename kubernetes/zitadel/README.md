@@ -7,17 +7,20 @@ helm template zitadel zitadel/zitadel \
  --set zitadel.configmapConfig.ExternalDomain="zitadel.apps.okd.<path:secret/data/homelab/domain#url>" \
  --set zitadel.configmapConfig.ExternalPort="443" \
  --set zitadel.configmapConfig.TLS.Enabled=false \
+ --set zitadel.configmapConfig.Database.cockroach.User.SSL.Mode="verify-full" \
+ --set zitadel.configmapConfig.Database.cockroach.Admin.SSL.Mode="verify-full" \
  --set zitadel.secretConfig.Database.cockroach.User.Password="<path:secret/data/homelab/zitadel/config#db-password>" \
  --set zitadel.secretConfig.Database.cockroach.Host="crdb-public" \
- --set zitadel.dbSslRootCrtSecret=crdb-ca \
- --set zitadel.dbSslClientCrtSecret=crdb-root \
+ --set zitadel.dbSslCaCrtSecret=crdb-ca \
+ --set zitadel.dbSslAdminCrtSecret=crdb-root \
+ --set zitadel.dbSslUserCrtSecret=db-cockroachdb-zitadel-secret \
  --set zitadel.configmapConfig.FirstInstance.Org.Machine=false \
  --set setupJob.activeDeadlineSeconds=600 \
  --set pdb.enabled=true \
  --set pdb.minAvailable=1 \
  --set metrics.enabled=true \
  --set metrics.serviceMonitor.enabled=true \
- --set replicaCount=2 > zitadel.yaml
+ --set replicaCount=0 > zitadel.yaml
 ```
 
 Manual Fixes, Remove:

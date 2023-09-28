@@ -4,14 +4,12 @@ kind: Deployment
 metadata:
   name: zitadel
   labels:
-    helm.sh/chart: zitadel-4.3.0
+    helm.sh/chart: zitadel-6.2.0
     app.kubernetes.io/name: zitadel
     app.kubernetes.io/instance: zitadel
-    app.kubernetes.io/version: "v2.30.0"
+    app.kubernetes.io/version: "v2.35.0"
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/component: start
-  annotations:
-    argocd.argoproj.io/sync-wave: "3"
 spec:
   replicas: 2
   selector:
@@ -21,9 +19,9 @@ spec:
   template:
     metadata:
       annotations:
-        checksum/configmap: 5f9dd562d3b3b5be1bd8555bc8ec7a48d3fb9060bbe188fa996487f853bfe52e
+        checksum/configmap: 02380b048a445d00640d0fa6e22698a05177de11581ac13a3dea38a49dbc7d33
         checksum/secret-db-ssl-root-crt: e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
-        checksum/secret-zitadel-secrets: fd536719e56c2acfcafe2dfdd53cce617f6c0b3b5b26c316398ed98b42664845
+        checksum/secret-zitadel-secrets: fe7d4615da0e1c72437a7f6f8b773795ce1e81a780056a7952227b53f6b64d68
       labels:
         app.kubernetes.io/component: start
         app.kubernetes.io/name: zitadel
@@ -72,30 +70,32 @@ spec:
             capabilities:
               drop:
                 - all
-          image: "ghcr.io/zitadel/zitadel:v2.30.0"
+          image: "ghcr.io/zitadel/zitadel:v2.35.0"
           imagePullPolicy: IfNotPresent
           args:
             - start
             - --config
             - /config/zitadel-config-yaml
             - --config
-            - /.secrets/zitadel-secrets-yaml
-            - --masterkeyFile
-            - /.secrets/masterkey
+            - /.secrets/zitadel-secrets-yaml/zitadel-secrets-yaml
+            - --masterkeyFromEnv
           env:
             - name: POD_IP
               valueFrom:
                 fieldRef:
                   apiVersion: v1
                   fieldPath: status.podIP
+            - name: ZITADEL_MASTERKEY
+              valueFrom:
+                secretKeyRef:
+                  name: zitadel-masterkey
+                  key: masterkey
             - name: ZITADEL_DATABASE_COCKROACH_USER_SSL_ROOTCERT
-              value: /.secrets/ca.crt
-            - name: ZITADEL_DATABASE_COCKROACH_ADMIN_SSL_ROOTCERT
-              value: /.secrets/ca.crt
-            - name: ZITADEL_DATABASE_COCKROACH_ADMIN_SSL_CERT
-              value: /.secrets/tls.crt
-            - name: ZITADEL_DATABASE_COCKROACH_ADMIN_SSL_KEY
-              value: /.secrets/tls.key
+              value: /.secrets/db-ssl-ca-crt/ca.crt
+            - name: ZITADEL_DATABASE_COCKROACH_USER_SSL_CERT
+              value: /.secrets/db-ssl-user-crt/tls.crt
+            - name: ZITADEL_DATABASE_COCKROACH_USER_SSL_KEY
+              value: /.secrets/db-ssl-user-crt/tls.key
           ports:
             - containerPort: 8080
               name: http2-server
@@ -107,6 +107,7 @@ spec:
               httpHeaders:
                 - name: Host
                   value: zitadel.apps.okd.<path:secret/data/homelab/domain#url>
+            initialDelaySeconds: 0
             periodSeconds: 5
             failureThreshold: 3
           readinessProbe:
@@ -116,6 +117,7 @@ spec:
               httpHeaders:
                 - name: Host
                   value: zitadel.apps.okd.<path:secret/data/homelab/domain#url>
+            initialDelaySeconds: 0
             periodSeconds: 5
             failureThreshold: 3
           startupProbe:
@@ -141,7 +143,7 @@ spec:
               memory: 128Mi
       initContainers:
         - args:
-            - "cp /db-ssl-client-crt/* /chowned-secrets/ && cp /db-ssl-root-crt/* /chowned-secrets/ && cp /masterkey/* /chowned-secrets/ && cp /zitadel-secrets-yaml/* /chowned-secrets/  && chmod 400 /chowned-secrets/*"
+            - "cp -r /db-ssl-user-crt/ /chowned-secrets/ && cp -r /db-ssl-ca-crt/ /chowned-secrets/ && cp -r /zitadel-secrets-yaml/ /chowned-secrets/ && find /chowned-secrets/ -type f -exec chmod 400 -- {} + "
           command:
             - sh
             - -c
@@ -151,14 +153,12 @@ spec:
           volumeMounts:
             - name: chowned-secrets
               mountPath: /chowned-secrets
-            - name: masterkey
-              mountPath: /masterkey
             - name: zitadel-secrets-yaml
               mountPath: /zitadel-secrets-yaml
-            - name: db-ssl-root-crt
-              mountPath: /db-ssl-root-crt
-            - name: db-ssl-client-crt
-              mountPath: /db-ssl-client-crt
+            - name: db-ssl-ca-crt
+              mountPath: /db-ssl-ca-crt
+            - name: db-ssl-user-crt
+              mountPath: /db-ssl-user-crt
           securityContext:
             runAsNonRoot: true
             readOnlyRootFilesystem: false
@@ -175,14 +175,11 @@ spec:
         - name: zitadel-secrets-yaml
           secret:
             secretName: zitadel-secrets-yaml
-        - name: db-ssl-root-crt
+        - name: db-ssl-ca-crt
           secret:
             secretName: crdb-ca
-        - name: db-ssl-client-crt
+        - name: db-ssl-user-crt
           secret:
-            secretName: crdb-root
-        - name: masterkey
-          secret:
-            secretName: zitadel-masterkey
+            secretName: db-cockroachdb-zitadel-secret
         - name: chowned-secrets
           emptyDir: {}

@@ -1,13 +1,12 @@
-# Source: zitadel/templates/initjob.yaml
 apiVersion: batch/v1
 kind: Job
 metadata:
   name: "zitadel-init"
   labels:
-    helm.sh/chart: zitadel-4.3.0
+    helm.sh/chart: zitadel-6.2.0
     app.kubernetes.io/name: zitadel
     app.kubernetes.io/instance: zitadel
-    app.kubernetes.io/version: "v2.30.0"
+    app.kubernetes.io/version: "v2.35.0"
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/component: init
   annotations:
@@ -42,14 +41,14 @@ spec:
             capabilities:
               drop:
                 - all
-          image: "ghcr.io/zitadel/zitadel:v2.30.0"
+          image: "ghcr.io/zitadel/zitadel:v2.35.0"
           imagePullPolicy: IfNotPresent
           args:
             - init
             - --config
             - /config/zitadel-config-yaml
             - --config
-            - /.secrets/zitadel-secrets-yaml
+            - /.secrets/zitadel-secrets-yaml/zitadel-secrets-yaml
           env:
             - name: POD_IP
               valueFrom:
@@ -57,13 +56,17 @@ spec:
                   apiVersion: v1
                   fieldPath: status.podIP
             - name: ZITADEL_DATABASE_COCKROACH_USER_SSL_ROOTCERT
-              value: /.secrets/ca.crt
+              value: /.secrets/db-ssl-ca-crt/ca.crt
             - name: ZITADEL_DATABASE_COCKROACH_ADMIN_SSL_ROOTCERT
-              value: /.secrets/ca.crt
+              value: /.secrets/db-ssl-ca-crt/ca.crt
             - name: ZITADEL_DATABASE_COCKROACH_ADMIN_SSL_CERT
-              value: /.secrets/tls.crt
+              value: /.secrets/db-ssl-admin-crt/tls.crt
             - name: ZITADEL_DATABASE_COCKROACH_ADMIN_SSL_KEY
-              value: /.secrets/tls.key
+              value: /.secrets/db-ssl-admin-crt/tls.key
+            - name: ZITADEL_DATABASE_COCKROACH_USER_SSL_CERT
+              value: /.secrets/db-ssl-user-crt/tls.crt
+            - name: ZITADEL_DATABASE_COCKROACH_USER_SSL_KEY
+              value: /.secrets/db-ssl-user-crt/tls.key
           volumeMounts:
             - name: zitadel-config-yaml
               mountPath: /config
@@ -78,7 +81,7 @@ spec:
               memory: 128Mi
       initContainers:
         - args:
-            - "cp /db-ssl-client-crt/* /chowned-secrets/ && cp /db-ssl-root-crt/* /chowned-secrets/ && cp /zitadel-secrets-yaml/* /chowned-secrets/  && chmod 400 /chowned-secrets/*"
+            - "cp -r /db-ssl-user-crt/ /chowned-secrets/ && cp -r /db-ssl-admin-crt/ /chowned-secrets/ && cp -r /db-ssl-ca-crt/ /chowned-secrets/ && cp -r /zitadel-secrets-yaml/ /chowned-secrets/ && find /chowned-secrets/ -type f -exec chmod 400 -- {} + "
           command:
             - sh
             - -c
@@ -90,10 +93,12 @@ spec:
               mountPath: /chowned-secrets
             - name: zitadel-secrets-yaml
               mountPath: /zitadel-secrets-yaml
-            - name: db-ssl-root-crt
-              mountPath: /db-ssl-root-crt
-            - name: db-ssl-client-crt
-              mountPath: /db-ssl-client-crt
+            - name: db-ssl-ca-crt
+              mountPath: /db-ssl-ca-crt
+            - name: db-ssl-admin-crt
+              mountPath: /db-ssl-admin-crt
+            - name: db-ssl-user-crt
+              mountPath: /db-ssl-user-crt
           securityContext:
             runAsNonRoot: true
             seccompProfile:
@@ -105,11 +110,14 @@ spec:
         - name: zitadel-secrets-yaml
           secret:
             secretName: zitadel-secrets-yaml
-        - name: db-ssl-root-crt
+        - name: db-ssl-ca-crt
           secret:
             secretName: crdb-ca
-        - name: db-ssl-client-crt
+        - name: db-ssl-admin-crt
           secret:
             secretName: crdb-root
+        - name: db-ssl-user-crt
+          secret:
+            secretName: db-cockroachdb-zitadel-secret
         - name: chowned-secrets
           emptyDir: {}
