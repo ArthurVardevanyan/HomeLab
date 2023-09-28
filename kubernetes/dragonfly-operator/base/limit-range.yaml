@@ -1,0 +1,20 @@
+apiVersion: v1
+kind: LimitRange
+metadata:
+  name: dragonfly-operator-lr
+  namespace: dragonfly-operator-system
+  annotations:
+    argocd.argoproj.io/sync-wave: "0"
+  labels:
+    app.kubernetes.io/instance: dragonfly-operator
+spec:
+  limits:
+    - type: Container
+      default:
+        cpu: 50m
+        memory: 300M
+        ephemeral-storage: 256Mi
+      defaultRequest:
+        cpu: 25m
+        memory: 150M
+        ephemeral-storage: 128Mi
