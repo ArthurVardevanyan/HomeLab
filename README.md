@@ -372,7 +372,7 @@ kubectl scale --replicas=1 -n quay deployment/quay-operator-tng
 
 kubectl scale --replicas=0 -n quay deployment/quay-operator-tng
 kubectl patch -n quay deployment/quay-quay-app --type='json' \
-  -p='[{"op": "replace", "path": "/spec/template/spec/containers/0/resources", "value": {"limits": {"cpu": "1000m","memory": "6Gi", "ephemeral-storage": "2Gi"},"requests": {"cpu": "150m","memory": "3Gi", "ephemeral-storage": "1Gi"}}}]'
+  -p='[{"op": "replace", "path": "/spec/template/spec/containers/0/resources", "value": {"limits": {"cpu": "1000m","memory": "8Gi", "ephemeral-storage": "2Gi"},"requests": {"cpu": "150m","memory": "4Gi", "ephemeral-storage": "1Gi"}}}]'
 kubectl patch -n quay deployment/quay-clair-app --type='json' \
   -p='[{"op": "replace", "path": "/spec/template/spec/containers/0/resources", "value": {"limits": {"cpu": "500m","memory": "2.5Gi", "ephemeral-storage": "3Gi"},"requests": {"cpu": "150m","memory": "756Mi", "ephemeral-storage": "1Gi"}}}]'
 kubectl patch -n quay deployment/quay-quay-mirror --type='json' \

@@ -116,16 +116,15 @@ spec:
         - name: networks # TODO Circle Back to This.
           mountPath: /etc/containers/networks
       securityContext:
-        runAsNonRoot: false
+        #runAsNonRoot: true
         runAsUser: 0 #1000 #65532
-        privileged: true # TODO Circle Back to This.
+        privileged: false
         readOnlyRootFilesystem: true
-        allowPrivilegeEscalation: true
+        allowPrivilegeEscalation: false
         # seccompProfile:
         #   type: RuntimeDefault
         capabilities:
           add:
-            - CAP_SYS_ADMIN # TODO Circle Back to This.
             - SETFCAP
           drop:
             - MKNOD

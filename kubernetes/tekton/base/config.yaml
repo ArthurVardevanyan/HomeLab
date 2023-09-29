@@ -18,8 +18,17 @@ spec:
         value: "false"
       - name: pipelineTemplates
         value: "false"
+  chain:
+    disabled: false
+    options:
+      disabled: false
   dashboard:
+    options:
+      disabled: false
     readonly: true
+  hub:
+    options:
+      disabled: false
   params:
     - name: createRbacResource
       value: "true"
@@ -41,6 +50,8 @@ spec:
     metrics.pipelinerun.level: pipelinerun
     metrics.taskrun.duration-type: lastvalue
     metrics.taskrun.level: taskrun
+    options:
+      disabled: false
     params:
       - name: enableMetrics
         value: "true"
@@ -54,6 +65,8 @@ spec:
     openshift:
       pipelinesAsCode:
         enable: true
+        options:
+          disabled: false
         settings:
           application-name: Pipelines as Code
           auto-configure-new-github-repo: "false"
@@ -68,9 +81,12 @@ spec:
           error-log-snippet: "false"
           hub-catalog-name: tekton
           hub-url: https://api.hub.tekton.dev/v1
+          remember-ok-to-test: "true"
           remote-tasks: "true"
           secret-auto-create: "true"
           secret-github-app-token-scoped: "true"
+      scc:
+        default: pipelines-scc
   profile: all
   pruner:
     disabled: false
@@ -83,3 +99,5 @@ spec:
   trigger:
     default-service-account: pipeline
     enable-api-fields: stable
+    options:
+      disabled: false
