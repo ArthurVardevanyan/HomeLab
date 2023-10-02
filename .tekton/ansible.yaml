@@ -32,6 +32,7 @@ spec:
 
     workspaces:
       - name: data
+      - name: git_auth_secret
 
     tasks:
       - name: git-clone
@@ -44,6 +45,8 @@ spec:
         workspaces:
           - name: output
             workspace: data
+          - name: basic-auth
+            workspace: git_auth_secret
 
       - name: ansible
         runAfter:
@@ -73,3 +76,6 @@ spec:
             requests:
               storage: "100Mi"
           storageClassName: longhorn
+    - name: git_auth_secret
+      secret:
+        secretName: "{{ git_auth_secret }}"
