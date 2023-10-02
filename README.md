@@ -150,8 +150,8 @@ end
 
 | Machine | PPT | VOFFSET |
 | ------- | --- | ------- |
-| kvm-1   | 25W | -0.1625 |
-| kvm-2   | 20W | -0.1625 |
+| kvm-1   | 35W | -0.1625 |
+| kvm-2   | 35W | -0.1625 |
 
 **ZFS Storage:**
 
@@ -165,19 +165,20 @@ end
 | NAME     | ROLES          | Machine | vCPU | Mem   | Storage |
 | -------- | -------------- | ------- | ---- | ----- | ------- |
 | server-1 | cp,etcd,master | kvm-1   | 5    | 17.1G | N/A     |
-| server-2 | cp,etcd,master | kvm-2   | 5    | 19G   | N/A     |
+| server-2 | cp,etcd,master | kvm-2   | 5    | 19.5G | N/A     |
 | server-3 | cp,etcd,master | kvm-1   | 5    | 17.1G | N/A     |
-| worker-1 | worker         | kvm-1   | 4    | 19G   | LH NVME |
-| worker-2 | worker         | kvm-2   | 4    | 23.5G | LH NVME |
-| worker-3 | worker         | kvm-1   | 4    | 19G   | LH NVME |
-| worker-4 | worker         | kvm-2   | 4    | 23.5G | LH NVME |
-| worker-5 | worker         | kvm-1   | 4    | 19G   | LH NVME |
-| worker-6 | worker         | kvm-2   | 4    | 23.5G | LH NVME |
+| worker-1 | worker         | kvm-1   | 6    | 28.5G | LH NVME |
+| worker-2 | worker         | kvm-2   | 6    | 23.5G | LH NVME |
+| worker-3 | worker         | kvm-1   | 6    | 28.5G | LH NVME |
+| worker-4 | worker         | kvm-2   | 6    | 28.5G | LH NVME |
+| worker-5 | worker         | kvm-1   | 6    | 28.5G | LH NVME |
+| worker-6 | worker         | kvm-2   | 6    | 23.5G | LH NVME |
 
 #### KVM Config Dump
 
 ```bash
 sudo virsh dumpxml server-1 > server-1.xml
+sudo virsh dumpxml server-3 > server-3.xml
 sudo virsh dumpxml worker-1 > worker-1.xml
 sudo virsh dumpxml worker-3 > worker-3.xml
 sudo virsh dumpxml worker-5 > worker-5.xml

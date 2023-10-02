@@ -1,4 +1,4 @@
-<domain type='kvm' id='16' xmlns:qemu='http://libvirt.org/schemas/domain/qemu/1.0'>
+<domain type='kvm' id='2' xmlns:qemu='http://libvirt.org/schemas/domain/qemu/1.0'>
   <name>server-3</name>
   <uuid>35fa2be3-10b8-40c9-b53d-97d6d9b24569</uuid>
   <metadata>
@@ -6,8 +6,8 @@
       <libosinfo:os id="http://fedoraproject.org/coreos/stable" />
     </libosinfo:libosinfo>
   </metadata>
-  <memory unit='KiB'>18350080</memory>
-  <currentMemory unit='KiB'>18350080</currentMemory>
+  <memory unit='KiB'>20447232</memory>
+  <currentMemory unit='KiB'>20447232</currentMemory>
   <vcpu placement='static'>5</vcpu>
   <resource>
     <partition>/machine</partition>
@@ -20,7 +20,9 @@
     <acpi />
     <apic />
   </features>
-  <cpu mode='host-passthrough' check='none' migratable='on' />
+  <cpu mode='host-passthrough' check='none' migratable='on'>
+    <topology sockets='5' dies='1' cores='1' threads='1' />
+  </cpu>
   <clock offset='utc'>
     <timer name='rtc' tickpolicy='catchup' />
     <timer name='pit' tickpolicy='delay' />
@@ -103,26 +105,26 @@
     <interface type='bridge'>
       <mac address='10:00:00:00:01:03' />
       <source bridge='br0' />
-      <target dev='vnet15' />
+      <target dev='vnet1' />
       <model type='virtio' />
       <alias name='net0' />
       <address type='pci' domain='0x0000' bus='0x01' slot='0x00' function='0x0' />
     </interface>
     <serial type='pty'>
-      <source path='/dev/pts/2' />
+      <source path='/dev/pts/1' />
       <target type='isa-serial' port='0'>
         <model name='isa-serial' />
       </target>
       <alias name='serial0' />
     </serial>
-    <console type='pty' tty='/dev/pts/2'>
-      <source path='/dev/pts/2' />
+    <console type='pty' tty='/dev/pts/1'>
+      <source path='/dev/pts/1' />
       <target type='serial' port='0' />
       <alias name='serial0' />
     </console>
     <channel type='unix'>
       <source mode='bind'
-        path='/var/lib/libvirt/qemu/channel/target/domain-16-server-3/org.qemu.guest_agent.0' />
+        path='/var/lib/libvirt/qemu/channel/target/domain-2-server-3/org.qemu.guest_agent.0' />
       <target type='virtio' name='org.qemu.guest_agent.0' state='connected' />
       <alias name='channel0' />
       <address type='virtio-serial' controller='0' bus='0' port='1' />

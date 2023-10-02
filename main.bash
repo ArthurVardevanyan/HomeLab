@@ -77,7 +77,7 @@ stateful_workload_stop() {
   kubectl scale --replicas=0 -n openshift-user-workload-monitoring statefulset/thanos-ruler-user-workload
 
   kubectl scale --replicas=0 -n bitwarden statefulset/bitwarden
-  kubectl scale --replicas=0 -n gitea statefulset/gitea
+  kubectl scale --replicas=0 -n gitea deployment/gitea
   kubectl scale --replicas=0 -n grafana deployment/grafana
   kubectl scale --replicas=0 -n heimdall statefulset/heimdall
   kubectl scale --replicas=0 -n homeassistant statefulset/homeassistant
@@ -92,17 +92,19 @@ stateful_workload_stop() {
 
   kubectl scale --replicas=0 -n minio-operator deployment/minio-operator
   kubectl scale --replicas=0 -n quay statefulset/quay-pool-0
+  kubectl scale --replicas=0 -n gitea statefulset/gitea-pool-0
+  kubectl scale --replicas=0 -n quay deployment/quay-operator-tng
   kubectl scale --replicas=0 -n quay deployment/quay-quay-app
   kubectl scale --replicas=0 -n quay deployment/quay-clair-app
   kubectl scale --replicas=0 -n quay deployment/quay-quay-mirror
-  kubectl scale --replicas=0 -n gitea statefulset/gitea
   kubectl scale --replicas=0 -n jellyfin statefulset/jellyfin
 
   kubectl scale --replicas=0 -n cockroach-operator-system deployments/cockroach-operator-manager
   kubectl scale --replicas=0 -n zitadel statefulset/crdb
+  kubectl scale --replicas=0 -n zitadel deployment/zitadel
 
   kubectl patch postgresCluster clair -n postgres --type=merge -p '{"spec":{"shutdown":true}}'
-  kubectl patch postgresCluster gitea -n postgres --type=merge -p '{"spec":{"shutdown":true}}'
+  kubectl patch postgresCluster gitea -n gitea --type=merge -p '{"spec":{"shutdown":true}}'
   kubectl patch postgresCluster grafana -n postgres --type=merge -p '{"spec":{"shutdown":true}}'
   kubectl patch postgresCluster homeassistant -n postgres --type=merge -p '{"spec":{"shutdown":true}}'
   kubectl patch postgresCluster nextcloud -n postgres --type=merge -p '{"spec":{"shutdown":true}}'
@@ -132,9 +134,10 @@ stateful_workload_start() {
 
   kubectl scale --replicas=1 -n cockroach-operator-system deployments/cockroach-operator-manager
   kubectl scale --replicas=1 -n zitadel statefulset/crdb
+  kubectl scale --replicas=2 -n zitadel deployment/zitadel
 
   kubectl scale --replicas=1 -n bitwarden statefulset/bitwarden
-  kubectl scale --replicas=1 -n gitea statefulset/gitea
+  kubectl scale --replicas=2 -n gitea deployment/gitea
   kubectl scale --replicas=2 -n grafana deployment/grafana
   kubectl scale --replicas=1 -n heimdall statefulset/heimdall
   kubectl scale --replicas=1 -n homeassistant statefulset/homeassistant
@@ -149,15 +152,16 @@ stateful_workload_start() {
 
   kubectl scale --replicas=1 -n minio-operator deployment/minio-operator
   kubectl scale --replicas=3 -n quay statefulset/quay-pool-0
+  kubectl scale --replicas=3 -n gitea statefulset/gitea-pool-0
+  kubectl scale --replicas=1 -n quay deployment/quay-operator-tng
   kubectl scale --replicas=2 -n quay deployment/quay-quay-app
   kubectl scale --replicas=2 -n quay deployment/quay-clair-app
   kubectl scale --replicas=2 -n quay deployment/quay-quay-mirror
-  kubectl scale --replicas=1 -n gitea statefulset/gitea
   kubectl scale --replicas=1 -n postgres deployment/pgo
   kubectl scale --replicas=1 -n jellyfin statefulset/jellyfin
 
   kubectl patch postgresCluster clair -n postgres --type=merge -p '{"spec":{"shutdown":false}}'
-  kubectl patch postgresCluster gitea -n postgres --type=merge -p '{"spec":{"shutdown":false}}'
+  kubectl patch postgresCluster gitea -n gitea --type=merge -p '{"spec":{"shutdown":false}}'
   kubectl patch postgresCluster grafana -n postgres --type=merge -p '{"spec":{"shutdown":false}}'
   kubectl patch postgresCluster homeassistant -n postgres --type=merge -p '{"spec":{"shutdown":false}}'
   kubectl patch postgresCluster nextcloud -n postgres --type=merge -p '{"spec":{"shutdown":false}}'

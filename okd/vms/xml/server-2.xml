@@ -1,4 +1,4 @@
-<domain type='kvm' id='11' xmlns:qemu='http://libvirt.org/schemas/domain/qemu/1.0'>
+<domain type='kvm' id='1' xmlns:qemu='http://libvirt.org/schemas/domain/qemu/1.0'>
   <name>server-2</name>
   <uuid>fc4973d7-e577-4a5f-a2cb-54838efa6d55</uuid>
   <metadata>
@@ -6,8 +6,8 @@
       <libosinfo:os id="http://fedoraproject.org/coreos/stable" />
     </libosinfo:libosinfo>
   </metadata>
-  <memory unit='KiB'>22544384</memory>
-  <currentMemory unit='KiB'>22544384</currentMemory>
+  <memory unit='KiB'>20447232</memory>
+  <currentMemory unit='KiB'>19922944</currentMemory>
   <vcpu placement='static'>5</vcpu>
   <resource>
     <partition>/machine</partition>
@@ -20,7 +20,9 @@
     <acpi />
     <apic />
   </features>
-  <cpu mode='host-passthrough' check='none' migratable='on' />
+  <cpu mode='host-passthrough' check='none' migratable='on'>
+    <topology sockets='5' dies='1' cores='1' threads='1' />
+  </cpu>
   <clock offset='utc'>
     <timer name='rtc' tickpolicy='catchup' />
     <timer name='pit' tickpolicy='delay' />
@@ -103,7 +105,7 @@
     <interface type='bridge'>
       <mac address='10:00:00:00:01:02' />
       <source bridge='br0' />
-      <target dev='vnet10' />
+      <target dev='vnet0' />
       <model type='virtio' />
       <alias name='net0' />
       <address type='pci' domain='0x0000' bus='0x01' slot='0x00' function='0x0' />
@@ -122,7 +124,7 @@
     </console>
     <channel type='unix'>
       <source mode='bind'
-        path='/var/lib/libvirt/qemu/channel/target/domain-11-server-2/org.qemu.guest_agent.0' />
+        path='/var/lib/libvirt/qemu/channel/target/domain-1-server-2/org.qemu.guest_agent.0' />
       <target type='virtio' name='org.qemu.guest_agent.0' state='connected' />
       <alias name='channel0' />
       <address type='virtio-serial' controller='0' bus='0' port='1' />
