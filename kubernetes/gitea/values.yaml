@@ -402,18 +402,17 @@ gitea:
   # Either specify inline `key` and `secret` or refer to them via `existingSecret`
   ## @param gitea.oauth OAuth configuration
   oauth:
-    []
-    # - name: 'OAuth 1'
-    #   provider:
-    #   key:
-    #   secret:
-    #   existingSecret:
-    #   autoDiscoverUrl:
-    #   useCustomUrls:
-    #   customAuthUrl:
-    #   customTokenUrl:
-    #   customProfileUrl:
-    #   customEmailUrl:
+    - name: "Zitadel"
+      provider: "openidConnect"
+      key: <path:secret/data/homelab/gitea/zitadel#client_id>
+      secret: <path:secret/data/homelab/gitea/zitadel#client_secret>
+      #existingSecret:
+      autoDiscoverUrl: https://zitadel.apps.okd.arthurvardevanyan.com/.well-known/openid-configuration
+      # useCustomUrls:
+      # customAuthUrl:
+      # customTokenUrl:
+      # customProfileUrl:
+      # customEmailUrl:
 
   ## @param gitea.config.server.SSH_PORT SSH port for rootlful Gitea image
   ## @param gitea.config.server.SSH_LISTEN_PORT SSH port for rootless Gitea image
@@ -431,7 +430,7 @@ gitea:
       HOST: gitea-primary.gitea.svc
       NAME: gitea
       USER: gitea
-      PASSWD: <path:secret/data/homelab/gitea#admin_pass>
+      PASSWD: <path:secret/data/homelab/gitea/gitea#admin_pass>
 
     indexer:
       ISSUE_INDEXER_CONN_STR: http://gitea-meilisearch.gitea.svc.cluster.local:7700
