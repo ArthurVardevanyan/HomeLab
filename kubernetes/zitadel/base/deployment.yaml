@@ -37,14 +37,22 @@ spec:
           effect: NoSchedule
       affinity:
         nodeAffinity:
-          preferredDuringSchedulingIgnoredDuringExecution:
-            - weight: 1
-              preference:
-                matchExpressions:
-                  - key: node-role.kubernetes.io/master
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - key: node-role.kubernetes.io/control-plane
                     operator: In
                     values:
-                      - "true"
+                      - ""
+        podAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - labelSelector:
+                matchExpressions:
+                  - key: app.kubernetes.io/name
+                    operator: NotIn
+                    values:
+                      - zitadel
+              topologyKey: topology.kubernetes.io/zone
         podAntiAffinity:
           preferredDuringSchedulingIgnoredDuringExecution:
             - weight: 1
@@ -139,11 +147,11 @@ spec:
               mountPath: /.secrets
           resources:
             limits:
-              cpu: 500m
-              memory: 256Mi
+              cpu: 1000m
+              memory: 512Mi
             requests:
               cpu: 100m
-              memory: 128Mi
+              memory: 256Mi
       initContainers:
         - args:
             - "cp -r /db-ssl-user-crt/ /chowned-secrets/ && cp -r /db-ssl-ca-crt/ /chowned-secrets/ && cp -r /zitadel-secrets-yaml/ /chowned-secrets/ && find /chowned-secrets/ -type f -exec chmod 400 -- {} + "
