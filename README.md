@@ -167,11 +167,11 @@ end
 | server-1 | cp,etcd,master | kvm-1   | 5    | 17.1G | N/A     |
 | server-2 | cp,etcd,master | kvm-2   | 5    | 19.5G | N/A     |
 | server-3 | cp,etcd,master | kvm-1   | 5    | 17.1G | N/A     |
-| worker-1 | worker         | kvm-1   | 6    | 28.5G | LH NVME |
+| worker-1 | worker         | kvm-1   | 6    | 28.0G | LH NVME |
 | worker-2 | worker         | kvm-2   | 6    | 23.5G | LH NVME |
-| worker-3 | worker         | kvm-1   | 6    | 28.5G | LH NVME |
+| worker-3 | worker         | kvm-1   | 6    | 28.0G | LH NVME |
 | worker-4 | worker         | kvm-2   | 6    | 28.5G | LH NVME |
-| worker-5 | worker         | kvm-1   | 6    | 28.5G | LH NVME |
+| worker-5 | worker         | kvm-1   | 6    | 28.0G | LH NVME |
 | worker-6 | worker         | kvm-2   | 6    | 23.5G | LH NVME |
 
 #### KVM Config Dump
