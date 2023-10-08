@@ -11,6 +11,7 @@ metadata:
     # && "containers/toolbox/containerfile".pathChanged()
     pipelinesascode.tekton.dev/target-namespace: "homelab"
     pipelinesascode.tekton.dev/task: "[tekton/base/overlay-test.yaml]"
+    pipelinesascode.tekton.dev/task-1: "https://tekton-hub-api-openshift-pipelines.apps.okd.arthurvardevanyan.com/v1/resource/homelab/task/git-clone/0.9.1/raw"
 spec:
   params:
     - name: playbooks
@@ -38,7 +39,7 @@ spec:
       - name: git-clone
         taskRef:
           name: git-clone
-          kind: ClusterTask
+          kind: Task
         params:
           - name: url
             value: $(params.git-url)
