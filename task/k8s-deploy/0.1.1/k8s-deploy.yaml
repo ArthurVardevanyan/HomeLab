@@ -1,11 +1,21 @@
 apiVersion: tekton.dev/v1beta1
-kind: ClusterTask
+kind: Task
 metadata:
-  name: deploy
+  name: k8s-deploy
+  labels:
+    app.kubernetes.io/version: "0.1.1"
   annotations:
     argocd.argoproj.io/sync-wave: "2"
     argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+    tekton.dev/pipelines.minVersion: "0.38.0"
+    tekton.dev/categories: Deployment
+    tekton.dev/tags: k8s
+    tekton.dev/displayName: "k8s-deploy"
+    tekton.dev/platforms: "linux/amd64,linux/s390x,linux/ppc64le,linux/arm64"
 spec:
+  description: >-
+    A Simple Task to Deploy Manifests to a Cluster
+
   params:
     - name: git-commit
       type: string
@@ -17,7 +27,7 @@ spec:
 
   steps:
     - name: deploy
-      image: "registry.<path:secret/data/homelab/domain#url>/homelab/toolbox:latest"
+      image: "registry.arthurvardevanyan.com/homelab/toolbox:latest"
       env:
         - name: SHA
           value: $(params.git-commit)
