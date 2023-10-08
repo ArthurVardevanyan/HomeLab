@@ -9,6 +9,8 @@ metadata:
       target_branch == "production" && "containers/toolbox/containerfile".pathChanged()
     # event == "pull_request" &&
     pipelinesascode.tekton.dev/target-namespace: "homelab"
+    pipelinesascode.tekton.dev/task: "https://tekton-hub-api-openshift-pipelines.apps.okd.arthurvardevanyan.com/v1/resource/homelab/task/git-clone/0.9.1/raw"
+    pipelinesascode.tekton.dev/task-1: "https://tekton-hub-api-openshift-pipelines.apps.okd.arthurvardevanyan.com/v1/resource/homelab/task/buildah/0.5.1/raw"
 spec:
   params:
     - name: git-url
@@ -41,7 +43,7 @@ spec:
       - name: git-clone
         taskRef:
           name: git-clone
-          kind: ClusterTask
+          kind: Task
         params:
           - name: url
             value: $(params.git-url)
@@ -58,7 +60,7 @@ spec:
           - git-clone
         taskRef:
           name: buildah
-          kind: ClusterTask
+          kind: Task
         params:
           - name: IMAGE
             value: $(params.IMAGE)
