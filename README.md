@@ -108,21 +108,21 @@ router---ap{<center>TP-AX1800<br>10.0.0.1</center>}
 ap---switch[<center>TL-SG1005D</center>]
 
 subgraph HomeLab
-    switch-.-kvm-1(<center>kvm-1<br>10.0.0.109</center>)
-    switch-.-kvm-2(<center>kvm-2<br>10.0.0.110</center>)
+    switch-.-kvm-1(<center>kvm-1<br>10.0.0.107</center>)
+    switch-.-kvm-2(<center>kvm-2<br>10.0.0.108</center>)
     subgraph OKD ODD
         kvm-1-.-server-1(<center>server-1<br>10.0.0.101</center>)
+        kvm-1-.-infra-1(<center>infra-1<br>10.0.0.121</center>)
         kvm-1-.-server-3(<center>server-3<br>10.0.0.103</center>)
         kvm-1-.-worker-1(<center>worker-1<br>10.0.0.111</center>)
         kvm-1-.-worker-3(<center>worker-3<br>10.0.0.113</center>)
-        kvm-1-.-worker-5(<center>worker-5<br>10.0.0.115</center>)
     end
     switch-.-truenas(<center>TrueNas<br>10.0.0.3</center>)
     subgraph OKD EVEN
         kvm-2-.-server-2(<center>server-2<br>10.0.0.102</center>)
+        kvm-2-.-infra-2(<center>infra-2<br>10.0.0.121</center>)
         kvm-2-.-worker-2(<center>worker-2<br>10.0.0.1112</center>)
         kvm-2-.-worker-4(<center>worker-2<br>10.0.0.114</center>)
-        kvm-2-.-worker-6(<center>worker-6<br>10.0.0.116</center>)
     end
 end
 ```
@@ -133,20 +133,20 @@ end
 
 | Kubernetes Channel | OKD Channel | OKD OS           | Host Operating System |
 | ------------------ | ----------- | ---------------- | --------------------- |
-| v1.24              | stable-4.11 | Fedora CoreOS 36 | Debian 11             |
+| v1.24              | stable-4.11 | Fedora CoreOS 36 | RHEL 9.2              |
 
 **Machines:**
 
 [CPU Benchmark](https://www.cpubenchmark.net/compare/Intel-i5-6600-vs-AMD-RX-427BB-vs-Intel-i3-2130-vs-AMD-GX-415GA-SOC-vs-AMD-Ryzen-7-5700G/2594vs2496vs755vs2081vs4323)
 
-| Machine    | Model       | CPU      | CPU | Mem | Storage               | ZFS Storage    |
-| ---------- | ----------- | -------- | --- | --- | --------------------- | -------------- |
-| pfSense    | Hp t730     | RX-427BB | 4   | 4G  | 16G SSD               | N/A            |
-| Bare Metal | Hp t620     | GX-415GA | 4   | 6G  | 16G SSD & 16G USB     | N/A            |
-| kvm-1      | N/A         | R7-5700G | 16  | 96G | 1.5 TB NVME, .5TB SSD | N/A            |
-| kvm-2      | N/A         | R7-5700G | 16  | 96G | 1.5 TB NVME, .5TB SSD | N/A            |
-| TrueNas    | Hp ProDesk  | i5-6600  | 4   | 32G | 120G SSD Boot Mirror  | 2T HDD, 1T SSD |
-| Spare      | Hp p7-1226s | i3-2130  | 4   | 8G  | 240G SSD              | N/A            |
+| Machine    | Model       | CPU      | CPU | Mem  | Storage              | ZFS Storage    |
+| ---------- | ----------- | -------- | --- | ---- | -------------------- | -------------- |
+| pfSense    | Hp t730     | RX-427BB | 4   | 4G   | 16G SSD              | N/A            |
+| Bare Metal | Hp t620     | GX-415GA | 4   | 6G   | 16G SSD & 16G USB    | N/A            |
+| kvm-1      | N/A         | R7-5700G | 16  | 128G | 2x1TB NVME, 1TB SSD  | N/A            |
+| kvm-2      | N/A         | R7-5700G | 16  | 96G  | 2x1TB NVME, 1TB SSD  | N/A            |
+| TrueNas    | Hp ProDesk  | i5-6600  | 4   | 32G  | 120G SSD Boot Mirror | 2T HDD, 1T SSD |
+| Spare      | Hp p7-1226s | i3-2130  | 4   | 8G   | 240G SSD             | N/A            |
 
 | Machine | PPT | VOFFSET |
 | ------- | --- | ------- |
@@ -162,37 +162,39 @@ end
 
 **Kubernetes Nodes:**
 
-| NAME     | ROLES          | Machine | vCPU | Mem   | Storage |
-| -------- | -------------- | ------- | ---- | ----- | ------- |
-| server-1 | cp,etcd,master | kvm-1   | 5    | 17.1G | N/A     |
-| server-2 | cp,etcd,master | kvm-2   | 5    | 19.5G | N/A     |
-| server-3 | cp,etcd,master | kvm-1   | 5    | 17.1G | N/A     |
-| worker-1 | worker         | kvm-1   | 6    | 28.0G | LH NVME |
-| worker-2 | worker         | kvm-2   | 6    | 23.5G | LH NVME |
-| worker-3 | worker         | kvm-1   | 6    | 28.0G | LH NVME |
-| worker-4 | worker         | kvm-2   | 6    | 28.5G | LH NVME |
-| worker-5 | worker         | kvm-1   | 6    | 28.0G | LH NVME |
-| worker-6 | worker         | kvm-2   | 6    | 23.5G | LH NVME |
+| NAME     | ROLES          | Machine | vCPU | Mem   | Storage       |
+| -------- | -------------- | ------- | ---- | ----- | ------------- |
+| server-1 | cp,etcd,master | kvm-1   | 5    | 19.0G | N/A           |
+| server-2 | cp,etcd,master | kvm-2   | 5    | 19.0G | N/A           |
+| server-3 | cp,etcd,master | kvm-1   | 5    | 19.0G | N/A           |
+| infra-1  | infra,worker   | kvm-1   | 6    | 27.0G | 2x1TB LH NVME |
+| infra-2  | infra,worker   | kvm-2   | 6    | 23.5G | 2x1TB LH NVME |
+| worker-1 | worker         | kvm-1   | 6    | 27.0G | N/A           |
+| worker-2 | worker         | kvm-2   | 6    | 23.5G | N/A           |
+| worker-3 | worker         | kvm-1   | 6    | 27.0G | N/A           |
+| worker-4 | worker         | kvm-2   | 6    | 28.5G | N/A           |
 
 #### KVM Config Dump
 
 ```bash
+sudo virsh dumpxml infra-1 > infra-1.xml
 sudo virsh dumpxml server-1 > server-1.xml
 sudo virsh dumpxml server-3 > server-3.xml
 sudo virsh dumpxml worker-1 > worker-1.xml
 sudo virsh dumpxml worker-3 > worker-3.xml
-sudo virsh dumpxml worker-5 > worker-5.xml
 
+sudo virsh dumpxml infra-2 > infra-2.xml
 sudo virsh dumpxml server-2 > server-2.xml
 sudo virsh dumpxml worker-2 > worker-2.xml
 sudo virsh dumpxml worker-4 > worker-4.xml
-sudo virsh dumpxml worker-6 > worker-6.xml
+
 ```
 
 #### OKD Longhorn Secondary Disk Setup
 
 ```bash
 sudo mkfs.ext4 -L longhorn /dev/vdb
+sudo mkfs.ext4 -L longhorn1 /dev/vdc
 
 # Pre Machine Config
 sudo su
@@ -291,12 +293,11 @@ curl --header "Authorization: Bearer $(oc whoami -t)" -H 'Content-type: applicat
 #### SSH Keyscan
 
 ```bash
-export IP_LIST="3 4 5 17 110 101 102 103 111 112 113 114"
+export IP_LIST="3 4 5 17 107 108 101 102 103 111 112 113 114 121 122"
 
 rm -f /tmp/ssh_keyscan.txt
 for IP in $( echo "$IP_LIST" ); do
 ssh-keyscan 10.0.0."${IP}" >> /tmp/ssh_keyscan.txt
-
 done
 
 echo "\n\n\nSSH Keyscan\n\n"

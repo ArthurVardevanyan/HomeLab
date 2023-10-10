@@ -111,6 +111,7 @@ stateful_workload_stop() {
   kubectl patch postgresCluster photoprism -n postgres --type=merge -p '{"spec":{"shutdown":true}}'
   kubectl patch postgresCluster stackrox -n postgres --type=merge -p '{"spec":{"shutdown":true}}'
   kubectl patch postgresCluster quay -n postgres --type=merge -p '{"spec":{"shutdown":true}}'
+  kubectl patch postgresCluster tekton-hub -n openshift-pipelines --type=merge -p '{"spec":{"shutdown":true}}'
 
   kubectl scale --replicas=0 -n argocd deployment/argocd-operator-controller-manager
   kubectl scale --replicas=0 -n argocd statefulset/argocd-application-controller
@@ -118,6 +119,9 @@ stateful_workload_stop() {
   kubectl scale --replicas=0 -n argocd deployment/argocd-dex-server
   kubectl scale --replicas=0 -n argocd deployment/argocd-server
   kubectl scale --replicas=0 -n argocd deployment/argocd-redis
+
+  kubectl scale --replicas=0 -n openshift-pipelines-operator deployment/openshift-pipelines-operator
+  kubectl scale --replicas=0 -n openshift-pipelines deployment/tekton-hub-api
 
   kubectl scale --replicas=0 -n stackrox deployment/central
   kubectl scale --replicas=0 -n stackrox deployment/scanner-db
@@ -151,8 +155,8 @@ stateful_workload_start() {
   kubectl scale --replicas=1 -n vault statefulset/vault
 
   kubectl scale --replicas=1 -n minio-operator deployment/minio-operator
-  kubectl scale --replicas=3 -n quay statefulset/quay-pool-0
-  kubectl scale --replicas=3 -n gitea statefulset/gitea-pool-0
+  kubectl scale --replicas=4 -n quay statefulset/quay-pool-0
+  kubectl scale --replicas=4 -n gitea statefulset/gitea-pool-0
   kubectl scale --replicas=1 -n quay deployment/quay-operator-tng
   kubectl scale --replicas=2 -n quay deployment/quay-quay-app
   kubectl scale --replicas=2 -n quay deployment/quay-clair-app
@@ -168,6 +172,7 @@ stateful_workload_start() {
   kubectl patch postgresCluster photoprism -n postgres --type=merge -p '{"spec":{"shutdown":false}}'
   kubectl patch postgresCluster stackrox -n postgres --type=merge -p '{"spec":{"shutdown":false}}'
   kubectl patch postgresCluster quay -n postgres --type=merge -p '{"spec":{"shutdown":false}}'
+  kubectl patch postgresCluster tekton-hub -n openshift-pipelines --type=merge -p '{"spec":{"shutdown":false}}'
 
   kubectl scale --replicas=1 -n argocd deployment/argocd-operator-controller-manager
   kubectl scale --replicas=1 -n argocd statefulset/argocd-application-controller
@@ -175,6 +180,9 @@ stateful_workload_start() {
   kubectl scale --replicas=1 -n argocd deployment/argocd-dex-server
   kubectl scale --replicas=1 -n argocd deployment/argocd-server
   kubectl scale --replicas=1 -n argocd deployment/argocd-redis
+
+  kubectl scale --replicas=1 -n openshift-pipelines-operator deployment/openshift-pipelines-operator
+  kubectl scale --replicas=1 -n openshift-pipelines deployment/tekton-hub-api
 
   kubectl scale --replicas=1 -n stackrox deployment/central
   kubectl scale --replicas=1 -n stackrox deployment/scanner-db

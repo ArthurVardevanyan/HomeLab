@@ -1,4 +1,4 @@
-<domain type='kvm' id='5' xmlns:qemu='http://libvirt.org/schemas/domain/qemu/1.0'>
+<domain type='kvm' id='10' xmlns:qemu='http://libvirt.org/schemas/domain/qemu/1.0'>
   <name>worker-2</name>
   <uuid>dfedb5ba-7619-4516-a976-92cccd580098</uuid>
   <metadata>
@@ -13,7 +13,7 @@
     <partition>/machine</partition>
   </resource>
   <os>
-    <type arch='x86_64' machine='pc-q35-5.2'>hvm</type>
+    <type arch='x86_64' machine='pc-q35-rhel9.2.0'>hvm</type>
     <boot dev='hd' />
   </os>
   <features>
@@ -21,7 +21,7 @@
     <apic />
   </features>
   <cpu mode='host-passthrough' check='none' migratable='on'>
-    <topology sockets='6' dies='1' cores='1' threads='1' />
+    <topology sockets='1' dies='1' cores='6' threads='1' />
   </cpu>
   <clock offset='utc'>
     <timer name='rtc' tickpolicy='catchup' />
@@ -36,22 +36,14 @@
     <suspend-to-disk enabled='no' />
   </pm>
   <devices>
-    <emulator>/usr/bin/qemu-system-x86_64</emulator>
+    <emulator>/usr/libexec/qemu-kvm</emulator>
     <disk type='file' device='disk'>
       <driver name='qemu' type='raw' cache='none' />
-      <source file='/home/arthur/vm/okd/worker-2.raw' index='2' />
+      <source file='/home/okd/worker-2.raw' index='1' />
       <backingStore />
       <target dev='vda' bus='virtio' />
       <alias name='virtio-disk0' />
       <address type='pci' domain='0x0000' bus='0x04' slot='0x00' function='0x0' />
-    </disk>
-    <disk type='file' device='disk'>
-      <driver name='qemu' type='raw' cache='none' />
-      <source file='/home/arthur/vm/okd/worker-2_storage.raw' index='1' />
-      <backingStore />
-      <target dev='vdb' bus='virtio' />
-      <alias name='virtio-disk1' />
-      <address type='pci' domain='0x0000' bus='0x05' slot='0x00' function='0x0' />
     </disk>
     <controller type='usb' index='0' model='qemu-xhci' ports='15'>
       <alias name='usb' />
@@ -119,26 +111,25 @@
     <interface type='bridge'>
       <mac address='10:00:00:00:01:12' />
       <source bridge='br0' />
-      <target dev='vnet4' />
+      <target dev='vnet5' />
       <model type='virtio' />
       <alias name='net0' />
       <address type='pci' domain='0x0000' bus='0x01' slot='0x00' function='0x0' />
     </interface>
     <serial type='pty'>
-      <source path='/dev/pts/1' />
+      <source path='/dev/pts/6' />
       <target type='isa-serial' port='0'>
         <model name='isa-serial' />
       </target>
       <alias name='serial0' />
     </serial>
-    <console type='pty' tty='/dev/pts/1'>
-      <source path='/dev/pts/1' />
+    <console type='pty' tty='/dev/pts/6'>
+      <source path='/dev/pts/6' />
       <target type='serial' port='0' />
       <alias name='serial0' />
     </console>
     <channel type='unix'>
-      <source mode='bind'
-        path='/var/lib/libvirt/qemu/channel/target/domain-5-worker-2/org.qemu.guest_agent.0' />
+      <source mode='bind' path='/run/libvirt/qemu/channel/10-worker-2/org.qemu.guest_agent.0' />
       <target type='virtio' name='org.qemu.guest_agent.0' state='connected' />
       <alias name='channel0' />
       <address type='virtio-serial' controller='0' bus='0' port='1' />
@@ -149,6 +140,7 @@
     <input type='keyboard' bus='ps2'>
       <alias name='input1' />
     </input>
+    <audio id='1' type='none' />
     <memballoon model='virtio'>
       <alias name='balloon0' />
       <address type='pci' domain='0x0000' bus='0x06' slot='0x00' function='0x0' />
@@ -159,16 +151,16 @@
       <address type='pci' domain='0x0000' bus='0x07' slot='0x00' function='0x0' />
     </rng>
   </devices>
-  <seclabel type='dynamic' model='apparmor' relabel='yes'>
-    <label>libvirt-dfedb5ba-7619-4516-a976-92cccd580098</label>
-    <imagelabel>libvirt-dfedb5ba-7619-4516-a976-92cccd580098</imagelabel>
+  <seclabel type='dynamic' model='selinux' relabel='yes'>
+    <label>system_u:system_r:svirt_t:s0:c352,c406</label>
+    <imagelabel>system_u:object_r:svirt_image_t:s0:c352,c406</imagelabel>
   </seclabel>
   <seclabel type='dynamic' model='dac' relabel='yes'>
-    <label>+64055:+64055</label>
-    <imagelabel>+64055:+64055</imagelabel>
+    <label>+107:+107</label>
+    <imagelabel>+107:+107</imagelabel>
   </seclabel>
   <qemu:commandline>
     <qemu:arg value='-fw_cfg' />
-    <qemu:arg value='name=opt/com.coreos/config,file=/home/arthur/vm/okd/worker.ign' />
+    <qemu:arg value='name=opt/com.coreos/config,file=/var/lib/libvirt/images/worker.ign' />
   </qemu:commandline>
 </domain>

@@ -1,4 +1,4 @@
-<domain type='kvm' id='2' xmlns:qemu='http://libvirt.org/schemas/domain/qemu/1.0'>
+<domain type='kvm' id='3' xmlns:qemu='http://libvirt.org/schemas/domain/qemu/1.0'>
   <name>server-3</name>
   <uuid>35fa2be3-10b8-40c9-b53d-97d6d9b24569</uuid>
   <metadata>
@@ -6,14 +6,14 @@
       <libosinfo:os id="http://fedoraproject.org/coreos/stable" />
     </libosinfo:libosinfo>
   </metadata>
-  <memory unit='KiB'>20447232</memory>
-  <currentMemory unit='KiB'>20447232</currentMemory>
+  <memory unit='KiB'>19922944</memory>
+  <currentMemory unit='KiB'>19922944</currentMemory>
   <vcpu placement='static'>5</vcpu>
   <resource>
     <partition>/machine</partition>
   </resource>
   <os>
-    <type arch='x86_64' machine='pc-q35-5.2'>hvm</type>
+    <type arch='x86_64' machine='pc-q35-rhel9.2.0'>hvm</type>
     <boot dev='hd' />
   </os>
   <features>
@@ -21,7 +21,7 @@
     <apic />
   </features>
   <cpu mode='host-passthrough' check='none' migratable='on'>
-    <topology sockets='5' dies='1' cores='1' threads='1' />
+    <topology sockets='1' dies='1' cores='5' threads='1' />
   </cpu>
   <clock offset='utc'>
     <timer name='rtc' tickpolicy='catchup' />
@@ -36,7 +36,7 @@
     <suspend-to-disk enabled='no' />
   </pm>
   <devices>
-    <emulator>/usr/bin/qemu-system-x86_64</emulator>
+    <emulator>/usr/libexec/qemu-kvm</emulator>
     <disk type='file' device='disk'>
       <driver name='qemu' type='raw' cache='none' />
       <source file='/mnt/server-3/server-3.raw' index='1' />
@@ -105,27 +105,26 @@
     <interface type='bridge'>
       <mac address='10:00:00:00:01:03' />
       <source bridge='br0' />
-      <target dev='vnet1' />
+      <target dev='vnet2' />
       <model type='virtio' />
       <alias name='net0' />
       <address type='pci' domain='0x0000' bus='0x01' slot='0x00' function='0x0' />
     </interface>
     <serial type='pty'>
-      <source path='/dev/pts/1' />
+      <source path='/dev/pts/3' />
       <target type='isa-serial' port='0'>
         <model name='isa-serial' />
       </target>
       <alias name='serial0' />
     </serial>
-    <console type='pty' tty='/dev/pts/1'>
-      <source path='/dev/pts/1' />
+    <console type='pty' tty='/dev/pts/3'>
+      <source path='/dev/pts/3' />
       <target type='serial' port='0' />
       <alias name='serial0' />
     </console>
     <channel type='unix'>
-      <source mode='bind'
-        path='/var/lib/libvirt/qemu/channel/target/domain-2-server-3/org.qemu.guest_agent.0' />
-      <target type='virtio' name='org.qemu.guest_agent.0' state='connected' />
+      <source mode='bind' path='/run/libvirt/qemu/channel/3-server-3/org.qemu.guest_agent.0' />
+      <target type='virtio' name='org.qemu.guest_agent.0' state='disconnected' />
       <alias name='channel0' />
       <address type='virtio-serial' controller='0' bus='0' port='1' />
     </channel>
@@ -135,6 +134,7 @@
     <input type='keyboard' bus='ps2'>
       <alias name='input1' />
     </input>
+    <audio id='1' type='none' />
     <memballoon model='virtio'>
       <alias name='balloon0' />
       <address type='pci' domain='0x0000' bus='0x05' slot='0x00' function='0x0' />
@@ -145,16 +145,16 @@
       <address type='pci' domain='0x0000' bus='0x06' slot='0x00' function='0x0' />
     </rng>
   </devices>
-  <seclabel type='dynamic' model='apparmor' relabel='yes'>
-    <label>libvirt-35fa2be3-10b8-40c9-b53d-97d6d9b24569</label>
-    <imagelabel>libvirt-35fa2be3-10b8-40c9-b53d-97d6d9b24569</imagelabel>
+  <seclabel type='dynamic' model='selinux' relabel='yes'>
+    <label>system_u:system_r:svirt_t:s0:c61,c205</label>
+    <imagelabel>system_u:object_r:svirt_image_t:s0:c61,c205</imagelabel>
   </seclabel>
   <seclabel type='dynamic' model='dac' relabel='yes'>
-    <label>+64055:+64055</label>
-    <imagelabel>+64055:+64055</imagelabel>
+    <label>+107:+107</label>
+    <imagelabel>+107:+107</imagelabel>
   </seclabel>
   <qemu:commandline>
     <qemu:arg value='-fw_cfg' />
-    <qemu:arg value='name=opt/com.coreos/config,file=/home/arthur/vm/okd/master.ign' />
+    <qemu:arg value='name=opt/com.coreos/config,file=/var/lib/libvirt/images/master.ign' />
   </qemu:commandline>
 </domain>

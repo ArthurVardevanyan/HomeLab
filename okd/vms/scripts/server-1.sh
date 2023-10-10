@@ -3,12 +3,12 @@ export NODE=server-1
 export VCPUS=5
 export RAM_MB=19456
 export IMAGE="/mnt/${NODE}/${NODE}.raw"
-export IGNITION_CONFIG="${HOME}/vm/okd/master.ign"
+export IGNITION_CONFIG="/var/lib/libvirt/images/master.ign"
 export SIZE="128G"
 export MAC="10:00:00:00:01:01"
 
 qemu-img create "${IMAGE}" "${SIZE}" -f raw
-virt-resize --expand /dev/sda4 "${HOME}"/vm/okd/fedora-coreos-*.qcow2 "${IMAGE}"
+virt-resize --expand /dev/sda4 /var/lib/libvirt/images/fedora-coreos-*.qcow2 "${IMAGE}"
 
 virt-install \
   --connect="qemu:///system" \

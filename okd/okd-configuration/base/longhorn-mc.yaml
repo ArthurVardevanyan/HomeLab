@@ -2,7 +2,7 @@ apiVersion: machineconfiguration.openshift.io/v1
 kind: MachineConfig
 metadata:
   labels:
-    machineconfiguration.openshift.io/role: worker
+    machineconfiguration.openshift.io/role: infra
     app.kubernetes.io/instance: okd-configuration
   name: 71-mount-storage-worker
 spec:
@@ -19,6 +19,17 @@ spec:
             [Mount]
             Where=/var/mnt/longhorn
             What=/dev/disk/by-label/longhorn
+            Options=rw,relatime,discard
+            [Install]
+            WantedBy=local-fs.target
+        - name: var-mnt-longhorn1mount
+          enabled: true
+          contents: |
+            [Unit]
+            Before=local-fs.target
+            [Mount]
+            Where=/var/mnt/longhorn1
+            What=/dev/disk/by-label/longhorn1
             Options=rw,relatime,discard
             [Install]
             WantedBy=local-fs.target
