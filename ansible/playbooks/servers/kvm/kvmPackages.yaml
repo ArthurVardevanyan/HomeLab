@@ -4,31 +4,21 @@
   user: arthur
   tasks:
     - name: install packages
-      apt:
+      yum:
         state: latest
         name:
-          - firmware-realtek
-          - firmware-misc-nonfree
+          #- firmware-realtek
+          #- firmware-misc-nonfree
           - cockpit-machines
           - qemu-kvm
-          - libvirt-clients
-          - libvirt-daemon-system
-          - bridge-utils
-          - virtinst
+          #- libvirt-clients
+          #- libvirt-daemon-system
+          #- bridge-utils
+          #- virtinst
           - libvirt-daemon
-          - libguestfs-tools
+          - guestfs-tools
 
     - name: Creates VM Directory
       file:
-        path: /home/arthur/vm
+        path: /home/okd
         state: directory
-
-    - name: Adding user to Libvirt Group
-      user: name=arthur
-        groups=libvirt
-        append=yes
-
-    - name: Enable modprobe vhost_net
-      modprobe:
-        name: vhost_net
-        state: present

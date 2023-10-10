@@ -293,12 +293,11 @@ curl --header "Authorization: Bearer $(oc whoami -t)" -H 'Content-type: applicat
 #### SSH Keyscan
 
 ```bash
-export IP_LIST="3 4 5 17 110 101 102 103 111 112 113 114"
+export IP_LIST="3 4 5 17 107 108 101 102 103 111 112 113 114 121 122"
 
 rm -f /tmp/ssh_keyscan.txt
 for IP in $( echo "$IP_LIST" ); do
 ssh-keyscan 10.0.0."${IP}" >> /tmp/ssh_keyscan.txt
-
 done
 
 echo "\n\n\nSSH Keyscan\n\n"
