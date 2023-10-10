@@ -1,19 +1,14 @@
 export HOME=/home/arthur
 export NODE=worker-3
-export VCPUS=4
-export RAM_MB=28672
-export IMAGE="/mnt/storage/okd/${NODE}.raw"
-export IGNITION_CONFIG="${HOME}/vm/okd/worker.ign"
+export VCPUS=6
+export RAM_MB=27648
+export IMAGE="/home/okd/${NODE}.raw"
+export IGNITION_CONFIG="/var/lib/libvirt/images/worker.ign"
 export SIZE="64G"
 export MAC="10:00:00:00:01:13"
 
-STORAGE_PATH="/mnt/storage/okd/${NODE}_storage.raw"
-STORAGE_SIZE="320G"
-qemu-img create "${STORAGE_PATH}" "${STORAGE_SIZE}" -f raw
-STORAGE="--disk=\"${STORAGE_PATH}\"",cache=none
-
 qemu-img create "${IMAGE}" "${SIZE}" -f raw
-virt-resize --expand /dev/sda4 "${HOME}"/vm/okd/fedora-coreos-*.qcow2 "${IMAGE}"
+virt-resize --expand /dev/sda4 /var/lib/libvirt/images/fedora-coreos-*.qcow2 "${IMAGE}"
 
 virt-install \
   --connect="qemu:///system" \
@@ -22,7 +17,7 @@ virt-install \
   --os-variant="fedora-coreos-stable" \
   --import --graphics="none" \
   --network bridge=br0,mac="${MAC}" \
-  --disk="${IMAGE},cache=none" ${STORAGE} \
-  --noautoconsole \
+  --disk="${IMAGE},cache=none" \
   --cpu="host-passthrough" \
+  --noautoconsole \
   --qemu-commandline="-fw_cfg name=opt/com.coreos/config,file=${IGNITION_CONFIG}"
