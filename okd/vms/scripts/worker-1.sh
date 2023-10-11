@@ -1,7 +1,7 @@
 export HOME=/home/arthur
 export NODE=worker-1
-export VCPUS=6
-export RAM_MB=27648
+export VCPUS=8
+export RAM_MB=36864
 export IMAGE="${HOME}/vm/okd/${NODE}.raw"
 export IGNITION_CONFIG="/var/lib/libvirt/images/worker.ign"
 export SIZE="64G"

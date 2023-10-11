@@ -27,6 +27,10 @@ spec:
         prometheus.io/scrape: "true"
         enable.version-checker.io/longhorn-manager: "true"
     spec:
+      tolerations:
+        - key: node-role.kubernetes.io/infra
+          effect: NoSchedule
+          operator: Exists
       containers:
         - name: longhorn-manager
           image: longhornio/longhorn-manager:v1.5.1
