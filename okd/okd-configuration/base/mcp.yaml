@@ -1,0 +1,36 @@
+apiVersion: machineconfiguration.openshift.io/v1
+kind: MachineConfigPool
+metadata:
+  name: infra
+  labels:
+    app.kubernetes.io/instance: okd-configuration
+spec:
+  machineConfigSelector:
+    matchExpressions:
+      - key: machineconfiguration.openshift.io/role
+        operator: In
+        values:
+          - worker
+          - infra
+  maxUnavailable: 1
+  nodeSelector:
+    matchLabels:
+      node-role.kubernetes.io/infra: ""
+  paused: false
+---
+apiVersion: machineconfiguration.openshift.io/v1
+kind: MachineConfigPool
+metadata:
+  labels:
+    machineconfiguration.openshift.io/mco-built-in: ""
+    pools.operator.machineconfiguration.openshift.io/worker: ""
+  name: worker
+spec:
+  machineConfigSelector:
+    matchLabels:
+      machineconfiguration.openshift.io/role: worker
+  maxUnavailable: 1
+  nodeSelector:
+    matchLabels:
+      node-role.kubernetes.io/worker: ""
+  paused: false
