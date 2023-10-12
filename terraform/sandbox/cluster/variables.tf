@@ -1,7 +1,7 @@
 variable "os" {
   type        = string
   description = "Federoa CoreOS Version"
-  default     = "37.20230303.3.0"
+  default     = "38.20230918.3.2"
 }
 
 variable "path" {

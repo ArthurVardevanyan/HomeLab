@@ -207,7 +207,7 @@ oc label node ${NODE} node.longhorn.io/create-default-disk=config
 
 # Infra
 kubectl taint node ${NODE} node-role.kubernetes.io/infra:NoSchedule
-kubectl label node ${NODE} node-role.kubernetes.io/infra
+kubectl label node ${NODE} node-role.kubernetes.io/infra=""
 
 ```
 

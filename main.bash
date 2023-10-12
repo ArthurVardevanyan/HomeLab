@@ -906,11 +906,6 @@ install_okd() {
   export TF_VAR_master_count=3
   export TF_VAR_worker_count=4
 
-  if [[ $(/usr/bin/id -u) -ne 0 ]]; then
-    echo "Not running as root"
-    exit
-  fi
-
   echo -e "\n\n${BLUE}Get URL:${NC}"
   URL=${URL:-}
   if [ -z "${URL}" ]; then
@@ -951,9 +946,6 @@ install_okd() {
     ${OKD}/okd
 
   mkdir -p "${OKD}/vm"
-  chown -R arthur:libvirt-qemu "${OKD}/vm"
-  chmod 777 -R "${OKD}/vm"
-  chmod g+s "${OKD}/vm"
 
   echo -e "\n\n${BLUE}Download Dependencies:${NC}"
   # Download openshift-install and openshift-client
@@ -1091,6 +1083,11 @@ install_addons_okd() {
   kubectl label node "worker-2" node.longhorn.io/create-default-disk=config --overwrite
   kubectl label node "worker-3" node.longhorn.io/create-default-disk=config --overwrite
 
+  kubectl label node "worker-0" node-role.kubernetes.io/infra="" --overwrite
+  kubectl label node "worker-1" node-role.kubernetes.io/infra="" --overwrite
+  kubectl label node "worker-2" node-role.kubernetes.io/infra="" --overwrite
+  kubectl label node "worker-3" node-role.kubernetes.io/infra="" --overwrite
+
   kubectl apply -f "${HOMELAB}"/okd/okd-configuration/base/longhorn-mc.yaml
 
   sleep 15s
@@ -1127,6 +1124,7 @@ install_addons_okd() {
 
   oc patch --type=merge --patch='{"spec":{"paused":true}}' machineconfigpool/master
   oc patch --type=merge --patch='{"spec":{"paused":true}}' machineconfigpool/worker
+  oc patch --type=merge --patch='{"spec":{"paused":true}}' machineconfigpool/infra
 
   echo -e "\n${BLUE}OKD Configuration:${NC}"
   # shellcheck disable=SC2317
@@ -1158,6 +1156,7 @@ install_addons_okd() {
 
   oc patch --type=merge --patch='{"spec":{"paused":false}}' machineconfigpool/master
   oc patch --type=merge --patch='{"spec":{"paused":false}}' machineconfigpool/worker
+  oc patch --type=merge --patch='{"spec":{"paused":false}}' machineconfigpool/infra
 
   echo -e "\n\n${BLUE}Addons Installed!${NC}"
 }

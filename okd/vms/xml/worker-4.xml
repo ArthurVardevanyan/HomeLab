@@ -1,4 +1,4 @@
-<domain type='kvm' id='16' xmlns:qemu='http://libvirt.org/schemas/domain/qemu/1.0'>
+<domain type='kvm' id='4' xmlns:qemu='http://libvirt.org/schemas/domain/qemu/1.0'>
   <name>worker-4</name>
   <uuid>b1bad4b5-e5cf-4c13-be66-94a48dcd4bcc</uuid>
   <metadata>
@@ -6,8 +6,8 @@
       <libosinfo:os id="http://fedoraproject.org/coreos/stable" />
     </libosinfo:libosinfo>
   </metadata>
-  <memory unit='KiB'>34078720</memory>
-  <currentMemory unit='KiB'>34078720</currentMemory>
+  <memory unit='KiB'>33030144</memory>
+  <currentMemory unit='KiB'>33030144</currentMemory>
   <vcpu placement='static'>8</vcpu>
   <resource>
     <partition>/machine</partition>
@@ -111,25 +111,25 @@
     <interface type='bridge'>
       <mac address='10:00:00:00:01:14' />
       <source bridge='br0' />
-      <target dev='vnet10' />
+      <target dev='vnet3' />
       <model type='virtio' />
       <alias name='net0' />
       <address type='pci' domain='0x0000' bus='0x01' slot='0x00' function='0x0' />
     </interface>
     <serial type='pty'>
-      <source path='/dev/pts/4' />
+      <source path='/dev/pts/3' />
       <target type='isa-serial' port='0'>
         <model name='isa-serial' />
       </target>
       <alias name='serial0' />
     </serial>
-    <console type='pty' tty='/dev/pts/4'>
-      <source path='/dev/pts/4' />
+    <console type='pty' tty='/dev/pts/3'>
+      <source path='/dev/pts/3' />
       <target type='serial' port='0' />
       <alias name='serial0' />
     </console>
     <channel type='unix'>
-      <source mode='bind' path='/run/libvirt/qemu/channel/16-worker-4/org.qemu.guest_agent.0' />
+      <source mode='bind' path='/run/libvirt/qemu/channel/4-worker-4/org.qemu.guest_agent.0' />
       <target type='virtio' name='org.qemu.guest_agent.0' state='connected' />
       <alias name='channel0' />
       <address type='virtio-serial' controller='0' bus='0' port='1' />
@@ -152,8 +152,8 @@
     </rng>
   </devices>
   <seclabel type='dynamic' model='selinux' relabel='yes'>
-    <label>system_u:system_r:svirt_t:s0:c402,c767</label>
-    <imagelabel>system_u:object_r:svirt_image_t:s0:c402,c767</imagelabel>
+    <label>system_u:system_r:svirt_t:s0:c416,c509</label>
+    <imagelabel>system_u:object_r:svirt_image_t:s0:c416,c509</imagelabel>
   </seclabel>
   <seclabel type='dynamic' model='dac' relabel='yes'>
     <label>+107:+107</label>
