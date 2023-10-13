@@ -10,7 +10,19 @@
           - zsh
           #- zsh-autosuggestions
           #- zsh-syntax-highlighting
-          #- autojump
+          - autojump-zsh
+
+    - name: Cloning zsh-autosuggestions
+      become: true
+      git:
+        repo: https://github.com/zsh-users/zsh-autosuggestions
+        dest: //usr/share/zsh-autosuggestions
+
+    - name: Cloning zsh-syntax-highlighting
+      become: true
+      git:
+        repo: https://github.com/zsh-users/zsh-syntax-highlighting
+        dest: //usr/share/zsh-syntax-highlighting
 
     - name: Check if .zshrc exists
       stat:
