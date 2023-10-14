@@ -86,8 +86,10 @@
           - obs-studio
           - openscad
           - handbrake
-          #- blender
-          #- system76-cuda-latest
+          - ffmpeg
+          - webex
+          - blender
+          - system76-cuda-latest
           #- network-manager-openvpn
           #- network-manager-openvpn-gnome
     - name: Install ProtonTricks
@@ -103,3 +105,18 @@
           - geary
           - docker.io
           - docker-compose
+    - name: Download Minio Client
+      get_url:
+        url: https://dl.min.io/client/mc/release/linux-amd64/mc
+        dest: /usr/local/bin/mc
+        mode: a+x
+    - name: Download golang
+      get_url:
+        url: https://go.dev/dl/go1.21.3.linux-amd64.tar.gz
+        dest: /tmp/go.linux-amd64.tar.gz
+
+    - name: Extract golang
+      unarchive:
+        src: /tmp/go.linux-amd64.tar.gz
+        dest: /usr/local
+        remote_src: yes
