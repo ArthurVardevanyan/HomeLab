@@ -1,0 +1,13 @@
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: gitea-minio
+  namespace: gitea
+spec:
+  maxUnavailable: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/instance: gitea
+      v1.min.io/console: gitea-console
+      v1.min.io/pool: pool-0
+      v1.min.io/tenant: gitea

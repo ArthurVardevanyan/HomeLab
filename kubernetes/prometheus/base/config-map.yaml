@@ -413,6 +413,10 @@ data:
         - source_labels: [ __name__ ]
           regex: 'process_start_time_seconds'
           action: drop
+        # Net Observ
+        - source_labels: [ __name__ ]
+          regex: 'netobserv_(.+)'
+          action: drop
 
       - job_name: 'kvm'
         scrape_interval: 15s
@@ -779,6 +783,9 @@ data:
           action: drop
         - source_labels: [ __name__ ]
           regex: 'process_start_time_seconds'
+          action: drop
+        - source_labels: [ __name__ ]
+          regex: 'node_systemd_unit_state'
           action: drop
 
 
@@ -1147,4 +1154,7 @@ data:
           action: drop
         - source_labels: [ __name__ ]
           regex: 'process_start_time_seconds'
+          action: drop
+        - source_labels: [ __name__ ]
+          regex: 'node_systemd_unit_state'
           action: drop
