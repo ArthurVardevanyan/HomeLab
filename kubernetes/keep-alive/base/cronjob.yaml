@@ -42,7 +42,7 @@ spec:
           automountServiceAccountToken: false
           containers:
             - name: keep-alive
-              imagePullPolicy: Always
+              imagePullPolicy: IfNotPresent
               image: registry.<path:secret/data/homelab/domain#url>/homelab/toolbox:latest
               command:
                 - /bin/bash
@@ -53,8 +53,8 @@ spec:
                   set -o pipefail # return value of all commands in a pipe
 
                   export TIMESTAMP=$(date +%s)
-                  echo ${TIMESTAMP} > ${HOME}/${TIMESTAMP}
-                  gcloud storage cp ${HOME}/${TIMESTAMP} gs://${GCS_BUCKET}
+                  echo ${TIMESTAMP} > /tmp/${TIMESTAMP}
+                  gcloud storage cp /tmp/${TIMESTAMP} gs://${GCS_BUCKET}
               env:
                 - name: GOOGLE_APPLICATION_CREDENTIALS
                   value: /var/run/secrets/google/credentials_config.json
@@ -63,13 +63,15 @@ spec:
                 - name: GCS_BUCKET
                   value: "okd_homelab_keep_alive"
               securityContext:
-                runAsNonRoot: false
+                runAsNonRoot: true
+                privileged: false
+                readOnlyRootFilesystem: true
                 allowPrivilegeEscalation: false
                 seccompProfile:
                   type: RuntimeDefault
                 capabilities:
                   drop:
-                    - all
+                    - ALL
               resources:
                 requests:
                   memory: "50Mi"
@@ -80,6 +82,8 @@ spec:
                   cpu: "150m"
                   ephemeral-storage: 100Mi
               volumeMounts:
+                - name: tmp
+                  mountPath: /tmp
                 - name: gcp-credentials-request
                   readOnly: true
                   mountPath: /var/run/secrets/google
@@ -87,6 +91,9 @@ spec:
                   readOnly: true
                   mountPath: /var/run/secrets/openshift/serviceaccount
           volumes:
+            - name: tmp
+              emptyDir:
+                sizeLimit: 2Mi
             - name: gcp-credentials-request
               configMap:
                 name: gcp-credentials-request

@@ -1,46 +1,30 @@
-FROM debian:bookworm-slim
+FROM registry.access.redhat.com/ubi9:latest
 
-ENV ARGOCD_VAULT_VERSION=1.16.1
-ENV HOME=/tmp
-ENV KICK="0"
+COPY ./containers/toolbox/repos /etc/yum.repos.d/
 
-RUN apt-get update && apt-get install gnupg2 curl -y
+RUN dnf install --disableplugin=subscription-manager https://dl.fedoraproject.org/pub/epel/epel-release-latest-9.noarch.rpm -y \
+  && dnf install --nodocs -y --disableplugin=subscription-manager \
+  sshpass logrotate rsync git jq unzip MariaDB-client ansible google-cloud-cli -y  \
+  && rm -rf /var/cache/* /var/lib/rpm/* && \
+  rm -rf /usr/lib64/google-cloud-sdk/{platform,data,bin/anthoscli}
 
-RUN printf "deb http://ppa.launchpad.net/ansible/ansible/ubuntu focal main" > /etc/apt/sources.list.d/ansible.list
-RUN apt-key adv --keyserver keyserver.ubuntu.com --recv-keys 93C4A3FD7BB9C367
+ENV \
+  ARGOCD_VAULT_VERSION=1.16.1 \
+  OKD_VERSION=4.13.0-0.okd-2023-09-30-084937 \
+  VAULT_VERSION=1.15.0 \
+  HOME=/tmp \
+  KICK="0"
 
-RUN curl -fsSL https://apt.releases.hashicorp.com/gpg | apt-key add -
-RUN echo "deb [arch=amd64] https://apt.releases.hashicorp.com bullseye main" | tee /etc/apt/sources.list.d/vault.list
-
-RUN echo "deb [signed-by=/usr/share/keyrings/cloud.google.gpg] https://packages.cloud.google.com/apt cloud-sdk main" | tee -a /etc/apt/sources.list.d/google-cloud-sdk.list
-RUN curl https://packages.cloud.google.com/apt/doc/apt-key.gpg | apt-key --keyring /usr/share/keyrings/cloud.google.gpg add -
-
-RUN curl -fsSL https://packages.cloud.google.com/apt/doc/apt-key.gpg | gpg --dearmor -o /etc/apt/keyrings/kubernetes-archive-keyring.gpg
-RUN echo "deb [signed-by=/etc/apt/keyrings/kubernetes-archive-keyring.gpg] https://apt.kubernetes.io/ kubernetes-xenial main" |  tee /etc/apt/sources.list.d/kubernetes.list
-
-RUN curl -L -o argocd-vault-plugin https://github.com/argoproj-labs/argocd-vault-plugin/releases/download/v${ARGOCD_VAULT_VERSION}/argocd-vault-plugin_${ARGOCD_VAULT_VERSION}_linux_amd64
-RUN chmod +x argocd-vault-plugin
-RUN mv argocd-vault-plugin /usr/local/bin
-
-RUN curl -L -o yq https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64
-RUN chmod +x yq
-RUN mv yq /usr/local/bin
-
-RUN apt-get install sshpass logrotate rsync git iputils-ping jq -y
-
-RUN apt-get update && apt-get install mariadb-client kubectl ansible vault google-cloud-cli -y && \
-  apt-get clean && \
-  rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
-
-RUN cp /usr/bin/dpkg /tmp/dpkg && \
-  /tmp/dpkg -P --force-remove-essential --force-depends apt dpkg && \
-  rm -rf \
-  /tmp/dpkg /var/log/apt \
-  /var/lib/apt/lists/* /tmp/* /var/tmp/* \
-  /var/lib/dpkg/updates /var/lib/dpkg/info /var/lib/dpkg/alternatives /etc/dpkg/dpkg.cfg.d /etc/alternatives
-
-RUN setcap -r /usr/bin/vault
-
-USER 65532
+RUN curl -L -o argocd-vault-plugin https://github.com/argoproj-labs/argocd-vault-plugin/releases/download/v${ARGOCD_VAULT_VERSION}/argocd-vault-plugin_${ARGOCD_VAULT_VERSION}_linux_amd64 && \
+  chmod +x argocd-vault-plugin && mv argocd-vault-plugin /usr/local/bin \
+  && \
+  curl -L -o yq https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64  && \
+  chmod +x yq && mv yq /usr/local/bin \
+  && \
+  curl -L -o openshift-client-linux.tar.gz https://github.com/openshift/okd/releases/download/${OKD_VERSION}/openshift-client-linux-${OKD_VERSION}.tar.gz && \
+  tar -xzf openshift-client-linux.tar.gz && mv oc /usr/local/bin/kubectl && rm -f oc kubectl openshift-client-linux.tar.gz\\
+  && \
+  curl -L -o vault_linux_amd64.zip https://releases.hashicorp.com/vault/${VAULT_VERSION}/vault_${VAULT_VERSION}_linux_amd64.zip && \
+  unzip vault_linux_amd64.zip && chmod +x vault && mv vault /usr/local/bin/
 
 CMD ["sleep", "infinity"]
