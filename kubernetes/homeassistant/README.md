@@ -16,3 +16,4 @@ kubectl kustomize kubernetes/homeassistant/overlays/okd | argocd-vault-plugin ge
 - <https://www.reddit.com/r/homeassistant/comments/im49ud/is_it_possible_to_get_data_from_my_utilitys_meters/>
 - <https://www.reddit.com/r/homeassistant/comments/sq97e7/psa_if_youre_using_octoprint_use_mqtt_instead_of/>
 - <https://www.reddit.com/r/homeassistant/comments/wa1g5x/running_homeassistant_as_nonroot_in_k8s/>
+- <https://github.com/dronenb/HomeLab/blob/main/kubernetes/manifests/home-assistant/statefulset.yaml#L33-L57>

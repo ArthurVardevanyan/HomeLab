@@ -1,0 +1,11 @@
+[Unit]
+Description=Run NVMe metrics collection every 15 minutes
+ConditionPathExists=/usr/sbin/nvme
+ConditionPathExistsGlob=/dev/nvme*
+
+[Timer]
+OnBootSec=0
+OnUnitActiveSec=15min
+
+[Install]
+WantedBy=timers.target

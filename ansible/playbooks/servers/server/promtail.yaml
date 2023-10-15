@@ -3,18 +3,65 @@
   become: true
   user: arthur
   tasks:
-    - name: Add grafana key
-      apt_key:
-        url: https://apt.grafana.com/gpg.key
-        state: present
-    - name: Add grafana Repo
-      apt_repository:
-        repo: deb https://apt.grafana.com stable main
-        state: present
-        update_cache: True
-        filename: grafana
-    - name: Install promtail
-      apt:
-        state: latest
-        name:
-          - promtail
+    # https://www.ozonejunkie.com/posts/loki-rhel/
+    - name: Download PromTail
+      get_url:
+        url: https://github.com/grafana/loki/releases/download/v2.9.1/promtail-linux-amd64.zip
+        dest: /tmp/promtail-linux-amd64.zip
+
+    - name: PromTail
+      file:
+        path: /tmp/promtail-linux-amd64
+        state: directory
+
+    - name: Extract PromTail
+      unarchive:
+        src: /tmp/promtail-linux-amd64.zip
+        dest: /tmp/promtail-linux-amd64
+        remote_src: yes
+
+    - name: Copy PromTail Binary To Bin
+      copy:
+        src: /tmp/promtail-linux-amd64/promtail-linux-amd64
+        dest: /usr/local/bin/promtail-linux-amd64
+        mode: a+x
+        remote_src: yes
+
+    - name: Promtail Systemd File
+      copy:
+        src: "../../../../machineConfigs/servers/server/etc/systemd/system/promtail.service"
+        dest: "/etc/systemd/system/promtail.service"
+      register: promtail
+
+    - name: Enable PromTail SystemD
+      ansible.builtin.systemd:
+        enabled: true
+        name: promtail
+        state: started
+        daemon_reload: true
+
+    - name: Restart PromTail SystemD
+      ansible.builtin.systemd:
+        enabled: true
+        name: promtail
+        state: restarted
+        daemon_reload: true
+      when: promtail.changed
+
+    - name: SeLinux File
+      copy:
+        src: "../../../../machineConfigs/servers/server/home/arthur/promtail.te"
+        dest: "/home/arthur/promtail.te"
+      register: selinux
+
+    - name: Convert to SeLinux Module
+      command: checkmodule -M -m -o promtail.mod promtail.te
+      when: selinux.changed
+
+    - name: Convert to SeLinux Policy
+      command: semodule_package -o promtail.pp -m promtail.mod
+      when: selinux.changed
+
+    - name: Install SeLinux Policy
+      command: semodule -i promtail.pp
+      when: selinux.changed

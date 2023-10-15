@@ -1,0 +1,63 @@
+- hosts: servers
+  gather_facts: no
+  become: true
+  user: arthur
+  tasks:
+    - name: install node exporter
+      yum:
+        state: latest
+        name:
+          - node_exporter
+
+    - name: Node Exporter Collector Directory
+      file:
+        path: /var/lib/prometheus/node-exporter
+        state: directory
+
+    - name: Git Clone node-exporter-textfile-collector-scripts
+      git:
+        repo: "https://github.com/prometheus-community/node-exporter-textfile-collector-scripts"
+        dest: /usr/share/node-exporter-textfile-collector-scripts/
+
+    - name: Node Exporter Systemd File
+      copy:
+        src: "../../../../machineConfigs/servers/server/usr/lib/systemd/system/node_exporter.service"
+        dest: "/usr/lib/systemd/system/node_exporter.service"
+      register: node_exporter
+
+    - name: Enable Node Exporter SystemD
+      ansible.builtin.systemd:
+        enabled: true
+        name: node_exporter
+        state: started
+        daemon_reload: true
+
+    - name: Restart Node Exporter SystemD
+      ansible.builtin.systemd:
+        enabled: true
+        name: node_exporter
+        state: restarted
+        daemon_reload: true
+      when: node_exporter.changed
+
+    - name: Node Exporter NVME Plugin Systemd File
+      copy:
+        src: "../../../../machineConfigs/servers/server/usr/lib/systemd/system/prometheus-node-exporter-nvme.service"
+        dest: "/usr/lib/systemd/system/prometheus-node-exporter-nvme.service"
+
+    - name: Enable Node Exporter NVME Plugin SystemD
+      ansible.builtin.systemd:
+        enabled: true
+        name: prometheus-node-exporter-nvme
+        daemon_reload: true
+
+    - name: Node Exporter NVME Plugin Timer Systemd File
+      copy:
+        src: "../../../../machineConfigs/servers/server/usr/lib/systemd/system/prometheus-node-exporter-nvme.timer"
+        dest: "/usr/lib/systemd/system/prometheus-node-exporter-nvme.timer"
+
+    - name: Enable Node Exporter NVME Timer Plugin SystemD
+      ansible.builtin.systemd:
+        enabled: true
+        name: prometheus-node-exporter-nvme.timer
+        daemon_reload: true

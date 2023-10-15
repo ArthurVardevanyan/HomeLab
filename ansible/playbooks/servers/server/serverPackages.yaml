@@ -30,7 +30,24 @@
           - smartmontools
           - tree
           - nvme-cli
-          #- prometheus-node-exporter
+
+    - name: Enable codeready-builder repositories
+      community.general.rhsm_repository:
+        name: codeready-builder-for-rhel-9-x86_64-rpms
+        state: enabled
+    # https://www.redhat.com/sysadmin/install-epel-linux
+    # https://unix.stackexchange.com/questions/560024/ansible-right-way-to-enable-epel-yum-repository-vs-yum
+    - name: Install package epel-release
+      yum:
+        name: epel-release
+        state: present
+
+    - name: install epel packages
+      yum:
+        state: latest
+        name:
+          - htop
+          - moreutils
     - name: Download YQ
       get_url:
         url: https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64

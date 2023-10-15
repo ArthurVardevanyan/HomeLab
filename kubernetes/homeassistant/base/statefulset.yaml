@@ -54,22 +54,28 @@ spec:
             - name: certificate
               mountPath: /ssl
           livenessProbe:
-            tcpSocket:
+            httpGet:
+              path: /manifest.json
               port: 8123
+              scheme: HTTPS
             timeoutSeconds: 1
             periodSeconds: 10
             initialDelaySeconds: 3
             failureThreshold: 3
           readinessProbe:
-            tcpSocket:
+            httpGet:
+              path: /manifest.json
               port: 8123
+              scheme: HTTPS
             timeoutSeconds: 1
             periodSeconds: 10
             initialDelaySeconds: 3
             failureThreshold: 3
           startupProbe:
-            tcpSocket:
+            httpGet:
+              path: /manifest.json
               port: 8123
+              scheme: HTTPS
             timeoutSeconds: 1
             periodSeconds: 5
             successThreshold: 1
