@@ -11,3 +11,34 @@
       dconf:
         key: "/org/gnome/desktop/background/picture-uri"
         value: "'file:///home/arthur/Pictures/Wallpapers/starlitnight1920x1200 No Logo.jpg'"
+    - name: Enable Extensions
+      dconf:
+        key: "/org/gnome/shell/enabled-extensions"
+        value:
+          "['netspeed@hedayaty.gmail.com', 'places-menu@gnome-shell-extensions.gcampax.github.com', 'gsconnect@andyholmes.github.io', \
+          'transparentnotification@ipaq3870', 'hidetopbar@mathieu.bidon.ca', 'pop-shell@system76.com', 'caffeine@patapon.info', \
+          'appindicatorsupport@rgcjonas.gmail.com', 'apps-menu@gnome-shell-extensions.gcampax.github.com']"
+
+    - name: Download Kubectl Neat
+      get_url:
+        url: https://github.com/itaysk/kubectl-neat/releases/download/v2.0.3/kubectl-neat_linux_amd64.tar.gz
+        dest: /tmp/kubectl-neat_linux_amd64.tar.gz
+
+    - name: Kubectl Neat
+      file:
+        path: /tmp/kubectl-neat_linux_amd64
+        state: directory
+
+    - name: Extract Kubectl Neat
+      unarchive:
+        src: /tmp/kubectl-neat_linux_amd64.tar.gz
+        dest: /tmp/kubectl-neat_linux_amd64
+        remote_src: yes
+
+    - name: Copy Kubectl Neat Binary To Bin
+      become: true
+      copy:
+        src: /tmp/kubectl-neat_linux_amd64/kubectl-neat
+        dest: /usr/local/bin/kubectl-neat
+        mode: a+x
+        remote_src: yes

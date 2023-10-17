@@ -1,16 +1,43 @@
-- hosts: ryzen
+- hosts: dell
   gather_facts: no
   become: true
   user: arthur
   tasks:
-    - name: Upgrade all apt packages
-      apt:
-        update_cache: True
-        cache_valid_time: 3600
-        upgrade: dist
-        autoremove: yes
+    - name: Add MariaDB Repo
+      ansible.builtin.yum_repository:
+        name: MariaDB
+        description: MariaDB YUM repo
+        baseurl: https://rpm.mariadb.org/10.10/fedora/$releasever/$basearch
+        gpgkey: https://rpm.mariadb.org/RPM-GPG-KEY-MariaDB
+    - name: Add Google Chrome Repo
+      ansible.builtin.yum_repository:
+        name: google-chrome
+        description: Google Chrome YUM repo
+        baseurl: https://dl.google.com/linux/chrome/rpm/stable/x86_64
+        gpgkey: https://dl.google.com/linux/linux_signing_key.pub
+    - name: Add VSCodium Repo
+      ansible.builtin.yum_repository:
+        name: vscodium
+        description: vscodium YUM repo
+        baseurl: https://download.vscodium.com/rpms/
+        gpgkey: https://gitlab.com/paulcarroty/vscodium-deb-rpm-repo/-/raw/master/pub.gpg
+    - name: Add Google Cloud SDK Repo
+      ansible.builtin.yum_repository:
+        name: gCloud
+        description: Google Cloud SDK
+        baseurl: https://packages.cloud.google.com/yum/repos/cloud-sdk-el8-x86_64
+        gpgkey: https://packages.cloud.google.com/yum/doc/rpm-package-key.gpg
+    - name: Install RPM Fusion Free
+      ansible.builtin.yum:
+        name: https://download1.rpmfusion.org/free/fedora/rpmfusion-free-release-stable.noarch.rpm
+        state: present
+        disable_gpg_check: false
+    - name: Upgrade all yum packages
+      yum:
+        name: "*"
+        state: latest
     - name: install core packages
-      apt:
+      yum:
         state: latest
         name:
           - openssh-server
@@ -26,22 +53,24 @@
           - rsync
           - gparted
           - smartmontools
-          - caffeine
-          #- p7zip-full
-          #- remmina
+          - google-chrome
+          - nextcloud-client
+          #- caffeine
     - name: install development tools
-      apt:
+      yum:
         state: latest
         name:
           - git
           - gh
           - ansible
-          - build-essential
+          - make
+          - gcc
+          - g++
+          - gcc-c++
           - python3-pip
-          - node-typescript
-          - openjdk-19-jre
+          - nodejs-typescript
           - cockpit
-          - mariadb-client
+          - MariaDB-client
           - gdb
           - adb
           - podman
@@ -49,12 +78,9 @@
           - skopeo
           - npm
           - tree
-          #- arduino
-          #- apache2
-          #- php
-          #- mariadb-server
-          #- phpmyadmin
-          #- libmariadb-dev
+          - kubernetes-client
+          - google-cloud-cli
+          - codium
     - name: Download YQ
       get_url:
         url: https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64
@@ -65,36 +91,17 @@
         url: https://github.com/argoproj-labs/argocd-vault-plugin/releases/download/v1.16.1/argocd-vault-plugin_1.16.1_linux_amd64
         dest: /usr/local/bin/argocd-vault-plugin
         mode: a+x
-    - name: install virtual machine tools
-      apt:
-        state: latest
-        name:
-          - virt-manager
-          - qemu
-          - qemu-kvm
-          - libvirt-clients
-          - libvirt-daemon
-          - libvirt-daemon-system
-          - virtinst
-          - libguestfs-tools
-          - bridge-utils
-          - cockpit-machines
     - name: install additional packages
-      apt:
+      yum:
         state: latest
         name:
-          - steam
           - vlc
           - gimp
-          - winetricks
           - cura
           - obs-studio
           - openscad
           - handbrake
           - ffmpeg
-          - webex
-          - blender
-          - system76-cuda-latest
           #- network-manager-openvpn
           #- network-manager-openvpn-gnome
     - name: Install ProtonTricks
@@ -104,7 +111,7 @@
       pip:
         name: psutil
     - name: Remove UnNeeded Packages
-      apt:
+      yum:
         state: absent
         name:
           - geary
@@ -125,3 +132,8 @@
         src: /tmp/go.linux-amd64.tar.gz
         dest: /usr/local
         remote_src: yes
+
+    - name: Install Webex
+      ansible.builtin.yum:
+        name: https://binaries.webex.com/WebexDesktop-CentOS-Official-Package/Webex.rpm
+        state: present
