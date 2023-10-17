@@ -70,6 +70,11 @@ spec:
             - vault
             - server
             - -config=/vault/config/vault.json
+          env:
+            - name: GOOGLE_APPLICATION_CREDENTIALS
+              value: /var/run/secrets/google/credentials_config.json
+            - name: CLOUDSDK_AUTH_CREDENTIAL_FILE_OVERRIDE
+              value: /var/run/secrets/google/credentials_config.json
           volumeMounts:
             - mountPath: /vault/file
               name: vault-pvc
@@ -77,6 +82,12 @@ spec:
               name: vault-config
             - mountPath: /vault/cert
               name: vault-cert
+            - name: gcp-credentials-request
+              readOnly: true
+              mountPath: /var/run/secrets/google
+            - name: serviceaccount-token
+              readOnly: true
+              mountPath: /var/run/secrets/openshift/serviceaccount
           resources:
             requests:
               memory: "384Mi"
@@ -96,3 +107,15 @@ spec:
         - name: vault-pvc
           persistentVolumeClaim:
             claimName: vault-pvc
+        - name: gcp-credentials-request
+          configMap:
+            name: gcp-credentials-request
+            defaultMode: 420
+        - name: serviceaccount-token
+          projected:
+            sources:
+              - serviceAccountToken:
+                  audience: openshift
+                  expirationSeconds: 3600
+                  path: token
+            defaultMode: 420
