@@ -167,8 +167,8 @@ end
 | server-1 | cp,etcd,master | kvm-1   | 5    | 19.0G | N/A           |
 | server-2 | cp,etcd,master | kvm-2   | 5    | 19.0G | N/A           |
 | server-3 | cp,etcd,master | kvm-1   | 5    | 19.0G | N/A           |
-| infra-1  | infra,worker   | kvm-1   | 4    | 8.0G  | 2x1TB LH NVME |
-| infra-2  | infra,worker   | kvm-2   | 4    | 8.0G  | 2x1TB LH NVME |
+| infra-1  | infra,worker   | kvm-1   | 4    | 7.0G  | 2x1TB LH NVME |
+| infra-2  | infra,worker   | kvm-2   | 4    | 7.0G  | 2x1TB LH NVME |
 | worker-1 | worker         | kvm-1   | 8    | 36.0G | N/A           |
 | worker-2 | worker         | kvm-2   | 8    | 32.5G | N/A           |
 | worker-3 | worker         | kvm-1   | 8    | 36.0G | N/A           |

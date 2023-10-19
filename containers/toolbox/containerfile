@@ -1,10 +1,9 @@
-FROM registry.access.redhat.com/ubi9:latest
+FROM registry.access.redhat.com/ubi9-minimal:latest
 
 COPY ./containers/toolbox/repos /etc/yum.repos.d/
 
-RUN dnf install --disableplugin=subscription-manager https://dl.fedoraproject.org/pub/epel/epel-release-latest-9.noarch.rpm -y \
-  && dnf install --nodocs -y --disableplugin=subscription-manager \
-  sshpass logrotate rsync git jq unzip MariaDB-client ansible google-cloud-cli -y  \
+RUN microdnf install --nodocs -y --disableplugin=subscription-manager \
+  sshpass logrotate rsync git jq unzip MariaDB-client ansible google-cloud-cli tar -y  \
   && rm -rf /var/cache/* /var/lib/rpm/* && \
   rm -rf /usr/lib64/google-cloud-sdk/{platform,data,bin/anthoscli}
 

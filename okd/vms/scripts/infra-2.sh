@@ -1,7 +1,7 @@
 export HOME=/home/arthur
 export NODE=infra-2
 export VCPUS=4
-export RAM_MB=8192
+export RAM_MB=7168
 export IMAGE="/var/lib/libvirt/images/${NODE}.raw"
 export IGNITION_CONFIG="/var/lib/libvirt/images/worker.ign"
 export SIZE="64G"
