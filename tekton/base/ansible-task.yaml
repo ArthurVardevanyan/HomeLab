@@ -58,6 +58,10 @@ spec:
 
         export URL=arthurvardevanyan.com
 
+        kubectl get secret cockpit-cert -n homelab -o yaml > /tmp/cockpit-cert.yaml
+        yq '.data."tls.crt"' /tmp/cockpit-cert.yaml | base64 -d > /tmp/cockpit.crt
+        yq '.data."tls.key"' /tmp/cockpit-cert.yaml | base64 -d > /tmp/cockpit.key
+
         export CI_JOB_JWT="$(cat /var/run/secrets/kubernetes.io/serviceaccount/token)"
         export VAULT_ADDR=https://vault.${URL}
         export VAULT_TOKEN="$(vault write -field=token auth/homelab/login role=homelab jwt=${CI_JOB_JWT})"
