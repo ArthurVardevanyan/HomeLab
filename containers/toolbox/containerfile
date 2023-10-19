@@ -2,17 +2,20 @@ FROM registry.access.redhat.com/ubi9-minimal:latest
 
 COPY ./containers/toolbox/repos /etc/yum.repos.d/
 
-RUN microdnf install --nodocs -y --disableplugin=subscription-manager \
-  sshpass logrotate rsync git jq unzip MariaDB-client ansible google-cloud-cli tar -y  \
-  && rm -rf /var/cache/* /var/lib/rpm/* && \
-  rm -rf /usr/lib64/google-cloud-sdk/{platform,data,bin/anthoscli}
-
 ENV \
   ARGOCD_VAULT_VERSION=1.16.1 \
   OKD_VERSION=4.13.0-0.okd-2023-09-30-084937 \
+  OPENTOFU_VERSION=1.6.0-alpha3\
   VAULT_VERSION=1.15.0 \
   HOME=/tmp \
   KICK="0"
+
+RUN rpm -ivh https://github.com/opentofu/opentofu/releases/download/v${OPENTOFU_VERSION}/tofu_${OPENTOFU_VERSION}_amd64.rpm && \
+  microdnf install --nodocs -y --disableplugin=subscription-manager \
+  sshpass logrotate rsync git jq unzip MariaDB-client ansible google-cloud-cli tar -y \
+  && ln -s /usr/bin/python3.11 /usr/local/bin/python \
+  && rm -rf /var/cache/* /var/lib/rpm/* && \
+  rm -rf /usr/lib64/google-cloud-sdk/{platform,data,bin/anthoscli}
 
 RUN curl -L -o argocd-vault-plugin https://github.com/argoproj-labs/argocd-vault-plugin/releases/download/v${ARGOCD_VAULT_VERSION}/argocd-vault-plugin_${ARGOCD_VAULT_VERSION}_linux_amd64 && \
   chmod +x argocd-vault-plugin && mv argocd-vault-plugin /usr/local/bin \

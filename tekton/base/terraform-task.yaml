@@ -1,0 +1,102 @@
+apiVersion: tekton.dev/v1beta1
+kind: Task
+metadata:
+  name: terraform
+  namespace: homelab
+  labels:
+    app: homelab
+    app.kubernetes.io/instance: homelab
+  annotations:
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+spec:
+  params:
+    - name: image
+      type: string
+      default: "registry.arthurvardevanyan.com/homelab/toolbox:latest"
+
+  workspaces:
+    - name: data
+
+  steps:
+    - name: terraform
+      image: "$(params.image)"
+      resources:
+        limits:
+          cpu: 750m
+          memory: 1Gi
+        requests:
+          cpu: 250m
+          memory: 512Mi
+      securityContext:
+        runAsNonRoot: true
+        #runAsUser: 65532
+        privileged: false
+        readOnlyRootFilesystem: true
+        allowPrivilegeEscalation: false
+        seccompProfile:
+          type: RuntimeDefault
+        capabilities:
+          drop:
+            - ALL
+            - MKNOD
+      env:
+        - name: WORKSPACE_DATA_PATH
+          value: $(workspaces.data.path)
+        - name: GOOGLE_APPLICATION_CREDENTIALS
+          value: /var/run/secrets/google/credentials_config.json
+        - name: CLOUDSDK_AUTH_CREDENTIAL_FILE_OVERRIDE
+          value: /var/run/secrets/google/credentials_config.json
+
+      volumeMounts:
+        - name: tmp
+          mountPath: /tmp
+        - name: gcp-credentials-request
+          readOnly: true
+          mountPath: /var/run/secrets/google
+        - name: serviceaccount-token
+          readOnly: true
+          mountPath: /var/run/secrets/openshift/serviceaccount
+      script: |
+        #!/bin/bash
+
+        # set -o errexit
+        # set -o nounset
+        # set -o pipefail
+
+        export URL=arthurvardevanyan.com
+
+        export CI_JOB_JWT="$(cat /var/run/secrets/kubernetes.io/serviceaccount/token)"
+        export VAULT_ADDR=https://vault.${URL}
+        export VAULT_TOKEN="$(vault write -field=token auth/homelab/login role=homelab jwt=${CI_JOB_JWT})"
+
+        export PROJECT_ID="$(vault kv get -field=project_id secret/gcp/org/av/projects)"
+        export BUCKET_ID="$(vault kv get -field=bucket_id secret/gcp/org/av/projects)"
+
+        cd ${WORKSPACE_DATA_PATH}/terraform/gcp/HomeLab/homelab
+
+        cat << EOF > backend.conf
+        bucket = "tf-state-homelab-${BUCKET_ID}"
+        prefix = "terraform/state"
+        EOF
+
+        echo "Running Tofu Init"
+        tofu init -no-color -backend-config=backend.conf
+        echo "Running Tofu Plan"
+        tofu plan -no-color
+
+  volumes:
+    - name: tmp
+      emptyDir:
+        sizeLimit: 2Mi
+    - name: gcp-credentials-request
+      configMap:
+        name: gcp-credentials-request
+        defaultMode: 420
+    - name: serviceaccount-token
+      projected:
+        sources:
+          - serviceAccountToken:
+              audience: openshift
+              expirationSeconds: 3600
+              path: token
+        defaultMode: 420
