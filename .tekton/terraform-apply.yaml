@@ -2,12 +2,11 @@
 apiVersion: tekton.dev/v1beta1
 kind: PipelineRun
 metadata:
-  name: terraform
+  name: terraform-apply
   annotations:
     pipelinesascode.tekton.dev/max-keep-runs: "1"
     pipelinesascode.tekton.dev/on-cel-expression: |
-      target_branch == "production" && "terraform/***".pathChanged()
-    # event == "pull_request" &&
+      event == "push" && (target_branch == "refs/heads/production" || target_branch == "production") && "terraform/***".pathChanged()
     pipelinesascode.tekton.dev/target-namespace: "homelab"
     pipelinesascode.tekton.dev/task: "[tekton/base/terraform-task.yaml]"
     pipelinesascode.tekton.dev/task-1: "https://tekton-hub-api-openshift-pipelines.apps.okd.arthurvardevanyan.com/v1/resource/homelab/task/git-clone/0.9.1/raw"
@@ -49,6 +48,9 @@ spec:
       - name: terraform
         runAfter:
           - git-clone
+        params:
+          - name: terraform_action
+            value: apply
         taskRef:
           name: terraform
           kind: Task

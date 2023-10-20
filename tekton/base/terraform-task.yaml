@@ -99,12 +99,15 @@ spec:
         if [[ "${TERRAFORM_ACTION}" = "plan" ]]; then
           echo "Running Tofu Plan"
           tofu plan -no-color
+        elif [[ "${TERRAFORM_ACTION}" = "apply" ]]; then
+          echo "Running Tofu Apply"
+          tofu apply -no-color -auto-approve
         fi
 
   volumes:
     - name: tmp
       emptyDir:
-        sizeLimit: 2Mi
+        sizeLimit: 100Mi
     - name: gcp-credentials-request
       configMap:
         name: gcp-credentials-request
