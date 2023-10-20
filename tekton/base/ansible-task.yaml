@@ -56,6 +56,10 @@ spec:
       script: |
         #!/bin/bash
 
+        set -o errexit
+        set -o nounset
+        set -o pipefail
+
         export URL=arthurvardevanyan.com
 
         kubectl get secret cockpit-cert -n homelab -o yaml > /tmp/cockpit-cert.yaml

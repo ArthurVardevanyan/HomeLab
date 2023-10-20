@@ -1,0 +1,75 @@
+---
+apiVersion: tekton.dev/v1beta1
+kind: PipelineRun
+metadata:
+  name: terraform-plan
+  annotations:
+    pipelinesascode.tekton.dev/max-keep-runs: "1"
+    pipelinesascode.tekton.dev/on-cel-expression: |
+      event == "pull_request" && target_branch == "production" && "terraform/***".pathChanged()
+    pipelinesascode.tekton.dev/target-namespace: "homelab"
+    pipelinesascode.tekton.dev/task: "[tekton/base/terraform-task.yaml]"
+    pipelinesascode.tekton.dev/task-1: "https://tekton-hub-api-openshift-pipelines.apps.okd.arthurvardevanyan.com/v1/resource/homelab/task/git-clone/0.9.1/raw"
+spec:
+  params:
+    - name: git-commit
+      value: "{{ revision }}"
+    - name: git-url
+      value: "{{ repo_url }}"
+
+  pipelineSpec:
+    params:
+      - name: git-commit
+        type: string
+      - name: git-url
+        type: string
+        description: Repository URL to clone from.
+
+    workspaces:
+      - name: data
+      - name: git_auth_secret
+
+    tasks:
+      - name: git-clone
+        taskRef:
+          name: git-clone
+          kind: Task
+        params:
+          - name: url
+            value: $(params.git-url)
+          - name: revision
+            value: $(params.git-commit)
+        workspaces:
+          - name: output
+            workspace: data
+          - name: basic-auth
+            workspace: git_auth_secret
+
+      - name: terraform
+        runAfter:
+          - git-clone
+        taskRef:
+          name: terraform
+          kind: Task
+        workspaces:
+          - name: data
+            workspace: data
+
+  serviceAccountName: pipeline
+  workspaces:
+    - name: data
+      volumeClaimTemplate:
+        apiVersion: v1
+        kind: PersistentVolumeClaim
+        metadata:
+          name: data
+        spec:
+          accessModes:
+            - ReadWriteOnce
+          resources:
+            requests:
+              storage: "500Mi"
+          storageClassName: longhorn
+    - name: git_auth_secret
+      secret:
+        secretName: "{{ git_auth_secret }}"

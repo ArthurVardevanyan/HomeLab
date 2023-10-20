@@ -346,6 +346,14 @@ EOF
 vault write auth/kubernetes/login role=argocd jwt=$(cat /var/run/secrets/kubernetes.io/serviceaccount/token)
 ```
 
+Additional Policy for Terraform
+
+```hcl
+path "auth/token/create" {
+  capabilities = ["create", "read", "update", "list"]
+}
+```
+
 ## Database
 
 ### MariaDB
