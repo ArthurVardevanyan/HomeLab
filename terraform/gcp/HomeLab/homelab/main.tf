@@ -1,16 +1,24 @@
 terraform {
   backend "gcs" {}
-
 }
 
-provider "vault" {}
+provider "vault" {
+  address = "https://vault.arthurvardevanyan.com"
+}
 
 provider "google" {
 }
 
 terraform {
   required_providers {
-    google = "= 4.84.0"
+    google = {
+      source  = "hashicorp/google"
+      version = "5.1.0"
+    }
+    vault = {
+      source  = "hashicorp/vault"
+      version = "3.21.0"
+    }
   }
 }
 

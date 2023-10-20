@@ -58,7 +58,7 @@ resource "google_secret_manager_secret" "truenas_nextcloud" {
   secret_id = "truenas_nextcloud"
 
   replication {
-    automatic = true
+    auto {}
   }
 }
 

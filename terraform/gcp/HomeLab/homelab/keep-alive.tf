@@ -62,7 +62,9 @@ resource "google_secret_manager_secret" "discord_keep_alive" {
   secret_id = "discord_keep_alive"
   labels    = {}
 
-  replication { automatic = true }
+  replication {
+    auto {}
+  }
 }
 
 resource "google_secret_manager_secret_iam_member" "secretAccessor" {

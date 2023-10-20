@@ -10,6 +10,15 @@ metadata:
     argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
 spec:
   params:
+    - name: terraform_action
+      type: string
+      default: "plan"
+    - name: terraform_path
+      type: string
+      default: "terraform/gcp/HomeLab/homelab"
+    - name: terraform_bucket
+      type: string
+      default: "tf-state-homelab"
     - name: image
       type: string
       default: "registry.arthurvardevanyan.com/homelab/toolbox:latest"
@@ -42,6 +51,12 @@ spec:
       env:
         - name: WORKSPACE_DATA_PATH
           value: $(workspaces.data.path)
+        - name: TERRAFORM_PATH
+          value: $(params.terraform_path)
+        - name: TERRAFORM_ACTION
+          value: $(params.terraform_action)
+        - name: TERRAFORM_BUCKET
+          value: $(params.terraform_bucket)
         - name: GOOGLE_APPLICATION_CREDENTIALS
           value: /var/run/secrets/google/credentials_config.json
         - name: CLOUDSDK_AUTH_CREDENTIAL_FILE_OVERRIDE
@@ -59,9 +74,9 @@ spec:
       script: |
         #!/bin/bash
 
-        # set -o errexit
-        # set -o nounset
-        # set -o pipefail
+        set -o errexit
+        set -o nounset
+        set -o pipefail
 
         export URL=arthurvardevanyan.com
 
@@ -72,17 +87,19 @@ spec:
         export PROJECT_ID="$(vault kv get -field=project_id secret/gcp/org/av/projects)"
         export BUCKET_ID="$(vault kv get -field=bucket_id secret/gcp/org/av/projects)"
 
-        cd ${WORKSPACE_DATA_PATH}/terraform/gcp/HomeLab/homelab
+        cd ${WORKSPACE_DATA_PATH}/${TERRAFORM_PATH}
 
         cat << EOF > backend.conf
-        bucket = "tf-state-homelab-${BUCKET_ID}"
+        bucket = "${TERRAFORM_BUCKET}-${BUCKET_ID}"
         prefix = "terraform/state"
         EOF
 
         echo "Running Tofu Init"
         tofu init -no-color -backend-config=backend.conf
-        echo "Running Tofu Plan"
-        tofu plan -no-color
+        if [[ "${TERRAFORM_ACTION}" = "plan" ]]; then
+          echo "Running Tofu Plan"
+          tofu plan -no-color
+        fi
 
   volumes:
     - name: tmp
