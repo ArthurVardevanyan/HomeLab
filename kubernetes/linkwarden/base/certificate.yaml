@@ -1,0 +1,14 @@
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: linkwarden-cert
+  namespace: linkwarden
+  labels:
+    app.kubernetes.io/instance: linkwarden
+spec:
+  secretName: linkwarden-cert
+  dnsNames:
+    - "linkwarden.<path:secret/data/homelab/domain#url>"
+  issuerRef:
+    kind: ClusterIssuer
+    name: letsencrypt

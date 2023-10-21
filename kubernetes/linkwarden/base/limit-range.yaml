@@ -1,0 +1,18 @@
+apiVersion: v1
+kind: LimitRange
+metadata:
+  name: linkwarden-lr
+  namespace: linkwarden
+  labels:
+    app.kubernetes.io/instance: linkwarden
+spec:
+  limits:
+    - type: Container
+      default:
+        cpu: 50m
+        memory: 100M
+        ephemeral-storage: 256Mi
+      defaultRequest:
+        cpu: 25m
+        memory: 50M
+        ephemeral-storage: 128Mi

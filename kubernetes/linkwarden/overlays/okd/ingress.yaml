@@ -1,0 +1,24 @@
+kind: Ingress
+apiVersion: networking.k8s.io/v1
+metadata:
+  name: linkwarden
+  namespace: linkwarden
+  labels:
+    app.kubernetes.io/instance: linkwarden
+spec:
+  ingressClassName: openshift-default
+  tls:
+    - hosts:
+        - linkwarden.<path:secret/data/homelab/domain#url>
+      secretName: linkwarden-cert
+  rules:
+    - host: linkwarden.<path:secret/data/homelab/domain#url>
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: linkwarden
+                port:
+                  number: 80
