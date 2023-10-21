@@ -1,8 +1,11 @@
+# PSQL 15 Public Scheme Tweak
+# \c clair
+# GRANT CREATE ON SCHEMA public TO clair;
 apiVersion: postgres-operator.crunchydata.com/v1beta1
 kind: PostgresCluster
 metadata:
-  name: quay
-  namespace: postgres
+  name: clair
+  namespace: quay
   annotations:
     argocd.argoproj.io/sync-wave: "1"
     argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
@@ -12,13 +15,13 @@ spec:
   backups:
     pgbackrest:
       global:
-        repo1-retention-full: "14"
+        repo1-retention-full: "1"
         repo1-retention-full-type: count
       repoHost:
         resources:
           limits:
             memory: "64Mi"
-            cpu: "60m"
+            cpu: "45m"
           requests:
             memory: "32Mi"
             cpu: "15m"
@@ -26,11 +29,11 @@ spec:
         pgbackrest:
           resources:
             limits:
-              memory: "64Mi"
-              cpu: "100m"
+              memory: "1Gi"
+              cpu: "500m"
             requests:
-              memory: "32Mi"
-              cpu: "15m"
+              memory: "128Mi"
+              cpu: "50m"
         pgbackrestConfig:
           resources:
             limits:
@@ -43,37 +46,39 @@ spec:
         - name: repo1
           schedules:
             full: "0 7 * * *"
+            #full: "0 7 * * 0,3,5"
+            #differential: "0 7 * * 1-2,4,6"
           volume:
             volumeClaimSpec:
-              storageClassName: longhorn-static
+              storageClassName: longhorn
               accessModes:
                 - ReadWriteOnce
               resources:
                 requests:
-                  storage: 2Gi
+                  storage: 50Gi
   instances:
     - dataVolumeClaimSpec:
-        storageClassName: longhorn-static
+        storageClassName: longhorn
         accessModes:
           - ReadWriteOnce
         resources:
           requests:
-            storage: 3Gi
+            storage: 50Gi
       name: ""
       replicas: 2
       resources:
         requests:
-          memory: "350Mi"
-          cpu: "25m"
+          memory: "1Gi"
+          cpu: "350m"
         limits:
-          memory: "700Mi"
-          cpu: "100m"
+          memory: "2Gi"
+          cpu: 1
       affinity:
         podAntiAffinity:
           requiredDuringSchedulingIgnoredDuringExecution:
             - labelSelector:
                 matchLabels:
-                  postgres-operator.crunchydata.com/cluster: quay
+                  postgres-operator.crunchydata.com/cluster: clair
                   postgres-operator.crunchydata.com/instance-set: "00"
               topologyKey: "kubernetes.io/hostname"
           preferredDuringSchedulingIgnoredDuringExecution:
@@ -81,9 +86,14 @@ spec:
               podAffinityTerm:
                 labelSelector:
                   matchLabels:
-                    postgres-operator.crunchydata.com/cluster: quay
+                    postgres-operator.crunchydata.com/cluster: clair
                     postgres-operator.crunchydata.com/instance-set: "00"
                 topologyKey: topology.kubernetes.io/zone
+  patroni:
+    dynamicConfiguration:
+      postgresql:
+        pg_hba:
+          - "host all all 0.0.0.0/0 trust"
   monitoring:
     pgmonitor:
       exporter:
@@ -114,28 +124,3 @@ spec:
   openshift: true
   port: 5432
   postgresVersion: 15
-# ---
-# apiVersion: postgres-operator.crunchydata.com/v1beta1
-# kind: PGUpgrade
-# metadata:
-#   name: quay-upgrade
-#   namespace: postgres
-# spec:
-#   fromPostgresVersion: 14
-#   postgresClusterName: quay
-#   toPostgresVersion: 15
-
-# kubectl delete ResourceQuota -n postgres --all
-# kubectl delete LimitRange -n postgres --all
-
-# kubectl patch postgrescluster quay -n postgres --type=merge \
-#     -p '{"spec":{"shutdown":true}}'
-
-# kubectl annotate postgrescluster quay -n postgres  \
-#     postgres-operator.crunchydata.com/allow-upgrade=quay-upgrade
-
-# kubectl patch postgrescluster quay -n postgres --type "json" -p \
-# '[{"op":"replace","path":"/spec/postgresVersion","value":15}]'
-
-# kubectl patch postgrescluster quay -n postgres --type=merge \
-#     -p '{"spec":{"shutdown":false}}'
