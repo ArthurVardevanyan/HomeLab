@@ -1,0 +1,62 @@
+apiVersion: longhorn.io/v1beta2
+kind: Volume
+metadata:
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+  labels:
+    longhornvolume: linkwarden-00-4nll-pgdata
+    recurring-job-group.longhorn.io/backup: enabled
+    app.kubernetes.io/instance: linkwarden
+  name: linkwarden-00-4nll-pgdata
+  namespace: longhorn-system
+spec:
+  replicaAutoBalance: ignored
+  dataLocality: disabled
+  accessMode: rwo
+  engineImage: longhornio/longhorn-engine:v1.5.1
+  frontend: blockdev
+  snapshotDataIntegrity: enabled
+  numberOfReplicas: 2
+  size: "1073741824"
+---
+apiVersion: longhorn.io/v1beta2
+kind: Volume
+metadata:
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+  labels:
+    longhornvolume: linkwarden-00-8jd7-pgdata
+    recurring-job-group.longhorn.io/backup: enabled
+    app.kubernetes.io/instance: linkwarden
+  name: linkwarden-00-8jd7-pgdata
+  namespace: longhorn-system
+spec:
+  replicaAutoBalance: ignored
+  dataLocality: disabled
+  accessMode: rwo
+  engineImage: longhornio/longhorn-engine:v1.5.1
+  frontend: blockdev
+  snapshotDataIntegrity: enabled
+  numberOfReplicas: 2
+  size: "1073741824"
+---
+apiVersion: longhorn.io/v1beta2
+kind: Volume
+metadata:
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+  labels:
+    longhornvolume: linkwarden-repo1
+    recurring-job-group.longhorn.io/backup: enabled
+    app.kubernetes.io/instance: linkwarden
+  name: linkwarden-repo1
+  namespace: longhorn-system
+spec:
+  replicaAutoBalance: ignored
+  dataLocality: disabled
+  accessMode: rwo
+  engineImage: longhornio/longhorn-engine:v1.5.1
+  frontend: blockdev
+  snapshotDataIntegrity: enabled
+  numberOfReplicas: 2
+  size: "1073741824"
