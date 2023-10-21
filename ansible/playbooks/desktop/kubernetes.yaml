@@ -42,3 +42,26 @@
         dest: /usr/local/bin/kubectl-neat
         mode: a+x
         remote_src: yes
+
+    - name: Download KO
+      get_url:
+        url: https://github.com/ko-build/ko/releases/download/v0.15.0/ko_0.15.0_Linux_x86_64.tar.gz
+        dest: /tmp/ko_Linux_x86_64.tar.gz
+
+    - name: KO Dir
+      file:
+        path: /tmp/ko_Linux_x86_64
+        state: directory
+
+    - name: Extract KO
+      unarchive:
+        src: /tmp/ko_Linux_x86_64.tar.gz
+        dest: /tmp/ko_Linux_x86_64
+        remote_src: yes
+
+    - name: Copy KO Binary To Bin
+      copy:
+        src: /tmp/ko_Linux_x86_64/ko
+        dest: /usr/local/bin/ko
+        mode: a+x
+        remote_src: yes
