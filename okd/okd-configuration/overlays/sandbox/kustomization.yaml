@@ -28,3 +28,10 @@ patches:
       - op: replace
         path: /spec/dnsNames/1
         value: "*.sandbox.<path:secret/data/homelab/domain#url>"
+  - target:
+      kind: MachineConfig
+      name: 71-mount-storage-worker
+    patch: |-
+      - op: replace
+        path: /spec/config/systemd/units/1/enabled
+        value: false

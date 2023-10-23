@@ -1005,18 +1005,12 @@ install_okd() {
   terraform init
   terraform apply -auto-approve
 
-  chown -R arthur:arthur ${OKD}
-  chmod 777 -R ${OKD}
-
   echo -e "\n\n${BLUE}Wait for Install To Complete:${NC}"
   yq 'del(.spec.defaultCertificate)' "${HOMELAB}/okd/okd-configuration/base/certificates/ingress-controller.yaml" | ${OKD}/oc apply -f -
   ${OKD}/openshift-install --dir=${OKD}/okd wait-for install-complete --log-level debug
 
   ${OKD}/oc apply -f "${HOMELAB}/okd/okd-configuration/base/operator-hub.yaml"
   ${OKD}/oc apply -f "${HOMELAB}/okd/okd-configuration/base/operators"
-
-  # # https://github.com/openshift/okd/issues/963#issuecomment-1073120091
-  # ${OKD}/oc delete mc 99-master-okd-extensions 99-okd-master-disable-mitigations
 
   echo -e "\n\n${BLUE}Install Complete:${NC}"
   echo "export KUBECONFIG=${OKD}/okd/auth/kubeconfig"
@@ -1088,10 +1082,12 @@ install_addons_okd() {
   kubectl label node "worker-2" node-role.kubernetes.io/infra="" --overwrite
   kubectl label node "worker-3" node-role.kubernetes.io/infra="" --overwrite
 
-  kubectl apply -f "${HOMELAB}"/okd/okd-configuration/base/longhorn-mc.yaml
+  kubectl apply -f "${HOMELAB}"/okd/okd-configuration/base/mcp.yaml
+  yq '.spec.config.systemd.units[1].enabled=false' "${HOMELAB}"/okd/okd-configuration/base/longhorn-mc.yaml | kubectl apply -f -
+  argocd-vault-plugin generate "${HOMELAB}"/okd/okd-configuration/base/image-source-policy.yaml | kubectl apply -f -
 
   sleep 15s
-  while [ "$(kubectl get mcp worker -o yaml | yq '.status.conditions[] | select(.type == "Updating") | .status')" == "True" ]; do
+  while [ "$(kubectl get mcp infra -o yaml | yq '.status.conditions[] | select(.type == "Updating") | .status')" == "True" ]; do
     echo "Waiting for MCPs"
     sleep 30s
   done
