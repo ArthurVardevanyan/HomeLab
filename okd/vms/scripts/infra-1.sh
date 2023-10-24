@@ -4,7 +4,7 @@ export VCPUS=4
 export RAM_MB=7168
 export IMAGE="/var/lib/libvirt/images/{NODE}.raw"
 export IGNITION_CONFIG="/var/lib/libvirt/images/worker.ign"
-export SIZE="64G"
+export SIZE="128G"
 export MAC="10:00:00:00:01:21"
 
 STORAGE_PATH="/mnt/storage/${NODE}_storage.raw"

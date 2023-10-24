@@ -4,7 +4,7 @@ export VCPUS=8
 export RAM_MB=36864
 export IMAGE="${HOME}/vm/okd/${NODE}.raw"
 export IGNITION_CONFIG="/var/lib/libvirt/images/worker.ign"
-export SIZE="64G"
+export SIZE="128G"
 export MAC="10:00:00:00:01:11"
 
 qemu-img create "${IMAGE}" "${SIZE}" -f raw

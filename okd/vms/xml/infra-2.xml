@@ -1,4 +1,4 @@
-<domain type='kvm' id='13' xmlns:qemu='http://libvirt.org/schemas/domain/qemu/1.0'>
+<domain type='kvm' id='5' xmlns:qemu='http://libvirt.org/schemas/domain/qemu/1.0'>
   <name>infra-2</name>
   <uuid>8048b73e-0759-4293-b2b9-23946d2cd8f0</uuid>
   <metadata>
@@ -39,7 +39,7 @@
     <emulator>/usr/libexec/qemu-kvm</emulator>
     <disk type='file' device='disk'>
       <driver name='qemu' type='raw' cache='none' />
-      <source file='/var/lib/libvirt/images/infra-2.raw' index='3' />
+      <source file='/home/okd/infra-2.raw' index='3' />
       <backingStore />
       <target dev='vda' bus='virtio' />
       <alias name='virtio-disk0' />
@@ -163,25 +163,25 @@
     <interface type='bridge'>
       <mac address='10:00:00:00:01:22' />
       <source bridge='br0' />
-      <target dev='vnet7' />
+      <target dev='vnet4' />
       <model type='virtio' />
       <alias name='net0' />
       <address type='pci' domain='0x0000' bus='0x01' slot='0x00' function='0x0' />
     </interface>
     <serial type='pty'>
-      <source path='/dev/pts/2' />
+      <source path='/dev/pts/1' />
       <target type='isa-serial' port='0'>
         <model name='isa-serial' />
       </target>
       <alias name='serial0' />
     </serial>
-    <console type='pty' tty='/dev/pts/2'>
-      <source path='/dev/pts/2' />
+    <console type='pty' tty='/dev/pts/1'>
+      <source path='/dev/pts/1' />
       <target type='serial' port='0' />
       <alias name='serial0' />
     </console>
     <channel type='unix'>
-      <source mode='bind' path='/run/libvirt/qemu/channel/13-infra-2/org.qemu.guest_agent.0' />
+      <source mode='bind' path='/run/libvirt/qemu/channel/5-infra-2/org.qemu.guest_agent.0' />
       <target type='virtio' name='org.qemu.guest_agent.0' state='connected' />
       <alias name='channel0' />
       <address type='virtio-serial' controller='0' bus='0' port='1' />
@@ -204,8 +204,8 @@
     </rng>
   </devices>
   <seclabel type='dynamic' model='selinux' relabel='yes'>
-    <label>system_u:system_r:svirt_t:s0:c177,c460</label>
-    <imagelabel>system_u:object_r:svirt_image_t:s0:c177,c460</imagelabel>
+    <label>system_u:system_r:svirt_t:s0:c179,c713</label>
+    <imagelabel>system_u:object_r:svirt_image_t:s0:c179,c713</imagelabel>
   </seclabel>
   <seclabel type='dynamic' model='dac' relabel='yes'>
     <label>+107:+107</label>
