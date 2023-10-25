@@ -29,6 +29,7 @@ HomeLab Server/Cluster, Virtual Sandbox Cluster, & Desktop Configuration
         - [Delete Pod Using Graceful Termination Eviction Request](#delete-pod-using-graceful-termination-eviction-request)
       - [SSH Keyscan](#ssh-keyscan)
       - [Vault Kubernetes Integration](#vault-kubernetes-integration)
+      - [k3s Install](#k3s-install)
   - [Database](#database)
     - [MariaDB](#mariadb)
     - [Postgres](#postgres)
@@ -352,6 +353,16 @@ Additional Policy for Terraform
 path "auth/token/create" {
   capabilities = ["create", "read", "update", "list"]
 }
+```
+
+#### k3s Install
+
+```bash
+export K3S_TOKEN="k3s"
+export RESERVED="--kubelet-arg system-reserved=cpu=250m,memory=500Mi --kubelet-arg kube-reserved=cpu=250m,memory=500Mi"
+
+curl -sfL https://get.k3s.io | INSTALL_K3S_EXEC="server --cluster-init --disable traefik ${RESERVED}" \
+  INSTALL_K3S_CHANNEL=v1.28 sh -
 ```
 
 ## Database
