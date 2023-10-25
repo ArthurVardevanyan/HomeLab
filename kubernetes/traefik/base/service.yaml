@@ -4,8 +4,10 @@ metadata:
   name: traefik-dashboard
   namespace: traefik
   labels:
-    app: traefik
+    app.kubernetes.io/name: traefik
     app.kubernetes.io/instance: traefik
+    helm.sh/chart: traefik-25.0.0
+    app.kubernetes.io/managed-by: Helm
 spec:
   type: ClusterIP
   ports:
@@ -13,7 +15,8 @@ spec:
       port: 9000
       targetPort: 9000
   selector:
-    app: traefik
+    app.kubernetes.io/name: traefik
+    app.kubernetes.io/instance: traefik
 ---
 apiVersion: v1
 kind: Service
@@ -21,13 +24,16 @@ metadata:
   name: traefik
   namespace: traefik
   labels:
-    app: traefik
+    app.kubernetes.io/name: traefik
     app.kubernetes.io/instance: traefik
+    helm.sh/chart: traefik-25.0.0
+    app.kubernetes.io/managed-by: Helm
 spec:
-  type: ClusterIP #type: LoadBalancer
+  type: LoadBalancer
   selector:
-    app: traefik
-  #externalTrafficPolicy: Local
+    app.kubernetes.io/name: traefik
+    app.kubernetes.io/instance: traefik
+  externalTrafficPolicy: Local
   ports:
     - name: web
       port: 80
@@ -37,11 +43,3 @@ spec:
       port: 443
       protocol: TCP
       targetPort: 8443
-    - name: registry
-      port: 5050
-      protocol: TCP
-      targetPort: 5050
-    - name: mariadb
-      port: 3306
-      protocol: TCP
-      targetPort: 3306

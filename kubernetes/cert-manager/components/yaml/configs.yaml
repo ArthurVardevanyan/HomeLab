@@ -8,7 +8,7 @@ metadata:
     app.kubernetes.io/name: webhook
     app.kubernetes.io/instance: cert-manager
     app.kubernetes.io/component: "webhook"
-    app.kubernetes.io/version: "v1.10.0"
+    app.kubernetes.io/version: "v1.13.1"
   annotations:
     cert-manager.io/inject-ca-from-secret: "cert-manager/cert-manager-webhook-ca"
 webhooks:
@@ -49,7 +49,7 @@ metadata:
     app.kubernetes.io/name: webhook
     app.kubernetes.io/instance: cert-manager
     app.kubernetes.io/component: "webhook"
-    app.kubernetes.io/version: "v1.10.0"
+    app.kubernetes.io/version: "v1.13.1"
   annotations:
     cert-manager.io/inject-ca-from-secret: "cert-manager/cert-manager-webhook-ca"
 webhooks:
@@ -60,10 +60,6 @@ webhooks:
           operator: "NotIn"
           values:
             - "true"
-        - key: "name"
-          operator: "NotIn"
-          values:
-            - cert-manager
     rules:
       - apiGroups:
           - "cert-manager.io"
@@ -89,6 +85,20 @@ webhooks:
         namespace: cert-manager
         path: /validate
 ---
+# Source: cert-manager/templates/controller-config.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: cert-manager
+  namespace: cert-manager
+  labels:
+    app: cert-manager
+    app.kubernetes.io/name: cert-manager
+    app.kubernetes.io/instance: cert-manager
+    app.kubernetes.io/component: "controller"
+    app.kubernetes.io/version: "v1.13.1"
+data:
+---
 # Source: cert-manager/templates/webhook-config.yaml
 apiVersion: v1
 kind: ConfigMap
@@ -100,4 +110,5 @@ metadata:
     app.kubernetes.io/name: webhook
     app.kubernetes.io/instance: cert-manager
     app.kubernetes.io/component: "webhook"
+    app.kubernetes.io/version: "v1.13.1"
 data:
