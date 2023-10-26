@@ -15,6 +15,9 @@ spec:
     - name: image
       type: string
       default: "registry.arthurvardevanyan.com/homelab/toolbox:latest"
+    - name: dry_run
+      type: string
+      default: "true"
 
   workspaces:
     - name: data
@@ -44,6 +47,8 @@ spec:
       env:
         - name: PLAYBOOKS
           value: "$(params.playbooks)"
+        - name: DRY_RUN
+          value: "$(params.dry_run)"
         - name: WORKSPACE_DATA_PATH
           value: $(workspaces.data.path)
       volumeMounts:
@@ -84,11 +89,16 @@ spec:
         echo "$SSH_KNOWN_HOSTS" >> ~/.ssh/known_hosts
         chmod 644 ~/.ssh/known_hosts
 
+        export CHECK=""
+        if [[ "${DRY_RUN}" = "true" ]]; then
+          export CHECK="--check"
+        fi
+
         for PLAYBOOK in ${PLAYBOOKS//,/ }
         do
         ansible-playbook -e "ansible_ssh_timeout=1" -i ${WORKSPACE_DATA_PATH}/ansible/inventory ${WORKSPACE_DATA_PATH}/ansible/${PLAYBOOK}.yaml \
           --extra-vars "ansible_become_pass=${SUDO} ansible_ssh_pass=${SUDO} \
-          ansible_python_interpreter=/usr/bin/python3" -e 'ansible_python_interpreter=/usr/bin/python3'
+          ansible_python_interpreter=/usr/bin/python3" -e 'ansible_python_interpreter=/usr/bin/python3' ${CHECK}
         done
   volumes:
     - name: ssh

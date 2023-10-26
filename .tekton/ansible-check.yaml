@@ -2,13 +2,11 @@
 apiVersion: tekton.dev/v1beta1
 kind: PipelineRun
 metadata:
-  name: ansible
+  name: ansible-check
   annotations:
     pipelinesascode.tekton.dev/max-keep-runs: "1"
     pipelinesascode.tekton.dev/on-cel-expression: |
-      target_branch == "production"
-    # event == "pull_request" &&
-    # && "containers/toolbox/containerfile".pathChanged()
+      event == "pull_request" && target_branch == "production"
     pipelinesascode.tekton.dev/target-namespace: "homelab"
     pipelinesascode.tekton.dev/task: "[tekton/base/ansible-task.yaml]"
     pipelinesascode.tekton.dev/task-1: "https://tekton-hub-api-openshift-pipelines.apps.okd.arthurvardevanyan.com/v1/resource/homelab/task/git-clone/0.9.1/raw"
@@ -16,8 +14,6 @@ spec:
   params:
     - name: playbooks
       value: servers
-    - name: dry_run
-      value: "false"
     - name: git-commit
       value: "{{ revision }}"
     - name: git-url
@@ -62,8 +58,6 @@ spec:
         params:
           - name: playbooks
             value: $(params.playbooks)
-          - name: dry_run
-            value: $(params.dry_run)
         workspaces:
           - name: data
             workspace: data
