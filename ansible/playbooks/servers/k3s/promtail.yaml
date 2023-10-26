@@ -1,0 +1,29 @@
+- hosts: k3s
+  gather_facts: no
+  become: true
+  user: arthur
+  ignore_unreachable: true
+  tasks:
+    - name: Promtail Directory
+      file:
+        path: /etc/promtail
+        state: directory
+    - name: Promtail Config
+      copy:
+        src: "../../../../machineConfigs/servers/k3s-server/etc/promtail/config.yml"
+        dest: "/etc/promtail/config.yml"
+    - name: Add grafana key
+      apt_key:
+        url: https://apt.grafana.com/gpg.key
+        state: present
+    - name: Add grafana Repo
+      apt_repository:
+        repo: deb https://apt.grafana.com stable main
+        state: present
+        update_cache: True
+        filename: grafana
+    - name: Install promtail
+      apt:
+        state: latest
+        name:
+          - promtail

@@ -1,6 +1,5 @@
 - name: Install Standard Packages
   import_playbook: playbooks/servers/server/serverPackages.yaml
-
 - name: ZSH
   import_playbook: playbooks/servers/server/zsh.yaml
 - name: Install KVM Packages
@@ -21,3 +20,23 @@
   import_playbook: playbooks/servers/server/promtail.yaml
 - name: Install Node Exporter
   import_playbook: playbooks/servers/server/node_exporter.yaml
+- name: Install Standard Packages
+  import_playbook: playbooks/servers/k3s/serverPackages.yaml
+- name: Cockpit
+  import_playbook: playbooks/servers/k3s/cockpit.yaml
+- name: Disable IPV6
+  import_playbook: playbooks/servers/k3s/ipv6.yaml
+- name: Configure SSHD
+  import_playbook: playbooks/servers/k3s/sshd.yaml
+- name: ZSH
+  import_playbook: playbooks/servers/k3s/zsh.yaml
+- name: Install Promtail
+  import_playbook: playbooks/servers/k3s/promtail.yaml
+- name: Install Promtail
+  import_playbook: playbooks/servers/k3s/wol.yaml
+# Runs Through Pipeline to Add Webhook Secret
+##- name: Discord Bot
+##  import_playbook: playbooks/servers/k3s/discord_bot.yaml
+# Runs Through Pipeline
+##- name: Cockpit
+##  import_playbook: playbooks/servers/server/cockpit.yaml

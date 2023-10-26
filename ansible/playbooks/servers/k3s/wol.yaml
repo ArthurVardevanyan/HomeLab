@@ -1,0 +1,14 @@
+- hosts: k3s
+  gather_facts: no
+  become: true
+  user: arthur
+  ignore_unreachable: true
+  tasks:
+    - name: Create WOL Boot Service
+      copy:
+        src: "../../../../machineConfigs/servers/k3s-server/etc/systemd/system/wol.service"
+        dest: "/etc/systemd/system/wol.service"
+      register: wol
+    - name: Enable Service
+      command: systemctl enable wol.service
+      when: wol.changed

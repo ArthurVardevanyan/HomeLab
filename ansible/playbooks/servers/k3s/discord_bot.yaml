@@ -1,0 +1,47 @@
+- hosts: k3s
+  gather_facts: no
+  become: true
+  user: arthur
+  ignore_unreachable: true
+  tasks:
+    - name: Create Discord Bot Boot Service
+      copy:
+        src: "../../../../machineConfigs/servers/server/etc/systemd/system/discordBoot.service"
+        dest: "/etc/systemd/system/discordBoot.service"
+      register: discordBoot_conf
+    - name: Enable Service
+      command: systemctl enable discordBoot.service
+      when: discordBoot_conf.changed
+
+    - name: Create Discord Bot Reboot Service
+      copy:
+        src: "../../../../machineConfigs/servers/server/etc/systemd/system/discordReboot.service"
+        dest: "/etc/systemd/system/discordReboot.service"
+      register: discordReboot_conf
+    - name: Enable Service
+      command: systemctl enable discordReboot.service
+      when: discordReboot_conf.changed
+
+    - name: Create Discord Bot Shutdown Service
+      copy:
+        src: "../../../../machineConfigs/servers/server/etc/systemd/system/discordShutdown.service"
+        dest: "/etc/systemd/system/discordShutdown.service"
+      register: discordShutdown_conf
+    - name: Enable Service
+      command: systemctl enable discordShutdown.service
+      when: discordShutdown_conf.changed
+
+    - name: Creates Discord Directory
+      file:
+        path: /home/arthur/discord
+        state: directory
+
+    - name: Git Clone discord.sh
+      git:
+        repo: "https://github.com/fieu/discord.sh"
+        dest: /home/arthur/discord/discord.sh
+
+    - name: Create Discord Bot Script
+      copy:
+        src: "../../../../machineConfigs/servers/server/home/arthur/discord/discord_bot.sh"
+        dest: "/home/arthur/discord/discord_bot.sh"

@@ -1,0 +1,60 @@
+- hosts: k3s
+  gather_facts: no
+  become: true
+  user: arthur
+  ignore_unreachable: true
+  tasks:
+    - apt_repository:
+        repo: deb http://deb.debian.org/debian/ bookworm main contrib non-free
+        state: present
+    - apt_repository:
+        repo: deb-src http://deb.debian.org/debian/ bookworm main contrib non-free
+        state: present
+    - apt_repository:
+        repo: deb http://security.debian.org/debian-security bookworm-security main contrib non-free
+        state: present
+    - apt_repository:
+        repo: deb-src http://security.debian.org/debian-security bookworm-security main contrib non-free
+        state: present
+    - apt_repository:
+        repo: deb http://deb.debian.org/debian/ bookworm-updates main contrib non-free
+        state: present
+    - apt_repository:
+        repo: deb-src http://deb.debian.org/debian/ bookworm-updates main contrib non-free
+        state: present
+    - name: Upgrade all apt packages
+      apt:
+        update_cache: True
+        cache_valid_time: 3600
+        upgrade: dist
+        autoremove: yes
+    - name: install packages
+      apt:
+        state: latest
+        name:
+          - ntp
+          - htop
+          - sysstat
+          - git
+          - speedtest-cli
+          - wget
+          - apt-transport-https
+          - ca-certificates
+          - curl
+          - gnupg2
+          - software-properties-common
+          - pv
+          - jq
+          - rsync
+          - open-iscsi
+          - nfs-common
+          - smartmontools
+          - tree
+          - nvme-cli
+          - prometheus-node-exporter
+          - ethtool
+    - name: Download YQ
+      get_url:
+        url: https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64
+        dest: /usr/local/bin/yq
+        mode: a+x
