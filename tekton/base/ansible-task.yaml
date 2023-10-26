@@ -86,7 +86,7 @@ spec:
 
         for PLAYBOOK in ${PLAYBOOKS//,/ }
         do
-        ansible-playbook -i ${WORKSPACE_DATA_PATH}/ansible/inventory ${WORKSPACE_DATA_PATH}/ansible/${PLAYBOOK}.yaml \
+        ansible-playbook -e "ansible_ssh_timeout=1" -i ${WORKSPACE_DATA_PATH}/ansible/inventory ${WORKSPACE_DATA_PATH}/ansible/${PLAYBOOK}.yaml \
           --extra-vars "ansible_become_pass=${SUDO} ansible_ssh_pass=${SUDO} \
           ansible_python_interpreter=/usr/bin/python3" -e 'ansible_python_interpreter=/usr/bin/python3'
         done
