@@ -10,8 +10,8 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: stackrox
     app.kubernetes.io/part-of: stackrox-central-services
-    app.kubernetes.io/version: 4.2.1
-    helm.sh/chart: stackrox-central-services-400.2.0
+    app.kubernetes.io/version: 4.2.2
+    helm.sh/chart: stackrox-central-services-400.2.2
     app: central
   annotations:
     argocd.argoproj.io/sync-wave: "2"
@@ -37,8 +37,8 @@ spec:
         app.kubernetes.io/managed-by: Helm
         app.kubernetes.io/name: stackrox
         app.kubernetes.io/part-of: stackrox-central-services
-        app.kubernetes.io/version: 4.2.1
-        helm.sh/chart: stackrox-central-services-400.2.0
+        app.kubernetes.io/version: 4.2.2
+        helm.sh/chart: stackrox-central-services-400.2.2
       annotations:
         traffic.sidecar.istio.io/excludeInboundPorts: "8443"
         email: support@stackrox.com
@@ -85,7 +85,7 @@ spec:
         runAsUser: 4000
       containers:
         - name: central
-          image: "quay.io/stackrox-io/main:4.2.1"
+          image: "quay.io/stackrox-io/main:4.2.2"
           command:
             - /stackrox/central-entrypoint.sh
           ports:
@@ -249,8 +249,8 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: stackrox
     app.kubernetes.io/part-of: stackrox-central-services
-    app.kubernetes.io/version: 4.2.1
-    helm.sh/chart: stackrox-central-services-400.2.0
+    app.kubernetes.io/version: 4.2.2
+    helm.sh/chart: stackrox-central-services-400.2.2
   annotations:
     email: support@stackrox.com
     meta.helm.sh/release-name: stackrox-central-services
@@ -274,8 +274,8 @@ spec:
         app.kubernetes.io/managed-by: Helm
         app.kubernetes.io/name: stackrox
         app.kubernetes.io/part-of: stackrox-central-services
-        app.kubernetes.io/version: 4.2.1
-        helm.sh/chart: stackrox-central-services-400.2.0
+        app.kubernetes.io/version: 4.2.2
+        helm.sh/chart: stackrox-central-services-400.2.2
       annotations:
         traffic.sidecar.istio.io/excludeInboundPorts: "8080,8443"
         email: support@stackrox.com
@@ -319,7 +319,7 @@ spec:
       containers:
         - name: scanner
 
-          image: "quay.io/stackrox-io/scanner:4.2.1"
+          image: "quay.io/stackrox-io/scanner:4.2.2"
           env:
             - name: GOMEMLIMIT
               valueFrom:
@@ -446,8 +446,8 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: stackrox
     app.kubernetes.io/part-of: stackrox-central-services
-    app.kubernetes.io/version: 4.2.1
-    helm.sh/chart: stackrox-central-services-400.2.0
+    app.kubernetes.io/version: 4.2.2
+    helm.sh/chart: stackrox-central-services-400.2.2
   annotations:
     argocd.argoproj.io/sync-wave: "2"
     email: support@stackrox.com
@@ -472,8 +472,8 @@ spec:
         app.kubernetes.io/managed-by: Helm
         app.kubernetes.io/name: stackrox
         app.kubernetes.io/part-of: stackrox-central-services
-        app.kubernetes.io/version: 4.2.1
-        helm.sh/chart: stackrox-central-services-400.2.0
+        app.kubernetes.io/version: 4.2.2
+        helm.sh/chart: stackrox-central-services-400.2.2
       annotations:
         traffic.sidecar.istio.io/excludeInboundPorts: "5432"
         email: support@stackrox.com
@@ -516,7 +516,7 @@ spec:
                     operator: DoesNotExist
       initContainers:
         - name: init-db
-          image: "quay.io/stackrox-io/scanner-db:4.2.1"
+          image: "quay.io/stackrox-io/scanner-db:4.2.2"
           env:
             - name: POSTGRES_PASSWORD_FILE
               value: "/run/secrets/stackrox.io/secrets/password"
@@ -540,7 +540,7 @@ spec:
               readOnly: true
       containers:
         - name: db
-          image: "quay.io/stackrox-io/scanner-db:4.2.1"
+          image: "quay.io/stackrox-io/scanner-db:4.2.2"
           #env:
 
           ports:

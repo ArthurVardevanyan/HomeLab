@@ -47,10 +47,10 @@ spec:
     policy: |
       g, system:cluster-admins, role:admin
       g, cluster-admins, role:admin
-  version: v2.8.4
+  version: v2.8.5
   repo:
     replicas: 3
-    version: v2.8.4
+    version: v2.8.5
     mountsatoken: true
     serviceaccount: default
     resources:
@@ -70,7 +70,7 @@ spec:
           - name: AVP_VERSION
             value: 1.16.1
           - name: KUSTOMIZE_VERSION
-            value: 5.1.1
+            value: 5.2.1
         command: [sh, -c]
         args:
           - >-
@@ -143,7 +143,9 @@ spec:
           cpu: 10m
           memory: 50Mi
   ha:
-    enabled: false
+    enabled: true
+    redisProxyImage: haproxy # 2.8.3
+    redisProxyVersion: sha256:dde6c10f32c08a28dae2eb6d5ce0cfcda5805bab82a4fd8a0368d29f0af68590
     resources:
       limits:
         cpu: 50m
@@ -154,7 +156,8 @@ spec:
   tls:
     ca: {}
   redis:
-    image: redis:7.0.12
+    image: redis # 7.2.2
+    version: sha256:f75c773aa7efa73c5ec32b9af2aeeb184b24ab3a766a16d951b29df92e600b8a
     resources:
       limits:
         cpu: 100m
