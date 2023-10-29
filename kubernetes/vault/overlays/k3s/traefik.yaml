@@ -11,7 +11,7 @@ spec:
     permanent: true
 ---
 apiVersion: traefik.io/v1alpha1
-kind: IngressRoute
+kind: IngressRouteTCP
 metadata:
   name: vault
   namespace: vault
@@ -19,16 +19,33 @@ metadata:
     app.kubernetes.io/instance: vault
 spec:
   entryPoints:
-    - web
     - websecure
+  routes:
+    - match: HostSNI(`vault.k3s.<path:secret/data/homelab/domain#url>`)
+      services:
+        - name: vault
+          port: 443
+  tls:
+    passthrough: true
+    domains:
+      - main: vault.k3s.<path:secret/data/homelab/domain#url>
+---
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: vault-traefik
+  namespace: vault
+  labels:
+    app.kubernetes.io/instance: vault
+spec:
+  entryPoints:
+    - web
   routes:
     - match: Host(`vault.k3s.<path:secret/data/homelab/domain#url>`)
       kind: Rule
       services:
         - name: vault
+          scheme: https
           port: 443
       middlewares:
         - name: https-redirect
-  tls:
-    domains:
-      - main: vault.k3s.<path:secret/data/homelab/domain#url>
