@@ -6,9 +6,7 @@ metadata:
   annotations:
     pipelinesascode.tekton.dev/max-keep-runs: "1"
     pipelinesascode.tekton.dev/on-cel-expression: |
-      target_branch == "production"
-    # event == "pull_request" &&
-    # && "containers/toolbox/containerfile".pathChanged()
+      event == "push" && (target_branch == "refs/heads/production" || target_branch == "production")
     pipelinesascode.tekton.dev/target-namespace: "homelab"
     pipelinesascode.tekton.dev/task: "[tekton/base/ansible-task.yaml]"
     pipelinesascode.tekton.dev/task-1: "https://tekton-hub-api-openshift-pipelines.apps.okd.arthurvardevanyan.com/v1/resource/homelab/task/git-clone/0.9.1/raw"
