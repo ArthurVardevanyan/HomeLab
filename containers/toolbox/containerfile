@@ -4,9 +4,9 @@ COPY ./containers/toolbox/repos /etc/yum.repos.d/
 
 ENV \
   ARGOCD_VAULT_VERSION=1.16.1 \
-  OKD_VERSION=4.13.0-0.okd-2023-09-30-084937 \
+  OKD_VERSION=4.14.0-0.okd-2023-10-28-073550 \
   OPENTOFU_VERSION=1.6.0-alpha3\
-  VAULT_VERSION=1.15.0 \
+  VAULT_VERSION=1.15.1 \
   KO_VERSION=0.15.0 \
   GO_VERSION=1.21.3 \
   HOME=/tmp \
@@ -21,21 +21,21 @@ RUN rpm -ivh https://github.com/opentofu/opentofu/releases/download/v${OPENTOFU_
   rm -rf /usr/lib64/google-cloud-sdk/{platform,data,bin/anthoscli}
 
 RUN curl -L -o argocd-vault-plugin https://github.com/argoproj-labs/argocd-vault-plugin/releases/download/v${ARGOCD_VAULT_VERSION}/argocd-vault-plugin_${ARGOCD_VAULT_VERSION}_linux_amd64 && \
-  chmod +x argocd-vault-plugin && mv argocd-vault-plugin /usr/local/bin \
-  && \
-  curl -L -o yq https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64  && \
-  chmod +x yq && mv yq /usr/local/bin \
-  && \
-  curl -L -o openshift-client-linux.tar.gz https://github.com/openshift/okd/releases/download/${OKD_VERSION}/openshift-client-linux-${OKD_VERSION}.tar.gz && \
-  tar -xzf openshift-client-linux.tar.gz && mv oc /usr/local/bin/kubectl && rm -f oc kubectl openshift-client-linux.tar.gz \
-  && \
-  curl -L -o vault_linux_amd64.zip https://releases.hashicorp.com/vault/${VAULT_VERSION}/vault_${VAULT_VERSION}_linux_amd64.zip && \
-  unzip vault_linux_amd64.zip && chmod +x vault && mv vault /usr/local/bin/ && rm -f vault_linux_amd64.zip \
-  && \
-  curl -L -o ko_Linux_x86_64.tar.gz https://github.com/ko-build/ko/releases/download/v${KO_VERSION}/ko_${KO_VERSION}_Linux_x86_64.tar.gz && \
-  tar -xzf ko_Linux_x86_64.tar.gz && mv ko /usr/local/bin/ko && rm -f ko_Linux_x86_64.tar.gz \
-  && \
-  curl -L -o go.linux-amd64.tar.gz https://golang.org/dl/go${GO_VERSION}.linux-amd64.tar.gz && \
+  chmod +x argocd-vault-plugin && mv argocd-vault-plugin /usr/local/bin
+
+RUN curl -L -o yq https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64  && \
+  chmod +x yq && mv yq /usr/local/bin
+
+RUN curl -L -o openshift-client-linux.tar.gz https://github.com/openshift/okd/releases/download/${OKD_VERSION}/openshift-client-linux-${OKD_VERSION}.tar.gz && \
+  tar -xzf openshift-client-linux.tar.gz && mv oc /usr/local/bin/oc && rm -f oc kubectl openshift-client-linux.tar.gz && ln -svf /usr/local/bin/oc /usr/local/bin/kubectl
+
+RUN curl -L -o vault_linux_amd64.zip https://releases.hashicorp.com/vault/${VAULT_VERSION}/vault_${VAULT_VERSION}_linux_amd64.zip && \
+  unzip vault_linux_amd64.zip && chmod +x vault && mv vault /usr/local/bin/ && rm -f vault_linux_amd64.zip
+
+RUN  curl -L -o ko_Linux_x86_64.tar.gz https://github.com/ko-build/ko/releases/download/v${KO_VERSION}/ko_${KO_VERSION}_Linux_x86_64.tar.gz && \
+  tar -xzf ko_Linux_x86_64.tar.gz && mv ko /usr/local/bin/ko && rm -f ko_Linux_x86_64.tar.gz
+
+RUN curl -L -o go.linux-amd64.tar.gz https://golang.org/dl/go${GO_VERSION}.linux-amd64.tar.gz && \
   tar -xzf go.linux-amd64.tar.gz --no-same-owner -C /usr/local && rm -f go.linux-amd64.tar.gz
 
 CMD ["sleep", "infinity"]
