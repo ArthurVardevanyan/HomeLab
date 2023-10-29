@@ -1,10 +1,21 @@
 apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: https-redirect
+  namespace: traefik
+  labels:
+    app.kubernetes.io/instance: traefik
+spec:
+  redirectScheme:
+    scheme: https
+    permanent: true
+---
+apiVersion: traefik.io/v1alpha1
 kind: IngressRoute
 metadata:
   name: traefik-dashboard
   namespace: traefik
   labels:
-    app: traefik
     app.kubernetes.io/instance: traefik
 spec:
   entryPoints:
@@ -13,5 +24,27 @@ spec:
     - match: Host(`traefik.k3s.<path:secret/data/homelab/domain#url>`)
       kind: Rule
       services:
+        - name: traefik-frontend
+          port: 80
+      middlewares:
+        - name: https-redirect
+---
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  labels:
+    app.kubernetes.io/instance: traefik
+  name: traefik-https
+  namespace: traefik
+spec:
+  entryPoints:
+    - websecure
+  routes:
+    - match: "Host(`traefik.k3s.<path:secret/data/homelab/domain#url>`)"
+      kind: Rule
+      services:
         - name: traefik-dashboard
           port: 9000
+  tls:
+    domains:
+      - main: traefik.k3s.<path:secret/data/homelab/domain#url>

@@ -273,7 +273,7 @@ watch kubectl get pods -A -o wide --sort-by=.metadata.creationTimestamp
 # Delete Pods that Have a Restart
 kubectl get pods -A | awk '$5>0' | awk '{print "kubectl delete pod -n " $1 " " $2}' | bash -
 # Drain Node
-kubectl drain k3s-worker --ignore-daemonsets --delete-emptydir-data
+kubectl drain k3s-server --ignore-daemonsets --delete-emptydir-data
 # Vault
 kubectl exec -it vault-0 -n vault -- vault operator unseal --tls-skip-verify
 # Nextcloud

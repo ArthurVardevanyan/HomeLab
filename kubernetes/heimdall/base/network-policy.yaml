@@ -16,7 +16,7 @@ spec:
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
-  name: allow-from-openshift-ingress
+  name: allow-from-ingress
   namespace: heimdall
   annotations:
     argocd.argoproj.io/sync-wave: "0"
@@ -33,3 +33,7 @@ spec:
         - namespaceSelector:
             matchLabels:
               network.openshift.io/policy-group: ingress
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: traefik

@@ -1,0 +1,22 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: heimdall-k3s
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+  labels:
+    app.kubernetes.io/instance: argocd
+spec:
+  destination:
+    namespace: heimdall
+    server: https://10.0.0.5:6443
+  project: default
+  source:
+    path: kubernetes/heimdall/overlays/k3s
+    repoURL: https://git.<path:secret/data/homelab/domain#url>/ArthurVardevanyan/HomeLab
+    targetRevision: HEAD
+  syncPolicy:
+    syncOptions:
+      - CreateNamespace=true

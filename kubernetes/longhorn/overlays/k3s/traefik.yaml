@@ -1,15 +1,50 @@
 apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: https-redirect
+  namespace: longhorn-system
+  labels:
+    app.kubernetes.io/instance: longhorn
+spec:
+  redirectScheme:
+    scheme: https
+    permanent: true
+---
+apiVersion: traefik.io/v1alpha1
 kind: IngressRoute
 metadata:
   name: longhorn
   namespace: longhorn-system
+  labels:
+    app.kubernetes.io/instance: longhorn
 spec:
   entryPoints:
     - web
-    - websecure
   routes:
     - match: Host(`longhorn.k3s.<path:secret/data/homelab/domain#url>`)
       kind: Rule
       services:
         - name: longhorn-frontend
           port: 80
+      middlewares:
+        - name: https-redirect
+---
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  labels:
+    app.kubernetes.io/instance: longhorn
+  name: longhorn-https
+  namespace: longhorn-system
+spec:
+  entryPoints:
+    - websecure
+  routes:
+    - match: "Host(`longhorn.k3s.<path:secret/data/homelab/domain#url>`)"
+      kind: Rule
+      services:
+        - name: longhorn-frontend
+          port: 80
+  tls:
+    domains:
+      - main: longhorn.k3s.<path:secret/data/homelab/domain#url>

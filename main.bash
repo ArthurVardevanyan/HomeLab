@@ -39,10 +39,10 @@ ansible() {
     -e 'ansible_python_interpreter=/usr/bin/python3'
 }
 
-test_overlays() {
+test_overlays_okd() {
 
   if [ -n "$VAULT_ADDR" ] && [ -n "$VAULT_TOKEN" ]; then
-    for OVERLAY in ./kubernetes/*/overlays/*; do
+    for OVERLAY in ./kubernetes/*/overlays/okd; do
       echo "${OVERLAY}"
       kubectl kustomize "${OVERLAY}" | argocd-vault-plugin generate - | kubectl apply --dry-run=server -f - 1>/dev/null
     done
@@ -115,7 +115,6 @@ stateful_workload_stop() {
 
   kubectl patch postgresCluster linkwarden -n linkwarden --type=merge -p '{"spec":{"shutdown":true}}'
   kubectl scale --replicas=0 -n linkwarden statefulset/linkwarden
-
 
   kubectl scale --replicas=0 -n argocd deployment/argocd-operator-controller-manager
   kubectl scale --replicas=0 -n argocd statefulset/argocd-application-controller

@@ -3,3 +3,15 @@ kind: Kustomization
 resources:
   - ../../base
   - route.yaml
+  - network-policy.yaml
+generatorOptions:
+  disableNameSuffixHash: true
+configMapGenerator:
+  - name: vault-config
+    namespace: vault
+    files:
+      - vault.json
+  - name: gcp-credentials-request
+    namespace: vault
+    files:
+      - credentials_config.json
