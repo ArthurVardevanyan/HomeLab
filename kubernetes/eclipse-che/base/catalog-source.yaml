@@ -1,0 +1,15 @@
+apiVersion: operators.coreos.com/v1alpha1
+kind: CatalogSource
+metadata:
+  name: devworkspace-operator-catalog
+  namespace: openshift-marketplace
+  annotations:
+    argocd.argoproj.io/sync-wave: "0"
+spec:
+  sourceType: grpc
+  image: quay.io/devfile/devworkspace-operator-index:release
+  publisher: Red Hat
+  displayName: DevWorkspace Operator Catalog
+  updateStrategy:
+    registryPoll:
+      interval: 5m
