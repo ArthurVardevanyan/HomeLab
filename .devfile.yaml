@@ -1,0 +1,27 @@
+## https://devfile.io/docs/2.1.0/devfile-schema
+schemaVersion: 2.1.0
+metadata:
+  name: homelab
+attributes:
+  controller.devfile.io/storage-type: per-workspace
+  controller.devfile.io/scc: container-build
+components:
+  - name: devtools
+    container:
+      image: registry.arthurvardevanyan.com/homelab/udi:latest
+      memoryLimit: 8Gi
+      memoryRequest: 512Mi
+      cpuLimit: 4000m
+      cpuRequest: 100m
+commands:
+  - id: configure-vscode-extensions
+    exec:
+      label: "configure vscode extension"
+      component: devtools
+      workingDir: ${PROJECTS_ROOT}
+      commandLine: |
+        export EXTENSIONS=$(cat .vscode/extensions.json | sed 's|//.*||' | jq -r '.recommendations[]')
+
+        for EXTENSION in ${EXTENSIONS}; do
+          code-oss --install-extension "${EXTENSION}" --force
+        done

@@ -1,0 +1,51 @@
+apiVersion: org.eclipse.che/v2
+kind: CheCluster
+metadata:
+  annotations:
+    argocd.argoproj.io/sync-wave: "2"
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+  name: eclipse-che
+  namespace: eclipse-che-operator
+spec:
+  components:
+    cheServer:
+      debug: false
+      logLevel: INFO
+    dashboard:
+      logLevel: ERROR
+    devfileRegistry:
+      disableInternalRegistry: true
+    imagePuller:
+      enable: false
+    metrics:
+      enable: true
+  devEnvironments:
+    containerBuildConfiguration:
+      openShiftSecurityContextConstraint: container-build
+    defaultNamespace:
+      autoProvision: false
+      template: <username>-che
+    maxNumberOfWorkspacesPerUser: -1
+    secondsOfInactivityBeforeIdling: 1800
+    secondsOfRunBeforeIdling: -1
+    startTimeoutSeconds: 300
+    storage:
+      perUserStrategyPvcConfig:
+        claimSize: 10Gi
+        storageClass: longhorn
+      perWorkspaceStrategyPvcConfig:
+        claimSize: 10Gi
+        storageClass: longhorn
+      pvcStrategy: per-user
+  networking:
+    auth:
+      gateway:
+        configLabels:
+          app: che
+          component: che-gateway-config
+        kubeRbacProxy:
+          logLevel: 0
+        oAuthProxy:
+          cookieExpireSeconds: 86400
+        traefik:
+          logLevel: INFO

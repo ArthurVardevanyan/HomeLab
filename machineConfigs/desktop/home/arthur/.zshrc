@@ -1,5 +1,5 @@
 # Path to your oh-my-zsh installation.
-export ZSH="/home/arthur/.oh-my-zsh"
+export ZSH="/${HOME}/.oh-my-zsh"
 export PATH="${KREW_ROOT:-$HOME/.krew}/bin:$PATH"
 
 export VAULT_ADDR="https://vault.arthurvardevanyan.com"
@@ -10,6 +10,7 @@ export USE_GKE_GCLOUD_AUTH_PLUGIN=True
 
 ZSH_THEME="custom"
 
+alias oclogin="oc login --web --server https://api.okd.arthurvardevanyan.com:6443"
 # Uncomment the following line to use case-sensitive completion.
 # CASE_SENSITIVE="true"
 

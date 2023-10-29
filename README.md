@@ -355,6 +355,10 @@ path "auth/token/create" {
 }
 ```
 
+```bash
+export VAULT_TOKEN=$(vault login --tls-skip-verify -address=https://vault.arthurvardevanyan.com -method=userpass -token-only username=arthur)
+```
+
 #### k3s Install
 
 ```bash

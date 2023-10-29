@@ -1,0 +1,29 @@
+apiVersion: operators.coreos.com/v1alpha1
+kind: Subscription
+metadata:
+  name: devworkspace-operator
+  namespace: eclipse-che-operator
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+spec:
+  channel: fast
+  installPlanApproval: Manual
+  name: devworkspace-operator
+  source: devworkspace-operator-catalog
+  sourceNamespace: openshift-marketplace
+  startingCSV: devworkspace-operator.v0.24.0
+---
+apiVersion: operators.coreos.com/v1alpha1
+kind: Subscription
+metadata:
+  name: eclipse-che
+  namespace: eclipse-che-operator
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+spec:
+  channel: stable
+  installPlanApproval: Manual
+  name: eclipse-che
+  source: community-operators
+  sourceNamespace: openshift-marketplace
+  startingCSV: eclipse-che.v7.76.0
