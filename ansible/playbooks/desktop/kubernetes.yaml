@@ -65,3 +65,26 @@
         dest: /usr/local/bin/ko
         mode: a+x
         remote_src: yes
+
+    - name: Download Kubeconform
+      get_url:
+        url: https://github.com/yannh/kubeconform/releases/download/v0.6.2/kubeconform-linux-amd64.tar.gz
+        dest: /tmp/kubeconform-linux-amd64.tar.gz
+
+    - name: Kubeconform Dir
+      file:
+        path: /tmp/kubeconform-linux-amd64
+        state: directory
+
+    - name: Extract Kubeconform
+      unarchive:
+        src: /tmp/kubeconform-linux-amd64.tar.gz
+        dest: /tmp/kubeconform-linux-amd64
+        remote_src: yes
+
+    - name: Copy Kubeconform Binary To Bin
+      copy:
+        src: /tmp/kubeconform-linux-amd64/kubeconform
+        dest: /usr/local/bin/kubeconform
+        mode: a+x
+        remote_src: yes

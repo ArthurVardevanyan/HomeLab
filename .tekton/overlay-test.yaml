@@ -33,6 +33,7 @@ spec:
 
     workspaces:
       - name: data
+      - name: kubernetes-json-schema
       - name: git_auth_secret
 
     tasks:
@@ -50,16 +51,33 @@ spec:
             workspace: data
           - name: basic-auth
             workspace: git_auth_secret
+      - name: git-clone-json
+        taskRef:
+          name: git-clone
+          kind: Task
+        params:
+          - name: url
+            value: https://github.com/ArthurVardevanyan/kubernetes-json-schema
+          - name: revision
+            value: production
+        workspaces:
+          - name: output
+            workspace: kubernetes-json-schema
+          - name: basic-auth
+            workspace: git_auth_secret
 
       - name: overlay-test
         runAfter:
           - git-clone
+          - git-clone-json
         taskRef:
           name: overlay-test
           kind: Task
         workspaces:
           - name: data
             workspace: data
+          - name: kubernetes-json-schema
+            workspace: kubernetes-json-schema
 
   serviceAccountName: pipeline
   workspaces:
@@ -69,6 +87,19 @@ spec:
         kind: PersistentVolumeClaim
         metadata:
           name: data
+        spec:
+          accessModes:
+            - ReadWriteOnce
+          resources:
+            requests:
+              storage: "100Mi"
+          storageClassName: longhorn
+    - name: kubernetes-json-schema
+      volumeClaimTemplate:
+        apiVersion: v1
+        kind: PersistentVolumeClaim
+        metadata:
+          name: kubernetes-json-schema
         spec:
           accessModes:
             - ReadWriteOnce

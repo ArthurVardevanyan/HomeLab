@@ -39,21 +39,34 @@ ansible() {
     -e 'ansible_python_interpreter=/usr/bin/python3'
 }
 
-test_overlays_okd() {
+test_overlays() {
 
   if [ -n "$VAULT_ADDR" ] && [ -n "$VAULT_TOKEN" ]; then
-    for OVERLAY in ./kubernetes/*/overlays/okd; do
+    DIR="/tmp/yaml"
+    rm -rf /tmp/yaml
+    mkdir -p /tmp/yaml
+    echo "Build Yaml's"
+    for OVERLAY in ./kubernetes/*/overlays/*; do
       echo "${OVERLAY}"
-      kubectl kustomize "${OVERLAY}" | argocd-vault-plugin generate - | kubectl apply --dry-run=server -f - 1>/dev/null
+      OUTPUT=$(echo "${OVERLAY}" | sed 's/\.//g' | sed 's/\//_/g')
+      kubectl kustomize "${OVERLAY}" | argocd-vault-plugin generate - >"${DIR}/${OUTPUT}.yaml"
     done
     for OVERLAY in ./okd/*/overlays/*; do
       echo "${OVERLAY}"
-      kubectl kustomize "${OVERLAY}" | argocd-vault-plugin generate - | kubectl apply --dry-run=server -f - 1>/dev/null
+      OUTPUT=$(echo "${OVERLAY}" | sed 's/\.//g' | sed 's/\//_/g')
+      kubectl kustomize "${OVERLAY}" | argocd-vault-plugin generate - >"${DIR}/${OUTPUT}.yaml"
     done
     for OVERLAY in ./tekton/overlays/*; do
       echo "${OVERLAY}"
-      kubectl kustomize "${OVERLAY}" | argocd-vault-plugin generate - | kubectl apply --dry-run=server -f - 1>/dev/null
+      OUTPUT=$(echo "${OVERLAY}" | sed 's/\.//g' | sed 's/\//_/g')
+      kubectl kustomize "${OVERLAY}" | argocd-vault-plugin generate - >"${DIR}/${OUTPUT}.yaml"
     done
+
+    echo "Run KubeConform on Yaml's"
+    kubeconform -n 16 -verbose --summary -ignore-missing-schemas \
+      -schema-location="../kubernetes-json-schema/master-standalone-strict/{{.ResourceKind}}{{.KindSuffix}}.json" \
+      -output text "${DIR}" | grep -v "is valid"
+
   else
     echo "Vault Variables Missing"
     exit 1
