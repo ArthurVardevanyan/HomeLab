@@ -1,0 +1,18 @@
+apiVersion: v1
+kind: LimitRange
+metadata:
+  name: kyverno-lr
+  namespace: kyverno
+  labels:
+    app.kubernetes.io/instance: kyverno
+spec:
+  limits:
+    - type: Container
+      default:
+        cpu: 20m
+        memory: 75M
+        ephemeral-storage: 256Mi
+      defaultRequest:
+        cpu: 10m
+        memory: 50M
+        ephemeral-storage: 128Mi
