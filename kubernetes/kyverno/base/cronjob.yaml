@@ -1,0 +1,89 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: kyverno-cleanup-admission-reports
+  namespace: kyverno
+  labels:
+    app.kubernetes.io/instance: kyverno
+spec:
+  suspend: true
+  schedule: "*/10 * * * *"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 1
+  failedJobsHistoryLimit: 1
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          serviceAccountName: kyverno-cleanup-jobs
+          containers:
+            - name: cleanup
+              image: bitnami/kubectl:1.26.4
+              imagePullPolicy: IfNotPresent
+              command:
+                - /bin/sh
+                - -c
+                - |
+                  COUNT=$(kubectl get admissionreports.kyverno.io -A | wc -l)
+                  if [ "$COUNT" -gt 10000 ]; then
+                    echo "too many reports found ($COUNT), cleaning up..."
+                    kubectl delete admissionreports.kyverno.io -A -l='!audit.kyverno.io/report.aggregate'
+                  else
+                    echo "($COUNT) reports found, no clean up needed"
+                  fi
+              securityContext:
+                allowPrivilegeEscalation: false
+                capabilities:
+                  drop:
+                    - ALL
+                privileged: false
+                readOnlyRootFilesystem: true
+                runAsNonRoot: true
+                seccompProfile:
+                  type: RuntimeDefault
+          restartPolicy: OnFailure
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: kyverno-cleanup-cluster-admission-reports
+  namespace: kyverno
+  labels:
+    app.kubernetes.io/instance: kyverno
+spec:
+  suspend: true
+  schedule: "*/10 * * * *"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 1
+  failedJobsHistoryLimit: 1
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          serviceAccountName: kyverno-cleanup-jobs
+          containers:
+            - name: cleanup
+              image: bitnami/kubectl:1.26.4
+              imagePullPolicy: IfNotPresent
+              command:
+                - /bin/sh
+                - -c
+                - |
+                  COUNT=$(kubectl get clusteradmissionreports.kyverno.io -A | wc -l)
+                  if [ "$COUNT" -gt 10000 ]; then
+                    echo "too many reports found ($COUNT), cleaning up..."
+                    kubectl delete clusteradmissionreports.kyverno.io -A -l='!audit.kyverno.io/report.aggregate'
+                  else
+                    echo "($COUNT) reports found, no clean up needed"
+                  fi
+              securityContext:
+                allowPrivilegeEscalation: false
+                capabilities:
+                  drop:
+                    - ALL
+                privileged: false
+                readOnlyRootFilesystem: true
+                runAsNonRoot: true
+                seccompProfile:
+                  type: RuntimeDefault
+          restartPolicy: OnFailure

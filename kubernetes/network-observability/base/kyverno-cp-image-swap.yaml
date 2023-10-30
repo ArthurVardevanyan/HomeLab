@@ -1,0 +1,21 @@
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: replace-ebpf-agent-image
+  annotations:
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+spec:
+  background: false
+  rules:
+    - name: replace-ebpf-agent-image
+      match:
+        any:
+          - resources:
+              kinds:
+                - Pod
+      mutate:
+        patchStrategicMerge:
+          spec:
+            containers:
+              - (image): "quay.io/netobserv/netobserv-ebpf-agent:v0.3.2"
+                image: "quay.io/netobserv/netobserv-ebpf-agent:main"
