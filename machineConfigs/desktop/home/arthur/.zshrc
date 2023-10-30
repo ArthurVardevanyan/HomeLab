@@ -8,6 +8,8 @@ export AVP_AUTH_TYPE=token
 
 export USE_GKE_GCLOUD_AUTH_PLUGIN=True
 
+export GPG_TTY=$(tty)
+
 ZSH_THEME="custom"
 
 alias oclogin="oc login --web --server https://api.okd.arthurvardevanyan.com:6443"
