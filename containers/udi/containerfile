@@ -12,6 +12,8 @@ ENV \
   KO_VERSION=0.15.0 \
   GO_VERSION=1.21.3 \
   GH_VERSION=2.37.0 \
+  # 0.6.3 Not Working
+  KUBECONFORM_VERSION=0.6.2  \
   PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/local/go/bin \
   HOME=/home/user \
   SHELL=/bin/zsh \
@@ -70,6 +72,9 @@ RUN  curl -L -o ko_Linux_x86_64.tar.gz https://github.com/ko-build/ko/releases/d
 
 RUN curl -L -o go.linux-amd64.tar.gz https://golang.org/dl/go${GO_VERSION}.linux-amd64.tar.gz && \
   tar -xzf go.linux-amd64.tar.gz --no-same-owner -C /usr/local && rm -f go.linux-amd64.tar.gz
+
+RUN curl -L -o kubeconform-linux-amd64.tar.gz https://github.com/yannh/kubeconform/releases/download/v${KUBECONFORM_VERSION}/kubeconform-linux-amd64.tar.gz && \
+  tar -xzf kubeconform-linux-amd64.tar.gz && chmod +x kubeconform && mv kubeconform /usr/local/bin/ && rm -f kubeconform-linux-amd64.tar.gz
 
 #COPY --chown=0:0 entrypoint.sh /
 COPY --chown=0:0  ./containers/udi/entrypoint.sh /
