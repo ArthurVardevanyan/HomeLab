@@ -17,19 +17,17 @@ ENV \
   PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/local/go/bin \
   HOME=/home/user \
   SHELL=/bin/zsh \
-  GPG_TTY=/dev/pts/0
+  GPG_TTY=/dev/pts/0 \
+  VSCODE_NODEJS_RUNTIME_DIR=/usr/bin
+
 
 #COPY ./repos /etc/yum.repos.d/
 COPY ./containers/udi/repos /etc/yum.repos.d/
 
-
-# UBI 9 Fix
-RUN dnf install --disableplugin=subscription-manager libbrotli compat-openssl11 -y
-
 RUN dnf install --disableplugin=subscription-manager \
   diffutils git iproute jq less lsof man nano procps \
   perl-Digest-SHA net-tools openssh-clients rsync socat sudo time vim wget zip  pinentry \
-  sshpass logrotate unzip MariaDB-client google-cloud-cli tar procps-ng make -y \
+  sshpass logrotate unzip MariaDB-client google-cloud-cli tar procps-ng make nodejs npm -y \
   && dnf update -y && dnf clean all \
   && ln -s /usr/bin/python3.11 /usr/local/bin/python && \
   rm -rf /usr/lib64/google-cloud-sdk/{platform,data,bin/anthoscli}
