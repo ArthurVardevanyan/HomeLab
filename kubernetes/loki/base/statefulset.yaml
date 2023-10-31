@@ -8,6 +8,7 @@ metadata:
     app.kubernetes.io/instance: loki
 spec:
   replicas: 1
+  podManagementPolicy: "Parallel"
   serviceName: loki
   selector:
     matchLabels:
@@ -92,12 +93,19 @@ spec:
         - name: config
           configMap:
             name: loki
-        - name: storage
-          persistentVolumeClaim:
-            claimName: loki-pvc
         - name: cache
           emptyDir:
             sizeLimit: 128Mi
         - name: index
           emptyDir:
             sizeLimit: 128Mi
+  volumeClaimTemplates:
+    - metadata:
+        name: storage
+      spec:
+        accessModes:
+          - ReadWriteOnce
+        resources:
+          requests:
+            storage: 10Gi
+        storageClassName: longhorn
