@@ -79,23 +79,24 @@ RUN curl -L -o kubeconform-linux-amd64.tar.gz https://github.com/yannh/kubeconfo
 COPY --chown=0:0  ./containers/udi/entrypoint.sh /
 
 RUN \
+  mkdir /home/tooling && \
   # add user and configure it
   useradd -u 10001 -G wheel,root -d /home/user --shell /bin/bash -m user && \
   # Setup $PS1 for a consistent and reasonable prompt
-  echo "export PS1='\W \`git branch --show-current 2>/dev/null | sed -r -e \"s@^(.+)@\(\1\) @\"\`$ '" >> /home/user/.bashrc && \
+  echo "export PS1='\W \`git branch --show-current 2>/dev/null | sed -r -e \"s@^(.+)@\(\1\) @\"\`$ '" >> /home/tooling/.bashrc && \
   # Set permissions on /etc/passwd and /home to allow arbitrary users to write
   chgrp -R 0 /home && \
   chmod -R g=u /etc/passwd /etc/group /home && \
   chmod +x /entrypoint.sh
 
-RUN git clone https://github.com/ohmyzsh/ohmyzsh.git /home/user/.oh-my-zsh \
+RUN git clone https://github.com/ohmyzsh/ohmyzsh.git /home/tooling/.oh-my-zsh \
   && git clone https://github.com/zsh-users/zsh-autosuggestions /usr/share/zsh-autosuggestions \
   && git clone https://github.com/zsh-users/zsh-syntax-highlighting /usr/share/zsh-syntax-highlighting \
-  && curl -o /home/user/.oh-my-zsh/themes/custom.zsh-theme https://raw.githubusercontent.com/ArthurVardevanyan/HomeLab/production/machineConfigs/desktop/home/arthur/.oh-my-zsh/themes/custom.zsh-theme \
-  && curl -o /home/user/.zshrc https://raw.githubusercontent.com/ArthurVardevanyan/HomeLab/production/machineConfigs/desktop/home/arthur/.zshrc \
+  && curl -o /home/tooling/.oh-my-zsh/themes/custom.zsh-theme https://raw.githubusercontent.com/ArthurVardevanyan/HomeLab/production/machineConfigs/desktop/home/arthur/.oh-my-zsh/themes/custom.zsh-theme \
+  && curl -o /home/tooling/.zshrc https://raw.githubusercontent.com/ArthurVardevanyan/HomeLab/production/machineConfigs/desktop/home/arthur/.zshrc \
   && dnf install --disableplugin=subscription-manager zsh autojump -y && dnf clean all
 
-RUN curl -o /home/user/.gitconfig https://raw.githubusercontent.com/ArthurVardevanyan/HomeLab/production/machineConfigs/desktop/home/arthur/.gitconfig
+RUN curl -o /home/tooling/.gitconfig https://raw.githubusercontent.com/ArthurVardevanyan/HomeLab/production/machineConfigs/desktop/home/arthur/.gitconfig
 
 USER 10001
 WORKDIR /projects
