@@ -4,6 +4,7 @@
   user: arthur
   tasks:
     - name: install node exporter
+      # https://techviewleo.com/install-prometheus-with-node-exporter-on-rhel-centos/
       yum:
         state: latest
         name:
@@ -61,3 +62,9 @@
         enabled: true
         name: prometheus-node-exporter-nvme.timer
         daemon_reload: true
+
+    - name: Allow Node Exporter Firewall
+      ansible.posix.firewalld:
+        port: 9100/tcp
+        permanent: true
+        state: enabled

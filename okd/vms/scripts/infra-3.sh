@@ -1,12 +1,12 @@
 export LIBGUESTFS_BACKEND=direct
 export HOME=/home/arthur
-export NODE=infra-2
+export NODE=infra-3
 export VCPUS=4
 export RAM_MB=7168
 export IMAGE="/home/okd/${NODE}.raw"
 export IGNITION_CONFIG="/var/lib/libvirt/images/worker.ign"
 export SIZE="128G"
-export MAC="10:00:00:00:01:22"
+export MAC="10:00:00:00:01:23"
 
 STORAGE_PATH="/mnt/storage/${NODE}_storage.raw"
 STORAGE_SIZE="896G"

@@ -1,3 +1,4 @@
+export LIBGUESTFS_BACKEND=direct
 export HOME=/home/arthur
 export NODE=infra-1
 export VCPUS=4

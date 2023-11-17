@@ -9,7 +9,19 @@ resources:
   - service.yaml
   - dashboard-config.yaml
   - datasource-config.yaml
-  - dashboards-json.yaml
   - secret.yaml
   - deployment.yaml
   - service-monitor.yaml
+generatorOptions:
+  disableNameSuffixHash: true
+configMapGenerator:
+  - name: grafana-dashboards
+    namespace: grafana
+    files:
+      - dashboards/eagle.json
+      - dashboards/homeassistant.json
+      - dashboards/homelab-power.json
+      - dashboards/loki.json
+      - dashboards/node-exporter.json
+      - dashboards/pfsense_lite.json
+      - dashboards/version-checker.json

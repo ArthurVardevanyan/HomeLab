@@ -1,8 +1,9 @@
+export LIBGUESTFS_BACKEND=direct
 export HOME=/home/arthur
 export NODE=bootstrap
 export VCPUS=4
 export RAM_MB=12288
-export IMAGE="${HOME}/vm/okd/${NODE}.raw"
+export IMAGE="/home/okd/${NODE}.raw"
 export IGNITION_CONFIG="/var/lib/libvirt/images/bootstrap.ign"
 export SIZE="48G"
 export MAC="10:00:00:00:01:04"

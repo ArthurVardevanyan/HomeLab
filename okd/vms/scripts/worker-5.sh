@@ -1,12 +1,12 @@
 export LIBGUESTFS_BACKEND=direct
 export HOME=/home/arthur
-export NODE=worker-3
+export NODE=worker-5
 export VCPUS=7
 export RAM_MB=31744
 export IMAGE="/home/okd/${NODE}.raw"
 export IGNITION_CONFIG="/var/lib/libvirt/images/worker.ign"
 export SIZE="128G"
-export MAC="10:00:00:00:01:13"
+export MAC="10:00:00:00:01:15"
 
 qemu-img create "${IMAGE}" "${SIZE}" -f raw
 virt-resize --expand /dev/sda4 /var/lib/libvirt/images/fedora-coreos-*.qcow2 "${IMAGE}"

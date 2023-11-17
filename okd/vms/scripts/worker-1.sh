@@ -1,8 +1,9 @@
+export LIBGUESTFS_BACKEND=direct
 export HOME=/home/arthur
 export NODE=worker-1
-export VCPUS=8
-export RAM_MB=36864
-export IMAGE="${HOME}/vm/okd/${NODE}.raw"
+export VCPUS=7
+export RAM_MB=31744
+export IMAGE="/home/okd/${NODE}.raw"
 export IGNITION_CONFIG="/var/lib/libvirt/images/worker.ign"
 export SIZE="128G"
 export MAC="10:00:00:00:01:11"
