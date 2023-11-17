@@ -24,6 +24,7 @@ HomeLab Server/Cluster, Virtual Sandbox Cluster, & Desktop Configuration
       - [OKD Longhorn Secondary Disk Setup](#okd-longhorn-secondary-disk-setup)
       - [OKD Upgrade](#okd-upgrade)
       - [OKD Host Disk Expansion](#okd-host-disk-expansion)
+      - [OKD Host Bad Block Recovery](#okd-host-bad-block-recovery)
       - [OKD WIF](#okd-wif)
       - [Kubernetes Commands](#kubernetes-commands)
         - [Delete Pod Using Graceful Termination Eviction Request](#delete-pod-using-graceful-termination-eviction-request)
@@ -236,6 +237,12 @@ unshare --mount
 mount -o remount,rw /sysroot
 xfs_growfs /sysroot
 df -h | grep vda
+```
+
+#### OKD Host Bad Block Recovery
+
+```bash
+dd if=/mnt/source/source.raw  of=/mnt/destination/destination.raw bs=4k conv=noerror,sync
 ```
 
 #### OKD WIF

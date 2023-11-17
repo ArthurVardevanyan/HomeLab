@@ -134,7 +134,8 @@ stateful_workload_stop() {
   kubectl scale --replicas=0 -n argocd deployment/argocd-repo-server
   kubectl scale --replicas=0 -n argocd deployment/argocd-dex-server
   kubectl scale --replicas=0 -n argocd deployment/argocd-server
-  kubectl scale --replicas=0 -n argocd deployment/argocd-redis
+  kubectl scale --replicas=0 -n argocd deployment/argocd-redis-ha-haproxy
+  kubectl scale --replicas=0 -n argocd statefulset/argocd-redis-ha-server
 
   kubectl scale --replicas=0 -n openshift-pipelines-operator deployment/openshift-pipelines-operator
   kubectl scale --replicas=0 -n openshift-pipelines deployment/tekton-hub-api
@@ -198,7 +199,8 @@ stateful_workload_start() {
   kubectl scale --replicas=1 -n argocd deployment/argocd-repo-server
   kubectl scale --replicas=1 -n argocd deployment/argocd-dex-server
   kubectl scale --replicas=1 -n argocd deployment/argocd-server
-  kubectl scale --replicas=1 -n argocd deployment/argocd-redis
+  kubectl scale --replicas=1 -n argocd deployment/argocd-redis-ha-haproxy
+  kubectl scale --replicas=3 -n argocd statefulset/argocd-redis-ha-server
 
   kubectl scale --replicas=1 -n openshift-pipelines-operator deployment/openshift-pipelines-operator
   kubectl scale --replicas=1 -n openshift-pipelines deployment/tekton-hub-api
