@@ -110,21 +110,28 @@ router---ap{<center>TP-AX1800<br>10.0.0.1</center>}
 ap---switch[<center>TL-SG1005D</center>]
 
 subgraph HomeLab
+    switch-.-truenas(<center>TrueNas<br>10.0.0.3</center>)
     switch-.-kvm-1(<center>kvm-1<br>10.0.0.107</center>)
     switch-.-kvm-2(<center>kvm-2<br>10.0.0.108</center>)
-    subgraph OKD ODD
+    switch-.-kvm-3(<center>kvm-3<br>10.0.0.109</center>)
+    subgraph OKD KVM-1
         kvm-1-.-server-1(<center>server-1<br>10.0.0.101</center>)
         kvm-1-.-infra-1(<center>infra-1<br>10.0.0.121</center>)
-        kvm-1-.-server-3(<center>server-3<br>10.0.0.103</center>)
         kvm-1-.-worker-1(<center>worker-1<br>10.0.0.111</center>)
-        kvm-1-.-worker-3(<center>worker-3<br>10.0.0.113</center>)
+        kvm-1-.-worker-4(<center>worker-4<br>10.0.0.114</center>)
     end
-    switch-.-truenas(<center>TrueNas<br>10.0.0.3</center>)
-    subgraph OKD EVEN
+
+    subgraph OKD KVM-2
         kvm-2-.-server-2(<center>server-2<br>10.0.0.102</center>)
         kvm-2-.-infra-2(<center>infra-2<br>10.0.0.121</center>)
-        kvm-2-.-worker-2(<center>worker-2<br>10.0.0.1112</center>)
-        kvm-2-.-worker-4(<center>worker-2<br>10.0.0.114</center>)
+        kvm-2-.-worker-2(<center>worker-2<br>10.0.0.112</center>)
+        kvm-2-.-worker-5(<center>worker-5<br>10.0.0.115</center>)
+    end
+    subgraph OKD KVM-3
+        kvm-3-.-server-3(<center>server-3<br>10.0.0.103</center>)
+        kvm-3-.-infra-3(<center>infra-3<br>10.0.0.123</center>)
+        kvm-3-.-worker-3(<center>worker-3<br>10.0.0.113</center>)
+        kvm-3-.-worker-6(<center>worker-6<br>10.0.0.116</center>)
     end
 end
 ```
@@ -135,25 +142,27 @@ end
 
 | Kubernetes Channel | OKD Channel | OKD OS           | Host Operating System |
 | ------------------ | ----------- | ---------------- | --------------------- |
-| v1.24              | stable-4.11 | Fedora CoreOS 36 | RHEL 9.2              |
+| v1.27              | stable-4.11 | Fedora CoreOS 38 | RHEL 9.3              |
 
 **Machines:**
 
 [CPU Benchmark](https://www.cpubenchmark.net/compare/Intel-i5-6600-vs-AMD-RX-427BB-vs-Intel-i3-2130-vs-AMD-GX-415GA-SOC-vs-AMD-Ryzen-7-5700G/2594vs2496vs755vs2081vs4323)
 
-| Machine    | Model       | CPU      | CPU | Mem  | Storage              | ZFS Storage    |
-| ---------- | ----------- | -------- | --- | ---- | -------------------- | -------------- |
-| pfSense    | Hp t730     | RX-427BB | 4   | 4G   | 16G SSD              | N/A            |
-| Bare Metal | Hp t620     | GX-415GA | 4   | 6G   | 16G SSD & 16G USB    | N/A            |
-| kvm-1      | N/A         | R7-5700G | 16  | 128G | 2x1TB NVME, 1TB SSD  | N/A            |
-| kvm-2      | N/A         | R7-5700G | 16  | 96G  | 2x1TB NVME, 1TB SSD  | N/A            |
-| TrueNas    | Hp ProDesk  | i5-6600  | 4   | 32G  | 120G SSD Boot Mirror | 2T HDD, 1T SSD |
-| Spare      | Hp p7-1226s | i3-2130  | 4   | 8G   | 240G SSD             | N/A            |
+| Machine    | Model       | CPU      | CPU | Mem | Storage              | ZFS Storage    |
+| ---------- | ----------- | -------- | --- | --- | -------------------- | -------------- |
+| pfSense    | Hp t730     | RX-427BB | 4   | 4G  | 16G SSD              | N/A            |
+| Bare Metal | Hp t620     | GX-415GA | 4   | 6G  | 16G SSD & 16G USB    | N/A            |
+| kvm-1      | N/A         | R7-5700G | 16  | 96G | 2x1TB NVME, 1TB SSD  | N/A            |
+| kvm-2      | N/A         | R7-5700G | 16  | 96G | 2x1TB NVME, 1TB SSD  | N/A            |
+| kvm-3      | N/A         | R7-5700G | 16  | 96G | 2x1TB NVME, 1TB SSD  | N/A            |
+| TrueNas    | Hp ProDesk  | i5-6600  | 4   | 32G | 120G SSD Boot Mirror | 2T HDD, 1T SSD |
+| Spare      | Hp p7-1226s | i3-2130  | 4   | 8G  | 240G SSD             | N/A            |
 
 | Machine | PPT | VOFFSET |
 | ------- | --- | ------- |
-| kvm-1   | 35W | -0.1625 |
-| kvm-2   | 35W | -0.1625 |
+| kvm-1   | 20W | -0.1625 |
+| kvm-2   | 20W | -0.1625 |
+| kvm-3   | 20W | -0.1625 |
 
 **ZFS Storage:**
 
@@ -166,30 +175,38 @@ end
 
 | NAME     | ROLES          | Machine | vCPU | Mem   | Storage       |
 | -------- | -------------- | ------- | ---- | ----- | ------------- |
-| server-1 | cp,etcd,master | kvm-1   | 5    | 19.0G | N/A           |
-| server-2 | cp,etcd,master | kvm-2   | 5    | 19.0G | N/A           |
-| server-3 | cp,etcd,master | kvm-1   | 5    | 19.0G | N/A           |
+| server-1 | cp,etcd,master | kvm-1   | 5    | 19.5G | N/A           |
+| server-2 | cp,etcd,master | kvm-2   | 5    | 19.5G | N/A           |
+| server-3 | cp,etcd,master | kvm-1   | 5    | 19.5G | N/A           |
 | infra-1  | infra,worker   | kvm-1   | 4    | 7.0G  | 2x1TB LH NVME |
 | infra-2  | infra,worker   | kvm-2   | 4    | 7.0G  | 2x1TB LH NVME |
-| worker-1 | worker         | kvm-1   | 8    | 36.0G | N/A           |
-| worker-2 | worker         | kvm-2   | 8    | 31.0G | N/A           |
-| worker-3 | worker         | kvm-1   | 8    | 36.0G | N/A           |
-| worker-4 | worker         | kvm-2   | 8    | 31.0G | N/A           |
+| infra-3  | infra,worker   | kvm-3   | 4    | 7.0G  | 2x1TB LH NVME |
+| worker-1 | worker         | kvm-1   | 7    | 31.0G | N/A           |
+| worker-2 | worker         | kvm-2   | 7    | 31.0G | N/A           |
+| worker-3 | worker         | kvm-3   | 7    | 31.0G | N/A           |
+| worker-4 | worker         | kvm-1   | 7    | 31.0G | N/A           |
+| worker-5 | worker         | kvm-2   | 7    | 31.0G | N/A           |
+| worker-6 | worker         | kvm-3   | 7    | 31.0G | N/A           |
 
 #### KVM Config Dump
 
 ```bash
+scp ./* arthur@10.0.0.17:/home/arthur/Downloads
+
 sudo virsh dumpxml infra-1 > infra-1.xml
 sudo virsh dumpxml server-1 > server-1.xml
-sudo virsh dumpxml server-3 > server-3.xml
 sudo virsh dumpxml worker-1 > worker-1.xml
-sudo virsh dumpxml worker-3 > worker-3.xml
+sudo virsh dumpxml worker-4 > worker-4.xml
 
 sudo virsh dumpxml infra-2 > infra-2.xml
 sudo virsh dumpxml server-2 > server-2.xml
 sudo virsh dumpxml worker-2 > worker-2.xml
-sudo virsh dumpxml worker-4 > worker-4.xml
+sudo virsh dumpxml worker-5 > worker-5.xml
 
+sudo virsh dumpxml infra-3 > infra-3.xml
+sudo virsh dumpxml server-3 > server-3.xml
+sudo virsh dumpxml worker-3 > worker-3.xml
+sudo virsh dumpxml worker-6 > worker-6.xml
 ```
 
 #### OKD Longhorn Secondary Disk Setup
@@ -306,7 +323,7 @@ curl --header "Authorization: Bearer $(oc whoami -t)" -H 'Content-type: applicat
 #### SSH Keyscan
 
 ```bash
-export IP_LIST="3 4 5 17 107 108 101 102 103 111 112 113 114 121 122"
+export IP_LIST="3 4 5 17 107 108 109 101 102 103 111 112 113 114 115 116 121 122 123"
 
 rm -f /tmp/ssh_keyscan.txt
 for IP in $( echo "$IP_LIST" ); do

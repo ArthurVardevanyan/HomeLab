@@ -154,7 +154,7 @@ stateful_workload_start() {
   kubectl scale --replicas=1 -n openshift-monitoring deployment/cluster-monitoring-operator
 
   kubectl scale --replicas=1 -n cockroach-operator-system deployments/cockroach-operator-manager
-  kubectl scale --replicas=1 -n zitadel statefulset/crdb
+  kubectl scale --replicas=3 -n zitadel statefulset/crdb
   kubectl scale --replicas=2 -n zitadel deployment/zitadel
 
   kubectl scale --replicas=1 -n bitwarden statefulset/bitwarden

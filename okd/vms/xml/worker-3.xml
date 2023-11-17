@@ -1,14 +1,14 @@
-<domain type='kvm' id='15' xmlns:qemu='http://libvirt.org/schemas/domain/qemu/1.0'>
+<domain type='kvm' id='12' xmlns:qemu='http://libvirt.org/schemas/domain/qemu/1.0'>
   <name>worker-3</name>
-  <uuid>ce0f94b6-44e0-4f01-9edd-5481105d47a1</uuid>
+  <uuid>015aa430-8851-4f09-8dcd-ec297334cd09</uuid>
   <metadata>
     <libosinfo:libosinfo xmlns:libosinfo="http://libosinfo.org/xmlns/libvirt/domain/1.0">
       <libosinfo:os id="http://fedoraproject.org/coreos/stable" />
     </libosinfo:libosinfo>
   </metadata>
-  <memory unit='KiB'>37748736</memory>
-  <currentMemory unit='KiB'>37748736</currentMemory>
-  <vcpu placement='static'>8</vcpu>
+  <memory unit='KiB'>32505856</memory>
+  <currentMemory unit='KiB'>32505856</currentMemory>
+  <vcpu placement='static'>7</vcpu>
   <resource>
     <partition>/machine</partition>
   </resource>
@@ -20,9 +20,7 @@
     <acpi />
     <apic />
   </features>
-  <cpu mode='host-passthrough' check='none' migratable='on'>
-    <topology sockets='1' dies='1' cores='8' threads='1' />
-  </cpu>
+  <cpu mode='host-passthrough' check='none' migratable='on' />
   <clock offset='utc'>
     <timer name='rtc' tickpolicy='catchup' />
     <timer name='pit' tickpolicy='delay' />
@@ -48,10 +46,6 @@
     <controller type='usb' index='0' model='qemu-xhci' ports='15'>
       <alias name='usb' />
       <address type='pci' domain='0x0000' bus='0x02' slot='0x00' function='0x0' />
-    </controller>
-    <controller type='sata' index='0'>
-      <alias name='ide' />
-      <address type='pci' domain='0x0000' bus='0x00' slot='0x1f' function='0x2' />
     </controller>
     <controller type='pci' index='0' model='pcie-root'>
       <alias name='pcie.0' />
@@ -104,6 +98,46 @@
       <alias name='pci.8' />
       <address type='pci' domain='0x0000' bus='0x00' slot='0x01' function='0x7' />
     </controller>
+    <controller type='pci' index='9' model='pcie-root-port'>
+      <model name='pcie-root-port' />
+      <target chassis='9' port='0x10' />
+      <alias name='pci.9' />
+      <address type='pci' domain='0x0000' bus='0x00' slot='0x02' function='0x0' multifunction='on' />
+    </controller>
+    <controller type='pci' index='10' model='pcie-root-port'>
+      <model name='pcie-root-port' />
+      <target chassis='10' port='0x11' />
+      <alias name='pci.10' />
+      <address type='pci' domain='0x0000' bus='0x00' slot='0x02' function='0x1' />
+    </controller>
+    <controller type='pci' index='11' model='pcie-root-port'>
+      <model name='pcie-root-port' />
+      <target chassis='11' port='0x12' />
+      <alias name='pci.11' />
+      <address type='pci' domain='0x0000' bus='0x00' slot='0x02' function='0x2' />
+    </controller>
+    <controller type='pci' index='12' model='pcie-root-port'>
+      <model name='pcie-root-port' />
+      <target chassis='12' port='0x13' />
+      <alias name='pci.12' />
+      <address type='pci' domain='0x0000' bus='0x00' slot='0x02' function='0x3' />
+    </controller>
+    <controller type='pci' index='13' model='pcie-root-port'>
+      <model name='pcie-root-port' />
+      <target chassis='13' port='0x14' />
+      <alias name='pci.13' />
+      <address type='pci' domain='0x0000' bus='0x00' slot='0x02' function='0x4' />
+    </controller>
+    <controller type='pci' index='14' model='pcie-root-port'>
+      <model name='pcie-root-port' />
+      <target chassis='14' port='0x15' />
+      <alias name='pci.14' />
+      <address type='pci' domain='0x0000' bus='0x00' slot='0x02' function='0x5' />
+    </controller>
+    <controller type='sata' index='0'>
+      <alias name='ide' />
+      <address type='pci' domain='0x0000' bus='0x00' slot='0x1f' function='0x2' />
+    </controller>
     <controller type='virtio-serial' index='0'>
       <alias name='virtio-serial0' />
       <address type='pci' domain='0x0000' bus='0x03' slot='0x00' function='0x0' />
@@ -111,25 +145,26 @@
     <interface type='bridge'>
       <mac address='10:00:00:00:01:13' />
       <source bridge='br0' />
-      <target dev='vnet14' />
+      <target dev='vnet9' />
       <model type='virtio' />
       <alias name='net0' />
       <address type='pci' domain='0x0000' bus='0x01' slot='0x00' function='0x0' />
     </interface>
     <serial type='pty'>
-      <source path='/dev/pts/4' />
+      <source path='/dev/pts/2' />
       <target type='isa-serial' port='0'>
         <model name='isa-serial' />
       </target>
       <alias name='serial0' />
     </serial>
-    <console type='pty' tty='/dev/pts/4'>
-      <source path='/dev/pts/4' />
+    <console type='pty' tty='/dev/pts/2'>
+      <source path='/dev/pts/2' />
       <target type='serial' port='0' />
       <alias name='serial0' />
     </console>
     <channel type='unix'>
-      <source mode='bind' path='/run/libvirt/qemu/channel/15-worker-3/org.qemu.guest_agent.0' />
+      <source mode='bind'
+        path='/var/lib/libvirt/qemu/channel/target/domain-12-worker-3/org.qemu.guest_agent.0' />
       <target type='virtio' name='org.qemu.guest_agent.0' state='connected' />
       <alias name='channel0' />
       <address type='virtio-serial' controller='0' bus='0' port='1' />
@@ -141,19 +176,22 @@
       <alias name='input1' />
     </input>
     <audio id='1' type='none' />
+    <watchdog model='itco' action='reset'>
+      <alias name='watchdog0' />
+    </watchdog>
     <memballoon model='virtio'>
       <alias name='balloon0' />
-      <address type='pci' domain='0x0000' bus='0x06' slot='0x00' function='0x0' />
+      <address type='pci' domain='0x0000' bus='0x05' slot='0x00' function='0x0' />
     </memballoon>
     <rng model='virtio'>
       <backend model='random'>/dev/urandom</backend>
       <alias name='rng0' />
-      <address type='pci' domain='0x0000' bus='0x07' slot='0x00' function='0x0' />
+      <address type='pci' domain='0x0000' bus='0x06' slot='0x00' function='0x0' />
     </rng>
   </devices>
   <seclabel type='dynamic' model='selinux' relabel='yes'>
-    <label>system_u:system_r:svirt_t:s0:c368,c557</label>
-    <imagelabel>system_u:object_r:svirt_image_t:s0:c368,c557</imagelabel>
+    <label>system_u:system_r:svirt_t:s0:c687,c705</label>
+    <imagelabel>system_u:object_r:svirt_image_t:s0:c687,c705</imagelabel>
   </seclabel>
   <seclabel type='dynamic' model='dac' relabel='yes'>
     <label>+107:+107</label>

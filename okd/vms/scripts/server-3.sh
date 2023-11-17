@@ -1,7 +1,8 @@
+export LIBGUESTFS_BACKEND=direct
 export HOME=/home/arthur
 export NODE=server-3
 export VCPUS=5
-export RAM_MB=19456
+export RAM_MB=19968
 export IMAGE="/mnt/${NODE}/${NODE}.raw"
 export IGNITION_CONFIG="/var/lib/libvirt/images/master.ign"
 export SIZE="128G"

@@ -1,0 +1,13 @@
+- hosts: kvm-3
+  gather_facts: no
+  become: true
+  user: arthur
+  tasks:
+    - name: Promtail Directory
+      file:
+        path: /etc/promtail
+        state: directory
+    - name: Promtail Config
+      copy:
+        src: "../../../../machineConfigs/servers/kvm-3/etc/promtail/config.yml"
+        dest: "/etc/promtail/config.yml"
