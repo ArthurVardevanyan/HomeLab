@@ -1,0 +1,96 @@
+﻿apiVersion: operator.knative.dev/v1beta1
+kind: KnativeServing
+metadata:
+  name: knative-serving
+  namespace: knative-serving
+  annotations:
+    argocd.argoproj.io/sync-wave: "2"
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+spec:
+  high-availability:
+    replicas: 2
+  podDisruptionBudgets:
+    - minAvailable: 1
+      name: activator-pdb
+    - minAvailable: 1
+      name: 3scale-kourier-gateway-pdb
+    - minAvailable: 1
+      name: webhook-pdb
+  config:
+    network:
+      ingress-class: "kourier.ingress.networking.knative.dev"
+    features:
+      kubernetes.podspec-affinity: enabled
+      kubernetes.podspec-topologyspreadconstraints: enabled
+      kubernetes.podspec-init-containers: enabled
+      kubernetes.podspec-volumes-emptydir: enabled
+  ingress:
+    istio:
+      enabled: false
+    kourier:
+      enabled: true
+      service-type: ClusterIP
+  deployments:
+    - name: 3scale-kourier-gateway
+      resources:
+        - container: kourier-gateway
+          limits:
+            cpu: 100m
+            memory: 256Mi
+          requests:
+            cpu: 10m
+            memory: 128Mi
+    - name: activator
+      resources:
+        - container: activator
+          limits:
+            cpu: 100m
+            memory: 128Mi
+          requests:
+            cpu: 10m
+            memory: 64Mi
+    - name: autoscaler
+      resources:
+        - container: autoscaler
+          limits:
+            cpu: 100m
+            memory: 256Mi
+          requests:
+            cpu: 10m
+            memory: 128Mi
+    - name: autoscaler-hpa
+      resources:
+        - container: autoscaler-hpa
+          limits:
+            cpu: 100m
+            memory: 128Mi
+          requests:
+            cpu: 10m
+            memory: 64Mi
+    - name: controller
+      resources:
+        - container: controller
+          limits:
+            cpu: 100m
+            memory: 256Mi
+          requests:
+            cpu: 10m
+            memory: 128Mi
+    - name: net-kourier-controller
+      resources:
+        - container: controller
+          limits:
+            cpu: 100m
+            memory: 384Mi
+          requests:
+            cpu: 10m
+            memory: 192Mi
+    - name: webhook
+      resources:
+        - container: webhook
+          limits:
+            cpu: 100m
+            memory: 128Mi
+          requests:
+            cpu: 10m
+            memory: 64Mi

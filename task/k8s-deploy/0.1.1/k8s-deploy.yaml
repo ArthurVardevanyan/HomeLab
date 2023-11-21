@@ -71,7 +71,6 @@ spec:
         export VAULT_ADDR=https://vault.${URL}
         export VAULT_TOKEN="$(vault write -field=token auth/${VAULT_PATH}/login role=${VAULT_PATH} jwt=${TOKEN})"
 
-        sed -i "s/<VERSION>/${SHA}/g" ${WORKSPACE_DATA_PATH}/kubernetes/base/deployment.yaml
-
         kubectl kustomize ${WORKSPACE_DATA_PATH}/kubernetes/overlays/okd | \
+          sed "s/<VERSION>/${SHA}/g" | \
           argocd-vault-plugin generate - | kubectl apply -f -

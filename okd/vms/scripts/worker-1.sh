@@ -1,3 +1,5 @@
+#!/bin/bash
+
 export LIBGUESTFS_BACKEND=direct
 export HOME=/home/arthur
 export NODE=worker-1
