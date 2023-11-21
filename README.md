@@ -175,9 +175,9 @@ end
 
 | NAME     | ROLES          | Machine | vCPU | Mem   | Storage       |
 | -------- | -------------- | ------- | ---- | ----- | ------------- |
-| server-1 | cp,etcd,master | kvm-1   | 6    | 20.0G | N/A           |
-| server-2 | cp,etcd,master | kvm-2   | 6    | 20.0G | N/A           |
-| server-3 | cp,etcd,master | kvm-1   | 6    | 20.0G | N/A           |
+| server-1 | cp,etcd,master | kvm-1   | 7    | 20.5G | N/A           |
+| server-2 | cp,etcd,master | kvm-2   | 7    | 20.5G | N/A           |
+| server-3 | cp,etcd,master | kvm-1   | 7    | 20.5G | N/A           |
 | infra-1  | infra,worker   | kvm-1   | 4    | 7.0G  | 2x1TB LH NVME |
 | infra-2  | infra,worker   | kvm-2   | 4    | 7.0G  | 2x1TB LH NVME |
 | infra-3  | infra,worker   | kvm-3   | 4    | 7.0G  | 2x1TB LH NVME |
