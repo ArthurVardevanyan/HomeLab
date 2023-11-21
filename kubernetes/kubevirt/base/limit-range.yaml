@@ -1,0 +1,18 @@
+apiVersion: v1
+kind: LimitRange
+metadata:
+  name: kubevirt-hyperconverged-lr
+  namespace: kubevirt-hyperconverged
+  labels:
+    app.kubernetes.io/instance: kubevirt
+spec:
+  limits:
+    - type: Container
+      default:
+        cpu: 100m
+        memory: 512Mi
+        ephemeral-storage: 256Mi
+      defaultRequest:
+        cpu: 10m
+        memory: 16Mi
+        ephemeral-storage: 128Mi
