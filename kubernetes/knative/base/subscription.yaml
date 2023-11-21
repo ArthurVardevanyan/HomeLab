@@ -1,0 +1,22 @@
+apiVersion: operators.coreos.com/v1alpha1
+kind: Subscription
+metadata:
+  name: knative-operator
+  namespace: knative-operator
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+spec:
+  channel: stable
+  installPlanApproval: Manual
+  name: knative-operator
+  source: operator-hub
+  sourceNamespace: openshift-marketplace
+  startingCSV: knative-operator.v1.12.0
+  config:
+    resources:
+      limits:
+        cpu: 100m
+        memory: 192Mi
+      requests:
+        cpu: 10m
+        memory: 96Mi
