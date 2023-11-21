@@ -1,4 +1,4 @@
-﻿apiVersion: argoproj.io/v1alpha1
+﻿apiVersion: argoproj.io/v1beta1
 kind: ArgoCD
 metadata:
   name: argocd
@@ -47,10 +47,10 @@ spec:
     policy: |
       g, system:cluster-admins, role:admin
       g, cluster-admins, role:admin
-  version: v2.8.5
+  version: v2.9.2
   repo:
     replicas: 3
-    version: v2.8.5
+    version: v2.9.2
     mountsatoken: true
     serviceaccount: default
     resources:
@@ -68,7 +68,7 @@ spec:
         image: registry.access.redhat.com/ubi9
         env:
           - name: AVP_VERSION
-            value: 1.16.1
+            value: 1.17.0
           - name: KUSTOMIZE_VERSION
             value: 5.2.1
         command: [sh, -c]

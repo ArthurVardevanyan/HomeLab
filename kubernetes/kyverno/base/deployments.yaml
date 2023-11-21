@@ -24,7 +24,7 @@ spec:
         app.kubernetes.io/component: admission-controller
         app.kubernetes.io/instance: kyverno
         app.kubernetes.io/part-of: kyverno
-        app.kubernetes.io/version: v1.10.0
+        app.kubernetes.io/version: v1.10.5
     spec:
       tolerations:
         - key: node-role.kubernetes.io/control-plane
@@ -37,7 +37,7 @@ spec:
       serviceAccountName: kyverno-admission-controller
       initContainers:
         - name: kyverno-pre
-          image: "ghcr.io/kyverno/kyvernopre:v1.10.0"
+          image: "ghcr.io/kyverno/kyvernopre:v1.10.5"
           imagePullPolicy: IfNotPresent
           args:
             - --loggingFormat=text
@@ -74,7 +74,7 @@ spec:
               value: kyverno
       containers:
         - name: kyverno
-          image: "ghcr.io/kyverno/kyverno:v1.10.0"
+          image: "ghcr.io/kyverno/kyverno:v1.10.5"
           imagePullPolicy: IfNotPresent
           args:
             - --backgroundServiceAccountName=system:serviceaccount:kyverno:kyverno-background-controller
@@ -199,7 +199,7 @@ spec:
         app.kubernetes.io/component: background-controller
         app.kubernetes.io/instance: kyverno
         app.kubernetes.io/part-of: kyverno
-        app.kubernetes.io/version: v1.10.0
+        app.kubernetes.io/version: v1.10.5
     spec:
       dnsPolicy: ClusterFirst
       affinity:
@@ -217,7 +217,7 @@ spec:
       serviceAccountName: kyverno-background-controller
       containers:
         - name: controller
-          image: "ghcr.io/kyverno/background-controller:v1.10.0"
+          image: "ghcr.io/kyverno/background-controller:v1.10.5"
           ports:
             - containerPort: 9443
               name: https
@@ -288,7 +288,7 @@ spec:
         app.kubernetes.io/component: cleanup-controller
         app.kubernetes.io/instance: kyverno
         app.kubernetes.io/part-of: kyverno
-        app.kubernetes.io/version: v1.10.0
+        app.kubernetes.io/version: v1.10.5
     spec:
       dnsPolicy: ClusterFirst
       affinity:
@@ -306,7 +306,7 @@ spec:
       serviceAccountName: kyverno-cleanup-controller
       containers:
         - name: controller
-          image: "ghcr.io/kyverno/cleanup-controller:v1.10.0"
+          image: "ghcr.io/kyverno/cleanup-controller:v1.10.5"
           ports:
             - containerPort: 9443
               name: https
@@ -409,7 +409,7 @@ spec:
         app.kubernetes.io/component: reports-controller
         app.kubernetes.io/instance: kyverno
         app.kubernetes.io/part-of: kyverno
-        app.kubernetes.io/version: v1.10.0
+        app.kubernetes.io/version: v1.10.5
     spec:
       dnsPolicy: ClusterFirst
       affinity:
@@ -427,7 +427,7 @@ spec:
       serviceAccountName: kyverno-reports-controller
       containers:
         - name: controller
-          image: "ghcr.io/kyverno/reports-controller:v1.10.0"
+          image: "ghcr.io/kyverno/reports-controller:v1.10.5"
           ports:
             - containerPort: 9443
               name: https

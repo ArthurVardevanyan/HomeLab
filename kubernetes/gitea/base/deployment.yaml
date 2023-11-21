@@ -7,8 +7,8 @@ metadata:
     app: gitea
     app.kubernetes.io/name: gitea
     app.kubernetes.io/instance: gitea
-    app.kubernetes.io/version: "1.20.5"
-    version: "1.20.5"
+    app.kubernetes.io/version: "1.21.0"
+    version: "1.21.0"
     app.kubernetes.io/managed-by: Helm
 spec:
   replicas: 2
@@ -28,15 +28,15 @@ spec:
         app: gitea
         app.kubernetes.io/name: gitea
         app.kubernetes.io/instance: gitea
-        app.kubernetes.io/version: "1.20.5"
-        version: "1.20.5"
+        app.kubernetes.io/version: "1.21.0"
+        version: "1.21.0"
         app.kubernetes.io/managed-by: Helm
     spec:
       # securityContext:
       #   fsGroup: 1000
       initContainers:
         - name: init-directories
-          image: "gitea/gitea:1.20.5-rootless"
+          image: "gitea/gitea:1.21.0-rootless"
           imagePullPolicy: IfNotPresent
           command: ["/usr/sbin/init_directory_structure.sh"]
           env:
@@ -75,7 +75,7 @@ spec:
               cpu: 25m
               memory: 64Mi
         - name: init-app-ini
-          image: "gitea/gitea:1.20.5-rootless"
+          image: "gitea/gitea:1.21.0-rootless"
           imagePullPolicy: IfNotPresent
           command: ["/usr/sbin/config_environment.sh"]
           env:
@@ -116,7 +116,7 @@ spec:
               cpu: 25m
               memory: 64Mi
         - name: configure-gitea
-          image: "gitea/gitea:1.20.5-rootless"
+          image: "gitea/gitea:1.21.0-rootless"
           command: ["/usr/sbin/configure_gitea.sh"]
           imagePullPolicy: IfNotPresent
           securityContext:
@@ -164,7 +164,7 @@ spec:
       terminationGracePeriodSeconds: 60
       containers:
         - name: gitea
-          image: "gitea/gitea:1.20.5-rootless"
+          image: "gitea/gitea:1.21.0-rootless"
           imagePullPolicy: IfNotPresent
           env:
             # SSH Port values have to be set here as well for openssh configuration
