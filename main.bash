@@ -46,7 +46,7 @@ test_overlays() {
     rm -rf /tmp/yaml
     mkdir -p /tmp/yaml
     echo "Build Yaml's"
-    for OVERLAY in ./kubernetes/*/overlays/*; do
+    for OVERLAY in ./kubernetes/*/overlays/okd; do # *
       echo "${OVERLAY}"
       OUTPUT=$(echo "${OVERLAY}" | sed 's/\.//g' | sed 's/\//_/g')
       kubectl kustomize "${OVERLAY}" | argocd-vault-plugin generate - >"${DIR}/${OUTPUT}.yaml"
@@ -73,6 +73,28 @@ test_overlays() {
   fi
 }
 
+test_overlays_k3s() {
+
+  if [ -n "$VAULT_ADDR" ] && [ -n "$VAULT_TOKEN" ]; then
+    DIR="/tmp/yaml"
+    rm -rf /tmp/yaml
+    mkdir -p /tmp/yaml
+    echo "Build Yaml's"
+    for OVERLAY in ./kubernetes/*/overlays/k3s; do # *
+      echo "${OVERLAY}"
+      OUTPUT=$(echo "${OVERLAY}" | sed 's/\.//g' | sed 's/\//_/g')
+      kubectl kustomize "${OVERLAY}" | argocd-vault-plugin generate - >"${DIR}/${OUTPUT}.yaml"
+    done
+    echo "Run KubeConform on Yaml's"
+    kubeconform -n 16 -verbose --summary -ignore-missing-schemas \
+      -schema-location="../kubernetes-json-schema/master-standalone-strict/{{.ResourceKind}}{{.KindSuffix}}.json" \
+      -output text "${DIR}" | grep -v "is valid"
+
+  else
+    echo "Vault Variables Missing"
+    exit 1
+  fi
+}
 stateful_workload_stop() {
   kubectl patch cronjobs -n photoprism photoprism-cron -p '{"spec" : {"suspend" : true }}'
   kubectl patch cronjobs -n nextcloud nextcloud-preview -p '{"spec" : {"suspend" : true }}'
