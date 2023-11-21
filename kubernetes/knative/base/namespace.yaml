@@ -8,12 +8,13 @@ metadata:
     kubernetes.io/metadata.name: knative-operator
   name: knative-operator
 ---
-apiVersion: v1
-kind: Namespace
-metadata:
-  annotations:
-    argocd.argoproj.io/sync-wave: "0"
-  labels:
-    app.kubernetes.io/instance: knative
-    kubernetes.io/metadata.name: knative-serving
-  name: knative-serving
+# Operator Bug, Keeps overwriting the namespace labels/annotations
+# apiVersion: v1
+# kind: Namespace
+# metadata:
+#   annotations:
+#     argocd.argoproj.io/sync-wave: "0"
+#   labels:
+#     app.kubernetes.io/instance: knative
+#     kubernetes.io/metadata.name: knative-serving
+#   name: knative-serving
