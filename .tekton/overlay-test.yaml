@@ -6,9 +6,8 @@ metadata:
   annotations:
     pipelinesascode.tekton.dev/max-keep-runs: "1"
     pipelinesascode.tekton.dev/on-cel-expression: |
-      target_branch == "production"
+      target_branch == "production" && ("kubernetes/***".pathChanged() || "okd/***".pathChanged()  || "task/***".pathChanged() || "tekton/***".pathChanged())
     # event == "pull_request" &&
-    # && "containers/toolbox/containerfile".pathChanged()
     pipelinesascode.tekton.dev/target-namespace: "homelab"
     pipelinesascode.tekton.dev/task: "[tekton/base/overlay-test.yaml]"
     pipelinesascode.tekton.dev/task-1: "https://tekton-hub-api-openshift-pipelines.apps.okd.arthurvardevanyan.com/v1/resource/homelab/task/git-clone/0.9.1/raw"
