@@ -1,0 +1,24 @@
+apiVersion: operators.coreos.com/v1alpha1
+kind: Subscription
+metadata:
+  labels:
+    app.kubernetes.io/instance: container-security-operator
+  annotations:
+    argocd.argoproj.io/sync-wave: "0"
+  name: container-security-operator
+  namespace: container-security-operator
+spec:
+  channel: test
+  installPlanApproval: Manual
+  name: container-security-operator
+  source: container-security-catalog
+  sourceNamespace: container-security-operator
+  startingCSV: container-security-operator-test
+  config:
+    resources:
+      limits:
+        cpu: 50m
+        memory: 128Mi
+      requests:
+        cpu: 25m
+        memory: 64Mi
