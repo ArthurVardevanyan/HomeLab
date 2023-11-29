@@ -1,0 +1,18 @@
+apiVersion: v1
+kind: LimitRange
+metadata:
+  name: container-security-operator-lr
+  namespace: container-security-operator
+  labels:
+    app.kubernetes.io/instance: container-security-operator
+spec:
+  limits:
+    - type: Container
+      default:
+        cpu: 50m
+        memory: 50Mi
+        ephemeral-storage: 256Mi
+      defaultRequest:
+        cpu: 25m
+        memory: 25Mi
+        ephemeral-storage: 128Mi

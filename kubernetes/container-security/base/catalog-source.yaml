@@ -1,0 +1,15 @@
+apiVersion: operators.coreos.com/v1alpha1
+kind: CatalogSource
+metadata:
+  name: container-security-catalog
+  namespace: container-security-operator
+  annotations:
+    argocd.argoproj.io/sync-wave: "0"
+  labels:
+    app.kubernetes.io/instance: container-security-operator
+spec:
+  image: registry.arthurvardevanyan.com/quay/container-security-operator-index@sha256:d86a998ecafa7cff7554df6b9c1075edb7b2d99a1018cf803c8cd8060068ac0c
+  sourceType: grpc
+  updateStrategy:
+    registryPoll:
+      interval: 120m0s
