@@ -20,7 +20,7 @@ fi
 
 if [[ ! -f /home/user/.zshrc ]]; then
   cp -rf /home/tooling/{.gitconfig,.oh-my-zsh,.zshrc,.bashrc} /home/user/ >/dev/null 2>&1 || true
-  chown ${USER_ID}:${GROUP_ID} /home/user/{.gitconfig,.oh-my-zsh,.zshrc,.bashrc} >/dev/null 2>&1 || true
+  chown "${USER_ID}":"${GROUP_ID}" /home/user/{.gitconfig,.oh-my-zsh,.zshrc,.bashrc} >/dev/null 2>&1 || true
   chmod 0775 /home/user/{.gitconfig,.oh-my-zsh,.zshrc,.bashrc} >/dev/null 2>&1 || true
 fi
 

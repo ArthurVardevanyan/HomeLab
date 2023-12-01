@@ -11,6 +11,7 @@ export SIZE="128G"
 export MAC="10:00:00:00:01:14"
 
 qemu-img create "${IMAGE}" "${SIZE}" -f raw
+# shellcheck disable=SC2089
 virt-resize --expand /dev/sda4 /var/lib/libvirt/images/fedora-coreos-*.qcow2 "${IMAGE}"
 
 virt-install \

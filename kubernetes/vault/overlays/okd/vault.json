@@ -1,27 +1,27 @@
-    {
-      "backend": {
-        "file": {
-          "path": "/vault/file"
-        }
-      },
-      "seal": {
-        "gcpckms": {
-          "crypto_key": "vault",
-          "key_ring": "vault",
-          "project": "homelab-<path:secret/data/gcp/org/av/projects#project_id>",
-          "region": "global"
-        }
-      },
-      "disable_mlock": true,
-      "default_lease_ttl": "168h",
-      "max_lease_ttl": "720h",
-      "ui": true,
-      "listener": {
-        "tcp": {
-          "address": "0.0.0.0:8200",
-          "tls_disable": "0",
-          "tls_cert_file": "/vault/cert/tls.crt",
-          "tls_key_file": "/vault/cert/tls.key"
-        }
-      }
+{
+  "backend": {
+    "file": {
+      "path": "/vault/file"
     }
+  },
+  "seal": {
+    "gcpckms": {
+      "crypto_key": "vault",
+      "key_ring": "vault",
+      "project": "homelab-<path:secret/data/gcp/org/av/projects#project_id>",
+      "region": "global"
+    }
+  },
+  "disable_mlock": true,
+  "default_lease_ttl": "168h",
+  "max_lease_ttl": "720h",
+  "ui": true,
+  "listener": {
+    "tcp": {
+      "address": "0.0.0.0:8200",
+      "tls_disable": "0",
+      "tls_cert_file": "/vault/cert/tls.crt",
+      "tls_key_file": "/vault/cert/tls.key"
+    }
+  }
+}

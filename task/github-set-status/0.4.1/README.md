@@ -13,7 +13,7 @@ This task expects a secret set in the kubernetes secret `github`
 with a GitHub token in the key `token`; you can easily create it on the
 command line with `kubectl` like this :
 
-```
+```bash
 kubectl create secret generic github --from-literal token="MY_TOKEN"
 ```
 
@@ -49,7 +49,7 @@ kubectl apply -f https://tekton-hub-api-openshift-pipelines.apps.okd.arthurvarde
 - **STATE**: The state of the status. Can be one of the following `error`,
   `failure`, `pending`, or `success`.
 - **AUTH_TYPE**: The type of authentication to use. You could use the less secure "Basic"
-  for example. See https://docs.github.com/en/rest/overview/other-authentication-methods for more information.
+  for example. See <https://docs.github.com/en/rest/overview/other-authentication-methods> for more information.
 - **GITHUB_TOKEN_SECRET_NAME** \[optional\]: The name of the kubernetes secret that
   contains the GitHub token. Default value: `github`.
 - **GITHUB_TOKEN_SECRET_KEY** \[optional\]: The key within the kubernetes secret that

@@ -3,7 +3,8 @@
 # https://github.com/ChaoticWeg/discord.sh
 
 export UPTIME_WEBHOOK=https://discord.com/api/webhooks/REPLACE_ME
-export HOSTNAME=$(cat /etc/hostname)
+export HOSTNAME
+HOSTNAME=$(cat /etc/hostname)
 
 booted() {
   /home/arthur/discord/discord.sh/discord.sh \

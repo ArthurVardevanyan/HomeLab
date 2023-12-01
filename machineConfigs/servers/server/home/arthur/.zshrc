@@ -1,8 +1,20 @@
+# shellcheck disable=SC2296,SC2015,SC2154,SC2154,SC2034,SC1091,SC2016,SC2086,SC2155,SC2148,SC2148
 # Path to your oh-my-zsh installation.
-export ZSH="/home/arthur/.oh-my-zsh"
+ZSH_DISABLE_COMPFIX="true"
+export ZSH="/${HOME}/.oh-my-zsh"
+export PATH="${KREW_ROOT:-$HOME/.krew}/bin:$PATH"
+
+export VAULT_ADDR="https://vault.arthurvardevanyan.com"
+export AVP_TYPE=vault
+export AVP_AUTH_TYPE=token
+
+export USE_GKE_GCLOUD_AUTH_PLUGIN=True
+
+export GPG_TTY=$(tty)
 
 ZSH_THEME="custom"
 
+alias oclogin="oc login --web --server https://api.okd.arthurvardevanyan.com:6443"
 # Uncomment the following line to use case-sensitive completion.
 # CASE_SENSITIVE="true"
 
@@ -105,7 +117,7 @@ if [ -f /etc/zsh_command_not_found ]; then
     . /etc/zsh_command_not_found
 fi
 
-alias UPDATE="sudo apt-get update && sudo apt-get upgrade -y && sudo apt-get dist-upgrade -y && sudo apt-get autoremove -y"
+alias UPDATE="sudo apt-get update && sudo apt-get upgrade -y && sudo apt-get dist-upgrade -y && sudo apt-get autoremove -y && flatpak update -y"
 
 # hide EOL sign ('%')
 PROMPT_EOL_MARK=""

@@ -39,9 +39,9 @@ kubectl apply -f https://tekton-hub-api-openshift-pipelines.apps.okd.arthurvarde
 ## Workspaces
 
 - **source**: A [Workspace](https://github.com/tektoncd/pipeline/blob/main/docs/workspaces.md) containing the source to build.
-- **sslcertdir**: An [_optional_ Workspace](https://github.com/tektoncd/pipeline/blob/v0.17.0/docs/workspaces.md#optional-workspaces) containing your custom SSL certificates to connect to the registry. Buildah will look for files ending with _.crt, _.cert, \*.key into this workspace. See [this sample](./samples/openshift-internal-registry.yaml) for a complete example on how to use it with OpenShift internal registry.
+- **sslcertdir**: An [_optional_ Workspace](https://github.com/tektoncd/pipeline/blob/v0.17.0/docs/workspaces.md#optional-workspaces) containing your custom SSL certificates to connect to the registry. Buildah will look for files ending with \_.crt, .cert, \*.key into this workspace. See [this sample](./samples/openshift-internal-registry.yaml) for a complete example on how to use it with OpenShift internal registry.
 
-* **dockerconfig**: An [optional workspace](https://github.com/tektoncd/pipeline/blob/main/docs/workspaces.md#using-workspaces-in-tasks) that allows providing a `.docker/config.json` file for Buildah to access the container registry. The file should be placed at the root of the Workspace with name `config.json`. See [this sample](./samples/dockerconfig.yaml) for a complete example on how to use `dockerconfig` to access container registry. _(optional)_
+- **dockerconfig**: An [optional workspace](https://github.com/tektoncd/pipeline/blob/main/docs/workspaces.md#using-workspaces-in-tasks) that allows providing a `.docker/config.json` file for Buildah to access the container registry. The file should be placed at the root of the Workspace with name `config.json`. See [this sample](./samples/dockerconfig.yaml) for a complete example on how to use `dockerconfig` to access container registry. _(optional)_
 
 ## Platforms
 

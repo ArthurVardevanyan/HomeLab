@@ -73,7 +73,7 @@ spec:
 - **ssl-ca-directory**: An optional workspace to provide custom CA certificates.
   Like the /etc/ssl/certs path this directory can have any pem or cert files,
   this uses libcurl ssl capath directive. See this SO answer here
-  https://stackoverflow.com/a/9880236 on how it works.
+  <https://stackoverflow.com/a/9880236> on how it works.
 
 - **basic-auth**: An optional workspace containing `.gitconfig` and
   `.git-credentials` files. This allows username/password/access token to be
@@ -135,121 +135,121 @@ The following pipelines demonstrate usage of the git-clone Task:
 This Task supports fetching private repositories. There are three ways to
 authenticate:
 
-1.  The simplest approach is to bind an `ssh-directory` workspace to this
-    Task. The workspace should contain private keys (e.g. `id_rsa`), `config`
-    and `known_hosts` files - anything you need to interact with your git remote
-    via SSH. It's **strongly** recommended that you use Kubernetes `Secrets` to
-    hold your credentials and bind to this workspace.
+- The simplest approach is to bind an `ssh-directory` workspace to this
+  Task. The workspace should contain private keys (e.g. `id_rsa`), `config`
+  and `known_hosts` files - anything you need to interact with your git remote
+  via SSH. It's **strongly** recommended that you use Kubernetes `Secrets` to
+  hold your credentials and bind to this workspace.
 
-        In a TaskRun that would look something like this:
+  In a TaskRun that would look something like this:
 
-        ```yaml
-        kind: TaskRun
-        spec:
-          workspaces:
+  ```yaml
+  kind: TaskRun
+  spec:
+    workspaces:
+      - name: ssh-directory
+        secret:
+          secretName: my-ssh-credentials
+  ```
+
+  And in a Pipeline and PipelineRun it would look like this:
+
+  ```yaml
+  kind: Pipeline
+  spec:
+    workspaces:
+      - name: ssh-creds
+    # ...
+    tasks:
+      - name: fetch-source
+        taskRef:
+          name: git-clone
+        workspaces:
           - name: ssh-directory
-            secret:
-              secretName: my-ssh-credentials
-        ```
+            workspace: ssh-creds
+    # ...
+  ---
+  kind: PipelineRun
+  spec:
+    workspaces:
+      - name: ssh-creds
+        secret:
+          secretName: my-ssh-credentials
+    # ...
+  ```
 
-        And in a Pipeline and PipelineRun it would look like this:
+  The `Secret` would appear the same in both cases - structured like a `.ssh`
+  directory:
 
-        ```yaml
-        kind: Pipeline
-        spec:
-          workspaces:
-          - name: ssh-creds
-          # ...
-          tasks:
-          - name: fetch-source
-            taskRef:
-              name: git-clone
-            workspaces:
-            - name: ssh-directory
-              workspace: ssh-creds
-          # ...
-        ---
-        kind: PipelineRun
-        spec:
-          workspaces:
-          - name: ssh-creds
-            secret:
-              secretName: my-ssh-credentials
-          # ...
-        ```
+  ```yaml
+  kind: Secret
+  apiVersion: v1
+  metadata:
+    name: my-ssh-credentials
+  data:
+    id_rsa: # ... base64-encoded private key ...
+    known_hosts: # ... base64-encoded known_hosts file ...
+    config: # ... base64-encoded ssh config file ...
+  ```
 
-        The `Secret` would appear the same in both cases - structured like a `.ssh`
-        directory:
+  Including `known_hosts` is optional but strongly recommended. Without it
+  the `git-clone` Task will blindly accept the remote server's identity.
 
-        ```yaml
-        kind: Secret
-        apiVersion: v1
-        metadata:
-          name: my-ssh-credentials
-        data:
-          id_rsa: # ... base64-encoded private key ...
-          known_hosts: # ... base64-encoded known_hosts file ...
-          config: # ... base64-encoded ssh config file ...
-        ```
+- Use Tekton Pipelines' built-in credentials support as [documented in
+  Pipelines' auth.md](https://github.com/tektoncd/pipeline/blob/master/docs/auth.md).
 
-        Including `known_hosts` is optional but strongly recommended. Without it
-        the `git-clone` Task will blindly accept the remote server's identity.
+- Another approach is to bind an `ssl-ca-directory` workspace to this
+  Task. The workspace should contain crt keys (e.g. `ca-bundle.crt`)files - anything you need to interact with your git remote
+  via custom CA . It's **strongly** recommended that you use Kubernetes `Secrets` to
+  hold your credentials and bind to this workspace.
 
-2.  Use Tekton Pipelines' built-in credentials support as [documented in
-    Pipelines' auth.md](https://github.com/tektoncd/pipeline/blob/master/docs/auth.md).
+  In a TaskRun that would look something like this:
 
-3.  Another approach is to bind an `ssl-ca-directory` workspace to this
-    Task. The workspace should contain crt keys (e.g. `ca-bundle.crt`)files - anything you need to interact with your git remote
-    via custom CA . It's **strongly** recommended that you use Kubernetes `Secrets` to
-    hold your credentials and bind to this workspace.
+  ```yaml
+  kind: TaskRun
+  spec:
+    workspaces:
+      - name: ssl-ca-directory
+        secret:
+          secretName: my-ssl-credentials
+  ```
 
-        In a TaskRun that would look something like this:
+  And in a Pipeline and PipelineRun it would look like this:
 
-        ```yaml
-        kind: TaskRun
-        spec:
-          workspaces:
+  ```yaml
+  kind: Pipeline
+  spec:
+    workspaces:
+      - name: ssl-creds
+    # ...
+    tasks:
+      - name: fetch-source
+        taskRef:
+          name: git-clone
+        workspaces:
           - name: ssl-ca-directory
-            secret:
-              secretName: my-ssl-credentials
-        ```
+            workspace: ssl-creds
+    # ...
+  ---
+  kind: PipelineRun
+  spec:
+    workspaces:
+      - name: ssl-creds
+        secret:
+          secretName: my-ssl-credentials
+    # ...
+  ```
 
-        And in a Pipeline and PipelineRun it would look like this:
+  The `Secret` would appear like below:
 
-        ```yaml
-        kind: Pipeline
-        spec:
-          workspaces:
-          - name: ssl-creds
-          # ...
-          tasks:
-          - name: fetch-source
-            taskRef:
-              name: git-clone
-            workspaces:
-            - name: ssl-ca-directory
-              workspace: ssl-creds
-          # ...
-        ---
-        kind: PipelineRun
-        spec:
-          workspaces:
-          - name: ssl-creds
-            secret:
-              secretName: my-ssl-credentials
-          # ...
-        ```
-
-        The `Secret` would appear like below:
-
-        ```yaml
-        kind: Secret
-        apiVersion: v1
-        metadata:
-          name: my-ssl-credentials
-        data:
-          ca-bundle.crt: # ... base64-encoded crt ...  # If key/filename is other than ca-bundle.crt then set crtFileName param as explained under Parameters section
-        ```
+  ```yaml
+  kind: Secret
+  apiVersion: v1
+  metadata:
+    name: my-ssl-credentials
+  data:
+    ca-bundle.crt: # ... base64-encoded crt ...  # If key/filename is other than ca-bundle.crt then set crtFileName param as explained under Parameters section
+  ```
 
 ## Using basic-auth Credentials
 
@@ -260,7 +260,7 @@ as a password and generally be able to use `git` as the username.
 On bitbucket server the token may have a / into it so you would need
 to urlquote them before in the `Secret`, see this stackoverflow answer :
 
-https://stackoverflow.com/a/24719496
+<https://stackoverflow.com/a/24719496>
 
 To support basic-auth this Task exposes an optional `basic-auth` Workspace.
 The bound Workspace must contain a `.gitconfig` and `.git-credentials` file.

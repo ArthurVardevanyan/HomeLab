@@ -1,3 +1,4 @@
+# shellcheck disable=SC2296,SC2015,SC2154,SC2154,SC2034,SC1091,SC2016,SC2086,SC2155,SC2148,SC2148
 # Path to your oh-my-zsh installation.
 ZSH_DISABLE_COMPFIX="true"
 export ZSH="/${HOME}/.oh-my-zsh"
