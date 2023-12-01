@@ -148,8 +148,8 @@ stateful_workload_stop() {
   kubectl patch postgresCluster quay -n quay --type=merge -p '{"spec":{"shutdown":true}}'
   kubectl patch postgresCluster tekton-hub -n openshift-pipelines --type=merge -p '{"spec":{"shutdown":true}}'
 
-  kubectl patch postgresCluster linkwarden -n linkwarden --type=merge -p '{"spec":{"shutdown":true}}'
-  kubectl scale --replicas=0 -n linkwarden statefulset/linkwarden
+  # kubectl patch postgresCluster linkwarden -n linkwarden --type=merge -p '{"spec":{"shutdown":true}}'
+  # kubectl scale --replicas=0 -n linkwarden statefulset/linkwarden
 
   kubectl scale --replicas=0 -n argocd deployment/argocd-operator-controller-manager
   kubectl scale --replicas=0 -n argocd statefulset/argocd-application-controller
@@ -213,8 +213,8 @@ stateful_workload_start() {
   kubectl patch postgresCluster quay -n quay --type=merge -p '{"spec":{"shutdown":false}}'
   kubectl patch postgresCluster tekton-hub -n openshift-pipelines --type=merge -p '{"spec":{"shutdown":false}}'
 
-  kubectl patch postgresCluster linkwarden -n linkwarden --type=merge -p '{"spec":{"shutdown":false}}'
-  kubectl scale --replicas=1 -n linkwarden statefulset/linkwarden
+  # kubectl patch postgresCluster linkwarden -n linkwarden --type=merge -p '{"spec":{"shutdown":false}}'
+  # kubectl scale --replicas=1 -n linkwarden statefulset/linkwarden
 
   kubectl scale --replicas=1 -n argocd deployment/argocd-operator-controller-manager
   kubectl scale --replicas=1 -n argocd statefulset/argocd-application-controller

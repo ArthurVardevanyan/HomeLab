@@ -158,11 +158,11 @@ end
 | TrueNas    | Hp ProDesk  | i5-6600  | 4   | 32G | 120G SSD Boot Mirror | 2T HDD, 1T SSD |
 | Spare      | Hp p7-1226s | i3-2130  | 4   | 8G  | 240G SSD             | N/A            |
 
-| Machine | PPT | VOFFSET |
-| ------- | --- | ------- |
-| kvm-1   | 25W | -0.1625 |
-| kvm-2   | 25W | -0.1625 |
-| kvm-3   | 25W | -0.1625 |
+| Machine | PPT | VOFFSET | CPU Curve | GFX Curve | CPU Frequency |
+| ------- | --- | ------- | --------- | --------- | ------------- |
+| kvm-1   | 20W | -0.1625 | -5        | -30       | -1000         |
+| kvm-2   | 20W | -0.1625 | -5        | -30       | -1000         |
+| kvm-3   | 20W | -0.1625 | -5        | -30       | -1000         |
 
 **ZFS Storage:**
 
