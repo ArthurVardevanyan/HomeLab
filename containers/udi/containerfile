@@ -7,13 +7,16 @@ USER 0
 ENV \
   ARGOCD_VAULT_VERSION=1.17.0 \
   OKD_VERSION=4.14.0-0.okd-2023-11-14-101924 \
-  OPENTOFU_VERSION=1.6.0-alpha5 \
-  VAULT_VERSION=1.15.2 \
+  OPENTOFU_VERSION=1.6.0-beta1 \
+  VAULT_VERSION=1.15.3 \
   KO_VERSION=0.15.1 \
   GO_VERSION=1.21.4 \
-  GH_VERSION=2.39.1 \
+  GH_VERSION=2.39.2 \
   # 0.6.3 Not Working
   KUBECONFORM_VERSION=0.6.2  \
+  MARKDOWNLINT_VERSION=0.32.1 \
+  PRETTIER_VERSION=3.1.0 \
+  SHELL_CHECK_VERSION=0.9.0 \
   PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/local/go/bin \
   HOME=/home/user \
   SHELL=/bin/zsh
@@ -25,17 +28,17 @@ COPY ./containers/udi/repos /etc/yum.repos.d/
 # UBI 9 Fix
 RUN dnf install --disableplugin=subscription-manager libbrotli compat-openssl11 -y
 
-RUN dnf install --disableplugin=subscription-manager \
+RUN rpm -ivh https://github.com/opentofu/opentofu/releases/download/v${OPENTOFU_VERSION}/tofu_${OPENTOFU_VERSION}_amd64.rpm && \
+  dnf install --disableplugin=subscription-manager \
   diffutils git iproute jq less lsof man nano procps \
   perl-Digest-SHA net-tools openssh-clients rsync socat sudo time vim wget zip  pinentry \
-  sshpass logrotate unzip MariaDB-client google-cloud-cli tar procps-ng make -y \
+  sshpass logrotate unzip MariaDB-client google-cloud-cli tar procps-ng make nodejs ShellCheck -y \
   && dnf update -y && dnf clean all \
   && ln -s /usr/bin/python3.11 /usr/local/bin/python && \
-  rm -rf /usr/lib64/google-cloud-sdk/{platform,data,bin/anthoscli}
+  rm -rf /usr/lib64/google-cloud-sdk/{platform,data,bin/anthoscli} && \
+  npm install -g markdownlint-cli@${MARKDOWNLINT_CLI_VERSION} prettier@${PRETTIER_CLI_VERSION}
 
 RUN dnf install --disableplugin=subscription-manager ansible-core ansible -y --nobest && dnf clean all
-
-RUN rpm -ivh https://github.com/opentofu/opentofu/releases/download/v${OPENTOFU_VERSION}/tofu_${OPENTOFU_VERSION}_amd64.rpm
 
 ## gh-cli
 RUN \

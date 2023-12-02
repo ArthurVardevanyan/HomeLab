@@ -1,26 +1,32 @@
 FROM registry.access.redhat.com/ubi9-minimal:9.3-1361.1699548032
 
 COPY ./containers/toolbox/repos /etc/yum.repos.d/
+#COPY ./repos /etc/yum.repos.d/
 
 ENV \
   ARGOCD_VAULT_VERSION=1.17.0 \
   OKD_VERSION=4.14.0-0.okd-2023-11-14-101924 \
-  OPENTOFU_VERSION=1.6.0-alpha5 \
-  VAULT_VERSION=1.15.2 \
+  OPENTOFU_VERSION=1.6.0-beta1 \
+  VAULT_VERSION=1.15.3 \
   KO_VERSION=0.15.1 \
   GO_VERSION=1.21.4 \
   # 0.6.3 Not Working
   KUBECONFORM_VERSION=0.6.2  \
+  MARKDOWNLINT_VERSION=0.32.1 \
+  PRETTIER_VERSION=3.1.0 \
+  SHELL_CHECK_VERSION=0.9.0 \
   HOME=/tmp \
   PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/local/go/bin \
   KICK="0"
 
 RUN rpm -ivh https://github.com/opentofu/opentofu/releases/download/v${OPENTOFU_VERSION}/tofu_${OPENTOFU_VERSION}_amd64.rpm && \
   microdnf install --nodocs -y --disableplugin=subscription-manager \
-  sshpass logrotate rsync git jq unzip MariaDB-client ansible google-cloud-cli tar procps-ng make -y \
+  sshpass logrotate rsync git jq unzip MariaDB-client ansible google-cloud-cli tar procps-ng make nodejs ShellCheck -y \
   && ln -s /usr/bin/python3.11 /usr/local/bin/python \
   && rm -rf /var/cache/* /var/lib/rpm/* && \
   rm -rf /usr/lib64/google-cloud-sdk/{platform,data,bin/anthoscli}
+
+RUN npm install -g markdownlint-cli@${MARKDOWNLINT_CLI_VERSION} prettier@${PRETTIER_CLI_VERSION}
 
 RUN curl -L -o argocd-vault-plugin https://github.com/argoproj-labs/argocd-vault-plugin/releases/download/v${ARGOCD_VAULT_VERSION}/argocd-vault-plugin_${ARGOCD_VAULT_VERSION}_linux_amd64 && \
   chmod +x argocd-vault-plugin && mv argocd-vault-plugin /usr/local/bin
