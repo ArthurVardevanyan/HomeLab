@@ -4,17 +4,13 @@
   tasks:
     - name: Install Conky
       become: true
-      apt:
+      yum:
         state: latest
         name:
-          - conky-all
-          - lm-sensors
+          - conky
+          - lm_sensors
 
     - name: Copy Conky Config
       copy:
         src: "../../../machineConfigs/desktop/home/arthur/.conkyrc"
         dest: "/home/arthur/"
-    - name: Conky Startup
-      copy:
-        src: "../../../machineConfigs/desktop/home/arthur/.config/autostart/conky.desktop"
-        dest: "/home/arthur/.config/autostart/conky.desktop"

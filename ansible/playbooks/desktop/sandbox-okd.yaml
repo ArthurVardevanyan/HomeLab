@@ -3,12 +3,16 @@
   become: true
   user: arthur
   tasks:
+    - name: Create Haproxy Folder
+      file:
+        path: /etc/haproxy
+        state: directory
     - name: Copy HaProxy Configs
       copy:
         src: "../../../machineConfigs/sandbox/etc/haproxy/haproxy.cfg"
         dest: "/etc/haproxy/haproxy.cfg"
     - name: install haproxy
-      apt:
+      yum:
         state: latest
         name:
           - haproxy

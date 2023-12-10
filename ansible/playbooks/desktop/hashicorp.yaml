@@ -3,18 +3,13 @@
   become: true
   user: arthur
   tasks:
-    - name: Add HashiCorp key
-      apt_key:
-        url: https://apt.releases.hashicorp.com/gpg
-        state: present
-    - name: Add HashiCorp Repo
-      apt_repository:
-        repo: deb https://apt.releases.hashicorp.com jammy main
-        state: present
-        update_cache: True
-        filename: hashicorp
+    - name: Add MariaDB Repo
+      ansible.builtin.yum_repository:
+        name: MariaDB
+        description: MariaDB YUM repo
+        baseurl: https://rpm.releases.hashicorp.com/fedora/hashicorp.repo
     - name: Install Terraform & Vault
-      apt:
+      yum:
         state: latest
         name:
           - terraform

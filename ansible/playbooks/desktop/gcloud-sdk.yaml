@@ -3,19 +3,15 @@
   become: true
   user: arthur
   tasks:
-    - name: Add gcloud-sdk key
-      apt_key:
-        url: https://packages.cloud.google.com/apt/doc/apt-key.gpg
-        state: present
-    - name: Add gcloud-sdk Repo
-      apt_repository:
-        repo: deb https://packages.cloud.google.com/apt cloud-sdk main
-        state: present
-        update_cache: True
-        filename: google-chrome
+    - name: Add Google Cloud SDK Repo
+      ansible.builtin.yum_repository:
+        name: gCloud
+        description: Google Cloud SDK
+        baseurl: https://packages.cloud.google.com/yum/repos/cloud-sdk-el8-x86_64
+        gpgkey: https://packages.cloud.google.com/yum/doc/rpm-package-key.gpg
     - name: Install gcloud-sdk
-      apt:
+      yum:
         state: latest
         name:
-          - google-cloud-cli
+          - google-cloud-sdk
           - google-cloud-sdk-gke-gcloud-auth-plugin

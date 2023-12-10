@@ -3,23 +3,11 @@
   become: true
   user: arthur
   tasks:
-    - name: Add kubectl Key
-      apt_key:
-        url: https://packages.cloud.google.com/apt/doc/apt-key.gpg
-        keyring: /usr/share/keyrings/kubernetes-archive-keyring.gpg
-        state: present
-    - name: Add kubectl Repo
-      apt_repository:
-        repo: deb [signed-by=/usr/share/keyrings/kubernetes-archive-keyring.gpg] https://apt.kubernetes.io/ kubernetes-xenial main
-        state: present
-        update_cache: True
-        filename: kubernetes
     - name: Install kubectl
-      apt:
+      yum:
         state: latest
         name:
-          - kubectl
-
+          - kubernetes-client
     - name: Download Kubectl Neat
       get_url:
         url: https://github.com/itaysk/kubectl-neat/releases/download/v2.0.3/kubectl-neat_linux_amd64.tar.gz

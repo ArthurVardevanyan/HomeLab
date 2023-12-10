@@ -1,0 +1,16 @@
+- hosts: ryzen
+  gather_facts: no
+  become: true
+  user: arthur
+  tasks:
+    - name: Add MariaDB Repo
+      ansible.builtin.yum_repository:
+        name: MariaDB
+        description: MariaDB YUM repo
+        baseurl: https://rpm.mariadb.org/10.11/fedora/38/$basearch
+        gpgkey: https://rpm.mariadb.org/RPM-GPG-KEY-MariaDB
+    - name: install MariaDB-client
+      yum:
+        state: latest
+        name:
+          - MariaDB-client

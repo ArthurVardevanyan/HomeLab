@@ -11,32 +11,3 @@
       hostname:
         name: arthur-ryzen
         use: systemd
-    - name: Bakkes Mod
-      copy:
-        src: "../../../machineConfigs/desktop/home/arthur/.bakkes_mod.sh"
-        dest: "/home/arthur/.bakkes_mod.sh"
-    - name: Bakkes Mod Executable
-      file: dest=/home/arthur/.bakkes_mod.sh mode=a+x
-    - name: Git Config
-      copy:
-        src: "../../../machineConfigs/desktop/home/arthur/.gitconfig"
-        dest: "/home/arthur/.gitconfig"
-    - name: Find Audio Power Save
-      become: true
-      lineinfile:
-        dest: /etc/modprobe.d/alsa-base.conf
-        line: "options snd-hda-intel power_save=0 power_save_controller=N"
-      check_mode: yes
-      register: presence
-
-    - name: Add Audio Power Save
-      become: true
-      lineinfile:
-        dest: /etc/modprobe.d/alsa-base.conf
-        line: "options snd-hda-intel power_save=0 power_save_controller=N"
-      when: presence.changed
-
-    - name: Power Profile
-      copy:
-        src: "../../../machineConfigs/desktop/home/arthur/.config/autostart/system76-power.desktop"
-        dest: "/home/arthur/.config/autostart/system76-power.desktop"

@@ -1,0 +1,30 @@
+- hosts: ryzen
+  gather_facts: no
+  user: arthur
+  tasks:
+    - name: Discord
+      become: true
+      flatpak:
+        name: com.discordapp.Discord
+        remote: flathub
+        method: system
+    - name: Discord Startup
+      copy:
+        src: "../../../machineConfigs/desktop/home/arthur/.config/autostart/discord-stable.desktop"
+        dest: "/home/arthur/.config/autostart/discord-stable.desktop"
+    - name: Slack
+      become: true
+      flatpak:
+        name: com.slack.Slack
+        remote: flathub
+        method: system
+    - name: Spotify
+      become: true
+      flatpak:
+        name: com.spotify.Client
+        remote: flathub
+        method: system
+    - name: Spotify Startup
+      copy:
+        src: "../../../machineConfigs/desktop/home/arthur/.config/autostart/spotify.desktop"
+        dest: "/home/arthur/.config/autostart/spotify.desktop"

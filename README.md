@@ -2,12 +2,7 @@
 
 HomeLab Server/Cluster, Virtual Sandbox Cluster, & Desktop Configuration
 
-- Server: Debian Stable /w OKD & ZFS
-- Desktop: Pop!\_OS Latest
-
-  - Manual Patches Applied
-    - <https://github.com/ArthurVardevanyan/pop-shell>
-    - <https://github.com/ArthurVardevanyan/pop-cosmic>
+- Desktop: Fedora 39
 
 ## Table of Contents
 

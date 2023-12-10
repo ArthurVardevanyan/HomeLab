@@ -2,19 +2,12 @@
   gather_facts: no
   user: arthur
   tasks:
-    - name: Add Nextcloud Repo
-      become: true
-      apt_repository:
-        validate_certs: no
-        repo: "ppa:nextcloud-devs/client"
-        state: present
-        update_cache: True
     - name: Install Nextcloud
       become: true
-      apt:
+      yum:
         state: latest
         name:
-          - nextcloud-desktop
+          - nextcloud-client
     - name: Nextcloud Startup
       copy:
         src: "../../../machineConfigs/desktop/home/arthur/.config/autostart/com.nextcloud.desktopclient.nextcloud.desktop"

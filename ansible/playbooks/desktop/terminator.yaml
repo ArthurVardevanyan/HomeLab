@@ -2,16 +2,9 @@
   gather_facts: no
   user: arthur
   tasks:
-    - name: Add Terminator Repo
-      become: true
-      apt_repository:
-        validate_certs: no
-        repo: "ppa:gnome-terminator"
-        state: present
-        update_cache: True
     - name: Install Terminator
       become: true
-      apt:
+      yum:
         state: latest
         name:
           - terminator
