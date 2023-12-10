@@ -64,9 +64,9 @@ ${swapbar}
 ${font Ubuntu:bold:size=10}GPU ${hr 2}
 ${font sans-serif:normal:size=8}${color1}GPU:${exec nvidia-smi -i 0 --query-gpu=gpu_name --format=csv,noheader,nounits} $color
 ${color1}GPU Temperature ${color}  ${execi 60 nvidia-settings -query [gpu:0]/GPUCoreTemp -t} °C
-${color1}GPU Utilization ${color}  ${exec nvidia-smi -i 0 | grep % | cut -c 61-63} % ${nvidia gpufreq} Mhz
-${color1}VRAM Utilization ${color} ${nvidia membwutil}% ${exec nvidia-smi -i 0 | grep % | cut -c 37-40} MB
-${color1}GPU Power Draw ${color} ${exec nvidia-smi -i 0 | grep % | cut -c 21-23} W
+${color1}GPU Utilization ${color}  ${exec nvidia-smi --query-gpu=utilization.gpu --format=csv,noheader} ${exec nvidia-smi -q -d CLOCK | grep Graphics | head -1 | cut -c 45-57}
+${color1}VRAM Utilization ${color} ${exec nvidia-smi --query-gpu=utilization.memory --format=csv,noheader} ${exec nvidia-smi -i 0 | grep % | cut -c 47-64}
+${color1}GPU Power Draw ${color} ${exec nvidia-smi -i 0 | grep Default | cut -c 30-35}
 
 ${font Ubuntu:bold:size=10}NETWORK ${hr 2}
 ${font sans-serif:normal:size=8}Down: ${downspeed wlo1}  ${alignr}Up: ${upspeed wlo1}

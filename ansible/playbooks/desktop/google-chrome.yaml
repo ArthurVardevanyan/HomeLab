@@ -3,18 +3,14 @@
   become: true
   user: arthur
   tasks:
-    - name: Add Google Chrome key
-      apt_key:
-        url: https://dl-ssl.google.com/linux/linux_signing_key.pub
-        state: present
     - name: Add Google Chrome Repo
-      apt_repository:
-        repo: deb [arch=amd64] http://dl.google.com/linux/chrome/deb/ stable main
-        state: present
-        update_cache: True
-        filename: google-chrome
-    - name: Install Google Chrome
-      apt:
+      ansible.builtin.yum_repository:
+        name: google-chrome
+        description: Google Chrome YUM repo
+        baseurl: https://dl.google.com/linux/chrome/rpm/stable/x86_64
+        gpgkey: https://dl.google.com/linux/linux_signing_key.pub
+    - name: install google-chrome
+      yum:
         state: latest
         name:
           - google-chrome-stable

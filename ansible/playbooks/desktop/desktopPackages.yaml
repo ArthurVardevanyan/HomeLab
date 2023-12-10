@@ -3,14 +3,17 @@
   become: true
   user: arthur
   tasks:
-    - name: Upgrade all apt packages
-      apt:
-        update_cache: True
-        cache_valid_time: 3600
-        upgrade: dist
-        autoremove: yes
+    - name: Install RPM Fusion Free
+      ansible.builtin.yum:
+        name: https://mirrors.rpmfusion.org/free/fedora/rpmfusion-free-release-39.noarch.rpm
+        state: present
+        disable_gpg_check: false
+    - name: Upgrade all yum packages
+      yum:
+        name: "*"
+        state: latest
     - name: install core packages
-      apt:
+      yum:
         state: latest
         name:
           - openssh-server
@@ -26,22 +29,21 @@
           - rsync
           - gparted
           - smartmontools
-          - caffeine
-          #- p7zip-full
-          #- remmina
+          #- caffeine
     - name: install development tools
-      apt:
+      yum:
         state: latest
         name:
           - git
           - gh
           - ansible
-          - build-essential
+          - make
+          - gcc
+          - g++
+          - gcc-c++
           - python3-pip
-          - node-typescript
-          - openjdk-19-jre
+          - nodejs-typescript
           - cockpit
-          - mariadb-client
           - gdb
           - adb
           - podman
@@ -49,12 +51,30 @@
           - skopeo
           - npm
           - tree
+          - adb
+          - podman
+          - buildah
+          - skopeo
           #- arduino
           #- apache2
           #- php
           #- mariadb-server
           #- phpmyadmin
           #- libmariadb-dev
+    - name: install nvidia drivers
+      yum:
+        state: latest
+        name:
+          - kernel-devel
+          - kernel-headers
+          - dkms
+          - acpid
+          - libglvnd-glx
+          - libglvnd-opengl
+          - libglvnd-devel
+          - pkgconfig
+          - akmod-nvidia
+          - xorg-x11-drv-nvidia-cuda
     - name: Download YQ
       get_url:
         url: https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64
@@ -62,25 +82,11 @@
         mode: a+x
     - name: Download ArgoCD Vault Plugin
       get_url:
-        url: https://github.com/argoproj-labs/argocd-vault-plugin/releases/download/v1.16.1/argocd-vault-plugin_1.16.1_linux_amd64
+        url: https://github.com/argoproj-labs/argocd-vault-plugin/releases/download/v1.17.0/argocd-vault-plugin_1.17.0_linux_amd64
         dest: /usr/local/bin/argocd-vault-plugin
         mode: a+x
-    - name: install virtual machine tools
-      apt:
-        state: latest
-        name:
-          - virt-manager
-          - qemu
-          - qemu-kvm
-          - libvirt-clients
-          - libvirt-daemon
-          - libvirt-daemon-system
-          - virtinst
-          - libguestfs-tools
-          - bridge-utils
-          - cockpit-machines
     - name: install additional packages
-      apt:
+      yum:
         state: latest
         name:
           - steam
@@ -91,12 +97,24 @@
           - obs-studio
           - openscad
           - handbrake
-          - ffmpeg
-          - webex
           - blender
-          - system76-cuda-latest
+          #- ffmpeg
           #- network-manager-openvpn
           #- network-manager-openvpn-gnome
+    - name: install virtual machine tools
+      yum:
+        state: latest
+        name:
+          - virt-manager
+          - qemu
+          - qemu-kvm
+          #- libvirt-clients
+          - libvirt-daemon
+          #- libvirt-daemon-system
+          #- virtinst
+          - libguestfs-tools
+          - bridge-utils
+          - cockpit-machines
     - name: Install ProtonTricks
       pip:
         name: protontricks
@@ -104,7 +122,7 @@
       pip:
         name: psutil
     - name: Remove UnNeeded Packages
-      apt:
+      yum:
         state: absent
         name:
           - geary
@@ -117,11 +135,14 @@
         mode: a+x
     - name: Download golang
       get_url:
-        url: https://go.dev/dl/go1.21.3.linux-amd64.tar.gz
+        url: https://go.dev/dl/go1.21.5.linux-amd64.tar.gz
         dest: /tmp/go.linux-amd64.tar.gz
-
     - name: Extract golang
       unarchive:
         src: /tmp/go.linux-amd64.tar.gz
         dest: /usr/local
         remote_src: yes
+    - name: Install Webex
+      ansible.builtin.yum:
+        name: https://binaries.webex.com/WebexDesktop-CentOS-Official-Package/Webex.rpm
+        state: present
