@@ -49,7 +49,6 @@ Manually Install Extensions from extensions.gnome.org
 
 - gnome-shell-extension-netspeed
 - gnome-shell-extension-places-menu
-- gnome-shell-extension-transparentnotification
 
 ### Cura
 
