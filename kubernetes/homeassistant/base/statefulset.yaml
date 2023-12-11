@@ -29,9 +29,14 @@ spec:
           secret:
             secretName: homeassistant-cert
       serviceAccountName: homeassistant-sa
+      dnsConfig:
+        options:
+          - name: ndots
+            value: "1"
       containers:
         - name: homeassistant
-          image: homeassistant/home-assistant:2023.11.3
+          image: homeassistant/home-assistant:2023.12.1
+
           securityContext:
             runAsNonRoot: false
             privileged: true
