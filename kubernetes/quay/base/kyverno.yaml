@@ -1,0 +1,74 @@
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: quay-resources
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+spec:
+  rules:
+    - name: quay-app
+      match:
+        any:
+          - resources:
+              kinds:
+                - Deployment
+      mutate:
+        patchStrategicMerge:
+          spec:
+            template:
+              spec:
+                containers:
+                  - (name): quay-app
+                    resources:
+                      limits:
+                        cpu: 1500m
+                        memory: 8Gi
+                        ephemeral-storage: 2Gi
+                      requests:
+                        cpu: 350m
+                        memory: 4Gi
+                        ephemeral-storage: 1Gi
+    - name: clair-app
+      match:
+        any:
+          - resources:
+              kinds:
+                - Deployment
+      mutate:
+        patchStrategicMerge:
+          spec:
+            template:
+              spec:
+                containers:
+                  - (name): clair-app
+                    resources:
+                      limits:
+                        cpu: 1500m
+                        memory: 6Gi
+                        ephemeral-storage: 12Gi
+                      requests:
+                        cpu: 150m
+                        memory: 2Gi
+                        ephemeral-storage: 1Gi
+    - name: quay-mirror
+      match:
+        any:
+          - resources:
+              kinds:
+                - Deployment
+      mutate:
+        patchStrategicMerge:
+          spec:
+            template:
+              spec:
+                containers:
+                  - (name): quay-mirror
+                    resources:
+                      limits:
+                        cpu: 500m
+                        memory: 512Mi
+                        ephemeral-storage: 1Gi
+                      requests:
+                        cpu: 50m
+                        memory: 128Mi
+                        ephemeral-storage: 256Mi
