@@ -70,7 +70,7 @@ spec:
           - name: AVP_VERSION
             value: 1.17.0
           - name: KUSTOMIZE_VERSION
-            value: 5.2.1
+            value: 5.3.0
         command: [sh, -c]
         args:
           - >-
@@ -92,7 +92,7 @@ spec:
         resources:
           limits:
             cpu: "1"
-            memory: 1Gi
+            memory: 2Gi
             ephemeral-storage: 6Gi
           requests:
             cpu: 50m
@@ -145,8 +145,8 @@ spec:
           memory: 50Mi
   ha:
     enabled: true
-    redisProxyImage: haproxy # 2.8.3
-    redisProxyVersion: sha256:dde6c10f32c08a28dae2eb6d5ce0cfcda5805bab82a4fd8a0368d29f0af68590
+    redisProxyImage: haproxy # haproxy:2.9.1-bookworm
+    redisProxyVersion: sha256:8b427bf0b4bb57e6004c73a86ab12772b95bbcafee403d1ed0c458fa9ae627a7
     resources:
       limits:
         cpu: 50m
@@ -157,8 +157,8 @@ spec:
   tls:
     ca: {}
   redis:
-    image: redis # 7.2.2
-    version: sha256:f75c773aa7efa73c5ec32b9af2aeeb184b24ab3a766a16d951b29df92e600b8a
+    image: redis # redis:7.2.3-bookworm
+    version: sha256:d4c84914b872521e215f77d8845914c2268a96b0e35bacd5691e1f5e1f88b500
     resources:
       limits:
         cpu: 100m
