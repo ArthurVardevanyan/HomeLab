@@ -6,6 +6,10 @@ metadata:
   labels:
     app: homeassistant
     app.kubernetes.io/instance: homeassistant
+  annotations:
+    #   checkov.io/skip1: CKV_K8S_40=OpenShift Injects Random UID
+    checkov.io/skip2: CKV_K8S_20=Containers Runs CHOWN and MKDIR
+    checkov.io/skip3: CKV_K8S_25=Containers Runs CHOWN and MKDIR
 spec:
   replicas: 1
   serviceName: homeassistant
@@ -19,8 +23,12 @@ spec:
         app: homeassistant
       annotations:
         enable.version-checker.io/homeassistant: "true"
-        seccomp.security.alpha.kubernetes.io/defaultProfileName: runtime/default
     spec:
+      securityContext:
+        seccompProfile:
+          type: RuntimeDefault
+        runAsNonRoot: true
+        fsGroup: 1000790000 # Namespace Random UID, AutoDetection Not Picking Up
       volumes:
         - name: homeassistant-pvc
           persistentVolumeClaim:
@@ -28,6 +36,9 @@ spec:
         - name: certificate
           secret:
             secretName: homeassistant-cert
+        - name: run
+          emptyDir:
+            sizeLimit: 10Mi
       serviceAccountName: homeassistant-sa
       dnsConfig:
         options:
@@ -36,12 +47,21 @@ spec:
       containers:
         - name: homeassistant
           image: homeassistant/home-assistant:2023.12.3
-
           securityContext:
-            runAsNonRoot: false
-            privileged: true
+            allowPrivilegeEscalation: true
             seccompProfile:
               type: RuntimeDefault
+            capabilities:
+              add:
+                - CHOWN
+                - SETUID
+                - SETGID
+              drop:
+                - ALL
+            privileged: false
+            readOnlyRootFilesystem: true
+            runAsNonRoot: false
+            runAsUser: 1000790000 # Namespace Random UID, AutoDetection Not Picking Up
           ports:
             #- hostPort: 8123
             - containerPort: 8123
@@ -58,6 +78,8 @@ spec:
               mountPath: /config
             - name: certificate
               mountPath: /ssl
+            - name: run
+              mountPath: /run
           livenessProbe:
             httpGet:
               path: /manifest.json

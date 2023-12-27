@@ -5,6 +5,11 @@ metadata:
   namespace: alert-manager-discord
   labels:
     app.kubernetes.io/instance: openshift-monitoring
+  annotations:
+    checkov.io/skip1: CKV_K8S_40=OpenShift Injects Random UID
+    checkov.io/skip2: CKV_K8S_8=App doesn't have a health endpoint
+    checkov.io/skip3: CKV_K8S_9=App doesn't have a health endpoint
+    checkov.io/skip4: CKV_K8S_35=App doesn't support Secret Files
 spec:
   progressDeadlineSeconds: 600
   replicas: 2
@@ -22,6 +27,10 @@ spec:
       labels:
         app: alert-manager-discord
     spec:
+      securityContext:
+        seccompProfile:
+          type: RuntimeDefault
+        runAsNonRoot: true
       affinity:
         podAntiAffinity:
           requiredDuringSchedulingIgnoredDuringExecution:
@@ -30,11 +39,20 @@ spec:
                   app: alert-manager-discord
               topologyKey: "kubernetes.io/hostname"
       containers:
-        - image: benjojo/alertmanager-discord
+        - image: benjojo/alertmanager-discord@sha256:7d27cd8494b269fe592cf6a9d7f6bdf14ac628bba34c381dc43cf533eaa95158
           envFrom:
             - secretRef:
                 name: discord-webhook
           imagePullPolicy: IfNotPresent
+          securityContext:
+            runAsNonRoot: true
+            readOnlyRootFilesystem: true
+            allowPrivilegeEscalation: false
+            seccompProfile:
+              type: RuntimeDefault
+            capabilities:
+              drop:
+                - ALL
           name: alert-manager-discord
           ports:
             - containerPort: 9094
@@ -48,6 +66,26 @@ spec:
             requests:
               cpu: 15m
               memory: 15M
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 9094
+              scheme: HTTP
+            initialDelaySeconds: 5
+            timeoutSeconds: 10
+            periodSeconds: 20
+            successThreshold: 1
+            failureThreshold: 15
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 9094
+              scheme: HTTP
+            initialDelaySeconds: 5
+            timeoutSeconds: 10
+            periodSeconds: 20
+            successThreshold: 1
+            failureThreshold: 3
       dnsPolicy: ClusterFirst
       restartPolicy: Always
       schedulerName: default-scheduler

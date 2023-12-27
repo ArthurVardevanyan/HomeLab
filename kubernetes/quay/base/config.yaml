@@ -1,89 +1,63 @@
-apiVersion: v1
-kind: Secret
-metadata:
-  name: quay-config-bundle
-  namespace: quay
-  annotations:
-    argocd.argoproj.io/sync-wave: "0"
-  labels:
-    app.kubernetes.io/instance: quay
-stringData:
-  config.yaml: |
-    FEATURE_APP_REGISTRY: true
-    ALLOW_PULLS_WITHOUT_STRICT_LOGGING: false
-    AUTHENTICATION_TYPE: Database
-    ENTERPRISE_LOGO_URL: /static/img/quay-horizontal-color.svg
-    FEATURE_BUILD_SUPPORT: false
-    FEATURE_DIRECT_LOGIN: false
-    FEATURE_MAILING: false
-    REGISTRY_TITLE: Quay
-    REGISTRY_TITLE_SHORT: Quay
-    SETUP_COMPLETE: true
-    SUPER_USERS:
-      - arthurvardevanyan
-    TEAM_RESYNC_STALE_TIME: 60m
-    TESTING: false
-    SERVER_HOSTNAME: registry.<path:secret/data/homelab/domain#url>
-    DB_URI: <path:secret/data/homelab/postgres#quay_uri>
-    DB_CONNECTION_ARGS:
-      sslmode: prefer
-    DISTRIBUTED_STORAGE_DEFAULT_LOCATIONS: []
-    DISTRIBUTED_STORAGE_PREFERENCE:
-      - default
-    DISTRIBUTED_STORAGE_CONFIG:
-      default:
-      - RadosGWStorage
-      - access_key: <path:secret/data/homelab/quay/minio#access_key>
-        secret_key: <path:secret/data/homelab/quay/minio#secret_key>
-        hostname: minio.quay.svc.cluster.local
-        bucket_name: quay
-        port: 80
-        is_secure: false
-        storage_path: /datastorage/registry
-    DEFAULT_TAG_EXPIRATION: 30m
-    FEATURE_PROXY_STORAGE: true
-    TAG_EXPIRATION_OPTIONS:
-        - 0s
-        - 30m
-        - 1h
-        - 12h
-        - 1d
-        - 1w
-        - 2w
-        - 4w
-    FEATURE_SUPERUSERS_FULL_ACCESS: true
-    FEATURE_UI_V2: true
-    FEATURE_QUOTA_MANAGEMENT: true
-    DEFAULT_SYSTEM_REJECT_QUOTA_BYTES: 10737418240 #10GB
-    ZITADEL_LOGIN_CONFIG:
-      CLIENT_ID: <path:secret/data/homelab/quay/zitadel#client_id>
-      CLIENT_SECRET: <path:secret/data/homelab/quay/zitadel#client_secret>
-      LOGIN_SCOPES:
-      - profile
-      - openid
-      OIDC_SERVER: https://zitadel.apps.okd.<path:secret/data/homelab/domain#url>/
-      PREFERRED_USERNAME_CLAIM_NAME: preferred_username
-      SERVICE_NAME: Zitadel
-      VERIFIED_EMAIL_CLAIM_NAME: email
-    BUILDLOGS_REDIS:
-      host: quay-dragonfly.quay.svc.cluster.local
-      port: 6379
-    USER_EVENTS_REDIS:
-      host: quay-dragonfly.quay.svc.cluster.local
-      port: 6379
-
-  clair-config.yaml: |
-    indexer:
-      connstring: <path:secret/data/homelab/postgres#clair_uri>
-      layer_scan_concurrency: 5
-      migrations: true
-      scanlock_retry: 10
-    log_level: info
-    matcher:
-      connstring: <path:secret/data/homelab/postgres#clair_uri>
-      migrations: true
-    metrics:
-      name: prometheus
-    notifier:
-      connstring: <path:secret/data/homelab/postgres#clair_uri>
-      migrations: true
+FEATURE_APP_REGISTRY: true
+ALLOW_PULLS_WITHOUT_STRICT_LOGGING: false
+AUTHENTICATION_TYPE: Database
+ENTERPRISE_LOGO_URL: /static/img/quay-horizontal-color.svg
+FEATURE_BUILD_SUPPORT: false
+FEATURE_DIRECT_LOGIN: false
+FEATURE_MAILING: false
+REGISTRY_TITLE: Quay
+REGISTRY_TITLE_SHORT: Quay
+SETUP_COMPLETE: true
+SUPER_USERS:
+  - arthurvardevanyan
+TEAM_RESYNC_STALE_TIME: 60m
+TESTING: false
+SERVER_HOSTNAME: registry.<path:secret/data/homelab/domain#url>
+DB_URI: <path:secret/data/homelab/postgres#quay_uri>
+DB_CONNECTION_ARGS:
+  sslmode: prefer
+DISTRIBUTED_STORAGE_DEFAULT_LOCATIONS: []
+DISTRIBUTED_STORAGE_PREFERENCE:
+  - default
+DISTRIBUTED_STORAGE_CONFIG:
+  default:
+    - RadosGWStorage
+    - access_key: <path:secret/data/homelab/quay/minio#access_key>
+      secret_key: <path:secret/data/homelab/quay/minio#secret_key>
+      hostname: minio.quay.svc.cluster.local
+      # checkov:skip=CKV_SECRET_6 PlaceHolder Values
+      bucket_name: quay
+      port: 80
+      is_secure: false
+      storage_path: /datastorage/registry
+DEFAULT_TAG_EXPIRATION: 30m
+FEATURE_PROXY_STORAGE: true
+TAG_EXPIRATION_OPTIONS:
+  - 0s
+  - 30m
+  - 1h
+  - 12h
+  - 1d
+  - 1w
+  - 2w
+  - 4w
+FEATURE_SUPERUSERS_FULL_ACCESS: true
+FEATURE_UI_V2: true
+FEATURE_QUOTA_MANAGEMENT: true
+DEFAULT_SYSTEM_REJECT_QUOTA_BYTES: 10737418240 #10GB
+ZITADEL_LOGIN_CONFIG:
+  CLIENT_ID: <path:secret/data/homelab/quay/zitadel#client_id>
+  CLIENT_SECRET: <path:secret/data/homelab/quay/zitadel#client_secret>
+  LOGIN_SCOPES:
+    - profile
+    - openid
+  OIDC_SERVER: https://zitadel.apps.okd.<path:secret/data/homelab/domain#url>/
+  PREFERRED_USERNAME_CLAIM_NAME: preferred_username
+  SERVICE_NAME: Zitadel
+  VERIFIED_EMAIL_CLAIM_NAME: email
+BUILDLOGS_REDIS:
+  host: quay-dragonfly.quay.svc.cluster.local
+  port: 6379
+USER_EVENTS_REDIS:
+  host: quay-dragonfly.quay.svc.cluster.local
+  port: 6379

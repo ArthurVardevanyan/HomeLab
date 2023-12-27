@@ -19,8 +19,14 @@ resources:
   - rbac.yaml
   - service.yaml
   - storage-class.yaml
-  - default-setting.yaml
   - manager-daemonset.yaml
   - ui-deployment.yaml
   - driver-deployment.yaml
   - snapshot-cron.yaml
+generatorOptions:
+  disableNameSuffixHash: true
+configMapGenerator:
+  - name: longhorn-default-setting
+    namespace: longhorn-system
+    files:
+      - default-setting.yaml

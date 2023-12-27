@@ -7,6 +7,10 @@ metadata:
     app.kubernetes.io/instance: prometheus
   name: node-exporter
   namespace: prometheus
+  annotations:
+    checkov.io/skip1: CKV_K8S_40=OpenShift Injects Random UID
+    checkov.io/skip2: CKV_K8S_23=System Wide Monitoring
+    checkov.io/skip3: CKV_K8S_31=System Wide Monitoring
 spec:
   selector:
     matchLabels:
@@ -21,13 +25,14 @@ spec:
         prometheus.io/scrape: "true"
         prometheus.io/port: "9100"
         enable.version-checker.io/node-exporter: "true"
-        seccomp.security.alpha.kubernetes.io/defaultProfileName: runtime/default
     spec:
-      # securityContext:
-      #   sGroup: 19100
-      #   runAsGroup: 19100
-      #   runAsUser: 19100
-      #   runAsNonRoot: true
+      securityContext:
+        #   sGroup: 19100
+        #   runAsGroup: 19100
+        #   runAsUser: 19100
+        runAsNonRoot: false
+      # seccompProfile:
+      #   type: RuntimeDefault
       serviceAccountName: node-exporter-sa
       automountServiceAccountToken: false
       containers:
@@ -46,12 +51,12 @@ spec:
             # runAsNonRoot: true
             readOnlyRootFilesystem: true
             allowPrivilegeEscalation: false
+            runAsNonRoot: false
             # seccompProfile:
             #   type: RuntimeDefault
             capabilities:
               drop:
-                - all
-
+                - ALL
           ports:
             - containerPort: 9100
               protocol: TCP

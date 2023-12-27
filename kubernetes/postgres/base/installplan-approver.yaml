@@ -30,6 +30,8 @@ metadata:
     argocd.argoproj.io/hook: Sync
     argocd.argoproj.io/hook-delete-policy: HookSucceeded
     argocd.argoproj.io/sync-wave: "0"
+    checkov.io/skip1: CKV_K8S_38=Need to Approve Install Plans
+    checkov.io/skip2: CKV_K8S_40=OpenShift Injects Random UID
   labels:
     app.kubernetes.io/instance: postgres
 spec:
@@ -57,7 +59,7 @@ spec:
       containers:
         - name: installplan-approver
           imagePullPolicy: IfNotPresent
-          image: registry.<path:secret/data/homelab/domain#url>/homelab/toolbox:latest
+          image: registry.<path:secret/data/homelab/domain#url>/homelab/toolbox:not_latest
           env:
             - name: SUBSCRIPTION
               value: postgresql

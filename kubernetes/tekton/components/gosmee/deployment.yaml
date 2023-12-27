@@ -3,6 +3,10 @@ kind: Deployment
 metadata:
   name: gosmee
   namespace: openshift-pipelines
+  annotations:
+    checkov.io/skip1: CKV_K8S_40=OpenShift Injects Random
+    checkov.io/skip2: CKV_K8S_8=Probes Don't Exist
+    checkov.io/skip3: CKV_K8S_9=Probes Don't Exist
 spec:
   replicas: 1
   selector:
@@ -13,9 +17,13 @@ spec:
       labels:
         app: gosmee
     spec:
+      securityContext:
+        seccompProfile:
+          type: RuntimeDefault
+        runAsNonRoot: true
       containers:
         - name: gosmeed
-          image: ghcr.io/chmouel/gosmee:latest
+          image: ghcr.io/chmouel/gosmee:v0.20.2
           imagePullPolicy: Always
           args:
             - client
@@ -33,3 +41,13 @@ spec:
             requests:
               cpu: 10m
               memory: 32Mi
+          securityContext:
+            runAsNonRoot: true
+            readOnlyRootFilesystem: true
+            allowPrivilegeEscalation: false
+            seccompProfile:
+              type: RuntimeDefault
+            capabilities:
+              drop:
+                - ALL
+      automountServiceAccountToken: false

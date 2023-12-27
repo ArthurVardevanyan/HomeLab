@@ -6,6 +6,9 @@ metadata:
   labels:
     app: kube-eagle
     app.kubernetes.io/instance: kube-eagle
+  annotations:
+    checkov.io/skip1: CKV_K8S_40=OpenShift Injects Random UID
+    checkov.io/skip2: CKV_K8S_38=Requires ability to read metrics
 spec:
   replicas: 1
   selector:
@@ -32,11 +35,11 @@ spec:
             runAsNonRoot: true
             allowPrivilegeEscalation: false
             readOnlyRootFilesystem: true
-            # seccompProfile:
-            #   type: RuntimeDefault
+            seccompProfile:
+              type: RuntimeDefault
             capabilities:
               drop:
-                - all
+                - ALL
           ports:
             - name: http
               containerPort: 8080
@@ -88,7 +91,10 @@ spec:
           effect: NoSchedule
       serviceAccountName: sa-kube-eagle
       serviceAccount: sa-kube-eagle
-      # securityContext:
+      securityContext:
+        seccompProfile:
+          type: RuntimeDefault
+        runAsNonRoot: true
       #   runAsUser: 11199
       #   fsGroup: 11199
       schedulerName: default-scheduler

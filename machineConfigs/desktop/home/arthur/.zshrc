@@ -2,7 +2,7 @@
 # Path to your oh-my-zsh installation.
 ZSH_DISABLE_COMPFIX="true"
 export ZSH="/${HOME}/.oh-my-zsh"
-export PATH="${KREW_ROOT:-$HOME/.krew}/bin:$PATH"
+export PATH="${KREW_ROOT:-$HOME/.krew}/bin:$HOME/.local/bin:/usr/local/go/bin:$PATH"
 
 export VAULT_ADDR="https://vault.arthurvardevanyan.com"
 export AVP_TYPE=vault

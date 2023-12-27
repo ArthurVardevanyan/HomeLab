@@ -6,6 +6,8 @@ metadata:
   labels:
     app: vault
     app.kubernetes.io/instance: vault
+  annotations:
+    checkov.io/skip1: CKV_K8S_40=OpenShift Injects Random UID
 spec:
   replicas: 1
   serviceName: vault
@@ -63,7 +65,7 @@ spec:
               type: RuntimeDefault
             capabilities:
               drop:
-                - all
+                - ALL
             #   add:
             #     - IPC_LOCK
           command:

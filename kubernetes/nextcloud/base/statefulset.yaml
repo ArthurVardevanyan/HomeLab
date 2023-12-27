@@ -6,6 +6,10 @@ metadata:
   labels:
     app: nextcloud
     app.kubernetes.io/instance: nextcloud
+  annotations:
+    checkov.io/skip1: CKV_K8S_40=Needs to run as User 33
+    checkov.io/skip2: CKV_K8S_31=App Doesn't Support
+    checkov.io/skip3: CKV_K8S_22=App Doesn't Support
 spec:
   replicas: 1
   serviceName: nextcloud
@@ -20,7 +24,6 @@ spec:
         db: nextcloud-pg
       annotations:
         enable.version-checker.io/nextcloud: "true"
-        seccomp.security.alpha.kubernetes.io/defaultProfileName: runtime/default
     spec:
       serviceAccountName: nextcloud-sa
       volumes:
@@ -51,7 +54,7 @@ spec:
             #   type: RuntimeDefault
             capabilities:
               drop:
-                - all
+                - ALL
           ports:
             - containerPort: 8443
               protocol: TCP

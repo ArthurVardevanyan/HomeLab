@@ -8,7 +8,6 @@ resources:
   - ./subscription.yaml
   - ./network-policy.yaml
   - ./quay.yaml
-  - ./config.yaml
   - ./installplan-approver.yaml
   - ./pdb.yaml
   - ./minio/tenant.yaml
@@ -20,3 +19,11 @@ resources:
   - ./postgres/clair/postgres.yaml
   - ./postgres/clair/network-policy.yaml
   - ./kyverno.yaml
+generatorOptions:
+  disableNameSuffixHash: true
+secretGenerator:
+  - name: quay-config-bundle
+    namespace: quay
+    files:
+      - config.yaml
+      - clair-config.yaml

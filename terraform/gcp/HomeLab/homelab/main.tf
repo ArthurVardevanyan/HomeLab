@@ -61,12 +61,15 @@ resource "google_service_account" "tekton" {
 
 
 resource "google_project_iam_member" "tekton" {
+  #checkov:skip=CKV_GCP_49: Used for Automation
+  #checkov:skip=CKV_GCP_117: Used for Automation
   project = "homelab-${local.project_id}"
   role    = "roles/owner"
   member  = google_service_account.tekton.member
 }
 
 resource "google_service_account_iam_member" "tekton" {
+  #checkov:skip=CKV_GCP_49: Used for Automation
   service_account_id = google_service_account.tekton.id
   role               = "roles/iam.workloadIdentityUser"
   member             = "principal://iam.googleapis.com/projects/${local.homelab_project_num}/locations/global/workloadIdentityPools/${google_iam_workload_identity_pool.okd_homelab_wif.workload_identity_pool_id}/subject/system:serviceaccount:homelab:pipeline"

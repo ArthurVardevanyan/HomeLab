@@ -5,6 +5,14 @@ metadata:
   namespace: loki
   labels:
     app.kubernetes.io/instance: loki
+  annotations:
+    checkov.io/skip1: CKV_K8S_40=OpenShift Injects Random UID
+    checkov.io/skip2: CKV_K8S_20=System Wide Monitoring
+    checkov.io/skip3: CKV_K8S_23=System Wide Monitoring
+    checkov.io/skip4: CKV_K8S_16=System Wide Monitoring
+    checkov.io/skip5: CKV_K8S_8=Health Endpoints not Present
+    checkov.io/skip6: CKV_K8S_9=Health Endpoints not Present
+    checkov.io/skip7: CKV_K8S_38=System Wide Monitoring
 spec:
   selector:
     matchLabels:
@@ -17,9 +25,12 @@ spec:
         app.kubernetes.io/instance: loki
       annotations:
         enable.version-checker.io/promtail: "true"
-        seccomp.security.alpha.kubernetes.io/defaultProfileName: runtime/default
     spec:
       serviceAccountName: promtail-sa
+      securityContext:
+        seccompProfile:
+          type: RuntimeDefault
+        runAsNonRoot: false
       containers:
         - name: promtail
           image: "grafana/promtail:2.9.2"
@@ -63,7 +74,7 @@ spec:
               type: RuntimeDefault
             capabilities:
               drop:
-                - all
+                - ALL
           readinessProbe:
             failureThreshold: 5
             httpGet:

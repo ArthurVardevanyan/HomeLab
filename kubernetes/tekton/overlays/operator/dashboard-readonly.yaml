@@ -310,6 +310,9 @@ metadata:
     app.kubernetes.io/version: v0.40.1
     dashboard.tekton.dev/release: v0.40.1
     version: v0.40.1
+  annotations:
+    checkov.io/skip1: CKV_K8S_40=OpenShift Injects Random UID
+    checkov.io/skip2: CKV_K8S_38=Operator Needs API Access
   name: tekton-dashboard
   namespace: openshift-pipelines
 spec:
@@ -331,6 +334,10 @@ spec:
         app.kubernetes.io/version: v0.40.1
       name: tekton-dashboard
     spec:
+      securityContext:
+        seccompProfile:
+          type: RuntimeDefault
+        runAsNonRoot: true
       containers:
         - args:
             - --port=9097
@@ -370,12 +377,13 @@ spec:
               port: 9097
           securityContext:
             allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
             capabilities:
               drop:
                 - ALL
-            runAsGroup: 65532
+            # runAsGroup: 65532
             runAsNonRoot: true
-            runAsUser: 65532
+            # runAsUser: 65532
             seccompProfile:
               type: RuntimeDefault
       nodeSelector:

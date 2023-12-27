@@ -14,6 +14,8 @@ metadata:
     argocd.argoproj.io/sync-wave: "1"
     argocd.argoproj.io/hook: Sync
     argocd.argoproj.io/hook-delete-policy: HookSucceeded
+    checkov.io/skip1: CKV_K8S_40=OpenShift Injects Random UID
+    checkov.io/skip2: CKV_K8S_35=App Doesn't Support
 spec:
   backoffLimit: 5
   activeDeadlineSeconds: 300
@@ -31,17 +33,18 @@ spec:
           type: RuntimeDefault
       enableServiceLinks: false
       restartPolicy: OnFailure
+      automountServiceAccountToken: false
       containers:
         - name: "zitadel-init"
           securityContext:
             runAsNonRoot: true
-            readOnlyRootFilesystem: false
+            readOnlyRootFilesystem: true
             allowPrivilegeEscalation: false
             seccompProfile:
               type: RuntimeDefault
             capabilities:
               drop:
-                - all
+                - ALL
           image: "ghcr.io/zitadel/zitadel:v2.42.3"
           imagePullPolicy: IfNotPresent
           args:
@@ -102,8 +105,20 @@ spec:
               mountPath: /db-ssl-user-crt
           securityContext:
             runAsNonRoot: true
+            readOnlyRootFilesystem: true
+            allowPrivilegeEscalation: false
             seccompProfile:
               type: RuntimeDefault
+            capabilities:
+              drop:
+                - ALL
+          resources:
+            limits:
+              cpu: 75m
+              memory: 256Mi
+            requests:
+              cpu: 25m
+              memory: 128Mi
       volumes:
         - name: zitadel-config-yaml
           configMap:

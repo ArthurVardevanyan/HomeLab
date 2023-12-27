@@ -18,6 +18,8 @@ resource "google_project_service" "cloudscheduler" {
 }
 
 resource "google_storage_bucket" "okd_homelab_keep_alive" {
+  #checkov:skip=CKV_GCP_78:These are temp files
+  #checkov:skip=CKV_GCP_62:Access logs are not required.
   name          = "okd_homelab_keep_alive"
   location      = "US"
   project       = "homelab-${local.project_id}"
@@ -75,11 +77,12 @@ resource "google_secret_manager_secret_iam_member" "secretAccessor" {
 }
 
 resource "google_storage_bucket" "okd_homelab_keep_alive_cloud_function" {
-  name          = "okd_homelab_keep_alive_cloud_function"
-  location      = "US"
-  project       = "homelab-${local.project_id}"
-  force_destroy = true
-
+  #checkov:skip=CKV_GCP_78:Versioning is Handleed by GitHub
+  #checkov:skip=CKV_GCP_62:Access logs are not required.
+  name                        = "okd_homelab_keep_alive_cloud_function"
+  location                    = "US"
+  project                     = "homelab-${local.project_id}"
+  force_destroy               = true
   public_access_prevention    = "enforced"
   uniform_bucket_level_access = true
 }
@@ -110,18 +113,19 @@ resource "google_storage_bucket_iam_member" "okd_homelab_keep_alive_cloud_functi
 
 
 resource "google_cloudfunctions_function" "okd_homelab_keep_alive_cloud_function" {
-  available_memory_mb   = "128"
-  entry_point           = "KeepAlive"
-  ingress_settings      = "ALLOW_ALL"
-  source_archive_bucket = google_storage_bucket.okd_homelab_keep_alive_cloud_function.name
-  source_archive_object = "${data.archive_file.keep_alive.output_md5}.zip"
-  max_instances         = "3"
-  name                  = "okd_homelab_keep_alive_cloud_function"
-  project               = "homelab-${local.project_id}"
-  region                = "us-central1"
-  runtime               = "go120"
-  timeout               = "60"
-  trigger_http          = true
+  available_memory_mb          = "128"
+  entry_point                  = "KeepAlive"
+  ingress_settings             = "ALLOW_ALL"
+  source_archive_bucket        = google_storage_bucket.okd_homelab_keep_alive_cloud_function.name
+  source_archive_object        = "${data.archive_file.keep_alive.output_md5}.zip"
+  max_instances                = "3"
+  name                         = "okd_homelab_keep_alive_cloud_function"
+  project                      = "homelab-${local.project_id}"
+  region                       = "us-central1"
+  runtime                      = "go120"
+  timeout                      = "60"
+  trigger_http                 = true
+  https_trigger_security_level = "SECURE_ALWAYS"
 
   environment_variables = {
     GCS_BUCKET    = "okd_homelab_keep_alive"
@@ -129,8 +133,9 @@ resource "google_cloudfunctions_function" "okd_homelab_keep_alive_cloud_function
   }
 
   secret_environment_variables {
-    key     = "DISCORD"
-    secret  = "discord_keep_alive"
+    key    = "DISCORD"
+    secret = "discord_keep_alive"
+    # checkov:skip=CKV_SECRET_6 Place Holder
     version = "latest"
   }
 }

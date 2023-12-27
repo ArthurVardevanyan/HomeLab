@@ -337,7 +337,7 @@ cat /tmp/ssh_keyscan.txt
 # https://itnext.io/argocd-secret-management-with-argocd-vault-plugin-539f104aff05
 vault auth enable kubernetes
 
-token_reviewer_jwt=$(kubectl get secrets -n argocd -o jsonpath="{.items[?(@.metadata.annotations.kubernetes.io/service-account.name=='default')].data.token}" |base64 -d)
+token_reviewer_jwt=$(kubectl get secrets -n argocd -o jsonpath="{.items[?(@.metadata.annotations.kubernetes.io/service-account.name=='argocd-repo-server')].data.token}" |base64 -d)
 
 #kubernetes_host=$(oc whoami --show-server)
 kubernetes_host="https://kubernetes.default.svc:443"
@@ -352,7 +352,7 @@ vault write auth/kubernetes/config \
    disable_local_ca_jwt=true
 
 vault write auth/kubernetes/role/argocd \
-    bound_service_account_names=default \
+    bound_service_account_names=argocd-repo-server \
     bound_service_account_namespaces=argocd \
     policies=argocd \
     ttl=1h
@@ -436,7 +436,7 @@ kubectl delete replicaSet -n openshift-pipelines --all
 # Image Build
 tkn -n homelab pipeline start image-build -s pipeline \
   --param="git-url=https://git.arthurvardevanyan.com/ArthurVardevanyan/HomeLab" \
-  --param="IMAGE=registry.arthurvardevanyan.com/homelab/toolbox:latest" \
+  --param="IMAGE=registry.arthurvardevanyan.com/homelab/toolbox:not_latest" \
   --param="git-commit=$(git log --format=oneline | cut -d ' ' -f 1 | head -n 1)" \
   --param="DOCKERFILE=./containers/toolbox/containerfile" \
   --workspace=name=data,volumeClaimTemplateFile=tekton/base/pvc.yaml \

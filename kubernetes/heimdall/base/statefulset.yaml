@@ -6,6 +6,13 @@ metadata:
   labels:
     app: heimdall
     app.kubernetes.io/instance: heimdall
+  annotations:
+    checkov.io/skip1: CKV_K8S_40=OpenShift Injects Random UID
+    checkov.io/skip2: CKV_K8S_37=Not Supported
+    checkov.io/skip3: CKV_K8S_20=Not Supported
+    checkov.io/skip4: CKV_K8S_23=Not Supported
+    checkov.io/skip5: CKV_K8S_22=Not Supported
+    checkov.io/skip6: CKV_K8S_16=Not Supported
 spec:
   replicas: 1
   serviceName: heimdall-service
@@ -24,6 +31,10 @@ spec:
     spec:
       automountServiceAccountToken: false
       serviceAccountName: heimdall-sa
+      securityContext:
+        seccompProfile:
+          type: RuntimeDefault
+        runAsNonRoot: false
       containers:
         - image: linuxserver/heimdall:2.5.8
           imagePullPolicy: Always # Temp
@@ -34,6 +45,9 @@ spec:
             allowPrivilegeEscalation: true
             seccompProfile:
               type: RuntimeDefault
+            capabilities:
+              drop:
+                - NET_RAW
           ports:
             - containerPort: 80
               name: http-80

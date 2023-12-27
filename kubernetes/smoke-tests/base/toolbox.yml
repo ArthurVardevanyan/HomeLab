@@ -1,29 +1,37 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: gcloud-sdk
+  name: toolbox
   namespace: smoke-tests
   labels:
-    app: gcloud-sdk
+    app: toolbox
     app.kubernetes.io/instance: smoke-tests
+  annotations:
+    checkov.io/skip1: CKV_K8S_40=OpenShift Injects Random UID
+    checkov.io/skip2: CKV_K8S_8=App doesn't have a health endpoint
+    checkov.io/skip3: CKV_K8S_9=App doesn't have a health endpoint
 spec:
   replicas: 0
   selector:
     matchLabels:
-      app: gcloud-sdk
+      app: toolbox
   template:
     metadata:
       labels:
-        app: gcloud-sdk
+        app: toolbox
     spec:
+      securityContext:
+        seccompProfile:
+          type: RuntimeDefault
+        runAsNonRoot: true
       restartPolicy: Always
       serviceAccountName: wif-test
       schedulerName: default-scheduler
       automountServiceAccountToken: false
       containers:
-        - name: gcloud-sdk
+        - name: toolbox
           imagePullPolicy: Always
-          image: google/cloud-sdk
+          image: registry.<path:secret/data/homelab/domain#url>/homelab/toolbox:not_latest
           args:
             - sleep
             - infinity
@@ -33,13 +41,15 @@ spec:
             - name: CLOUDSDK_AUTH_CREDENTIAL_FILE_OVERRIDE
               value: /var/run/secrets/google/credentials_config.json
           securityContext:
-            runAsNonRoot: false
-            allowPrivilegeEscalation: true
-            # seccompProfile:
-            #   type: RuntimeDefault
+            runAsNonRoot: true
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            privileged: false
+            seccompProfile:
+              type: RuntimeDefault
             capabilities:
               drop:
-                - all
+                - ALL
           resources:
             requests:
               memory: "50Mi"
