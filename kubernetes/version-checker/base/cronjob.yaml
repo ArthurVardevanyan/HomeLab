@@ -6,6 +6,10 @@ metadata:
   labels:
     app: version-checker
     app.kubernetes.io/instance: version-checker
+  annotations:
+    checkov.io/skip1: CKV_K8S_40=OpenShift Injects Random UID
+    checkov.io/skip2: CKV_K8S_38=Scans Pods to see what images to check
+    checkov.io/skip3: CKV_K8S_31=https://github.com/bridgecrewio/checkov/issues/2222
 spec:
   schedule: "*/10 * * * *"
   concurrencyPolicy: Replace
@@ -22,7 +26,6 @@ spec:
             prometheus.io/path: /metrics
             prometheus.io/port: "8080"
             prometheus.io/scrape: "true"
-            seccomp.security.alpha.kubernetes.io/defaultProfileName: "runtime/default"
             enable.version-checker.io/version-checker: "true"
         spec:
           tolerations:
@@ -41,10 +44,12 @@ spec:
                         values:
                           - "true"
           automountServiceAccountToken: true
-          # securityContext:
+          securityContext:
+            seccompProfile:
+              type: RuntimeDefault
+            runAsNonRoot: true
           #   fsGroup: 65554
           #   runAsGroup: 65554
-          #   runAsNonRoot: true
           #   runAsUser: 65554
           containers:
             - name: version-checker
@@ -55,11 +60,11 @@ spec:
                 runAsNonRoot: true
                 readOnlyRootFilesystem: true
                 allowPrivilegeEscalation: false
-                # seccompProfile:
-                #   type: RuntimeDefault
+                seccompProfile:
+                  type: RuntimeDefault
                 capabilities:
                   drop:
-                    - all
+                    - ALL
               command:
                 - version-checker
               ports:

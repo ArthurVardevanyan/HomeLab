@@ -6,6 +6,9 @@ metadata:
   labels:
     app: keep-alive
     app.kubernetes.io/instance: keep-alive
+  annotations:
+    checkov.io/skip1: CKV_K8S_40=OpenShift Injects Random UID
+    checkov.io/skip2: CKV_K8S_31=Broken Check
 spec:
   schedule: "*/10 * * * *"
   concurrencyPolicy: Replace
@@ -40,10 +43,14 @@ spec:
           serviceAccountName: keep-alive
           schedulerName: default-scheduler
           automountServiceAccountToken: false
+          securityContext:
+            seccompProfile:
+              type: RuntimeDefault
+            runAsNonRoot: true
           containers:
             - name: keep-alive
               imagePullPolicy: IfNotPresent
-              image: registry.<path:secret/data/homelab/domain#url>/homelab/toolbox:latest
+              image: registry.<path:secret/data/homelab/domain#url>/homelab/toolbox:not_latest
               command:
                 - /bin/bash
                 - -c

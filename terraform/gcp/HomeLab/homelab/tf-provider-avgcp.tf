@@ -17,10 +17,14 @@ resource "google_service_account_iam_member" "avgcp-au" {
 }
 
 resource "google_storage_bucket" "avgcp" {
-  name          = "terraform_provider_avgcp"
-  location      = "US"
-  project       = "homelab-${local.project_id}"
-  force_destroy = true
+  #checkov:skip=CKV_GCP_78:Versioning is Handleed by GitHub
+  #checkov:skip=CKV_GCP_62:Access logs are not required.
+  name                        = "terraform_provider_avgcp"
+  location                    = "US"
+  project                     = "homelab-${local.project_id}"
+  force_destroy               = true
+  public_access_prevention    = "enforced"
+  uniform_bucket_level_access = true
 }
 
 resource "google_storage_bucket_iam_member" "avgcp" {

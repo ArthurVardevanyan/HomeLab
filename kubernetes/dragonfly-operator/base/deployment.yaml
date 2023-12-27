@@ -11,6 +11,9 @@ metadata:
     control-plane: controller-manager
   name: dragonfly-operator-controller-manager
   namespace: dragonfly-operator-system
+  annotations:
+    checkov.io/skip1: CKV_K8S_40=OpenShift Injects Random UID
+    checkov.io/skip2: CKV_K8S_38=Operators Require Use of Service Account Tokens
 spec:
   replicas: 1
   selector:
@@ -41,29 +44,6 @@ spec:
                       - linux
       containers:
         - args:
-            - --secure-listen-address=0.0.0.0:8443
-            - --upstream=http://127.0.0.1:8080/
-            - --logtostderr=true
-            - --v=0
-          image: gcr.io/kubebuilder/kube-rbac-proxy:v0.13.1
-          name: kube-rbac-proxy
-          ports:
-            - containerPort: 8443
-              name: https
-              protocol: TCP
-          resources:
-            limits:
-              cpu: 100m
-              memory: 128Mi
-            requests:
-              cpu: 5m
-              memory: 64Mi
-          securityContext:
-            allowPrivilegeEscalation: false
-            capabilities:
-              drop:
-                - ALL
-        - args:
             - --health-probe-bind-address=:8081
             - --metrics-bind-address=127.0.0.1:8080
             - --leader-elect
@@ -91,11 +71,18 @@ spec:
               cpu: 10m
               memory: 64Mi
           securityContext:
+            runAsNonRoot: true
+            readOnlyRootFilesystem: true
             allowPrivilegeEscalation: false
+            seccompProfile:
+              type: RuntimeDefault
             capabilities:
               drop:
                 - ALL
       securityContext:
+        seccompProfile:
+          type: RuntimeDefault
         runAsNonRoot: true
       serviceAccountName: dragonfly-operator-controller-manager
       terminationGracePeriodSeconds: 10
+      automountServiceAccountToken: true

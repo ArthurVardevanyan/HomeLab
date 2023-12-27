@@ -1,5 +1,7 @@
 
 resource "google_storage_bucket" "truenas_nextcloud" {
+  #checkov:skip=CKV_GCP_78:Versioning is Handleed by GitHub
+  #checkov:skip=CKV_GCP_62:Access logs are not required.
   name          = "truenas_homelab_nextcloud"
   location      = "US"
   project       = "homelab-${local.project_id}"
@@ -68,6 +70,8 @@ resource "google_secret_manager_secret_version" "truenas_nextcloud" {
 }
 
 resource "google_storage_bucket" "homelab-tf-bucket" {
+  #checkov:skip=CKV_GCP_78:Versioning is Handleed by GitHub
+  #checkov:skip=CKV_GCP_62:Access logs are not required.
   name          = "tf-state-truenas-${local.bucket_id}"
   location      = "us-central1"
   project       = "homelab-${local.project_id}"

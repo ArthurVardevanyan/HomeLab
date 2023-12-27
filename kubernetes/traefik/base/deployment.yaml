@@ -9,6 +9,8 @@ metadata:
     app.kubernetes.io/instance: traefik
     helm.sh/chart: traefik-25.0.0
     app.kubernetes.io/managed-by: Helm
+  annotations:
+    checkov.io/skip1: CKV_K8S_38=Ingress Controller Requires API Server Access
 spec:
   replicas: 1
   selector:
@@ -35,6 +37,7 @@ spec:
         app.kubernetes.io/managed-by: Helm
     spec:
       serviceAccountName: traefik
+      automountServiceAccountToken: true
       terminationGracePeriodSeconds: 60
       hostNetwork: false
       containers:
@@ -136,3 +139,5 @@ spec:
         runAsGroup: 65532
         fsGroup: 65532
         runAsUser: 65532
+        seccompProfile:
+          type: RuntimeDefault

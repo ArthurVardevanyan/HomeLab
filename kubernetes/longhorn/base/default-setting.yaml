@@ -1,48 +1,38 @@
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: longhorn-default-setting
-  namespace: longhorn-system
-  labels:
-    app.kubernetes.io/name: longhorn
-    app.kubernetes.io/instance: longhorn
-    app.kubernetes.io/version: v1.5.3
-data:
-  default-setting.yaml: |-
-    allow-node-drain-with-last-healthy-replica: false
-    allow-recurring-job-while-volume-detached: false
-    allow-volume-creation-with-degraded-availability: true
-    auto-cleanup-system-generated-snapshot: true
-    auto-delete-pod-when-volume-detached-unexpectedly: true
-    auto-salvage: true
-    backing-image-cleanup-wait-interval: 60
-    backing-image-recovery-wait-interval: 300
-    backupstore-poll-interval: 300
-    backupTargetURL: 's3://longhorn@minio/longhorn'
-    credentialSecret: truenas-secret
-    concurrent-automatic-engine-upgrade-per-node-limit: 0
-    concurrent-replica-rebuild-per-node-limit: 5
-    create-default-disk-labeled-nodes: true
-    default-data-locality: disabled
-    default-data-path: "/mnt/storage"
-    default-longhorn-static-storage-class: longhorn-static
-    default-replica-count: "2"
-    disable-replica-rebuild: false
-    disable-revision-counter: false
-    disable-scheduling-on-cordoned-node: true
-    guaranteed-engine-manager-cpu: 12
-    guaranteed-replica-manager-cpu: 12
-    mkfs-ext4-parameters:
-    node-down-pod-deletion-policy: do-nothing
-    orphan-auto-deletion: false
-    priority-class:
-    replica-auto-balance: disabled
-    replica-replenishment-wait-interval: 600
-    replica-soft-anti-affinity: false
-    replica-zone-soft-anti-affinity: false
-    storage-minimal-available-percentage: 25
-    storage-over-provisioning-percentage: 200
-    system-managed-components-node-selector:
-    system-managed-pods-image-pull-policy: if-not-present
-    taint-toleration:
-    upgrade-checker: true
+allow-node-drain-with-last-healthy-replica: false
+allow-recurring-job-while-volume-detached: false
+allow-volume-creation-with-degraded-availability: true
+auto-cleanup-system-generated-snapshot: true
+auto-delete-pod-when-volume-detached-unexpectedly: true
+auto-salvage: true
+backing-image-cleanup-wait-interval: 60
+backing-image-recovery-wait-interval: 300
+backupstore-poll-interval: 300
+backupTargetURL: "s3://longhorn@minio/longhorn"
+# checkov:skip=CKV_SECRET_6 False Alert
+credentialSecret: truenas-secret
+concurrent-automatic-engine-upgrade-per-node-limit: 0
+concurrent-replica-rebuild-per-node-limit: 5
+create-default-disk-labeled-nodes: true
+default-data-locality: disabled
+default-data-path: "/mnt/storage"
+default-longhorn-static-storage-class: longhorn-static
+default-replica-count: "2"
+disable-replica-rebuild: false
+disable-revision-counter: false
+disable-scheduling-on-cordoned-node: true
+guaranteed-engine-manager-cpu: 12
+guaranteed-replica-manager-cpu: 12
+mkfs-ext4-parameters:
+node-down-pod-deletion-policy: do-nothing
+orphan-auto-deletion: false
+priority-class:
+replica-auto-balance: disabled
+replica-replenishment-wait-interval: 600
+replica-soft-anti-affinity: false
+replica-zone-soft-anti-affinity: false
+storage-minimal-available-percentage: 25
+storage-over-provisioning-percentage: 200
+system-managed-components-node-selector:
+system-managed-pods-image-pull-policy: if-not-present
+taint-toleration:
+upgrade-checker: true

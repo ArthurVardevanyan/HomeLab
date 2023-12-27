@@ -5,6 +5,9 @@ metadata:
   namespace: photoprism
   labels:
     app: photoprism
+  annotations:
+    checkov.io/skip1: CKV_K8S_40=OpenShift Injects Random UID
+    checkov.io/skip2: CKV_K8S_35=App Doesn't Support
 spec:
   revisionHistoryLimit: 0
   selector:
@@ -26,10 +29,12 @@ spec:
       automountServiceAccountToken: false
       serviceAccountName: photoprism-sa
       securityContext:
+        seccompProfile:
+          type: RuntimeDefault
+        runAsNonRoot: true
         # fsGroup: 12342
         # runAsGroup: 12342
         # runAsUser: 12342
-        runAsNonRoot: true
       containers:
         - name: photoprism
           image: photoprism/photoprism:231128
@@ -59,6 +64,10 @@ spec:
             httpGet:
               path: /api/v1/status
               port: http
+          livenessProbe:
+            httpGet:
+              path: /api/v1/status
+              port: http
           volumeMounts:
             - name: photoprism-media
               mountPath: /assets/photos/originals/Photos
@@ -85,11 +94,11 @@ spec:
             runAsNonRoot: true
             readOnlyRootFilesystem: true
             allowPrivilegeEscalation: false
-            # seccompProfile:
-            #   type: RuntimeDefault
+            seccompProfile:
+              type: RuntimeDefault
             capabilities:
               drop:
-                - all
+                - ALL
       volumes:
         - name: photoprism-media
           persistentVolumeClaim:

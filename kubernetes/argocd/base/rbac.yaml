@@ -16,7 +16,12 @@ rules:
     resources:
       - "tokenreviews"
     verbs:
-      - "*"
+      - "get"
+      - "list"
+      - "watch"
+      - "update"
+      - "patch"
+      - "create"
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
@@ -33,7 +38,7 @@ roleRef:
   name: argocd-repo-server-tr
 subjects:
   - kind: ServiceAccount
-    name: default
+    name: argocd-repo-server
     namespace: argocd
 ---
 apiVersion: rbac.authorization.k8s.io/v1
@@ -53,6 +58,8 @@ rules:
       - ""
     resources:
       - secrets
+    resourceNames:
+      - k3s
     verbs:
       - get
       - list
@@ -63,6 +70,7 @@ kind: RoleBinding
 metadata:
   annotations:
     argocd.argoproj.io/sync-wave: "0"
+    checkov.io/skip1: CKV2_K8S_5=Broken Policy
   labels:
     app.kubernetes.io/component: repo-server
     app.kubernetes.io/instance: argocd
@@ -76,5 +84,16 @@ roleRef:
   name: argocd-repo-server-s
 subjects:
   - kind: ServiceAccount
-    name: default
+    name: argocd-repo-server
     namespace: argocd
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: argocd-repo-server
+  namespace: argocd
+  annotations:
+    authorization.k8s.io/get: "[]"
+  labels:
+    app.kubernetes.io/instance: argocd
+    app: argocd

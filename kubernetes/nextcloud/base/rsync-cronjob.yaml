@@ -5,6 +5,10 @@ metadata:
   namespace: nextcloud
   labels:
     app.kubernetes.io/instance: nextcloud
+  annotations:
+    checkov.io/skip1: CKV_K8S_40=Needs to run as User 33
+    checkov.io/skip2: CKV_K8S_31=App Doesn't Support
+    checkov.io/skip3: CKV_K8S_22=App Doesn't Support
 spec:
   schedule: "0 7 * * *"
   concurrencyPolicy: Forbid
@@ -17,8 +21,6 @@ spec:
         metadata:
           labels:
             app: nextcloud-rsync
-          annotations:
-            seccomp.security.alpha.kubernetes.io/defaultProfileName: runtime/default
         spec:
           serviceAccountName: nextcloud-sa
           affinity:
@@ -45,7 +47,7 @@ spec:
             runAsUser: 33
           containers:
             - name: nextcloud-rsync
-              image: registry.<path:secret/data/homelab/domain#url>/homelab/toolbox:latest
+              image: registry.<path:secret/data/homelab/domain#url>/homelab/toolbox:not_latest
               command:
                 [
                   "/bin/bash",
@@ -75,7 +77,7 @@ spec:
                 #   type: RuntimeDefault
                 capabilities:
                   drop:
-                    - all
+                    - ALL
               terminationMessagePath: /dev/termination-log
               terminationMessagePolicy: File
               imagePullPolicy: IfNotPresent

@@ -6,6 +6,9 @@ metadata:
   labels:
     app: grafana
     app.kubernetes.io/instance: grafana
+  annotations:
+    checkov.io/skip1: CKV_K8S_40=OpenShift Injects Random UID
+    checkov.io/skip2: CKV_K8S_35=Not Supported
 spec:
   replicas: 2
   revisionHistoryLimit: 0
@@ -66,7 +69,7 @@ spec:
               type: RuntimeDefault
             capabilities:
               drop:
-                - all
+                - ALL
           ports:
             - containerPort: 3000
           livenessProbe:

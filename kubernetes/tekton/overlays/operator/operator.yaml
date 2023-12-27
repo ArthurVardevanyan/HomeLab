@@ -405,6 +405,9 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   name: tekton-operator
+  annotations:
+    checkov.io/skip1: CKV_K8S_155=Operator Manages Webhooks
+    checkov.io/skip2: CKV_K8S_158=Operator Manages Additional Perms
 rules:
   - apiGroups:
       - ""
@@ -1034,6 +1037,12 @@ metadata:
     version: v0.68.1
   name: openshift-pipelines-operator
   namespace: openshift-pipelines-operator
+  annotations:
+    checkov.io/skip1: CKV_K8S_40=OpenShift Injects Random UID
+    checkov.io/skip2: CKV_K8S_23=https://github.com/tektoncd/operator/issues/1772
+    checkov.io/skip3: CKV_K8S_8=Not Provided
+    checkov.io/skip4: CKV_K8S_9=Not Provided
+    checkov.io/skip6: CKV_K8S_38=Operator Needs API Access
 spec:
   replicas: 1
   selector:
@@ -1112,7 +1121,11 @@ spec:
               cpu: 10m
               memory: 96Mi
           securityContext:
+            runAsNonRoot: false
+            readOnlyRootFilesystem: true
             allowPrivilegeEscalation: false
+            seccompProfile:
+              type: RuntimeDefault
             capabilities:
               drop:
                 - ALL
@@ -1142,7 +1155,11 @@ spec:
           imagePullPolicy: Always
           name: openshift-pipelines-operator-cluster-operations
           securityContext:
+            runAsNonRoot: false
+            readOnlyRootFilesystem: true
             allowPrivilegeEscalation: false
+            seccompProfile:
+              type: RuntimeDefault
             capabilities:
               drop:
                 - ALL
@@ -1167,6 +1184,12 @@ metadata:
     version: v0.68.1
   name: tekton-operator-webhook
   namespace: openshift-pipelines-operator
+  annotations:
+    checkov.io/skip1: CKV_K8S_40=OpenShift Injects Random UID
+    checkov.io/skip2: CKV_K8S_23=https://github.com/tektoncd/operator/issues/1772
+    checkov.io/skip3: CKV_K8S_8=Not Provided
+    checkov.io/skip4: CKV_K8S_9=Not Provided
+    checkov.io/skip6: CKV_K8S_38=Operator Needs API Access
 spec:
   replicas: 1
   selector:
@@ -1200,7 +1223,11 @@ spec:
             - containerPort: 8443
               name: https-webhook
           securityContext:
+            runAsNonRoot: false
+            readOnlyRootFilesystem: true
             allowPrivilegeEscalation: false
+            seccompProfile:
+              type: RuntimeDefault
             capabilities:
               drop:
                 - ALL

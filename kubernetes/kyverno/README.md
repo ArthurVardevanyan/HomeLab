@@ -1,5 +1,7 @@
 # Kyverno
 
+Only Admission Controller is Active
+
 ```bash
 kubectl kustomize kubernetes/kyverno/overlays/okd | argocd-vault-plugin generate - | kubectl apply -f -
 

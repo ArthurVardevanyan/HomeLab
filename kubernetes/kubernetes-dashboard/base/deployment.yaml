@@ -6,6 +6,9 @@ metadata:
   labels:
     k8s-app: kubernetes-dashboard
     app.kubernetes.io/instance: kubernetes-dashboard
+  annotations:
+    checkov.io/skip1: CKV_K8S_33=I want the Dashboard
+    checkov.io/skip2: CKV_K8S_38=Dashboard Requires API Access
 spec:
   replicas: 1
   selector:
@@ -18,7 +21,6 @@ spec:
       annotations:
         enable.version-checker.io/kubernetes-dashboard: "true"
         enable.version-checker.io/dashboard-metrics-scraper: "true"
-        seccomp.security.alpha.kubernetes.io/defaultProfileName: "runtime/default"
     spec:
       volumes:
         - name: kubernetes-dashboard-certs
@@ -63,17 +65,29 @@ spec:
             periodSeconds: 10
             successThreshold: 1
             failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 8443
+              scheme: HTTPS
+            initialDelaySeconds: 30
+            timeoutSeconds: 30
+            periodSeconds: 10
+            successThreshold: 1
+            failureThreshold: 3
           terminationMessagePath: /dev/termination-log
           terminationMessagePolicy: File
           imagePullPolicy: IfNotPresent
           securityContext:
-            # runAsUser: 11001
-            # runAsGroup: 12001
+            runAsUser: 11001
+            runAsGroup: 12001
             readOnlyRootFilesystem: true
             allowPrivilegeEscalation: false
+            seccompProfile:
+              type: RuntimeDefault
             capabilities:
               drop:
-                - all
+                - ALL
         - name: dashboard-metrics-scraper
           image: kubernetesui/metrics-scraper:v1.0.9
           ports:
@@ -101,17 +115,29 @@ spec:
             periodSeconds: 10
             successThreshold: 1
             failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 8000
+              scheme: HTTP
+            initialDelaySeconds: 30
+            timeoutSeconds: 30
+            periodSeconds: 10
+            successThreshold: 1
+            failureThreshold: 3
           terminationMessagePath: /dev/termination-log
           terminationMessagePolicy: File
           imagePullPolicy: IfNotPresent
           securityContext:
-            # runAsUser: 11001
-            # runAsGroup: 12001
+            runAsUser: 11001
+            runAsGroup: 12001
             readOnlyRootFilesystem: true
             allowPrivilegeEscalation: false
+            seccompProfile:
+              type: RuntimeDefault
             capabilities:
               drop:
-                - all
+                - ALL
       restartPolicy: Always
       terminationGracePeriodSeconds: 30
       dnsPolicy: ClusterFirst
@@ -135,6 +161,7 @@ spec:
       securityContext:
         runAsUser: 11001
         runAsGroup: 12001
+        runAsNonRoot: true
         seccompProfile:
           type: RuntimeDefault
       schedulerName: default-scheduler

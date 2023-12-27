@@ -6,6 +6,9 @@ metadata:
   labels:
     app: phpmyadmin
     app.kubernetes.io/instance: phpmyadmin
+  annotations:
+    checkov.io/skip1: CKV_K8S_40=OpenShift Injects Random UID
+    checkov.io/skip2: CKV_K8S_22=Container Modifies Configs at Boot
 spec:
   replicas: 1
   selector:
@@ -20,11 +23,13 @@ spec:
         app: phpmyadmin
       annotations:
         enable.version-checker.io/phpmyadmin: "true"
-        seccomp.security.alpha.kubernetes.io/defaultProfileName: "runtime/default"
     spec:
       automountServiceAccountToken: false
       serviceAccountName: phpmyadmin-sa
-      # securityContext:
+      securityContext:
+        seccompProfile:
+          type: RuntimeDefault
+        runAsNonRoot: true
       #   runAsUser: 11001
       #   fsGroup: 11001
       containers:
@@ -35,11 +40,12 @@ spec:
             # runAsUser: 11001
             runAsNonRoot: true
             allowPrivilegeEscalation: false
-            # seccompProfile:
-            #   type: RuntimeDefault
+            readOnlyRootFilesystem: false
+            seccompProfile:
+              type: RuntimeDefault
             capabilities:
               drop:
-                - all
+                - ALL
           resources:
             requests:
               memory: "75Mi"
