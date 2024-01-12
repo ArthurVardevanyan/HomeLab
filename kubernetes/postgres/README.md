@@ -4,6 +4,15 @@
 kubectl kustomize kubernetes/postgres/overlays/okd | argocd-vault-plugin generate - | kubectl apply -f -
 ```
 
+## Image Mirroring
+
+```bash
+skopeo copy docker://registry.developers.crunchydata.com/crunchydata/crunchy-pgbackrest:ubi8-2.47-2 docker://registry.arthurvardevanyan.com/crunchydata/crunchy-pgbackrest:ubi8-2.47-2
+skopeo copy docker://registry.developers.crunchydata.com/crunchydata/crunchy-postgres-exporter:ubi8-0.15.0-0 docker://registry.arthurvardevanyan.com/crunchydata/crunchy-postgres-exporter:ubi8-0.15.0-0
+skopeo copy docker://registry.developers.crunchydata.com/crunchydata/crunchy-postgres:ubi8-15.5-0 docker://registry.arthurvardevanyan.com/crunchydata/crunchy-postgres:ubi8-15.5-0
+skopeo copy docker://registry.developers.crunchydata.com/crunchydata/postgres-operator:ubi8-5.5.0-0 docker://registry.arthurvardevanyan.com/crunchydata/postgres-operator:ubi8-5.5.0-0
+```
+
 ## REF
 
 - <https://access.crunchydata.com/documentation/postgres-operator/5.3.0/guides/major-postgres-version-upgrade/>
