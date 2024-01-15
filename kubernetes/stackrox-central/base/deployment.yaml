@@ -93,7 +93,7 @@ spec:
         runAsUser: 4000
       containers:
         - name: central
-          image: "quay.io/stackrox-io/main:4.3.1"
+          image: "quay.io/stackrox-io/main:4.3.1@sha256:b49f3d3726823711e9d722cf0c9570b993dcb8d435e454b5c7b30b13499a829c"
           command:
             - /stackrox/central-entrypoint.sh
           ports:
@@ -336,7 +336,7 @@ spec:
       containers:
         - name: scanner
 
-          image: "quay.io/stackrox-io/scanner:4.3.1"
+          image: "quay.io/stackrox-io/scanner:4.3.1@sha256:ba3c53f812b7b80de9c3e1e9102832c0d3d4b10f6083e24d0eb00189aa92800f"
           env:
             - name: GOMEMLIMIT
               valueFrom:
@@ -544,7 +544,7 @@ spec:
                     operator: DoesNotExist
       initContainers:
         - name: init-db
-          image: "quay.io/stackrox-io/scanner-db:4.3.1"
+          image: "quay.io/stackrox-io/scanner-db:4.3.1@sha256:4c83f809ce4350b8f7537e5a0e60a0c645b225af020f6269631dc2d2d14e24ee"
           env:
             - name: POSTGRES_PASSWORD_FILE
               value: "/run/secrets/stackrox.io/secrets/password"
@@ -568,7 +568,7 @@ spec:
               readOnly: true
       containers:
         - name: db
-          image: "quay.io/stackrox-io/scanner-db:4.3.1"
+          image: "quay.io/stackrox-io/scanner-db:4.3.1@sha256:4c83f809ce4350b8f7537e5a0e60a0c645b225af020f6269631dc2d2d14e24ee"
           #env:
 
           ports:

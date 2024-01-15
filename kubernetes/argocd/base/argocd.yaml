@@ -47,10 +47,10 @@ spec:
     policy: |
       g, system:cluster-admins, role:admin
       g, cluster-admins, role:admin
-  version: v2.9.3
+  version: sha256:dfc13f4b9ddbf25a88f7018667ee45e35a49520e2716242e3f65ef75f88c25ff #v2.9.3
   repo:
     replicas: 3
-    version: v2.9.3
+    version: sha256:dfc13f4b9ddbf25a88f7018667ee45e35a49520e2716242e3f65ef75f88c25ff #v2.9.3
     mountsatoken: true
     serviceaccount: argocd-repo-server
     resources:
@@ -64,8 +64,8 @@ spec:
         ephemeral-storage: 256Mi
     initContainers:
       - name: download-tools
-        imagePullPolicy: Always
-        image: registry.access.redhat.com/ubi9
+        imagePullPolicy: IfNotPresent
+        image: registry.access.redhat.com/ubi9/ubi:9.3-1476@sha256:fc300be6adbdf2ca812ad01efd0dee2a3e3f5d33958ad6cd99159e25e9ee1398
         env:
           - name: AVP_VERSION
             value: 1.17.0
@@ -87,8 +87,8 @@ spec:
     sidecarContainers:
       - name: avp-kustomize
         command: [/var/run/argocd/argocd-cmp-server]
-        image: registry.access.redhat.com/ubi9
-        imagePullPolicy: Always
+        imagePullPolicy: IfNotPresent
+        image: registry.access.redhat.com/ubi9/ubi:9.3-1476@sha256:fc300be6adbdf2ca812ad01efd0dee2a3e3f5d33958ad6cd99159e25e9ee1398
         resources:
           limits:
             cpu: "1"
@@ -146,7 +146,7 @@ spec:
   ha:
     enabled: true
     redisProxyImage: haproxy # haproxy:2.9.1-bookworm
-    redisProxyVersion: sha256:8b427bf0b4bb57e6004c73a86ab12772b95bbcafee403d1ed0c458fa9ae627a7
+    redisProxyVersion: sha256:e1d0edfdee9e39632a1fda3883dafb8c9268894849c1afd8afbd1fc6437bbeaf
     resources:
       limits:
         cpu: 100m
@@ -157,8 +157,8 @@ spec:
   tls:
     ca: {}
   redis:
-    image: redis # redis:7.2.3-bookworm
-    version: sha256:d4c84914b872521e215f77d8845914c2268a96b0e35bacd5691e1f5e1f88b500
+    image: redis # redis:7.2.4-bookworm
+    version: sha256:9e32ff5c286464387ff8f3fe72fc150a095c80f67af69d31ce4cb4d80fad0d7a
     resources:
       limits:
         cpu: 100m

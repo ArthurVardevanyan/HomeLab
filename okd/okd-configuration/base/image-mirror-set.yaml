@@ -1,0 +1,310 @@
+---
+apiVersion: config.openshift.io/v1
+kind: ImageDigestMirrorSet
+metadata:
+  name: image-policy-0
+  labels:
+    app.kubernetes.io/instance: okd-configuration
+spec:
+  imageDigestMirrors:
+    - mirrors:
+        - registry.arthurvardevanyan.com/openshift
+      source: quay.io/openshift
+      mirrorSourcePolicy: AllowContactingSource
+    - mirrors:
+        - registry.arthurvardevanyan.com/minio
+      source: quay.io/minio
+      mirrorSourcePolicy: AllowContactingSource
+    - mirrors:
+        - registry.arthurvardevanyan.com
+      source: docker.dragonflydb.io
+      mirrorSourcePolicy: AllowContactingSource
+---
+apiVersion: config.openshift.io/v1
+kind: ImageTagMirrorSet
+metadata:
+  name: image-policy-0
+spec:
+  imageTagMirrors:
+    - mirrors:
+        - registry.arthurvardevanyan.com/projectquay
+      source: quay.io/projectquay
+      mirrorSourcePolicy: AllowContactingSource
+    - mirrors:
+        - registry.arthurvardevanyan.com
+      source: registry.developers.crunchydata.com
+      mirrorSourcePolicy: AllowContactingSource
+---
+apiVersion: config.openshift.io/v1
+kind: ImageDigestMirrorSet
+metadata:
+  name: image-policy-core
+  labels:
+    app.kubernetes.io/instance: okd-configuration
+spec:
+  imageDigestMirrors:
+    - mirrors:
+        - registry.arthurvardevanyan.com
+      source: docker.io
+      mirrorSourcePolicy: NeverContactSource
+    - mirrors:
+        - registry.arthurvardevanyan.com
+      source: quay.io
+      mirrorSourcePolicy: NeverContactSource
+    - mirrors:
+        - registry.arthurvardevanyan.com
+      source: registry.access.redhat.com
+      mirrorSourcePolicy: NeverContactSource
+    - mirrors:
+        - registry.arthurvardevanyan.com
+      source: gcr.io
+      mirrorSourcePolicy: NeverContactSource
+    - mirrors:
+        - registry.arthurvardevanyan.com
+      source: ghcr.io
+      mirrorSourcePolicy: NeverContactSource
+    - mirrors:
+        - registry.arthurvardevanyan.com/nextcloud/nextcloud
+      source: docker.io/library/nextcloud
+      mirrorSourcePolicy: NeverContactSource
+    - mirrors:
+        - registry.arthurvardevanyan.com/mariadb/mariadb
+      source: docker.io/library/mariadb
+      mirrorSourcePolicy: NeverContactSource
+    - mirrors:
+        - registry.arthurvardevanyan.com/redis/redis
+      source: docker.io/library/redis
+      mirrorSourcePolicy: NeverContactSource
+    - mirrors:
+        - registry.arthurvardevanyan.com/haproxy/haproxy
+      source: docker.io/library/haproxy
+      mirrorSourcePolicy: NeverContactSource
+    - mirrors:
+        - registry.arthurvardevanyan.com
+      source: cgr.dev
+      mirrorSourcePolicy: AllowContactingSource # NeverContactSource
+---
+apiVersion: config.openshift.io/v1
+kind: ImageTagMirrorSet
+metadata:
+  name: image-policy-core
+spec:
+  imageTagMirrors:
+    - mirrors:
+        - registry.arthurvardevanyan.com/redhat/community-operator-index
+      source: registry.access.redhat.com/redhat/community-operator-index
+      mirrorSourcePolicy: NeverContactSource
+    - mirrors:
+        - registry.arthurvardevanyan.com/operatorhubio/catalog
+      source: quay.io/operatorhubio/catalog
+      mirrorSourcePolicy: NeverContactSource
+    - mirrors:
+        - registry.arthurvardevanyan.com/jetstack/cert-manager-controller
+      source: quay.io/jetstack/cert-manager-controller
+    - mirrors:
+        - registry.arthurvardevanyan.com/jetstack/cert-manager-cainjector
+      source: quay.io/jetstack/cert-manager-cainjector
+    - mirrors:
+        - registry.arthurvardevanyan.com/jetstack/cert-manager-webhook
+      source: quay.io/jetstack/cert-manager-webhook
+      mirrorSourcePolicy: NeverContactSource
+    - mirrors:
+        - registry.arthurvardevanyan.com/linuxserver/heimdall
+      source: docker.io/linuxserver/heimdall
+      mirrorSourcePolicy: NeverContactSource
+    - mirrors:
+        - registry.arthurvardevanyan.com/influxdb/influxdb
+      source: docker.io/library/influxdb
+      mirrorSourcePolicy: NeverContactSource
+    - mirrors:
+        - registry.arthurvardevanyan.com/openshift-pipelines
+      source: ghcr.io/openshift-pipelines
+      mirrorSourcePolicy: NeverContactSource
+    - mirrors:
+        - registry.arthurvardevanyan.com/tekton-hub
+      source: quay.io/tekton-hub
+      mirrorSourcePolicy: NeverContactSource
+    - mirrors:
+        - registry.arthurvardevanyan.com/knative/operator
+      source: gcr.io/knative-releases/knative.dev/operator
+      mirrorSourcePolicy: NeverContactSource
+    - mirrors:
+        - registry.arthurvardevanyan.com/kubebuilder
+      source: gcr.io/kubebuilder
+      mirrorSourcePolicy: NeverContactSource
+    - mirrors:
+        - registry.arthurvardevanyan.com/netobserv/network-observability-operator
+      source: quay.io/netobserv/network-observability-operator
+      mirrorSourcePolicy: NeverContactSource
+    - mirrors:
+        - registry.arthurvardevanyan.com/netobserv/network-observability-console-plugin
+      source: quay.io/netobserv/network-observability-console-plugin
+      mirrorSourcePolicy: NeverContactSource
+---
+apiVersion: config.openshift.io/v1
+kind: ImageDigestMirrorSet
+metadata:
+  name: image-policy-tekton
+  labels:
+    app.kubernetes.io/instance: okd-configuration
+spec:
+  imageDigestMirrors:
+    - mirrors:
+        - registry.arthurvardevanyan.com/tektoncd/dogfooding/tkn
+      source: gcr.io/tekton-releases/dogfooding/tkn
+      mirrorSourcePolicy: NeverContactSource
+    - mirrors:
+        - registry.arthurvardevanyan.com/tektoncd/chains/controller
+      source: gcr.io/tekton-releases/github.com/tektoncd/chains/cmd/controller
+      mirrorSourcePolicy: NeverContactSource
+    - mirrors:
+        - registry.arthurvardevanyan.com/tektoncd/dashboard/dashboard
+      source: gcr.io/tekton-releases/github.com/tektoncd/dashboard/cmd/dashboard
+      mirrorSourcePolicy: NeverContactSource
+    - mirrors:
+        - registry.arthurvardevanyan.com/tektoncd/operator/openshift/operator
+      source: gcr.io/tekton-releases/github.com/tektoncd/operator/cmd/openshift/operator
+      mirrorSourcePolicy: NeverContactSource
+    - mirrors:
+        - registry.arthurvardevanyan.com/tektoncd/operator/openshift/proxy-webhook
+      source: gcr.io/tekton-releases/github.com/tektoncd/operator/cmd/openshift/proxy-webhook
+      mirrorSourcePolicy: NeverContactSource
+    - mirrors:
+        - registry.arthurvardevanyan.com/tektoncd/operator/openshift/webhook
+      source: gcr.io/tekton-releases/github.com/tektoncd/operator/cmd/openshift/webhook
+      mirrorSourcePolicy: NeverContactSource
+    - mirrors:
+        - registry.arthurvardevanyan.com/tektoncd/pipeline/controller
+      source: gcr.io/tekton-releases/github.com/tektoncd/pipeline/cmd/controller
+    - mirrors:
+        - registry.arthurvardevanyan.com/tektoncd/pipeline/events
+      source: gcr.io/tekton-releases/github.com/tektoncd/pipeline/cmd/events
+      mirrorSourcePolicy: NeverContactSource
+    - mirrors:
+        - registry.arthurvardevanyan.com/tektoncd/pipeline/resolvers
+      source: gcr.io/tekton-releases/github.com/tektoncd/pipeline/cmd/resolvers
+      mirrorSourcePolicy: NeverContactSource
+    - mirrors:
+        - registry.arthurvardevanyan.com/tektoncd/pipeline/webhook
+      source: gcr.io/tekton-releases/github.com/tektoncd/pipeline/cmd/webhook
+      mirrorSourcePolicy: NeverContactSource
+    - mirrors:
+        - registry.arthurvardevanyan.com/tektoncd/pipeline/entrypoint
+      source: gcr.io/tekton-releases/github.com/tektoncd/pipeline/cmd/entrypoint
+      mirrorSourcePolicy: AllowContactingSource # NeverContactSource
+    - mirrors:
+        - registry.arthurvardevanyan.com/tektoncd/pipeline/git-init
+      source: gcr.io/tekton-releases/github.com/tektoncd/pipeline/cmd/git-init
+      mirrorSourcePolicy: NeverContactSource
+    - mirrors:
+        - registry.arthurvardevanyan.com/tektoncd/triggers/controller
+      source: gcr.io/tekton-releases/github.com/tektoncd/triggers/cmd/controller
+      mirrorSourcePolicy: NeverContactSource
+    - mirrors:
+        - registry.arthurvardevanyan.com/tektoncd/triggers/interceptors
+      source: gcr.io/tekton-releases/github.com/tektoncd/triggers/cmd/interceptors
+      mirrorSourcePolicy: NeverContactSource
+    - mirrors:
+        - registry.arthurvardevanyan.com/tektoncd/triggers/webhook
+      source: gcr.io/tekton-releases/github.com/tektoncd/triggers/cmd/webhook
+      mirrorSourcePolicy: NeverContactSource
+---
+apiVersion: config.openshift.io/v1
+kind: ImageTagMirrorSet
+metadata:
+  name: image-policy-tekton
+spec:
+  imageTagMirrors:
+    - mirrors:
+        - registry.arthurvardevanyan.com/openshift-pipelines
+      source: ghcr.io/openshift-pipelines
+      mirrorSourcePolicy: NeverContactSource
+    - mirrors:
+        - registry.arthurvardevanyan.com/rupali/serve-tkn
+      source: docker.io/rupali/serve-tkn
+      mirrorSourcePolicy: NeverContactSource
+---
+apiVersion: config.openshift.io/v1
+kind: ImageTagMirrorSet
+metadata:
+  name: image-policy-knative
+spec:
+  imageTagMirrors:
+    - mirrors:
+        - registry.arthurvardevanyan.com/knative/operator/operator
+      source: gcr.io/knative-releases/knative.dev/operator/cmd/operator
+      mirrorSourcePolicy: NeverContactSource
+    - mirrors:
+        - registry.arthurvardevanyan.com/knative/operator/webhook
+      source: gcr.io/knative-releases/knative.dev/operator/cmd/webhook
+    - mirrors:
+        - registry.arthurvardevanyan.com/envoyproxy/envoy
+      source: docker.io/envoyproxy/envoy
+      mirrorSourcePolicy: NeverContactSource
+---
+apiVersion: config.openshift.io/v1
+kind: ImageDigestMirrorSet
+metadata:
+  name: image-policy-knative
+  labels:
+    app.kubernetes.io/instance: okd-configuration
+spec:
+  imageDigestMirrors:
+    - mirrors:
+        - registry.arthurvardevanyan.com/knative/net-kourier/kourier
+      source: gcr.io/knative-releases/knative.dev/net-kourier/cmd/kourier
+      mirrorSourcePolicy: NeverContactSource
+    - mirrors:
+        - registry.arthurvardevanyan.com/knative/storageversion/migrate
+      source: gcr.io/knative-releases/knative.dev/pkg/apiextensions/storageversion/cmd/migrate
+      mirrorSourcePolicy: AllowContactingSource # NeverContactSource
+    - mirrors:
+        - registry.arthurvardevanyan.com/knative/serving/activator
+      source: gcr.io/knative-releases/knative.dev/serving/cmd/activator
+      mirrorSourcePolicy: NeverContactSource
+    - mirrors:
+        - registry.arthurvardevanyan.com/knative/serving/autoscaler-hpa
+      source: gcr.io/knative-releases/knative.dev/serving/cmd/autoscaler-hpa
+      mirrorSourcePolicy: NeverContactSource
+    - mirrors:
+        - registry.arthurvardevanyan.com/knative/serving/autoscaler
+      source: gcr.io/knative-releases/knative.dev/serving/cmd/autoscaler
+      mirrorSourcePolicy: NeverContactSource
+    - mirrors:
+        - registry.arthurvardevanyan.com/knative/serving/controller
+      source: gcr.io/knative-releases/knative.dev/serving/cmd/controller
+      mirrorSourcePolicy: NeverContactSource
+    - mirrors:
+        - registry.arthurvardevanyan.com/knative/serving/queue
+      source: gcr.io/knative-releases/knative.dev/serving/cmd/queue
+      mirrorSourcePolicy: NeverContactSource
+    - mirrors:
+        - registry.arthurvardevanyan.com/knative/serving/webhook
+      source: gcr.io/knative-releases/knative.dev/serving/cmd/webhook
+      mirrorSourcePolicy: NeverContactSource
+---
+apiVersion: config.openshift.io/v1
+kind: ImageTagMirrorSet
+metadata:
+  name: image-policy-che
+spec:
+  imageTagMirrors:
+    - mirrors:
+        - registry.arthurvardevanyan.com/devfile/devworkspace-operator-index
+      source: quay.io/devfile/devworkspace-operator-index
+    - mirrors:
+        - registry.arthurvardevanyan.com/devfile/devworkspace-controller
+      source: quay.io/devfile/devworkspace-controller
+      mirrorSourcePolicy: NeverContactSource
+    - mirrors:
+        - registry.arthurvardevanyan.com/eclipse/kubernetes-image-puller
+      source: quay.io/eclipse/kubernetes-image-puller
+      mirrorSourcePolicy: NeverContactSource
+    - mirrors:
+        - registry.arthurvardevanyan.com/eclipse/kubernetes-image-puller-operator
+      source: quay.io/eclipse/kubernetes-image-puller-operator
+      mirrorSourcePolicy: NeverContactSource
+    - mirrors:
+        - registry.arthurvardevanyan.com/brancz/kube-rbac-proxy
+      source: quay.io/brancz/kube-rbac-proxy
+      mirrorSourcePolicy: NeverContactSource

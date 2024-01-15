@@ -5,9 +5,9 @@ metadata:
   annotations:
     argocd.argoproj.io/sync-wave: "1"
 spec:
+  background: true
   rules:
-    - name: quay-app
-      match:
+    - match:
         any:
           - resources:
               kinds:
@@ -21,15 +21,15 @@ spec:
                   - (name): quay-app
                     resources:
                       limits:
-                        cpu: 1500m
-                        memory: 8Gi
+                        cpu: 2000m
                         ephemeral-storage: 2Gi
+                        memory: 9216Mi
                       requests:
-                        cpu: 350m
-                        memory: 4Gi
+                        cpu: 750m
                         ephemeral-storage: 1Gi
-    - name: clair-app
-      match:
+                        memory: 4608Mi
+      name: quay-app
+    - match:
         any:
           - resources:
               kinds:
@@ -44,14 +44,14 @@ spec:
                     resources:
                       limits:
                         cpu: 1500m
-                        memory: 6Gi
                         ephemeral-storage: 12Gi
+                        memory: 6Gi
                       requests:
-                        cpu: 150m
-                        memory: 2Gi
+                        cpu: 200m
                         ephemeral-storage: 1Gi
-    - name: quay-mirror
-      match:
+                        memory: 2.5Gi
+      name: clair-app
+    - match:
         any:
           - resources:
               kinds:
@@ -65,10 +65,12 @@ spec:
                   - (name): quay-mirror
                     resources:
                       limits:
-                        cpu: 500m
-                        memory: 512Mi
+                        cpu: 250m
                         ephemeral-storage: 1Gi
+                        memory: 512Mi
                       requests:
-                        cpu: 50m
-                        memory: 128Mi
+                        cpu: 75m
                         ephemeral-storage: 256Mi
+                        memory: 256Mi
+      name: quay-mirror
+  validationFailureAction: Audit

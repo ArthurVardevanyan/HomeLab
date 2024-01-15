@@ -132,7 +132,7 @@ stateful_workload_stop() {
   kubectl scale --replicas=0 -n quay deployment/quay-quay-app
   kubectl scale --replicas=0 -n quay deployment/quay-clair-app
   kubectl scale --replicas=0 -n quay deployment/quay-quay-mirror
-  kubectl scale --replicas=0 -n jellyfin statefulset/jellyfin
+  # kubectl scale --replicas=0 -n jellyfin statefulset/jellyfin
 
   kubectl scale --replicas=0 -n cockroach-operator-system deployments/cockroach-operator-manager
   kubectl scale --replicas=0 -n zitadel statefulset/crdb
@@ -201,7 +201,7 @@ stateful_workload_start() {
   kubectl scale --replicas=2 -n quay deployment/quay-clair-app
   kubectl scale --replicas=2 -n quay deployment/quay-quay-mirror
   kubectl scale --replicas=1 -n postgres deployment/pgo
-  kubectl scale --replicas=1 -n jellyfin statefulset/jellyfin
+  # kubectl scale --replicas=1 -n jellyfin statefulset/jellyfin
 
   kubectl patch postgresCluster clair -n quay --type=merge -p '{"spec":{"shutdown":false}}'
   kubectl patch postgresCluster gitea -n gitea --type=merge -p '{"spec":{"shutdown":false}}'

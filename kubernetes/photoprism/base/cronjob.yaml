@@ -9,6 +9,7 @@ metadata:
     checkov.io/skip1: CKV_K8S_40=OpenShift Injects Random UID
     checkov.io/skip2: CKV_K8S_35=App Doesn't Support
     checkov.io/skip3: CKV_K8S_31=Broken Check
+    checkov.io/skip4: CKV_K8S_43=Don't Mind Tag for This
 spec:
   schedule: "30 07,17 * * *"
   concurrencyPolicy: Forbid
@@ -49,7 +50,7 @@ spec:
             # runAsUser: 12342
           containers:
             - name: photoprism-cron
-              image: photoprism/photoprism:231128
+              image: photoprism/photoprism:231128@sha256:cbaf35b067efc179dee68ab703db8911c2ad306830831458abb369542ee4cf12
               command:
                 - /bin/bash
                 - "-c"
