@@ -1,6 +1,6 @@
 resource "libvirt_ignition" "bootstrap" {
   name    = "bootstrap-tf.ign"
-  pool    = var.pool
+  pool    = "default" #var.pool
   content = "${var.path}/okd/bootstrap.ign"
 }
 

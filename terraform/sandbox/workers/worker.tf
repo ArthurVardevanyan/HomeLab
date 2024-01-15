@@ -1,7 +1,7 @@
 
 resource "libvirt_ignition" "worker" {
   name    = "worker-tf.ign"
-  pool    = var.pool
+  pool    = "default" # var.pool
   content = "${var.path}/okd/worker.ign"
 }
 

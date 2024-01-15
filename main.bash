@@ -844,10 +844,10 @@ install_okd() {
 
   export PREFIX=""
   export TF_VAR_master_count=3
-  export TF_VAR_worker_count=4
+  export TF_VAR_worker_count=3 #4
 
   echo -e "\n\n${BLUE}Get URL:${NC}"
-  URL=${URL:-}
+  URL=${URL:-sandbox.arthurvardevanyan.com}
   if [ -z "${URL}" ]; then
     echo -n URL:
     read -r -s URL
@@ -856,7 +856,7 @@ install_okd() {
   echo "${URL}"
 
   echo -e "\n\n${BLUE}Get Registry URL:${NC}"
-  REGISTRY=${REGISTRY:-}
+  REGISTRY=${REGISTRY:-registry.arthurvardevanyan.com}
   if [ -z "${REGISTRY}" ]; then
     echo -n REGISTRY:
     read -r -s REGISTRY
@@ -865,10 +865,10 @@ install_okd() {
   echo "${REGISTRY}"
 
   # # Expand Swap Size on Host Computer
-  # if ! test -f "/mnt/swapfile.img"; then
-  # 	dd if=/dev/zero of=/mnt/swapfile.img bs=45056 count=1M
-  # 	mkswap /mnt/swapfile.img
-  # 	swapon /mnt/swapfile.img
+  # if ! test -f "/home/swapfile.img"; then
+  # 	dd if=/dev/zero of=/home/swapfile.img bs=45056 count=1M
+  # 	mkswap /home/swapfile.img
+  # 	swapon /home/swapfile.img
   # fi
 
   # Delete Cluster If Exists
@@ -952,6 +952,8 @@ install_okd() {
   ${OKD}/oc apply -f "${HOMELAB}/okd/okd-configuration/base/operator-hub.yaml"
   ${OKD}/oc apply -f "${HOMELAB}/okd/okd-configuration/base/operators"
 
+  sed 's/AllowContactingSource/NeverContactSource/' "${HOMELAB}"/okd/okd-configuration/base/image-mirror-set.yaml | kubectl apply -f -
+
   echo -e "\n\n${BLUE}Install Complete:${NC}"
   echo "export KUBECONFIG=${OKD}/okd/auth/kubeconfig"
   echo "Kubeadmin Password: $(cat ${OKD}/okd/auth/kubeadmin-password)"
@@ -982,7 +984,7 @@ install_addons_okd() {
 
   echo -e "\n${BLUE}Installing Cluster Addons:${NC}"
   echo -e "\n\n${BLUE}Get URL:${NC}"
-  URL=${URL:-}
+  URL=${URL:-arthurvardevanyan.com}
   if [ -z "${URL}" ]; then
     echo -n URL:
     read -r -s URL
@@ -997,30 +999,36 @@ install_addons_okd() {
     VAULT_TOKEN=$(vault login --tls-skip-verify -address="${URL}" -method=userpass -token-only username=arthur)
   fi
 
+  sleep 15s
+  while [ "$(kubectl get mcp worker -o yaml | yq '.status.conditions[] | select(.type == "Updating") | .status')" == "True" ]; do
+    echo "Waiting for MCPs"
+    sleep 30s
+  done
+
   oc debug node/worker-0 -t -- chroot /host sudo mkfs.ext4 -L longhorn /dev/vdb
   oc debug node/worker-1 -t -- chroot /host sudo mkfs.ext4 -L longhorn /dev/vdb
   oc debug node/worker-2 -t -- chroot /host sudo mkfs.ext4 -L longhorn /dev/vdb
-  oc debug node/worker-3 -t -- chroot /host sudo mkfs.ext4 -L longhorn /dev/vdb
+  oc debug node/worker-3 -t -- chroot /host sudo mkfs.ext4 -L longhorn /dev/vdb || true
 
   kubectl label node worker-0 topology.kubernetes.io/zone="even" --overwrite
   kubectl label node worker-1 topology.kubernetes.io/zone="odd" --overwrite
   kubectl label node worker-2 topology.kubernetes.io/zone="even" --overwrite
-  kubectl label node worker-3 topology.kubernetes.io/zone="odd" --overwrite
+  kubectl label node worker-3 topology.kubernetes.io/zone="odd" --overwrite || true
 
   kubectl annotate node "worker-0" node.longhorn.io/default-disks-config='[{"path":"/var/mnt/longhorn","allowScheduling":true}]' --overwrite
   kubectl annotate node "worker-1" node.longhorn.io/default-disks-config='[{"path":"/var/mnt/longhorn","allowScheduling":true}]' --overwrite
   kubectl annotate node "worker-2" node.longhorn.io/default-disks-config='[{"path":"/var/mnt/longhorn","allowScheduling":true}]' --overwrite
-  kubectl annotate node "worker-3" node.longhorn.io/default-disks-config='[{"path":"/var/mnt/longhorn","allowScheduling":true}]' --overwrite
+  kubectl annotate node "worker-3" node.longhorn.io/default-disks-config='[{"path":"/var/mnt/longhorn","allowScheduling":true}]' --overwrite || true
 
   kubectl label node "worker-0" node.longhorn.io/create-default-disk=config --overwrite
   kubectl label node "worker-1" node.longhorn.io/create-default-disk=config --overwrite
   kubectl label node "worker-2" node.longhorn.io/create-default-disk=config --overwrite
-  kubectl label node "worker-3" node.longhorn.io/create-default-disk=config --overwrite
+  kubectl label node "worker-3" node.longhorn.io/create-default-disk=config --overwrite || true
 
   kubectl label node "worker-0" node-role.kubernetes.io/infra="" --overwrite
   kubectl label node "worker-1" node-role.kubernetes.io/infra="" --overwrite
   kubectl label node "worker-2" node-role.kubernetes.io/infra="" --overwrite
-  kubectl label node "worker-3" node-role.kubernetes.io/infra="" --overwrite
+  kubectl label node "worker-3" node-role.kubernetes.io/infra="" --overwrite || true
 
   kubectl apply -f "${HOMELAB}"/okd/okd-configuration/base/mcp.yaml
   yq '.spec.config.systemd.units[1].enabled=false' "${HOMELAB}"/okd/okd-configuration/base/longhorn-mc.yaml | kubectl apply -f -
