@@ -63,7 +63,7 @@ spec:
       serviceAccountName: collector
       containers:
         - name: collector
-          image: "quay.io/stackrox-io/collector-slim:4.3.1"
+          image: "quay.io/stackrox-io/collector-slim:4.3.1@sha256:8947cc86f7c9acc74088b740138e00152f9bc277dfe433f43c2c04f26cf76a3c"
           imagePullPolicy: IfNotPresent
           env:
             - name: COLLECTOR_CONFIG
@@ -137,7 +137,7 @@ spec:
             - name: ROX_NODE_SCANNING_ENDPOINT
               value: "127.0.0.1:8444"
 
-          image: "quay.io/stackrox-io/main:4.3.1"
+          image: "quay.io/stackrox-io/main:4.3.1@sha256:b49f3d3726823711e9d722cf0c9570b993dcb8d435e454b5c7b30b13499a829c"
           imagePullPolicy: IfNotPresent
           name: compliance
           resources:
@@ -166,7 +166,7 @@ spec:
               name: certs
               readOnly: true
         - name: node-inventory
-          image: "quay.io/stackrox-io/scanner-slim:4.3.1"
+          image: "quay.io/stackrox-io/scanner-slim:4.3.1@sha256:8c458e75d3670c57902c7fefb77d85d3e8536e51afd61e7acc59821cf0fa641b"
           imagePullPolicy: IfNotPresent
           command: ["/scanner", "--nodeinventory", "--config=", ""]
           ports:
