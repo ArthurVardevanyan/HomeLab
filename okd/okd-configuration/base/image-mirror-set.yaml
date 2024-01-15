@@ -2,11 +2,19 @@
 apiVersion: config.openshift.io/v1
 kind: ImageDigestMirrorSet
 metadata:
-  name: image-policy-0
+  name: image-digest-mirror
   labels:
     app.kubernetes.io/instance: okd-configuration
 spec:
   imageDigestMirrors:
+    # - mirrors:
+    #     - registry.arthurvardevanyan.com/origin/content
+    #   source: registry.ci.openshift.org/origin
+    #   mirrorSourcePolicy: AllowContactingSource
+    # - mirrors:
+    #     - registry.arthurvardevanyan.com/origin/release
+    # #   source: registry.ci.openshift.org/origin/release
+    #   mirrorSourcePolicy: AllowContactingSource
     - mirrors:
         - registry.arthurvardevanyan.com/openshift
       source: quay.io/openshift
@@ -23,7 +31,7 @@ spec:
 apiVersion: config.openshift.io/v1
 kind: ImageTagMirrorSet
 metadata:
-  name: image-policy-0
+  name: image-digest-mirror
 spec:
   imageTagMirrors:
     - mirrors:

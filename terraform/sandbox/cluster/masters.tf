@@ -2,7 +2,7 @@
 
 resource "libvirt_ignition" "master" {
   name    = "master-tf.ign"
-  pool    = libvirt_pool.okd.name
+  pool    = "default" #libvirt_pool.okd.name
   content = "${var.path}/okd/master.ign"
 }
 
@@ -20,7 +20,7 @@ resource "libvirt_domain" "master" {
   name            = "master-${count.index}"
   coreos_ignition = libvirt_ignition.master.id
 
-  vcpu   = "4"
+  vcpu   = "3"
   memory = "13312"
   disk {
     volume_id = element(libvirt_volume.master.*.id, count.index)
