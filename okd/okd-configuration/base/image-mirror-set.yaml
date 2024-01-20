@@ -99,6 +99,10 @@ spec:
         - registry.arthurvardevanyan.com
       source: cgr.dev
       mirrorSourcePolicy: AllowContactingSource # NeverContactSource
+    - mirrors:
+        - registry.arthurvardevanyan.com/eclipse/che-plugin-registry
+      source: quay.io/eclipse/che-plugin-registry
+      mirrorSourcePolicy: AllowContactingSource # NeverContactSource
 ---
 apiVersion: config.openshift.io/v1
 kind: ImageTagMirrorSet
@@ -213,6 +217,11 @@ spec:
       source: gcr.io/tekton-releases/github.com/tektoncd/pipeline/cmd/git-init
       mirrorSourcePolicy: NeverContactSource
     - mirrors:
+        - registry.arthurvardevanyan.com/tektoncd/pipeline/workingdirinit
+      source: gcr.io/tekton-releases/github.com/tektoncd/pipeline/cmd/workingdirinit
+      mirrorSourcePolicy: AllowContactingSource # NeverContactSource
+
+    - mirrors:
         - registry.arthurvardevanyan.com/tektoncd/triggers/controller
       source: gcr.io/tekton-releases/github.com/tektoncd/triggers/cmd/controller
       mirrorSourcePolicy: NeverContactSource
@@ -238,6 +247,10 @@ spec:
     - mirrors:
         - registry.arthurvardevanyan.com/rupali/serve-tkn
       source: docker.io/rupali/serve-tkn
+      mirrorSourcePolicy: NeverContactSource
+    - mirrors:
+        - registry.arthurvardevanyan.com/tektoncd/pipeline/git-init
+      source: gcr.io/tekton-releases/github.com/tektoncd/pipeline/cmd/git-init
       mirrorSourcePolicy: NeverContactSource
 ---
 apiVersion: config.openshift.io/v1
