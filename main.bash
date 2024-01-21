@@ -844,7 +844,7 @@ install_okd() {
 
   export PREFIX=""
   export TF_VAR_master_count=3
-  export TF_VAR_worker_count=3 #4
+  export TF_VAR_worker_count=4
 
   echo -e "\n\n${BLUE}Get URL:${NC}"
   URL=${URL:-sandbox.arthurvardevanyan.com}
@@ -1032,7 +1032,6 @@ install_addons_okd() {
 
   kubectl apply -f "${HOMELAB}"/okd/okd-configuration/base/mcp.yaml
   yq '.spec.config.systemd.units[1].enabled=false' "${HOMELAB}"/okd/okd-configuration/base/longhorn-mc.yaml | kubectl apply -f -
-  argocd-vault-plugin generate "${HOMELAB}"/okd/okd-configuration/base/image-source-policy.yaml | kubectl apply -f -
 
   sleep 15s
   while [ "$(kubectl get mcp infra -o yaml | yq '.status.conditions[] | select(.type == "Updating") | .status')" == "True" ]; do
