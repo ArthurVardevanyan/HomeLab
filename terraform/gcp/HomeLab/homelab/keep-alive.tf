@@ -138,6 +138,9 @@ resource "google_cloudfunctions_function" "okd_homelab_keep_alive_cloud_function
     # checkov:skip=CKV_SECRET_6 Place Holder
     version = "latest"
   }
+
+  depends_on = [google_storage_bucket_object.keep_alive]
+
 }
 
 resource "google_cloudfunctions_function_iam_member" "member" {
