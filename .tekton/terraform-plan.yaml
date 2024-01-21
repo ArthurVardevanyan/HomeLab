@@ -6,10 +6,10 @@ metadata:
   annotations:
     pipelinesascode.tekton.dev/max-keep-runs: "1"
     pipelinesascode.tekton.dev/on-cel-expression: |
-      event == "pull_request" && target_branch == "production" && "terraform/***".pathChanged()
+      event == "pull_request" && target_branch == "main" && "terraform/***".pathChanged()
     pipelinesascode.tekton.dev/target-namespace: "homelab"
     pipelinesascode.tekton.dev/task: "[tekton/base/terraform-task.yaml]"
-    pipelinesascode.tekton.dev/task-1: "https://raw.githubusercontent.com/ArthurVardevanyan/HomeLab/production/tekton/tasks/git-clone/0.9.1/git-clone.yaml"
+    pipelinesascode.tekton.dev/task-1: "https://raw.githubusercontent.com/ArthurVardevanyan/HomeLab/main/tekton/tasks/git-clone/0.9.1/git-clone.yaml"
 spec:
   params:
     - name: git-commit
