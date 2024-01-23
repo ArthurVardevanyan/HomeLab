@@ -79,6 +79,13 @@ spec:
         - name: truenas
           secret:
             secretName: truenas
-        - name: data
-          emptyDir:
-            sizeLimit: 5Gi
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+      spec:
+        accessModes:
+          - ReadWriteOnce
+        resources:
+          requests:
+            storage: "5Gi"
+        storageClassName: longhorn
