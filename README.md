@@ -207,10 +207,15 @@ sudo virsh dumpxml worker-6 > worker-6.xml
 #### OKD Longhorn Secondary Disk Setup
 
 ```bash
+# https://askubuntu.com/questions/144894/add-physical-disk-to-kvm-virtual-machine
+sudo mkfs.ext4 -L longhorn /dev/nvme0n1
+sudo mkfs.ext4 -L longhorn1 /dev/nvme1n1
+
+# Sandbox
 sudo mkfs.ext4 -L longhorn /dev/vdb
 sudo mkfs.ext4 -L longhorn1 /dev/vdc
 
-# Pre Machine Config
+# Pre Machine Config (Sandbox)
 sudo su
 echo "/dev/vdb /var/mnt/longhorn auto nofail" > /etc/fstab
 sudo reboot
