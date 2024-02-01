@@ -1,0 +1,14 @@
+---
+kind: Kustomization
+apiVersion: kustomize.config.k8s.io/v1beta1
+resources:
+  - ../../base
+  - ./okd.yaml
+patches:
+  - target:
+      kind: DaemonSet
+      name: kube-vip-ds
+    patch: |-
+      - op: add
+        path: /spec/template/spec/containers/0/env/0
+        value: { "name": "address", "value": "10.0.0.130" }

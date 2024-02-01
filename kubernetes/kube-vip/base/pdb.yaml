@@ -1,0 +1,21 @@
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: kube-vip
+  namespace: kube-vip
+spec:
+  maxUnavailable: 1
+  selector:
+    matchLabels:
+      name: kube-vip-ds
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: kube-vip-cloud-provider
+  namespace: kube-vip
+spec:
+  selector:
+    matchLabels:
+      app: kube-vip
+      component: kube-vip-cloud-provider

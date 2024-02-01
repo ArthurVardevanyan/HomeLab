@@ -1,7 +1,7 @@
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: kubevirt
+  name: kube-vip
   namespace: argocd
   annotations:
     argocd.argoproj.io/sync-wave: "1"
@@ -10,13 +10,13 @@ metadata:
     app.kubernetes.io/instance: argocd
 spec:
   destination:
-    namespace: kubevirt-hyperconverged
+    namespace: kube-vip
     server: https://kubernetes.default.svc
   project: default
   source:
-    path: kubernetes/kubevirt/overlays/okd
+    path: kubernetes/kube-vip/overlays/okd
     repoURL: https://git.<path:secret/data/homelab/domain#url>/ArthurVardevanyan/HomeLab
-    targetRevision: HEAD
+    targetRevision: kube-vip
   syncPolicy:
     syncOptions:
       - CreateNamespace=true
