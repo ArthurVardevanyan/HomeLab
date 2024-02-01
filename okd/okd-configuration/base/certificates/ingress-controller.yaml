@@ -8,6 +8,7 @@ metadata:
   labels:
     app.kubernetes.io/instance: okd-configuration
 spec:
+  replicas: 2
   defaultCertificate:
     name: ingress-certificate
   # Kube Vip
@@ -49,6 +50,9 @@ metadata:
   namespace: openshift-ingress
 spec:
   allocateLoadBalancerNodePorts: true
+  clusterIP: 172.30.55.53
+  clusterIPs:
+    - 172.30.55.53
   externalTrafficPolicy: Local
   healthCheckNodePort: 32014
   internalTrafficPolicy: Cluster
