@@ -1,17 +1,22 @@
-apiVersion: route.openshift.io/v1
-kind: Route
+kind: Ingress
+apiVersion: networking.k8s.io/v1
 metadata:
-  labels:
-    app.kubernetes.io/instance: minio-operator
   name: minio-operator
   namespace: minio-operator
+  labels:
+    app.kubernetes.io/instance: minio-operator
+  annotations:
+    route.openshift.io/termination: edge
 spec:
-  host: minio-operator.apps.okd.<path:secret/data/homelab/domain#url>
-  port:
-    targetPort: http
-  to:
-    kind: Service
-    name: console
-  tls:
-    termination: edge
-    insecureEdgeTerminationPolicy: Redirect
+  ingressClassName: openshift-default
+  rules:
+    - host: minio-operator.apps.okd.arthurvardevanyan.com
+      http:
+        paths:
+          - path: ""
+            pathType: ImplementationSpecific
+            backend:
+              service:
+                name: console
+                port:
+                  name: http

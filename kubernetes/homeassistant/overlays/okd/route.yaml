@@ -1,20 +1,22 @@
-kind: Route
-apiVersion: route.openshift.io/v1
+kind: Ingress
+apiVersion: networking.k8s.io/v1
 metadata:
   name: homeassistant
   namespace: homeassistant
   labels:
-    app: homeassistant
     app.kubernetes.io/instance: homeassistant
+  annotations:
+    route.openshift.io/termination: passthrough
 spec:
-  host: "home.<path:secret/data/homelab/domain#url>"
-  to:
-    kind: Service
-    name: homeassistant
-    weight: 100
-  port:
-    targetPort: 8123
-  tls:
-    termination: passthrough
-    insecureEdgeTerminationPolicy: Redirect
-  wildcardPolicy: None
+  ingressClassName: openshift-default
+  rules:
+    - host: home.arthurvardevanyan.com
+      http:
+        paths:
+          - path: ""
+            pathType: ImplementationSpecific
+            backend:
+              service:
+                name: homeassistant
+                port:
+                  name: https

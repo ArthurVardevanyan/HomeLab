@@ -1,20 +1,22 @@
-kind: Route
-apiVersion: route.openshift.io/v1
+kind: Ingress
+apiVersion: networking.k8s.io/v1
 metadata:
   name: uptime-kuma
   namespace: uptime-kuma
   labels:
-    app: uptime-kuma
     app.kubernetes.io/instance: uptime-kuma
+  annotations:
+    route.openshift.io/termination: edge
 spec:
-  host: uptime.apps.okd.<path:secret/data/homelab/domain#url>
-  to:
-    kind: Service
-    name: uptime-kuma-service
-    weight: 100
-  port:
-    targetPort: 3001
-  tls:
-    termination: edge
-    insecureEdgeTerminationPolicy: Redirect
-  wildcardPolicy: None
+  ingressClassName: openshift-default
+  rules:
+    - host: uptime.apps.okd.arthurvardevanyan.com
+      http:
+        paths:
+          - path: ""
+            pathType: ImplementationSpecific
+            backend:
+              service:
+                name: uptime-kuma-service
+                port:
+                  name: http
