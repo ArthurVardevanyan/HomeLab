@@ -1,0 +1,25 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: unifi-network-application
+  namespace: unifi-network-application
+  labels:
+    helm.sh/chart: unifi-network-application-2.6.1
+    app.kubernetes.io/name: unifi-network-application
+    app.kubernetes.io/instance: unifi-network-application
+    app.kubernetes.io/version: "8.0.24"
+    app.kubernetes.io/managed-by: Helm
+  annotations:
+    route.openshift.io/termination: passthrough
+spec:
+  rules:
+    - host: "unifi.arthurvardevanyan.com"
+      http:
+        paths:
+          - path: ""
+            pathType: ImplementationSpecific
+            backend:
+              service:
+                name: "unifi-network-application-tcp"
+                port:
+                  number: 8443

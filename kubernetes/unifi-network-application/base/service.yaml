@@ -1,0 +1,65 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: unifi-network-application-tcp
+  namespace: unifi-network-application
+  labels:
+    helm.sh/chart: unifi-network-application-2.6.1
+    app.kubernetes.io/name: unifi-network-application
+    app.kubernetes.io/instance: unifi-network-application
+    app.kubernetes.io/version: "8.0.24"
+    app.kubernetes.io/managed-by: Helm
+spec:
+  type: LoadBalancer
+  loadBalancerIP: 10.0.0.132
+  ports:
+    - port: 8080
+      targetPort: 8080
+      protocol: TCP
+      name: devicecom
+    - port: 8443
+      targetPort: 8443
+      protocol: TCP
+      name: webapi
+    - port: 8880
+      targetPort: 8880
+      protocol: TCP
+      name: httpredirects
+    - port: 8843
+      targetPort: 8843
+      protocol: TCP
+      name: httpsredirects
+    - port: 6789
+      targetPort: 6789
+      protocol: TCP
+      name: speedtest
+  selector:
+    app.kubernetes.io/name: unifi-network-application
+    app.kubernetes.io/instance: unifi-network-application
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: unifi-network-application-udp
+  namespace: unifi-network-application
+  labels:
+    helm.sh/chart: unifi-network-application-2.6.1
+    app.kubernetes.io/name: unifi-network-application
+    app.kubernetes.io/instance: unifi-network-application
+    app.kubernetes.io/version: "8.0.24"
+    app.kubernetes.io/managed-by: Helm
+spec:
+  type: LoadBalancer
+  ports:
+    - port: 10001
+      targetPort: 10001
+      protocol: UDP
+      name: apdiscovery
+    - port: 3478
+      targetPort: 3478
+      protocol: UDP
+      name: stun
+  selector:
+    app.kubernetes.io/name: unifi-network-application
+    app.kubernetes.io/instance: unifi-network-application
+  loadBalancerIP: 10.0.0.132
