@@ -3,6 +3,8 @@ kind: ServiceAccount
 metadata:
   name: unifi-network-application
   namespace: unifi-network-application
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
   labels:
     helm.sh/chart: unifi-network-application-2.6.1
     app.kubernetes.io/name: unifi-network-application
@@ -16,6 +18,8 @@ metadata:
   name: unifi-network-application
   labels:
     app.kubernetes.io/instance: unifi-network-application
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
 rules:
   - apiGroups:
       - security.openshift.io
@@ -33,6 +37,8 @@ metadata:
   name: unifi-network-application
   labels:
     app.kubernetes.io/instance: unifi-network-application
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole

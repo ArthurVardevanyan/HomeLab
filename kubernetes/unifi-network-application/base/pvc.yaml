@@ -9,6 +9,8 @@ metadata:
     app.kubernetes.io/instance: unifi-network-application
     app.kubernetes.io/version: "8.0.24"
     app.kubernetes.io/managed-by: Helm
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
 spec:
   accessModes:
     - "ReadWriteOnce"
@@ -24,6 +26,8 @@ metadata:
   name: unifi-network-application-data
   labels:
     app.kubernetes.io/instance: unifi-network-application
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
 spec:
   capacity:
     storage: 10Gi
@@ -54,6 +58,8 @@ metadata:
     app.kubernetes.io/instance: unifi-network-application
     app.kubernetes.io/version: "8.0.24"
     app.kubernetes.io/managed-by: Helm
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
 spec:
   accessModes:
     - "ReadWriteOnce"
@@ -69,6 +75,8 @@ metadata:
   name: unifi-network-application-backup
   labels:
     app.kubernetes.io/instance: unifi-network-application
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
 spec:
   capacity:
     storage: 10Gi
@@ -87,5 +95,3 @@ spec:
   persistentVolumeReclaimPolicy: Retain
   storageClassName: longhorn-static
   volumeMode: Filesystem
----
-
