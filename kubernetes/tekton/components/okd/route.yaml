@@ -1,22 +1,24 @@
-kind: Route
-apiVersion: route.openshift.io/v1
+kind: Ingress
+apiVersion: networking.k8s.io/v1
 metadata:
   name: tekton
   namespace: openshift-pipelines
-  annotations:
-    argocd.argoproj.io/sync-wave: "0"
   labels:
     app: tekton
     app.kubernetes.io/instance: tekton
+  annotations:
+    argocd.argoproj.io/sync-wave: "0"
+    route.openshift.io/termination: edge
 spec:
-  host: tekton.apps.okd.<path:secret/data/homelab/domain#url>
-  to:
-    kind: Service
-    name: tekton-dashboard
-    weight: 100
-  port:
-    targetPort: 9097
-  tls:
-    termination: edge
-    insecureEdgeTerminationPolicy: Redirect
-  wildcardPolicy: None
+  ingressClassName: openshift-default
+  rules:
+    - host: tekton.apps.okd.arthurvardevanyan.com
+      http:
+        paths:
+          - path: ""
+            pathType: ImplementationSpecific
+            backend:
+              service:
+                name: tekton-dashboard
+                port:
+                  name: http

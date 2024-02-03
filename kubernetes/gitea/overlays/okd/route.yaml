@@ -1,20 +1,22 @@
-kind: Route
-apiVersion: route.openshift.io/v1
+kind: Ingress
+apiVersion: networking.k8s.io/v1
 metadata:
   name: gitea
   namespace: gitea
   labels:
-    app: gitea
     app.kubernetes.io/instance: gitea
+  annotations:
+    route.openshift.io/termination: passthrough
 spec:
-  host: "git.arthurvardevanyan.com"
-  to:
-    kind: Service
-    name: gitea-http
-    weight: 100
-  port:
-    targetPort: http
-  tls:
-    termination: passthrough
-    insecureEdgeTerminationPolicy: Redirect
-  wildcardPolicy: None
+  ingressClassName: openshift-default
+  rules:
+    - host: git.arthurvardevanyan.com
+      http:
+        paths:
+          - path: ""
+            pathType: ImplementationSpecific
+            backend:
+              service:
+                name: gitea-http
+                port:
+                  name: http

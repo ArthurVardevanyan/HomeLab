@@ -1,41 +1,45 @@
-kind: Route
-apiVersion: route.openshift.io/v1
+kind: Ingress
+apiVersion: networking.k8s.io/v1
 metadata:
   name: prometheus
   namespace: prometheus
   labels:
-    app: prometheus
     app.kubernetes.io/instance: prometheus
+  annotations:
+    route.openshift.io/termination: edge
 spec:
-  host: prometheus.apps.okd.<path:secret/data/homelab/domain#url>
-  to:
-    kind: Service
-    name: prometheus-service
-    weight: 100
-  port:
-    targetPort: 9090
-  tls:
-    termination: edge
-    insecureEdgeTerminationPolicy: Redirect
-  wildcardPolicy: None
+  ingressClassName: openshift-default
+  rules:
+    - host: prometheus.apps.okd.arthurvardevanyan.com
+      http:
+        paths:
+          - path: ""
+            pathType: ImplementationSpecific
+            backend:
+              service:
+                name: prometheus-service
+                port:
+                  name: metrics
 ---
-kind: Route
-apiVersion: route.openshift.io/v1
+kind: Ingress
+apiVersion: networking.k8s.io/v1
 metadata:
   name: thanos-querier
   namespace: prometheus
   labels:
-    app: prometheus
     app.kubernetes.io/instance: prometheus
+  annotations:
+    route.openshift.io/termination: edge
 spec:
-  host: thanos-querier.apps.okd.<path:secret/data/homelab/domain#url>
-  to:
-    kind: Service
-    name: thanos-querier
-    weight: 100
-  port:
-    targetPort: http
-  tls:
-    termination: edge
-    insecureEdgeTerminationPolicy: Redirect
-  wildcardPolicy: None
+  ingressClassName: openshift-default
+  rules:
+    - host: thanos-querier.apps.okd.arthurvardevanyan.com
+      http:
+        paths:
+          - path: ""
+            pathType: ImplementationSpecific
+            backend:
+              service:
+                name: thanos-querier
+                port:
+                  name: http

@@ -1,20 +1,22 @@
-kind: Route
-apiVersion: route.openshift.io/v1
+kind: Ingress
+apiVersion: networking.k8s.io/v1
 metadata:
   name: vault
   namespace: vault
   labels:
-    app: vault
     app.kubernetes.io/instance: vault
+  annotations:
+    route.openshift.io/termination: passthrough
 spec:
-  host: vault.<path:secret/data/homelab/domain#url>
-  to:
-    kind: Service
-    name: vault
-    weight: 100
-  port:
-    targetPort: vault
-  tls:
-    termination: passthrough
-    insecureEdgeTerminationPolicy: Redirect
-  wildcardPolicy: None
+  ingressClassName: openshift-default
+  rules:
+    - host: vault.arthurvardevanyan.com
+      http:
+        paths:
+          - path: ""
+            pathType: ImplementationSpecific
+            backend:
+              service:
+                name: vault
+                port:
+                  name: vault
