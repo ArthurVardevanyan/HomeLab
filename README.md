@@ -102,20 +102,19 @@ graph TD
 wan1[<center>WAN 500/50<br>192.168.100.1</center>]---router{<center>PfSense<br>10.0.0.2</center>}
 wan2[<center>LTE 100/25 Mb<br>192.168.1.1</center>]---router
 router---ap{<center>TP-AX1800<br>10.0.0.1</center>}
-ap---switch[<center>TL-SG1005D</center>]
+ap---switch[<center>USW-Flex-XG</center>]
 
 subgraph HomeLab
-    switch-.-truenas(<center>TrueNas<br>10.0.0.3</center>)
-    switch-.-kvm-1(<center>kvm-1<br>10.0.0.107</center>)
-    switch-.-kvm-2(<center>kvm-2<br>10.0.0.108</center>)
-    switch-.-kvm-3(<center>kvm-3<br>10.0.0.109</center>)
+    switch-.-|1 GbE|truenas(<center>TrueNas<br>10.0.0.3</center>)
+    switch-.-|10 GbE|kvm-1(<center>kvm-1<br>10.0.0.107</center>)
+    switch-.-|10 GbE|kvm-2(<center>kvm-2<br>10.0.0.108</center>)
+    switch-.-|10 GbE|kvm-3(<center>kvm-3<br>10.0.0.109</center>)
     subgraph OKD KVM-1
         kvm-1-.-server-1(<center>server-1<br>10.0.0.101</center>)
         kvm-1-.-infra-1(<center>infra-1<br>10.0.0.121</center>)
         kvm-1-.-worker-1(<center>worker-1<br>10.0.0.111</center>)
         kvm-1-.-worker-4(<center>worker-4<br>10.0.0.114</center>)
     end
-
     subgraph OKD KVM-2
         kvm-2-.-server-2(<center>server-2<br>10.0.0.102</center>)
         kvm-2-.-infra-2(<center>infra-2<br>10.0.0.121</center>)

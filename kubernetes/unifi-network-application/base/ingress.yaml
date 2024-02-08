@@ -11,8 +11,10 @@ metadata:
     app.kubernetes.io/managed-by: Helm
   annotations:
     argocd.argoproj.io/sync-wave: "1"
-    route.openshift.io/termination: passthrough
+    route.openshift.io/destination-ca-certificate-secret: internal-cert
+    route.openshift.io/termination: reencrypt
 spec:
+  ingressClassName: openshift-default
   rules:
     - host: "unifi.arthurvardevanyan.com"
       http:
