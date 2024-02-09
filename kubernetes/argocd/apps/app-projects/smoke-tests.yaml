@@ -1,0 +1,14 @@
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: smoke-tests
+  namespace: argocd-apps
+spec:
+  destinations:
+    - name: in-cluster
+      namespace: smoke-tests
+      server: "https://kubernetes.default.svc"
+  sourceNamespaces:
+    - smoke-tests
+  sourceRepos:
+    - "*"

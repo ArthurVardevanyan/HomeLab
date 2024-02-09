@@ -1,0 +1,37 @@
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: argocd-repo-server
+  namespace: argocd-apps
+  annotations:
+    authorization.k8s.io/get: "[]"
+  labels:
+    app.kubernetes.io/instance: argocd
+    app: argocd-apps
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: argocd-apps-argocd-application-controller
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: cluster-admin # TODO Scope Down
+subjects:
+  - kind: ServiceAccount
+    name: argocd-apps-argocd-application-controller
+    namespace: argocd-apps
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: argocd-apps-argocd-server
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: cluster-admin # TODO Scope Down
+subjects:
+  - kind: ServiceAccount
+    name: argocd-apps-argocd-server
+    namespace: argocd-apps
