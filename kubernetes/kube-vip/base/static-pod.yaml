@@ -1,0 +1,82 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: kube-vip
+  namespace: kube-vip
+  annotations:
+    checkov.io/skip1: CKV_K8S_8=Not Supported
+    checkov.io/skip2: CKV_K8S_9=Not Supported
+    checkov.io/skip3: CKV_K8S_38=Leader Election and Services
+    checkov.io/skip4: CKV_K8S_40=Needs to run as root
+    checkov.io/skip5: CKV_K8S_23=Needs to run as root
+    checkov.io/skip6: CKV_K8S_25=Needs Network capabilities
+    checkov.io/skip7: CKV_K8S_19=Needs Host Network to Manage Load Balancing
+  labels:
+    app: kube-vip-ds
+spec:
+  automountServiceAccountToken: false
+  containers:
+    - args:
+        - manager
+      env:
+        - name: address
+          value: 10.0.0.130
+        - name: vip_arp
+          value: "true"
+        - name: port
+          value: "6443"
+        - name: vip_cidr
+          value: "32"
+        - name: cp_enable
+          value: "true"
+        - name: cp_namespace
+          value: kube-vip
+        - name: vip_ddns
+          value: "false"
+        - name: svc_enable
+          value: "true"
+        - name: vip_leaderelection
+          value: "true"
+        - name: vip_leaseduration
+          value: "15"
+        - name: vip_renewdeadline
+          value: "10"
+        - name: vip_retryperiod
+          value: "2"
+      image: ghcr.io/kube-vip/kube-vip:v0.6.4@sha256:aa09234646e542dc2629c3dbd5698a77123aecb88d3b01a1d3ba5a78648c45b8
+      imagePullPolicy: IfNotPresent
+      name: kube-vip
+      resources:
+        limits:
+          cpu: 100m
+          ephemeral-storage: 15Mi
+          memory: 128Mi
+        requests:
+          cpu: 25m
+          memory: 32Mi
+      securityContext:
+        allowPrivilegeEscalation: false
+        capabilities:
+          add:
+            - NET_ADMIN
+            - NET_RAW
+            - SYS_TIME
+          drop:
+            - ALL
+        readOnlyRootFilesystem: true
+        runAsNonRoot: false
+        seccompProfile:
+          type: RuntimeDefault
+      volumeMounts:
+        - mountPath: /etc/kubernetes/admin.conf
+          name: kubeconfig
+  hostAliases:
+    - hostnames:
+        - kubernetes
+      ip: 127.0.0.1
+  hostNetwork: true
+  volumes:
+    - hostPath:
+        path: /etc/kubernetes/static-pod-resources/kube-apiserver-certs/secrets/node-kubeconfigs/localhost.kubeconfig # TODO Use a different KubeConfig
+      name: kubeconfig
+status: {}
