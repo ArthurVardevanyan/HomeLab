@@ -1,0 +1,125 @@
+﻿apiVersion: argoproj.io/v1beta1
+kind: ArgoCD
+metadata:
+  name: argocd-apps
+  namespace: argocd-apps
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+  labels:
+    app.kubernetes.io/instance: argocd
+spec:
+  sourceNamespaces:
+    - "smoke-tests"
+    - "analytics-for-spotify"
+    - "knative-serving"
+  monitoring:
+    enabled: true
+  server:
+    replicas: 2
+    host: argocd-apps.apps.okd.arthurvardevanyan.com
+    autoscale:
+      enabled: false
+    grpc:
+      ingress:
+        enabled: false
+    ingress:
+      enabled: false
+    resources:
+      limits:
+        cpu: 100m
+        memory: 200Mi
+      requests:
+        cpu: 50m
+        memory: 100Mi
+    insecure: true
+    route:
+      enabled: true
+      tls:
+        termination: edge
+        insecureEdgeTerminationPolicy: Redirect
+    service:
+      type: ""
+  grafana:
+    enabled: false
+  prometheus:
+    enabled: false
+  initialSSHKnownHosts: {}
+  disableAdmin: true
+  usersAnonymousEnabled: false
+  rbac:
+    policy: |
+      g, system:cluster-admins, role:admin
+      g, cluster-admins, role:admin
+  version: sha256:b0df6dc907f85a54ffb320264c6ab642b778eacea6f92ceae203322ba4cf149e #v2.9.5
+  repo:
+    replicas: 3
+    version: sha256:b0df6dc907f85a54ffb320264c6ab642b778eacea6f92ceae203322ba4cf149e #v2.9.5
+    mountsatoken: true
+    serviceaccount: argocd-repo-server
+    resources:
+      limits:
+        cpu: "1500m"
+        memory: 1Gi
+        ephemeral-storage: 6Gi
+      requests:
+        cpu: 50m
+        memory: 150Mi
+        ephemeral-storage: 256Mi
+  sso:
+    provider: dex
+    dex:
+      openShiftOAuth: true
+      resources:
+        limits:
+          cpu: 50m
+          memory: 100Mi
+        requests:
+          cpu: 10m
+          memory: 50Mi
+  ha:
+    enabled: true
+    redisProxyImage: haproxy # haproxy:2.9.1-bookworm
+    redisProxyVersion: sha256:e1d0edfdee9e39632a1fda3883dafb8c9268894849c1afd8afbd1fc6437bbeaf
+    resources:
+      limits:
+        cpu: 100m
+        memory: 96Mi
+      requests:
+        cpu: 25m
+        memory: 32Mi
+  tls:
+    ca: {}
+  redis:
+    image: redis # redis:7.2.4-bookworm
+    version: sha256:9e32ff5c286464387ff8f3fe72fc150a095c80f67af69d31ce4cb4d80fad0d7a
+    resources:
+      limits:
+        cpu: 100m
+        memory: 100Mi
+      requests:
+        cpu: 25m
+        memory: 25Mi
+  controller:
+    parallelismLimit: 25
+    sharding:
+      enabled: true
+      replicas: 1
+    processors:
+      operation: 25
+      status: 50
+    resources:
+      limits:
+        cpu: "1"
+        memory: 3Gi
+      requests:
+        cpu: 250m
+        memory: 750Mi
+  resourceExclusions: |
+    - apiGroups:
+      - tekton.dev
+      clusters:
+      - '*'
+      kinds:
+      - TaskRun
+      - PipelineRun

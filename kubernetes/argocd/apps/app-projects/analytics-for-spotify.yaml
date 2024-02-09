@@ -1,0 +1,17 @@
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: analytics-for-spotify
+  namespace: argocd-apps
+spec:
+  destinations:
+    - name: in-cluster
+      namespace: analytics-for-spotify
+      server: "https://kubernetes.default.svc"
+    - name: in-cluster
+      namespace: knative-serving
+      server: "https://kubernetes.default.svc"
+  sourceNamespaces:
+    - analytics-for-spotify
+  sourceRepos:
+    - "*"

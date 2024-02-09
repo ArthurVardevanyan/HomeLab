@@ -1,18 +1,17 @@
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: argocd
-  namespace: argocd
+  name: smoke-tests
+  namespace: smoke-tests
   annotations:
     argocd.argoproj.io/sync-wave: "1"
     argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
-  labels:
-    app.kubernetes.io/instance: argocd
 spec:
   destination:
+    namespace: smoke-tests
     server: https://kubernetes.default.svc
-  project: default
+  project: smoke-tests
   source:
-    path: kubernetes/argocd/overlays/okd
-    repoURL: https://git.<path:secret/data/homelab/domain#url>/ArthurVardevanyan/HomeLab
+    path: kubernetes/smoke-tests/overlays/okd
+    repoURL: https://git.arthurvardevanyan.com/ArthurVardevanyan/HomeLab
     targetRevision: HEAD
