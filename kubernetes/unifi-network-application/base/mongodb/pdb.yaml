@@ -1,0 +1,13 @@
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: mongo
+  namespace: unifi-network-application
+  annotations:
+    argocd.argoproj.io/sync-wave: "0"
+spec:
+  maxUnavailable: 1
+  selector:
+    matchLabels:
+      app: mongo-unifi-network-application-svc
+      app.kubernetes.io/name: mongodb

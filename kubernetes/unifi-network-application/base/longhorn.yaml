@@ -1,0 +1,41 @@
+apiVersion: longhorn.io/v1beta2
+kind: Volume
+metadata:
+  labels:
+    app.kubernetes.io/instance: unifi-network-application
+    longhornvolume: unifi-network-application-data
+    recurring-job-group.longhorn.io/backup: enabled
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+  name: unifi-network-application-data
+  namespace: longhorn-system
+spec:
+  replicaAutoBalance: ignored
+  dataLocality: disabled
+  accessMode: rwo
+  engineImage: longhornio/longhorn-engine:v1.5.3@sha256:3fb3b5d911242514e996941efb411eee3c926ec3b9766b514deddda9e6d18924
+  frontend: blockdev
+  snapshotDataIntegrity: enabled
+  numberOfReplicas: 2
+  size: "10737418240"
+---
+apiVersion: longhorn.io/v1beta2
+kind: Volume
+metadata:
+  labels:
+    app.kubernetes.io/instance: unifi-network-application
+    longhornvolume: unifi-network-application-backup
+    recurring-job-group.longhorn.io/backup: enabled
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+  name: unifi-network-application-backup
+  namespace: longhorn-system
+spec:
+  replicaAutoBalance: ignored
+  dataLocality: disabled
+  accessMode: rwo
+  engineImage: longhornio/longhorn-engine:v1.5.3@sha256:3fb3b5d911242514e996941efb411eee3c926ec3b9766b514deddda9e6d18924
+  frontend: blockdev
+  snapshotDataIntegrity: enabled
+  numberOfReplicas: 2
+  size: "10737418240"

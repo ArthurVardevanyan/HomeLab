@@ -104,9 +104,9 @@ spec:
       source: docker.io/library/alpine
       mirrorSourcePolicy: NeverContactSource
     - mirrors:
-        - registry.arthurvardevanyan.com
-      source: cgr.dev
-      mirrorSourcePolicy: AllowContactingSource # NeverContactSource
+        - registry.arthurvardevanyan.com/mongodb/mongo
+      source: docker.io/library/mongo
+      mirrorSourcePolicy: NeverContactSource
     - mirrors:
         - registry.arthurvardevanyan.com/eclipse/che-plugin-registry
       source: quay.io/eclipse/che-plugin-registry
@@ -163,6 +163,10 @@ spec:
     - mirrors:
         - registry.arthurvardevanyan.com/netobserv/network-observability-console-plugin
       source: quay.io/netobserv/network-observability-console-plugin
+      mirrorSourcePolicy: NeverContactSource
+    - mirrors:
+        - registry.arthurvardevanyan.com/mongodb/mongo
+      source: docker.io/library/mongo
       mirrorSourcePolicy: NeverContactSource
 ---
 apiVersion: config.openshift.io/v1
@@ -237,6 +241,10 @@ spec:
         - registry.arthurvardevanyan.com/tektoncd/triggers/webhook
       source: gcr.io/tekton-releases/github.com/tektoncd/triggers/cmd/webhook
       mirrorSourcePolicy: NeverContactSource
+    - mirrors:
+        - registry.arthurvardevanyan.com
+      source: cgr.dev
+      mirrorSourcePolicy: AllowContactingSource # NeverContactSource
 ---
 apiVersion: config.openshift.io/v1
 kind: ImageTagMirrorSet

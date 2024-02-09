@@ -132,24 +132,23 @@ stateful_workload_stop() {
   kubectl scale --replicas=0 -n quay deployment/quay-quay-app
   kubectl scale --replicas=0 -n quay deployment/quay-clair-app
   kubectl scale --replicas=0 -n quay deployment/quay-quay-mirror
-  # kubectl scale --replicas=0 -n jellyfin statefulset/jellyfin
 
   kubectl scale --replicas=0 -n cockroach-operator-system deployments/cockroach-operator-manager
   kubectl scale --replicas=0 -n zitadel statefulset/crdb
   kubectl scale --replicas=0 -n zitadel deployment/zitadel
 
+  kubectl scale --replicas=0 -n mongodb-operator deployments/mongodb-kubernetes-operator
+  kubectl scale --replicas=0 -n unifi-network-application statefulset/unifi-network-application
+  kubectl scale --replicas=0 -n unifi-network-application statefulset/mongo-unifi-network-application
+
   kubectl patch postgresCluster clair -n quay --type=merge -p '{"spec":{"shutdown":true}}'
   kubectl patch postgresCluster gitea -n gitea --type=merge -p '{"spec":{"shutdown":true}}'
   kubectl patch postgresCluster grafana -n postgres --type=merge -p '{"spec":{"shutdown":true}}'
-  kubectl patch postgresCluster homeassistant -n postgres --type=merge -p '{"spec":{"shutdown":true}}'
+  kubectl patch postgresCluster homeassistant -n homeassistant --type=merge -p '{"spec":{"shutdown":true}}'
   kubectl patch postgresCluster nextcloud -n postgres --type=merge -p '{"spec":{"shutdown":true}}'
   kubectl patch postgresCluster photoprism -n postgres --type=merge -p '{"spec":{"shutdown":true}}'
   kubectl patch postgresCluster stackrox -n postgres --type=merge -p '{"spec":{"shutdown":true}}'
   kubectl patch postgresCluster quay -n quay --type=merge -p '{"spec":{"shutdown":true}}'
-  kubectl patch postgresCluster tekton-hub -n openshift-pipelines --type=merge -p '{"spec":{"shutdown":true}}'
-
-  # kubectl patch postgresCluster linkwarden -n linkwarden --type=merge -p '{"spec":{"shutdown":true}}'
-  # kubectl scale --replicas=0 -n linkwarden statefulset/linkwarden
 
   kubectl scale --replicas=0 -n argocd deployment/argocd-operator-controller-manager
   kubectl scale --replicas=0 -n argocd statefulset/argocd-application-controller
@@ -158,9 +157,6 @@ stateful_workload_stop() {
   kubectl scale --replicas=0 -n argocd deployment/argocd-server
   kubectl scale --replicas=0 -n argocd deployment/argocd-redis-ha-haproxy
   kubectl scale --replicas=0 -n argocd statefulset/argocd-redis-ha-server
-
-  kubectl scale --replicas=0 -n openshift-pipelines-operator deployment/openshift-pipelines-operator
-  kubectl scale --replicas=0 -n openshift-pipelines deployment/tekton-hub-api
 
   kubectl scale --replicas=0 -n stackrox deployment/central
   kubectl scale --replicas=0 -n stackrox deployment/scanner-db
@@ -178,6 +174,10 @@ stateful_workload_start() {
   kubectl scale --replicas=1 -n cockroach-operator-system deployments/cockroach-operator-manager
   kubectl scale --replicas=3 -n zitadel statefulset/crdb
   kubectl scale --replicas=2 -n zitadel deployment/zitadel
+
+  kubectl scale --replicas=1 -n mongodb-operator deployments/mongodb-kubernetes-operator
+  kubectl scale --replicas=3 -n unifi-network-application statefulset/mongo-unifi-network-application
+  kubectl scale --replicas=1 -n unifi-network-application statefulset/unifi-network-application
 
   kubectl scale --replicas=1 -n bitwarden statefulset/bitwarden
   kubectl scale --replicas=2 -n gitea deployment/gitea
@@ -201,20 +201,15 @@ stateful_workload_start() {
   kubectl scale --replicas=2 -n quay deployment/quay-clair-app
   kubectl scale --replicas=2 -n quay deployment/quay-quay-mirror
   kubectl scale --replicas=1 -n postgres deployment/pgo
-  # kubectl scale --replicas=1 -n jellyfin statefulset/jellyfin
 
   kubectl patch postgresCluster clair -n quay --type=merge -p '{"spec":{"shutdown":false}}'
   kubectl patch postgresCluster gitea -n gitea --type=merge -p '{"spec":{"shutdown":false}}'
   kubectl patch postgresCluster grafana -n postgres --type=merge -p '{"spec":{"shutdown":false}}'
-  kubectl patch postgresCluster homeassistant -n postgres --type=merge -p '{"spec":{"shutdown":false}}'
+  kubectl patch postgresCluster homeassistant -n homeassistant --type=merge -p '{"spec":{"shutdown":false}}'
   kubectl patch postgresCluster nextcloud -n postgres --type=merge -p '{"spec":{"shutdown":false}}'
   kubectl patch postgresCluster photoprism -n postgres --type=merge -p '{"spec":{"shutdown":false}}'
   kubectl patch postgresCluster stackrox -n postgres --type=merge -p '{"spec":{"shutdown":false}}'
   kubectl patch postgresCluster quay -n quay --type=merge -p '{"spec":{"shutdown":false}}'
-  kubectl patch postgresCluster tekton-hub -n openshift-pipelines --type=merge -p '{"spec":{"shutdown":false}}'
-
-  # kubectl patch postgresCluster linkwarden -n linkwarden --type=merge -p '{"spec":{"shutdown":false}}'
-  # kubectl scale --replicas=1 -n linkwarden statefulset/linkwarden
 
   kubectl scale --replicas=1 -n argocd deployment/argocd-operator-controller-manager
   kubectl scale --replicas=1 -n argocd statefulset/argocd-application-controller
@@ -223,9 +218,6 @@ stateful_workload_start() {
   kubectl scale --replicas=1 -n argocd deployment/argocd-server
   kubectl scale --replicas=1 -n argocd deployment/argocd-redis-ha-haproxy
   kubectl scale --replicas=3 -n argocd statefulset/argocd-redis-ha-server
-
-  kubectl scale --replicas=1 -n openshift-pipelines-operator deployment/openshift-pipelines-operator
-  kubectl scale --replicas=1 -n openshift-pipelines deployment/tekton-hub-api
 
   kubectl scale --replicas=1 -n stackrox deployment/central
   kubectl scale --replicas=1 -n stackrox deployment/scanner-db

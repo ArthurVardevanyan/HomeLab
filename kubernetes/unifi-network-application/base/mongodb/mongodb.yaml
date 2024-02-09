@@ -1,0 +1,126 @@
+apiVersion: mongodbcommunity.mongodb.com/v1
+kind: MongoDBCommunity
+metadata:
+  annotations:
+    argocd.argoproj.io/sync-wave: "0"
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+  name: mongo-unifi-network-application
+  namespace: unifi-network-application
+spec:
+  members: 3
+  security:
+    authentication:
+      ignoreUnknownUsers: true
+      modes:
+        - SCRAM
+  statefulSet:
+    spec:
+      selector:
+        matchLabels:
+          app.kubernetes.io/name: mongodb
+      template:
+        metadata:
+          labels:
+            app.kubernetes.io/name: mongodb
+        spec:
+          affinity:
+            podAntiAffinity:
+              preferredDuringSchedulingIgnoredDuringExecution:
+                - podAffinityTerm:
+                    labelSelector:
+                      matchExpressions:
+                        - key: app.kubernetes.io/name
+                          operator: In
+                          values:
+                            - mongodb
+                    topologyKey: kubernetes.io/hostname
+                  weight: 100
+          containers:
+            - name: mongod
+              resources:
+                limits:
+                  cpu: "150m"
+                  memory: 768Mi
+                requests:
+                  cpu: "25m"
+                  memory: 256Mi
+            - name: mongodb-agent
+              resources:
+                limits:
+                  cpu: "50m"
+                  memory: 128Mi
+                requests:
+                  cpu: "25m"
+                  memory: 64Mi
+          initContainers:
+            - name: mongodb-agent-readinessprobe
+              resources:
+                limits:
+                  cpu: "150m"
+                  memory: 512Mi
+                requests:
+                  cpu: "25m"
+                  memory: 128Mi
+      volumeClaimTemplates:
+        - apiVersion: v1
+          kind: PersistentVolumeClaim
+          metadata:
+            creationTimestamp: null
+            name: data-volume
+          spec:
+            accessModes:
+              - ReadWriteOnce
+            resources:
+              requests:
+                storage: 10Gi
+            volumeMode: Filesystem
+          status:
+            phase: Pending
+        - apiVersion: v1
+          kind: PersistentVolumeClaim
+          metadata:
+            creationTimestamp: null
+            name: logs-volume
+          spec:
+            accessModes:
+              - ReadWriteOnce
+            resources:
+              requests:
+                storage: 2Gi
+            volumeMode: Filesystem
+          status:
+            phase: Pending
+
+  type: ReplicaSet
+  users:
+    - connectionStringSecretName: mongodb-unifi-network-application-unifi-connection-string
+      db: unifi
+      name: unifi-network-application
+      passwordSecretRef:
+        name: mongodb-unifi-network-application-setup
+      roles:
+        - db: unifi
+          name: clusterAdmin
+        - db: unifi
+          name: userAdminAnyDatabase
+        - db: unifi
+          name: root
+        - db: admin
+          name: dbOwner
+      scramCredentialsSecretName: mongodb-unifi-network-application-unifi
+    - connectionStringSecretName: mongodb-unifi-network-application-connection-string
+      db: admin
+      name: unifi-network-application
+      passwordSecretRef:
+        name: mongodb-unifi-network-application-setup
+      roles:
+        - db: admin
+          name: clusterAdmin
+        - db: admin
+          name: userAdminAnyDatabase
+        - db: admin
+          name: root
+        - db: admin
+          name: dbOwner
+      scramCredentialsSecretName: mongodb-unifi-network-application
+  version: 6.0.5

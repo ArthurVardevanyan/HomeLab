@@ -1,0 +1,77 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    email: support@mongodb.com
+  labels:
+    owner: mongodb
+  name: mongodb-kubernetes-operator
+  namespace: mongodb-operator
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      name: mongodb-kubernetes-operator
+  strategy:
+    rollingUpdate:
+      maxUnavailable: 1
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        name: mongodb-kubernetes-operator
+    spec:
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - labelSelector:
+                matchExpressions:
+                  - key: name
+                    operator: In
+                    values:
+                      - mongodb-kubernetes-operator
+              topologyKey: kubernetes.io/hostname
+      containers:
+        - command:
+            - /usr/local/bin/entrypoint
+          env:
+            - name: WATCH_NAMESPACE
+              value: "*"
+            - name: POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: MANAGED_SECURITY_CONTEXT
+              value: "true"
+            - name: OPERATOR_NAME
+              value: mongodb-kubernetes-operator
+            - name: AGENT_IMAGE
+              value: quay.io/mongodb/mongodb-agent:107.0.0.8465-1@sha256:a208e80f79bb7fe954d9a9a1444bb482dee2e86e5e5ae89dbf240395c4a158b3
+            - name: READINESS_PROBE_IMAGE
+              value: quay.io/mongodb/mongodb-kubernetes-readinessprobe:1.0.17@sha256:bcceb08875a4c8d376700f0acf600dd853e1cbecefd7a4afa76bee540cc278c5
+            - name: VERSION_UPGRADE_HOOK_IMAGE
+              value: quay.io/mongodb/mongodb-kubernetes-operator-version-upgrade-post-start-hook:1.0.8@sha256:4976643b32b904079ad3f85f51994007a6be2af462623fe09467b1751c61b31c
+            - name: MONGODB_IMAGE
+              value: library/mongo
+            - name: MONGODB_REPO_URL
+              value: docker.io
+          image: quay.io/mongodb/mongodb-kubernetes-operator:0.9.0@sha256:838e8ae2fab6a0630001fabc765689d7c5eee5db8c24d1d795a1ba39bc2342ad
+          imagePullPolicy: Always
+          name: mongodb-kubernetes-operator
+          securityContext:
+            runAsNonRoot: true
+            readOnlyRootFilesystem: true
+            allowPrivilegeEscalation: false
+            seccompProfile:
+              type: RuntimeDefault
+            capabilities:
+              drop:
+                - ALL
+          resources:
+            limits:
+              cpu: 1100m
+              memory: 1Gi
+            requests:
+              cpu: 500m
+              memory: 200Mi
+      serviceAccountName: mongodb-kubernetes-operator

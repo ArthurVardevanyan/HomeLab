@@ -1,0 +1,100 @@
+image:
+  repository: linuxserver/unifi-network-application
+  pullPolicy: IfNotPresent
+  tag:
+
+replicaCount: 1
+
+imagePullSecrets: []
+nameOverride: ""
+fullnameOverride: ""
+
+serviceAccount:
+  create: true
+  annotations: {}
+  name: ""
+
+environment:
+  timezone: "Europe/Berlin"
+  uid: 1000
+  gid: 1000
+  memLimit: 1920 # Keep this a little below the resource limits
+  memStartup: 1024 # Set this rougly to the resource requests
+
+service:
+  type: "LoadBalancer"
+  annotations:
+    {}
+    # traefik.ingress.kubernetes.io/service.serversscheme: https
+  ports:
+    devicecom: 8080
+    webapi: 8443
+  appDiscovery: false
+  syslogCapture: false
+  loadBalancerIP: "10.0.0.132"
+
+ingress:
+  enabled: true
+  className: ""
+  annotations:
+    {}
+    # kubernetes.io/ingress.class: nginx
+    # kubernetes.io/tls-acme: "true"
+  hosts:
+    - host: unifi.apps.okd.arthurvardevanyan.com
+      paths:
+        - path: /
+          pathType: ImplementationSpecific
+  tls: []
+  #  - secretName: chart-example-tls
+  #    hosts:
+  #      - unifi.speedport.ip
+
+# if set, use this persistant volume claim for the internal mongodb
+persistence:
+  enabled: true
+  accessMode: ReadWriteOnce
+  size: 8Gi
+  ## database data Persistent Volume Storage Class
+  ## If defined, storageClassName: <storageClass>
+  ## If set to "-", storageClassName: "", which disables dynamic provisioning
+  storageClass: longhorn
+  annotations: {}
+  backup:
+    enabled: true
+    accessMode: ReadWriteOnce
+    size: 8Gi
+    ## database data Persistent Volume Storage Class
+    ## If defined, storageClassName: <storageClass>
+    ## If set to "-", storageClassName: "", which disables dynamic provisioning
+    storageClass: longhorn
+    annotations: {}
+
+podSecurityContext:
+  {}
+  # runAsUser: 999
+  # fsGroup: 999
+
+securityContext: {}
+#  capabilities:
+#     drop:
+#     - ALL
+#  readOnlyRootFilesystem: false
+#  runAsNonRoot: true
+#  runAsUser: 999
+
+resources:
+  limits:
+    cpu: 500m
+    memory: 2Gi
+  requests:
+    cpu: 250m
+    memory: 1Gi
+
+nodeSelector:
+  {}
+  #unifi-network-application/enabled: "true"
+
+tolerations: []
+
+affinity: {}
