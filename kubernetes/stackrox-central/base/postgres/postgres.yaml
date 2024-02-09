@@ -1,5 +1,6 @@
 # StackroxDB Tweak
 # alter user stackrox createdb;
+# alter user stackrox superuser
 # PSQL 15 Public Scheme Tweak
 # \c stackrox
 # GRANT CREATE ON SCHEMA public TO stackrox;
@@ -7,12 +8,12 @@ apiVersion: postgres-operator.crunchydata.com/v1beta1
 kind: PostgresCluster
 metadata:
   name: stackrox
-  namespace: postgres
+  namespace: stackrox
   annotations:
     argocd.argoproj.io/sync-wave: "1"
     argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
   labels:
-    app.kubernetes.io/instance: postgres
+    app.kubernetes.io/instance: stackrox-central-services
 spec:
   backups:
     pgbackrest:
@@ -51,15 +52,15 @@ spec:
             differential: "0 7 * * 1-6"
           volume:
             volumeClaimSpec:
-              storageClassName: longhorn-static
+              storageClassName: longhorn
               accessModes:
                 - ReadWriteOnce
               resources:
                 requests:
-                  storage: 15Gi
+                  storage: 25Gi
   instances:
     - dataVolumeClaimSpec:
-        storageClassName: longhorn-static
+        storageClassName: longhorn
         accessModes:
           - ReadWriteOnce
         resources:

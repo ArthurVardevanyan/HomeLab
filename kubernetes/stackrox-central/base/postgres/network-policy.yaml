@@ -2,11 +2,11 @@ apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
   name: stackrox-app
-  namespace: postgres
+  namespace: stackrox
   annotations:
     argocd.argoproj.io/sync-wave: "1"
   labels:
-    app.kubernetes.io/instance: postgres
+    app.kubernetes.io/instance: stackrox-central-services
 spec:
   podSelector:
     matchLabels:
@@ -29,28 +29,19 @@ apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
   name: stackrox-postgres
-  namespace: postgres
+  namespace: stackrox
   annotations:
     argocd.argoproj.io/sync-wave: "1"
   labels:
-    app.kubernetes.io/instance: postgres
+    app.kubernetes.io/instance: stackrox-central-services
 spec:
   podSelector:
     matchLabels:
       postgres-operator.crunchydata.com/cluster: stackrox
   policyTypes:
     - Ingress
-    - Egress
   ingress:
     - from:
-        - namespaceSelector:
-            matchLabels:
-              kubernetes.io/metadata.name: postgres
-          podSelector:
-            matchLabels:
-              postgres-operator.crunchydata.com/cluster: stackrox
-  egress:
-    - to:
         - namespaceSelector:
             matchLabels:
               kubernetes.io/metadata.name: postgres
