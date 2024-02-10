@@ -1,0 +1,17 @@
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: finance-tracker
+  namespace: argocd-apps
+spec:
+  destinations:
+    - name: in-cluster
+      namespace: finance-tracker
+      server: "https://kubernetes.default.svc"
+    - name: in-cluster
+      namespace: knative-serving
+      server: "https://kubernetes.default.svc"
+  sourceNamespaces:
+    - finance-tracker
+  sourceRepos:
+    - "*"
