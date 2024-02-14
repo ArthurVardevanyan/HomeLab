@@ -19,6 +19,7 @@ metadata:
   labels:
     app.kubernetes.io/component: admission-controller
     app.kubernetes.io/instance: kyverno
+    app.kubernetes.io/part-of: kyverno
   annotations:
     checkov.io/skip1: CKV_K8S_155=Limited to WebHooks for Current Operator
 rules:
@@ -27,12 +28,6 @@ rules:
     resources:
       - mutatingwebhookconfigurations
       - validatingwebhookconfigurations
-    resourceNames:
-      - admission-controller
-      - kyverno-resource-mutating-webhook-cfg
-      - kyverno-exception-validating-webhook-cfg
-      - kyverno-policy-validating-webhook-cfg
-      - kyverno-resource-validating-webhook-cfg
     verbs:
       - create
       - delete
