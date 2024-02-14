@@ -1,0 +1,80 @@
+apiVersion: operator.external-secrets.io/v1alpha1
+kind: OperatorConfig
+metadata:
+  annotations:
+    operator-sdk/primary-resource: /externalsecret-validate
+    operator-sdk/primary-resource-type: ValidatingWebhookConfiguration.admissionregistration.k8s.io
+    argocd.argoproj.io/sync-wave: "2"
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+  name: external
+  namespace: external-secrets-operator
+spec:
+  certController:
+    create: true
+    fullnameOverride: ""
+    image:
+      pullPolicy: IfNotPresent
+      repository: ghcr.io/external-secrets/external-secrets
+      tag: v0.9.11@sha256:5660a29f1bfbf3666ebd99f692cea46fb12fa209db4fa460a97fd8c00f991671
+    nameOverride: ""
+    priorityClassName: ""
+    prometheus:
+      enabled: false
+      service:
+        port: 8080
+    rbac:
+      create: true
+    requeueInterval: 5m
+    serviceAccount:
+      create: true
+      name: ""
+  concurrent: 1
+  controllerClass: ""
+  crds:
+    createClusterExternalSecret: true
+    createClusterSecretStore: true
+  createOperator: true
+  fullnameOverride: ""
+  image:
+    pullPolicy: IfNotPresent
+    repository: ghcr.io/external-secrets/external-secrets
+    tag: v0.9.11@sha256:5660a29f1bfbf3666ebd99f692cea46fb12fa209db4fa460a97fd8c00f991671
+  installCRDs: false
+  leaderElect: false
+  nameOverride: ""
+  priorityClassName: ""
+  processClusterExternalSecret: true
+  processClusterStore: true
+  prometheus:
+    enabled: false
+    service:
+      port: 8080
+  rbac:
+    create: true
+  replicaCount: 2
+  scopedNamespace: ""
+  scopedRBAC: false
+  serviceAccount:
+    create: true
+    name: ""
+  webhook:
+    certCheckInterval: 5m
+    certDir: /tmp/certs
+    create: true
+    fullnameOverride: ""
+    image:
+      pullPolicy: IfNotPresent
+      repository: ghcr.io/external-secrets/external-secrets
+      tag: v0.9.11@sha256:5660a29f1bfbf3666ebd99f692cea46fb12fa209db4fa460a97fd8c00f991671
+    nameOverride: ""
+    priorityClassName: ""
+    prometheus:
+      enabled: false
+      service:
+        port: 8080
+    rbac:
+      create: true
+    replicaCount: 2
+    serviceAccount:
+      create: true
+      name: ""
