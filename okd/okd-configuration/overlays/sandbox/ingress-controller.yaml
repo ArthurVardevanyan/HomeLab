@@ -1,0 +1,21 @@
+apiVersion: operator.openshift.io/v1
+kind: IngressController
+metadata:
+  name: default
+  namespace: openshift-ingress-operator
+  annotations:
+    ingress.operator.openshift.io/default-enable-http2: "true"
+  labels:
+    app.kubernetes.io/instance: okd-configuration
+spec:
+  endpointPublishingStrategy:
+    hostNetwork:
+      protocol: PROXY
+    type: HostNetwork
+  tlsSecurityProfile:
+    type: Modern
+  nodePlacement:
+    tolerations:
+      - key: node-role.kubernetes.io/infra
+        effect: NoSchedule
+        operator: Exists

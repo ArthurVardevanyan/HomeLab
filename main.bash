@@ -880,9 +880,10 @@ install_okd() {
   mkdir -p "${OKD}/vm"
 
   echo -e "\n\n${BLUE}Download Dependencies:${NC}"
+  export OKD_VERSION=${OKD_VERSION:-latest} # tag/RELEASE_NAME
   # Download openshift-install and openshift-client
-  wget "$(curl https://api.github.com/repos/openshift/okd/releases/latest -L | grep openshift-install-linux | grep browser_download_url | grep -v arm | cut -d\" -f4)" -P ${OKD}/
-  wget "$(curl https://api.github.com/repos/openshift/okd/releases/latest -L | grep openshift-client-linux | grep -v arm | grep browser_download_url | cut -d\" -f4)" -P ${OKD}/
+  wget "$(curl https://api.github.com/repos/openshift/okd/releases/"${OKD_VERSION}" -L | grep openshift-install-linux | grep browser_download_url | grep -v arm | cut -d\" -f4)" -P ${OKD}/
+  wget "$(curl https://api.github.com/repos/openshift/okd/releases/"${OKD_VERSION}" -L | grep openshift-client-linux | grep -v arm | grep browser_download_url | cut -d\" -f4)" -P ${OKD}/
   tar xvzf ${OKD}/openshift-install-linux* -C ${OKD}
   tar xvzf ${OKD}/openshift-client-linux* -C ${OKD}
 
@@ -938,12 +939,13 @@ install_okd() {
   terraform apply -auto-approve
 
   echo -e "\n\n${BLUE}Wait for Install To Complete:${NC}"
-  yq 'del(.spec.defaultCertificate)' "${HOMELAB}/okd/okd-configuration/base/certificates/ingress-controller.yaml" | ${OKD}/oc apply -f -
+  ${OKD}/oc apply -f "${HOMELAB}/okd/okd-configuration/overlays/sandbox/ingress-controller.yaml"
   ${OKD}/openshift-install --dir=${OKD}/okd wait-for install-complete --log-level debug
 
   ${OKD}/oc apply -f "${HOMELAB}/okd/okd-configuration/base/operator-hub.yaml"
   ${OKD}/oc apply -f "${HOMELAB}/okd/okd-configuration/base/operators"
 
+  echo -e "\n\n${BLUE}Setup Image Mirroring:${NC}"
   sed 's/AllowContactingSource/NeverContactSource/' "${HOMELAB}"/okd/okd-configuration/base/image-mirror-set.yaml | kubectl apply -f -
 
   echo -e "\n\n${BLUE}Install Complete:${NC}"
