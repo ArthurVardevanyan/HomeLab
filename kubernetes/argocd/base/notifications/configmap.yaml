@@ -22,7 +22,7 @@ data:
   #     when: app.metadata.deletionTimestamp != nil
   template.app-sync-status-unknown: |-
     message: |
-      Application {{.app.metadata.name}} is now running new version of deployments manifests.
+      Application {{.app.metadata.name}} Unknown
     status:
       state: queued
       label: "{{ .context.environmentName }}-{{.app.metadata.name}}"
@@ -66,7 +66,7 @@ data:
   #   ""
   template.app-sync-failed: |-
     message: |
-      Application {{.app.metadata.name}} is now running new version of deployments manifests.
+      Application {{.app.metadata.name}} Failed
     github:
       repoURLPath: "{{.app.spec.source.repoURL}}"
       revisionPath: "{{.app.status.operationState.operation.sync.revision}}"
@@ -83,7 +83,7 @@ data:
         transientEnvironment: false
   template.app-sync-succeeded: |-
     message: |
-      Application {{.app.metadata.name}} is now running new version of deployments manifests.
+      Application {{.app.metadata.name}} Succeeded
     github:
       repoURLPath: "{{.app.spec.source.repoURL}}"
       revisionPath: "{{.app.status.operationState.syncResult.revision}}"
@@ -120,7 +120,7 @@ data:
   #         == 'Healthy'
   template.app-health-degraded: |-
     message: |
-      Application {{.app.metadata.name}} is now running new version of deployments manifests.
+      Application {{.app.metadata.name}} Degraded
     github:
       repoURLPath: "{{.app.spec.source.repoURL}}"
       revisionPath: "{{.app.status.operationState.syncResult.revision}}"
