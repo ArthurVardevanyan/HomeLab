@@ -1,14 +1,37 @@
-kind: Secret
-apiVersion: v1
+# kind: Secret
+# apiVersion: v1
+# metadata:
+#   name: github-oauth-config
+#   namespace: eclipse-che-operator
+#   labels:
+#     app.kubernetes.io/part-of: che.eclipse.org
+#     app.kubernetes.io/component: oauth-scm-configuration
+#   annotations:
+#     che.eclipse.org/oauth-scm-server: github
+# type: Opaque
+# data:
+#   id: <path:secret/data/homelab/che/github#id | base64encode>
+#   secret: <path:secret/data/homelab/che/github#secret | base64encode>
+# ---
+apiVersion: external-secrets.io/v1beta1
+kind: ExternalSecret
 metadata:
   name: github-oauth-config
   namespace: eclipse-che-operator
-  labels:
-    app.kubernetes.io/part-of: che.eclipse.org
-    app.kubernetes.io/component: oauth-scm-configuration
-  annotations:
-    che.eclipse.org/oauth-scm-server: github
-type: Opaque
-data:
-  id: <path:secret/data/homelab/che/github#id | base64encode>
-  secret: <path:secret/data/homelab/che/github#secret | base64encode>
+spec:
+  refreshInterval: "1h"
+  secretStoreRef:
+    name: vault
+    kind: ClusterSecretStore
+  target:
+    name: github-oauth-config
+    #creationPolicy: "Merge"
+  data:
+    - secretKey: id
+      remoteRef:
+        key: homelab/che/github
+        property: id
+    - secretKey: secret
+      remoteRef:
+        key: homelab/che/github
+        property: secret
