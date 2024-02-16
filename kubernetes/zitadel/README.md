@@ -4,7 +4,7 @@
 helm template zitadel zitadel/zitadel \
  --set zitadel.masterkey="<path:secret/data/homelab/zitadel/config#masterkey>" \
  --set zitadel.configmapConfig.ExternalSecure=true \
- --set zitadel.configmapConfig.ExternalDomain="zitadel.apps.okd.<path:secret/data/homelab/domain#url>" \
+ --set zitadel.configmapConfig.ExternalDomain="zitadel.apps.okd.arthurvardevanyan.com" \
  --set zitadel.configmapConfig.ExternalPort="443" \
  --set zitadel.configmapConfig.TLS.Enabled=false \
  --set zitadel.configmapConfig.Database.cockroach.User.SSL.Mode="verify-full" \
@@ -42,14 +42,14 @@ kubectl kustomize kubernetes/zitadel/overlays/okd | argocd-vault-plugin generate
 Initial User
 
 ```bash
-zitadel-admin@zitadel.zitadel.apps.okd.<path:secret/data/homelab/domain#url>
+zitadel-admin@zitadel.zitadel.apps.okd.arthurvardevanyan.com
 ```
 
 Call Back URLs
 
 ```bash
-https://oauth-openshift.apps.okd.<path:secret/data/homelab/domain#url>/oauth2callback/zitadel
-https://oauth-openshift.apps.okd.sandbox.<path:secret/data/homelab/domain#url>/oauth2callback/zitadel
+https://oauth-openshift.apps.okd.arthurvardevanyan.com/oauth2callback/zitadel
+https://oauth-openshift.apps.okd.sandbox.arthurvardevanyan.com/oauth2callback/zitadel
 ```
 
 TODO: PassThrough Termination
