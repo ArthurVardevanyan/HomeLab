@@ -325,8 +325,10 @@ spec:
             - name: ROX_OPENSHIFT_API
               value: "true"
             - name: ROX_HELM_CLUSTER_CONFIG_FP
-              value: "<path:secret/data/homelab/stackrox/homelab#config-fingerprint>"
-
+              valueFrom:
+              secretKeyRef:
+                name: config-fingerprint
+                key: config-fingerprint
           volumeMounts:
             - name: varlog
               mountPath: /var/log/stackrox/
