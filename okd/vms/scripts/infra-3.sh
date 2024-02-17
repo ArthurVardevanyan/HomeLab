@@ -3,7 +3,7 @@
 export LIBGUESTFS_BACKEND=direct
 export HOME=/home/arthur
 export NODE=infra-3
-export VCPUS=4
+export VCPUS=6
 export RAM_MB=7168
 export IMAGE="/home/okd/${NODE}.raw"
 export IGNITION_CONFIG="/var/lib/libvirt/images/worker.ign"

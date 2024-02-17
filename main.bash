@@ -147,7 +147,7 @@ stateful_workload_stop() {
   kubectl patch postgresCluster homeassistant -n homeassistant --type=merge -p '{"spec":{"shutdown":true}}'
   kubectl patch postgresCluster nextcloud -n postgres --type=merge -p '{"spec":{"shutdown":true}}'
   kubectl patch postgresCluster photoprism -n postgres --type=merge -p '{"spec":{"shutdown":true}}'
-  kubectl patch postgresCluster stackrox -n postgres --type=merge -p '{"spec":{"shutdown":true}}'
+  kubectl patch postgresCluster stackrox -n stackrox --type=merge -p '{"spec":{"shutdown":true}}'
   kubectl patch postgresCluster quay -n quay --type=merge -p '{"spec":{"shutdown":true}}'
 
   kubectl scale --replicas=0 -n argocd deployment/argocd-operator-controller-manager
@@ -208,7 +208,7 @@ stateful_workload_start() {
   kubectl patch postgresCluster homeassistant -n homeassistant --type=merge -p '{"spec":{"shutdown":false}}'
   kubectl patch postgresCluster nextcloud -n postgres --type=merge -p '{"spec":{"shutdown":false}}'
   kubectl patch postgresCluster photoprism -n postgres --type=merge -p '{"spec":{"shutdown":false}}'
-  kubectl patch postgresCluster stackrox -n postgres --type=merge -p '{"spec":{"shutdown":false}}'
+  kubectl patch postgresCluster stackrox -n stackrox --type=merge -p '{"spec":{"shutdown":false}}'
   kubectl patch postgresCluster quay -n quay --type=merge -p '{"spec":{"shutdown":false}}'
 
   kubectl scale --replicas=1 -n argocd deployment/argocd-operator-controller-manager
