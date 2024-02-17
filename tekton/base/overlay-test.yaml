@@ -13,10 +13,17 @@ spec:
     - name: image
       type: string
       default: "registry.arthurvardevanyan.com/homelab/toolbox:not_latest"
+    - name: git-commit
+      type: string
+    - name: git-url
+      type: string
+    - name: git-pr-number
+      type: string
 
   workspaces:
     - name: data
     - name: kubernetes-json-schema
+    - name: basic-auth
 
   steps:
     - name: overlay-test
@@ -43,9 +50,17 @@ spec:
       volumeMounts:
         - name: tmp
           mountPath: /tmp
+        - name: test
+          mountPath: /workspace/test
       env:
+        - name: GIT_URL
+          value: $(params.git-url)
+        - name: GIT_PR_NUMBER
+          value: $(params.git-pr-number)
         - name: WORKSPACE_DATA_PATH
           value: $(workspaces.data.path)
+        - name: WORKSPACE_BASIC_AUTH_PATH
+          value: $(workspaces.basic-auth.path)
       script: |
         #!/bin/bash
 
@@ -57,9 +72,45 @@ spec:
         export KUBERNETES_TOKEN="$(cat /var/run/secrets/kubernetes.io/serviceaccount/token)"
         export VAULT_TOKEN="$(vault write -field=token auth/homelab/login role=homelab jwt=${KUBERNETES_TOKEN})"
 
-        cd $(workspaces.data.path)
-        ./main.bash test_overlays
+        cd "${WORKSPACE_DATA_PATH}"
+
+        gh auth login --with-token <"/${WORKSPACE_BASIC_AUTH_PATH}/git-provider-token"
+
+        WHATS_CHANGED=$(gh pr diff --repo "${GIT_URL}" "${GIT_PR_NUMBER}"  --name-only)
+
+        for FILE_PATH in ${WHATS_CHANGED}; do
+          echo "${FILE_PATH}" | cut -d'/' -f1,2 >>/tmp/files_changed.log
+        done
+
+        export FOLDER_LIST
+        FOLDER_LIST=$(sort -u /tmp/files_changed.log | grep -E "kubernetes/|okd/")
+        echo "${FOLDER_LIST}"
+
+        DIR="/tmp/yaml"
+        rm -rf /tmp/yaml
+        mkdir -p /tmp/yaml
+        echo "Build Yaml's"
+
+        for FOLDER in ${FOLDER_LIST}; do
+              if test -d ${FOLDER}; then
+                for OVERLAY in ./${FOLDER}/overlays/*; do
+                  if [[ ${OVERLAY} != *"k3s"* ]];then
+                    echo "${OVERLAY}"
+                    OUTPUT=$(echo "${OVERLAY}" | sed 's/\.//g' | sed 's/\//_/g')
+                    kubectl kustomize "${OVERLAY}" | argocd-vault-plugin generate - >"${DIR}/${OUTPUT}.yaml"
+                  fi
+                done
+              fi
+        done
+
+        kubeconform -n 16 -verbose --summary -ignore-missing-schemas \
+          -schema-location="../kubernetes-json-schema/master-standalone-strict/{{.ResourceKind}}{{.KindSuffix}}.json" \
+          -output text "${DIR}" | grep -v "is valid"
+
   volumes:
     - name: tmp
+      emptyDir:
+        sizeLimit: 10Mi
+    - name: test
       emptyDir:
         sizeLimit: 10Mi
