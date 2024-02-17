@@ -1,22 +1,21 @@
 # https://github.com/devfile/developer-images
 # https://registry.access.redhat.com/ubi9/ubi
-FROM registry.access.redhat.com/ubi9:9.3-1361.1699548029
+FROM registry.access.redhat.com/ubi9:9.3-1552
 
 USER 0
 
 ENV \
   ARGOCD_VAULT_VERSION=1.17.0 \
-  OKD_VERSION=4.14.0-0.okd-2023-12-01-225814 \
-  OPENTOFU_VERSION=1.6.0-beta1 \
-  VAULT_VERSION=1.15.3 \
+  OKD_VERSION=4.15.0-0.okd-2024-02-10-035534 \
+  OPENTOFU_VERSION=1.6.1 \
+  VAULT_VERSION=1.15.5 \
   KO_VERSION=0.15.1 \
-  GO_VERSION=1.21.4 \
-  GH_VERSION=2.39.2 \
+  GO_VERSION=1.22.0 \
+  GH_VERSION=2.44.1 \
   # 0.6.3 Not Working
   KUBECONFORM_VERSION=0.6.2  \
-  MARKDOWNLINT_VERSION=0.32.1 \
-  PRETTIER_VERSION=3.1.0 \
-  SHELL_CHECK_VERSION=0.9.0 \
+  MARKDOWNLINT_CLI_VERSION=0.39.0 \
+  PRETTIER_CLI_VERSION=3.2.5 \
   PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/local/go/bin \
   HOME=/home/user \
   SHELL=/bin/zsh
@@ -29,10 +28,12 @@ COPY ./containers/udi/repos /etc/yum.repos.d/
 RUN dnf install --disableplugin=subscription-manager libbrotli compat-openssl11 -y
 
 RUN rpm -ivh https://github.com/opentofu/opentofu/releases/download/v${OPENTOFU_VERSION}/tofu_${OPENTOFU_VERSION}_amd64.rpm && \
+  dnf install --nodocs -y --disableplugin=subscription-manager libpmem -y &&\
   dnf install --disableplugin=subscription-manager \
   diffutils git iproute jq less lsof man nano procps \
   perl-Digest-SHA net-tools openssh-clients rsync socat sudo time vim wget zip  pinentry \
-  sshpass logrotate unzip MariaDB-client google-cloud-cli tar procps-ng make nodejs ShellCheck -y \
+  sshpass logrotate unzip google-cloud-cli tar procps-ng make nodejs ShellCheck -y \
+  && dnf install --nodocs -y --disableplugin=subscription-manager MariaDB-client --disablerepo=centos-9-appstream -y \
   && dnf update -y && dnf clean all \
   && ln -s /usr/bin/python3.11 /usr/local/bin/python && \
   rm -rf /usr/lib64/google-cloud-sdk/{platform,data,bin/anthoscli} && \

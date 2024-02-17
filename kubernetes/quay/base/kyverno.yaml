@@ -74,37 +74,37 @@ spec:
                         memory: 256Mi
       name: quay-mirror
   validationFailureAction: Audit
----
-apiVersion: kyverno.io/v1
-kind: ClusterPolicy
-metadata:
-  name: replace-quay-image
-  annotations:
-    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
-spec:
-  background: false
-  rules:
-    - name: replace-quay-image
-      match:
-        any:
-          - resources:
-              kinds:
-                - Pod
-      mutate:
-        patchStrategicMerge:
-          spec:
-            containers:
-              - (image): "quay.io/projectquay/quay:3.10.2"
-                image: "quay.io/projectquay/quay:v3.10.2"
-    - name: replace-quay-image-init
-      match:
-        any:
-          - resources:
-              kinds:
-                - Pod
-      mutate:
-        patchStrategicMerge:
-          spec:
-            initContainers:
-              - (image): "quay.io/projectquay/quay:3.10.2"
-                image: "quay.io/projectquay/quay:v3.10.2"
+# ---
+# apiVersion: kyverno.io/v1
+# kind: ClusterPolicy
+# metadata:
+#   name: replace-quay-image
+#   annotations:
+#     argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+# spec:
+#   background: false
+#   rules:
+#     - name: replace-quay-image
+#       match:
+#         any:
+#           - resources:
+#               kinds:
+#                 - Pod
+#       mutate:
+#         patchStrategicMerge:
+#           spec:
+#             containers:
+#               - (image): "quay.io/projectquay/quay:3.10.2"
+#                 image: "quay.io/projectquay/quay:v3.10.3"
+#     - name: replace-quay-image-init
+#       match:
+#         any:
+#           - resources:
+#               kinds:
+#                 - Pod
+#       mutate:
+#         patchStrategicMerge:
+#           spec:
+#             initContainers:
+#               - (image): "quay.io/projectquay/quay:3.10.2"
+#                 image: "quay.io/projectquay/quay:v3.10.3"
