@@ -6,8 +6,7 @@ metadata:
   annotations:
     pipelinesascode.tekton.dev/max-keep-runs: "1"
     pipelinesascode.tekton.dev/on-cel-expression: |
-      target_branch == "main" && "containers/toolbox/containerfile".pathChanged()
-    # event == "pull_request" &&
+      event == "pull_request" &&  target_branch == "main" && "containers/toolbox/containerfile".pathChanged()
     pipelinesascode.tekton.dev/target-namespace: "homelab"
     pipelinesascode.tekton.dev/task: "https://raw.githubusercontent.com/ArthurVardevanyan/HomeLab/main/tekton/tasks/git-clone/0.9.1/git-clone.yaml"
     pipelinesascode.tekton.dev/task-1: "https://raw.githubusercontent.com/ArthurVardevanyan/HomeLab/main/tekton/tasks/buildah/0.5.1/buildah.yaml"
