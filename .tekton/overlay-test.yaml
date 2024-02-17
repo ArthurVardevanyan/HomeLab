@@ -6,8 +6,7 @@ metadata:
   annotations:
     pipelinesascode.tekton.dev/max-keep-runs: "1"
     pipelinesascode.tekton.dev/on-cel-expression: |
-      target_branch == "main" && ("kubernetes/***".pathChanged() || "okd/***".pathChanged()  || "task/***".pathChanged() || "tekton/***".pathChanged())
-    # event == "pull_request" &&
+      event == "pull_request" && target_branch == "main" && ("kubernetes/***".pathChanged() || "okd/***".pathChanged())
     pipelinesascode.tekton.dev/target-namespace: "homelab"
     pipelinesascode.tekton.dev/task: "[tekton/base/overlay-test.yaml]"
     pipelinesascode.tekton.dev/task-1: "https://raw.githubusercontent.com/ArthurVardevanyan/HomeLab/main/tekton/tasks/git-clone/0.9.1/git-clone.yaml"
@@ -19,6 +18,8 @@ spec:
       value: "{{ revision }}"
     - name: git-url
       value: "{{ repo_url }}"
+    - name: git-pr-number
+      value: "{{ pull_request_number }}"
 
   pipelineSpec:
     params:
@@ -66,6 +67,13 @@ spec:
             workspace: git_auth_secret
 
       - name: overlay-test
+        params:
+          - name: git-commit
+            value: $(params.git-commit)
+          - name: git-url
+            value: $(params.git-url)
+          - name: git-pr-number
+            value: $(params.git-pr-number)
         runAfter:
           - git-clone
           - git-clone-json
@@ -77,6 +85,8 @@ spec:
             workspace: data
           - name: kubernetes-json-schema
             workspace: kubernetes-json-schema
+          - name: basic-auth
+            workspace: git_auth_secret
 
   serviceAccountName: pipeline
   workspaces:
