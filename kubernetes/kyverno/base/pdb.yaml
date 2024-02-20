@@ -1,0 +1,12 @@
+kind: PodDisruptionBudget
+apiVersion: policy/v1
+metadata:
+  name: "kyverno-admission-controller"
+  namespace: kyverno
+spec:
+  maxUnavailable: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/component: admission-controller
+      app.kubernetes.io/instance: kyverno
+      app.kubernetes.io/part-of: kyverno

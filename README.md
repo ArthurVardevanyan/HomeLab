@@ -134,9 +134,9 @@ end
 
 <https://www.okd.io/>
 
-| Kubernetes Channel | OKD Channel | OKD OS           | Host Operating System |
-| ------------------ | ----------- | ---------------- | --------------------- |
-| v1.27              | stable-4.11 | Fedora CoreOS 38 | RHEL 9.3              |
+| Kubernetes Channel | OKD Version | OKD Channel | OKD OS           | Host Operating System |
+| ------------------ | ----------- | ----------- | ---------------- | --------------------- |
+| v1.28              | 4.15-\*     | stable-4.11 | Fedora CoreOS 39 | RHEL 9.3              |
 
 **Machines:**
 

@@ -39,6 +39,14 @@ spec:
         - registry.arthurvardevanyan.com/kube-vip
       source: ghcr.io/kube-vip
       mirrorSourcePolicy: AllowContactingSource
+    - mirrors:
+        - registry.arthurvardevanyan.com/longhornio
+      source: docker.io/longhornio
+      mirrorSourcePolicy: NeverContactSource
+    - mirrors:
+        - registry.arthurvardevanyan.com/kyverno/kyverno
+      source: ghcr.io/kyverno/kyverno
+      mirrorSourcePolicy: NeverContactSource
 ---
 apiVersion: config.openshift.io/v1
 kind: ImageTagMirrorSet
@@ -46,6 +54,10 @@ metadata:
   name: image-tag-mirror
 spec:
   imageTagMirrors:
+    - mirrors:
+        - registry.arthurvardevanyan.com/openshift/origin-oauth-proxy
+      source: quay.io/openshift/origin-oauth-proxy
+      mirrorSourcePolicy: AllowContactingSource
     - mirrors:
         - registry.arthurvardevanyan.com/projectquay
       source: quay.io/projectquay
@@ -165,12 +177,8 @@ spec:
       source: gcr.io/kubebuilder
       mirrorSourcePolicy: NeverContactSource
     - mirrors:
-        - registry.arthurvardevanyan.com/netobserv/network-observability-operator
-      source: quay.io/netobserv/network-observability-operator
-      mirrorSourcePolicy: NeverContactSource
-    - mirrors:
-        - registry.arthurvardevanyan.com/netobserv/network-observability-console-plugin
-      source: quay.io/netobserv/network-observability-console-plugin
+        - registry.arthurvardevanyan.com/netobserv
+      source: quay.io/netobserv
       mirrorSourcePolicy: NeverContactSource
     - mirrors:
         - registry.arthurvardevanyan.com/mongodb/mongo
