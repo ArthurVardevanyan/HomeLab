@@ -1,4 +1,4 @@
-apiVersion: flows.netobserv.io/v1alpha1
+apiVersion: flows.netobserv.io/v1beta2
 kind: FlowCollector
 metadata:
   name: cluster
@@ -15,7 +15,7 @@ spec:
       excludeInterfaces:
         - lo
       imagePullPolicy: IfNotPresent
-      kafkaBatchSize: 10485760
+      kafkaBatchSize: 1048576
       logLevel: info
       resources:
         limits:
@@ -25,42 +25,33 @@ spec:
           cpu: 50m
           memory: 64Mi
       sampling: 5 # 0 # Send All Flows, 50 Default
-    type: EBPF
+    ipfix:
+      cacheActiveTimeout: 20s
+      cacheMaxFlows: 400
+      clusterNetworkOperator:
+        namespace: openshift-network-operator
+      ovnKubernetes:
+        containerName: ovnkube-node
+        daemonSetName: ovnkube-node
+        namespace: ovn-kubernetes
+      sampling: 400
+    type: eBPF
   consolePlugin:
     autoscaler:
       maxReplicas: 3
-      metrics:
-        - resource:
-            name: cpu
-            target:
-              averageUtilization: 50
-              type: Utilization
-          type: Resource
-      minReplicas: 2
-      status: DISABLED
+      status: Disabled
+    enable: true
     imagePullPolicy: IfNotPresent
     logLevel: info
-    port: 9001
-    resources:
-      limits:
-        memory: 128Mi
-        cpu: 150m
-      requests:
-        cpu: 50m
-        memory: 32Mi
     portNaming:
       enable: true
-      portNames:
-        "3100": loki
     quickFilters:
       - default: true
         filter:
-          dst_namespace!: "openshift-,network-observability"
-          src_namespace!: "openshift-,network-observability"
+          flow_layer: app
         name: Applications
       - filter:
-          dst_namespace: "openshift-,network-observability"
-          src_namespace: "openshift-,network-observability"
+          flow_layer: infra
         name: Infrastructure
       - default: true
         filter:
@@ -70,48 +61,64 @@ spec:
       - filter:
           dst_kind: Service
         name: Services network
-    register: true
-  deploymentModel: DIRECT
-  #exporters: []
+    replicas: 2
+    resources:
+      limits:
+        cpu: 150m
+        memory: 128Mi
+      requests:
+        cpu: 50m
+        memory: 32Mi
+  deploymentModel: Direct
   kafka:
     address: ""
-    tls:
-      caCert: {}
-      userCert: {}
+    sasl:
+      type: Disabled
     topic: ""
   loki:
-    batchSize: 10485760
-    batchWait: 1s
-    maxBackoff: 5s
-    maxRetries: 2
-    minBackoff: 1s
-    tls:
-      #enable: false
-      insecureSkipVerify: true
-    url: "http://loki.loki.svc:3100/"
+    enable: true
+    lokiStack:
+      name: loki
+    manual:
+      authToken: Disabled
+      ingesterUrl: http://loki:3100/
+      querierUrl: http://loki:3100/
+      tenantID: netobserv
+    microservices:
+      ingesterUrl: http://loki-distributor:3100/
+      querierUrl: http://loki-query-frontend:3100/
+      tenantID: netobserv
+    mode: Monolithic
+    monolithic:
+      tenantID: netobserv
+      tls:
+        insecureSkipVerify: true
+      url: http://loki.loki.svc:3100/
+    readTimeout: 30s
+    writeBatchSize: 102400
+    writeBatchWait: 1s
+    writeTimeout: 10s
   namespace: network-observability
   processor:
-    dropUnusedFields: true
     imagePullPolicy: IfNotPresent
-    kafkaConsumerAutoscaler: null
+    kafkaConsumerAutoscaler:
+      maxReplicas: 3
+      status: Disabled
     kafkaConsumerBatchSize: 10485760
     kafkaConsumerQueueCapacity: 1000
     kafkaConsumerReplicas: 3
     logLevel: info
+    logTypes: Flows
     metrics:
-      ignoreTags:
-        - egress
-        - packets
       server:
         port: 9102
         tls:
-          type: DISABLED
-    port: 2055
-    profilePort: 6060
+          type: Disabled
+    multiClusterDeployment: false
     resources:
       limits:
-        memory: 192Mi
         cpu: 150m
+        memory: 192Mi
       requests:
         cpu: 50m
         memory: 64Mi
