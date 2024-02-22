@@ -11,31 +11,5 @@ spec:
   resources:
     requests:
       storage: 35Gi
-  volumeName: prometheus-pv
-  storageClassName: longhorn-static
-  volumeMode: Filesystem
----
-kind: PersistentVolume
-apiVersion: v1
-metadata:
-  name: prometheus-pv
-  labels:
-    app.kubernetes.io/instance: prometheus
-spec:
-  capacity:
-    storage: 35Gi
-  csi:
-    driver: driver.longhorn.io
-    volumeHandle: prometheus
-    fsType: ext4
-    volumeAttributes:
-      numberOfReplicas: "2"
-  accessModes:
-    - ReadWriteOnce
-  claimRef:
-    kind: PersistentVolumeClaim
-    name: prometheus-pvc
-    namespace: prometheus
-  persistentVolumeReclaimPolicy: Retain
-  storageClassName: longhorn-static
+  storageClassName: longhorn
   volumeMode: Filesystem
