@@ -33,18 +33,26 @@ spec:
       value: "true"
   pipeline:
     await-sidecar-readiness: true
+    coschedule: workspaces
     default-service-account: pipeline
     disable-affinity-assistant: true
     disable-creds-init: false
     embedded-status: full
     enable-api-fields: stable
     enable-bundles-resolver: true
+    enable-cel-in-whenexpression: false
     enable-cluster-resolver: true
     enable-custom-tasks: false
     enable-git-resolver: true
     enable-hub-resolver: true
+    enable-param-enum: false
     enable-provenance-in-status: false
+    enable-step-actions: false
     enable-tekton-oci-bundles: true
+    enforce-nonfalsifiability: none
+    keep-pod-on-cancel: false
+    max-result-size: 4096
+    metrics.count.enable-reason: false
     metrics.pipelinerun.duration-type: lastvalue
     metrics.pipelinerun.level: pipelinerun
     metrics.taskrun.duration-type: lastvalue
@@ -57,8 +65,10 @@ spec:
     performance:
       disable-ha: false
     require-git-ssh-secret-known-hosts: false
+    results-from: termination-message
     running-in-environment-with-injected-sidecars: true
     send-cloudevents-for-runs: false
+    set-security-context: false
     trusted-resources-verification-no-match-policy: ignore
   platforms:
     openshift:

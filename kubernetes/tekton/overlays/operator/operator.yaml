@@ -2,8 +2,8 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   labels:
-    operator.tekton.dev/release: v0.68.1
-    version: v0.68.1
+    operator.tekton.dev/release: v0.70.0
+    version: v0.70.0
   name: openshiftpipelinesascodes.operator.tekton.dev
 spec:
   group: operator.tekton.dev
@@ -43,8 +43,8 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   labels:
-    operator.tekton.dev/release: v0.68.1
-    version: v0.68.1
+    operator.tekton.dev/release: v0.70.0
+    version: v0.70.0
   name: tektonaddons.operator.tekton.dev
 spec:
   group: operator.tekton.dev
@@ -81,8 +81,8 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   labels:
-    operator.tekton.dev/release: v0.68.1
-    version: v0.68.1
+    operator.tekton.dev/release: v0.70.0
+    version: v0.70.0
   name: tektonchains.operator.tekton.dev
 spec:
   group: operator.tekton.dev
@@ -119,8 +119,8 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   labels:
-    operator.tekton.dev/release: v0.68.1
-    version: v0.68.1
+    operator.tekton.dev/release: v0.70.0
+    version: v0.70.0
   name: tektonconfigs.operator.tekton.dev
 spec:
   group: operator.tekton.dev
@@ -157,8 +157,8 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   labels:
-    operator.tekton.dev/release: v0.68.1
-    version: v0.68.1
+    operator.tekton.dev/release: v0.70.0
+    version: v0.70.0
   name: tektonhubs.operator.tekton.dev
 spec:
   group: operator.tekton.dev
@@ -201,8 +201,8 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   labels:
-    operator.tekton.dev/release: v0.68.1
-    version: v0.68.1
+    operator.tekton.dev/release: v0.70.0
+    version: v0.70.0
   name: tektoninstallersets.operator.tekton.dev
 spec:
   group: operator.tekton.dev
@@ -236,8 +236,8 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   labels:
-    operator.tekton.dev/release: v0.68.1
-    version: v0.68.1
+    operator.tekton.dev/release: v0.70.0
+    version: v0.70.0
   name: tektonpipelines.operator.tekton.dev
 spec:
   group: operator.tekton.dev
@@ -274,8 +274,8 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   labels:
-    operator.tekton.dev/release: v0.68.1
-    version: v0.68.1
+    operator.tekton.dev/release: v0.70.0
+    version: v0.70.0
   name: tektonresults.operator.tekton.dev
 spec:
   group: operator.tekton.dev
@@ -312,8 +312,8 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   labels:
-    operator.tekton.dev/release: v0.68.1
-    version: v0.68.1
+    operator.tekton.dev/release: v0.70.0
+    version: v0.70.0
   name: tektontriggers.operator.tekton.dev
 spec:
   group: operator.tekton.dev
@@ -405,9 +405,6 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   name: tekton-operator
-  annotations:
-    checkov.io/skip1: CKV_K8S_155=Operator Manages Webhooks
-    checkov.io/skip2: CKV_K8S_158=Operator Manages Additional Perms
 rules:
   - apiGroups:
       - ""
@@ -766,6 +763,18 @@ rules:
       - delete
       - update
       - patch
+  - apiGroups:
+      - console.openshift.io
+    resources:
+      - consoleplugins
+    verbs:
+      - get
+      - list
+      - watch
+      - create
+      - delete
+      - update
+      - patch
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
@@ -920,7 +929,7 @@ data:
 kind: ConfigMap
 metadata:
   labels:
-    operator.tekton.dev/release: devel
+    operator.tekton.dev/release: v0.70.0
   name: config-logging
   namespace: openshift-pipelines-operator
 ---
@@ -931,7 +940,7 @@ data:
 kind: ConfigMap
 metadata:
   labels:
-    operator.tekton.dev/release: devel
+    operator.tekton.dev/release: v0.70.0
   name: tekton-config-defaults
   namespace: openshift-pipelines-operator
 ---
@@ -975,12 +984,90 @@ metadata:
 ---
 apiVersion: v1
 data:
-  version: v0.68.1
+  _example: |
+    ################################
+    #                              #
+    #    EXAMPLE CONFIGURATION     #
+    #                              #
+    ################################
+    # This block is not actually functional configuration,
+    # but serves to illustrate the available configuration
+    # options and document them in a way that is accessible
+    # to users that `kubectl edit` this config map.
+    #
+    # These sample configuration options may be copied out of
+    # this example block and unindented to be in the data block
+    # to actually change the configuration.
+    # lease-duration is how long non-leaders will wait to try to acquire the
+    # lock; 15 seconds is the value used by core kubernetes controllers.
+    lease-duration: "60s"
+    # renew-deadline is how long a leader will try to renew the lease before
+    # giving up; 10 seconds is the value used by core kubernetes controllers.
+    renew-deadline: "40s"
+    # retry-period is how long the leader election client waits between tries of
+    # actions; 2 seconds is the value used by core kubernetes controllers.
+    retry-period: "10s"
+    # buckets is the number of buckets used to partition key space of each
+    # Reconciler. If this number is M and the replica number of the controller
+    # is N, the N replicas will compete for the M buckets. The owner of a
+    # bucket will take care of the reconciling for the keys partitioned into
+    # that bucket.
+    buckets: "1"
+kind: ConfigMap
+metadata:
+  labels:
+    app.kubernetes.io/instance: tekton
+    operator.tekton.dev/release: v0.70.0
+  name: tekton-operator-controller-config-leader-election
+  namespace: openshift-pipelines-operator
+---
+apiVersion: v1
+data:
+  version: v0.70.0
 kind: ConfigMap
 metadata:
   labels:
     app.kubernetes.io/instance: tekton
   name: tekton-operator-info
+  namespace: openshift-pipelines-operator
+---
+apiVersion: v1
+data:
+  _example: |
+    ################################
+    #                              #
+    #    EXAMPLE CONFIGURATION     #
+    #                              #
+    ################################
+    # This block is not actually functional configuration,
+    # but serves to illustrate the available configuration
+    # options and document them in a way that is accessible
+    # to users that `kubectl edit` this config map.
+    #
+    # These sample configuration options may be copied out of
+    # this example block and unindented to be in the data block
+    # to actually change the configuration.
+    # lease-duration is how long non-leaders will wait to try to acquire the
+    # lock; 15 seconds is the value used by core kubernetes controllers.
+    lease-duration: "60s"
+    # renew-deadline is how long a leader will try to renew the lease before
+    # giving up; 10 seconds is the value used by core kubernetes controllers.
+    renew-deadline: "40s"
+    # retry-period is how long the leader election client waits between tries of
+    # actions; 2 seconds is the value used by core kubernetes controllers.
+    retry-period: "10s"
+    # buckets is the number of buckets used to partition key space of each
+    # Reconciler. If this number is M and the replica number of the controller
+    # is N, the N replicas will compete for the M buckets. The owner of a
+    # bucket will take care of the reconciling for the keys partitioned into
+    # that bucket.
+    buckets: "1"
+kind: ConfigMap
+metadata:
+  labels:
+    app.kubernetes.io/instance: tekton
+    operator.tekton.dev/release: v0.70.0
+  name: tekton-operator-webhook-config-leader-election
   namespace: openshift-pipelines-operator
 ---
 apiVersion: v1
@@ -997,7 +1084,7 @@ kind: Service
 metadata:
   labels:
     name: openshift-pipelines-operator
-    version: v0.68.1
+    version: v0.70.0
   name: tekton-operator
   namespace: openshift-pipelines-operator
 spec:
@@ -1016,8 +1103,8 @@ metadata:
   labels:
     app: tekton-operator
     name: tekton-operator-webhook
-    operator.tekton.dev/release: v0.68.1
-    version: v0.68.1
+    operator.tekton.dev/release: v0.70.0
+    version: v0.70.0
   name: tekton-operator-webhook
   namespace: openshift-pipelines-operator
 spec:
@@ -1033,8 +1120,8 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   labels:
-    operator.tekton.dev/release: v0.68.1
-    version: v0.68.1
+    operator.tekton.dev/release: v0.70.0
+    version: v0.70.0
   name: openshift-pipelines-operator
   namespace: openshift-pipelines-operator
   annotations:
@@ -1075,13 +1162,13 @@ spec:
             - name: OPERATOR_NAME
               value: redhat-openshift-pipelines-operator
             - name: IMAGE_PIPELINES_PROXY
-              value: gcr.io/tekton-releases/github.com/tektoncd/operator/cmd/openshift/proxy-webhook:v0.68.1@sha256:bb5620558043755883ee7ad67e3b671e35cb22512278eb9b30148d3d6ade8e9c
+              value: gcr.io/tekton-releases/github.com/tektoncd/operator/cmd/openshift/proxy-webhook:v0.70.0@sha256:a43878afb5d28c317fc0a586efb29878a2d71b6516010c10f07ab557b2da3f35
             - name: IMAGE_JOB_PRUNER_TKN
-              value: gcr.io/tekton-releases/dogfooding/tkn@sha256:64886334a4fd2a9fef496e83e248d66159c05691abb66bf5e6887ba3845f61d8
+              value: gcr.io/tekton-releases/dogfooding/tkn@sha256:a572f1748eb5c0e8002dd0a83ee836ad9d755d035cbd5bfbdef5de810d2bea0b
             - name: METRICS_DOMAIN
               value: tekton.dev/operator
             - name: VERSION
-              value: v0.68.1
+              value: v0.70.0
             - name: AUTOINSTALL_COMPONENTS
               valueFrom:
                 configMapKeyRef:
@@ -1094,23 +1181,25 @@ spec:
                   name: tekton-config-defaults
             - name: CONFIG_OBSERVABILITY_NAME
               value: tekton-config-observability
+            - name: CONFIG_LEADERELECTION_NAME
+              value: tekton-operator-controller-config-leader-election
             - name: IMAGE_HUB_TEKTON_HUB_DB
-              value: registry.redhat.io/rhel8/postgresql-13@sha256:1a5ce2ba0cc5215252ae5d4d6688a2b26d82a208d2b08d9d3de13d430ba11030
+              value: registry.redhat.io/rhel8/postgresql-13@sha256:3903d562425dd564986123280dc076548fb3d24c74138dcd857652f53052e0a7
             - name: IMAGE_ADDONS_PARAM_BUILDER_IMAGE
-              value: registry.redhat.io/rhel8/buildah@sha256:55f5c7d88c77e1ab5a2ab8e877172b2b66cb196e21f10dc45148470d0ee8bbae
+              value: registry.redhat.io/rhel8/buildah@sha256:b48f410efa0ff8ab0db6ead420a5d8d866d64af846fece5efb185230d7ecf591
             - name: IMAGE_ADDONS_PARAM_KN_IMAGE
               value: registry.redhat.io/openshift-serverless-1/client-kn-rhel8@sha256:bf6cf2e87fb19f7aa9a490b83c16af69834c0721220a643710a1b077959e91ca
             - name: IMAGE_ADDONS_MVN_SETTINGS
-              value: registry.redhat.io/ubi8/ubi-minimal@sha256:b93deceb59a58588d5b16429fc47f98920f84740a1f2ed6454e33275f0701b59
+              value: registry.redhat.io/ubi8/ubi-minimal@sha256:6825946f10e8c81586fa7815c4f06016af05cfc231d921ec9699402a6655d201
             - name: IMAGE_ADDONS_SKOPEO_COPY
-              value: registry.redhat.io/rhel8/skopeo@sha256:91f6ffc3be778ebeb59a0da528f93da5a0332b61d1e689ffdbaf159d25cabaeb
+              value: registry.redhat.io/rhel8/skopeo@sha256:e297b84ba6f1d5eb2c37e2c3b31c9a9a4c39f9590e7d7c32388165245bde4835
             - name: IMAGE_ADDONS_GENERATE
-              value: registry.redhat.io/ocp-tools-4-tech-preview/source-to-image-rhel8@sha256:98d8cb3a255641ca6a1bce854e5e2460c20de9fb9b28e3cc67eb459f122873dd
+              value: registry.redhat.io/ocp-tools-4-tech-preview/source-to-image-rhel8@sha256:6a6025914296a62fdf2092c3a40011bd9b966a6806b094d51eec5e1bd5026ef4
             - name: IMAGE_ADDONS_GEN_ENV_FILE
-              value: registry.redhat.io/ocp-tools-4-tech-preview/source-to-image-rhel8@sha256:98d8cb3a255641ca6a1bce854e5e2460c20de9fb9b28e3cc67eb459f122873dd
+              value: registry.redhat.io/ocp-tools-4-tech-preview/source-to-image-rhel8@sha256:6a6025914296a62fdf2092c3a40011bd9b966a6806b094d51eec5e1bd5026ef4
             - name: IMAGE_ADDONS_PARAM_MAVEN_IMAGE
-              value: registry.redhat.io/ubi8/openjdk-17@sha256:aa53206031afff34f8c83b8cc491d853bc78d88a16bf19a3e09ed1841af4cdc7
-          image: gcr.io/tekton-releases/github.com/tektoncd/operator/cmd/openshift/operator:v0.68.1@sha256:c5584c184036ea456c89582b95b9c70b4c5ed7086d900a5077778b75544cc18a
+              value: registry.redhat.io/ubi8/openjdk-17@sha256:a8165bc2cd5051a96d6937e25ed03155bbd4b731da6e58cebfe2ea83209c16d8
+          image: gcr.io/tekton-releases/github.com/tektoncd/operator/cmd/openshift/operator:v0.70.0@sha256:702677b7fd247aed89fdfa1ceefe319db581bd7e323db40109d8546109ed3c93
           imagePullPolicy: Always
           name: openshift-pipelines-operator-lifecycle
           resources:
@@ -1121,7 +1210,7 @@ spec:
               cpu: 10m
               memory: 96Mi
           securityContext:
-            runAsNonRoot: false
+            runAsNonRoot: false # true
             readOnlyRootFilesystem: true
             allowPrivilegeEscalation: false
             seccompProfile:
@@ -1148,14 +1237,16 @@ spec:
             - name: PROFILING_PORT
               value: "9009"
             - name: VERSION
-              value: v0.68.1
+              value: v0.70.0
             - name: METRICS_DOMAIN
               value: tekton.dev/operator
-          image: gcr.io/tekton-releases/github.com/tektoncd/operator/cmd/openshift/operator:v0.68.1@sha256:c5584c184036ea456c89582b95b9c70b4c5ed7086d900a5077778b75544cc18a
+            - name: CONFIG_LEADERELECTION_NAME
+              value: tekton-operator-controller-config-leader-election
+          image: gcr.io/tekton-releases/github.com/tektoncd/operator/cmd/openshift/operator:v0.70.0@sha256:702677b7fd247aed89fdfa1ceefe319db581bd7e323db40109d8546109ed3c93
           imagePullPolicy: Always
           name: openshift-pipelines-operator-cluster-operations
           securityContext:
-            runAsNonRoot: false
+            runAsNonRoot: false # true
             readOnlyRootFilesystem: true
             allowPrivilegeEscalation: false
             seccompProfile:
@@ -1171,7 +1262,7 @@ spec:
               cpu: 10m
               memory: 96Mi
       securityContext:
-        #runAsNonRoot: true
+        runAsNonRoot: true
         seccompProfile:
           type: RuntimeDefault
       serviceAccountName: openshift-pipelines-operator
@@ -1180,8 +1271,8 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   labels:
-    operator.tekton.dev/release: v0.68.1
-    version: v0.68.1
+    operator.tekton.dev/release: v0.70.0
+    version: v0.70.0
   name: tekton-operator-webhook
   namespace: openshift-pipelines-operator
   annotations:
@@ -1207,8 +1298,14 @@ spec:
               valueFrom:
                 fieldRef:
                   fieldPath: metadata.namespace
+            - name: WEBHOOK_POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
             - name: CONFIG_LOGGING_NAME
               value: config-logging
+            - name: CONFIG_LEADERELECTION_NAME
+              value: tekton-operator-webhook-config-leader-election
             - name: WEBHOOK_SERVICE_NAME
               value: tekton-operator-webhook
             - name: WEBHOOK_SECRET_NAME
@@ -1217,13 +1314,13 @@ spec:
               value: tekton.dev/operator
             - name: PLATFORM
               value: openshift
-          image: gcr.io/tekton-releases/github.com/tektoncd/operator/cmd/openshift/webhook:v0.68.1@sha256:be2e96a76e41d09e0d7d2838c0c27dc38925c45563ec181002224bd2e76e5aac
+          image: gcr.io/tekton-releases/github.com/tektoncd/operator/cmd/openshift/webhook:v0.70.0@sha256:b822b500707127275780ff68ac53fd75eb8528726f22e55613a93a4f8effd230
           name: tekton-operator-webhook
           ports:
             - containerPort: 8443
               name: https-webhook
           securityContext:
-            runAsNonRoot: false
+            runAsNonRoot: false # true
             readOnlyRootFilesystem: true
             allowPrivilegeEscalation: false
             seccompProfile:
@@ -1239,7 +1336,7 @@ spec:
               cpu: 10m
               memory: 32Mi
       securityContext:
-        #runAsNonRoot: true
+        runAsNonRoot: true
         seccompProfile:
           type: RuntimeDefault
       serviceAccountName: openshift-pipelines-operator
