@@ -8,8 +8,6 @@ metadata:
     app: gitea
     app.kubernetes.io/name: gitea
     app.kubernetes.io/instance: gitea
-    app.kubernetes.io/version: "1.21.3"
-    version: "1.21.3"
     app.kubernetes.io/managed-by: Helm
   annotations:
     checkov.io/skip1: CKV_K8S_40=OpenShift Injects Random UID
@@ -31,8 +29,6 @@ spec:
         app: gitea
         app.kubernetes.io/name: gitea
         app.kubernetes.io/instance: gitea
-        app.kubernetes.io/version: "1.21.3"
-        version: "1.21.3"
         app.kubernetes.io/managed-by: Helm
     spec:
       securityContext:
@@ -43,7 +39,7 @@ spec:
       #   fsGroup: 1000
       initContainers:
         - name: init-directories
-          image: "gitea/gitea:1.21.3-rootless@sha256:2aa1b8f0abba66fb06617c49ce4ce7d6ee9b24cd40e32d37e15f2b62e1b467b2"
+          image: "gitea/gitea:1.21.6-rootless@sha256:2aa1b8f0abba66fb06617c49ce4ce7d6ee9b24cd40e32d37e15f2b62e1b467b2"
           imagePullPolicy: IfNotPresent
           command: ["/usr/sbin/init_directory_structure.sh"]
           env:
@@ -82,7 +78,7 @@ spec:
               cpu: 25m
               memory: 64Mi
         - name: init-app-ini
-          image: "gitea/gitea:1.21.3-rootless@sha256:2aa1b8f0abba66fb06617c49ce4ce7d6ee9b24cd40e32d37e15f2b62e1b467b2"
+          image: "gitea/gitea:1.21.6-rootless@sha256:2aa1b8f0abba66fb06617c49ce4ce7d6ee9b24cd40e32d37e15f2b62e1b467b2"
           imagePullPolicy: IfNotPresent
           command: ["/usr/sbin/config_environment.sh"]
           env:
@@ -123,7 +119,7 @@ spec:
               cpu: 25m
               memory: 64Mi
         - name: configure-gitea
-          image: "gitea/gitea:1.21.3-rootless@sha256:2aa1b8f0abba66fb06617c49ce4ce7d6ee9b24cd40e32d37e15f2b62e1b467b2"
+          image: "gitea/gitea:1.21.6-rootless@sha256:2aa1b8f0abba66fb06617c49ce4ce7d6ee9b24cd40e32d37e15f2b62e1b467b2"
           command: ["/usr/sbin/configure_gitea.sh"]
           imagePullPolicy: IfNotPresent
           securityContext:
@@ -171,7 +167,7 @@ spec:
       terminationGracePeriodSeconds: 60
       containers:
         - name: gitea
-          image: "gitea/gitea:1.21.3-rootless@sha256:2aa1b8f0abba66fb06617c49ce4ce7d6ee9b24cd40e32d37e15f2b62e1b467b2"
+          image: "gitea/gitea:1.21.6-rootless@sha256:2aa1b8f0abba66fb06617c49ce4ce7d6ee9b24cd40e32d37e15f2b62e1b467b2"
           imagePullPolicy: IfNotPresent
           env:
             # SSH Port values have to be set here as well for openssh configuration
