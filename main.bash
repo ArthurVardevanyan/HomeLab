@@ -152,11 +152,19 @@ stateful_workload_stop() {
 
   kubectl scale --replicas=0 -n argocd deployment/argocd-operator-controller-manager
   kubectl scale --replicas=0 -n argocd statefulset/argocd-application-controller
+  kubectl scale --replicas=0 -n argocd deployment/argocd-notifications-controller
   kubectl scale --replicas=0 -n argocd deployment/argocd-repo-server
   kubectl scale --replicas=0 -n argocd deployment/argocd-dex-server
   kubectl scale --replicas=0 -n argocd deployment/argocd-server
   kubectl scale --replicas=0 -n argocd deployment/argocd-redis-ha-haproxy
   kubectl scale --replicas=0 -n argocd statefulset/argocd-redis-ha-server
+
+  kubectl scale --replicas=0 -n argocd-apps statefulset/argocd-apps-application-controller
+  kubectl scale --replicas=0 -n argocd-apps statefulset/argocd-apps-redis-ha-server
+  kubectl scale --replicas=0 -n argocd-apps deployment/argocd-apps-dex-server
+  kubectl scale --replicas=0 -n argocd-apps deployment/argocd-apps-redis-ha-haproxy
+  kubectl scale --replicas=0 -n argocd-apps deployment/argocd-apps-repo-server
+  kubectl scale --replicas=0 -n argocd-apps deployment/argocd-apps-server
 
   kubectl scale --replicas=0 -n stackrox deployment/central
   kubectl scale --replicas=0 -n stackrox deployment/scanner-db
@@ -213,11 +221,19 @@ stateful_workload_start() {
 
   kubectl scale --replicas=1 -n argocd deployment/argocd-operator-controller-manager
   kubectl scale --replicas=1 -n argocd statefulset/argocd-application-controller
+  kubectl scale --replicas=1 -n argocd statefulset/argocd-application-controller
   kubectl scale --replicas=1 -n argocd deployment/argocd-repo-server
   kubectl scale --replicas=1 -n argocd deployment/argocd-dex-server
   kubectl scale --replicas=1 -n argocd deployment/argocd-server
   kubectl scale --replicas=1 -n argocd deployment/argocd-redis-ha-haproxy
   kubectl scale --replicas=3 -n argocd statefulset/argocd-redis-ha-server
+
+  kubectl scale --replicas=1 -n argocd-apps statefulset/argocd-apps-application-controller
+  kubectl scale --replicas=3 -n argocd-apps statefulset/argocd-apps-redis-ha-server
+  kubectl scale --replicas=1 -n argocd-apps deployment/argocd-apps-dex-server
+  kubectl scale --replicas=1 -n argocd-apps deployment/argocd-apps-redis-ha-haproxy
+  kubectl scale --replicas=1 -n argocd-apps deployment/argocd-apps-repo-server
+  kubectl scale --replicas=1 -n argocd-apps deployment/argocd-apps-server
 
   kubectl scale --replicas=1 -n stackrox deployment/central
   kubectl scale --replicas=1 -n stackrox deployment/scanner-db
