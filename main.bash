@@ -188,7 +188,7 @@ stateful_workload_start() {
   kubectl scale --replicas=1 -n unifi-network-application statefulset/unifi-network-application
 
   kubectl scale --replicas=1 -n bitwarden statefulset/bitwarden
-  kubectl scale --replicas=1 -n gitea deployment/gitea
+  kubectl scale --replicas=2 -n gitea deployment/gitea
   kubectl scale --replicas=2 -n grafana deployment/grafana
   kubectl scale --replicas=1 -n heimdall statefulset/heimdall
   kubectl scale --replicas=1 -n homeassistant statefulset/homeassistant
