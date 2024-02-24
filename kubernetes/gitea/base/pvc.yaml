@@ -5,7 +5,7 @@ metadata:
   namespace: gitea
 spec:
   accessModes:
-    - ReadWriteMany
+    - ReadWriteOnce # ReadWriteMany
   volumeMode: Filesystem
   storageClassName: longhorn-static
   resources:
@@ -28,7 +28,7 @@ spec:
     volumeAttributes:
       numberOfReplicas: "2"
   accessModes:
-    - ReadWriteMany
+    - ReadWriteOnce # ReadWriteMany
   claimRef:
     kind: PersistentVolumeClaim
     name: gitea-shared-storage
