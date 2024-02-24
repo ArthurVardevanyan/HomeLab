@@ -6,7 +6,7 @@ metadata:
   labels:
     app.kubernetes.io/name: longhorn
     app.kubernetes.io/instance: longhorn
-    app.kubernetes.io/version: v1.5.3
+    app.kubernetes.io/version: v1.6.0
     app: longhorn-manager
   name: longhorn-manager
   namespace: longhorn-system
@@ -31,7 +31,7 @@ spec:
       labels:
         app.kubernetes.io/name: longhorn
         app.kubernetes.io/instance: longhorn
-        app.kubernetes.io/version: v1.5.3
+        app.kubernetes.io/version: v1.6.0
         app: longhorn-manager
       annotations:
         prometheus.io/path: /metrics
@@ -45,7 +45,7 @@ spec:
           operator: Exists
       containers:
         - name: longhorn-manager
-          image: longhornio/longhorn-manager:v1.5.3@sha256:b5769e761b172b441567c11416c3181078e29dea450683eb1bc66192b0caa494
+          image: longhornio/longhorn-manager:v1.6.0@sha256:f84954bfecd3e085542a0b1e9320e1482b2871e4ae2af6c261056004a192f150
           imagePullPolicy: IfNotPresent
           securityContext:
             privileged: true
@@ -61,19 +61,20 @@ spec:
             - -d
             - daemon
             - --engine-image
-            - "longhornio/longhorn-engine:v1.5.3@sha256:3fb3b5d911242514e996941efb411eee3c926ec3b9766b514deddda9e6d18924"
+            - "longhornio/longhorn-engine:v1.6.0@sha256:95eaa36d0f50fe5fd9ce21a6c68b0ba0d630f0906f323f27a31a7cb672084623"
             - --instance-manager-image
-            - "longhornio/longhorn-instance-manager:v1.5.3@sha256:e936e793c56cf4dc422591707c20abf71286a5f6b9d9b48337d299c367c71a02"
+            - "longhornio/longhorn-instance-manager:v1.6.0@sha256:de584592cbeeab6b57dbe1d2a9ee205acc76fcd025031ba545b38d29524eb5b5"
             - --share-manager-image
-            - "longhornio/longhorn-share-manager:v1.5.3@sha256:3bf9efec252fff37fa5fbadfeffb1979a7411b89d330cf4f72863628037fca1d"
+            - "longhornio/longhorn-share-manager:v1.6.0@sha256:dff4a71291144e5c4077dc54f987227a3b11db9a3bf8d6b0b577ae8ba0ab7691"
             - --backing-image-manager-image
-            - "longhornio/backing-image-manager:v1.5.3@sha256:6f0ca4bfefc4d0627b76bcbd231ce2d78ff1d66c4f6adf5e350ee02963ed8eb8"
+            - "longhornio/backing-image-manager:v1.6.0@sha256:8abe2479d2542b74f1acbad43af3fdec4a2ddde7b2d2dd26bb361cb970b5eaca"
             - --support-bundle-manager-image
-            - "longhornio/support-bundle-kit:v0.0.27@sha256:1333a6b32199ea3349b90a9fd0ef8025aab35255ed4a1e210e506c60d4c413b6"
+            - "longhornio/support-bundle-kit:v0.0.33@sha256:b82e7c8e77065eec47245fca8ba55ec780045ee23bb2ec6d09a98e8ed2da2de5"
             - --manager-image
-            - "longhornio/longhorn-manager:v1.5.3@sha256:b5769e761b172b441567c11416c3181078e29dea450683eb1bc66192b0caa494"
+            - "longhornio/longhorn-manager:v1.6.0@sha256:f84954bfecd3e085542a0b1e9320e1482b2871e4ae2af6c261056004a192f150"
             - --service-account
             - longhorn-service-account
+            - --upgrade-version-check
           ports:
             - containerPort: 9500
               name: manager
@@ -125,6 +126,7 @@ spec:
           secret:
             secretName: longhorn-grpc-tls
             optional: true
+      priorityClassName: "longhorn-critical"
       serviceAccountName: longhorn-service-account
       automountServiceAccountToken: true
   updateStrategy:

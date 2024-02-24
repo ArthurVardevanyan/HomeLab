@@ -6,7 +6,7 @@ metadata:
   labels:
     app.kubernetes.io/name: longhorn
     app.kubernetes.io/instance: longhorn
-    app.kubernetes.io/version: v1.5.3
+    app.kubernetes.io/version: v1.6.0
     app: longhorn-ui
   name: longhorn-ui
   namespace: longhorn-system
@@ -35,7 +35,7 @@ spec:
       labels:
         app.kubernetes.io/name: longhorn
         app.kubernetes.io/instance: longhorn
-        app.kubernetes.io/version: v1.5.3
+        app.kubernetes.io/version: v1.6.0
         app: longhorn-ui
       annotations:
         enable.version-checker.io/longhorn-ui: "true"
@@ -48,6 +48,8 @@ spec:
         - key: node-role.kubernetes.io/infra
           effect: NoSchedule
           operator: Exists
+      serviceAccountName: longhorn-ui-service-account
+      automountServiceAccountToken: true
       affinity:
         podAntiAffinity:
           preferredDuringSchedulingIgnoredDuringExecution:
@@ -60,8 +62,6 @@ spec:
                       values:
                         - longhorn-ui
                 topologyKey: kubernetes.io/hostname
-      serviceAccountName: longhorn-ui-service-account
-      automountServiceAccountToken: true
       containers:
         - name: oauth-proxy
           image: quay.io/openshift/origin-oauth-proxy:4.15
@@ -89,7 +89,7 @@ spec:
             - mountPath: /etc/tls/private
               name: longhorn-ui-tls
         - name: longhorn-ui
-          image: longhornio/longhorn-ui:v1.5.3@sha256:c0b1933e63508e72863b75523f363139c065e9936c0726141064d33d071cfcc3
+          image: longhornio/longhorn-ui:v1.6.0@sha256:34a46238cc0829d2a2a6e3ea7036129ec1b03ea0c78d77fb8da79f2fbea9bbd7
           imagePullPolicy: IfNotPresent
           volumeMounts:
             - name: nginx-cache
@@ -128,3 +128,4 @@ spec:
           name: nginx-config
         - emptyDir: {}
           name: var-run
+      priorityClassName: "longhorn-critical"
