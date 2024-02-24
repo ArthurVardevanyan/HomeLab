@@ -16,3 +16,23 @@ spec:
     - ports:
         - protocol: TCP
           port: 9503
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: longhorn-recovery-backend-share-manager
+  namespace: longhorn-system
+  labels:
+    app.kubernetes.io/name: longhorn
+    app.kubernetes.io/instance: longhorn
+spec:
+  podSelector:
+    matchLabels:
+      longhorn.io/component: share-manager
+      longhorn.io/managed-by: longhorn-manager
+  policyTypes:
+    - Ingress
+  ingress:
+    - ports:
+        - protocol: TCP
+          port: 9503
