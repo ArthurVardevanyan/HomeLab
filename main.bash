@@ -896,7 +896,7 @@ install_okd() {
   mkdir -p "${OKD}/vm"
 
   echo -e "\n\n${BLUE}Download Dependencies:${NC}"
-  export OKD_VERSION=${OKD_VERSION:-latest} # tag/RELEASE_NAME
+  export OKD_VERSION=${OKD_VERSION:-latest} # tags/RELEASE_NAME
   # Download openshift-install and openshift-client
   wget "$(curl https://api.github.com/repos/openshift/okd/releases/"${OKD_VERSION}" -L | grep openshift-install-linux | grep browser_download_url | grep -v arm | cut -d\" -f4)" -P ${OKD}/
   wget "$(curl https://api.github.com/repos/openshift/okd/releases/"${OKD_VERSION}" -L | grep openshift-client-linux | grep -v arm | grep browser_download_url | cut -d\" -f4)" -P ${OKD}/
@@ -962,7 +962,8 @@ install_okd() {
   ${OKD}/oc apply -f "${HOMELAB}/okd/okd-configuration/base/operators"
 
   echo -e "\n\n${BLUE}Setup Image Mirroring:${NC}"
-  sed 's/AllowContactingSource/NeverContactSource/' "${HOMELAB}"/okd/okd-configuration/base/image-mirror-set.yaml | kubectl apply -f -
+  #sed 's/AllowContactingSource/NeverContactSource/' "${HOMELAB}"/okd/okd-configuration/base/image-mirror-set.yaml | kubectl apply -f -
+  kubectl apply -f "${HOMELAB}"/okd/okd-configuration/base/image-mirror-set.yaml
 
   echo -e "\n\n${BLUE}Install Complete:${NC}"
   echo "export KUBECONFIG=${OKD}/okd/auth/kubeconfig"
