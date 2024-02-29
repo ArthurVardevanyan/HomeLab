@@ -1,5 +1,5 @@
-kind: Ingress
-apiVersion: networking.k8s.io/v1
+kind: Route
+apiVersion: route.openshift.io/v1
 metadata:
   name: longhorn-ui
   namespace: longhorn-system
@@ -8,18 +8,12 @@ metadata:
     app.kubernetes.io/instance: longhorn
     app.kubernetes.io/version: v1.6.0
     app: longhorn-ui
-  annotations:
-    route.openshift.io/termination: reencrypt
 spec:
-  ingressClassName: openshift-default
-  rules:
-    - host: ""
-      http:
-        paths:
-          - path: ""
-            pathType: ImplementationSpecific
-            backend:
-              service:
-                name: longhorn-ui
-                port:
-                  name: longhorn-ui
+  host: ""
+  to:
+    kind: Service
+    name: longhorn-ui
+  tls:
+    termination: reencrypt
+    insecureEdgeTerminationPolicy: Redirect
+  wildcardPolicy: None
