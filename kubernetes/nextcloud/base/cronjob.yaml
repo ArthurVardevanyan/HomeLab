@@ -25,16 +25,16 @@ spec:
             db: nextcloud-pg
         spec:
           serviceAccountName: nextcloud-sa
-          affinity:
-            podAffinity:
-              requiredDuringSchedulingIgnoredDuringExecution:
-                - labelSelector:
-                    matchExpressions:
-                      - key: app
-                        operator: In
-                        values:
-                          - nextcloud
-                  topologyKey: kubernetes.io/hostname
+          # affinity:
+          #   podAffinity:
+          #     requiredDuringSchedulingIgnoredDuringExecution:
+          #       - labelSelector:
+          #           matchExpressions:
+          #             - key: app
+          #               operator: In
+          #               values:
+          #                 - nextcloud
+          #         topologyKey: kubernetes.io/hostname
           securityContext:
             fsGroup: 33
             runAsGroup: 33

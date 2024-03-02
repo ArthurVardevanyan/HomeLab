@@ -7,7 +7,7 @@ metadata:
     app.kubernetes.io/instance: nextcloud
 spec:
   accessModes:
-    - ReadWriteOnce
+    - ReadWriteMany
   resources:
     requests:
       storage: 1Gi
@@ -31,7 +31,7 @@ spec:
     volumeAttributes:
       numberOfReplicas: "2"
   accessModes:
-    - ReadWriteOnce
+    - ReadWriteMany
   claimRef:
     kind: PersistentVolumeClaim
     name: nextcloud-config-pvc
@@ -51,7 +51,7 @@ spec:
   storageClassName: nfs
   volumeName: nextcloud-data
   accessModes:
-    - ReadWriteOnce
+    - ReadWriteMany
   resources:
     requests:
       storage: 750G
@@ -70,7 +70,7 @@ spec:
   capacity:
     storage: 750G
   accessModes:
-    - ReadWriteOnce
+    - ReadWriteMany
   mountOptions:
     - hard
     - nfsvers=4.1
@@ -92,7 +92,7 @@ spec:
   storageClassName: nfs
   volumeName: nextcloud-data-backup
   accessModes:
-    - ReadWriteOnce
+    - ReadWriteMany
   resources:
     requests:
       storage: 750G
@@ -111,7 +111,7 @@ spec:
   capacity:
     storage: 750G
   accessModes:
-    - ReadWriteOnce
+    - ReadWriteMany
   mountOptions:
     - hard
     - nfsvers=4.1
