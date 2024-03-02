@@ -24,9 +24,10 @@ resource "google_kms_key_ring" "key_ring" {
 
 # Create a crypto key for the key ring
 resource "google_kms_crypto_key" "crypto_key" {
-  name            = "vault"
-  key_ring        = google_kms_key_ring.key_ring.id
-  rotation_period = "100000s"
+  name                       = "vault"
+  key_ring                   = google_kms_key_ring.key_ring.id
+  rotation_period            = "1209600s"
+  destroy_scheduled_duration = "86400s"
 
   lifecycle {
     prevent_destroy = true
