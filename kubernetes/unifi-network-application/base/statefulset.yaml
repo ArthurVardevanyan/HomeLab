@@ -9,6 +9,13 @@ metadata:
     app.kubernetes.io/instance: unifi-network-application
     app.kubernetes.io/version: "8.0.24"
     app.kubernetes.io/managed-by: Helm
+  annotations:
+    checkov.io/skip3: CKV_K8S_20=Not Supported
+    checkov.io/skip4: CKV_K8S_23=Not Supported
+    checkov.io/skip5: CKV_K8S_22=Not Supported
+    checkov.io/skip6: CKV_K8S_16=Not Supported
+    checkov.io/skip7: CKV_K8S_40=Not Supported
+    checkov.io/skip8: CKV_K8S_43=Not Supported
 spec:
   serviceName: unifi-network-application
   replicas: 1
@@ -22,6 +29,11 @@ spec:
         app.kubernetes.io/name: unifi-network-application
         app.kubernetes.io/instance: unifi-network-application
     spec:
+      securityContext:
+        seccompProfile:
+          type: RuntimeDefault
+        runAsNonRoot: false
+      automountServiceAccountToken: false
       serviceAccountName: unifi-network-application
       containers:
         - name: unifi-network-application

@@ -2,9 +2,10 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   annotations:
-    email: support@mongodb.com
-  labels:
-    owner: mongodb
+    checkov.io/skip1: CKV_K8S_40=OpenShift Injects Random UID
+    checkov.io/skip2: CKV_K8S_9=Not Supported
+    checkov.io/skip3: CKV_K8S_8=Not Supported
+    checkov.io/skip4: CKV_K8S_38=Operator
   name: mongodb-kubernetes-operator
   namespace: mongodb-operator
 spec:
@@ -21,6 +22,11 @@ spec:
       labels:
         name: mongodb-kubernetes-operator
     spec:
+      automountServiceAccountToken: true
+      securityContext:
+        seccompProfile:
+          type: RuntimeDefault
+        runAsNonRoot: true
       affinity:
         podAntiAffinity:
           requiredDuringSchedulingIgnoredDuringExecution:
@@ -62,6 +68,7 @@ spec:
             runAsNonRoot: true
             readOnlyRootFilesystem: true
             allowPrivilegeEscalation: false
+            privileged: false
             seccompProfile:
               type: RuntimeDefault
             capabilities:

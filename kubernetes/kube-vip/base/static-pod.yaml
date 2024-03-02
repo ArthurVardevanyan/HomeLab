@@ -15,6 +15,10 @@ metadata:
     app: kube-vip-ds
 spec:
   automountServiceAccountToken: false
+  securityContext:
+    seccompProfile:
+      type: RuntimeDefault
+    runAsNonRoot: false
   containers:
     - args:
         - manager
