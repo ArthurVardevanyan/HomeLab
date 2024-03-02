@@ -1,17 +1,17 @@
 kind: PersistentVolume
 apiVersion: v1
 metadata:
-  name: nextcloud-00-7pnr-pgdata
+  name: nextcloud-00-t885-pgdata
   annotations:
     argocd.argoproj.io/sync-wave: "1"
   labels:
-    app.kubernetes.io/instance: postgres
+    app.kubernetes.io/instance: nextcloud
 spec:
   capacity:
     storage: 4Gi
   csi:
     driver: driver.longhorn.io
-    volumeHandle: nextcloud-00-7pnr-pgdata
+    volumeHandle: nextcloud-00-t885-pgdata
     fsType: ext4
     volumeAttributes:
       numberOfReplicas: "2"
@@ -19,8 +19,8 @@ spec:
     - ReadWriteOnce
   claimRef:
     kind: PersistentVolumeClaim
-    name: nextcloud-00-7pnr-pgdata
-    namespace: postgres
+    name: nextcloud-00-t885-pgdata
+    namespace: nextcloud
   persistentVolumeReclaimPolicy: Retain
   storageClassName: longhorn-static
   volumeMode: Filesystem
@@ -28,17 +28,17 @@ spec:
 kind: PersistentVolume
 apiVersion: v1
 metadata:
-  name: nextcloud-00-wdsz-pgdata
+  name: nextcloud-00-x5vs-pgdata
   annotations:
     argocd.argoproj.io/sync-wave: "1"
   labels:
-    app.kubernetes.io/instance: postgres
+    app.kubernetes.io/instance: nextcloud
 spec:
   capacity:
     storage: 4Gi
   csi:
     driver: driver.longhorn.io
-    volumeHandle: nextcloud-00-wdsz-pgdata
+    volumeHandle: nextcloud-00-x5vs-pgdata
     fsType: ext4
     volumeAttributes:
       numberOfReplicas: "2"
@@ -46,8 +46,8 @@ spec:
     - ReadWriteOnce
   claimRef:
     kind: PersistentVolumeClaim
-    name: nextcloud-00-wdsz-pgdata
-    namespace: postgres
+    name: nextcloud-00-x5vs-pgdata
+    namespace: nextcloud
   persistentVolumeReclaimPolicy: Retain
   storageClassName: longhorn-static
   volumeMode: Filesystem
@@ -59,7 +59,7 @@ metadata:
   annotations:
     argocd.argoproj.io/sync-wave: "1"
   labels:
-    app.kubernetes.io/instance: postgres
+    app.kubernetes.io/instance: nextcloud
 spec:
   capacity:
     storage: 8Gi
@@ -74,7 +74,7 @@ spec:
   claimRef:
     kind: PersistentVolumeClaim
     name: nextcloud-repo1
-    namespace: postgres
+    namespace: nextcloud
   persistentVolumeReclaimPolicy: Retain
   storageClassName: longhorn-static
   volumeMode: Filesystem
