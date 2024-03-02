@@ -1,0 +1,11 @@
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: nextcloud
+  namespace: nextcloud
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: nextcloud
+      db: nextcloud-pg
