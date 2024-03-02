@@ -25,6 +25,21 @@ spec:
       annotations:
         enable.version-checker.io/nextcloud: "true"
     spec:
+      topologySpreadConstraints:
+        - maxSkew: 1
+          topologyKey: topology.kubernetes.io/zone
+          whenUnsatisfiable: DoNotSchedule
+          labelSelector:
+            matchLabels:
+              app: nextcloud
+              db: nextcloud-pg
+        - maxSkew: 1
+          topologyKey: kubernetes.io/hostname
+          whenUnsatisfiable: DoNotSchedule
+          labelSelector:
+            matchLabels:
+              app: nextcloud
+              db: nextcloud-pg
       serviceAccountName: nextcloud-sa
       volumes:
         - name: nextcloud-cert
@@ -33,9 +48,9 @@ spec:
         - name: nextcloud-config
           persistentVolumeClaim:
             claimName: nextcloud-config-pvc
-        - name: nextcloud-data
+        - name: nextcloud-pvc
           persistentVolumeClaim:
-            claimName: nextcloud-data
+            claimName: nextcloud-pvc
       securityContext:
         fsGroup: 33
         runAsGroup: 33
@@ -76,7 +91,7 @@ spec:
             - name: nextcloud-cert
               mountPath: /ssl
               readOnly: true
-            - name: nextcloud-data
+            - name: nextcloud-pvc
               mountPath: /var/www/html/data
           livenessProbe:
             httpGet:

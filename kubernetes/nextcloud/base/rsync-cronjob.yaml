@@ -24,16 +24,16 @@ spec:
             app: nextcloud-rsync
         spec:
           serviceAccountName: nextcloud-sa
-          affinity:
-            podAffinity:
-              requiredDuringSchedulingIgnoredDuringExecution:
-                - labelSelector:
-                    matchExpressions:
-                      - key: app
-                        operator: In
-                        values:
-                          - nextcloud
-                  topologyKey: kubernetes.io/hostname
+          # affinity:
+          #   podAffinity:
+          #     requiredDuringSchedulingIgnoredDuringExecution:
+          #       - labelSelector:
+          #           matchExpressions:
+          #             - key: app
+          #               operator: In
+          #               values:
+          #                 - nextcloud
+          #         topologyKey: kubernetes.io/hostname
           volumes:
             - name: nextcloud-data
               persistentVolumeClaim:
@@ -41,6 +41,9 @@ spec:
             - name: nextcloud-data-backup
               persistentVolumeClaim:
                 claimName: nextcloud-data-backup
+            - name: nextcloud-pvc
+              persistentVolumeClaim:
+                claimName: nextcloud-pvc
           securityContext:
             fsGroup: 33
             runAsGroup: 33
@@ -53,7 +56,7 @@ spec:
                 [
                   "/bin/bash",
                   "-c",
-                  "rsync --stats --archive --verbose --human-readable --stats --delete /mnt/data/Nextcloud /mnt/backup/",
+                  "rsync --stats --archive --verbose --human-readable --stats --delete /mnt/data/Nextcloud /mnt/backup/ && rsync --stats --archive --verbose --human-readable --stats --delete /mnt/data/Nextcloud /mnt/backup1/",
                 ]
               resources:
                 limits:
@@ -64,10 +67,12 @@ spec:
                   memory: 500M
               volumeMounts:
                 - name: nextcloud-data
+                  mountPath: /mnt/backup/Nextcloud
+                - name: nextcloud-data-backup
+                  mountPath: /mnt/backup1/Nextcloud
+                - name: nextcloud-pvc
                   mountPath: /mnt/data/Nextcloud
                   readOnly: true
-                - name: nextcloud-data-backup
-                  mountPath: /mnt/backup/Nextcloud
               securityContext:
                 runAsGroup: 33
                 runAsUser: 33
