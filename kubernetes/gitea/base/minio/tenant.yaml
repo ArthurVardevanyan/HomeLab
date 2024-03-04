@@ -3,6 +3,8 @@ kind: Tenant
 metadata:
   name: gitea
   namespace: gitea
+  labels:
+    app.kubernetes.io/instance: gitea
   annotations:
     argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
 scheduler:
@@ -53,8 +55,8 @@ spec:
               storage: "3221225472"
           storageClassName: longhorn
       volumesPerServer: 1
-      securityContext: {}
-      containerSecurityContext: {}
+      securityContext:
+        fsGroupChangePolicy: OnRootMismatch
   requestAutoCert: false
   users:
     - name: gitea-user-0

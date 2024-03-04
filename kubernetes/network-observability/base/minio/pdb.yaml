@@ -1,0 +1,12 @@
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: netobserv-minio
+  namespace: network-observability-loki
+spec:
+  maxUnavailable: 1
+  selector:
+    matchLabels:
+      v1.min.io/console: netobserv-console
+      v1.min.io/pool: pool-0
+      v1.min.io/tenant: netobserv

@@ -1,0 +1,39 @@
+apiVersion: loki.grafana.com/v1
+kind: LokiStack
+metadata:
+  name: netobserv
+  namespace: network-observability-loki
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+spec:
+  limits:
+    global:
+      retention:
+        days: 1
+      ingestion:
+        ingestionBurstSize: 400
+        ingestionRate: 200
+        maxGlobalStreamsPerTenant: 250000
+      queries:
+        maxChunksPerQuery: 20000000
+        maxEntriesLimitPerQuery: 100000
+        maxQuerySeries: 30000
+  managementState: Managed
+  size: 1x.extra-small
+  storage:
+    schemas:
+      - effectiveDate: "2020-10-11"
+        version: v12
+    secret:
+      name: logging-loki-minio
+      type: s3
+  storageClassName: longhorn
+  tenants:
+    mode: openshift-network
+    openshift:
+      adminGroups:
+        - cluster-admins
+  template:
+    querier:
+      replicas: 2
