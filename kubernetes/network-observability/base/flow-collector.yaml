@@ -80,15 +80,19 @@ spec:
     lokiStack:
       name: loki
     manual:
-      authToken: Disabled
-      ingesterUrl: http://loki:3100/
-      querierUrl: http://loki:3100/
+      authToken: Forward
+      ingesterUrl: https://netobserv-gateway-http.network-observability-loki.svc:8080/api/logs/v1/network/
+      querierUrl: https://netobserv-gateway-http.network-observability-loki.svc:8080/api/logs/v1/network/
+      statusUrl: https://netobserv-query-frontend-http.network-observability-loki.svc:3100/
       tenantID: netobserv
+      tls:
+        enable: true
+        insecureSkipVerify: true
     microservices:
-      ingesterUrl: http://loki-distributor:3100/
-      querierUrl: http://loki-query-frontend:3100/
+      ingesterUrl: https://netobserv-distributor.network-observability-loki.svc:3100/
+      querierUrl: https://netobserv-query-frontend.network-observability-loki.svc:3100/
       tenantID: netobserv
-    mode: Monolithic
+    mode: Manual
     monolithic:
       tenantID: netobserv
       tls:

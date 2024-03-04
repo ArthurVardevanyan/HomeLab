@@ -1,19 +1,20 @@
 apiVersion: minio.min.io/v2
 kind: Tenant
 metadata:
-  name: quay
-  namespace: quay
+  name: netobserv
+  namespace: network-observability-loki
   labels:
-    app.kubernetes.io/instance: quay
+    app.kubernetes.io/instance: network-observability
   annotations:
+    argocd.argoproj.io/sync-wave: "1"
     argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
 scheduler:
   name: ""
 spec:
   configuration:
-    name: quay-env-configuration
+    name: netobserv-env-configuration
   credsSecret:
-    name: quay-secret
+    name: netobserv-secret
   exposeServices:
     console: false
     minio: false
@@ -28,7 +29,7 @@ spec:
                   - key: v1.min.io/tenant
                     operator: In
                     values:
-                      - quay
+                      - netobserv
                   - key: v1.min.io/pool
                     operator: In
                     values:
@@ -37,15 +38,12 @@ spec:
       name: pool-0
       resources:
         limits:
-          cpu: "1"
-          memory: 3Gi
+          cpu: 100m
+          memory: 4Gi
         requests:
-          cpu: 150m
-          memory: 512Mi
+          cpu: 25m
+          memory: 2Gi
       runtimeClassName: ""
-      securityContext:
-        fsGroupChangePolicy: OnRootMismatch
-      containerSecurityContext: {}
       servers: 4
       volumeClaimTemplate:
         metadata:
@@ -55,9 +53,12 @@ spec:
             - ReadWriteOnce
           resources:
             requests:
-              storage: "107374182400"
+              storage: "80530636800"
           storageClassName: longhorn
       volumesPerServer: 1
+      securityContext:
+        fsGroupChangePolicy: OnRootMismatch
+      containerSecurityContext: {}
   requestAutoCert: false
   users:
-    - name: quay-user-0
+    - name: netobserv-user-0

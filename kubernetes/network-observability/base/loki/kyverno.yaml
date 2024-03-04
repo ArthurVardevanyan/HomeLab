@@ -1,0 +1,279 @@
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: loki
+  annotations:
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+    argocd.argoproj.io/sync-wave: "1"
+spec:
+  background: false
+  rules:
+    - match:
+        any:
+          - resources:
+              kinds:
+                - StatefulSet
+              selector:
+                matchLabels:
+                  app.kubernetes.io/component: compactor
+                  app.kubernetes.io/created-by: lokistack-controller
+      mutate:
+        patchStrategicMerge:
+          spec:
+            template:
+              spec:
+                containers:
+                  - (name): loki-compactor
+                    resources:
+                      limits:
+                        cpu: 250m
+                        memory: 192Mi
+                      requests:
+                        cpu: 50m
+                        memory: 64Mi
+              volumeClaimTemplates:
+                - kind: PersistentVolumeClaim
+                  apiVersion: v1
+                  metadata:
+                    name: storage
+                    creationTimestamp: null
+                    labels:
+                      app.kubernetes.io/component: compactor
+                      app.kubernetes.io/created-by: lokistack-controller
+                      app.kubernetes.io/instance: loki
+                      app.kubernetes.io/managed-by: lokistack-controller
+                      app.kubernetes.io/name: lokistack
+                  spec:
+                    accessModes:
+                      - ReadWriteOnce
+                    resources:
+                      requests:
+                        storage: 1Gi
+                    storageClassName: longhorn
+                    volumeMode: Filesystem
+      name: loki-compactor
+    - match:
+        any:
+          - resources:
+              kinds:
+                - StatefulSet
+              selector:
+                matchLabels:
+                  app.kubernetes.io/component: index-gateway
+                  app.kubernetes.io/created-by: lokistack-controller
+      mutate:
+        patchStrategicMerge:
+          spec:
+            template:
+              spec:
+                containers:
+                  - (name): loki-index-gateway
+                    resources:
+                      limits:
+                        cpu: 250m
+                        memory: 192Mi
+                      requests:
+                        cpu: 50m
+                        memory: 64Mi
+            volumeClaimTemplates:
+              - kind: PersistentVolumeClaim
+                apiVersion: v1
+                metadata:
+                  name: storage
+                  creationTimestamp: null
+                  labels:
+                    app.kubernetes.io/component: index-gateway
+                    app.kubernetes.io/created-by: lokistack-controller
+                    app.kubernetes.io/instance: loki
+                    app.kubernetes.io/managed-by: lokistack-controller
+                    app.kubernetes.io/name: lokistack
+                spec:
+                  accessModes:
+                    - ReadWriteOnce
+                  resources:
+                    requests:
+                      storage: 1Gi
+                  storageClassName: longhorn
+                  volumeMode: Filesystem
+      name: loki-index-gateway
+    - match:
+        any:
+          - resources:
+              kinds:
+                - StatefulSet
+              selector:
+                matchLabels:
+                  app.kubernetes.io/component: ingester
+                  app.kubernetes.io/created-by: lokistack-controller
+      mutate:
+        patchStrategicMerge:
+          spec:
+            template:
+              spec:
+                containers:
+                  - (name): loki-ingester
+                    resources:
+                      limits:
+                        cpu: 300m
+                        memory: 10Gi
+                      requests:
+                        cpu: 150m
+                        memory: 5Gi
+            volumeClaimTemplates:
+              - kind: PersistentVolumeClaim
+                apiVersion: v1
+                metadata:
+                  name: storage
+                  creationTimestamp: null
+                  labels:
+                    app.kubernetes.io/component: ingester
+                    app.kubernetes.io/created-by: lokistack-controller
+                    app.kubernetes.io/instance: loki
+                    app.kubernetes.io/managed-by: lokistack-controller
+                    app.kubernetes.io/name: lokistack
+                spec:
+                  accessModes:
+                    - ReadWriteOnce
+                  resources:
+                    requests:
+                      storage: 1Gi
+                  storageClassName: longhorn
+                  volumeMode: Filesystem
+              - kind: PersistentVolumeClaim
+                apiVersion: v1
+                metadata:
+                  name: wal
+                  creationTimestamp: null
+                  labels:
+                    app.kubernetes.io/component: ingester
+                    app.kubernetes.io/created-by: lokistack-controller
+                    app.kubernetes.io/instance: loki
+                    app.kubernetes.io/managed-by: lokistack-controller
+                    app.kubernetes.io/name: lokistack
+                spec:
+                  accessModes:
+                    - ReadWriteOnce
+                  resources:
+                    requests:
+                      storage: 10Gi
+                  storageClassName: longhorn
+                  volumeMode: Filesystem
+      name: loki-ingester
+    - match:
+        any:
+          - resources:
+              kinds:
+                - Deployment
+      mutate:
+        patchStrategicMerge:
+          spec:
+            template:
+              spec:
+                containers:
+                  - (name): loki-querier
+                    resources:
+                      limits:
+                        cpu: 1000m
+                        memory: 2Gi
+                      requests:
+                        cpu: 50m
+                        memory: 128Mi
+      name: loki-querier
+    - match:
+        any:
+          - resources:
+              kinds:
+                - Deployment
+      mutate:
+        patchStrategicMerge:
+          spec:
+            template:
+              spec:
+                containers:
+                  - (name): loki-query-frontend
+                    resources:
+                      limits:
+                        cpu: 1000m
+                        memory: 2Gi
+                      requests:
+                        cpu: 50m
+                        memory: 128Mi
+      name: loki-query-frontend
+    - match:
+        any:
+          - resources:
+              kinds:
+                - Deployment
+      mutate:
+        patchStrategicMerge:
+          spec:
+            template:
+              spec:
+                containers:
+                  - (name): loki-distributor
+                    resources:
+                      limits:
+                        cpu: 300m
+                        memory: 256Mi
+                      requests:
+                        cpu: 100m
+                        memory: 64Mi
+      name: loki-distributor
+    - match:
+        any:
+          - resources:
+              kinds:
+                - Deployment
+      mutate:
+        patchStrategicMerge:
+          spec:
+            template:
+              spec:
+                containers:
+                  - (name): gateway
+                    resources:
+                      limits:
+                        cpu: 450m
+                        memory: 128Mi
+                      requests:
+                        cpu: 150m
+                        memory: 32Mi
+      name: loki-gateway
+    - match:
+        any:
+          - resources:
+              kinds:
+                - ServiceMonitor
+              selector:
+                matchLabels:
+                  app.kubernetes.io/managed-by: operator-lifecycle-manager
+                  app.kubernetes.io/name: loki-operator
+                  app.kubernetes.io/part-of: loki-operator
+      mutate:
+        patchesJson6902: |-
+          - path: "/spec/endpoints/0/tlsConfig/insecureSkipVerify"
+            op: add
+            value: true
+      name: loki-operator-sm
+#---
+# apiVersion: kyverno.io/v1
+# kind: ClusterPolicy
+# metadata:
+#   name: replace-ebpf-agent-image
+#   annotations:
+#     argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+# spec:
+#   background: false
+#   rules:
+#     - name: replace-ebpf-agent-image
+#       match:
+#         any:
+#           - resources:
+#               kinds:
+#                 - Pod
+#       mutate:
+#         patchStrategicMerge:
+#           spec:
+#             containers:
+#               - (image): "quay.io/netobserv/netobserv-ebpf-agent:v0.3.2"
+#                 image: "quay.io/netobserv/netobserv-ebpf-agent:main"
