@@ -114,11 +114,11 @@ spec:
                   - (name): loki-ingester
                     resources:
                       limits:
-                        cpu: 300m
-                        memory: 10Gi
-                      requests:
                         cpu: 150m
-                        memory: 5Gi
+                        memory: 8Gi
+                      requests:
+                        cpu: 75m
+                        memory: 4Gi
             volumeClaimTemplates:
               - kind: PersistentVolumeClaim
                 apiVersion: v1
@@ -213,10 +213,10 @@ spec:
                   - (name): loki-distributor
                     resources:
                       limits:
-                        cpu: 300m
+                        cpu: 150m
                         memory: 256Mi
                       requests:
-                        cpu: 100m
+                        cpu: 50m
                         memory: 64Mi
       name: loki-distributor
     - match:
@@ -233,10 +233,10 @@ spec:
                   - (name): gateway
                     resources:
                       limits:
-                        cpu: 450m
+                        cpu: 150m
                         memory: 128Mi
                       requests:
-                        cpu: 150m
+                        cpu: 75m
                         memory: 32Mi
       name: loki-gateway
     - match:
