@@ -122,6 +122,7 @@ stateful_workload_stop() {
   kubectl scale --replicas=0 -n nextcloud deployment/nextcloud
   kubectl scale --replicas=0 -n photoprism statefulset/photoprism
   kubectl scale --replicas=0 -n prometheus statefulset/prometheus
+  kubectl scale --replicas=0 -n prometheus statefulset/thanos-store-gateway
   kubectl scale --replicas=0 -n uptime-kuma statefulset/uptime-kuma
   kubectl scale --replicas=0 -n vault statefulset/vault
 
@@ -168,6 +169,16 @@ stateful_workload_stop() {
 
   kubectl scale --replicas=0 -n stackrox deployment/central
   kubectl scale --replicas=0 -n stackrox deployment/scanner-db
+
+  kubectl scale --replicas=0 -n loki-operator deployment/loki-operator-controller-manager
+  kubectl scale --replicas=0 -n network-observability-loki statefulset/netobserv-compactor
+  kubectl scale --replicas=0 -n network-observability-loki statefulset/netobserv-index-gateway
+  kubectl scale --replicas=0 -n network-observability-loki statefulset/netobserv-ingester
+  kubectl scale --replicas=0 -n network-observability-loki statefulset/netobserv-pool-0
+  kubectl scale --replicas=0 -n network-observability-loki deployment/netobserv-distributor
+  kubectl scale --replicas=0 -n network-observability-loki deployment/netobserv-gateway
+  kubectl scale --replicas=0 -n network-observability-loki deployment/netobserv-querier
+  kubectl scale --replicas=0 -n network-observability-loki deployment/netobserv-query-frontend
 }
 
 stateful_workload_start() {
@@ -198,6 +209,7 @@ stateful_workload_start() {
   kubectl scale --replicas=2 -n nextcloud deployment/nextcloud
   kubectl scale --replicas=1 -n photoprism statefulset/photoprism
   kubectl scale --replicas=1 -n prometheus statefulset/prometheus
+  kubectl scale --replicas=1 -n prometheus statefulset/thanos-store-gateway
   kubectl scale --replicas=1 -n uptime-kuma statefulset/uptime-kuma
   kubectl scale --replicas=1 -n vault statefulset/vault
 
@@ -211,13 +223,13 @@ stateful_workload_start() {
   kubectl scale --replicas=1 -n postgres deployment/pgo
 
   kubectl patch postgresCluster clair -n quay --type=merge -p '{"spec":{"shutdown":false}}'
+  kubectl patch postgresCluster quay -n quay --type=merge -p '{"spec":{"shutdown":false}}'
   kubectl patch postgresCluster gitea -n gitea --type=merge -p '{"spec":{"shutdown":false}}'
   kubectl patch postgresCluster grafana -n postgres --type=merge -p '{"spec":{"shutdown":false}}'
   kubectl patch postgresCluster homeassistant -n homeassistant --type=merge -p '{"spec":{"shutdown":false}}'
   kubectl patch postgresCluster nextcloud -n nextcloud --type=merge -p '{"spec":{"shutdown":false}}'
   kubectl patch postgresCluster photoprism -n postgres --type=merge -p '{"spec":{"shutdown":false}}'
   kubectl patch postgresCluster stackrox -n stackrox --type=merge -p '{"spec":{"shutdown":false}}'
-  kubectl patch postgresCluster quay -n quay --type=merge -p '{"spec":{"shutdown":false}}'
 
   kubectl scale --replicas=1 -n argocd deployment/argocd-operator-controller-manager
   kubectl scale --replicas=1 -n argocd statefulset/argocd-application-controller
@@ -237,6 +249,9 @@ stateful_workload_start() {
 
   kubectl scale --replicas=1 -n stackrox deployment/central
   kubectl scale --replicas=1 -n stackrox deployment/scanner-db
+
+  kubectl scale --replicas=1 -n loki-operator deployment/loki-operator-controller-manager
+  kubectl scale --replicas=4 -n network-observability-loki statefulset/netobserv-pool-0
 
   echo -e "\nkubectl exec -it vault-0 -n vault -- vault operator unseal --tls-skip-verify"
 }
