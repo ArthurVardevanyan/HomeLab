@@ -1,0 +1,230 @@
+---
+# Source: gha-runner-scale-set-controller/templates/serviceaccount.yaml
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: arc-gha-rs-controller
+  namespace: github-arc-systems
+  labels:
+    helm.sh/chart: gha-rs-controller-0.8.3
+    app.kubernetes.io/name: gha-rs-controller
+    app.kubernetes.io/namespace: github-arc-systems
+    app.kubernetes.io/instance: arc
+    app.kubernetes.io/version: "0.8.3"
+    app.kubernetes.io/part-of: gha-rs-controller
+    app.kubernetes.io/managed-by: Helm
+---
+# Source: gha-runner-scale-set-controller/templates/manager_cluster_role.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: arc-gha-rs-controller
+rules:
+  - apiGroups:
+      - actions.github.com
+    resources:
+      - autoscalingrunnersets
+    verbs:
+      - create
+      - delete
+      - get
+      - list
+      - patch
+      - update
+      - watch
+  - apiGroups:
+      - actions.github.com
+    resources:
+      - autoscalingrunnersets/finalizers
+    verbs:
+      - patch
+      - update
+  - apiGroups:
+      - actions.github.com
+    resources:
+      - autoscalingrunnersets/status
+    verbs:
+      - get
+      - patch
+      - update
+  - apiGroups:
+      - actions.github.com
+    resources:
+      - autoscalinglisteners
+    verbs:
+      - create
+      - delete
+      - get
+      - list
+      - patch
+      - update
+      - watch
+  - apiGroups:
+      - actions.github.com
+    resources:
+      - autoscalinglisteners/status
+    verbs:
+      - get
+      - patch
+      - update
+  - apiGroups:
+      - actions.github.com
+    resources:
+      - autoscalinglisteners/finalizers
+    verbs:
+      - patch
+      - update
+  - apiGroups:
+      - actions.github.com
+    resources:
+      - ephemeralrunnersets
+    verbs:
+      - create
+      - delete
+      - get
+      - list
+      - patch
+      - update
+      - watch
+  - apiGroups:
+      - actions.github.com
+    resources:
+      - ephemeralrunnersets/status
+    verbs:
+      - get
+      - patch
+      - update
+  - apiGroups:
+      - actions.github.com
+    resources:
+      - ephemeralrunnersets/finalizers
+    verbs:
+      - patch
+      - update
+  - apiGroups:
+      - actions.github.com
+    resources:
+      - ephemeralrunners
+    verbs:
+      - create
+      - delete
+      - get
+      - list
+      - patch
+      - update
+      - watch
+  - apiGroups:
+      - actions.github.com
+    resources:
+      - ephemeralrunners/finalizers
+    verbs:
+      - patch
+      - update
+  - apiGroups:
+      - actions.github.com
+    resources:
+      - ephemeralrunners/status
+    verbs:
+      - get
+      - patch
+      - update
+  - apiGroups:
+      - ""
+    resources:
+      - pods
+    verbs:
+      - list
+      - watch
+  - apiGroups:
+      - ""
+    resources:
+      - serviceaccounts
+    verbs:
+      - list
+      - watch
+  - apiGroups:
+      - rbac.authorization.k8s.io
+    resources:
+      - rolebindings
+    verbs:
+      - list
+      - watch
+  - apiGroups:
+      - rbac.authorization.k8s.io
+    resources:
+      - roles
+    verbs:
+      - list
+      - watch
+      - patch
+---
+# Source: gha-runner-scale-set-controller/templates/manager_cluster_role_binding.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: arc-gha-rs-controller
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: arc-gha-rs-controller
+subjects:
+  - kind: ServiceAccount
+    name: arc-gha-rs-controller
+    namespace: github-arc-systems
+---
+# Source: gha-runner-scale-set-controller/templates/manager_listener_role.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: arc-gha-rs-controller-listener
+  namespace: github-arc-systems
+rules:
+  - apiGroups:
+      - ""
+    resources:
+      - pods
+    verbs:
+      - create
+      - delete
+      - get
+  - apiGroups:
+      - ""
+    resources:
+      - pods/status
+    verbs:
+      - get
+  - apiGroups:
+      - ""
+    resources:
+      - secrets
+    verbs:
+      - create
+      - delete
+      - get
+      - patch
+      - update
+  - apiGroups:
+      - ""
+    resources:
+      - serviceaccounts
+    verbs:
+      - create
+      - delete
+      - get
+      - patch
+      - update
+---
+# Source: gha-runner-scale-set-controller/templates/manager_listener_role_binding.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: arc-gha-rs-controller-listener
+  namespace: github-arc-systems
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: arc-gha-rs-controller-listener
+subjects:
+  - kind: ServiceAccount
+    name: arc-gha-rs-controller
+    namespace: github-arc-systems
