@@ -57,10 +57,10 @@ spec:
     policy: |
       g, system:cluster-admins, role:admin
       g, cluster-admins, role:admin
-  version: sha256:5f1de1b4d959868c1e006e08d46361c8f019d9730e74bc1feeab8c7b413f1187 #v2.10.1
+  version: sha256:5f200a0efcf08abfd61d28165893edc9dce48261970d3280b7faef93617a43aa #v2.10.2
   repo:
     replicas: 3
-    version: sha256:5f1de1b4d959868c1e006e08d46361c8f019d9730e74bc1feeab8c7b413f1187 #v2.10.1
+    version: sha256:5f200a0efcf08abfd61d28165893edc9dce48261970d3280b7faef93617a43aa #v2.10.2
     mountsatoken: true
     serviceaccount: argocd-repo-server
     resources:
@@ -75,7 +75,7 @@ spec:
     initContainers:
       - name: download-tools
         imagePullPolicy: IfNotPresent
-        image: registry.access.redhat.com/ubi9/ubi:9.3-1552@sha256:1fafb0905264413501df60d90a92ca32df8a2011cbfb4876ddff5ceb20c8f165
+        image: registry.access.redhat.com/ubi9/ubi:9.3-1610@sha256:66233eebd72bb5baa25190d4f55e1dc3fff3a9b77186c1f91a0abdb274452072
         env:
           - name: AVP_VERSION
             value: 1.17.0
@@ -156,7 +156,7 @@ spec:
   ha:
     enabled: true
     redisProxyImage: haproxy
-    redisProxyVersion: 2.9.1-bookworm
+    redisProxyVersion: 2.9.6-bookworm
     resources:
       limits:
         cpu: 100m
