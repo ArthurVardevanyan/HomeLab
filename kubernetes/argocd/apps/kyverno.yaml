@@ -1,0 +1,48 @@
+apiVersion: kyverno.io/v1
+kind: Policy
+metadata:
+  name: argocd
+  namespace: argocd-apps
+  annotations:
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+    argocd.argoproj.io/sync-wave: "1"
+spec:
+  background: false
+  rules:
+    - name: argocd-scc-override
+      match:
+        any:
+          - resources:
+              kinds:
+                - Pod
+      mutate:
+        patchStrategicMerge:
+          metadata:
+            annotations:
+              openshift.io/required-scc: restricted-v2
+              openshift.io/scc: restricted-v2
+    - name: argocd-run-as-user
+      match:
+        any:
+          - resources:
+              kinds:
+                - Deployment
+                - StatefulSet
+      mutate:
+        patchesJson6902: |-
+          - path: "/spec/template/spec/securityContext/runAsUser"
+            op: remove
+          - path: "/spec/template/spec/initContainers/0/securityContext/runAsUser"
+            op: remove
+          - path: "/spec/template/spec/containers/1/securityContext/runAsUser"
+            op: remove
+          - path: "/spec/template/spec/containers/1/securityContext/runAsUser"
+            op: remove
+          - path: "/spec/template/spec/securityContext/fsGroup"
+            op: remove
+          - path: "/spec/template/spec/initContainers/0/securityContext/fsGroup"
+            op: remove
+          - path: "/spec/template/spec/containers/1/securityContext/fsGroup"
+            op: remove
+          - path: "/spec/template/spec/containers/1/securityContext/fsGroup"
+            op: remove

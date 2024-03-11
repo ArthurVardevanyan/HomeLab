@@ -74,6 +74,39 @@ spec:
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
+  name: allow-api-server-ingress
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "0"
+  labels:
+    app.kubernetes.io/instance: argocd
+spec:
+  podSelector:
+    matchLabels:
+      control-plane: controller-manager
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              app: openshift-kube-apiserver
+          namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: openshift-kube-apiserver
+        - ipBlock:
+            cidr: 10.0.0.101/32 # Control Plane 1
+        - ipBlock:
+            cidr: 10.0.0.102/32 # Control Plane 2
+        - ipBlock:
+            cidr: 10.0.0.103/32 # Control Plane 3
+      ports:
+        - protocol: TCP
+          port: 9443
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
   name: allow-from-openshift-ingress
   namespace: argocd
   annotations:
