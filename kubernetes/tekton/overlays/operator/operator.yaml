@@ -1144,6 +1144,8 @@ spec:
       labels:
         app: openshift-pipelines-operator
         name: openshift-pipelines-operator
+      annotations:
+        openshift.io/required-scc: "restricted-v2"
     spec:
       containers:
         - args:
@@ -1213,7 +1215,7 @@ spec:
               cpu: 10m
               memory: 96Mi
           securityContext:
-            runAsNonRoot: false # true
+            runAsNonRoot: true
             readOnlyRootFilesystem: true
             allowPrivilegeEscalation: false
             seccompProfile:
@@ -1249,7 +1251,7 @@ spec:
           imagePullPolicy: Always
           name: openshift-pipelines-operator-cluster-operations
           securityContext:
-            runAsNonRoot: false # true
+            runAsNonRoot: true
             readOnlyRootFilesystem: true
             allowPrivilegeEscalation: false
             seccompProfile:
@@ -1294,6 +1296,8 @@ spec:
       labels:
         app: tekton-operator
         name: tekton-operator-webhook
+      annotations:
+        openshift.io/required-scc: "restricted-v2"
     spec:
       containers:
         - env:
@@ -1323,7 +1327,7 @@ spec:
             - containerPort: 8443
               name: https-webhook
           securityContext:
-            runAsNonRoot: false # true
+            runAsNonRoot: true
             readOnlyRootFilesystem: true
             allowPrivilegeEscalation: false
             seccompProfile:
