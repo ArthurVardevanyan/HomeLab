@@ -109,29 +109,6 @@ spec:
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
-  name: gitea
-  namespace: dragonfly-operator-system
-spec:
-  podSelector: {}
-  policyTypes:
-    - Egress
-  egress:
-    - to:
-        - namespaceSelector:
-            matchLabels:
-              kubernetes.io/metadata.name: gitea
-          podSelector:
-            matchLabels:
-              app: gitea-dragonfly
-              app.kubernetes.io/name: dragonfly
-              app.kubernetes.io/part-of: dragonfly
-      ports:
-        - protocol: TCP
-          port: 9999
----
-apiVersion: networking.k8s.io/v1
-kind: NetworkPolicy
-metadata:
   name: nextcloud
   namespace: dragonfly-operator-system
 spec:
