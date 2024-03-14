@@ -170,6 +170,11 @@ stateful_workload_stop() {
   kubectl scale --replicas=0 -n stackrox deployment/central
   kubectl scale --replicas=0 -n stackrox deployment/scanner-db
 
+  kubectl scale --replicas=0 -n dragonfly-operator-system deployment/dragonfly-operator-controller-manager
+  kubectl scale --replicas=0 -n nextcloud statefulset/nextcloud-dragonfly
+  kubectl scale --replicas=0 -n gitea statefulset/gitea-dragonfly
+  kubectl scale --replicas=0 -n quay statefulset/quay-dragonfly
+
   kubectl scale --replicas=0 -n loki-operator deployment/loki-operator-controller-manager
   kubectl scale --replicas=0 -n network-observability-loki statefulset/netobserv-compactor
   kubectl scale --replicas=0 -n network-observability-loki statefulset/netobserv-index-gateway
@@ -189,6 +194,11 @@ stateful_workload_start() {
   kubectl patch cronjobs -n mariadb-galera mysqldump-cron -p '{"spec" : {"suspend" : false }}'
 
   kubectl scale --replicas=1 -n openshift-monitoring deployment/cluster-monitoring-operator
+
+  kubectl scale --replicas=1 -n dragonfly-operator-system deployment/dragonfly-operator-controller-manager
+  kubectl scale --replicas=2 -n nextcloud statefulset/nextcloud-dragonfly
+  kubectl scale --replicas=2 -n gitea statefulset/gitea-dragonfly
+  kubectl scale --replicas=2 -n quay statefulset/quay-dragonfly
 
   kubectl scale --replicas=1 -n cockroach-operator-system deployments/cockroach-operator-manager
   kubectl scale --replicas=3 -n zitadel statefulset/crdb
