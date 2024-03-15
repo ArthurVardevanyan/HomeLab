@@ -99,16 +99,26 @@ Permission Denied Issue
 graph TD
  linkStyle default interpolate basis
 
-wan1[<center>WAN 500/50<br>192.168.100.1</center>]---router{<center>PfSense<br>10.0.0.2</center>}
-wan2[<center>LTE 100/25 Mb<br>192.168.1.1</center>]---router
-router---ap{<center>TP-AX1800<br>10.0.0.1</center>}
-ap---switch[<center>USW-Flex-XG</center>]
+wan1[<center>WAN<br>192.168.100.1</center>]---|1000/50 Mb|router{<center>PfSense<br>10.0.0.2</center>}
+wan2[<center>LTE<br>192.168.1.1</center>]---|100/25 Mb|router
+router---|1GbE|ap1{<center>TP-AX1800 AP<br>10.0.0.4</center>}
+
+subgraph Networking
+    switch10---|2.5GbE|ap2{<center>U7 Pro<br>10.0.0.1</center>}
+    ap1-----|1GbE|switch10[<center>USW-Flex-XG<br>10.0.0.105</center>]
+    ap1----|1GbE|switch1[<center>TL-SG1005D</center>]
+end
 
 subgraph HomeLab
-    switch-.-|1 GbE|truenas(<center>TrueNas<br>10.0.0.3</center>)
-    switch-.-|10 GbE|kvm-1(<center>kvm-1<br>10.0.0.107</center>)
-    switch-.-|10 GbE|kvm-2(<center>kvm-2<br>10.0.0.108</center>)
-    switch-.-|10 GbE|kvm-3(<center>kvm-3<br>10.0.0.109</center>)
+    switch1-.-|1GbE Fail Over|kvm-1(<center>kvm-1<br>10.0.0.107</center>)
+    switch1-.-|1GbE Fail Over|kvm-2(<center>kvm-2<br>10.0.0.108</center>)
+    switch1-.-|1GbE Fail Over|kvm-3(<center>kvm-3<br>10.0.0.109</center>)
+    switch1-.-|1GbE|truenas(<center>TrueNas<br>10.0.0.3</center>)
+
+
+    switch10----|10 GbE|kvm-1(<center>kvm-1<br>10.0.0.107</center>)
+    switch10----|10 GbE|kvm-2(<center>kvm-2<br>10.0.0.108</center>)
+    switch10----|10 GbE|kvm-3(<center>kvm-3<br>10.0.0.109</center>)
     subgraph OKD KVM-1
         kvm-1-.-server-1(<center>server-1<br>10.0.0.101</center>)
         kvm-1-.-infra-1(<center>infra-1<br>10.0.0.121</center>)
