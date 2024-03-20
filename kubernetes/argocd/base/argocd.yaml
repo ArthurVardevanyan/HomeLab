@@ -154,28 +154,12 @@ spec:
           cpu: 10m
           memory: 50Mi
   ha:
-    enabled: true
-    redisProxyImage: haproxy
-    redisProxyVersion: 2.9.6-bookworm
-    resources:
-      limits:
-        cpu: 100m
-        memory: 192Mi
-      requests:
-        cpu: 25m
-        memory: 96Mi
+    enabled: false
   tls:
     ca: {}
   redis:
-    image: redis
-    version: 7.2.4-bookworm
-    resources:
-      limits:
-        cpu: 100m
-        memory: 100Mi
-      requests:
-        cpu: 25m
-        memory: 25Mi
+    enabled: false
+    remote: "argocd-redis:6379"
   controller:
     parallelismLimit: 25
     sharding:
