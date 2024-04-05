@@ -39,7 +39,7 @@ spec:
                   app: alert-manager-discord
               topologyKey: "kubernetes.io/hostname"
       containers:
-        - image: benjojo/alertmanager-discord@sha256:7d27cd8494b269fe592cf6a9d7f6bdf14ac628bba34c381dc43cf533eaa95158
+        - image: speckle/alertmanager-discord:0.3.1@sha256:3457db62d41827bdde9d1ee84095ae1aeec860dc24edfe56e7fe12d856e50cde
           envFrom:
             - secretRef:
                 name: discord-webhook
@@ -68,7 +68,7 @@ spec:
               memory: 15M
           livenessProbe:
             httpGet:
-              path: /
+              path: /liveness
               port: 9094
               scheme: HTTP
             initialDelaySeconds: 5
@@ -78,7 +78,7 @@ spec:
             failureThreshold: 15
           readinessProbe:
             httpGet:
-              path: /
+              path: /readiness
               port: 9094
               scheme: HTTP
             initialDelaySeconds: 5
