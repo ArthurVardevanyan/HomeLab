@@ -144,9 +144,9 @@ end
 
 <https://www.okd.io/>
 
-| Kubernetes Channel | OKD Version | OKD Channel | OKD OS           | Host Operating System |
-| ------------------ | ----------- | ----------- | ---------------- | --------------------- |
-| v1.28              | 4.15-\*     | stable-4.11 | Fedora CoreOS 39 | RHEL 9.3              |
+| Kubernetes Channel | OKD Version | OKD Channel | OKD OS           | Host Operating System | Storage Layer |
+| ------------------ | ----------- | ----------- | ---------------- | --------------------- | ------------- |
+| v1.28              | 4.15-\*     | stable-4.11 | Fedora CoreOS 39 | RHEL 9.3              | CEPH          |
 
 **Machines:**
 
@@ -177,20 +177,20 @@ end
 
 **Kubernetes Nodes:**
 
-| NAME     | ROLES          | Machine | vCPU | Mem   | Storage       |
-| -------- | -------------- | ------- | ---- | ----- | ------------- |
-| server-1 | cp,etcd,master | kvm-1   | 8    | 24.0G | N/A           |
-| server-2 | cp,etcd,master | kvm-2   | 8    | 24.0G | N/A           |
-| server-3 | cp,etcd,master | kvm-1   | 8    | 24.0G | N/A           |
-| infra-1  | infra,worker   | kvm-1   | 6    | 7.0G  | 2x1TB LH NVME |
-| infra-2  | infra,worker   | kvm-2   | 6    | 7.0G  | 2x1TB LH NVME |
-| infra-3  | infra,worker   | kvm-3   | 6    | 7.0G  | 2x1TB LH NVME |
-| worker-1 | worker         | kvm-1   | 7    | 29.0G | N/A           |
-| worker-2 | worker         | kvm-2   | 7    | 29.0G | N/A           |
-| worker-3 | worker         | kvm-3   | 7    | 29.0G | N/A           |
-| worker-4 | worker         | kvm-1   | 7    | 29.0G | N/A           |
-| worker-5 | worker         | kvm-2   | 7    | 29.0G | N/A           |
-| worker-6 | worker         | kvm-3   | 7    | 29.0G | N/A           |
+| NAME     | ROLES          | Machine | vCPU | Mem   | Storage         |
+| -------- | -------------- | ------- | ---- | ----- | --------------- |
+| server-1 | cp,etcd,master | kvm-1   | 8    | 24.0G | N/A             |
+| server-2 | cp,etcd,master | kvm-2   | 8    | 24.0G | N/A             |
+| server-3 | cp,etcd,master | kvm-1   | 8    | 24.0G | N/A             |
+| infra-1  | infra,worker   | kvm-1   | 6    | 19.0G | 2x1TB CEPH NVME |
+| infra-2  | infra,worker   | kvm-2   | 6    | 19.0G | 2x1TB CEPH NVME |
+| infra-3  | infra,worker   | kvm-3   | 6    | 19.0G | 2x1TB CEPH NVME |
+| worker-1 | worker         | kvm-1   | 7    | 23.0G | N/A             |
+| worker-2 | worker         | kvm-2   | 7    | 23.0G | N/A             |
+| worker-3 | worker         | kvm-3   | 7    | 23.0G | N/A             |
+| worker-4 | worker         | kvm-1   | 7    | 23.0G | N/A             |
+| worker-5 | worker         | kvm-2   | 7    | 23.0G | N/A             |
+| worker-6 | worker         | kvm-3   | 7    | 23.0G | N/A             |
 
 #### KVM Config Dump
 

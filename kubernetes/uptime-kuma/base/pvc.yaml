@@ -1,7 +1,7 @@
 kind: PersistentVolumeClaim
 apiVersion: v1
 metadata:
-  name: uptime-kuma-pvc
+  name: uptime-kuma
   namespace: uptime-kuma
   labels:
     app.kubernetes.io/instance: uptime-kuma
@@ -11,31 +11,5 @@ spec:
   resources:
     requests:
       storage: 2Gi
-  volumeName: uptime-kuma-pv
-  storageClassName: longhorn-static
-  volumeMode: Filesystem
----
-kind: PersistentVolume
-apiVersion: v1
-metadata:
-  name: uptime-kuma-pv
-  labels:
-    app.kubernetes.io/instance: uptime-kuma
-spec:
-  capacity:
-    storage: 2Gi
-  csi:
-    driver: driver.longhorn.io
-    volumeHandle: uptime-kuma
-    fsType: ext4
-    volumeAttributes:
-      numberOfReplicas: "2"
-  accessModes:
-    - ReadWriteOnce
-  claimRef:
-    kind: PersistentVolumeClaim
-    name: uptime-kuma-pvc
-    namespace: uptime-kuma
-  persistentVolumeReclaimPolicy: Retain
-  storageClassName: longhorn-static
+  storageClassName: rook-ceph-block
   volumeMode: Filesystem

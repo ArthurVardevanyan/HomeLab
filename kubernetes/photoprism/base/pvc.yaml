@@ -1,7 +1,7 @@
 kind: PersistentVolumeClaim
 apiVersion: v1
 metadata:
-  name: photoprism-storage-pvc
+  name: photoprism-storage
   namespace: photoprism
   labels:
     app.kubernetes.io/instance: photoprism
@@ -10,40 +10,14 @@ spec:
     - ReadWriteOnce
   resources:
     requests:
-      storage: 2Gi
-  volumeName: photoprism-storage-pv
-  storageClassName: longhorn-static
-  volumeMode: Filesystem
----
-kind: PersistentVolume
-apiVersion: v1
-metadata:
-  name: photoprism-storage-pv
-  labels:
-    app.kubernetes.io/instance: photoprism
-spec:
-  capacity:
-    storage: 2Gi
-  csi:
-    driver: driver.longhorn.io
-    volumeHandle: photoprism-storage
-    fsType: ext4
-    volumeAttributes:
-      numberOfReplicas: "2"
-  accessModes:
-    - ReadWriteOnce
-  claimRef:
-    kind: PersistentVolumeClaim
-    name: photoprism-storage-pvc
-    namespace: photoprism
-  persistentVolumeReclaimPolicy: Retain
-  storageClassName: longhorn-static
+      storage: 5Gi
+  storageClassName: rook-ceph-block
   volumeMode: Filesystem
 ---
 kind: PersistentVolumeClaim
 apiVersion: v1
 metadata:
-  name: photoprism-cache-pvc
+  name: photoprism-cache
   namespace: photoprism
   labels:
     app.kubernetes.io/instance: photoprism
@@ -52,34 +26,8 @@ spec:
     - ReadWriteOnce
   resources:
     requests:
-      storage: 25Gi
-  volumeName: photoprism-cache-pv
-  storageClassName: longhorn-static
-  volumeMode: Filesystem
----
-kind: PersistentVolume
-apiVersion: v1
-metadata:
-  name: photoprism-cache-pv
-  labels:
-    app.kubernetes.io/instance: photoprism
-spec:
-  capacity:
-    storage: 25Gi
-  csi:
-    driver: driver.longhorn.io
-    volumeHandle: photoprism-cache
-    fsType: ext4
-    volumeAttributes:
-      numberOfReplicas: "2"
-  accessModes:
-    - ReadWriteOnce
-  claimRef:
-    kind: PersistentVolumeClaim
-    name: photoprism-cache-pvc
-    namespace: photoprism
-  persistentVolumeReclaimPolicy: Retain
-  storageClassName: longhorn-static
+      storage: 50Gi
+  storageClassName: rook-ceph-block
   volumeMode: Filesystem
 ---
 apiVersion: v1

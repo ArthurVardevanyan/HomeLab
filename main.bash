@@ -126,9 +126,7 @@ stateful_workload_stop() {
   kubectl scale --replicas=0 -n uptime-kuma statefulset/uptime-kuma
   kubectl scale --replicas=0 -n vault statefulset/vault
 
-  kubectl scale --replicas=0 -n minio-operator deployment/minio-operator
-  kubectl scale --replicas=0 -n quay statefulset/quay-pool-0
-  kubectl scale --replicas=0 -n gitea statefulset/gitea-pool-0
+  #kubectl scale --replicas=0 -n minio-operator deployment/minio-operator
   kubectl scale --replicas=0 -n quay deployment/quay-operator-tng
   kubectl scale --replicas=0 -n quay deployment/quay-quay-app
   kubectl scale --replicas=0 -n quay deployment/quay-clair-app
@@ -157,13 +155,9 @@ stateful_workload_stop() {
   kubectl scale --replicas=0 -n argocd deployment/argocd-repo-server
   kubectl scale --replicas=0 -n argocd deployment/argocd-dex-server
   kubectl scale --replicas=0 -n argocd deployment/argocd-server
-  kubectl scale --replicas=0 -n argocd deployment/argocd-redis-ha-haproxy
-  kubectl scale --replicas=0 -n argocd statefulset/argocd-redis-ha-server
 
   kubectl scale --replicas=0 -n argocd-apps statefulset/argocd-apps-application-controller
-  kubectl scale --replicas=0 -n argocd-apps statefulset/argocd-apps-redis-ha-server
   kubectl scale --replicas=0 -n argocd-apps deployment/argocd-apps-dex-server
-  kubectl scale --replicas=0 -n argocd-apps deployment/argocd-apps-redis-ha-haproxy
   kubectl scale --replicas=0 -n argocd-apps deployment/argocd-apps-repo-server
   kubectl scale --replicas=0 -n argocd-apps deployment/argocd-apps-server
 
@@ -179,7 +173,6 @@ stateful_workload_stop() {
   kubectl scale --replicas=0 -n network-observability-loki statefulset/netobserv-compactor
   kubectl scale --replicas=0 -n network-observability-loki statefulset/netobserv-index-gateway
   kubectl scale --replicas=0 -n network-observability-loki statefulset/netobserv-ingester
-  kubectl scale --replicas=0 -n network-observability-loki statefulset/netobserv-pool-0
   kubectl scale --replicas=0 -n network-observability-loki deployment/netobserv-distributor
   kubectl scale --replicas=0 -n network-observability-loki deployment/netobserv-gateway
   kubectl scale --replicas=0 -n network-observability-loki deployment/netobserv-querier
@@ -223,9 +216,7 @@ stateful_workload_start() {
   kubectl scale --replicas=1 -n uptime-kuma statefulset/uptime-kuma
   kubectl scale --replicas=1 -n vault statefulset/vault
 
-  kubectl scale --replicas=1 -n minio-operator deployment/minio-operator
-  kubectl scale --replicas=4 -n quay statefulset/quay-pool-0
-  kubectl scale --replicas=4 -n gitea statefulset/gitea-pool-0
+  #kubectl scale --replicas=1 -n minio-operator deployment/minio-operator
   kubectl scale --replicas=1 -n quay deployment/quay-operator-tng
   kubectl scale --replicas=2 -n quay deployment/quay-quay-app
   kubectl scale --replicas=2 -n quay deployment/quay-clair-app
@@ -247,13 +238,9 @@ stateful_workload_start() {
   kubectl scale --replicas=1 -n argocd deployment/argocd-repo-server
   kubectl scale --replicas=1 -n argocd deployment/argocd-dex-server
   kubectl scale --replicas=1 -n argocd deployment/argocd-server
-  kubectl scale --replicas=1 -n argocd deployment/argocd-redis-ha-haproxy
-  kubectl scale --replicas=3 -n argocd statefulset/argocd-redis-ha-server
 
   kubectl scale --replicas=1 -n argocd-apps statefulset/argocd-apps-application-controller
-  kubectl scale --replicas=3 -n argocd-apps statefulset/argocd-apps-redis-ha-server
   kubectl scale --replicas=1 -n argocd-apps deployment/argocd-apps-dex-server
-  kubectl scale --replicas=1 -n argocd-apps deployment/argocd-apps-redis-ha-haproxy
   kubectl scale --replicas=1 -n argocd-apps deployment/argocd-apps-repo-server
   kubectl scale --replicas=1 -n argocd-apps deployment/argocd-apps-server
 
@@ -261,7 +248,6 @@ stateful_workload_start() {
   kubectl scale --replicas=1 -n stackrox deployment/scanner-db
 
   kubectl scale --replicas=1 -n loki-operator deployment/loki-operator-controller-manager
-  kubectl scale --replicas=4 -n network-observability-loki statefulset/netobserv-pool-0
 
   echo -e "\nkubectl exec -it vault-0 -n vault -- vault operator unseal --tls-skip-verify"
 }

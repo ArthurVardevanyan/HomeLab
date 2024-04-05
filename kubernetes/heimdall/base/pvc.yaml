@@ -1,7 +1,7 @@
 kind: PersistentVolumeClaim
 apiVersion: v1
 metadata:
-  name: heimdall-pvc
+  name: heimdall
   namespace: heimdall
   labels:
     app.kubernetes.io/instance: heimdall
@@ -10,32 +10,6 @@ spec:
     - ReadWriteOnce
   resources:
     requests:
-      storage: 75Mi
-  volumeName: heimdall-pv
-  storageClassName: longhorn-static
-  volumeMode: Filesystem
----
-kind: PersistentVolume
-apiVersion: v1
-metadata:
-  name: heimdall-pv
-  labels:
-    app.kubernetes.io/instance: heimdall
-spec:
-  capacity:
-    storage: 75Mi
-  csi:
-    driver: driver.longhorn.io
-    volumeHandle: heimdall
-    fsType: ext4
-    volumeAttributes:
-      numberOfReplicas: "2"
-  accessModes:
-    - ReadWriteOnce
-  claimRef:
-    kind: PersistentVolumeClaim
-    name: heimdall-pvc
-    namespace: heimdall
-  persistentVolumeReclaimPolicy: Retain
-  storageClassName: longhorn-static
+      storage: 100Mi
+  storageClassName: rook-ceph-block
   volumeMode: Filesystem
