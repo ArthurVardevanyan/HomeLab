@@ -1,7 +1,7 @@
 kind: PersistentVolumeClaim
 apiVersion: v1
 metadata:
-  name: nextcloud-config-pvc
+  name: nextcloud-config
   namespace: nextcloud
   labels:
     app.kubernetes.io/instance: nextcloud
@@ -11,39 +11,13 @@ spec:
   resources:
     requests:
       storage: 1Gi
-  volumeName: nextcloud-config-pv
-  storageClassName: longhorn-static
-  volumeMode: Filesystem
----
-kind: PersistentVolume
-apiVersion: v1
-metadata:
-  name: nextcloud-config-pv
-  labels:
-    app.kubernetes.io/instance: nextcloud
-spec:
-  capacity:
-    storage: 1Gi
-  csi:
-    driver: driver.longhorn.io
-    volumeHandle: nextcloud-config
-    fsType: ext4
-    volumeAttributes:
-      numberOfReplicas: "2"
-  accessModes:
-    - ReadWriteMany
-  claimRef:
-    kind: PersistentVolumeClaim
-    name: nextcloud-config-pvc
-    namespace: nextcloud
-  persistentVolumeReclaimPolicy: Retain
-  storageClassName: longhorn-static
+  storageClassName: rook-cephfs
   volumeMode: Filesystem
 ---
 kind: PersistentVolumeClaim
 apiVersion: v1
 metadata:
-  name: nextcloud-pvc
+  name: nextcloud
   namespace: nextcloud
   labels:
     app.kubernetes.io/instance: nextcloud
@@ -53,33 +27,7 @@ spec:
   resources:
     requests:
       storage: 750Gi
-  volumeName: nextcloud-pv
-  storageClassName: longhorn-static
-  volumeMode: Filesystem
----
-kind: PersistentVolume
-apiVersion: v1
-metadata:
-  name: nextcloud-pv
-  labels:
-    app.kubernetes.io/instance: nextcloud
-spec:
-  capacity:
-    storage: 750Gi
-  csi:
-    driver: driver.longhorn.io
-    volumeHandle: nextcloud
-    fsType: ext4
-    volumeAttributes:
-      numberOfReplicas: "2"
-  accessModes:
-    - ReadWriteMany
-  claimRef:
-    kind: PersistentVolumeClaim
-    name: nextcloud-pvc
-    namespace: nextcloud
-  persistentVolumeReclaimPolicy: Retain
-  storageClassName: longhorn-static
+  storageClassName: rook-cephfs
   volumeMode: Filesystem
 ---
 apiVersion: v1

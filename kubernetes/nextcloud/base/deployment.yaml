@@ -47,15 +47,18 @@ spec:
             secretName: nextcloud-cert
         - name: nextcloud-config
           persistentVolumeClaim:
-            claimName: nextcloud-config-pvc
-        - name: nextcloud-pvc
+            claimName: nextcloud-config
+        - name: nextcloud
           persistentVolumeClaim:
-            claimName: nextcloud-pvc
+            claimName: nextcloud
       securityContext:
         fsGroup: 33
         runAsGroup: 33
-        runAsNonRoot: true
         runAsUser: 33
+        runAsNonRoot: true
+        fsGroupChangePolicy: OnRootMismatch
+        seLinuxOptions:
+          type: "spc_t"
       containers:
         - name: nextcloud
           image: nextcloud:28.0.3-apache
@@ -91,7 +94,7 @@ spec:
             - name: nextcloud-cert
               mountPath: /ssl
               readOnly: true
-            - name: nextcloud-pvc
+            - name: nextcloud
               mountPath: /var/www/html/data
           livenessProbe:
             httpGet:

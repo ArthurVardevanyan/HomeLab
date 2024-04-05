@@ -41,14 +41,17 @@ spec:
             - name: nextcloud-data-backup
               persistentVolumeClaim:
                 claimName: nextcloud-data-backup
-            - name: nextcloud-pvc
+            - name: nextcloud
               persistentVolumeClaim:
-                claimName: nextcloud-pvc
+                claimName: nextcloud
           securityContext:
             fsGroup: 33
             runAsGroup: 33
-            runAsNonRoot: true
             runAsUser: 33
+            runAsNonRoot: true
+            fsGroupChangePolicy: OnRootMismatch
+            seLinuxOptions:
+              type: "spc_t"
           containers:
             - name: nextcloud-rsync
               image: registry.arthurvardevanyan.com/homelab/toolbox:not_latest
@@ -58,19 +61,15 @@ spec:
                   "-c",
                   "rsync --stats --archive --verbose --human-readable --stats --delete /mnt/data/Nextcloud /mnt/backup/ && rsync --stats --archive --verbose --human-readable --stats --delete /mnt/data/Nextcloud /mnt/backup1/",
                 ]
-              resources:
-                limits:
-                  cpu: 300m
-                  memory: 3000M
-                requests:
-                  cpu: 100m
-                  memory: 500M
+
               volumeMounts:
                 - name: nextcloud-data
                   mountPath: /mnt/backup/Nextcloud
+                  readOnly: false
                 - name: nextcloud-data-backup
                   mountPath: /mnt/backup1/Nextcloud
-                - name: nextcloud-pvc
+                  readOnly: false
+                - name: nextcloud
                   mountPath: /mnt/data/Nextcloud
                   readOnly: true
               securityContext:
