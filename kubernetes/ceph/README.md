@@ -1,12 +1,14 @@
 # CEPH
 
 ```bash
-ceph osd crush rm-device-class osd.0 osd.1 osd.2 osd.3 osd.4 osd.5
-ceph osd crush set-device-class nvme  osd.0 osd.1 osd.2 osd.3 osd.4 osd.5
+kubectl -n rook-ceph exec -it deploy/rook-ceph-tools -- bash
 
 ceph status
 ceph osd status
 ceph health detail
+
+ceph osd crush rm-device-class osd.0 osd.1 osd.2 osd.3 osd.4 osd.5
+ceph osd crush set-device-class nvme  osd.0 osd.1 osd.2 osd.3 osd.4 osd.5
 ```
 
 ## Refs
