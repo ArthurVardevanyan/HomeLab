@@ -61,7 +61,13 @@ spec:
                   "-c",
                   "rsync --stats --archive --verbose --human-readable --stats --delete /mnt/data/Nextcloud /mnt/backup/ && rsync --stats --archive --verbose --human-readable --stats --delete /mnt/data/Nextcloud /mnt/backup1/",
                 ]
-
+              resources:
+                limits:
+                  cpu: 300m
+                  memory: 3000M
+                requests:
+                  cpu: 100m
+                  memory: 500M
               volumeMounts:
                 - name: nextcloud-data
                   mountPath: /mnt/backup/Nextcloud
