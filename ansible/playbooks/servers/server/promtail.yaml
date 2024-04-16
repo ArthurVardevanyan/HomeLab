@@ -9,20 +9,15 @@
         url: https://github.com/grafana/loki/releases/download/v2.9.2/promtail-linux-amd64.zip
         dest: /tmp/promtail-linux-amd64.zip
 
-    - name: PromTail
-      file:
-        path: /tmp/promtail-linux-amd64
-        state: directory
-
     - name: Extract PromTail
       unarchive:
         src: /tmp/promtail-linux-amd64.zip
-        dest: /tmp/promtail-linux-amd64
+        dest: /tmp/
         remote_src: yes
 
     - name: Copy PromTail Binary To Bin
       copy:
-        src: /tmp/promtail-linux-amd64/promtail-linux-amd64
+        src: /tmp/promtail-linux-amd64
         dest: /usr/local/bin/promtail-linux-amd64
         mode: a+x
         remote_src: yes
