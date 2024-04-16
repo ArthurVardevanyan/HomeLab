@@ -22,9 +22,11 @@ spec:
       labels:
         app: nextcloud
         db: nextcloud-pg
+        io.kubernetes.cri-o.TrySkipVolumeSELinuxLabel: "true"
       annotations:
         enable.version-checker.io/nextcloud: "true"
     spec:
+      runtimeClassName: selinux
       topologySpreadConstraints:
         - maxSkew: 1
           topologyKey: topology.kubernetes.io/zone
@@ -51,14 +53,15 @@ spec:
         - name: nextcloud
           persistentVolumeClaim:
             claimName: nextcloud
+        - name: nextcloud-preview-cache
+          persistentVolumeClaim:
+            claimName: nextcloud-preview-cache
       securityContext:
         fsGroup: 33
         runAsGroup: 33
         runAsUser: 33
         runAsNonRoot: true
         fsGroupChangePolicy: OnRootMismatch
-        seLinuxOptions:
-          type: "spc_t"
       containers:
         - name: nextcloud
           image: nextcloud:28.0.3-apache
@@ -68,8 +71,8 @@ spec:
             runAsNonRoot: true
             #readOnlyRootFilesystem: true
             allowPrivilegeEscalation: false
-            # seccompProfile:
-            #   type: RuntimeDefault
+            seccompProfile:
+              type: RuntimeDefault
             capabilities:
               drop:
                 - ALL
@@ -96,6 +99,8 @@ spec:
               readOnly: true
             - name: nextcloud
               mountPath: /var/www/html/data
+            - name: nextcloud-preview-cache
+              mountPath: /var/www/html/data/appdata_ocv0msatgbnc/preview
           livenessProbe:
             httpGet:
               path: /status.php

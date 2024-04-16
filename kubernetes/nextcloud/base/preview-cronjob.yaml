@@ -7,7 +7,6 @@ metadata:
     app.kubernetes.io/instance: nextcloud
   annotations:
     checkov.io/skip1: CKV_K8S_40=Needs to run as User 33
-    checkov.io/skip2: CKV_K8S_31=App Doesn't Support
     checkov.io/skip3: CKV_K8S_22=App Doesn't Support
     checkov.io/skip4: CKV_K8S_43=Not Supported
 spec:
@@ -23,8 +22,9 @@ spec:
           labels:
             app: nextcloud-preview
             db: nextcloud-pg
-
+            io.kubernetes.cri-o.TrySkipVolumeSELinuxLabel: "true"
         spec:
+          runtimeClassName: selinux
           serviceAccountName: nextcloud-sa
           # affinity:
           #   podAffinity:
@@ -46,14 +46,15 @@ spec:
             - name: nextcloud
               persistentVolumeClaim:
                 claimName: nextcloud
+            - name: nextcloud-preview-cache
+              persistentVolumeClaim:
+                claimName: nextcloud-preview-cache
           securityContext:
             fsGroup: 33
             runAsGroup: 33
             runAsUser: 33
             runAsNonRoot: true
             fsGroupChangePolicy: OnRootMismatch
-            seLinuxOptions:
-              type: "spc_t"
           containers:
             - name: nextcloud-preview
               image: nextcloud:28.0.3-apache
@@ -74,8 +75,8 @@ spec:
                 runAsNonRoot: true
                 readOnlyRootFilesystem: true
                 allowPrivilegeEscalation: false
-                # seccompProfile:
-                #   type: RuntimeDefault
+                seccompProfile:
+                  type: RuntimeDefault
                 capabilities:
                   drop:
                     - ALL
@@ -92,6 +93,8 @@ spec:
                   readOnly: true
                 - name: nextcloud
                   mountPath: /var/www/html/data
+                - name: nextcloud-preview-cache
+                  mountPath: /var/www/html/data/appdata_ocv0msatgbnc/preview
               terminationMessagePath: /dev/termination-log
               terminationMessagePolicy: File
               imagePullPolicy: IfNotPresent
