@@ -14,26 +14,26 @@ metadata:
 spec:
   selector:
     matchLabels:
-      name: kube-vip-ds
+      app: kube-vip-ds
   template:
     metadata:
       labels:
-        name: kube-vip-ds
+        app: kube-vip-ds
     spec:
       securityContext:
         seccompProfile:
           type: RuntimeDefault
         runAsNonRoot: false
-      affinity:
-        nodeAffinity:
-          requiredDuringSchedulingIgnoredDuringExecution:
-            nodeSelectorTerms:
-              - matchExpressions:
-                  - key: node-role.kubernetes.io/master
-                    operator: Exists
-              - matchExpressions:
-                  - key: node-role.kubernetes.io/control-plane
-                    operator: Exists
+      # affinity:
+      #   nodeAffinity:
+      #     requiredDuringSchedulingIgnoredDuringExecution:
+      #       nodeSelectorTerms:
+      #         - matchExpressions:
+      #             - key: node-role.kubernetes.io/master
+      #               operator: Exists
+      #         - matchExpressions:
+      #             - key: node-role.kubernetes.io/control-plane
+      #               operator: Exists
       containers:
         - args:
             - manager
@@ -45,7 +45,7 @@ spec:
             - name: vip_cidr
               value: "32"
             - name: cp_enable
-              value: "true"
+              value: "false" # True
             - name: cp_namespace
               value: kube-vip
             - name: vip_ddns
@@ -95,5 +95,10 @@ spec:
       tolerations:
         - effect: NoSchedule
           operator: Exists
+          key: node.kubernetes.io/unschedulable
         - effect: NoExecute
+          operator: Exists
+          key: node.kubernetes.io/unschedulable
+        - key: node-role.kubernetes.io/infra
+          effect: NoSchedule
           operator: Exists
