@@ -5,11 +5,11 @@ metadata:
   name: arc-gha-rs-controller
   namespace: github-arc-systems
   labels:
-    helm.sh/chart: gha-rs-controller-0.8.3
+    helm.sh/chart: gha-rs-controller-0.9.1
     app.kubernetes.io/name: gha-rs-controller
     app.kubernetes.io/namespace: github-arc-systems
     app.kubernetes.io/instance: arc
-    app.kubernetes.io/version: "0.8.3"
+    app.kubernetes.io/version: "0.9.1"
     app.kubernetes.io/part-of: gha-rs-controller
     app.kubernetes.io/managed-by: Helm
     actions.github.com/controller-service-account-namespace: github-arc-systems
@@ -28,7 +28,7 @@ spec:
       labels:
         app.kubernetes.io/part-of: gha-rs-controller
         app.kubernetes.io/component: controller-manager
-        app.kubernetes.io/version: 0.8.3
+        app.kubernetes.io/version: 0.9.1
         app.kubernetes.io/name: gha-rs-controller
         app.kubernetes.io/namespace: github-arc-systems
         app.kubernetes.io/instance: arc
@@ -36,7 +36,7 @@ spec:
       serviceAccountName: arc-gha-rs-controller
       containers:
         - name: manager
-          image: "ghcr.io/actions/gha-runner-scale-set-controller:0.8.3@sha256:3e74b4967fc585bc3bf2f544a96b4826135738be3962224a2ca9a855e604fb15"
+          image: "ghcr.io/actions/gha-runner-scale-set-controller:0.9.1@sha256:1237f4972fb227b6df1feea1ac5a1464ce9c2c2baf4d7d4f3f62b489944a5289"
           resources:
             limits:
               cpu: 50m
@@ -57,7 +57,7 @@ spec:
             - "/manager"
           env:
             - name: CONTROLLER_MANAGER_CONTAINER_IMAGE
-              value: "ghcr.io/actions/gha-runner-scale-set-controller:0.8.3@sha256:3e74b4967fc585bc3bf2f544a96b4826135738be3962224a2ca9a855e604fb15"
+              value: "ghcr.io/actions/gha-runner-scale-set-controller:0.9.1@sha256:1237f4972fb227b6df1feea1ac5a1464ce9c2c2baf4d7d4f3f62b489944a5289"
             - name: CONTROLLER_MANAGER_POD_NAMESPACE
               valueFrom:
                 fieldRef:
