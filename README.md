@@ -152,15 +152,15 @@ end
 
 [CPU Benchmark](https://www.cpubenchmark.net/compare/Intel-i5-6600-vs-AMD-RX-427BB-vs-Intel-i3-2130-vs-AMD-GX-415GA-SOC-vs-AMD-Ryzen-7-5700G/2594vs2496vs755vs2081vs4323)
 
-| Machine    | Model       | CPU      | CPU | Mem | Storage              | ZFS Storage    |
-| ---------- | ----------- | -------- | --- | --- | -------------------- | -------------- |
-| pfSense    | Hp t730     | RX-427BB | 4   | 4G  | 16G SSD              | N/A            |
-| Bare Metal | Hp t620     | GX-415GA | 4   | 6G  | 16G SSD & 16G USB    | N/A            |
-| kvm-1      | N/A         | R7-5700G | 16  | 96G | 2x1TB NVME, 1TB SSD  | N/A            |
-| kvm-2      | N/A         | R7-5700G | 16  | 96G | 2x1TB NVME, 1TB SSD  | N/A            |
-| kvm-3      | N/A         | R7-5700G | 16  | 96G | 2x1TB NVME, 1TB SSD  | N/A            |
-| TrueNas    | Hp ProDesk  | i5-6600  | 4   | 32G | 120G SSD Boot Mirror | 2T HDD, 1T SSD |
-| Spare      | Hp p7-1226s | i3-2130  | 4   | 8G  | 240G SSD             | N/A            |
+| Machine    | Model       | CPU      | CPU | Mem  | Storage              | ZFS Storage    |
+| ---------- | ----------- | -------- | --- | ---- | -------------------- | -------------- |
+| pfSense    | Hp t730     | RX-427BB | 4   | 4G   | 16G SSD              | N/A            |
+| Bare Metal | Hp t620     | GX-415GA | 4   | 6G   | 16G SSD & 16G USB    | N/A            |
+| kvm-1      | N/A         | R7-5700G | 16  | 112G | 2x1TB NVME, 1TB SSD  | N/A            |
+| kvm-2      | N/A         | R7-5700G | 16  | 112G | 2x1TB NVME, 1TB SSD  | N/A            |
+| kvm-3      | N/A         | R7-5700G | 16  | 112G | 2x1TB NVME, 1TB SSD  | N/A            |
+| TrueNas    | Hp ProDesk  | i5-6600  | 4   | 32G  | 120G SSD Boot Mirror | 2T HDD, 1T SSD |
+| Spare      | Hp p7-1226s | i3-2130  | 4   | 8G   | 240G SSD             | N/A            |
 
 | Machine | PPT | CPU Curve | GFX Curve | CPU Frequency | vMem | Memory Freq |
 | ------- | --- | --------- | --------- | ------------- | ---- | ----------- |
@@ -182,15 +182,15 @@ end
 | server-1 | cp,etcd,master | kvm-1   | 8    | 24.0G | N/A             |
 | server-2 | cp,etcd,master | kvm-2   | 8    | 24.0G | N/A             |
 | server-3 | cp,etcd,master | kvm-1   | 8    | 24.0G | N/A             |
-| infra-1  | infra,worker   | kvm-1   | 6    | 19.0G | 2x1TB CEPH NVME |
-| infra-2  | infra,worker   | kvm-2   | 6    | 19.0G | 2x1TB CEPH NVME |
-| infra-3  | infra,worker   | kvm-3   | 6    | 19.0G | 2x1TB CEPH NVME |
-| worker-1 | worker         | kvm-1   | 7    | 23.0G | N/A             |
-| worker-2 | worker         | kvm-2   | 7    | 23.0G | N/A             |
-| worker-3 | worker         | kvm-3   | 7    | 23.0G | N/A             |
-| worker-4 | worker         | kvm-1   | 7    | 23.0G | N/A             |
-| worker-5 | worker         | kvm-2   | 7    | 23.0G | N/A             |
-| worker-6 | worker         | kvm-3   | 7    | 23.0G | N/A             |
+| infra-1  | infra,worker   | kvm-1   | 6    | 20.0G | 2x1TB CEPH NVME |
+| infra-2  | infra,worker   | kvm-2   | 6    | 20.0G | 2x1TB CEPH NVME |
+| infra-3  | infra,worker   | kvm-3   | 6    | 20.0G | 2x1TB CEPH NVME |
+| worker-1 | worker         | kvm-1   | 7    | 30.0G | N/A             |
+| worker-2 | worker         | kvm-2   | 7    | 30.0G | N/A             |
+| worker-3 | worker         | kvm-3   | 7    | 30.0G | N/A             |
+| worker-4 | worker         | kvm-1   | 7    | 30.0G | N/A             |
+| worker-5 | worker         | kvm-2   | 7    | 30.0G | N/A             |
+| worker-6 | worker         | kvm-3   | 7    | 30.0G | N/A             |
 
 #### KVM Config Dump
 
