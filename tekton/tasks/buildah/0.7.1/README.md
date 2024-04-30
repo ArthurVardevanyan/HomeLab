@@ -14,7 +14,7 @@ to assemble a container image, then pushes that image to a container registry.
 ## Install the Task
 
 ```bash
-kubectl apply -f https://tekton-hub-api-openshift-pipelines.apps.okd.arthurvardevanyan.com/v1/resource/homelab/task/buildah/0.5.1/raw
+kubectl apply -f https://tekton-hub-api-openshift-pipelines.apps.okd.arthurvardevanyan.com/v1/resource/homelab/task/buildah/0.7.1/raw
 ```
 
 ## Parameters

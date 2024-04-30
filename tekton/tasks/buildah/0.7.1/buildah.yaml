@@ -3,7 +3,7 @@ kind: Task
 metadata:
   name: buildah
   labels:
-    app.kubernetes.io/version: "0.5.1"
+    app.kubernetes.io/version: "0.7.1"
   annotations:
     argocd.argoproj.io/sync-wave: "2"
     argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
@@ -11,7 +11,7 @@ metadata:
     tekton.dev/pipelines.minVersion: "0.17.0"
     tekton.dev/tags: image-build
     tekton.dev/platforms: "linux/amd64,linux/s390x,linux/ppc64le,linux/arm64"
-    tekton.dev/displayName: "buildah"
+    tekton.dev/displayName: buildah
 spec:
   description: >-
     Buildah task builds source into a container image and
@@ -28,7 +28,7 @@ spec:
       description: Reference of the image buildah will produce.
     - name: BUILDER_IMAGE
       description: The location of the buildah builder image.
-      default: quay.io/buildah/stable:v1.35.0
+      default: quay.io/buildah/stable:v1.35.3
     - name: STORAGE_DRIVER
       description: Set buildah storage driver
       default: vfs #overlay
@@ -50,7 +50,7 @@ spec:
     - name: PUSH_EXTRA_ARGS
       description: Extra parameters passed for the push command when pushing images.
       type: string
-      default: "--compression-format zstd:chunked"
+      default: "" # --compression-format zstd:chunked"
     - name: SKIP_PUSH
       description: Skip pushing the built image
       default: "false"
@@ -70,7 +70,7 @@ spec:
     - name: IMAGE_URL
       description: Image repository where the built image would be pushed to
   steps:
-    - name: build
+    - name: build-and-push
       resources:
         requests:
           memory: 500Mi
@@ -85,20 +85,21 @@ spec:
         mkdir -p /home/build/rundir/libpod
         rm -rf $(workspaces.source.path)/lost+found
 
-        [[ "$(workspaces.sslcertdir.bound)" == "true" ]] && CERT_DIR_FLAG="--cert-dir $(workspaces.sslcertdir.path)"
-        [[ "$(workspaces.dockerconfig.bound)" == "true" ]] && export DOCKER_CONFIG="$(workspaces.dockerconfig.path)"
-        buildah ${CERT_DIR_FLAG} --storage-driver=$(params.STORAGE_DRIVER) bud \
-          $(params.BUILD_EXTRA_ARGS) --format=$(params.FORMAT) \
-          --tls-verify=$(params.TLSVERIFY) --no-cache \
-          -f $(params.DOCKERFILE) -t $(params.IMAGE) $(params.CONTEXT)
-
-        [[ "$(params.SKIP_PUSH)" == "true" ]] && echo "Push skipped" && exit 0
-        buildah ${CERT_DIR_FLAG} --storage-driver=$(params.STORAGE_DRIVER) push \
-          $(params.PUSH_EXTRA_ARGS) --tls-verify=$(params.TLSVERIFY) \
-          --digestfile /tmp/image-digest $(params.IMAGE) \
-          docker://$(params.IMAGE)
-        cat /tmp/image-digest | tee $(results.IMAGE_DIGEST.path)
-        echo "$(params.IMAGE)" | tee $(results.IMAGE_URL.path)
+        [ "$(workspaces.sslcertdir.bound)" = "true" ] && CERT_DIR_FLAG="--cert-dir=$(workspaces.sslcertdir.path)"
+        [ "$(workspaces.dockerconfig.bound)" = "true" ] && DOCKER_CONFIG="$(workspaces.dockerconfig.path)" && export DOCKER_CONFIG
+        # build the image (CERT_DIR_FLAG should be omitted if empty and BUILD_EXTRA_ARGS can contain multiple args)
+        # shellcheck disable=SC2046,SC2086
+        buildah ${CERT_DIR_FLAG} "--storage-driver=$(params.STORAGE_DRIVER)" bud $(params.BUILD_EXTRA_ARGS) \
+          "--format=$(params.FORMAT)" "--tls-verify=$(params.TLSVERIFY)" \
+          -f "$(params.DOCKERFILE)" -t "$(params.IMAGE)" "$(params.CONTEXT)"
+        [ "$(params.SKIP_PUSH)" = "true" ] && echo "Push skipped" && exit 0
+        # push the image (CERT_DIR_FLAG should be omitted if empty and PUSH_EXTRA_ARGS can contain multiple args)
+        # shellcheck disable=SC2046,SC2086
+        buildah ${CERT_DIR_FLAG} "--storage-driver=$(params.STORAGE_DRIVER)" push $(params.PUSH_EXTRA_ARGS) \
+          "--tls-verify=$(params.TLSVERIFY)" --digestfile /tmp/image-digest "$(params.IMAGE)" \
+          "docker://$(params.IMAGE)"
+        tee "$(results.IMAGE_DIGEST.path)" < /tmp/image-digest
+        printf '%s' "$(params.IMAGE)" | tee "$(results.IMAGE_URL.path)"
       volumeMounts:
         - name: varlibcontainers
           mountPath: /var/lib/containers
