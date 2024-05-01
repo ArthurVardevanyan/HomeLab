@@ -122,7 +122,7 @@ resource "google_cloudfunctions_function" "okd_homelab_keep_alive_cloud_function
   name                         = "okd_homelab_keep_alive_cloud_function"
   project                      = "homelab-${local.project_id}"
   region                       = "us-central1"
-  runtime                      = "go120"
+  runtime                      = "go122"
   timeout                      = "60"
   trigger_http                 = true
   https_trigger_security_level = "SECURE_ALWAYS"
