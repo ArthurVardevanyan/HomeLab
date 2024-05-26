@@ -7,11 +7,13 @@ metadata:
     app.kubernetes.io/component: admission-controller
     app.kubernetes.io/instance: kyverno
     app.kubernetes.io/part-of: kyverno
+    app.kubernetes.io/version: v1.12.0
   annotations:
     checkov.io/skip1: CKV_K8S_38=Operators Require Use of Service Account Tokens
     checkov.io/skip2: CKV_K8S_40=OpenShift Injects Random UID
 spec:
   replicas: 3
+  revisionHistoryLimit: 10
   strategy:
     rollingUpdate:
       maxSurge: 1
@@ -28,7 +30,7 @@ spec:
         app.kubernetes.io/component: admission-controller
         app.kubernetes.io/instance: kyverno
         app.kubernetes.io/part-of: kyverno
-        app.kubernetes.io/version: v1.11.4
+        app.kubernetes.io/version: v1.12.0
     spec:
       securityContext:
         seccompProfile:
@@ -59,7 +61,7 @@ spec:
       serviceAccountName: kyverno-admission-controller
       initContainers:
         - name: kyverno-pre
-          image: "ghcr.io/kyverno/kyvernopre:v1.11.4@sha256:307d8838323bd1dfe14a9f92b92f25627d840d86c626decc3864adaf7de12092"
+          image: "ghcr.io/kyverno/kyvernopre:v1.12.0@sha256:0f241e033f4a815b7fc5a6f0aecaa7972baa30e08332840d5e213cac4f5bd8d5"
           imagePullPolicy: IfNotPresent
           args:
             - --loggingFormat=text
@@ -102,13 +104,14 @@ spec:
               value: kyverno-svc
       containers:
         - name: kyverno
-          image: "ghcr.io/kyverno/kyverno:v1.11.4@sha256:76d0252892bab3b7682444f283660274977a6243450720a3893221b510eed94e"
+          image: "ghcr.io/kyverno/kyverno:v1.12.0@sha256:5cb36611b0342b61fe819d0eccd51ff192f9d1cfdc8f17ca9d99380be5728177"
           imagePullPolicy: IfNotPresent
           args:
             - --caSecretName=kyverno-svc.kyverno.svc.kyverno-tls-ca
             - --tlsSecretName=kyverno-svc.kyverno.svc.kyverno-tls-pair
             - --backgroundServiceAccountName=system:serviceaccount:kyverno:kyverno-background-controller
             - --servicePort=443
+            - --webhookServerPort=9443
             - --disableMetrics=false
             - --otelConfig=prometheus
             - --metricsPort=8000
@@ -119,12 +122,15 @@ spec:
             - --dumpPayload=false
             - --forceFailurePolicyIgnore=false
             - --generateValidatingAdmissionPolicy=false
+            - --maxAPICallResponseLength=2000000
             - --loggingFormat=text
             - --v=2
+            - --omitEvents=PolicyApplied,PolicySkipped
             - --enablePolicyException=false
             - --protectManagedResources=false
             - --allowInsecureRegistry=false
             - --registryCredentialHelpers=default,google,amazon,azure,github
+
           resources:
             limits:
               cpu: 750m
