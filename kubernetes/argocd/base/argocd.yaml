@@ -57,10 +57,10 @@ spec:
     policy: |
       g, system:cluster-admins, role:admin
       g, cluster-admins, role:admin
-  version: sha256:f1a17da2e1d121b6a891a74805af2476febc145902b99d6bb4baafcf24b50e32 # v2.10.8
+  version: sha256:d2c274ff26c7ab164907de05826bdfe2e6f326af70edd0bb83194b75fbb71f9e # v2.11.2
   repo:
     replicas: 3
-    version: sha256:f1a17da2e1d121b6a891a74805af2476febc145902b99d6bb4baafcf24b50e32 # v2.10.8
+    version: sha256:d2c274ff26c7ab164907de05826bdfe2e6f326af70edd0bb83194b75fbb71f9e # v2.11.2
     mountsatoken: true
     serviceaccount: argocd-repo-server
     resources:
@@ -75,12 +75,12 @@ spec:
     initContainers:
       - name: download-tools
         imagePullPolicy: IfNotPresent
-        image: registry.access.redhat.com/ubi9/ubi:9.4-947@sha256:770cf07083e1c85ae69c25181a205b7cdef63c11b794c89b3b487d4670b4c328
+        image: registry.access.redhat.com/ubi9/ubi:9.4-947.1714667021@sha256:ed84f34cd929ea6b0c247b6daef54dd79602804a32480a052951021caf429494
         env:
           - name: AVP_VERSION
             value: 1.17.0
           - name: KUSTOMIZE_VERSION
-            value: 5.4.1
+            value: 5.4.2
         command: [sh, -c]
         args:
           - >-
@@ -98,7 +98,7 @@ spec:
       - name: avp-kustomize
         command: [/var/run/argocd/argocd-cmp-server]
         imagePullPolicy: IfNotPresent
-        image: registry.access.redhat.com/ubi9/ubi:9.4-947@sha256:770cf07083e1c85ae69c25181a205b7cdef63c11b794c89b3b487d4670b4c328
+        image: registry.access.redhat.com/ubi9/ubi:9.4-947.1714667021@sha256:ed84f34cd929ea6b0c247b6daef54dd79602804a32480a052951021caf429494
         resources:
           limits:
             cpu: "1"
@@ -171,10 +171,10 @@ spec:
     resources:
       limits:
         cpu: "2"
-        memory: 4Gi
+        memory: 8Gi
       requests:
         cpu: 500m
-        memory: 1Gi
+        memory: 2Gi
   resourceExclusions: |
     - apiGroups:
       - tekton.dev
