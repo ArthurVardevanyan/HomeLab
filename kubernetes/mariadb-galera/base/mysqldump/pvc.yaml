@@ -5,6 +5,7 @@ metadata:
   name: mysqldump-pvc
   labels:
     app.kubernetes.io/instance: mariadb-galera
+    velero.io/exclude-from-backup: "true"
 spec:
   storageClassName: nfs
   volumeName: mysqldump-pv
@@ -22,6 +23,7 @@ metadata:
   labels:
     type: local
     app.kubernetes.io/instance: mariadb-galera
+    velero.io/exclude-from-backup: "true"
 spec:
   storageClassName: nfs
   volumeMode: Filesystem
@@ -44,6 +46,8 @@ kind: PersistentVolumeClaim
 metadata:
   namespace: mariadb-galera
   name: mysqldump-backup-pvc
+  labels:
+    velero.io/exclude-from-backup: "true"
 spec:
   storageClassName: nfs
   volumeName: mysqldump-backup-pv
@@ -60,6 +64,7 @@ metadata:
   name: mysqldump-backup-pv
   labels:
     type: local
+    velero.io/exclude-from-backup: "true"
 spec:
   storageClassName: nfs
   volumeMode: Filesystem

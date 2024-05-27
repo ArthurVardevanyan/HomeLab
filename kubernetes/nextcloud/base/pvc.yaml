@@ -21,6 +21,7 @@ metadata:
   namespace: nextcloud
   labels:
     app.kubernetes.io/instance: nextcloud
+    velero.io/exclude-from-backup: "true"
 spec:
   accessModes:
     - ReadWriteMany
@@ -53,6 +54,7 @@ metadata:
   name: nextcloud-data
   labels:
     app.kubernetes.io/instance: nextcloud
+    velero.io/exclude-from-backup: "true"
 spec:
   storageClassName: nfs
   volumeName: nextcloud-data
@@ -70,6 +72,7 @@ metadata:
   labels:
     type: local
     app.kubernetes.io/instance: nextcloud
+    velero.io/exclude-from-backup: "true"
 spec:
   storageClassName: nfs
   volumeMode: Filesystem
@@ -94,6 +97,7 @@ metadata:
   name: nextcloud-data-backup
   labels:
     app.kubernetes.io/instance: nextcloud
+    velero.io/exclude-from-backup: "true"
 spec:
   storageClassName: nfs
   volumeName: nextcloud-data-backup
@@ -111,6 +115,7 @@ metadata:
   labels:
     type: local
     app.kubernetes.io/instance: nextcloud
+    velero.io/exclude-from-backup: "true"
 spec:
   storageClassName: nfs
   volumeMode: Filesystem

@@ -1,0 +1,43 @@
+# Source: velero/templates/backupstoragelocation.yaml
+apiVersion: velero.io/v1
+kind: BackupStorageLocation
+metadata:
+  name: velero-backup
+  namespace: velero
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+  labels:
+    app.kubernetes.io/name: velero
+    app.kubernetes.io/instance: velero
+    app.kubernetes.io/managed-by: Helm
+    helm.sh/chart: velero-6.4.0
+spec:
+  default: true
+  provider: aws
+  accessMode: ReadWrite
+  objectStorage:
+    bucket: "velero-backup"
+  config:
+    region: "homelab"
+    s3Url: "http://10.0.0.3:9000"
+---
+# # Source: velero/templates/volumesnapshotlocation.yaml
+# apiVersion: velero.io/v1
+# kind: VolumeSnapshotLocation
+# metadata:
+#   name: velero-snapshot
+#   namespace: velero
+#   labels:
+#     app.kubernetes.io/name: velero
+#     app.kubernetes.io/instance: velero
+#     app.kubernetes.io/managed-by: Helm
+#     helm.sh/chart: velero-6.4.0
+#   annotations:
+#    argocd.argoproj.io/sync-wave: "1"
+#    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+# spec:
+#   provider: aws
+#   config:
+#     region: "homelab"
+#     s3Url: "http://10.0.0.3:9000"

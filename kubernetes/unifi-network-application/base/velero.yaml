@@ -1,0 +1,22 @@
+apiVersion: velero.io/v1
+kind: Schedule
+metadata:
+  name: unifi-network-application
+  namespace: velero
+  annotations:
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+spec:
+  schedule: "30 5 * * *"
+  template:
+    defaultVolumesToFsBackup: false
+    csiSnapshotTimeout: 10m0s
+    ttl: 720h0m0s
+    itemOperationTimeout: 720h0m0s
+    metadata: {}
+    storageLocation: velero-backup
+    hooks: {}
+    snapshotMoveData: true
+    includedNamespaces:
+      - unifi-network-application
+    # includedNamespaceScopedResources:
+    #   - pvc
