@@ -1,0 +1,123 @@
+# Source: velero/templates/deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: velero
+  namespace: velero
+  labels:
+    app.kubernetes.io/name: velero
+    app.kubernetes.io/instance: velero
+    app.kubernetes.io/managed-by: Helm
+    helm.sh/chart: velero-6.4.0
+    component: velero
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app.kubernetes.io/instance: velero
+      app.kubernetes.io/name: velero
+  template:
+    metadata:
+      labels:
+        name: velero
+        app.kubernetes.io/name: velero
+        app.kubernetes.io/instance: velero
+        app.kubernetes.io/managed-by: Helm
+        helm.sh/chart: velero-6.4.0
+      annotations:
+        prometheus.io/path: /metrics
+        prometheus.io/port: "8085"
+        prometheus.io/scrape: "true"
+    spec:
+      restartPolicy: Always
+      serviceAccountName: velero-server
+      terminationGracePeriodSeconds: 3600
+      containers:
+        - name: velero
+          image: "velero/velero:v1.13.2@sha256:e9e7f03e0a631698dca819403882d9f685b6c628b4cb112e83341a95aaf757d4"
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http-monitoring
+              containerPort: 8085
+          command:
+            - /velero
+          args:
+            - server
+            ### Flags
+            - --features=EnableCSI
+            - --uploader-type=kopia
+            ### Global Flags
+          resources:
+            limits:
+              cpu: 1000m
+              memory: 512Mi
+            requests:
+              cpu: 500m
+              memory: 128Mi
+          livenessProbe:
+            failureThreshold: 5
+            httpGet:
+              path: /metrics
+              port: http-monitoring
+              scheme: HTTP
+            initialDelaySeconds: 10
+            periodSeconds: 30
+            successThreshold: 1
+            timeoutSeconds: 5
+          readinessProbe:
+            failureThreshold: 5
+            httpGet:
+              path: /metrics
+              port: http-monitoring
+              scheme: HTTP
+            initialDelaySeconds: 10
+            periodSeconds: 30
+            successThreshold: 1
+            timeoutSeconds: 5
+          volumeMounts:
+            - name: plugins
+              mountPath: /plugins
+            - name: cloud-credentials
+              mountPath: /credentials
+            - name: scratch
+              mountPath: /scratch
+          env:
+            - name: VELERO_SCRATCH_DIR
+              value: /scratch
+            - name: VELERO_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  apiVersion: v1
+                  fieldPath: metadata.namespace
+            - name: LD_LIBRARY_PATH
+              value: /plugins
+            - name: AWS_SHARED_CREDENTIALS_FILE
+              value: /credentials/cloud
+            - name: GOOGLE_APPLICATION_CREDENTIALS
+              value: /credentials/cloud
+            - name: AZURE_CREDENTIALS_FILE
+              value: /credentials/cloud
+            - name: ALIBABA_CLOUD_CREDENTIALS_FILE
+              value: /credentials/cloud
+      dnsPolicy: ClusterFirst
+      initContainers:
+        - image: velero/velero-plugin-for-aws:v1.9.2@sha256:c7f801bda8c89c1277377b8d07394da71de949246edf7b57988772c569d6f50d
+          name: velero-plugin-for-aws
+          volumeMounts:
+            - mountPath: /target
+              name: plugins
+        - image: velero/velero-plugin-for-csi:v0.7.0@sha256:3ba643989cd2128963cfd5914de28acaa061e8216999e44330fd64a647c503ff
+          name: velero-plugin-for-csi
+          volumeMounts:
+            - mountPath: /target
+              name: plugins
+      volumes:
+        - name: cloud-credentials
+          secret:
+            secretName: velero
+        - name: plugins
+          emptyDir: {}
+        - name: scratch
+          emptyDir: {}
