@@ -57,3 +57,26 @@ spec:
           podSelector:
             matchLabels:
               postgres-operator.crunchydata.com/cluster: photoprism
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: photoprism-allow-truenas-egress
+  namespace: photoprism
+  annotations:
+    argocd.argoproj.io/sync-wave: "0"
+  labels:
+    app.kubernetes.io/instance: photoprism
+spec:
+  policyTypes:
+    - Egress
+  podSelector:
+    matchLabels:
+      postgres-operator.crunchydata.com/cluster: photoprism
+  egress:
+    - to:
+        - ipBlock:
+            cidr: 10.0.0.3/32
+      ports:
+        - protocol: TCP
+          port: 9000
