@@ -9,11 +9,11 @@ helm template velero --include-crds vmware-tanzu/velero \
 --set configuration.backupStorageLocation[0].provider=aws \
 --set configuration.backupStorageLocation[0].bucket=velero-backup \
 --set configuration.backupStorageLocation[0].config.region=homelab \
---set configuration.backupStorageLocation[0].config.s3Url=http://10.0.0.3:9000 \
+--set configuration.backupStorageLocation[0].config.s3Url=https://truenas.arthurvardevanyan.com:9000 \
 --set configuration.volumeSnapshotLocation[0].name=velero-snapshot \
 --set configuration.volumeSnapshotLocation[0].provider=aws \
 --set configuration.volumeSnapshotLocation[0].config.region=homelab \
---set configuration.volumeSnapshotLocation[0].config.s3Url=http://10.0.0.3:9000  \
+--set configuration.volumeSnapshotLocation[0].config.s3Url=https://truenas.arthurvardevanyan.com:9000  \
 --set initContainers[0].name=velero-plugin-for-aws \
 --set initContainers[0].image=velero/velero-plugin-for-aws:v1.9.2 \
 --set initContainers[0].volumeMounts[0].mountPath=/target \
