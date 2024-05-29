@@ -15,9 +15,16 @@ metadata:
 spec:
   backups:
     pgbackrest:
+      configuration:
+        - secret:
+            name: truenas-s3-backup
       global:
         repo1-retention-full: "14"
         repo1-retention-full-type: count
+        repo2-path: /quay
+        repo2-retention-full: "14"
+        repo2-retention-full-type: count
+        repo2-s3-uri-style: path
       repoHost:
         resources:
           limits:
@@ -55,6 +62,13 @@ spec:
               resources:
                 requests:
                   storage: 2Gi
+        - name: repo2
+          s3:
+            bucket: postgres
+            endpoint: "truenas.arthurvardevanyan.com:9000"
+            region: homelab
+          schedules:
+            full: "0 6 * * *"
   instances:
     - dataVolumeClaimSpec:
         storageClassName: rook-ceph-block
