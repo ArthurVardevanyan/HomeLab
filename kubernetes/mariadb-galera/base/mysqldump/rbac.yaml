@@ -1,34 +1,3 @@
-apiVersion: rbac.authorization.k8s.io/v1
-kind: ClusterRole
-metadata:
-  name: mariadb-cr
-  labels:
-    app.kubernetes.io/instance: mariadb-galera
-rules:
-  - apiGroups:
-      - security.openshift.io
-    resourceNames:
-      - anyuid
-    resources:
-      - securitycontextconstraints
-    verbs:
-      - use
----
-apiVersion: rbac.authorization.k8s.io/v1
-kind: ClusterRoleBinding
-metadata:
-  name: mariadb-crb
-  labels:
-    app.kubernetes.io/instance: mariadb-galera
-roleRef:
-  apiGroup: rbac.authorization.k8s.io
-  kind: ClusterRole
-  name: mariadb-cr
-subjects:
-  - kind: ServiceAccount
-    name: mysqldump-sa
-    namespace: mariadb-galera
----
 apiVersion: v1
 kind: ServiceAccount
 metadata:

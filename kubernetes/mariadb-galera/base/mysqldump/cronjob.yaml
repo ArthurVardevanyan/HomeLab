@@ -6,8 +6,7 @@ metadata:
   labels:
     app.kubernetes.io/instance: mariadb-galera
   annotations:
-    # checkov.io/skip1: CKV_K8S_40=OpenShift Injects Random UID
-    checkov.io/skip2: CKV_K8S_31=Not Supported by App
+    checkov.io/skip1: CKV_K8S_40=OpenShift Injects Random UID
     checkov.io/skip3: CKV_K8S_43=Don't Mind Tag for This
 spec:
   schedule: "0 5 * * *"
@@ -24,38 +23,42 @@ spec:
         spec:
           serviceAccountName: mysqldump-sa
           volumes:
+            - name: rclone
+              secret:
+                secretName: rclone
             - name: mysqldump-config
               configMap:
                 name: mysqldump-config
-            - name: mysqldump-pvc
-              persistentVolumeClaim:
-                claimName: mysqldump-pvc
+            - name: mysqldump-emptydir
+              emptyDir:
+                sizeLimit: 1Gi
             - name: state
               emptyDir:
                 sizeLimit: 1Mi
           securityContext:
-            fsGroup: 65534
-            runAsGroup: 65534
             runAsNonRoot: true
-            runAsUser: 65534
+            seccompProfile:
+              type: RuntimeDefault
           containers:
             - name: mysqldump-cron
               image: registry.arthurvardevanyan.com/homelab/toolbox:not_latest
-              command: ["/bin/bash", "-c", "sh /mnt/mysqldump.sh"]
+              command: ["/bin/bash", "-c", "sh /tmp/mysqldump.sh"]
               resources:
                 limits:
                   cpu: 150m
-                  memory: 50M
+                  memory: 256M
                   ephemeral-storage: "1Mi"
                 requests:
                   cpu: 25m
-                  memory: 25M
+                  memory: 128M
                   ephemeral-storage: "1Mi"
               volumeMounts:
-                - name: mysqldump-pvc
-                  mountPath: /mnt/mysqldump
+                - name: rclone
+                  mountPath: /tmp/.config/rclone
+                - name: mysqldump-emptydir
+                  mountPath: /mnt/db-dump
                 - name: mysqldump-config
-                  mountPath: /mnt/mysqldump.sh
+                  mountPath: /tmp/mysqldump.sh
                   subPath: mysqldump.sh
                 - name: mysqldump-config
                   mountPath: /tmp/mysqldump
@@ -63,13 +66,11 @@ spec:
                 - name: state
                   mountPath: /tmp/state
               securityContext:
-                runAsGroup: 65534
-                runAsUser: 65534
                 runAsNonRoot: true
                 readOnlyRootFilesystem: true
                 allowPrivilegeEscalation: false
-                # seccompProfile:
-                #   type: RuntimeDefault
+                seccompProfile:
+                  type: RuntimeDefault
                 capabilities:
                   drop:
                     - ALL

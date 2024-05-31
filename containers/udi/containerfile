@@ -17,6 +17,7 @@ ENV \
   KUBECONFORM_VERSION=0.6.2  \
   MARKDOWNLINT_CLI_VERSION=0.40.0 \
   PRETTIER_CLI_VERSION=3.2.5 \
+  RCLONE_V=v1.66.0 \
   PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/local/go/bin \
   HOME=/home/user \
   SHELL=/bin/zsh
@@ -29,11 +30,12 @@ COPY ./containers/udi/repos /etc/yum.repos.d/
 RUN dnf install --disableplugin=subscription-manager libbrotli compat-openssl11 -y
 
 RUN rpm -ivh https://github.com/opentofu/opentofu/releases/download/v${OPENTOFU_VERSION}/tofu_${OPENTOFU_VERSION}_amd64.rpm && \
+  rpm -ivh https://github.com/rclone/rclone/releases/download/${RCLONE_V}/rclone-${RCLONE_V}-linux-amd64.rpm && \
   dnf install --nodocs -y --disableplugin=subscription-manager libpmem -y &&\
   dnf install --disableplugin=subscription-manager \
   diffutils git iproute jq less lsof man nano procps \
   perl-Digest-SHA net-tools openssh-clients rsync socat sudo time vim wget zip  pinentry \
-  sshpass logrotate unzip google-cloud-cli tar procps-ng make nodejs ShellCheck -y \
+  sshpass unzip google-cloud-cli tar procps-ng make nodejs ShellCheck -y \
   && dnf install --nodocs -y --disableplugin=subscription-manager MariaDB-client --disablerepo=centos-9-appstream -y \
   && dnf update -y && dnf clean all \
   && ln -s /usr/bin/python3.11 /usr/local/bin/python && \
