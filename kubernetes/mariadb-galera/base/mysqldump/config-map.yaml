@@ -10,28 +10,17 @@ data:
   mysqldump.sh: |-
     #!/bin/sh
 
-    echo "Rotating SQL Files"
-    logrotate -vf  /tmp/mysqldump -s /tmp/state/logrotate.status
-
     URL=mariadb-galera.mariadb-galera
-    LOCATION=/mnt/mysqldump
+    LOCATION=/mnt/db-dump/mysqldump
+    mkdir ${LOCATION}
 
     echo "Dumping MariaDB"
-    mysqldump -h ${URL} --port=3306 -ubackup -pbackup  mysql           > ${LOCATION}/mysql/mysql.sql
+    mysqldump -h ${URL} --port=3306 -ubackup -pbackup  mysql           > ${LOCATION}/mysql.sql
     echo "Dumping Spotify"
-    mysqldump -h ${URL} --port=3306 -ubackup -pbackup  spotify         > ${LOCATION}/spotify/spotify.sql
+    mysqldump -h ${URL} --port=3306 -ubackup -pbackup  spotify         > ${LOCATION}/spotify.sql
     echo "Dumping Finance Tracker"
-    mysqldump -h ${URL} --port=3306 -ubackup -pbackup  FinanceTracker  > ${LOCATION}/FinanceTracker/FinanceTracker.sql
+    mysqldump -h ${URL} --port=3306 -ubackup -pbackup  FinanceTracker  > ${LOCATION}/FinanceTracker.sql
     echo "Dumping Fitness"
-    mysqldump -h ${URL} --port=3306 -ubackup -pbackup  fitness         > ${LOCATION}/fitness/fitness.sql
+    mysqldump -h ${URL} --port=3306 -ubackup -pbackup  fitness         > ${LOCATION}/fitness.sql
 
-  mysqldump: |-
-    /mnt/mysqldump/*/*.sql {
-      daily
-      rotate 30
-      compress
-      delaycompress
-      create 640 65534 65534
-      dateext
-      dateformat .%Y-%m-%dT%H:%M:%S
-    }
+    rclone --progress copy /mnt/ truenas:db-dump
