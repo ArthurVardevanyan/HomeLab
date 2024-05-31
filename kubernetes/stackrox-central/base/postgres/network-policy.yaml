@@ -48,3 +48,30 @@ spec:
           podSelector:
             matchLabels:
               postgres-operator.crunchydata.com/cluster: stackrox
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: pgdump-ingress
+  namespace: stackrox
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+  labels:
+    app.kubernetes.io/instance: stackrox
+spec:
+  podSelector:
+    matchLabels:
+      postgres-operator.crunchydata.com/cluster: stackrox
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: postgres
+          podSelector:
+            matchLabels:
+              app: pgdump-cron
+      ports:
+        - protocol: TCP
+          port: 5432

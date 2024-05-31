@@ -1,0 +1,239 @@
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: pgdump-allow-truenas-egress
+  namespace: postgres
+  annotations:
+    argocd.argoproj.io/sync-wave: "0"
+  labels:
+    app.kubernetes.io/instance: postgres
+spec:
+  policyTypes:
+    - Egress
+  podSelector:
+    matchLabels:
+      app: pgdump-cron
+  egress:
+    - to:
+        - ipBlock:
+            cidr: 10.0.0.3/32
+      ports:
+        - protocol: TCP
+          port: 9000
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: pgdump-grafana-egress
+  namespace: postgres
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+  labels:
+    app.kubernetes.io/instance: postgres
+spec:
+  podSelector:
+    matchLabels:
+      app: pgdump-cron
+  policyTypes:
+    - Egress
+  egress:
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: postgres
+          podSelector:
+            matchLabels:
+              postgres-operator.crunchydata.com/cluster: grafana
+      ports:
+        - protocol: TCP
+          port: 5432
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: pgdump-photoprism-egress
+  namespace: postgres
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+  labels:
+    app.kubernetes.io/instance: postgres
+spec:
+  podSelector:
+    matchLabels:
+      app: pgdump-cron
+  policyTypes:
+    - Egress
+  egress:
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: postgres
+          podSelector:
+            matchLabels:
+              postgres-operator.crunchydata.com/cluster: photoprism
+      ports:
+        - protocol: TCP
+          port: 5432
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: pgdump-gitea-egress
+  namespace: postgres
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+  labels:
+    app.kubernetes.io/instance: postgres
+spec:
+  podSelector:
+    matchLabels:
+      app: pgdump-cron
+  policyTypes:
+    - Egress
+  egress:
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: gitea
+          podSelector:
+            matchLabels:
+              postgres-operator.crunchydata.com/cluster: gitea
+      ports:
+        - protocol: TCP
+          port: 5432
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: pgdump-homeassistant-egress
+  namespace: postgres
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+  labels:
+    app.kubernetes.io/instance: postgres
+spec:
+  podSelector:
+    matchLabels:
+      app: pgdump-cron
+  policyTypes:
+    - Egress
+  egress:
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: homeassistant
+          podSelector:
+            matchLabels:
+              postgres-operator.crunchydata.com/cluster: homeassistant
+      ports:
+        - protocol: TCP
+          port: 5432
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: pgdump-nextcloud-egress
+  namespace: postgres
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+  labels:
+    app.kubernetes.io/instance: postgres
+spec:
+  podSelector:
+    matchLabels:
+      app: pgdump-cron
+  policyTypes:
+    - Egress
+  egress:
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: nextcloud
+          podSelector:
+            matchLabels:
+              postgres-operator.crunchydata.com/cluster: nextcloud
+      ports:
+        - protocol: TCP
+          port: 5432
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: pgdump-quay-egress
+  namespace: postgres
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+  labels:
+    app.kubernetes.io/instance: postgres
+spec:
+  podSelector:
+    matchLabels:
+      app: pgdump-cron
+  policyTypes:
+    - Egress
+  egress:
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: quay
+          podSelector:
+            matchLabels:
+              postgres-operator.crunchydata.com/cluster: quay
+      ports:
+        - protocol: TCP
+          port: 5432
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: pgdump-clair-egress
+  namespace: postgres
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+  labels:
+    app.kubernetes.io/instance: postgres
+spec:
+  podSelector:
+    matchLabels:
+      app: pgdump-cron
+  policyTypes:
+    - Egress
+  egress:
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: quay
+          podSelector:
+            matchLabels:
+              postgres-operator.crunchydata.com/cluster: clair
+      ports:
+        - protocol: TCP
+          port: 5432
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: pgdump-stackrox-egress
+  namespace: postgres
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+  labels:
+    app.kubernetes.io/instance: postgres
+spec:
+  podSelector:
+    matchLabels:
+      app: pgdump-cron
+  policyTypes:
+    - Egress
+  egress:
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: stackrox
+          podSelector:
+            matchLabels:
+              postgres-operator.crunchydata.com/cluster: stackrox
+      ports:
+        - protocol: TCP
+          port: 5432
