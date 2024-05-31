@@ -1,10 +1,10 @@
 kind: CronJob
 apiVersion: batch/v1
 metadata:
-  name: mysqldump-cron
-  namespace: mariadb-galera
+  name: pgdump-cron
+  namespace: postgres
   labels:
-    app.kubernetes.io/instance: mariadb-galera
+    app.kubernetes.io/instance: postgres
   annotations:
     checkov.io/skip1: CKV_K8S_40=OpenShift Injects Random UID
     checkov.io/skip3: CKV_K8S_43=Don't Mind Tag for This
@@ -19,16 +19,16 @@ spec:
       template:
         metadata:
           labels:
-            app: mysqldump-cron
+            app: pgdump-cron
         spec:
-          serviceAccountName: mysqldump-sa
+          serviceAccountName: pgdump-sa
           volumes:
-            - name: mysqldump-config
+            - name: pgdump-config
               secret:
-                secretName: mysqldump-config
-            - name: mysqldump-emptydir
+                secretName: pgdump-config
+            - name: pgdump-emptydir
               emptyDir:
-                sizeLimit: 1Gi
+                sizeLimit: 5Gi
             - name: tmp
               emptyDir:
                 sizeLimit: 1Gi
@@ -37,25 +37,26 @@ spec:
             seccompProfile:
               type: RuntimeDefault
           containers:
-            - name: mysqldump-cron
+            - name: pgdump-cron
               image: registry.arthurvardevanyan.com/homelab/toolbox:not_latest
-              command: ["/bin/bash", "-c", "sh /mnt/mysqldump/mysqldump.sh"]
+              command: ["/bin/bash", "-c", "sh /mnt/pg_dump/pgdump.sh"]
               resources:
                 limits:
                   cpu: 150m
                   memory: 256M
-                  ephemeral-storage: "1Gi"
+                  ephemeral-storage: "5Gi"
                 requests:
                   cpu: 25m
                   memory: 128M
-                  ephemeral-storage: "1Gi"
+                  ephemeral-storage: "5Gi"
               volumeMounts:
                 - name: tmp
                   mountPath: /tmp
-                - name: mysqldump-emptydir
+                  subPath: pgdump.sh
+                - name: pgdump-emptydir
                   mountPath: /mnt/db-dump
-                - name: mysqldump-config
-                  mountPath: /mnt/mysqldump
+                - name: pgdump-config
+                  mountPath: /mnt/pg_dump
               securityContext:
                 runAsNonRoot: true
                 readOnlyRootFilesystem: true
@@ -72,7 +73,7 @@ spec:
           terminationGracePeriodSeconds: 30
           dnsPolicy: ClusterFirst
           automountServiceAccountToken: false
-          hostname: mysqldump-cron
+          hostname: pgdump-cron
           schedulerName: default-scheduler
   successfulJobsHistoryLimit: 1
   failedJobsHistoryLimit: 1
