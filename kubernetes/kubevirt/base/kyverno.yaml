@@ -1,0 +1,31 @@
+apiVersion: kyverno.io/v1
+kind: Policy
+metadata:
+  name: kubevirt-hyperconverged
+  namespace: kubevirt-hyperconverged
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+spec:
+  background: true
+  rules:
+    - name: virt-controller
+      match:
+        any:
+          - resources:
+              kinds:
+                - Deployment
+      mutate:
+        patchStrategicMerge:
+          spec:
+            template:
+              spec:
+                containers:
+                  - (name): virt-controller
+                    limits:
+                      cpu: 100m
+                      ephemeral-storage: 256Mi
+                      memory: 1Gi
+                    requests:
+                      cpu: 25m
+                      ephemeral-storage: 128Mi
+                      memory: 275Mi

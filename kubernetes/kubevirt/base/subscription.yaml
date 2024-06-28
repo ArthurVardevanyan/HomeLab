@@ -1,0 +1,22 @@
+apiVersion: operators.coreos.com/v1alpha1
+kind: Subscription
+metadata:
+  name: community-kubevirt-hyperconverged
+  namespace: kubevirt-hyperconverged
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+spec:
+  channel: stable
+  installPlanApproval: Manual
+  name: community-kubevirt-hyperconverged
+  source: operator-hub
+  sourceNamespace: openshift-marketplace
+  startingCSV: kubevirt-hyperconverged-operator.v1.11.1
+  config:
+    resources:
+      limits:
+        cpu: 150m
+        memory: 1Gi
+      requests:
+        cpu: 15m
+        memory: 384Mi
