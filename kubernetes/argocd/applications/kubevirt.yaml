@@ -1,0 +1,23 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: kubevirt
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+    notifications.argoproj.io/subscribe.on-sync-succeeded.github: ""
+    notifications.argoproj.io/subscribe.on-sync-failed.github: ""
+    notifications.argoproj.io/subscribe.on-sync-status-unknown: ""
+    notifications.argoproj.io/subscribe.on-health-degraded.github: ""
+  labels:
+    app.kubernetes.io/instance: argocd
+spec:
+  destination:
+    namespace: kubevirt-hyperconverged
+    server: https://kubernetes.default.svc
+  project: default
+  source:
+    path: kubernetes/kubevirt/overlays/okd
+    repoURL: https://git.arthurvardevanyan.com/ArthurVardevanyan/HomeLab
+    targetRevision: HEAD
