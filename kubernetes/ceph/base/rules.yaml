@@ -151,13 +151,13 @@ spec:
             severity: critical
         - alert: CephOSDNearFull
           annotations:
-            description: "Utilization of storage device {{ $labels.ceph_daemon }} of device_class type {{ $labels.device_class }} has crossed 75% on host {{ $labels.hostname }}. Immediately free up some space or add capacity of type {{ $labels.device_class }}."
+            description: "Utilization of storage device {{ $labels.ceph_daemon }} of device_class type {{ $labels.device_class }} has crossed 80% on host {{ $labels.hostname }}. Immediately free up some space or add capacity of type {{ $labels.device_class }}."
             message: Back-end storage device is nearing full.
             runbook_url: "https://github.com/openshift/runbooks/blob/master/alerts/openshift-container-storage-operator/CephOSDNearFull.md"
             severity_level: warning
             storage_type: ceph
           expr: |
-            (ceph_osd_metadata * on (ceph_daemon, namespace) group_right(device_class,hostname) (ceph_osd_stat_bytes_used / ceph_osd_stat_bytes)) >= 0.75
+            (ceph_osd_metadata * on (ceph_daemon, namespace) group_right(device_class,hostname) (ceph_osd_stat_bytes_used / ceph_osd_stat_bytes)) >= 0.80
           for: 40s
           labels:
             severity: warning
@@ -301,13 +301,13 @@ spec:
       rules:
         - alert: CephClusterNearFull
           annotations:
-            description: Storage cluster utilization has crossed 75% and will become read-only at 85%. Free up some space or expand the storage cluster.
+            description: Storage cluster utilization has crossed 80% and will become read-only at 85%. Free up some space or expand the storage cluster.
             message: Storage cluster is nearing full. Data deletion or cluster expansion is required.
             runbook_url: "https://github.com/openshift/runbooks/blob/master/alerts/openshift-container-storage-operator/CephClusterNearFull.md"
             severity_level: warning
             storage_type: ceph
           expr: |
-            ceph_cluster_total_used_raw_bytes / ceph_cluster_total_bytes > 0.75
+            ceph_cluster_total_used_raw_bytes / ceph_cluster_total_bytes > 0.80
           for: 5s
           labels:
             severity: warning
