@@ -1,0 +1,17 @@
+- hosts: vscode-server
+  gather_facts: no
+  become: true
+  user: fedora
+  tasks:
+    - name: Add Google Cloud SDK Repo
+      ansible.builtin.yum_repository:
+        name: gCloud
+        description: Google Cloud SDK
+        baseurl: https://packages.cloud.google.com/yum/repos/cloud-sdk-el8-x86_64
+        gpgkey: https://packages.cloud.google.com/yum/doc/rpm-package-key.gpg
+    - name: Install gcloud-sdk
+      yum:
+        state: latest
+        name:
+          - google-cloud-sdk
+          - google-cloud-sdk-gke-gcloud-auth-plugin

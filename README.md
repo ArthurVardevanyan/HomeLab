@@ -297,6 +297,8 @@ ccoctl gcp create-workload-identity-provider --name=okd-homelab-wif --region=us 
 #### Kubernetes Commands
 
 ```bash
+oc login --web --server https://api.okd.arthurvardevanyan.com:6443
+
 # Kubernetes Dashboard
 # https://upcloud.com/community/tutorials/deploy-kubernetes-dashboard
 kubectl get secret -n kubernetes-dashboard admin-user-token -o jsonpath="{.data.token}" | base64 --decode

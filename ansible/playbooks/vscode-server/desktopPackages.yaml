@@ -1,0 +1,77 @@
+- hosts: vscode-server
+  gather_facts: no
+  become: true
+  user: fedora
+  tasks:
+    - name: Upgrade all yum packages
+      yum:
+        name: "*"
+        state: latest
+    - name: install core packages
+      yum:
+        state: latest
+        name:
+          - openssh-server
+          - speedtest-cli
+          - sshpass
+          - htop
+          - pv
+          - jq
+          - rsync
+          - smartmontools
+          #- caffeine
+    - name: install development tools
+      yum:
+        state: latest
+        name:
+          - gnupg
+          - git
+          - gh
+          - ansible
+          - make
+          - gcc
+          - g++
+          - gcc-c++
+          - python3-pip
+          - nodejs-typescript
+          - gdb
+          - adb
+          - podman
+          - buildah
+          - skopeo
+          - npm
+          - tree
+          - adb
+          - podman
+          - buildah
+          - skopeo
+          - helm
+          #- apache2
+          #- php
+          #- mariadb-server
+          #- phpmyadmin
+          #- libmariadb-dev
+    - name: Download YQ
+      get_url:
+        url: https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64
+        dest: /usr/local/bin/yq
+        mode: a+x
+    - name: Download ArgoCD Vault Plugin
+      get_url:
+        url: https://github.com/argoproj-labs/argocd-vault-plugin/releases/download/v1.17.0/argocd-vault-plugin_1.17.0_linux_amd64
+        dest: /usr/local/bin/argocd-vault-plugin
+        mode: a+x
+    - name: Download Minio Client
+      get_url:
+        url: https://dl.min.io/client/mc/release/linux-amd64/mc
+        dest: /usr/local/bin/mc
+        mode: a+x
+    - name: Download golang
+      get_url:
+        url: https://go.dev/dl/go1.22.4.linux-amd64.tar.gz
+        dest: /tmp/go.linux-amd64.tar.gz
+    - name: Extract golang
+      unarchive:
+        src: /tmp/go.linux-amd64.tar.gz
+        dest: /usr/local
+        remote_src: yes
