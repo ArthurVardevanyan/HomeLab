@@ -48,10 +48,11 @@ kind: Service
 metadata:
   name: router-default-lb
   namespace: openshift-ingress
+  annotations:
+    kube-vip.io/loadbalancerIPs: "10.0.0.131"
 spec:
   externalTrafficPolicy: Local
   internalTrafficPolicy: Cluster
-  loadBalancerIP: 10.0.0.131
   ports:
     - name: http
       port: 80

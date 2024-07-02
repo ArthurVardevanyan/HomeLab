@@ -10,10 +10,10 @@ metadata:
     app.kubernetes.io/version: "8.0.24"
     app.kubernetes.io/managed-by: Helm
   annotations:
+    kube-vip.io/loadbalancerIPs: "10.0.0.132"
     argocd.argoproj.io/sync-wave: "1"
 spec:
   type: LoadBalancer
-  loadBalancerIP: 10.0.0.132
   ports:
     - port: 8080
       targetPort: 8080
@@ -52,6 +52,7 @@ metadata:
     app.kubernetes.io/managed-by: Helm
   annotations:
     argocd.argoproj.io/sync-wave: "1"
+    kube-vip.io/loadbalancerIPs: "10.0.0.132"
 spec:
   type: LoadBalancer
   ports:
@@ -66,4 +67,3 @@ spec:
   selector:
     app.kubernetes.io/name: unifi-network-application
     app.kubernetes.io/instance: unifi-network-application
-  loadBalancerIP: 10.0.0.132
