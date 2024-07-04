@@ -1,0 +1,28 @@
+---
+kind: RoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: nmstate-operator
+  namespace: nmstate
+subjects:
+  - kind: ServiceAccount
+    name: nmstate-operator
+    namespace: nmstate
+roleRef:
+  kind: Role
+  name: nmstate-operator
+  apiGroup: rbac.authorization.k8s.io
+---
+kind: ClusterRoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: nmstate-operator
+  namespace: nmstate
+subjects:
+  - kind: ServiceAccount
+    name: nmstate-operator
+    namespace: nmstate
+roleRef:
+  kind: ClusterRole
+  name: nmstate-operator
+  apiGroup: rbac.authorization.k8s.io
