@@ -1,4 +1,4 @@
-<domain type='kvm' id='7' xmlns:qemu='http://libvirt.org/schemas/domain/qemu/1.0'>
+<domain type='kvm' id='1' xmlns:qemu='http://libvirt.org/schemas/domain/qemu/1.0'>
   <name>worker-5</name>
   <uuid>7c4df395-ce84-4fdb-94fc-94367f473762</uuid>
   <metadata>
@@ -21,7 +21,7 @@
     <apic />
   </features>
   <cpu mode='host-passthrough' check='none' migratable='on'>
-    <topology sockets='1' dies='1' cores='7' threads='1' />
+    <topology sockets='1' dies='1' clusters='1' cores='7' threads='1' />
   </cpu>
   <clock offset='utc'>
     <timer name='rtc' tickpolicy='catchup' />
@@ -147,26 +147,33 @@
     <interface type='bridge'>
       <mac address='10:00:00:00:01:15' />
       <source bridge='br0' />
-      <target dev='vnet6' />
+      <target dev='vnet0' />
       <model type='virtio' />
       <alias name='net0' />
       <address type='pci' domain='0x0000' bus='0x01' slot='0x00' function='0x0' />
     </interface>
+    <interface type='bridge'>
+      <mac address='52:54:00:dc:cb:b9' />
+      <source bridge='br0' />
+      <target dev='vnet5' />
+      <model type='virtio' />
+      <alias name='net1' />
+      <address type='pci' domain='0x0000' bus='0x07' slot='0x00' function='0x0' />
+    </interface>
     <serial type='pty'>
-      <source path='/dev/pts/2' />
+      <source path='/dev/pts/0' />
       <target type='isa-serial' port='0'>
         <model name='isa-serial' />
       </target>
       <alias name='serial0' />
     </serial>
-    <console type='pty' tty='/dev/pts/2'>
-      <source path='/dev/pts/2' />
+    <console type='pty' tty='/dev/pts/0'>
+      <source path='/dev/pts/0' />
       <target type='serial' port='0' />
       <alias name='serial0' />
     </console>
     <channel type='unix'>
-      <source mode='bind'
-        path='/var/lib/libvirt/qemu/channel/target/domain-7-worker-5/org.qemu.guest_agent.0' />
+      <source mode='bind' path='/run/libvirt/qemu/channel/1-worker-5/org.qemu.guest_agent.0' />
       <target type='virtio' name='org.qemu.guest_agent.0' state='connected' />
       <alias name='channel0' />
       <address type='virtio-serial' controller='0' bus='0' port='1' />
@@ -191,6 +198,10 @@
       <address type='pci' domain='0x0000' bus='0x06' slot='0x00' function='0x0' />
     </rng>
   </devices>
+  <seclabel type='dynamic' model='selinux' relabel='yes'>
+    <label>system_u:system_r:svirt_t:s0:c357,c936</label>
+    <imagelabel>system_u:object_r:svirt_image_t:s0:c357,c936</imagelabel>
+  </seclabel>
   <seclabel type='dynamic' model='dac' relabel='yes'>
     <label>+107:+107</label>
     <imagelabel>+107:+107</imagelabel>

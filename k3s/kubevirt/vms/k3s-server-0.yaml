@@ -1,0 +1,107 @@
+apiVersion: kubevirt.io/v1
+kind: VirtualMachine
+metadata:
+  labels:
+    app: k3s-server-0
+    vm.kubevirt.io/template: fedora-server-small
+    vm.kubevirt.io/template.namespace: openshift
+    vm.kubevirt.io/template.revision: "1"
+    vm.kubevirt.io/template.version: v0.27.0
+  name: k3s-server-0
+  namespace: k3s
+spec:
+  dataVolumeTemplates:
+    - apiVersion: cdi.kubevirt.io/v1beta1
+      kind: DataVolume
+      metadata:
+        name: k3s-server-0
+      spec:
+        sourceRef:
+          kind: DataSource
+          name: fedora
+          namespace: kubevirt-os-images
+        storage:
+          resources:
+            requests:
+              storage: 30Gi
+  running: false
+  template:
+    metadata:
+      annotations:
+        vm.kubevirt.io/flavor: small
+        vm.kubevirt.io/os: fedora
+        vm.kubevirt.io/workload: server
+      labels:
+        kubevirt.io/domain: k3s-server-0
+        kubevirt.io/size: small
+    spec:
+      accessCredentials:
+        - sshPublicKey:
+            propagationMethod:
+              noCloud: {}
+            source:
+              secret:
+                secretName: ryzen-aqua-swordtail-57
+      architecture: amd64
+      domain:
+        cpu:
+          cores: 4
+          sockets: 1
+          threads: 1
+        devices:
+          disks:
+            - disk:
+                bus: virtio
+              name: rootdisk
+            - disk:
+                bus: virtio
+              name: cloudinitdisk
+          interfaces:
+            - masquerade: {}
+              model: virtio
+              name: default
+            - bridge: {}
+              macAddress: "10:00:00:00:01:40"
+              model: virtio
+              name: br1
+          networkInterfaceMultiqueue: true
+          rng: {}
+        features:
+          acpi: {}
+          smm:
+            enabled: true
+        firmware:
+          bootloader:
+            efi: {}
+        machine:
+          type: q35
+        memory:
+          guest: 4Gi
+        resources:
+          requests:
+            cpu: 250m
+            memory: 3Gi
+      evictionStrategy: None
+      networks:
+        - name: default
+          pod: {}
+        - name: br1
+          multus:
+            networkName: br1
+      readinessProbe:
+        httpGet:
+          path: /ping
+          port: 6443
+          scheme: HTTPS
+      terminationGracePeriodSeconds: 180
+      volumes:
+        - dataVolume:
+            name: k3s-server-0
+          name: rootdisk
+        - cloudInitNoCloud:
+            userData: |-
+              #cloud-config
+              user: fedora
+              password: 2bvd-r8a3-3v83
+              chpasswd: { expire: False }
+          name: cloudinitdisk
