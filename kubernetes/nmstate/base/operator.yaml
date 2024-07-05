@@ -49,21 +49,28 @@ spec:
             - --zap-time-encoding=iso8601
           # Replace this with the built image name
           image: quay.io/nmstate/kubernetes-nmstate-operator:v0.82.0@sha256:4e3a04e764d271199ead796fc15ae012cc23b9a134e44e802feab7e78093b4d5
-          imagePullPolicy: Always
+          imagePullPolicy: IfNotPresent
           command:
             - manager
           securityContext:
+            runAsNonRoot: true
+            readOnlyRootFilesystem: true
             allowPrivilegeEscalation: false
+            seccompProfile:
+              type: RuntimeDefault
             capabilities:
               drop:
                 - ALL
           resources:
+            limits:
+              cpu: 150m
+              memory: 96Mi
             requests:
-              cpu: 60m
-              memory: 30Mi
+              cpu: 50m
+              memory: 48Mi
           env:
             - name: WATCH_NAMESPACE
-              value: ""
+              value: nmstate
             - name: OPERATOR_NAME
               value: "kubernetes-nmstate-operator"
             - name: ENABLE_PROFILER
@@ -73,8 +80,8 @@ spec:
             - name: RUN_OPERATOR
               value: ""
             - name: RELATED_IMAGE_HANDLER_IMAGE
-              value: quay.io/nmstate/kubernetes-nmstate-handler:v0.82.0
+              value: quay.io/nmstate/kubernetes-nmstate-handler:v0.82.0@sha256:d56195d76595640710c04300abfea19ea4ef1bcf5cafd5df12884092f0296c39
             - name: HANDLER_IMAGE_PULL_POLICY
-              value: Always
+              value: IfNotPresent
             - name: HANDLER_NAMESPACE
               value: nmstate

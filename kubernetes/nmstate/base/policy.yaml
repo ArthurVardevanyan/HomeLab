@@ -9,18 +9,6 @@ metadata:
 spec:
   background: false
   rules:
-    - name: replace-nmstate-handler
-      match:
-        any:
-          - resources:
-              kinds:
-                - Pod
-      mutate:
-        patchStrategicMerge:
-          spec:
-            containers:
-              - (image): "quay.io/nmstate/kubernetes-nmstate-handler:v0.82.0"
-                image: "quay.io/nmstate/kubernetes-nmstate-handler:v0.82.0@sha256:d56195d76595640710c04300abfea19ea4ef1bcf5cafd5df12884092f0296c39"
     - name: replace-nmstate-console
       match:
         any:
@@ -33,3 +21,20 @@ spec:
             containers:
               - (image): "quay.io/nmstate/nmstate-console-plugin:release-1.0.0"
                 image: "quay.io/nmstate/nmstate-console-plugin:release-1.0.0@sha256:34b2ba0a80bec7f74c3b5c5f0e4900ed0c9be1cd0ef28ee0ffdc3bcb5e7fe793"
+    - name: nmstate-handler
+      match:
+        any:
+          - resources:
+              kinds:
+                - DaemonSet
+      mutate:
+        patchStrategicMerge:
+          spec:
+            template:
+              spec:
+                containers:
+                  - (name): nmstate-handler
+                    resources:
+                      requests:
+                        cpu: 10m
+                        memory: 48Mi

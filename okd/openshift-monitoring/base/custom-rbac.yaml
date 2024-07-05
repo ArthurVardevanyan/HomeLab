@@ -1,0 +1,55 @@
+kind: ServiceAccount
+apiVersion: v1
+metadata:
+  name: cluster-monitoring-view
+  namespace: openshift-monitoring
+---
+kind: ClusterRole
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: custom-cluster-monitoring-view
+rules:
+  - verbs:
+      - get
+    apiGroups:
+      - ""
+    resources:
+      - namespaces
+  - verbs:
+      - get
+      - create
+      - update
+    apiGroups:
+      - monitoring.coreos.com
+    resources:
+      - prometheuses/api
+  - verbs:
+      - get
+    apiGroups:
+      - monitoring.coreos.com
+    resources:
+      - prometheuses/api
+    resourceNames:
+      - k8s
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: custom-cluster-monitoring-view
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: cluster-monitoring-view
+subjects:
+  - kind: ServiceAccount
+    name: cluster-monitoring-view
+    namespace: openshift-monitoring
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: cluster-monitoring-view
+  namespace: openshift-monitoring
+  annotations:
+    kubernetes.io/service-account.name: cluster-monitoring-view
+type: kubernetes.io/service-account-token
