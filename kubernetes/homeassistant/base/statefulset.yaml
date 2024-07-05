@@ -23,6 +23,12 @@ spec:
         app: homeassistant
       annotations:
         enable.version-checker.io/homeassistant: "true"
+        k8s.v1.cni.cncf.io/networks: |
+          [{
+            "name": "br1",
+            "namespace": "homeassistant",
+            "mac": "10:00:00:00:01:35"
+          }]
     spec:
       securityContext:
         seccompProfile:
@@ -46,7 +52,7 @@ spec:
             value: "1"
       containers:
         - name: homeassistant
-          image: homeassistant/home-assistant:2024.5.5@sha256:031d355a2e52e82fc33cd6854753fb19fc5d6a31af6f0f54c277d6f118ad993e
+          image: homeassistant/home-assistant:2024.7.0@sha256:4c2400f34d42c5fed9e2443a5a41db01316323b0564701f3336411bcd2ff9c88
           securityContext:
             allowPrivilegeEscalation: true
             seccompProfile:

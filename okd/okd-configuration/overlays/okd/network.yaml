@@ -1,0 +1,54 @@
+apiVersion: operator.openshift.io/v1
+kind: Network
+metadata:
+  annotations:
+    networkoperator.openshift.io/ovn-cluster-initiator: 10.0.0.101
+  name: cluster
+spec:
+  logLevel: Normal
+  operatorLogLevel: Normal
+  disableNetworkDiagnostics: false
+  additionalNetworks:
+    - name: br1
+      namespace: homeassistant
+      rawCNIConfig: '{
+        "cniVersion": "0.3.1",
+        "name": "br1",
+        "bridge": "br1",
+        "type": "bridge",
+        "ipam": {
+        "type": "host-local",
+        "subnet": "10.0.0.0/24",
+        "rangeStart": "10.0.0.135",
+        "rangeEnd": "10.0.0.135"
+        }
+        }'
+      type: Raw
+  defaultNetwork:
+    ovnKubernetesConfig:
+      egressIPConfig: {}
+      gatewayConfig:
+        ipForwarding: Global
+        ipv4: {}
+        ipv6: {}
+        routingViaHost: false
+      genevePort: 6081
+      ipsecConfig:
+        mode: Disabled
+      mtu: 1400
+      policyAuditConfig:
+        destination: "null"
+        maxFileSize: 50
+        maxLogFiles: 5
+        rateLimit: 20
+        syslogFacility: local0
+    type: OVNKubernetes
+  managementState: Managed
+  useMultiNetworkPolicy: false
+  clusterNetwork:
+    - cidr: 10.128.0.0/14
+      hostPrefix: 23
+  serviceNetwork:
+    - 172.30.0.0/16
+  deployKubeProxy: false
+  disableMultiNetwork: false
