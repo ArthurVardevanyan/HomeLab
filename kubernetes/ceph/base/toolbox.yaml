@@ -138,3 +138,12 @@ spec:
           operator: "Exists"
           effect: "NoExecute"
           tolerationSeconds: 5
+        - key: node-role.kubernetes.io/infra
+          operator: Exists
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - key: node-role.kubernetes.io/infra
+                    operator: Exists

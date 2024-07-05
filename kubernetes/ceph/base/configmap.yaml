@@ -169,13 +169,13 @@ data:
   #    readOnly: true
 
   # (Optional) CephCSI provisioner NodeAffinity(applied to both CephFS and RBD provisioner).
-  # CSI_PROVISIONER_NODE_AFFINITY: "role=storage-node; storage=rook, ceph"
+  CSI_PROVISIONER_NODE_AFFINITY: "node-role.kubernetes.io/infra"
   # (Optional) CephCSI provisioner tolerations list(applied to both CephFS and RBD provisioner).
   # Put here list of taints you want to tolerate in YAML format.
   # CSI provisioner would be best to start on the same nodes as other ceph daemons.
   CSI_PROVISIONER_TOLERATIONS: |
     - key: node-role.kubernetes.io/infra
-          operator: Exists
+      operator: Exists
   # (Optional) CephCSI plugin NodeAffinity(applied to both CephFS and RBD plugin).
   # CSI_PLUGIN_NODE_AFFINITY: "role=storage-node; storage=rook, ceph"
   # (Optional) CephCSI plugin tolerations list(applied to both CephFS and RBD plugin).
@@ -183,16 +183,16 @@ data:
   # CSI plugins need to be started on all the nodes where the clients need to mount the storage.
   CSI_PLUGIN_TOLERATIONS: |
     - key: node-role.kubernetes.io/infra
-          operator: Exists
+      operator: Exists
 
   # (Optional) CephCSI RBD provisioner NodeAffinity(if specified, overrides CSI_PROVISIONER_NODE_AFFINITY).
-  # CSI_RBD_PROVISIONER_NODE_AFFINITY: "role=rbd-node"
+  CSI_RBD_PROVISIONER_NODE_AFFINITY: "node-role.kubernetes.io/infra"
   # (Optional) CephCSI RBD provisioner tolerations list(if specified, overrides CSI_PROVISIONER_TOLERATIONS).
   # Put here list of taints you want to tolerate in YAML format.
   # CSI provisioner would be best to start on the same nodes as other ceph daemons.
   CSI_RBD_PROVISIONER_TOLERATIONS: |
     - key: node-role.kubernetes.io/infra
-          operator: Exists
+      operator: Exists
   # (Optional) CephCSI RBD plugin NodeAffinity(if specified, overrides CSI_PLUGIN_NODE_AFFINITY).
   # CSI_RBD_PLUGIN_NODE_AFFINITY: "role=rbd-node"
   # (Optional) CephCSI RBD plugin tolerations list(if specified, overrides CSI_PLUGIN_TOLERATIONS).
@@ -200,16 +200,16 @@ data:
   # CSI plugins need to be started on all the nodes where the clients need to mount the storage.
   CSI_RBD_PLUGIN_TOLERATIONS: |
     - key: node-role.kubernetes.io/infra
-          operator: Exists
+      operator: Exists
 
   # (Optional) CephCSI CephFS provisioner NodeAffinity(if specified, overrides CSI_PROVISIONER_NODE_AFFINITY).
-  # CSI_CEPHFS_PROVISIONER_NODE_AFFINITY: "role=cephfs-node"
+  CSI_CEPHFS_PROVISIONER_NODE_AFFINITY: "node-role.kubernetes.io/infra"
   # (Optional) CephCSI CephFS provisioner tolerations list(if specified, overrides CSI_PROVISIONER_TOLERATIONS).
   # Put here list of taints you want to tolerate in YAML format.
   # CSI provisioner would be best to start on the same nodes as other ceph daemons.
   CSI_CEPHFS_PROVISIONER_TOLERATIONS: |
     - key: node-role.kubernetes.io/infra
-          operator: Exists
+      operator: Exists
   # (Optional) CephCSI CephFS plugin NodeAffinity(if specified, overrides CSI_PLUGIN_NODE_AFFINITY).
   # CSI_CEPHFS_PLUGIN_NODE_AFFINITY: "role=cephfs-node"
   # (Optional) CephCSI CephFS plugin tolerations list(if specified, overrides CSI_PLUGIN_TOLERATIONS).
@@ -217,16 +217,16 @@ data:
   # CSI plugins need to be started on all the nodes where the clients need to mount the storage.
   CSI_CEPHFS_PLUGIN_TOLERATIONS: |
     - key: node-role.kubernetes.io/infra
-          operator: Exists
+      operator: Exists
 
   # (Optional) CephCSI NFS provisioner NodeAffinity (overrides CSI_PROVISIONER_NODE_AFFINITY).
-  # CSI_NFS_PROVISIONER_NODE_AFFINITY: "role=nfs-node"
+  CSI_NFS_PROVISIONER_NODE_AFFINITY: "node-role.kubernetes.io/infra"
   # (Optional) CephCSI NFS provisioner tolerations list (overrides CSI_PROVISIONER_TOLERATIONS).
   # Put here list of taints you want to tolerate in YAML format.
   # CSI provisioner would be best to start on the same nodes as other ceph daemons.
   CSI_NFS_PROVISIONER_TOLERATIONS: |
     - key: node-role.kubernetes.io/infra
-          operator: Exists
+      operator: Exists
   # (Optional) CephCSI NFS plugin NodeAffinity (overrides CSI_PLUGIN_NODE_AFFINITY).
   # CSI_NFS_PLUGIN_NODE_AFFINITY: "role=nfs-node"
   # (Optional) CephCSI NFS plugin tolerations list (overrides CSI_PLUGIN_TOLERATIONS).
@@ -234,7 +234,7 @@ data:
   # CSI plugins need to be started on all the nodes where the clients need to mount the storage.
   CSI_NFS_PLUGIN_TOLERATIONS: |
     - key: node-role.kubernetes.io/infra
-          operator: Exists
+      operator: Exists
 
   # (Optional) CEPH CSI RBD provisioner resource requirement list, Put here list of resource
   # requests and limits you want to apply for provisioner pod
@@ -524,5 +524,3 @@ data:
         requests:
           cpu: 200m
           memory: 128Mi
----
-
