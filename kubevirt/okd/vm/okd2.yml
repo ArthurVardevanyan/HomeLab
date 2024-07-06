@@ -1,0 +1,99 @@
+apiVersion: kubevirt.io/v1
+kind: VirtualMachine
+metadata:
+  annotations:
+    name: okd-master-2
+  name: okd-master-2
+  namespace: k3s
+spec:
+  dataVolumeTemplates:
+    - apiVersion: cdi.kubevirt.io/v1beta1
+      kind: DataVolume
+      metadata:
+        creationTimestamp: null
+        name: okd-master-2
+      spec:
+        sourceRef:
+          kind: DataSource
+          name: fedora
+          namespace: kubevirt-os-images
+        storage:
+          resources:
+            requests:
+              storage: 100Gi
+  running: false
+  template:
+    metadata:
+      annotations:
+        vm.kubevirt.io/flavor: small
+        vm.kubevirt.io/os: fedora
+        vm.kubevirt.io/workload: server
+        vm: okd
+      creationTimestamp: null
+      labels:
+        kubevirt.io/domain: okd-master-2
+        kubevirt.io/size: small
+    spec:
+      topologySpreadConstraints:
+        - maxSkew: 1
+          topologyKey: topology.kubernetes.io/zone
+          whenUnsatisfiable: DoNotSchedule
+          labelSelector:
+            matchLabels:
+              vm: okd
+        - maxSkew: 1
+          topologyKey: kubernetes.io/hostname
+          whenUnsatisfiable: DoNotSchedule
+          labelSelector:
+            matchLabels:
+              vm: okd
+      architecture: amd64
+      domain:
+        cpu:
+          cores: 6
+          sockets: 1
+          threads: 1
+        devices:
+          disks:
+            - bootOrder: 2
+              disk:
+                bus: virtio
+              name: agent
+            - bootOrder: 1
+              disk:
+                bus: virtio
+              name: rootdisk
+          interfaces:
+            - bridge: {}
+              macAddress: "10:00:00:00:01:41"
+              model: virtio
+              name: br1
+          networkInterfaceMultiqueue: true
+          rng: {}
+        features:
+          acpi: {}
+          smm:
+            enabled: true
+        firmware:
+          bootloader:
+            efi: {}
+        machine:
+          type: q35
+        memory:
+          guest: 16Gi
+        resources:
+          requests:
+            cpu: 500m
+            memory: 3Gi
+      networks:
+        - multus:
+            networkName: br1
+          name: br1
+      terminationGracePeriodSeconds: 180
+      volumes:
+        - dataVolume:
+            name: okd-master-2
+          name: rootdisk
+        - name: agent
+          persistentVolumeClaim:
+            claimName: agent-agent

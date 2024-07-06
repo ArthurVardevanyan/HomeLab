@@ -1,0 +1,61 @@
+# PreConfigure External Load Balancer
+# Host Cluster Pod Networking Currently Disabled
+# rendezvous fix when dns dies
+# sudo systemctl enable --now systemd-resolved
+apiVersion: v1beta1
+kind: AgentConfig
+metadata:
+  name: okd-virt
+rendezvousIP: 10.0.0.140
+hosts:
+  - hostname: master-1
+    role: master
+    interfaces:
+      - name: enp1s0
+        macAddress: 10:00:00:00:01:40
+    # networkConfig:
+    #   interfaces:
+    #     - name: enp1s0
+    #       mac-address: 10:00:00:00:01:40
+    #       ipv4:
+    #         enabled: true
+    #         # address:
+    #         #   - ip: 10.0.0.140
+    #         #     prefix-length: 24
+    #         dhcp: true
+    #       ipv6:
+    #         enabled: false
+  - hostname: master-2
+    role: master
+    interfaces:
+      - name: enp1s0
+        macAddress: 10:00:00:00:01:41
+    # networkConfig:
+    #   interfaces:
+    #     - name: enp1s0
+    #       mac-address: 10:00:00:00:01:41
+    #       ipv4:
+    #         enabled: true
+    #         # address:
+    #         #   - ip: 10.0.0.141
+    #         #     prefix-length: 24
+    #         dhcp: true
+    #       ipv6:
+    #         enabled: false
+  - hostname: master-3
+    role: master
+    interfaces:
+      - name: enp1s0
+        macAddress: 10:00:00:00:01:42
+    # networkConfig:
+    #   interfaces:
+    #     - name: enp1s0
+    #       mac-address: 10:00:00:00:01:42
+    #       ipv4:
+    #         enabled: true
+    #         # address:
+    #         #   - ip: 10.0.0.142
+    #         #     prefix-length: 24
+    #         dhcp: true
+    #       ipv6:
+    #         enabled: false
