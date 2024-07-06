@@ -29,6 +29,7 @@ spec:
                         ephemeral-storage: 1Gi
                         memory: 6Gi
       name: quay-app
+      skipBackgroundRequests: true
     - match:
         any:
           - resources:
@@ -43,14 +44,15 @@ spec:
                   - (name): clair-app
                     resources:
                       limits:
-                        cpu: 6000m
+                        cpu: 3000m
                         ephemeral-storage: 12Gi
                         memory: 8Gi
                       requests:
-                        cpu: 2000m
+                        cpu: 1000m
                         ephemeral-storage: 1Gi
                         memory: 4Gi
       name: clair-app
+      skipBackgroundRequests: true
     - match:
         any:
           - resources:
@@ -73,6 +75,65 @@ spec:
                         ephemeral-storage: 512Mi
                         memory: 280Mi
       name: quay-mirror
+      skipBackgroundRequests: true
+    - match:
+        any:
+          - resources:
+              kinds:
+                - HorizontalPodAutoscaler
+            name:
+      mutate:
+        patchStrategicMerge:
+          spec:
+            scaleTargetRef:
+              kind: Deployment
+              (name): quay-clair-app
+            minReplicas: 2
+            maxReplicas: 5
+            metrics:
+              - type: Resource
+                resource:
+                  name: cpu
+                  target:
+                    type: Utilization
+                    averageUtilization: 150
+              - type: Resource
+                resource:
+                  name: memory
+                  target:
+                    type: Utilization
+                    averageUtilization: 90
+      name: quay-clair-hpa
+      skipBackgroundRequests: true
+    - match:
+        any:
+          - resources:
+              kinds:
+                - HorizontalPodAutoscaler
+            name:
+      mutate:
+        patchStrategicMerge:
+          spec:
+            scaleTargetRef:
+              kind: Deployment
+              (name): quay-quay-app
+            minReplicas: 2
+            maxReplicas: 5
+            metrics:
+              - type: Resource
+                resource:
+                  name: cpu
+                  target:
+                    type: Utilization
+                    averageUtilization: 150
+              - type: Resource
+                resource:
+                  name: memory
+                  target:
+                    type: Utilization
+                    averageUtilization: 90
+      name: quay-hpa
+      skipBackgroundRequests: true
   validationFailureAction: Audit
 # ---
 # apiVersion: kyverno.io/v1
