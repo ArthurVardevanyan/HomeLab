@@ -11,8 +11,8 @@ spec:
   autoSizingReserved: true
   kubeletConfig:
     imageMinimumGCAge: 75m
-    imageGCHighThresholdPercent: 75
-    imageGCLowThresholdPercent: 50
+    imageGCHighThresholdPercent: 85
+    imageGCLowThresholdPercent: 75
     #systemReserved:
     # cpu: 250m
     # memory: 512Mi
@@ -30,8 +30,27 @@ spec:
   autoSizingReserved: true
   kubeletConfig:
     imageMinimumGCAge: 75m
-    imageGCHighThresholdPercent: 75
-    imageGCLowThresholdPercent: 50
+    imageGCHighThresholdPercent: 85
+    imageGCLowThresholdPercent: 75
+    # systemReserved:
+    #   cpu: 250m
+    #   memory: 2Gi
+---
+apiVersion: machineconfiguration.openshift.io/v1
+kind: KubeletConfig
+metadata:
+  name: infra-kubelet-config
+  labels:
+    app.kubernetes.io/instance: okd-configuration
+spec:
+  machineConfigPoolSelector:
+    matchLabels:
+      pools.operator.machineconfiguration.openshift.io/infra: ""
+  autoSizingReserved: true
+  kubeletConfig:
+    imageMinimumGCAge: 75m
+    imageGCHighThresholdPercent: 85
+    imageGCLowThresholdPercent: 75
     # systemReserved:
     #   cpu: 250m
     #   memory: 2Gi
