@@ -5,9 +5,9 @@ export HOME=/home/arthur
 export NODE=worker-3
 export VCPUS=7
 export RAM_MB=30720
-export IMAGE="/home/okd/${NODE}.raw"
+export IMAGE="/mnt/storage/${NODE}.raw"
 export IGNITION_CONFIG="/var/lib/libvirt/images/worker.ign"
-export SIZE="128G"
+export SIZE="160G"
 export MAC="10:00:00:00:01:13"
 
 qemu-img create "${IMAGE}" "${SIZE}" -f raw

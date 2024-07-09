@@ -7,7 +7,7 @@ export VCPUS=8
 export RAM_MB=24576
 export IMAGE="/mnt/${NODE}/${NODE}.raw"
 export IGNITION_CONFIG="/var/lib/libvirt/images/master.ign"
-export SIZE="128G"
+export SIZE="160G"
 export MAC="10:00:00:00:01:02"
 
 qemu-img create "${IMAGE}" "${SIZE}" -f raw

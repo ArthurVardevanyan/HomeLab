@@ -7,8 +7,17 @@ ceph status
 ceph osd status
 ceph health detail
 
-ceph osd crush rm-device-class osd.0 osd.1 osd.2 osd.3 osd.4 osd.5
-ceph osd crush set-device-class nvme  osd.0 osd.1 osd.2 osd.3 osd.4 osd.5
+ceph osd crush rm-device-class osd.0
+ceph osd crush set-device-class nvme  osd.0
+
+ceph osd destroy 0 --yes-i-really-mean-it
+ceph auth del osd.0
+ceph osd crush rm osd.0
+ceph osd purge 0 --yes-i-really-mean-it
+
+ceph mon remove j
+
+ceph tell osd.\* injectargs --osd_max_backfills=32 --osd_recovery_max_active=64
 ```
 
 ## Refs
