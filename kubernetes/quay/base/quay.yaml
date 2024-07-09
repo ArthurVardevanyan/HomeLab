@@ -12,6 +12,16 @@ spec:
   components:
     - kind: clair
       managed: true
+      overrides:
+        resources:
+          limits:
+            cpu: 5000m
+            ephemeral-storage: 12Gi
+            memory: 8Gi
+          requests:
+            cpu: 1000m
+            ephemeral-storage: 1Gi
+            memory: 4Gi
     - kind: postgres
       managed: false
     - kind: objectstorage
@@ -19,7 +29,7 @@ spec:
     - kind: redis
       managed: false
     - kind: horizontalpodautoscaler
-      managed: true
+      managed: false
     - kind: route
       managed: true
     - kind: mirror
@@ -28,6 +38,15 @@ spec:
         env:
           - name: IGNORE_VALIDATION
             value: "true"
+        resources:
+          limits:
+            cpu: 250m
+            ephemeral-storage: 2Gi
+            memory: 560Mi
+          requests:
+            cpu: 75m
+            ephemeral-storage: 512Mi
+            memory: 280Mi
     - kind: monitoring
       managed: true
     - kind: tls
@@ -40,5 +59,14 @@ spec:
         env:
           - name: IGNORE_VALIDATION
             value: "true"
+        resources:
+          limits:
+            cpu: 3000m
+            ephemeral-storage: 2Gi
+            memory: 12Gi
+          requests:
+            cpu: 1000m
+            ephemeral-storage: 1Gi
+            memory: 6Gi
   configBundleSecret: quay-config-bundle
   # checkov:skip=CKV_SECRET_6 Place Holder
