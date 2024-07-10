@@ -13,10 +13,9 @@ spec:
         creationTimestamp: null
         name: okd-master-3
       spec:
-        sourceRef:
-          kind: DataSource
-          name: fedora
-          namespace: kubevirt-os-images
+        preallocation: false
+        source:
+          blank: {}
         storage:
           resources:
             requests:
@@ -31,9 +30,11 @@ spec:
         vm: okd
       creationTimestamp: null
       labels:
+        vm: okd
         kubevirt.io/domain: okd-master-3
         kubevirt.io/size: small
     spec:
+      evictionStrategy: LiveMigrateIfPossible
       topologySpreadConstraints:
         - maxSkew: 1
           topologyKey: topology.kubernetes.io/zone
