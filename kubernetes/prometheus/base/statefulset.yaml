@@ -85,7 +85,7 @@ spec:
             - name: prometheus-pvc
               mountPath: /prometheus_data/
         # https://hackernoon.com/kubernetes-monitoring-with-prometheus-and-thanos-z91w3uc2
-        - name: thanos
+        - name: thanos-ceph
           image: quay.io/thanos/thanos:v0.35.0@sha256:fa1d28718df00b68d6ad85d7c7d4703bd9f59e5cd8be8da6540ea398cf701a1f
           securityContext:
             runAsNonRoot: true
@@ -98,17 +98,17 @@ spec:
                 - ALL
           resources:
             requests:
-              cpu: 25m
-              memory: 512Mi
+              cpu: 10m
+              memory: 64Mi
             limits:
-              cpu: 250m
-              memory: 1Gi
+              cpu: 100m
+              memory: 256Mi
           args:
             - "sidecar"
             - "--log.level=debug"
             - "--tsdb.path=/prometheus_data"
             - "--prometheus.url=http://127.0.0.1:9090"
-            - "--objstore.config-file=/etc/secret/truenas.yaml"
+            - "--objstore.config-file=/etc/secret/ceph.yaml"
           ports:
             - name: http-sidecar
               containerPort: 10902
@@ -127,9 +127,57 @@ spec:
               mountPath: /etc/prometheus/
             - name: prometheus-pvc
               mountPath: /prometheus_data/
+            - name: ceph
+              mountPath: /etc/secret
+              readOnly: true
+        - name: thanos-truenas
+          image: quay.io/thanos/thanos:v0.35.0@sha256:fa1d28718df00b68d6ad85d7c7d4703bd9f59e5cd8be8da6540ea398cf701a1f
+          securityContext:
+            runAsNonRoot: true
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            seccompProfile:
+              type: RuntimeDefault
+            capabilities:
+              drop:
+                - ALL
+          resources:
+            requests:
+              cpu: 10m
+              memory: 64Mi
+            limits:
+              cpu: 100m
+              memory: 256Mi
+          args:
+            - "sidecar"
+            - "--log.level=debug"
+            - "--tsdb.path=/prometheus_data"
+            - "--prometheus.url=http://127.0.0.1:9090"
+            - "--objstore.config-file=/etc/secret/truenas.yaml"
+            - "--http-address=0.0.0.0:10904"
+            - "--grpc-address=0.0.0.0:10903"
+          ports:
+            - name: http-sidecar
+              containerPort: 10904
+            - name: grpc
+              containerPort: 10903
+          livenessProbe:
+            httpGet:
+              port: 10904
+              path: /-/healthy
+          readinessProbe:
+            httpGet:
+              port: 10904
+              path: /-/ready
+          volumeMounts:
+            - name: prometheus-config-volume
+              mountPath: /etc/prometheus/
+            - name: prometheus-pvc
+              mountPath: /prometheus_data/
             - name: truenas
               mountPath: /etc/secret
               readOnly: true
+
       volumes:
         - name: prometheus-config-volume
           configMap:
@@ -144,3 +192,6 @@ spec:
         - name: truenas
           secret:
             secretName: truenas
+        - name: ceph
+          secret:
+            secretName: ceph

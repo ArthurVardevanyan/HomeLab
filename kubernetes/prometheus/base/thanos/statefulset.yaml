@@ -53,7 +53,7 @@ spec:
             - "store"
             - "--log.level=debug"
             - "--data-dir=/data"
-            - "--objstore.config-file=/etc/secret/truenas.yaml"
+            - "--objstore.config-file=/etc/secret/ceph.yaml"
             - "--index-cache-size=500MB"
             - "--chunk-pool-size=500MB"
           ports:
@@ -70,15 +70,15 @@ spec:
               port: 10902
               path: /-/ready
           volumeMounts:
-            - name: truenas
+            - name: ceph
               mountPath: /etc/secret
               readOnly: false
             - name: data
               mountPath: /data
       volumes:
-        - name: truenas
+        - name: ceph
           secret:
-            secretName: truenas
+            secretName: ceph
   volumeClaimTemplates:
     - metadata:
         name: data

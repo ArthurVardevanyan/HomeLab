@@ -1,0 +1,14 @@
+apiVersion: objectbucket.io/v1alpha1
+kind: ObjectBucketClaim
+metadata:
+  labels:
+    bucket-provisioner: rook-ceph.ceph.rook.io-bucket
+  annotations:
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+  name: prometheus-thanos
+  namespace: prometheus
+spec:
+  generateBucketName: prometheus-thanos
+  storageClassName: rook-ceph-bucket
+  additionalConfig:
+    maxSize: "300Gi"

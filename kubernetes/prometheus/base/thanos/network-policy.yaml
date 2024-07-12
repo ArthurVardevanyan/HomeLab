@@ -2,6 +2,33 @@
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
+  name: allow-ceph-obj
+  namespace: prometheus
+  annotations:
+    argocd.argoproj.io/sync-wave: "0"
+  labels:
+    app.kubernetes.io/instance: quay
+spec:
+  podSelector:
+    matchLabels:
+      app: thanos-store-gateway
+  policyTypes:
+    - Egress
+  egress:
+    - to:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/component: cephobjectstores.ceph.rook.io
+          namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: rook-ceph
+      ports:
+        - protocol: TCP
+          port: 8080
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
   name: allow-local-egress-thanos-store-gateway
   namespace: prometheus
   annotations:
