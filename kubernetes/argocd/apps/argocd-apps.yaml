@@ -12,10 +12,7 @@ spec:
   applicationInstanceLabelKey: argocd.argoproj.io/instance
   resourceTrackingMethod: annotation+label
   sourceNamespaces:
-    - "smoke-tests"
-    - "analytics-for-spotify"
-    - "knative-serving"
-    - "finance-tracker"
+    - /^((?!argocd).)*$/
   monitoring:
     enabled: true
   server:
@@ -54,10 +51,12 @@ spec:
     policy: |
       g, system:cluster-admins, role:admin
       g, cluster-admins, role:admin
-  version: sha256:d2c274ff26c7ab164907de05826bdfe2e6f326af70edd0bb83194b75fbb71f9e # v2.11.2
+  image: registry.arthurvardevanyan.com/homelab/argocd
+  version: sha256:98d13358bb745a3366ea4247975ea9ca6e8aecfd4d233c457001264e9b1928f6 #sha256:d2c274ff26c7ab164907de05826bdfe2e6f326af70edd0bb83194b75fbb71f9e # v2.11.2
   repo:
     replicas: 3
-    version: sha256:d2c274ff26c7ab164907de05826bdfe2e6f326af70edd0bb83194b75fbb71f9e # v2.11.2
+    image: registry.arthurvardevanyan.com/homelab/argocd
+    version: sha256:98d13358bb745a3366ea4247975ea9ca6e8aecfd4d233c457001264e9b1928f6 #sha256:d2c274ff26c7ab164907de05826bdfe2e6f326af70edd0bb83194b75fbb71f9e # v2.11.2
     mountsatoken: true
     serviceaccount: argocd-repo-server
     resources:
