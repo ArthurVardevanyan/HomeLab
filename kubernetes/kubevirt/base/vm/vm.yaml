@@ -23,7 +23,7 @@ spec:
         storage:
           resources:
             requests:
-              storage: 30Gi
+              storage: 50Gi
           storageClassName: rook-ceph-block-virtualization
   # running: true
   template:
@@ -46,6 +46,10 @@ spec:
       architecture: amd64
       domain:
         cpu:
+          model: host-passthrough
+          features:
+            - name: svm
+              policy: require
           cores: 6
           sockets: 1
           threads: 1
