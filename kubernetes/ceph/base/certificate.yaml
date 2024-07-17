@@ -1,0 +1,14 @@
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: rook-ceph-cert
+  namespace: rook-ceph
+  labels:
+    app.kubernetes.io/instance: ceph
+spec:
+  secretName: rook-ceph-cert
+  dnsNames:
+    - "ceph.apps.okd.arthurvardevanyan.com"
+  issuerRef:
+    kind: ClusterIssuer
+    name: letsencrypt

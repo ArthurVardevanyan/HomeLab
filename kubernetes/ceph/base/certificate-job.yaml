@@ -1,0 +1,87 @@
+# https://github.com/dronenb/HomeLab/blob/1ccdcfb8f5c2ecb195e7ab928a9e6df88d8a71b8/kubernetes/workloads/rook-ceph/manifests/overlays/fh/cronjob.yaml
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: ceph-dashboard-cert-rotate
+  namespace: rook-ceph
+  labels:
+    app: ceph-toolbox-job
+spec:
+  schedule: "0 0 1 * *"
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          securityContext:
+            runAsNonRoot: true
+            seccompProfile:
+              type: RuntimeDefault
+          initContainers:
+            - name: config-init
+              image: rook/ceph:master
+              command: ["/usr/local/bin/toolbox.sh"]
+              args: ["--skip-watch"]
+              imagePullPolicy: IfNotPresent
+              env:
+                - name: ROOK_CEPH_USERNAME
+                  valueFrom:
+                    secretKeyRef:
+                      name: rook-ceph-mon
+                      key: ceph-username
+              volumeMounts:
+                - mountPath: /etc/ceph
+                  name: ceph-config
+                - name: mon-endpoint-volume
+                  mountPath: /etc/rook
+                - name: ceph-admin-secret
+                  mountPath: /var/lib/rook-ceph-mon
+          containers:
+            - name: script
+              image: rook/ceph:master
+              securityContext:
+                runAsNonRoot: true
+                privileged: false
+                readOnlyRootFilesystem: true
+                allowPrivilegeEscalation: false
+                seccompProfile:
+                  type: RuntimeDefault
+                capabilities:
+                  drop:
+                    - ALL
+              volumeMounts:
+                - mountPath: /etc/ceph
+                  name: ceph-config
+                  readOnly: true
+                - name: ceph-tls-secret
+                  mountPath: /var/run/secrets/certificates
+              command:
+                - "bash"
+                - "-c"
+                - |
+                  ceph config-key rm mgr/dashboard/key
+                  ceph config-key rm mgr/dashboard/crt
+                  ceph dashboard set-ssl-certificate -i /var/run/secrets/certificates/tls.crt
+                  ceph dashboard set-ssl-certificate-key -i /var/run/secrets/certificates/tls.key
+                  ceph mgr module disable dashboard
+                  ceph mgr module enable dashboard
+          volumes:
+            - name: ceph-admin-secret
+              secret:
+                secretName: rook-ceph-mon
+                optional: false
+                items:
+                  - key: ceph-secret
+                    path: secret.keyring
+            - name: ceph-tls-secret
+              secret:
+                secretName: rook-ceph-cert
+                optional: false
+            - name: mon-endpoint-volume
+              configMap:
+                name: rook-ceph-mon-endpoints
+                items:
+                  - key: data
+                    path: mon-endpoints
+            - name: ceph-config
+              emptyDir: {}
+          restartPolicy: Never
