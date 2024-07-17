@@ -68,15 +68,3 @@ resource "google_secret_manager_secret_version" "truenas_nextcloud" {
   secret      = google_secret_manager_secret.truenas_nextcloud.id
   secret_data = base64decode(google_service_account_key.truenas_nextcloud.private_key)
 }
-
-resource "google_storage_bucket" "homelab-tf-bucket" {
-  #checkov:skip=CKV_GCP_78:Versioning is Handleed by GitHub
-  #checkov:skip=CKV_GCP_62:Access logs are not required.
-  name          = "tf-state-truenas-${local.bucket_id}"
-  location      = "us-central1"
-  project       = "homelab-${local.project_id}"
-  force_destroy = true
-
-  public_access_prevention    = "enforced"
-  uniform_bucket_level_access = true
-}
