@@ -11,10 +11,6 @@ resource "zitadel_project" "ceph" {
   private_labeling_setting = "PRIVATE_LABELING_SETTING_UNSPECIFIED"
 }
 
-provider "http" {
-}
-
-
 data "http" "get_ceph_saml" {
   url = "https://ceph.apps.okd.arthurvardevanyan.com/auth/saml2/metadata"
 }

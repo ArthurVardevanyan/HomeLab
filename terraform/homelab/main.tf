@@ -2,11 +2,8 @@ terraform {
   backend "gcs" {}
 }
 
-provider "vault" {
-  address = "https://vault.arthurvardevanyan.com"
-}
-
-provider "google" {
+data "vault_generic_secret" "truenas" {
+  path = "secret/truenas/api"
 }
 
 data "vault_generic_secret" "org" {
@@ -25,6 +22,7 @@ locals {
   bucket_id           = data.vault_generic_secret.projects.data["bucket_id"]
   homelab_project_num = data.vault_generic_secret.homelab.data["homelab_project_num"]
   user                = data.vault_generic_secret.projects.data["user"]
+  api_key             = data.vault_generic_secret.truenas.data["key"]
 }
 
 resource "google_project_service" "compute" {
