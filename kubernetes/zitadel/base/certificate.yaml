@@ -1,0 +1,14 @@
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: zitadel-cert
+  namespace: zitadel
+  labels:
+    app.kubernetes.io/instance: zitadel
+spec:
+  secretName: zitadel-cert
+  dnsNames:
+    - "zitadel.apps.okd.arthurvardevanyan.com"
+  issuerRef:
+    kind: ClusterIssuer
+    name: letsencrypt

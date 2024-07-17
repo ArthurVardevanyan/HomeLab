@@ -15,7 +15,7 @@ spec:
       default: "plan"
     - name: terraform_path
       type: string
-      default: "terraform/gcp/HomeLab/homelab"
+      default: "terraform/homelab"
     - name: terraform_bucket
       type: string
       default: "tf-state-homelab"
@@ -86,6 +86,9 @@ spec:
 
         export PROJECT_ID="$(vault kv get -field=project_id secret/gcp/org/av/projects)"
         export BUCKET_ID="$(vault kv get -field=bucket_id secret/gcp/org/av/projects)"
+
+        gcloud auth login --cred-file=${GOOGLE_APPLICATION_CREDENTIALS}
+        gcloud secrets versions access latest --project="homelab-${PROJECT_ID}" --out-file="/tmp/zitadel.json" --secret zitadel_pipeline
 
         cd ${WORKSPACE_DATA_PATH}/${TERRAFORM_PATH}
 

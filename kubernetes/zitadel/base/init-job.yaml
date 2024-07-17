@@ -76,6 +76,8 @@ spec:
               mountPath: /config
             - name: chowned-secrets
               mountPath: /.secrets
+            - name: certificate
+              mountPath: /ssl
           resources:
             limits:
               cpu: 75m
@@ -103,6 +105,8 @@ spec:
               mountPath: /db-ssl-admin-crt
             - name: db-ssl-user-crt
               mountPath: /db-ssl-user-crt
+            - name: certificate
+              mountPath: /ssl
           securityContext:
             runAsNonRoot: true
             readOnlyRootFilesystem: true
@@ -137,3 +141,6 @@ spec:
             secretName: db-cockroachdb-zitadel-secret
         - name: chowned-secrets
           emptyDir: {}
+        - name: certificate
+          secret:
+            secretName: zitadel-cert
