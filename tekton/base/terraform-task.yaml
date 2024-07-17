@@ -87,6 +87,9 @@ spec:
         export PROJECT_ID="$(vault kv get -field=project_id secret/gcp/org/av/projects)"
         export BUCKET_ID="$(vault kv get -field=bucket_id secret/gcp/org/av/projects)"
 
+        gcloud auth login --cred-file=${GOOGLE_APPLICATION_CREDENTIALS}
+        gcloud secrets versions access latest --project="homelab-${PROJECT_ID}" --out-file="/tmp/zitadel.json" --secret zitadel_pipeline
+
         cd ${WORKSPACE_DATA_PATH}/${TERRAFORM_PATH}
 
         cat << EOF > backend.conf

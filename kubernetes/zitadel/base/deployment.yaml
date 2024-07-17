@@ -98,6 +98,7 @@ spec:
               protocol: TCP
           livenessProbe:
             httpGet:
+              scheme: HTTPS
               path: /debug/healthz
               port: http2-server
               httpHeaders:
@@ -108,6 +109,7 @@ spec:
             failureThreshold: 3
           readinessProbe:
             httpGet:
+              scheme: HTTPS
               path: /debug/ready
               port: http2-server
               httpHeaders:
@@ -118,6 +120,7 @@ spec:
             failureThreshold: 3
           startupProbe:
             httpGet:
+              scheme: HTTPS
               path: /debug/ready
               port: http2-server
               httpHeaders:
@@ -130,6 +133,8 @@ spec:
               mountPath: /config
             - name: chowned-secrets
               mountPath: /.secrets
+            - name: certificate
+              mountPath: /ssl
           resources:
             limits:
               cpu: 1000m
@@ -155,6 +160,8 @@ spec:
               mountPath: /db-ssl-ca-crt
             - name: db-ssl-user-crt
               mountPath: /db-ssl-user-crt
+            - name: certificate
+              mountPath: /ssl
           securityContext:
             runAsNonRoot: true
             readOnlyRootFilesystem: true
@@ -186,3 +193,6 @@ spec:
             secretName: db-cockroachdb-zitadel-secret
         - name: chowned-secrets
           emptyDir: {}
+        - name: certificate
+          secret:
+            secretName: zitadel-cert

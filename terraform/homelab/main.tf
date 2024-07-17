@@ -9,19 +9,6 @@ provider "vault" {
 provider "google" {
 }
 
-terraform {
-  required_providers {
-    google = {
-      source  = "hashicorp/google"
-      version = "5.1.0"
-    }
-    vault = {
-      source  = "hashicorp/vault"
-      version = "3.21.0"
-    }
-  }
-}
-
 data "vault_generic_secret" "org" {
   path = "secret/gcp/org/av/projects"
 }
@@ -37,6 +24,7 @@ locals {
   project_id          = data.vault_generic_secret.org.data["project_id"]
   bucket_id           = data.vault_generic_secret.projects.data["bucket_id"]
   homelab_project_num = data.vault_generic_secret.homelab.data["homelab_project_num"]
+  user                = data.vault_generic_secret.projects.data["user"]
 }
 
 resource "google_project_service" "compute" {
