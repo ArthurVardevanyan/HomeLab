@@ -146,7 +146,7 @@ end
 
 | Kubernetes Channel | OKD Version | OKD Channel | OKD OS           | Host Operating System | Storage Layer |
 | ------------------ | ----------- | ----------- | ---------------- | --------------------- | ------------- |
-| v1.28              | 4.15-\*     | stable-4.11 | Fedora CoreOS 39 | RHEL 9.3              | CEPH          |
+| v1.28              | 4.15-\*     | stable-4.11 | Fedora CoreOS 39 | RHEL 943              | CEPH          |
 
 **Machines:**
 
@@ -156,9 +156,9 @@ end
 | ---------- | ----------- | -------- | --- | ---- | ------------------------------ | -------------- |
 | pfSense    | Hp t730     | RX-427BB | 4   | 4G   | 16G SSD                        | N/A            |
 | Bare Metal | Hp t620     | GX-415GA | 4   | 6G   | 16G SSD & 16G USB              | N/A            |
-| kvm-1      | N/A         | R7-5700G | 16  | 112G | 1x4TB NVME, 1x1TB NVME, SSD    | N/A            |
-| kvm-2      | N/A         | R7-5700G | 16  | 112G | 1x4TB NVME, 1x1TB NVME,1TB SSD | N/A            |
-| kvm-3      | N/A         | R7-5700G | 16  | 112G | 1x4TB NVME, 1x1TB NVME,1TB SSD | N/A            |
+| kvm-1      | N/A         | R7-5700G | 16  | 128G | 1x4TB NVME, 1x1TB NVME, SSD    | N/A            |
+| kvm-2      | N/A         | R7-5700G | 16  | 128G | 1x4TB NVME, 1x1TB NVME,1TB SSD | N/A            |
+| kvm-3      | N/A         | R7-5700G | 16  | 128G | 1x4TB NVME, 1x1TB NVME,1TB SSD | N/A            |
 | TrueNas    | Hp ProDesk  | i5-6600  | 4   | 32G  | 120G SSD Boot Mirror           | 2T SSD, 1T SSD |
 | Spare      | Hp p7-1226s | i3-2130  | 4   | 8G   | 240G SSD                       | N/A            |
 
@@ -182,15 +182,15 @@ end
 | server-1 | cp,etcd,master | kvm-1   | 8    | 24.0G | N/A             |
 | server-2 | cp,etcd,master | kvm-2   | 8    | 24.0G | N/A             |
 | server-3 | cp,etcd,master | kvm-1   | 8    | 24.0G | N/A             |
-| infra-1  | infra,worker   | kvm-1   | 6    | 20.0G | 1x4TB CEPH NVME |
-| infra-2  | infra,worker   | kvm-2   | 6    | 20.0G | 1x4TB CEPH NVME |
-| infra-3  | infra,worker   | kvm-3   | 6    | 20.0G | 1x4TB CEPH NVME |
-| worker-1 | worker         | kvm-1   | 7    | 30.0G | N/A             |
-| worker-2 | worker         | kvm-2   | 7    | 30.0G | N/A             |
-| worker-3 | worker         | kvm-3   | 7    | 30.0G | N/A             |
-| worker-4 | worker         | kvm-1   | 7    | 30.0G | N/A             |
-| worker-5 | worker         | kvm-2   | 7    | 30.0G | N/A             |
-| worker-6 | worker         | kvm-3   | 7    | 30.0G | N/A             |
+| infra-1  | infra,worker   | kvm-1   | 6    | 28.0G | 1x4TB CEPH NVME |
+| infra-2  | infra,worker   | kvm-2   | 6    | 28.0G | 1x4TB CEPH NVME |
+| infra-3  | infra,worker   | kvm-3   | 6    | 28.0G | 1x4TB CEPH NVME |
+| worker-1 | worker         | kvm-1   | 7    | 34.5G | N/A             |
+| worker-2 | worker         | kvm-2   | 7    | 34.5G | N/A             |
+| worker-3 | worker         | kvm-3   | 7    | 34.0G | N/A             |
+| worker-4 | worker         | kvm-1   | 7    | 34.5G | N/A             |
+| worker-5 | worker         | kvm-2   | 7    | 34.5G | N/A             |
+| worker-6 | worker         | kvm-3   | 7    | 34.5G | N/A             |
 
 #### KVM Config Dump
 
