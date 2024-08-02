@@ -21,3 +21,27 @@ spec:
     }
     ]
     }'
+---
+apiVersion: "k8s.cni.cncf.io/v1"
+kind: NetworkAttachmentDefinition
+metadata:
+  name: br1
+  namespace: okd-virt
+  annotations:
+    k8s.v1.cni.cncf.io/resourceName: bridge.network.kubevirt.io/br1
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+    argocd.argoproj.io/sync-wave: "4"
+spec:
+  config: '{
+    "cniVersion": "0.3.1",
+    "name": "br1",
+    "plugins": [
+    {
+    "type": "cnv-bridge",
+    "bridge": "br1"
+    },
+    {
+    "type": "cnv-tuning"
+    }
+    ]
+    }'
