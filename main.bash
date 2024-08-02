@@ -845,6 +845,113 @@ delete_okd() {
   terraform destroy -auto-approve
 }
 
+monitor_okd_virt() {
+  export HOMELAB="${PWD}"
+  export OKD=/tmp/okd
+
+  export KUBECONFIG="${OKD}/okd/auth/kubeconfig"
+  "${OKD}/openshift-install" agent wait-for bootstrap-complete --dir "${OKD}/okd/"
+  "${OKD}/openshift-install" agent wait-for install-complete --dir "${OKD}/okd/"
+}
+
+delete_okd_virt() {
+  export HOMELAB="${PWD}"
+  export OKD=/tmp/okd
+
+  # TODO, Automate Finding Which IPs to Remove
+  ssh-keygen -R 10.0.0.140
+  ssh-keygen -R 10.0.0.141
+  ssh-keygen -R 10.0.0.142
+
+  echo -e "\n\n${BLUE}Delete All Existing Data:${NC}"
+  rm -rf \
+    "${HOME}/.cache/agent" \
+    ${OKD}/openshift-install-linux* \
+    ${OKD}/openshift-client-linux* \
+    ${OKD}/oc \
+    ${OKD}/kubectl \
+    ${OKD}/openshift-install \
+    ${OKD}/okd
+
+  kubectl delete -f "${HOMELAB}/sandbox/kubevirt/okd/vm" --ignore-not-found
+}
+
+install_okd_virt() {
+
+  delete_okd_virt
+
+  export HOMELAB="${PWD}"
+  export OKD=/tmp/okd
+
+  export CONTROL_PLANE_COUNT
+  export WORKER_COUNT
+  CONTROL_PLANE_COUNT=${CONTROL_PLANE_COUNT:-3}
+  WORKER_COUNT=${WORKER_COUNT:-0}
+
+  echo -e "\n\n${BLUE}Get URL:${NC}"
+  URL=${URL:-virt.arthurvardevanyan.com}
+  if [ -z "${URL}" ]; then
+    echo -n URL:
+    read -r -s URL
+    echo ""
+  fi
+  echo "${URL}"
+
+  echo -e "\n\n${BLUE}Get Registry URL:${NC}"
+  REGISTRY=${REGISTRY:-registry.arthurvardevanyan.com}
+  if [ -z "${REGISTRY}" ]; then
+    echo -n REGISTRY:
+    read -r -s REGISTRY
+    echo ""
+  fi
+  echo "${REGISTRY}"
+
+  export OKD_VERSION=${OKD_VERSION:-4.15.0-0.okd-scos-2024-01-18-223523} # Latest Stable, TODO, how to AutoDetect This.
+  # export PAYLOAD
+  # PAYLOAD=$(curl https://amd64.origin.releases.ci.openshift.org/graph | jq --arg OKD_VERSION "$OKD_VERSION" -r '.nodes | map(select(.version | contains($OKD_VERSION)))[0].payload' | sed 's|registry.ci.openshift.org/origin/release-scos|quay.io/okd/scos-release|g')
+
+  # oc adm release extract --tools "${PAYLOAD}" --to="${OKD}/"
+  oc adm release extract --tools "quay.io/okd/scos-release:${OKD_VERSION}" --to="${OKD}/"
+
+  # export OKD_VERSION=${OKD_VERSION:-latest} # tags/RELEASE_NAME
+  # # Download openshift-install and openshift-client
+  # echo "${OKD_VERSION}"
+  # wget "$(curl https://api.github.com/repos/okd-project/okd-scos/releases/"${OKD_VERSION}" -L | grep openshift-install-linux | grep browser_download_url | grep -v arm | cut -d\" -f4)" -P ${OKD}/
+  # wget "$(curl https://api.github.com/repos/okd-project/okd-scos/releases/"${OKD_VERSION}" -L | grep openshift-client-linux | grep -v arm | grep browser_download_url | cut -d\" -f4)" -P ${OKD}/
+  # # 4.16+ grep amd64 | grep rhel9
+
+  tar xvzf ${OKD}/openshift-install-linux* -C ${OKD}
+  tar xvzf ${OKD}/openshift-client-linux* -C ${OKD}
+
+  echo -e "\n\n${BLUE}Create Config Files:${NC}"
+  # Create okd directory of openshift-install files
+  mkdir -p ${OKD}/okd
+  # Copy the install-config.yaml
+  cp "${HOMELAB}/okd/install-config.yaml" "${OKD}/okd/"
+  cp "${HOMELAB}/sandbox/kubevirt/okd/configs/agent-config.yaml" "${OKD}/okd/"
+  cp "${HOMELAB}/sandbox/kubevirt/okd/configs/containerfile" "${OKD}/okd/containerfile"
+
+  SSH=$(cat "${HOME}/.ssh/id_ed25519.pub")
+  sed -i "s/<SSH>/${SSH}/g" "${OKD}/okd/install-config.yaml"
+  sed -i "s/<URL>/${URL}/g" "${OKD}/okd/install-config.yaml"
+  sed -i "s/<REGISTRY>/${REGISTRY}/g" "${OKD}/okd/install-config.yaml"
+  sed -i "s/<CONTROL_PLANE>/${CONTROL_PLANE_COUNT}/g" "${OKD}/okd/install-config.yaml"
+  sed -i "s/<WORKERS>/${WORKER_COUNT}/g" "${OKD}/okd/install-config.yaml"
+  cp "${OKD}/okd/install-config.yaml" "${OKD}/okd/install-config_backup.yaml"
+
+  "${OKD}/openshift-install" agent create cluster-manifests --dir "${OKD}/okd/"
+  "${OKD}/openshift-install" agent create image --dir "${OKD}/okd/"
+
+  podman build -f "${OKD}/okd/containerfile" -t "${REGISTRY}/homelab/okd-virt:latest"
+  podman push "${REGISTRY}/homelab/okd-virt:latest"
+
+  kubectl apply -f "${HOMELAB}/sandbox/kubevirt/okd/vm"
+
+  export KUBECONFIG="${OKD}/okd/auth/kubeconfig"
+  "${OKD}/openshift-install" agent wait-for bootstrap-complete --dir "${OKD}/okd/"
+  "${OKD}/openshift-install" agent wait-for install-complete --dir "${OKD}/okd/"
+}
+
 install_okd() {
   # https://blog.maumene.org/2020/11/18/OKD-or-OpenShit-in-one-box.html
   # ssh -i ~/.ssh/id_ed25519 core@10.10.10.10
@@ -924,7 +1031,7 @@ install_okd() {
   sed -i "s/<SSH>/${SSH}/g" "${OKD}/okd/install-config.yaml"
   sed -i "s/<URL>/${URL}/g" "${OKD}/okd/install-config.yaml"
   sed -i "s/<REGISTRY>/${REGISTRY}/g" "${OKD}/okd/install-config.yaml"
-  sed -i "s/<MASTERS>/${TF_VAR_master_count}/g" "${OKD}/okd/install-config.yaml"
+  sed -i "s/<CONTROL_PLANE>/${TF_VAR_master_count}/g" "${OKD}/okd/install-config.yaml"
   sed -i "s/<WORKERS>/${TF_VAR_worker_count}/g" "${OKD}/okd/install-config.yaml"
   cp "${OKD}/okd/install-config.yaml" "${OKD}/okd/install-config_backup.yaml"
 
