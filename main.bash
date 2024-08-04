@@ -905,20 +905,20 @@ install_okd_virt() {
     echo ""
   fi
   echo "${REGISTRY}"
+  export OKD_VERSION=""
+  if [ -z "${OKD_VERSION}" ]; then
+    export OKD_CHANNEL=${OKD_CHANNEL:-4-scos-stable} # Latest Stable, TODO, how to AutoDetect This.
+    # https://github.com/JaimeMagiera/oct/blob/3968059ca79d9b60245aaff659533f6090c9a722/helpers/okd-query-releases.sh#L137
+    OKD_VERSION=$(curl -s "https://amd64.origin.releases.ci.openshift.org/releasestream/${OKD_CHANNEL}" | grep "Accepted" -B 1 | awk 'sub(/.*release\/ */,""){f=1} f{if ( sub(/ *".*/,"") ) f=0; print}' | head -n 1)
+  fi
+  echo "${OKD_VERSION}"
+  if [[ $OKD_VERSION == *"scos"* ]]; then
+    export OKD_URL="quay.io/okd/scos-release:${OKD_VERSION}"
+  else
+    export OKD_URL="quay.io/openshift/okd:${OKD_VERSION}"
+  fi
 
-  export OKD_VERSION=${OKD_VERSION:-4.15.0-0.okd-scos-2024-01-18-223523} # Latest Stable, TODO, how to AutoDetect This.
-  # export PAYLOAD
-  # PAYLOAD=$(curl https://amd64.origin.releases.ci.openshift.org/graph | jq --arg OKD_VERSION "$OKD_VERSION" -r '.nodes | map(select(.version | contains($OKD_VERSION)))[0].payload' | sed 's|registry.ci.openshift.org/origin/release-scos|quay.io/okd/scos-release|g')
-
-  # oc adm release extract --tools "${PAYLOAD}" --to="${OKD}/"
-  oc adm release extract --tools "quay.io/okd/scos-release:${OKD_VERSION}" --to="${OKD}/"
-
-  # export OKD_VERSION=${OKD_VERSION:-latest} # tags/RELEASE_NAME
-  # # Download openshift-install and openshift-client
-  # echo "${OKD_VERSION}"
-  # wget "$(curl https://api.github.com/repos/okd-project/okd-scos/releases/"${OKD_VERSION}" -L | grep openshift-install-linux | grep browser_download_url | grep -v arm | cut -d\" -f4)" -P ${OKD}/
-  # wget "$(curl https://api.github.com/repos/okd-project/okd-scos/releases/"${OKD_VERSION}" -L | grep openshift-client-linux | grep -v arm | grep browser_download_url | cut -d\" -f4)" -P ${OKD}/
-  # # 4.16+ grep amd64 | grep rhel9
+  oc adm release extract --tools "${OKD_URL}" --to="${OKD}/"
 
   tar xvzf ${OKD}/openshift-install-linux* -C ${OKD}
   tar xvzf ${OKD}/openshift-client-linux* -C ${OKD}
@@ -944,6 +944,7 @@ install_okd_virt() {
 
   podman build -f "${OKD}/okd/containerfile" -t "${REGISTRY}/homelab/okd-virt:latest"
   podman push "${REGISTRY}/homelab/okd-virt:latest"
+  podman rmi -f "${REGISTRY}/homelab/okd-virt:latest"
 
   kubectl apply -f "${HOMELAB}/sandbox/kubevirt/okd/vm"
 
@@ -1016,8 +1017,8 @@ install_okd() {
   echo -e "\n\n${BLUE}Download Dependencies:${NC}"
   export OKD_VERSION=${OKD_VERSION:-latest} # tags/RELEASE_NAME
   # Download openshift-install and openshift-client
-  wget "$(curl https://api.github.com/repos/openshift/okd/releases/"${OKD_VERSION}" -L | grep openshift-install-linux | grep browser_download_url | grep -v arm | cut -d\" -f4)" -P ${OKD}/
-  wget "$(curl https://api.github.com/repos/openshift/okd/releases/"${OKD_VERSION}" -L | grep openshift-client-linux | grep -v arm | grep browser_download_url | cut -d\" -f4)" -P ${OKD}/
+  wget "$(curl -s https://api.github.com/repos/openshift/okd/releases/"${OKD_VERSION}" -L | grep openshift-install-linux | grep browser_download_url | grep -v arm | cut -d\" -f4)" -P ${OKD}/
+  wget "$(curl -s https://api.github.com/repos/openshift/okd/releases/"${OKD_VERSION}" -L | grep openshift-client-linux | grep -v arm | grep browser_download_url | cut -d\" -f4)" -P ${OKD}/
   tar xvzf ${OKD}/openshift-install-linux* -C ${OKD}
   tar xvzf ${OKD}/openshift-client-linux* -C ${OKD}
 
