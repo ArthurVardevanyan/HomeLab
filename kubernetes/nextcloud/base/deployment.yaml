@@ -65,6 +65,13 @@ spec:
       containers:
         - name: nextcloud
           image: nextcloud:29.0.3-apache
+          env:
+            - name: PHP_MEMORY_LIMIT
+              value: 3G
+            - name: PHP_UPLOAD_LIMIT
+              value: 10G
+            - name: APACHE_BODY_LIMIT
+              value: "3221225472"
           securityContext:
             runAsGroup: 33
             runAsUser: 33
@@ -83,7 +90,7 @@ spec:
             limits:
               cpu: 2000m
               ephemeral-storage: 5Gi
-              memory: 2Gi
+              memory: 3Gi
             requests:
               cpu: 100m
               ephemeral-storage: 1Gi
