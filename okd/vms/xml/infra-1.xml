@@ -1,4 +1,4 @@
-<domain type='kvm' id='2' xmlns:qemu='http://libvirt.org/schemas/domain/qemu/1.0'>
+<domain type='kvm' id='8' xmlns:qemu='http://libvirt.org/schemas/domain/qemu/1.0'>
   <name>infra-1</name>
   <uuid>6a1b828e-9c13-4edf-9ad9-c2beadf4c97c</uuid>
   <metadata>
@@ -6,8 +6,8 @@
       <libosinfo:os id="http://fedoraproject.org/coreos/stable" />
     </libosinfo:libosinfo>
   </metadata>
-  <memory unit='KiB'>29360128</memory>
-  <currentMemory unit='KiB'>29360128</currentMemory>
+  <memory unit='KiB'>33554432</memory>
+  <currentMemory unit='KiB'>33554432</currentMemory>
   <vcpu placement='static'>6</vcpu>
   <resource>
     <partition>/machine</partition>
@@ -153,7 +153,7 @@
     <interface type='bridge'>
       <mac address='10:00:00:00:01:21' />
       <source bridge='br0' />
-      <target dev='vnet1' />
+      <target dev='vnet11' />
       <model type='virtio' />
       <alias name='net0' />
       <address type='pci' domain='0x0000' bus='0x01' slot='0x00' function='0x0' />
@@ -171,7 +171,7 @@
       <alias name='serial0' />
     </console>
     <channel type='unix'>
-      <source mode='bind' path='/run/libvirt/qemu/channel/2-infra-1/org.qemu.guest_agent.0' />
+      <source mode='bind' path='/run/libvirt/qemu/channel/8-infra-1/org.qemu.guest_agent.0' />
       <target type='virtio' name='org.qemu.guest_agent.0' state='connected' />
       <alias name='channel0' />
       <address type='virtio-serial' controller='0' bus='0' port='1' />
@@ -197,8 +197,8 @@
     </rng>
   </devices>
   <seclabel type='dynamic' model='selinux' relabel='yes'>
-    <label>system_u:system_r:svirt_t:s0:c366,c670</label>
-    <imagelabel>system_u:object_r:svirt_image_t:s0:c366,c670</imagelabel>
+    <label>system_u:system_r:svirt_t:s0:c192,c609</label>
+    <imagelabel>system_u:object_r:svirt_image_t:s0:c192,c609</imagelabel>
   </seclabel>
   <seclabel type='dynamic' model='dac' relabel='yes'>
     <label>+107:+107</label>

@@ -24,14 +24,6 @@ spec:
             memory: 4Gi
         affinity:
           podAntiAffinity:
-            requiredDuringSchedulingIgnoredDuringExecution:
-              - labelSelector:
-                  matchExpressions:
-                    - key: quay-component
-                      operator: In
-                      values:
-                        - clair-app
-                topologyKey: kubernetes.io/hostname
             preferredDuringSchedulingIgnoredDuringExecution:
               - weight: 100
                 podAffinityTerm:
@@ -42,6 +34,15 @@ spec:
                         values:
                           - clair-app
                   topologyKey: topology.kubernetes.io/zone
+              - weight: 1
+                podAffinityTerm:
+                  labelSelector:
+                    matchExpressions:
+                      - key: quay-component
+                        operator: In
+                        values:
+                          - clair-app
+                  topologyKey: kubernetes.io/hostname
     - kind: postgres
       managed: false
     - kind: objectstorage
@@ -69,14 +70,6 @@ spec:
             memory: 280Mi
         affinity:
           podAntiAffinity:
-            requiredDuringSchedulingIgnoredDuringExecution:
-              - labelSelector:
-                  matchExpressions:
-                    - key: quay-component
-                      operator: In
-                      values:
-                        - quay-mirror
-                topologyKey: kubernetes.io/hostname
             preferredDuringSchedulingIgnoredDuringExecution:
               - weight: 100
                 podAffinityTerm:
@@ -87,6 +80,15 @@ spec:
                         values:
                           - quay-mirror
                   topologyKey: topology.kubernetes.io/zone
+              - weight: 1
+                podAffinityTerm:
+                  labelSelector:
+                    matchExpressions:
+                      - key: quay-component
+                        operator: In
+                        values:
+                          - quay-mirror
+                  topologyKey: kubernetes.io/hostname
     - kind: monitoring
       managed: true
     - kind: tls
@@ -110,14 +112,6 @@ spec:
             memory: 6Gi
         affinity:
           podAntiAffinity:
-            requiredDuringSchedulingIgnoredDuringExecution:
-              - labelSelector:
-                  matchExpressions:
-                    - key: quay-component
-                      operator: In
-                      values:
-                        - quay-app
-                topologyKey: kubernetes.io/hostname
             preferredDuringSchedulingIgnoredDuringExecution:
               - weight: 100
                 podAffinityTerm:
@@ -128,5 +122,14 @@ spec:
                         values:
                           - quay-app
                   topologyKey: topology.kubernetes.io/zone
+              - weight: 1
+                podAffinityTerm:
+                  labelSelector:
+                    matchExpressions:
+                      - key: quay-component
+                        operator: In
+                        values:
+                          - quay-app
+                  topologyKey: kubernetes.io/hostname
   configBundleSecret: quay-config-bundle
   # checkov:skip=CKV_SECRET_6 Place Holder

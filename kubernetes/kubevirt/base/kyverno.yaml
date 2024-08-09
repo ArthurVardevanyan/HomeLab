@@ -30,3 +30,25 @@ spec:
                         cpu: 25m
                         ephemeral-storage: 128Mi
                         memory: 320Mi
+    - name: virt-handler
+      match:
+        any:
+          - resources:
+              kinds:
+                - DaemonSet
+      mutate:
+        patchStrategicMerge:
+          spec:
+            template:
+              spec:
+                containers:
+                  - (name): virt-handler
+                    resources:
+                      limits:
+                        cpu: 100m
+                        ephemeral-storage: 256Mi
+                        memory: 1Gi
+                      requests:
+                        cpu: 10m
+                        ephemeral-storage: 128Mi
+                        memory: 384Mi

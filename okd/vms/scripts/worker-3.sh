@@ -3,11 +3,11 @@
 export LIBGUESTFS_BACKEND=direct
 export HOME=/home/arthur
 export NODE=worker-3
-export VCPUS=7
-export RAM_MB=30720
+export VCPUS=12
+export RAM_MB=61952
 export IMAGE="/mnt/storage/${NODE}.raw"
 export IGNITION_CONFIG="/var/lib/libvirt/images/worker.ign"
-export SIZE="160G"
+export SIZE="320G"
 export MAC="10:00:00:00:01:13"
 
 qemu-img create "${IMAGE}" "${SIZE}" -f raw
