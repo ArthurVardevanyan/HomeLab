@@ -818,33 +818,6 @@ install_k3s_cluster() {
   echo "${PREFIX} k3s Install Complete!"
 }
 
-delete_okd() {
-  export HOME=/home/arthur
-  export HOMELAB="${PWD}"
-
-  echo -e "\n\n${BLUE}Delete OKD Install:${NC}"
-
-  echo -e "\n\n${BLUE}Delete Bootstrap:${NC}"
-  cd "${HOMELAB}/terraform/sandbox/cluster"
-  terraform init
-  export TF_VAR_base_volume_id
-  TF_VAR_base_volume_id=$(terraform output -raw base_volume_id)
-  export TF_VAR_pool
-  TF_VAR_pool=$(terraform output -raw pool)
-  cd "${HOMELAB}/terraform/sandbox/bootstrap"
-  terraform init
-  terraform destroy -auto-approve
-
-  echo -e "\n\n${BLUE}Delete Workers:${NC}"
-  cd "${HOMELAB}/terraform/sandbox/workers"
-  terraform init
-  terraform destroy -auto-approve
-
-  echo -e "\n\n${BLUE}Delete libvirt and Masters:${NC}"
-  cd "${HOMELAB}/terraform/sandbox/cluster"
-  terraform destroy -auto-approve
-}
-
 monitor_okd_virt() {
   export HOMELAB="${PWD}"
   export OKD=/tmp/okd
@@ -876,20 +849,7 @@ delete_okd_virt() {
   kubectl delete -f "${HOMELAB}/sandbox/kubevirt/okd/vm" --ignore-not-found
 }
 
-install_okd_virt() {
-
-  delete_okd_virt
-
-  export HOMELAB="${PWD}"
-  export OKD=/tmp/okd
-
-  export CONTROL_PLANE_COUNT
-  export WORKER_COUNT
-  CONTROL_PLANE_COUNT=${CONTROL_PLANE_COUNT:-3}
-  WORKER_COUNT=${WORKER_COUNT:-0}
-
-  echo -e "\n\n${BLUE}Get URL:${NC}"
-  URL=${URL:-virt.arthurvardevanyan.com}
+install_okd_prep() {
   if [ -z "${URL}" ]; then
     echo -n URL:
     read -r -s URL
@@ -905,9 +865,11 @@ install_okd_virt() {
     echo ""
   fi
   echo "${REGISTRY}"
+
+  echo -e "\n\n${BLUE}Download Dependencies:${NC}"
   export OKD_VERSION=""
   if [ -z "${OKD_VERSION}" ]; then
-    export OKD_CHANNEL=${OKD_CHANNEL:-4-scos-stable} # Latest Stable, TODO, how to AutoDetect This.
+    export OKD_CHANNEL=${OKD_CHANNEL:-4-scos-stable}
     # https://github.com/JaimeMagiera/oct/blob/3968059ca79d9b60245aaff659533f6090c9a722/helpers/okd-query-releases.sh#L137
     OKD_VERSION=$(curl -s "https://amd64.origin.releases.ci.openshift.org/releasestream/${OKD_CHANNEL}" | grep "Accepted" -B 1 | awk 'sub(/.*release\/ */,""){f=1} f{if ( sub(/ *".*/,"") ) f=0; print}' | head -n 1)
   fi
@@ -920,8 +882,25 @@ install_okd_virt() {
 
   oc adm release extract --tools "${OKD_URL}" --to="${OKD}/"
 
-  tar xvzf ${OKD}/openshift-install-linux* -C ${OKD}
-  tar xvzf ${OKD}/openshift-client-linux* -C ${OKD}
+  tar xvzf "${OKD}"/openshift-install-linux* -C "${OKD}"
+  tar xvzf "${OKD}"/openshift-client-linux* -C "${OKD}"
+}
+
+install_okd_virt() {
+
+  delete_okd_virt
+
+  export HOMELAB="${PWD}"
+  export OKD=/tmp/okd
+
+  export CONTROL_PLANE_COUNT
+  export WORKER_COUNT
+  CONTROL_PLANE_COUNT=${CONTROL_PLANE_COUNT:-3}
+  WORKER_COUNT=${WORKER_COUNT:-0}
+
+  echo -e "\n\n${BLUE}Get URL:${NC}"
+  URL=${URL:-virt.arthurvardevanyan.com}
+  install_okd_prep
 
   echo -e "\n\n${BLUE}Create Config Files:${NC}"
   # Create okd directory of openshift-install files
@@ -953,6 +932,37 @@ install_okd_virt() {
   "${OKD}/openshift-install" agent wait-for install-complete --dir "${OKD}/okd/"
 }
 
+delete_okd() {
+  export HOME=/home/arthur
+  export HOMELAB="${PWD}"
+
+  if swapon --show | grep -q "${SWAP_PATH}"; then
+    swapon /home/swapfile.img
+  fi
+
+  echo -e "\n\n${BLUE}Delete OKD Install:${NC}"
+
+  echo -e "\n\n${BLUE}Delete Bootstrap:${NC}"
+  cd "${HOMELAB}/terraform/sandbox/cluster"
+  terraform init
+  export TF_VAR_base_volume_id
+  TF_VAR_base_volume_id=$(terraform output -raw base_volume_id)
+  export TF_VAR_pool
+  TF_VAR_pool=$(terraform output -raw pool)
+  cd "${HOMELAB}/terraform/sandbox/bootstrap"
+  terraform init
+  terraform destroy -auto-approve
+
+  echo -e "\n\n${BLUE}Delete Workers:${NC}"
+  cd "${HOMELAB}/terraform/sandbox/workers"
+  terraform init
+  terraform destroy -auto-approve
+
+  echo -e "\n\n${BLUE}Delete libvirt and Masters:${NC}"
+  cd "${HOMELAB}/terraform/sandbox/cluster"
+  terraform destroy -auto-approve
+}
+
 install_okd() {
   # https://blog.maumene.org/2020/11/18/OKD-or-OpenShit-in-one-box.html
   # ssh -i ~/.ssh/id_ed25519 core@10.10.10.10
@@ -973,33 +983,23 @@ install_okd() {
   export TF_VAR_master_count=3
   export TF_VAR_worker_count=4
 
-  echo -e "\n\n${BLUE}Get URL:${NC}"
-  URL=${URL:-sandbox.arthurvardevanyan.com}
-  if [ -z "${URL}" ]; then
-    echo -n URL:
-    read -r -s URL
-    echo ""
-  fi
-  echo "${URL}"
-
-  echo -e "\n\n${BLUE}Get Registry URL:${NC}"
-  REGISTRY=${REGISTRY:-registry.arthurvardevanyan.com}
-  if [ -z "${REGISTRY}" ]; then
-    echo -n REGISTRY:
-    read -r -s REGISTRY
-    echo ""
-  fi
-  echo "${REGISTRY}"
-
-  # # Expand Swap Size on Host Computer
-  # if ! test -f "/home/swapfile.img"; then
-  # 	dd if=/dev/zero of=/home/swapfile.img bs=45056 count=1M
-  # 	mkswap /home/swapfile.img
-  # 	swapon /home/swapfile.img
-  # fi
-
   # Delete Cluster If Exists
   delete_okd
+
+  export SWAP_PATH="/home/swapfile.img"
+
+  # Expand Swap Size on Host Computer
+  if ! test -f "${SWAP_PATH}"; then
+    dd if=/dev/zero of="${SWAP_PATH}" bs=45056 count=1M
+    mkswap "${SWAP_PATH}"
+  fi
+
+  if ! swapon --show | grep -q "${SWAP_PATH}"; then
+    swapon /home/swapfile.img
+  fi
+
+  systemctl start haproxy
+  systemctl stop firewalld
 
   echo -e "\n\n${BLUE}Delete All Existing Data:${NC}"
   rm -rf \
@@ -1014,13 +1014,9 @@ install_okd() {
 
   mkdir -p "${OKD}/vm"
 
-  echo -e "\n\n${BLUE}Download Dependencies:${NC}"
-  export OKD_VERSION=${OKD_VERSION:-latest} # tags/RELEASE_NAME
-  # Download openshift-install and openshift-client
-  wget "$(curl -s https://api.github.com/repos/openshift/okd/releases/"${OKD_VERSION}" -L | grep openshift-install-linux | grep browser_download_url | grep -v arm | cut -d\" -f4)" -P ${OKD}/
-  wget "$(curl -s https://api.github.com/repos/openshift/okd/releases/"${OKD_VERSION}" -L | grep openshift-client-linux | grep -v arm | grep browser_download_url | cut -d\" -f4)" -P ${OKD}/
-  tar xvzf ${OKD}/openshift-install-linux* -C ${OKD}
-  tar xvzf ${OKD}/openshift-client-linux* -C ${OKD}
+  echo -e "\n\n${BLUE}Get URL:${NC}"
+  URL=${URL:-sandbox.arthurvardevanyan.com}
+  install_okd_prep
 
   echo -e "\n\n${BLUE}Create Config Files:${NC}"
   # Create okd directory of openshift-install files
