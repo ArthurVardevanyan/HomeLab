@@ -867,23 +867,28 @@ install_okd_prep() {
   echo "${REGISTRY}"
 
   echo -e "\n\n${BLUE}Download Dependencies:${NC}"
-  export OKD_VERSION=""
+  export OKD_VERSION=${OKD_VERSION:-""}
   if [ -z "${OKD_VERSION}" ]; then
     export OKD_CHANNEL=${OKD_CHANNEL:-4-scos-stable}
     # https://github.com/JaimeMagiera/oct/blob/3968059ca79d9b60245aaff659533f6090c9a722/helpers/okd-query-releases.sh#L137
     OKD_VERSION=$(curl -s "https://amd64.origin.releases.ci.openshift.org/releasestream/${OKD_CHANNEL}" | grep "Accepted" -B 1 | awk 'sub(/.*release\/ */,""){f=1} f{if ( sub(/ *".*/,"") ) f=0; print}' | head -n 1)
   fi
+
   echo "${OKD_VERSION}"
   if [[ $OKD_VERSION == *"scos"* ]]; then
     export OKD_URL="quay.io/okd/scos-release:${OKD_VERSION}"
+    export OKD_URL_CI="registry.ci.openshift.org/origin/release-scos:${OKD_VERSION}"
   else
     export OKD_URL="quay.io/openshift/okd:${OKD_VERSION}"
+    export OKD_URL_CI="registry.ci.openshift.org/origin/release:${OKD_VERSION}"
+  fi
+  if ! oc adm release extract --tools "${OKD_URL}" --to="${OKD}/"; then
+    echo -e "${BLUE}Trying CI Registry:${NC}"
+    oc adm release extract --tools "${OKD_URL_CI}" --to="${OKD}/"
   fi
 
-  oc adm release extract --tools "${OKD_URL}" --to="${OKD}/"
-
-  tar xvzf "${OKD}"/openshift-install-linux* -C "${OKD}"
-  tar xvzf "${OKD}"/openshift-client-linux* -C "${OKD}"
+  tar xvzf "${OKD}"/openshift-install-linux-4* -C "${OKD}"
+  tar xvzf "${OKD}"/openshift-client-linux-4* -C "${OKD}"
 }
 
 install_okd_virt() {
