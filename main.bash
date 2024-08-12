@@ -12,6 +12,7 @@ NC='\033[0m'
 
 # https://www.how2shout.com/linux/how-to-install-and-configure-kvm-on-debian-11-bullseye-linux/
 export LIBVIRT_DEFAULT_URI=qemu:///system
+export SWAP_PATH=${SWAP_PATH:-"/home/swapfile.img"}
 
 # HomeLab Functions
 function retry {
@@ -858,6 +859,7 @@ install_okd_prep() {
   echo "${URL}"
 
   echo -e "\n\n${BLUE}Get Registry URL:${NC}"
+  export REGISTRY
   REGISTRY=${REGISTRY:-registry.arthurvardevanyan.com}
   if [ -z "${REGISTRY}" ]; then
     echo -n REGISTRY:
@@ -889,6 +891,22 @@ install_okd_prep() {
 
   tar xvzf "${OKD}"/openshift-install-linux-4* -C "${OKD}"
   tar xvzf "${OKD}"/openshift-client-linux-4* -C "${OKD}"
+
+  mkdir -p "${OKD}/vm"
+
+  echo -e "\n\n${BLUE}Create Config Files:${NC}"
+  # Create okd directory of openshift-install files
+  mkdir -p "${OKD}"/okd
+  # Copy the install-config.yaml
+  cp "${HOMELAB}/okd/install-config.yaml" "${OKD}/okd/"
+
+  SSH=$(cat "${HOME}"/.ssh/id_ed25519.pub)
+  sed -i "s/<SSH>/${SSH}/g" "${OKD}/okd/install-config.yaml"
+  sed -i "s/<URL>/${URL}/g" "${OKD}/okd/install-config.yaml"
+  sed -i "s/<REGISTRY>/${REGISTRY}/g" "${OKD}/okd/install-config.yaml"
+  sed -i "s/<CONTROL_PLANE>/${TF_VAR_control_plane_count:-${CONTROL_PLANE_COUNT}}/g" "${OKD}/okd/install-config.yaml"
+  sed -i "s/<WORKERS>/${TF_VAR_worker_count:-${WORKER_COUNT}}/g" "${OKD}/okd/install-config.yaml"
+  cp "${OKD}/okd/install-config.yaml" "${OKD}/okd/install-config_backup.yaml"
 }
 
 install_okd_virt() {
@@ -907,21 +925,8 @@ install_okd_virt() {
   URL=${URL:-virt.arthurvardevanyan.com}
   install_okd_prep
 
-  echo -e "\n\n${BLUE}Create Config Files:${NC}"
-  # Create okd directory of openshift-install files
-  mkdir -p ${OKD}/okd
-  # Copy the install-config.yaml
-  cp "${HOMELAB}/okd/install-config.yaml" "${OKD}/okd/"
   cp "${HOMELAB}/sandbox/kubevirt/okd/configs/agent-config.yaml" "${OKD}/okd/"
   cp "${HOMELAB}/sandbox/kubevirt/okd/configs/containerfile" "${OKD}/okd/containerfile"
-
-  SSH=$(cat "${HOME}/.ssh/id_ed25519.pub")
-  sed -i "s/<SSH>/${SSH}/g" "${OKD}/okd/install-config.yaml"
-  sed -i "s/<URL>/${URL}/g" "${OKD}/okd/install-config.yaml"
-  sed -i "s/<REGISTRY>/${REGISTRY}/g" "${OKD}/okd/install-config.yaml"
-  sed -i "s/<CONTROL_PLANE>/${CONTROL_PLANE_COUNT}/g" "${OKD}/okd/install-config.yaml"
-  sed -i "s/<WORKERS>/${WORKER_COUNT}/g" "${OKD}/okd/install-config.yaml"
-  cp "${OKD}/okd/install-config.yaml" "${OKD}/okd/install-config_backup.yaml"
 
   "${OKD}/openshift-install" agent create cluster-manifests --dir "${OKD}/okd/"
   "${OKD}/openshift-install" agent create image --dir "${OKD}/okd/"
@@ -934,6 +939,7 @@ install_okd_virt() {
 
   export KUBECONFIG="${OKD}/okd/auth/kubeconfig"
   "${OKD}/openshift-install" agent wait-for bootstrap-complete --dir "${OKD}/okd/"
+  #"${OKD}/oc" apply -f "${HOMELAB}/okd/okd-configuration/overlays/sandbox/ingress-controller.yaml"
   "${OKD}/openshift-install" agent wait-for install-complete --dir "${OKD}/okd/"
 }
 
@@ -942,7 +948,7 @@ delete_okd() {
   export HOMELAB="${PWD}"
 
   if swapon --show | grep -q "${SWAP_PATH}"; then
-    swapon /home/swapfile.img
+    swapoff /home/swapfile.img
   fi
 
   echo -e "\n\n${BLUE}Delete OKD Install:${NC}"
@@ -966,9 +972,44 @@ delete_okd() {
   echo -e "\n\n${BLUE}Delete libvirt and Masters:${NC}"
   cd "${HOMELAB}/terraform/sandbox/cluster"
   terraform destroy -auto-approve
+
+  cd "${HOMELAB}"
 }
 
-install_okd() {
+delete_okd_agent() {
+  export HOME=/home/arthur
+  export HOMELAB="${PWD}"
+  export OKD=/mnt/storage/okd
+
+  if swapon --show | grep -q "${SWAP_PATH}"; then
+    swapoff /home/swapfile.img
+  fi
+
+  # TODO, Automate Finding Which IPs to Remove
+  # TODO Stop Running as Sudo
+  sudo -H -u arthur ssh-keygen -R 10.10.10.10
+  sudo -H -u arthur ssh-keygen -R 10.10.10.11
+  sudo -H -u arthur ssh-keygen -R 10.10.10.12
+
+  echo -e "\n\n${BLUE}Delete Installation:${NC}"
+  cd "${HOMELAB}/terraform/agent"
+  terraform destroy -auto-approve
+
+  echo -e "\n\n${BLUE}Delete All Existing Data:${NC}"
+  rm -rf \
+    "${OKD}"/openshift-install-linux* \
+    "${OKD}"/openshift-client-linux* \
+    "${OKD}"/oc \
+    "${OKD}"/kubectl \
+    "${OKD}"/openshift-install \
+    "${OKD}"/fedora-coreos-* \
+    "${OKD}"/*.qcow2 \
+    "${OKD}"/okd
+
+  cd "${HOMELAB}"
+}
+
+install_okd_libvirt_prep() {
   # https://blog.maumene.org/2020/11/18/OKD-or-OpenShit-in-one-box.html
   # ssh -i ~/.ssh/id_ed25519 core@10.10.10.10
   # journalctl -b -f -u kubelet.service -u ciro.service
@@ -978,20 +1019,14 @@ install_okd() {
   # user = "root"
   # group = "root"
   # sudo systemctl restart libvirtd
-
-  export HOME=/home/arthur
   export HOMELAB="${PWD}"
+  export HOME=/home/arthur
   export OKD=/mnt/storage/okd
   export KUBECONFIG="${OKD}/okd/auth/kubeconfig"
 
   export PREFIX=""
-  export TF_VAR_master_count=3
-  export TF_VAR_worker_count=4
-
-  # Delete Cluster If Exists
-  delete_okd
-
-  export SWAP_PATH="/home/swapfile.img"
+  export TF_VAR_control_plane_count=3
+  export TF_VAR_worker_count=0
 
   # Expand Swap Size on Host Computer
   if ! test -f "${SWAP_PATH}"; then
@@ -999,43 +1034,23 @@ install_okd() {
     mkswap "${SWAP_PATH}"
   fi
 
-  if ! swapon --show | grep -q "${SWAP_PATH}"; then
-    swapon /home/swapfile.img
+  if ! (swapon --show | grep -q "${SWAP_PATH}"); then
+    swapon "${SWAP_PATH}"
   fi
 
   systemctl start haproxy
   systemctl stop firewalld
+}
 
-  echo -e "\n\n${BLUE}Delete All Existing Data:${NC}"
-  rm -rf \
-    ${OKD}/openshift-install-linux* \
-    ${OKD}/openshift-client-linux* \
-    ${OKD}/oc \
-    ${OKD}/kubectl \
-    ${OKD}/openshift-install \
-    ${OKD}/fedora-coreos-* \
-    ${OKD}/*.qcow2 \
-    ${OKD}/okd
+install_okd() {
 
-  mkdir -p "${OKD}/vm"
-
+  install_okd_libvirt_prep
+  # Delete Cluster If Exists
+  delete_okd
   echo -e "\n\n${BLUE}Get URL:${NC}"
   URL=${URL:-sandbox.arthurvardevanyan.com}
   install_okd_prep
-
-  echo -e "\n\n${BLUE}Create Config Files:${NC}"
-  # Create okd directory of openshift-install files
-  mkdir -p ${OKD}/okd
-  # Copy the install-config.yaml
-  cp "${HOMELAB}/okd/install-config.yaml" "${OKD}/okd/"
-
-  SSH=$(cat ${HOME}/.ssh/id_ed25519.pub)
-  sed -i "s/<SSH>/${SSH}/g" "${OKD}/okd/install-config.yaml"
-  sed -i "s/<URL>/${URL}/g" "${OKD}/okd/install-config.yaml"
-  sed -i "s/<REGISTRY>/${REGISTRY}/g" "${OKD}/okd/install-config.yaml"
-  sed -i "s/<CONTROL_PLANE>/${TF_VAR_master_count}/g" "${OKD}/okd/install-config.yaml"
-  sed -i "s/<WORKERS>/${TF_VAR_worker_count}/g" "${OKD}/okd/install-config.yaml"
-  cp "${OKD}/okd/install-config.yaml" "${OKD}/okd/install-config_backup.yaml"
+  export TF_VAR_worker_count=4
 
   # Create the ignition files
   "${OKD}/openshift-install" create ignition-configs --dir="${OKD}/okd"
@@ -1075,7 +1090,7 @@ install_okd() {
   terraform apply -auto-approve
 
   echo -e "\n\n${BLUE}Wait for Install To Complete:${NC}"
-  ${OKD}/oc apply -f "${HOMELAB}/okd/okd-configuration/overlays/sandbox/ingress-controller.yaml"
+  #${OKD}/oc apply -f "${HOMELAB}/okd/okd-configuration/overlays/sandbox/ingress-controller.yaml"
   ${OKD}/openshift-install --dir=${OKD}/okd wait-for install-complete --log-level debug
 
   ${OKD}/oc apply -f "${HOMELAB}/okd/okd-configuration/base/operator-hub.yaml"
@@ -1090,6 +1105,37 @@ install_okd() {
   echo "Kubeadmin Password: $(cat ${OKD}/okd/auth/kubeadmin-password)"
 
   #single_server
+}
+
+install_okd_agent() {
+  # Delete Cluster If Exists
+  delete_okd_agent
+
+  install_okd_libvirt_prep
+
+  echo -e "\n\n${BLUE}Get URL:${NC}"
+  export URL
+  URL=${URL:-sandbox.arthurvardevanyan.com}
+  install_okd_prep
+
+  cp "${HOMELAB}/sandbox/libvirt/configs/agent-config.yaml" "${OKD}/okd/"
+  "${OKD}/openshift-install" agent create cluster-manifests --dir "${OKD}/okd/"
+  "${OKD}/openshift-install" agent create image --dir "${OKD}/okd/"
+
+  chown -R arthur:arthur ${OKD}
+  chmod 777 -R ${OKD}
+
+  echo -e "\n\n${BLUE}Start OKD Install:${NC}"
+  echo -e "\n\n${BLUE}Setup libvirt and Masters:${NC}"
+  cd "${HOMELAB}/terraform/agent"
+  mkdir -p ${OKD}/terraform/agent
+  terraform init
+  terraform apply -auto-approve
+
+  export KUBECONFIG="${OKD}/okd/auth/kubeconfig"
+  "${OKD}/openshift-install" agent wait-for bootstrap-complete --dir "${OKD}/okd/"
+  "${OKD}/oc" apply -f "${HOMELAB}/okd/okd-configuration/overlays/sandbox/ingress-controller.yaml"
+  "${OKD}/openshift-install" agent wait-for install-complete --dir "${OKD}/okd/"
 }
 
 single_server() {
