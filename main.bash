@@ -947,10 +947,6 @@ delete_okd() {
   export HOME=/home/arthur
   export HOMELAB="${PWD}"
 
-  if swapon --show | grep -q "${SWAP_PATH}"; then
-    swapoff /home/swapfile.img
-  fi
-
   echo -e "\n\n${BLUE}Delete OKD Install:${NC}"
 
   echo -e "\n\n${BLUE}Delete Bootstrap:${NC}"
@@ -973,6 +969,10 @@ delete_okd() {
   cd "${HOMELAB}/terraform/sandbox/cluster"
   terraform destroy -auto-approve
 
+  if swapon --show | grep -q "${SWAP_PATH}"; then
+    swapoff /home/swapfile.img
+  fi
+
   cd "${HOMELAB}"
 }
 
@@ -980,10 +980,6 @@ delete_okd_agent() {
   export HOME=/home/arthur
   export HOMELAB="${PWD}"
   export OKD=/mnt/storage/okd
-
-  if swapon --show | grep -q "${SWAP_PATH}"; then
-    swapoff /home/swapfile.img
-  fi
 
   # TODO, Automate Finding Which IPs to Remove
   # TODO Stop Running as Sudo
@@ -1005,6 +1001,10 @@ delete_okd_agent() {
     "${OKD}"/fedora-coreos-* \
     "${OKD}"/*.qcow2 \
     "${OKD}"/okd
+
+  if swapon --show | grep -q "${SWAP_PATH}"; then
+    swapoff /home/swapfile.img
+  fi
 
   cd "${HOMELAB}"
 }
