@@ -24,6 +24,13 @@ patches:
       - op: replace
         path: /spec/prometheusK8s/volumeClaimTemplate/spec/resources/requests/storage
         value: 15Gi
+      - op: replace
+        path: /spec/prometheusK8s/volumeClaimTemplate/spec/storageClassName
+        value: longhorn
+      - op: replace
+        path: /spec/alertmanagerMain/volumeClaimTemplate/spec/storageClassName
+        value: longhorn
+
   - target:
       kind: User
       group: monitoring.arthurvardevanyan.com
@@ -38,3 +45,6 @@ patches:
       - op: replace
         path: /spec/prometheus/volumeClaimTemplate/spec/resources/requests/storage
         value: 5Gi
+      - op: replace
+        path: /spec/prometheus/volumeClaimTemplate/spec/storageClassName
+        value: longhorn

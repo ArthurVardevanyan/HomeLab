@@ -939,13 +939,14 @@ install_okd_virt() {
 
   export KUBECONFIG="${OKD}/okd/auth/kubeconfig"
   "${OKD}/openshift-install" agent wait-for bootstrap-complete --dir "${OKD}/okd/"
-  #"${OKD}/oc" apply -f "${HOMELAB}/okd/okd-configuration/overlays/sandbox/ingress-controller.yaml"
+  "${OKD}/oc" apply -f "${HOMELAB}/okd/okd-configuration/overlays/sandbox/ingress-controller.yaml"
   "${OKD}/openshift-install" agent wait-for install-complete --dir "${OKD}/okd/"
 }
 
 delete_okd() {
   export HOME=/home/arthur
   export HOMELAB="${PWD}"
+  export OKD=/mnt/storage/okd
 
   echo -e "\n\n${BLUE}Delete OKD Install:${NC}"
 
@@ -972,6 +973,18 @@ delete_okd() {
   if swapon --show | grep -q "${SWAP_PATH}"; then
     swapoff /home/swapfile.img
   fi
+
+  echo -e "\n\n${BLUE}Delete All Existing Data:${NC}"
+  rm -rf \
+    "${OKD}"/openshift-install-linux* \
+    "${OKD}"/openshift-client-linux* \
+    "${OKD}"/oc \
+    "${OKD}"/kubectl \
+    "${OKD}"/openshift-install \
+    "${OKD}"/fedora-coreos-* \
+    "${OKD}"/*.qcow2 \
+    "${OKD}"/okd \
+    "${OKD}"
 
   cd "${HOMELAB}"
 }
@@ -1043,14 +1056,13 @@ install_okd_libvirt_prep() {
 }
 
 install_okd() {
-
-  install_okd_libvirt_prep
   # Delete Cluster If Exists
   delete_okd
+  export TF_VAR_worker_count=4
+  install_okd_libvirt_prep
   echo -e "\n\n${BLUE}Get URL:${NC}"
   URL=${URL:-sandbox.arthurvardevanyan.com}
   install_okd_prep
-  export TF_VAR_worker_count=4
 
   # Create the ignition files
   "${OKD}/openshift-install" create ignition-configs --dir="${OKD}/okd"
@@ -1208,7 +1220,7 @@ install_addons_okd() {
   kubectl label node "worker-3" node-role.kubernetes.io/infra="" --overwrite || true
 
   kubectl apply -f "${HOMELAB}"/okd/okd-configuration/base/mcp.yaml
-  yq '.spec.config.systemd.units[1].enabled=false' "${HOMELAB}"/okd/okd-configuration/base/longhorn-mc.yaml | kubectl apply -f -
+  yq '.spec.config.systemd.units[1].enabled=false' "${HOMELAB}"/okd/okd-configuration/overlays/sandbox/longhorn-mc.yaml | kubectl apply -f -
 
   sleep 15s
   while [ "$(kubectl get mcp infra -o yaml | yq '.status.conditions[] | select(.type == "Updating") | .status')" == "True" ]; do
