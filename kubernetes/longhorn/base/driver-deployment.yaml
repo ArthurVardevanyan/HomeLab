@@ -8,7 +8,7 @@ metadata:
   labels:
     app.kubernetes.io/name: longhorn
     app.kubernetes.io/instance: longhorn
-    app.kubernetes.io/version: v1.6.0
+    app.kubernetes.io/version: v1.6.2
   annotations:
     checkov.io/skip1: CKV_K8S_8=Not Supported
     checkov.io/skip2: CKV_K8S_9=Not Supported
@@ -29,7 +29,7 @@ spec:
       labels:
         app.kubernetes.io/name: longhorn
         app.kubernetes.io/instance: longhorn
-        app.kubernetes.io/version: v1.6.0
+        app.kubernetes.io/version: v1.6.2
         app: longhorn-driver-deployer
       annotations:
         enable.version-checker.io/longhorn-driver-deployer: "true"
@@ -57,7 +57,7 @@ spec:
         runAsUser: 19500
       initContainers:
         - name: wait-longhorn-manager
-          image: docker.io/longhornio/longhorn-manager:v1.6.0@sha256:f84954bfecd3e085542a0b1e9320e1482b2871e4ae2af6c261056004a192f150
+          image: docker.io/longhornio/longhorn-manager:v1.6.2@sha256:c849a1f1f9ff33a5412dff58235791b4bc909211d6723b1d27f5fbf35dea3fc6
           command:
             [
               "sh",
@@ -73,7 +73,7 @@ spec:
               memory: 32Mi
       containers:
         - name: longhorn-driver-deployer
-          image: docker.io/longhornio/longhorn-manager:v1.6.0@sha256:f84954bfecd3e085542a0b1e9320e1482b2871e4ae2af6c261056004a192f150
+          image: docker.io/longhornio/longhorn-manager:v1.6.2@sha256:c849a1f1f9ff33a5412dff58235791b4bc909211d6723b1d27f5fbf35dea3fc6
           imagePullPolicy: IfNotPresent
           securityContext:
             runAsGroup: 19500
@@ -98,7 +98,7 @@ spec:
             - -d
             - deploy-driver
             - --manager-image
-            - "longhornio/longhorn-manager:v1.6.0@sha256:f84954bfecd3e085542a0b1e9320e1482b2871e4ae2af6c261056004a192f150"
+            - "docker.io/longhornio/longhorn-manager:v1.6.2@sha256:c849a1f1f9ff33a5412dff58235791b4bc909211d6723b1d27f5fbf35dea3fc6"
             - --manager-url
             - http://longhorn-backend:9500/v1
           env:
@@ -115,17 +115,17 @@ spec:
                 fieldRef:
                   fieldPath: spec.serviceAccountName
             - name: CSI_ATTACHER_IMAGE
-              value: "longhornio/csi-attacher:v4.4.2@sha256:d3d45e00f101887825e30fe6d50764349f04a55a574418d4d83090f3626d567b"
+              value: "docker.io/longhornio/csi-attacher:v4.5.1@sha256:befc1c8a06d29dc6a9d1fbb6437e10ca5be108616df8de77e437ae10eeb992bc"
             - name: CSI_PROVISIONER_IMAGE
-              value: "longhornio/csi-provisioner:v3.6.2@sha256:6b2897ba9c08cc83325ca90e5b7c145358aa56d0cc304b00bb91ff263cab04ae"
+              value: "docker.io/longhornio/csi-provisioner:v3.6.4@sha256:08fc0757d89dcd72a8964d19611f57830690081add9a7d1a5e10f9e71a6d080f"
             - name: CSI_NODE_DRIVER_REGISTRAR_IMAGE
-              value: "longhornio/csi-node-driver-registrar:v2.9.2@sha256:2ed94ecd23e6415307d11c5e685bdaa0422d1f7a51f04b42eff64c7aa813d010"
+              value: "docker.io/longhornio/csi-node-driver-registrar:v2.9.2@sha256:2ed94ecd23e6415307d11c5e685bdaa0422d1f7a51f04b42eff64c7aa813d010"
             - name: CSI_RESIZER_IMAGE
-              value: "longhornio/csi-resizer:v1.9.2@sha256:d8558927df747bb697de2c4cfcae2905da2cb2770d2e196ce9291fd30a684454"
+              value: "docker.io/longhornio/csi-resizer:v1.10.1@sha256:3a7c2e1b28a0b6ae7407b138f7fced12ee4304beb064c70fe169da09a2770046"
             - name: CSI_SNAPSHOTTER_IMAGE
-              value: "longhornio/csi-snapshotter:v6.3.2@sha256:0b20ae39edf66487832fbb719d46c06e4624e3a6e936953f1d84b448fc8b3845"
+              value: "docker.io/longhornio/csi-snapshotter:v6.3.4@sha256:f6c09ec68e0be8fa51817a4e1c7378439c991c4f617029a7fa42b880f7846dc6"
             - name: CSI_LIVENESS_PROBE_IMAGE
-              value: "longhornio/livenessprobe:v2.11.0@sha256:f0f8695d321ae8ca3e1fcb88e12a54a466a14182752212b674eb6e997bb2d14b"
+              value: "docker.io/longhornio/livenessprobe:v2.12.0@sha256:8b113ceb328173dadaf7d68cf03dc84287ac0ae27bdff61a201595aca2b5a1dd"
       priorityClassName: "longhorn-critical"
       serviceAccountName: longhorn-service-account
       automountServiceAccountToken: true

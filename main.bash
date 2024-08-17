@@ -1039,7 +1039,6 @@ install_okd_libvirt_prep() {
 
   export PREFIX=""
   export TF_VAR_control_plane_count=3
-  export TF_VAR_worker_count=0
 
   # Expand Swap Size on Host Computer
   if ! test -f "${SWAP_PATH}"; then
@@ -1122,7 +1121,7 @@ install_okd() {
 install_okd_agent() {
   # Delete Cluster If Exists
   delete_okd_agent
-
+  export TF_VAR_worker_count=0
   install_okd_libvirt_prep
 
   echo -e "\n\n${BLUE}Get URL:${NC}"

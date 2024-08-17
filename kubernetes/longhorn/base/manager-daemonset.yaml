@@ -1,4 +1,3 @@
----
 # Source: longhorn/templates/daemonset-sa.yaml
 apiVersion: apps/v1
 kind: DaemonSet
@@ -6,7 +5,7 @@ metadata:
   labels:
     app.kubernetes.io/name: longhorn
     app.kubernetes.io/instance: longhorn
-    app.kubernetes.io/version: v1.6.0
+    app.kubernetes.io/version: v1.6.2
     app: longhorn-manager
   name: longhorn-manager
   namespace: longhorn-system
@@ -31,7 +30,7 @@ spec:
       labels:
         app.kubernetes.io/name: longhorn
         app.kubernetes.io/instance: longhorn
-        app.kubernetes.io/version: v1.6.0
+        app.kubernetes.io/version: v1.6.2
         app: longhorn-manager
       annotations:
         prometheus.io/path: /metrics
@@ -45,7 +44,7 @@ spec:
           operator: Exists
       containers:
         - name: longhorn-manager
-          image: docker.io/longhornio/longhorn-manager:v1.6.0@sha256:f84954bfecd3e085542a0b1e9320e1482b2871e4ae2af6c261056004a192f150
+          image: docker.io/longhornio/longhorn-manager:v1.6.2@sha256:c849a1f1f9ff33a5412dff58235791b4bc909211d6723b1d27f5fbf35dea3fc6
           imagePullPolicy: IfNotPresent
           securityContext:
             privileged: true
@@ -61,17 +60,17 @@ spec:
             - -d
             - daemon
             - --engine-image
-            - "longhornio/longhorn-engine:v1.6.0@sha256:95eaa36d0f50fe5fd9ce21a6c68b0ba0d630f0906f323f27a31a7cb672084623"
+            - "docker.io/longhornio/longhorn-engine:v1.6.2@sha256:8cd27d5b910ab268478ba1a193e60b861215425333034084889619bf1f670774"
             - --instance-manager-image
-            - "longhornio/longhorn-instance-manager:v1.6.0@sha256:de584592cbeeab6b57dbe1d2a9ee205acc76fcd025031ba545b38d29524eb5b5"
+            - "docker.io/longhornio/longhorn-instance-manager:v1.6.2@sha256:957d6a84c83a4627d6b278bd0d36c2f9de26fdd351d2b95c39f3429302898302"
             - --share-manager-image
-            - "longhornio/longhorn-share-manager:v1.6.0@sha256:dff4a71291144e5c4077dc54f987227a3b11db9a3bf8d6b0b577ae8ba0ab7691"
+            - "docker.io/longhornio/longhorn-share-manager:v1.6.2@sha256:37d8ee4236b3e752c0cb58e8febc6225dcd8b730df4005c629cccab154f5daab"
             - --backing-image-manager-image
-            - "longhornio/backing-image-manager:v1.6.0@sha256:8abe2479d2542b74f1acbad43af3fdec4a2ddde7b2d2dd26bb361cb970b5eaca"
+            - "docker.io/longhornio/backing-image-manager:v1.6.2@sha256:1b7f37a4bbb3018491d130db3085374d9a4fd2d97df9310ca738e28a0a0847a1"
             - --support-bundle-manager-image
-            - "longhornio/support-bundle-kit:v0.0.33@sha256:b82e7c8e77065eec47245fca8ba55ec780045ee23bb2ec6d09a98e8ed2da2de5"
+            - "docker.io/longhornio/support-bundle-kit:v0.0.37@sha256:d1ea1aa1662d1df60f98b0e614a9982e2433e4532a2b66a3da2521e3e1c4da89"
             - --manager-image
-            - "longhornio/longhorn-manager:v1.6.0@sha256:f84954bfecd3e085542a0b1e9320e1482b2871e4ae2af6c261056004a192f150"
+            - "docker.io/longhornio/longhorn-manager:v1.6.2@sha256:c849a1f1f9ff33a5412dff58235791b4bc909211d6723b1d27f5fbf35dea3fc6"
             - --service-account
             - longhorn-service-account
             - --upgrade-version-check
