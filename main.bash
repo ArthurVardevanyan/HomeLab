@@ -1246,6 +1246,13 @@ install_addons_okd() {
   }
   retry 5 okd_monitoring
 
+  echo -e "\n${BLUE}OKD Configuration:${NC}"
+  # shellcheck disable=SC2317
+  okd_configuration() {
+    kubectl kustomize "${HOMELAB}"/okd/okd-configuration/overlays/sandbox | argocd-vault-plugin generate - | kubectl apply -f -
+  }
+  retry 5 okd_configuration
+
   echo -e "\n${BLUE}Cert Manager:${NC}"
   # shellcheck disable=SC2317
   cert_manager() {
@@ -1256,13 +1263,6 @@ install_addons_okd() {
   oc patch --type=merge --patch='{"spec":{"paused":true}}' machineconfigpool/master
   oc patch --type=merge --patch='{"spec":{"paused":true}}' machineconfigpool/worker
   oc patch --type=merge --patch='{"spec":{"paused":true}}' machineconfigpool/infra
-
-  echo -e "\n${BLUE}OKD Configuration:${NC}"
-  # shellcheck disable=SC2317
-  okd_configuration() {
-    kubectl kustomize "${HOMELAB}"/okd/okd-configuration/overlays/sandbox | argocd-vault-plugin generate - | kubectl apply -f -
-  }
-  retry 5 okd_configuration
 
   cert_check() {
 

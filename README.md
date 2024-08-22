@@ -144,9 +144,9 @@ end
 
 <https://www.okd.io/>
 
-| Kubernetes Channel | OKD Version | OKD Channel | OKD OS           | Host Operating System | Storage Layer |
-| ------------------ | ----------- | ----------- | ---------------- | --------------------- | ------------- |
-| v1.28              | 4.15-\*     | stable-4.11 | Fedora CoreOS 39 | RHEL 943              | CEPH          |
+| Kubernetes Channel | OKD Version | OKD Channel   | OKD OS    | Host Operating System | Storage Layer |
+| ------------------ | ----------- | ------------- | --------- | --------------------- | ------------- |
+| v1.29              | 4.16-\*     | stable-scos-4 | SCOS 4.17 | RHEL 9.4              | CEPH          |
 
 **Machines:**
 
@@ -179,9 +179,9 @@ end
 
 | NAME     | ROLES          | Machine | vCPU | Mem   | Storage         |
 | -------- | -------------- | ------- | ---- | ----- | --------------- |
-| server-1 | cp,etcd,master | kvm-1   | 8    | 27.0G | N/A             |
-| server-2 | cp,etcd,master | kvm-2   | 8    | 27.0G | N/A             |
-| server-3 | cp,etcd,master | kvm-1   | 8    | 27.0G | N/A             |
+| server-1 | cp,etcd,master | kvm-1   | 8    | 28.0G | N/A             |
+| server-2 | cp,etcd,master | kvm-2   | 8    | 28.0G | N/A             |
+| server-3 | cp,etcd,master | kvm-1   | 8    | 28.0G | N/A             |
 | infra-1  | infra,worker   | kvm-1   | 6    | 32.0G | 1x4TB CEPH NVME |
 | infra-2  | infra,worker   | kvm-2   | 6    | 22.0G | 1x4TB CEPH NVME |
 | infra-3  | infra,worker   | kvm-3   | 6    | 32.0G | 1x4TB CEPH NVME |

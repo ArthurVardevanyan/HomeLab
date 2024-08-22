@@ -12,3 +12,10 @@ patches:
       - op: replace
         path: /spec/rules/0/host
         value: longhorn.apps.okd.sandbox.arthurvardevanyan.com
+  - target:
+      kind: DaemonSet
+      name: longhorn-manager
+    patch: |-
+      - op: replace
+        path: /spec/template/spec/containers/0/resources/requests/memory
+        value: 512Mi
