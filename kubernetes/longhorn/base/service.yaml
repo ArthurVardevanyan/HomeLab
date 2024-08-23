@@ -6,7 +6,7 @@ metadata:
   labels:
     app.kubernetes.io/name: longhorn
     app.kubernetes.io/instance: longhorn
-    app.kubernetes.io/version: v1.6.2
+    app.kubernetes.io/version: v1.7.0
     app: longhorn-manager
   name: longhorn-backend
   namespace: longhorn-system
@@ -26,7 +26,7 @@ metadata:
   labels:
     app.kubernetes.io/name: longhorn
     app.kubernetes.io/instance: longhorn
-    app.kubernetes.io/version: v1.6.2
+    app.kubernetes.io/version: v1.7.0
     app: longhorn-ui
   name: longhorn-frontend
   namespace: longhorn-system
@@ -47,14 +47,14 @@ metadata:
   labels:
     app.kubernetes.io/name: longhorn
     app.kubernetes.io/instance: longhorn
-    app.kubernetes.io/version: v1.6.2
+    app.kubernetes.io/version: v1.7.0
     app: longhorn-conversion-webhook
   name: longhorn-conversion-webhook
   namespace: longhorn-system
 spec:
   type: ClusterIP
   selector:
-    app: longhorn-manager
+    longhorn.io/conversion-webhook: longhorn-conversion-webhook
   ports:
     - name: conversion-webhook
       port: 9501
@@ -67,14 +67,14 @@ metadata:
   labels:
     app.kubernetes.io/name: longhorn
     app.kubernetes.io/instance: longhorn
-    app.kubernetes.io/version: v1.6.2
+    app.kubernetes.io/version: v1.7.0
     app: longhorn-admission-webhook
   name: longhorn-admission-webhook
   namespace: longhorn-system
 spec:
   type: ClusterIP
   selector:
-    app: longhorn-manager
+    longhorn.io/admission-webhook: longhorn-admission-webhook
   ports:
     - name: admission-webhook
       port: 9502
@@ -87,50 +87,18 @@ metadata:
   labels:
     app.kubernetes.io/name: longhorn
     app.kubernetes.io/instance: longhorn
-    app.kubernetes.io/version: v1.6.2
+    app.kubernetes.io/version: v1.7.0
     app: longhorn-recovery-backend
   name: longhorn-recovery-backend
   namespace: longhorn-system
 spec:
   type: ClusterIP
   selector:
-    app: longhorn-manager
+    longhorn.io/recovery-backend: longhorn-recovery-backend
   ports:
     - name: recovery-backend
       port: 9503
       targetPort: recov-backend
----
-# Source: longhorn/templates/services.yaml
-apiVersion: v1
-kind: Service
-metadata:
-  labels:
-    app.kubernetes.io/name: longhorn
-    app.kubernetes.io/instance: longhorn
-    app.kubernetes.io/version: v1.6.2
-  name: longhorn-engine-manager
-  namespace: longhorn-system
-spec:
-  clusterIP: None
-  selector:
-    longhorn.io/component: instance-manager
-    longhorn.io/instance-manager-type: engine
----
-# Source: longhorn/templates/services.yaml
-apiVersion: v1
-kind: Service
-metadata:
-  labels:
-    app.kubernetes.io/name: longhorn
-    app.kubernetes.io/instance: longhorn
-    app.kubernetes.io/version: v1.6.2
-  name: longhorn-replica-manager
-  namespace: longhorn-system
-spec:
-  clusterIP: None
-  selector:
-    longhorn.io/component: instance-manager
-    longhorn.io/instance-manager-type: replica
 ---
 apiVersion: v1
 kind: Service
@@ -140,7 +108,7 @@ metadata:
   labels:
     app.kubernetes.io/name: longhorn
     app.kubernetes.io/instance: longhorn
-    app.kubernetes.io/version: v1.4.0
+    app.kubernetes.io/version: v1.7.0
     app: longhorn-ui
   annotations:
     service.alpha.openshift.io/serving-cert-secret-name: longhorn-ui-tls
