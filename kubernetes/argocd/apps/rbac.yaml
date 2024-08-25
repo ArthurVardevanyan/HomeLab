@@ -35,3 +35,16 @@ subjects:
   - kind: ServiceAccount
     name: argocd-apps-argocd-server
     namespace: argocd-apps
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: argocd-apps-argocd-notifications-controller
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: cluster-admin # TODO Scope Down
+subjects:
+  - kind: ServiceAccount
+    name: argocd-apps-argocd-notifications-controller
+    namespace: argocd-apps
