@@ -47,15 +47,15 @@ spec:
             op: remove
           - path: "/spec/template/spec/containers/1/securityContext/fsGroup"
             op: remove
-    # - name: replace-image
-    #   match:
-    #     any:
-    #       - resources:
-    #           kinds:
-    #             - Pod
-    #   mutate:
-    #     patchStrategicMerge:
-    #       spec:
-    #         containers:
-    #           - (image): "quay.io/argoprojlabs/argocd-operator@sha256:a35443838ddbb459f6b7c46b9b70112f1a8b69cf3b2dd107980c543d56861868"
-    #             image: "registry.arthurvardevanyan.com/homelab/argocd-operator@sha256:f221b5a73b2d5ba5a782d22e793c89e6ef6b69626e16e01e517fcf863cd5fda9"
+    - name: replace-image
+      match:
+        any:
+          - resources:
+              kinds:
+                - Pod
+      mutate:
+        patchStrategicMerge:
+          spec:
+            containers:
+              - (image): "quay.io/argoprojlabs/argocd-operator@sha256:dafdfde863b81c8da28f37819ac4fc504ee0e9519ddcebd4dbe7c22a51d644e5"
+                image: "registry.arthurvardevanyan.com/homelab/argocd-operator@sha256:e9c19e60b48a40ac12fc0357c8ce2694a361445c59d1c24c54fea9ab27bad083"

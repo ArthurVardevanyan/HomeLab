@@ -10,41 +10,59 @@ metadata:
     app.kubernetes.io/instance: argocd
     app: argocd-apps
 ---
+kind: ClusterRole
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: argocd-tenancy
+rules:
+  - apiGroups:
+      - argoproj.io
+    resources:
+      - applications
+    verbs:
+      - get
+      - watch
+  - apiGroups:
+      - argoproj.io
+    resources:
+      - appprojects
+    verbs:
+      - get
+      - watch
+  # this is needed for argocd application controller service to discover available/new api groups added to clusters.
+  - apiGroups:
+      - "*"
+    resources:
+      - "*"
+    verbs:
+      - list
+  # Repo Sever & Notification Controller
+  - apiGroups:
+      - argoproj.io
+    resources:
+      - applications
+    verbs:
+      - get
+      - watch
+      - list
+      - update
+      - patch
+---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
-  name: argocd-apps-argocd-application-controller
+  name: argocd-tenancy
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
-  name: cluster-admin # TODO Scope Down
+  name: argocd-tenancy
 subjects:
   - kind: ServiceAccount
     name: argocd-apps-argocd-application-controller
     namespace: argocd-apps
----
-apiVersion: rbac.authorization.k8s.io/v1
-kind: ClusterRoleBinding
-metadata:
-  name: argocd-apps-argocd-server
-roleRef:
-  apiGroup: rbac.authorization.k8s.io
-  kind: ClusterRole
-  name: cluster-admin # TODO Scope Down
-subjects:
   - kind: ServiceAccount
     name: argocd-apps-argocd-server
     namespace: argocd-apps
----
-apiVersion: rbac.authorization.k8s.io/v1
-kind: ClusterRoleBinding
-metadata:
-  name: argocd-apps-argocd-notifications-controller
-roleRef:
-  apiGroup: rbac.authorization.k8s.io
-  kind: ClusterRole
-  name: cluster-admin # TODO Scope Down
-subjects:
   - kind: ServiceAccount
     name: argocd-apps-argocd-notifications-controller
     namespace: argocd-apps
