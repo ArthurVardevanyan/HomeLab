@@ -1,0 +1,111 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    control-plane: controller-manager
+  name: metallb-operator-controller-manager
+  namespace: metallb-system
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      control-plane: controller-manager
+  template:
+    metadata:
+      labels:
+        control-plane: controller-manager
+    spec:
+      containers:
+        - args:
+            - --enable-leader-election
+          command:
+            - /manager
+          env:
+            - name: DEPLOY_SERVICEMONITORS
+              value: "true"
+            - name: METALLB_BGP_TYPE
+              value: frr
+            - name: SPEAKER_IMAGE
+              value: quay.io/metallb/speaker@sha256:fd86bfc502601d6525739d411a0045e7085a4008a732be7e271c851800952142 # v0.14.8
+            - name: CONTROLLER_IMAGE
+              value: quay.io/metallb/controller@sha256:93b83b39d06bbcb0aedc0eb750c9e43e3c46dc08a6f88400ed96105224d784ec # v0.14.8
+            - name: FRR_IMAGE
+              value: quay.io/frrouting/frr@sha256:f310c2ebb3827fa03b9674ee05e70a7d5eef2123bcc3b475eb2ef14dafcb52b4 # 9.1.0
+            - name: KUBE_RBAC_PROXY_IMAGE
+              value: quay.io/brancz/kube-rbac-proxy:v0.11.0
+            - name: DEPLOY_KUBE_RBAC_PROXIES
+              value: "false"
+            - name: FRRK8S_IMAGE
+              value: quay.io/metallb/frr-k8s@sha256:00f8c40129fb1403760d2e846fc970dc11ca8d19068f012a26f2b683f98cb598 # v0.0.14
+            - name: FRRK8S_EXTERNAL_NAMESPACE
+              value: frr-k8s-system
+            - name: OPERATOR_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+          image: quay.io/metallb/metallb-operator:1.14.2@sha256:891ba204356acb0c38b6ab073723705aa8fe1166bc653292d91155a07ec9349c
+          name: manager
+          ports:
+            - containerPort: 9443
+              name: webhook-server
+              protocol: TCP
+          readinessProbe:
+            failureThreshold: 3
+            httpGet:
+              path: /readyz
+              port: 8080
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            successThreshold: 1
+            timeoutSeconds: 1
+          resources:
+            requests:
+              ephemeral-storage: "15Mi"
+              memory: "32Mi"
+              cpu: "25m"
+            limits:
+              ephemeral-storage: "15Mi"
+              memory: "128Mi"
+              cpu: "100m"
+          securityContext:
+            runAsNonRoot: true
+            readOnlyRootFilesystem: true
+            allowPrivilegeEscalation: false
+            seccompProfile:
+              type: RuntimeDefault
+            capabilities:
+              drop:
+                - ALL
+          volumeMounts:
+            - mountPath: /tmp/k8s-webhook-server/serving-certs
+              name: cert
+              readOnly: true
+      serviceAccountName: manager-account
+      terminationGracePeriodSeconds: 10
+      volumes:
+        - name: cert
+          secret:
+            defaultMode: 420
+            secretName: metallb-operator-webhook-server-cert
+      tolerations:
+        - key: node-role.kubernetes.io/master
+          effect: NoSchedule
+        - key: node-role.kubernetes.io/control-plane
+          effect: NoSchedule
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - key: node-role.kubernetes.io/control-plane
+                    operator: Exists
+                  - key: node-role.kubernetes.io/master
+                    operator: Exists
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - labelSelector:
+                matchLabels:
+                  app: kube-vip
+                  component: kube-vip-cloud-provider
+              topologyKey: "kubernetes.io/hostname"
