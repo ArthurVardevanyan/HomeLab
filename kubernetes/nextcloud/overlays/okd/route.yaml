@@ -6,7 +6,8 @@ metadata:
   labels:
     app.kubernetes.io/instance: nextcloud
   annotations:
-    route.openshift.io/termination: passthrough
+    route.openshift.io/termination: reencrypt
+    route.openshift.io/destination-ca-certificate-secret: ca-bundle
 spec:
   ingressClassName: openshift-default
   rules:
@@ -20,3 +21,7 @@ spec:
                 name: nextcloud
                 port:
                   name: https
+  tls:
+    - hosts:
+        - nextcloud.arthurvardevanyan.com
+      secretName: nextcloud-cert

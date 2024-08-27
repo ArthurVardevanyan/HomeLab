@@ -4,6 +4,14 @@
 kubectl kustomize kubernetes/cert-manager/overlays/okd | argocd-vault-plugin generate - | kubectl apply -f -
 ```
 
+## Trust Manager
+
+```bash
+helm template trust-manager jetstack/trust-manager --include-crds --namespace cert-manager -f kubernetes/cert-manager/trust-values.yaml
+
+secretTargets.authorizedSecretsAll
+```
+
 ## REF
 
 - <https://cert-manager.io/docs/configuration/acme/dns01/cloudflare/>

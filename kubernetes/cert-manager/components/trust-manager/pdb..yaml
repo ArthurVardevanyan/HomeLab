@@ -1,0 +1,19 @@
+---
+# Source: trust-manager/templates/poddisruptionbudget.yaml
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: trust-manager
+  namespace: cert-manager
+  labels:
+    app: trust-manager
+    app.kubernetes.io/name: trust-manager
+    helm.sh/chart: trust-manager-v0.12.0
+    app.kubernetes.io/instance: trust-manager
+    app.kubernetes.io/version: "v0.12.0"
+    app.kubernetes.io/managed-by: Helm
+spec:
+  selector:
+    matchLabels:
+      app: trust-manager
+  minAvailable: 1 # Default value because minAvailable and maxUnavailable are not set
