@@ -1,0 +1,126 @@
+---
+# Source: trust-manager/templates/deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: trust-manager
+  namespace: cert-manager
+  labels:
+    app.kubernetes.io/name: trust-manager
+    helm.sh/chart: trust-manager-v0.12.0
+    app.kubernetes.io/instance: trust-manager
+    app.kubernetes.io/version: "v0.12.0"
+    app.kubernetes.io/managed-by: Helm
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: trust-manager
+  template:
+    metadata:
+      labels:
+        app: trust-manager
+        app.kubernetes.io/name: trust-manager
+        helm.sh/chart: trust-manager-v0.12.0
+        app.kubernetes.io/instance: trust-manager
+        app.kubernetes.io/version: "v0.12.0"
+        app.kubernetes.io/managed-by: Helm
+    spec:
+      serviceAccountName: trust-manager
+      initContainers:
+        - name: cert-manager-package-debian
+          image: "quay.io/jetstack/cert-manager-package-debian:20210119.0@sha256:116133f68938ef568aca17a0c691d5b1ef73a9a207029c9a068cf4230053fed5"
+          imagePullPolicy: IfNotPresent
+          args:
+            - "/copyandmaybepause"
+            - "/debian-package"
+            - "/packages"
+          volumeMounts:
+            - mountPath: /packages
+              name: packages
+              readOnly: false
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+            readOnlyRootFilesystem: true
+            runAsNonRoot: true
+            seccompProfile:
+              type: RuntimeDefault
+          resources:
+            limits:
+              cpu: 50m
+              memory: 96Mi
+            requests:
+              cpu: 10m
+              memory: 48Mi
+      containers:
+        - name: trust-manager
+          image: "quay.io/jetstack/trust-manager:v0.12.0@sha256:8285d0d1c374dcf6e29ddcac10a5c937502eb8c318dbd2411f9789ede0e23421"
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 6443
+            - containerPort: 9402
+          readinessProbe:
+            httpGet:
+              port: 6060
+              path: /readyz
+            initialDelaySeconds: 3
+            periodSeconds: 7
+          args:
+            - "--log-format=text"
+            - "--log-level=1"
+            - "--metrics-port=9402"
+            - "--readiness-probe-port=6060"
+            - "--readiness-probe-path=/readyz"
+            - "--leader-election-lease-duration=15s"
+            - "--leader-election-renew-deadline=10s"
+              # trust
+            - "--trust-namespace=cert-manager"
+              # webhook
+            - "--webhook-host=0.0.0.0"
+            - "--webhook-port=6443"
+            - "--webhook-certificate-dir=/tls"
+            - "--default-package-location=/packages/cert-manager-package-debian.json"
+            - "--secret-targets-enabled=true"
+          volumeMounts:
+            - mountPath: /tls
+              name: tls
+              readOnly: true
+            - mountPath: /packages
+              name: packages
+              readOnly: true
+          resources:
+            limits:
+              cpu: 50m
+              memory: 96Mi
+            requests:
+              cpu: 10m
+              memory: 48Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+            readOnlyRootFilesystem: true
+            runAsNonRoot: true
+            seccompProfile:
+              type: RuntimeDefault
+      nodeSelector:
+        kubernetes.io/os: linux
+      topologySpreadConstraints:
+        - labelSelector:
+            matchLabels:
+              app.kubernetes.io/name: trust-manager
+          maxSkew: 2
+          topologyKey: topology.kubernetes.io/zone
+          whenUnsatisfiable: ScheduleAnyway
+      volumes:
+        - name: packages
+          emptyDir:
+            sizeLimit: 50M
+        - name: tls
+          secret:
+            defaultMode: 420
+            secretName: trust-manager-tls

@@ -6,7 +6,8 @@ metadata:
   labels:
     app.kubernetes.io/instance: gitea
   annotations:
-    route.openshift.io/termination: passthrough
+    route.openshift.io/termination: reencrypt
+    route.openshift.io/destination-ca-certificate-secret: ca-bundle
 spec:
   ingressClassName: openshift-default
   rules:
@@ -20,3 +21,7 @@ spec:
                 name: gitea-http
                 port:
                   name: http
+  tls:
+    - hosts:
+        - git.arthurvardevanyan.com
+      secretName: gitea-cert
