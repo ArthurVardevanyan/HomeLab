@@ -42,11 +42,32 @@ spec:
   #       effect: NoSchedule
   #       operator: Exists
 ---
-# Kube VIP
 apiVersion: v1
 kind: Service
 metadata:
-  name: router-default-lb
+  name: router-default-lb-kube-vip
+  namespace: openshift-ingress
+  annotations:
+    kube-vip.io/loadbalancerIPs: "10.0.0.131"
+spec:
+  externalTrafficPolicy: Local
+  internalTrafficPolicy: Cluster
+  ports:
+    - name: http
+      port: 80
+      targetPort: http
+    - name: https
+      port: 443
+      targetPort: https
+  selector:
+    ingresscontroller.operator.openshift.io/deployment-ingresscontroller: default
+  type: LoadBalancer
+  loadBalancerClass: kube-vip.io/kube-vip-class
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: router-default-lb-metallb
   namespace: openshift-ingress
   annotations:
     metallb.universe.tf/loadBalancerIPs: "10.1.0.131"
