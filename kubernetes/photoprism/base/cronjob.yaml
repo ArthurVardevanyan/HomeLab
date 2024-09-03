@@ -17,7 +17,7 @@ spec:
   startingDeadlineSeconds: 60
   jobTemplate:
     spec:
-      backoffLimit: 0
+      backoffLimit: 1
       template:
         metadata:
           labels:
@@ -92,7 +92,7 @@ spec:
                   mountPath: /tmp
               resources:
                 limits:
-                  cpu: 250m
+                  cpu: 500m
                   memory: 3Gi
                 requests:
                   cpu: 100m
@@ -121,7 +121,7 @@ spec:
                 claimName: photoprism-storage
             - name: tmp
               emptyDir:
-                sizeLimit: 1Mi
+                sizeLimit: 10Mi
 
   successfulJobsHistoryLimit: 1
   failedJobsHistoryLimit: 1

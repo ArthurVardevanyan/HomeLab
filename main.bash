@@ -939,7 +939,7 @@ install_okd_virt() {
 
   export KUBECONFIG="${OKD}/okd/auth/kubeconfig"
   "${OKD}/openshift-install" agent wait-for bootstrap-complete --dir "${OKD}/okd/"
-  "${OKD}/oc" apply -f "${HOMELAB}/okd/okd-configuration/overlays/sandbox/ingress-controller.yaml"
+  # "${OKD}/oc" apply -f "${HOMELAB}/okd/okd-configuration/overlays/sandbox/ingress-controller.yaml"
   "${OKD}/openshift-install" agent wait-for install-complete --dir "${OKD}/okd/"
 }
 
@@ -1145,7 +1145,7 @@ install_okd_agent() {
 
   export KUBECONFIG="${OKD}/okd/auth/kubeconfig"
   "${OKD}/openshift-install" agent wait-for bootstrap-complete --dir "${OKD}/okd/"
-  "${OKD}/oc" apply -f "${HOMELAB}/okd/okd-configuration/overlays/sandbox/ingress-controller.yaml"
+  # "${OKD}/oc" apply -f "${HOMELAB}/okd/okd-configuration/overlays/sandbox/ingress-controller.yaml"
   "${OKD}/openshift-install" agent wait-for install-complete --dir "${OKD}/okd/"
 }
 
