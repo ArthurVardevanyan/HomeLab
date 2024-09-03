@@ -179,15 +179,15 @@ end
 
 | NAME     | ROLES          | Machine | vCPU | Mem   | Storage         |
 | -------- | -------------- | ------- | ---- | ----- | --------------- |
-| server-1 | cp,etcd,master | kvm-1   | 8    | 28.0G | N/A             |
-| server-2 | cp,etcd,master | kvm-2   | 8    | 28.0G | N/A             |
-| server-3 | cp,etcd,master | kvm-1   | 8    | 28.0G | N/A             |
-| infra-1  | infra,worker   | kvm-1   | 6    | 32.0G | 1x4TB CEPH NVME |
-| infra-2  | infra,worker   | kvm-2   | 6    | 22.0G | 1x4TB CEPH NVME |
-| infra-3  | infra,worker   | kvm-3   | 6    | 32.0G | 1x4TB CEPH NVME |
-| worker-1 | worker         | kvm-1   | 12   | 60.5G | N/A             |
-| worker-2 | worker         | kvm-2   | 12   | 60.5G | N/A             |
-| worker-3 | worker         | kvm-3   | 12   | 60.5G | N/A             |
+| server-1 | cp,etcd,master | kvm-1   | 8    | 29.0G | N/A             |
+| server-2 | cp,etcd,master | kvm-2   | 8    | 29.0G | N/A             |
+| server-3 | cp,etcd,master | kvm-1   | 8    | 29.0G | N/A             |
+| infra-1  | infra,worker   | kvm-1   | 6    | 33.0G | 1x4TB CEPH NVME |
+| infra-2  | infra,worker   | kvm-2   | 6    | 33.0G | 1x4TB CEPH NVME |
+| infra-3  | infra,worker   | kvm-3   | 6    | 33.0G | 1x4TB CEPH NVME |
+| worker-1 | worker         | kvm-1   | 12   | 59.0G | N/A             |
+| worker-2 | worker         | kvm-2   | 12   | 59.0G | N/A             |
+| worker-3 | worker         | kvm-3   | 12   | 59.0G | N/A             |
 
 #### KVM Config Dump
 
