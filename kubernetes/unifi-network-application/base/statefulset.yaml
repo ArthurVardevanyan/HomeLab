@@ -28,6 +28,13 @@ spec:
       labels:
         app.kubernetes.io/name: unifi-network-application
         app.kubernetes.io/instance: unifi-network-application
+      annotations:
+        k8s.v1.cni.cncf.io/networks: |
+          [{
+            "name": "br1",
+            "namespace": "unifi-network-application",
+            "mac": "10:00:00:00:01:36"
+          }]
     spec:
       securityContext:
         seccompProfile:
