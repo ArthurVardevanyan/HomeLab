@@ -1,0 +1,64 @@
+- hosts: microshift
+  gather_facts: no
+  become: true
+  user: arthur
+  tasks:
+    - name: Upgrade all packages
+      yum:
+        name: "*"
+        state: latest
+    - name: install epel
+      yum:
+        state: latest
+        name:
+          - epel-release
+    - name: install packages
+      yum:
+        state: latest
+        name:
+          #- ntp
+          #- htop
+          - sysstat
+          - git
+          #- speedtest-cli
+          - wget
+          #- apt-transport-https
+          - ca-certificates
+          - curl
+          - gnupg2
+          #- software-properties-common
+          #- pv
+          - jq
+          - rsync
+          #- open-iscsi
+          #- nfs-common
+          - smartmontools
+          - tree
+          - nvme-cli
+          - python3
+          - pip
+          - tar
+          - lvm2
+
+    - name: install epel packages
+      yum:
+        state: latest
+        name:
+          - htop
+          #- moreutils
+    - name: Download YQ
+      get_url:
+        url: https://github.com/mikefarah/yq/releases/latest/download/yq_linux_arm64
+        dest: /usr/local/bin/yq
+        mode: a+x
+    - name: Install firewalld
+      yum:
+        name: firewalld
+        state: latest
+      notify:
+        - start firewalld
+    - name: start firewalld
+      service:
+        name: firewalld
+        state: started
+        enabled: yes
