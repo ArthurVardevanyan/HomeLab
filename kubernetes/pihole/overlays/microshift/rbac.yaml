@@ -1,0 +1,31 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: pihole-cr
+  labels:
+    app.kubernetes.io/instance: pihole
+rules:
+  - apiGroups:
+      - security.openshift.io
+    resourceNames:
+      - anyuid
+      - privileged
+    resources:
+      - securitycontextconstraints
+    verbs:
+      - use
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: pihole-crb
+  labels:
+    app.kubernetes.io/instance: pihole
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: pihole-cr
+subjects:
+  - kind: ServiceAccount
+    name: pihole
+    namespace: pihole

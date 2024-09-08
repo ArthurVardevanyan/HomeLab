@@ -1,0 +1,31 @@
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: etc-pihole
+  namespace: pihole
+  labels:
+    app.kubernetes.io/instance: pihole
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
+  storageClassName: topolvm-provisioner
+  volumeMode: Filesystem
+---
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: etc-dnsmasq
+  namespace: pihole
+  labels:
+    app.kubernetes.io/instance: pihole
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
+  storageClassName: topolvm-provisioner
+  volumeMode: Filesystem

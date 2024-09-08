@@ -1,0 +1,14 @@
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: pihole-cert
+  namespace: pihole
+  labels:
+    app.kubernetes.io/instance: pihole
+spec:
+  secretName: pihole-cert
+  dnsNames:
+    - "pihole.arthurvardevanyan.com"
+  issuerRef:
+    kind: ClusterIssuer
+    name: letsencrypt
