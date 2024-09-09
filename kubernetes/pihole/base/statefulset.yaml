@@ -26,8 +26,12 @@ spec:
         seccompProfile:
           type: RuntimeDefault
         runAsNonRoot: true
+      dnsConfig:
+        nameservers:
+          - 1.1.1.1
+          - 1.0.0.1
       containers:
-        - image: docker.io/pihole/pihole:latest
+        - image: docker.io/pihole/pihole:2024.07.0@sha256:0def896a596e8d45780b6359dbf82fc8c75ef05b97e095452e67a0a4ccc95377
           imagePullPolicy: IfNotPresent
           name: pihole
           env:
@@ -76,6 +80,9 @@ spec:
               mountPath: /etc/pihole
             - name: etc-dnsmasq
               mountPath: /etc/dnsmasq.d
+            - name: wildcard-dns
+              mountPath: "/etc/dnsmasq.d/02-my-wildcard-dns.conf"
+              subPath: "02-my-wildcard-dns.conf"
           resources:
             limits:
               cpu: 100m
@@ -92,3 +99,6 @@ spec:
         - name: etc-dnsmasq
           persistentVolumeClaim:
             claimName: etc-dnsmasq
+        - name: wildcard-dns
+          configMap:
+            name: wildcard-dns
