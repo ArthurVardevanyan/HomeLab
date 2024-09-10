@@ -99,6 +99,26 @@
         permanent: true
         state: enabled
 
+    #######################################################################################################
+    ### After 4.12 Comes Online, we need to uninstall it, then we can install our 4.17 Compiled version ###
+    ### https://raw.githubusercontent.com/thinkahead/microshift/main/hack/cleanup.sh                    ###
+    #######################################################################################################
+
+    # - name: Get Compiled MicroShift
+    #   copy:
+    #     src: "/tmp/microshift"
+    #     dest: "/usr/bin/microshift"
+    #     mode: "0755"
+    # - name: Get Compiled MicroShift ETCD
+    #   copy:
+    #     src: "/tmp/microshift-etcd"
+    #     dest: "/usr/bin/microshift-etcd"
+    #     mode: "0755"
+
+    #######################################################################################################
+    #######################################################################################################
+    #######################################################################################################
+
     - name: Make sure microshift service unit is running
       ansible.builtin.systemd_service:
         state: started
@@ -123,17 +143,3 @@
         remote_src: true
         owner: arthur
         group: arthur
-#######################################################################################################
-### After 4.12 Comes Online, we need to uninstall it, then we can install our 4.17 Compiled version ###
-#######################################################################################################
-
-# - name: Get Compiled MicroShift
-#   copy:
-#     src: "/tmp/microshift"
-#     dest: "/usr/bin/microshift"
-#     mode: "0755"
-# - name: Get Compiled MicroShift ETCD
-#   copy:
-#     src: "/tmp/microshift-etcd"
-#     dest: "/usr/bin/microshift-etcd"
-#     mode: "0755"

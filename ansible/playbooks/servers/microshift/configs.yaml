@@ -11,6 +11,10 @@
         path: /etc/hosts
         line: 10.0.0.4 microshift microshift.arthurvardevanyan.com
         create: yes
+    - name: cGroupsV2
+      copy:
+        src: "../../../../machineConfigs/servers/microshift/boot/cmdline.txt"
+        dest: "/boot/cmdline.txt"
     - name: create partition
       parted:
         device: /dev/nvme0n1
