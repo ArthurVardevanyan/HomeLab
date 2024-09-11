@@ -1,4 +1,4 @@
-- hosts: servers
+- hosts: servers-x86
   gather_facts: no
   become: true
   user: arthur
@@ -22,7 +22,7 @@
 
     - name: Node Exporter Systemd File
       copy:
-        src: "../../../../machineConfigs/servers/server/usr/lib/systemd/system/node_exporter.service"
+        src: "../../../../../machineConfigs/servers/server/usr/lib/systemd/system/node_exporter.service"
         dest: "/usr/lib/systemd/system/node_exporter.service"
       register: node_exporter
 
@@ -43,7 +43,7 @@
 
     - name: Node Exporter NVME Plugin Systemd File
       copy:
-        src: "../../../../machineConfigs/servers/server/usr/lib/systemd/system/prometheus-node-exporter-nvme.service"
+        src: "../../../../../machineConfigs/servers/server/usr/lib/systemd/system/prometheus-node-exporter-nvme.service"
         dest: "/usr/lib/systemd/system/prometheus-node-exporter-nvme.service"
 
     - name: Enable Node Exporter NVME Plugin SystemD
@@ -54,7 +54,7 @@
 
     - name: Node Exporter NVME Plugin Timer Systemd File
       copy:
-        src: "../../../../machineConfigs/servers/server/usr/lib/systemd/system/prometheus-node-exporter-nvme.timer"
+        src: "../../../../../machineConfigs/servers/server/usr/lib/systemd/system/prometheus-node-exporter-nvme.timer"
         dest: "/usr/lib/systemd/system/prometheus-node-exporter-nvme.timer"
 
     - name: Enable Node Exporter NVME Timer Plugin SystemD

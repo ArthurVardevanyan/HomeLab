@@ -1,4 +1,4 @@
-- hosts: servers
+- hosts: microshift
   gather_facts: no
   become: true
   user: arthur
@@ -13,11 +13,4 @@
       copy:
         src: "../../../../machineConfigs/servers/server/etc/cockpit/machines.d/99-webui.json"
         dest: "/etc/cockpit/machines.d/99-webui.json"
-    - name: Cockpit Cert
-      copy:
-        src: "/tmp/cockpit.crt"
-        dest: "/etc/cockpit/ws-certs.d/cockpit.crt"
-    - name: Cockpit Key
-      copy:
-        src: "/tmp/cockpit.key"
-        dest: "/etc/cockpit/ws-certs.d/cockpit.key"
+      become: yes

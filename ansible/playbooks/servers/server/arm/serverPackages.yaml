@@ -1,4 +1,4 @@
-- hosts: servers
+- hosts: servers-arm
   gather_facts: no
   become: true
   user: arthur
@@ -7,6 +7,11 @@
       yum:
         name: "*"
         state: latest
+    - name: install epel
+      yum:
+        state: latest
+        name:
+          - epel-release
     - name: install packages
       yum:
         state: latest
@@ -30,26 +35,30 @@
           - smartmontools
           - tree
           - nvme-cli
-
-    - name: Enable codeready-builder repositories
-      community.general.rhsm_repository:
-        name: codeready-builder-for-rhel-9-x86_64-rpms
-        state: enabled
-    # https://www.redhat.com/sysadmin/install-epel-linux
-    # https://unix.stackexchange.com/questions/560024/ansible-right-way-to-enable-epel-yum-repository-vs-yum
-    - name: Install package epel-release
-      yum:
-        name: epel-release
-        state: present
+          - python3
+          - pip
+          - tar
+          - lvm2
 
     - name: install epel packages
       yum:
         state: latest
         name:
           - htop
-          - moreutils
+          #- moreutils
     - name: Download YQ
       get_url:
-        url: https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64
+        url: https://github.com/mikefarah/yq/releases/latest/download/yq_linux_arm64
         dest: /usr/local/bin/yq
         mode: a+x
+    - name: Install firewalld
+      yum:
+        name: firewalld
+        state: latest
+      notify:
+        - start firewalld
+    - name: start firewalld
+      service:
+        name: firewalld
+        state: started
+        enabled: yes

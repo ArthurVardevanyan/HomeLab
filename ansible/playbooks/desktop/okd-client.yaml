@@ -7,17 +7,20 @@
       get_url:
         url: https://github.com/okd-project/okd/releases/download/4.15.0-0.okd-2024-03-10-010116/openshift-client-linux-4.15.0-0.okd-2024-03-10-010116.tar.gz
         dest: /tmp/openshift-client-linux.tar.gz
+      check_mode: false
 
     - name: OKD-Client
       file:
         path: /tmp/openshift-client-linux
         state: directory
+      check_mode: false
 
     - name: Extract OKD-Client
       unarchive:
         src: /tmp/openshift-client-linux.tar.gz
         dest: /tmp/openshift-client-linux
         remote_src: yes
+      check_mode: false
 
     - name: Copy OKD Binary To Bin
       copy:

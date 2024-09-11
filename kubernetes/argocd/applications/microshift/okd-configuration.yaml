@@ -1,0 +1,24 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: okd-configuration-microshift
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+    notifications.argoproj.io/subscribe.on-sync-succeeded.github: ""
+    notifications.argoproj.io/subscribe.on-sync-failed.github: ""
+    notifications.argoproj.io/subscribe.on-sync-status-unknown: ""
+    notifications.argoproj.io/subscribe.on-health-degraded.github: ""
+  labels:
+    app.kubernetes.io/instance: argocd
+spec:
+  destination:
+    server: https://10.0.0.4:6443
+  project: default
+  source:
+    path: okd/okd-configuration/overlays/microshift
+    repoURL: https://git.arthurvardevanyan.com/ArthurVardevanyan/HomeLab
+    targetRevision: HEAD
+    plugin:
+      name: argocd-vault-plugin-kustomize

@@ -1,0 +1,145 @@
+- hosts: microshift
+  gather_facts: no
+  become: true
+  user: arthur
+  tasks:
+    - name: cGroupsV2
+      copy:
+        src: "../../../../machineConfigs/servers/microshift/boot/cmdline.txt"
+        dest: "/boot/cmdline.txt"
+
+    - name: install centos && okd packages
+      yum:
+        state: latest
+        name:
+          - centos-release-openstack-zed
+          - centos-release-okd-4.16
+
+    - name: Remove CentOS-OpenStack-zed.repo
+      ansible.builtin.file:
+        path: /etc/yum.repos.d/CentOS-OpenStack-zed.repo
+        state: absent
+
+    - name: install crio packages
+      yum:
+        state: latest
+        name:
+          - cri-o
+          - cri-tools
+          - containernetworking-plugins
+
+    - name: Copy Pull Secret
+      copy:
+        src: "/tmp/pull_secret.json"
+        dest: "/etc/crio/openshift-pull-secret"
+        mode: "0600"
+        owner: root
+        group: root
+
+    - name: Make sure cri-o service unit is running
+      ansible.builtin.systemd_service:
+        state: started
+        enabled: true
+        name: crio
+
+    # - name: Enable project redhat-et/microshiftt-testing
+    #   community.general.copr:
+    #     host: copr.fedorainfracloud.org
+    #     state: enabled
+    #     name: redhat-et/microshift-testing
+    #     chroot: centos-stream-9-aarch64
+
+    - name: Enable project redhat-et/microshift-testing
+      ansible.builtin.yum_repository:
+        name: redhat-et
+        description: redhat-et/microshift-testing
+        baseurl: https://download.copr.fedorainfracloud.org/results/@redhat-et/microshift-testing/centos-stream-9-aarch64
+        gpgkey: https://download.copr.fedorainfracloud.org/results/@redhat-et/microshift-testing/pubkey.gpg
+
+    - name: install microshift packages
+      yum:
+        state: latest
+        name:
+          - microshift
+
+    - name: firewalld pod network
+      firewalld:
+        zone: trusted
+        source: 10.42.0.0/16
+        permanent: true
+        state: enabled
+    - name: firewalld port 80
+      firewalld:
+        zone: public
+        port: 80/tcp
+        permanent: true
+        state: enabled
+    - name: firewalld port 443
+      firewalld:
+        zone: public
+        port: 443/tcp
+        permanent: true
+        state: enabled
+    - name: firewalld port 5353
+      firewalld:
+        zone: public
+        port: 5353/udp
+        permanent: true
+        state: enabled
+    - name: firewalld port 6443
+      firewalld:
+        zone: public
+        port: 6443/tcp
+        permanent: true
+        state: enabled
+    - name: firewalld nodeports
+      firewalld:
+        zone: public
+        port: 30000-32767/tcp
+        permanent: true
+        state: enabled
+
+    #######################################################################################################
+    ### After 4.12 Comes Online, we need to uninstall it, then we can install our 4.17 Compiled version ###
+    ### https://raw.githubusercontent.com/thinkahead/microshift/main/hack/cleanup.sh                    ###
+    #######################################################################################################
+
+    # - name: Get Compiled MicroShift
+    #   copy:
+    #     src: "/tmp/microshift"
+    #     dest: "/usr/bin/microshift"
+    #     mode: "0755"
+    # - name: Get Compiled MicroShift ETCD
+    #   copy:
+    #     src: "/tmp/microshift-etcd"
+    #     dest: "/usr/bin/microshift-etcd"
+    #     mode: "0755"
+
+    #######################################################################################################
+    #######################################################################################################
+    #######################################################################################################
+
+    - name: Make sure microshift service unit is running
+      ansible.builtin.systemd_service:
+        state: started
+        enabled: true
+        name: microshift
+
+    - name: Create a directory /.kube if it does not exist
+      ansible.builtin.file:
+        path: /home/arthur/.kube/
+        state: directory
+        mode: "0777"
+        owner: arthur
+        group: arthur
+
+    - name: kubeconfig
+      retries: 3
+      delay: 3
+      copy:
+        src: "/var/lib/microshift/resources/kubeadmin/kubeconfig"
+        dest: "/home/arthur/.kube/config"
+        mode: "0777"
+        remote_src: true
+        owner: arthur
+        group: arthur

@@ -1,0 +1,55 @@
+- hosts: servers-x86
+  gather_facts: no
+  become: true
+  user: arthur
+  tasks:
+    - name: Upgrade all packages
+      yum:
+        name: "*"
+        state: latest
+    - name: install packages
+      yum:
+        state: latest
+        name:
+          #- ntp
+          #- htop
+          - sysstat
+          - git
+          #- speedtest-cli
+          - wget
+          #- apt-transport-https
+          - ca-certificates
+          - curl
+          - gnupg2
+          #- software-properties-common
+          #- pv
+          - jq
+          - rsync
+          #- open-iscsi
+          #- nfs-common
+          - smartmontools
+          - tree
+          - nvme-cli
+
+    - name: Enable codeready-builder repositories
+      community.general.rhsm_repository:
+        name: codeready-builder-for-rhel-9-x86_64-rpms
+        state: enabled
+    # https://www.redhat.com/sysadmin/install-epel-linux
+    # https://unix.stackexchange.com/questions/560024/ansible-right-way-to-enable-epel-yum-repository-vs-yum
+    - name: Install package epel-release
+      yum:
+        name: epel-release
+        state: present
+
+    - name: install epel packages
+      yum:
+        state: latest
+        name:
+          - htop
+          - moreutils
+    - name: Download YQ
+      get_url:
+        url: https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64
+        dest: /usr/local/bin/yq
+        mode: a+x

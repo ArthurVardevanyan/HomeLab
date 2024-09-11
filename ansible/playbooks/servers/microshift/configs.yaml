@@ -1,0 +1,33 @@
+- hosts: microshift
+  gather_facts: no
+  become: true
+  user: arthur
+  tasks:
+    - name: Set a hostname
+      ansible.builtin.hostname:
+        name: microshift.arthurvardevanyan.com
+    - name: Add Local DNS for MicroShift
+      ansible.builtin.lineinfile:
+        path: /etc/hosts
+        line: 10.0.0.4 microshift microshift.arthurvardevanyan.com
+        create: yes
+    - name: cGroupsV2
+      copy:
+        src: "../../../../machineConfigs/servers/microshift/boot/cmdline.txt"
+        dest: "/boot/cmdline.txt"
+    - name: create partition
+      parted:
+        device: /dev/nvme0n1
+        number: 3
+        flags: [lvm]
+        state: present
+    - name: rhel volumegroup
+      lvg:
+        vg: rhel
+        pvs: /dev/nvme0n1p3
+    - name: logical volume test
+      lvol:
+        vg: rhel
+        lv: rhel
+        size: 1g
+        force: yes

@@ -52,6 +52,11 @@ test_overlays() {
       OUTPUT=$(echo "${OVERLAY}" | sed 's/\.//g' | sed 's/\//_/g')
       kubectl kustomize "${OVERLAY}" | argocd-vault-plugin generate - >"${DIR}/${OUTPUT}.yaml"
     done
+    for OVERLAY in ./kubernetes/*/overlays/microshift; do # *
+      echo "${OVERLAY}"
+      OUTPUT=$(echo "${OVERLAY}" | sed 's/\.//g' | sed 's/\//_/g')
+      kubectl kustomize "${OVERLAY}" | argocd-vault-plugin generate - >"${DIR}/${OUTPUT}.yaml"
+    done
     for OVERLAY in ./okd/*/overlays/*; do
       echo "${OVERLAY}"
       OUTPUT=$(echo "${OVERLAY}" | sed 's/\.//g' | sed 's/\//_/g')

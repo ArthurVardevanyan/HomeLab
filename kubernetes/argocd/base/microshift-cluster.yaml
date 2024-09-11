@@ -1,0 +1,20 @@
+apiVersion: v1
+kind: Secret
+metadata:
+  name: microshift
+  namespace: argocd
+  labels:
+    argocd.argoproj.io/secret-type: cluster
+  annotations:
+    managed-by: argocd.argoproj.io
+type: Opaque
+stringData:
+  name: microshift
+  server: https://10.0.0.4:6443
+  config: |
+    {
+      "bearerToken": "<path:secret/data/microshift#cluster-admin>",
+      "tlsClientConfig": {
+        "insecure": true
+      }
+    }

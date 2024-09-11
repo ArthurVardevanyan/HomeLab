@@ -1,4 +1,4 @@
-- hosts: servers
+- hosts: servers-x86
   gather_facts: no
   become: true
   user: arthur
@@ -8,17 +8,20 @@
       get_url:
         url: https://github.com/grafana/loki/releases/download/v2.9.2/promtail-linux-amd64.zip
         dest: /tmp/promtail-linux-amd64.zip
+      check_mode: false
 
     - name: PromTail
       file:
         path: /tmp/promtail-linux-amd64
         state: directory
+      check_mode: false
 
     - name: Extract PromTail
       unarchive:
         src: /tmp/promtail-linux-amd64.zip
         dest: /tmp/promtail-linux-amd64
         remote_src: yes
+      check_mode: false
 
     - name: Copy PromTail Binary To Bin
       copy:
@@ -29,7 +32,7 @@
 
     - name: Promtail Systemd File
       copy:
-        src: "../../../../machineConfigs/servers/server/etc/systemd/system/promtail.service"
+        src: "../../../../../machineConfigs/servers/server/etc/systemd/system/promtail.service"
         dest: "/etc/systemd/system/promtail.service"
       register: promtail
 
@@ -50,7 +53,7 @@
 
     - name: SeLinux File
       copy:
-        src: "../../../../machineConfigs/servers/server/home/arthur/promtail.te"
+        src: "../../../../../machineConfigs/servers/server/home/arthur/promtail.te"
         dest: "/home/arthur/promtail.te"
       register: selinux
 

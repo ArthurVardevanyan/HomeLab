@@ -1,0 +1,104 @@
+kind: StatefulSet
+apiVersion: apps/v1
+metadata:
+  name: pihole
+  namespace: pihole
+  labels:
+    app: pihole
+    app.kubernetes.io/instance: pihole
+  annotations:
+    checkov.io/skip1: CKV_K8S_40=OpenShift Injects Random UID
+spec:
+  replicas: 1
+  serviceName: pihole
+  selector:
+    matchLabels:
+      app: pihole
+  template:
+    metadata:
+      labels:
+        app: pihole
+      annotations:
+        enable.version-checker.io/pihole: "true"
+    spec:
+      hostname: pihole
+      securityContext:
+        seccompProfile:
+          type: RuntimeDefault
+        runAsNonRoot: true
+      dnsConfig:
+        nameservers:
+          - 1.1.1.1
+          - 1.0.0.1
+      containers:
+        - image: docker.io/pihole/pihole:2024.07.0@sha256:0def896a596e8d45780b6359dbf82fc8c75ef05b97e095452e67a0a4ccc95377
+          imagePullPolicy: IfNotPresent
+          name: pihole
+          env:
+            - name: TZ
+              value: "America/Detroit"
+            - name: VIRTUAL_HOST
+              value: "pihole.arthurvardevanyan.com"
+            - name: DNSSEC
+              value: "true"
+            - name: DNSMASQ_LISTENING
+              value: all
+          securityContext:
+            runAsNonRoot: false
+            privileged: true
+            allowPrivilegeEscalation: true
+            readOnlyRootFilesystem: false
+            seccompProfile:
+              type: RuntimeDefault
+            capabilities:
+              drop:
+                - ALL
+          readinessProbe:
+            exec:
+              command: ["dig", "@127.0.0.1", "cloudflare.com"]
+            timeoutSeconds: 20
+            initialDelaySeconds: 5
+            periodSeconds: 60
+          livenessProbe:
+            tcpSocket:
+              port: dns-tcp
+            initialDelaySeconds: 15
+            periodSeconds: 30
+          ports:
+            - name: dns-tcp
+              containerPort: 53
+              protocol: TCP
+            - name: dns-udp
+              containerPort: 53
+              protocol: UDP
+              hostPort: 53
+            - name: web
+              containerPort: 80
+              protocol: TCP
+          volumeMounts:
+            - name: etc-pihole
+              mountPath: /etc/pihole
+            - name: etc-dnsmasq
+              mountPath: /etc/dnsmasq.d
+            - name: wildcard-dns
+              mountPath: "/etc/dnsmasq.d/02-my-wildcard-dns.conf"
+              subPath: "02-my-wildcard-dns.conf"
+          resources:
+            limits:
+              cpu: 1000m
+              memory: 1024Mi
+            requests:
+              cpu: 100m
+              memory: 512Mi
+      automountServiceAccountToken: false
+      serviceAccountName: pihole
+      volumes:
+        - name: etc-pihole
+          persistentVolumeClaim:
+            claimName: etc-pihole
+        - name: etc-dnsmasq
+          persistentVolumeClaim:
+            claimName: etc-dnsmasq
+        - name: wildcard-dns
+          configMap:
+            name: wildcard-dns
