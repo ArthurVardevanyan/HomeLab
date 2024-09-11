@@ -3,6 +3,9 @@ kind: CatalogSource
 metadata:
   name: operatorhubio-catalog
   namespace: olm
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
 spec:
   sourceType: grpc
   image: quay.io/operatorhubio/catalog:latest
