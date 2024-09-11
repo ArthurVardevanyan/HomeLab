@@ -1,0 +1,140 @@
+apiVersion: operators.coreos.com/v1alpha1
+kind: ClusterServiceVersion
+metadata:
+  name: packageserver
+  namespace: olm
+  labels:
+    olm.version: v0.28.0
+spec:
+  displayName: Package Server
+  description: Represents an Operator package that is available from a given CatalogSource which will resolve to a ClusterServiceVersion.
+  minKubeVersion: 1.11.0
+  keywords: ["packagemanifests", "olm", "packages"]
+  maintainers:
+    - name: Red Hat
+      email: openshift-operators@redhat.com
+  provider:
+    name: Red Hat
+  links:
+    - name: Package Server
+      url: https://github.com/operator-framework/operator-lifecycle-manager/tree/master/pkg/package-server
+  installModes:
+    - type: OwnNamespace
+      supported: true
+    - type: SingleNamespace
+      supported: true
+    - type: MultiNamespace
+      supported: true
+    - type: AllNamespaces
+      supported: true
+  install:
+    strategy: deployment
+    spec:
+      clusterPermissions:
+        - serviceAccountName: olm-operator-serviceaccount
+          rules:
+            - apiGroups:
+                - authorization.k8s.io
+              resources:
+                - subjectaccessreviews
+              verbs:
+                - create
+                - get
+            - apiGroups:
+                - ""
+              resources:
+                - configmaps
+              verbs:
+                - get
+                - list
+                - watch
+            - apiGroups:
+                - "operators.coreos.com"
+              resources:
+                - catalogsources
+              verbs:
+                - get
+                - list
+                - watch
+            - apiGroups:
+                - "packages.operators.coreos.com"
+              resources:
+                - packagemanifests
+              verbs:
+                - get
+                - list
+      deployments:
+        - name: packageserver
+          spec:
+            strategy:
+              type: RollingUpdate
+              rollingUpdate:
+                maxUnavailable: 1
+                maxSurge: 1
+            replicas: 2
+            selector:
+              matchLabels:
+                app: packageserver
+            template:
+              metadata:
+                labels:
+                  app: packageserver
+              spec:
+                securityContext:
+                  runAsNonRoot: true
+                  seccompProfile:
+                    type: RuntimeDefault
+                serviceAccountName: olm-operator-serviceaccount
+                nodeSelector:
+                  kubernetes.io/os: linux
+                containers:
+                  - name: packageserver
+                    securityContext:
+                      allowPrivilegeEscalation: false
+                      capabilities:
+                        drop: ["ALL"]
+                    command:
+                      - /bin/package-server
+                      - -v=4
+                      - --secure-port
+                      - "5443"
+                      - --global-namespace
+                      - olm
+                    image: quay.io/operator-framework/olm:v0.28.0@sha256:40d0363f4aa684319cd721c2fcf3321785380fdc74de8ef821317cd25a10782a
+                    imagePullPolicy: Always
+                    ports:
+                      - containerPort: 5443
+                        protocol: TCP
+                    livenessProbe:
+                      httpGet:
+                        scheme: HTTPS
+                        path: /healthz
+                        port: 5443
+                    readinessProbe:
+                      httpGet:
+                        scheme: HTTPS
+                        path: /healthz
+                        port: 5443
+                    terminationMessagePolicy: FallbackToLogsOnError
+                    resources:
+                      requests:
+                        cpu: 10m
+                        memory: 50Mi
+                    volumeMounts:
+                      - name: tmpfs
+                        mountPath: /tmp
+                volumes:
+                  - name: tmpfs
+                    emptyDir: {}
+  maturity: alpha
+  version: v0.28.0
+  apiservicedefinitions:
+    owned:
+      - group: packages.operators.coreos.com
+        version: v1
+        kind: PackageManifest
+        name: packagemanifests
+        displayName: PackageManifest
+        description: A PackageManifest is a resource generated from existing CatalogSources and their ConfigMaps
+        deploymentName: packageserver
+        containerPort: 5443
