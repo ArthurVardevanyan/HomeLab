@@ -37,17 +37,20 @@
       get_url:
         url: https://github.com/itaysk/kubectl-neat/releases/download/v2.0.4/kubectl-neat_linux_arm64.tar.gz
         dest: /tmp/kubectl-neat_linux_arm64.tar.gz
+      check_mode: false
 
     - name: Kubectl Neat
       file:
         path: /tmp/kubectl-neat_linux_arm64
         state: directory
+      check_mode: false
 
     - name: Extract Kubectl Neat
       unarchive:
         src: /tmp/kubectl-neat_linux_arm64.tar.gz
         dest: /tmp/kubectl-neat_linux_arm64
         remote_src: yes
+      check_mode: false
 
     - name: Copy Kubectl Neat Binary To Bin
       copy:
