@@ -1,11 +1,11 @@
-- hosts: servers
+- hosts: servers-common
   gather_facts: no
   become: true
   user: arthur
   tasks:
     - name: Create Discord Bot Boot Service
       copy:
-        src: "../../../../machineConfigs/servers/server/etc/systemd/system/discordBoot.service"
+        src: "../../../../../machineConfigs/servers/server/etc/systemd/system/discordBoot.service"
         dest: "/etc/systemd/system/discordBoot.service"
       register: discordBoot_conf
     - name: Enable Service
@@ -14,7 +14,7 @@
 
     - name: Create Discord Bot Reboot Service
       copy:
-        src: "../../../../machineConfigs/servers/server/etc/systemd/system/discordReboot.service"
+        src: "../../../../../machineConfigs/servers/server/etc/systemd/system/discordReboot.service"
         dest: "/etc/systemd/system/discordReboot.service"
       register: discordReboot_conf
     - name: Enable Service
@@ -23,7 +23,7 @@
 
     - name: Create Discord Bot Shutdown Service
       copy:
-        src: "../../../../machineConfigs/servers/server/etc/systemd/system/discordShutdown.service"
+        src: "../../../../../machineConfigs/servers/server/etc/systemd/system/discordShutdown.service"
         dest: "/etc/systemd/system/discordShutdown.service"
       register: discordShutdown_conf
     - name: Enable Service
@@ -42,5 +42,5 @@
 
     - name: Create Discord Bot Script
       copy:
-        src: "../../../../machineConfigs/servers/server/home/arthur/discord/discord_bot.sh"
+        src: "../../../../../machineConfigs/servers/server/home/arthur/discord/discord_bot.sh"
         dest: "/home/arthur/discord/discord_bot.sh"

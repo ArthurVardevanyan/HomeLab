@@ -1,4 +1,4 @@
-- hosts: servers
+- hosts: servers-common
   gather_facts: no
   become: true
   user: arthur
@@ -11,7 +11,7 @@
           - cockpit-pcp
     - name: Cockpit Web Gui Devices
       copy:
-        src: "../../../../machineConfigs/servers/server/etc/cockpit/machines.d/99-webui.json"
+        src: "../../../../../machineConfigs/servers/server/etc/cockpit/machines.d/99-webui.json"
         dest: "/etc/cockpit/machines.d/99-webui.json"
     - name: Cockpit Cert
       copy:
@@ -21,3 +21,15 @@
       copy:
         src: "/tmp/cockpit.key"
         dest: "/etc/cockpit/ws-certs.d/cockpit.key"
+    - name: cockpit enable port 9090
+      firewalld:
+        zone: public
+        port: 9090/tcp
+        permanent: true
+        state: enabled
+      become: yes
+    - name: Make sure cockpit service unit is running
+      ansible.builtin.systemd_service:
+        state: started
+        enabled: true
+        name: cockpit
