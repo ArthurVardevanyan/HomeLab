@@ -15,6 +15,11 @@ spec:
     - /^((?!argocd).)*$/
   notifications:
     enabled: true
+    env:
+      - name: ARGOCD_NOTIFICATION_CONTROLLER_SELF_SERVICE_NOTIFICATION_ENABLED
+        value: "true"
+      - name: ARGOCD_APPLICATION_NAMESPACES
+        value: /^((?!argocd).)*$/
     replicas: 2
     resources:
       limits:

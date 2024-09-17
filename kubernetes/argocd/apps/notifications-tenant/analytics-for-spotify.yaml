@@ -1,8 +1,29 @@
+apiVersion: external-secrets.io/v1beta1
+kind: ExternalSecret
+metadata:
+  name: argocd-notifications-secret
+  namespace: analytics-for-spotify
+  annotations:
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+spec:
+  refreshInterval: "1h"
+  secretStoreRef:
+    name: vault
+    kind: ClusterSecretStore
+  target:
+    name: argocd-notifications-secret
+    #creationPolicy: "Merge"
+  data:
+    - secretKey: github-privateKey
+      remoteRef: # checkov:skip=CKV_SECRET_6 PlaceHolder Values
+        key: homelab/argo/tenant
+        property: github_pk
+---
 apiVersion: argoproj.io/v1alpha1
 kind: NotificationsConfiguration
 metadata:
   name: default-notifications-configuration
-  namespace: argocd-apps
+  namespace: analytics-for-spotify
   annotations:
     argocd.argoproj.io/sync-wave: "2"
     argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
@@ -10,24 +31,12 @@ spec:
   context:
     environmentName: HomeLab
   services:
-    service.github.gh-cluster-tenant: |-
-      appID: <path:secret/data/homelab/tekton#github_app>
-      installationID: <path:secret/data/homelab/tekton#github_app_installation>
+    service.github.gh-tenant: |-
+      appID: <path:secret/data/homelab/argo/tenant#github_app>
+      installationID: <path:secret/data/homelab/argo/tenant#github_app_installation>
       privateKey: $github-privateKey
+
   triggers:
-    # trigger.on-deleted: |-
-    #   - description: Application is deleted.
-    #     oncePer: app.metadata.name
-    #     send:
-    #     - app-deleted
-    #     when: app.metadata.deletionTimestamp != nil
-    # trigger.on-sync-running: |-
-    #   - description: Application is being synced
-    #     send:
-    #     - app-sync-running
-    #     when: app.status.operationState.phase in ['Running']
-    # template.app-deployed: |-
-    #   ""
     trigger.on-sync-succeeded: |-
       - description: Application syncing has succeeded
         send:
@@ -38,21 +47,11 @@ spec:
         send:
         - app-health-degraded
         when: app.status.health.status == 'Degraded'
-    # template.app-created: |-
-    #   ""
     trigger.on-sync-status-unknown: |-
       - description: Application status is 'Unknown'
         send:
         - app-sync-status-unknown
         when: app.status.sync.status == 'Unknown'
-    # template.app-sync-running: |-
-    #   ""
-    # trigger.on-created: |-
-    #   - description: Application is created.
-    #     oncePer: app.metadata.name
-    #     send:
-    #     - app-created
-    #     when: "true"
     trigger.on-sync-failed: |-
       - description: Application syncing has failed
         send:
@@ -128,12 +127,3 @@ spec:
           requiredContexts: []
           autoMerge: false
           transientEnvironment: false
-    # template.app-deleted: |-
-    #   ""
-    # trigger.on-deployed: |-
-    #   - description: Application is synced and healthy. Triggered once per commit.
-    #     oncePer: app.status.operationState.syncResult.revision
-    #     send:
-    #     - app-deployed
-    #     when: app.status.operationState.phase in ['Succeeded'] and app.status.health.status
-    #         == 'Healthy'
