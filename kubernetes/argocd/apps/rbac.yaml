@@ -36,7 +36,42 @@ rules:
       - "*"
     verbs:
       - list
-  # Repo Sever & Notification Controller
+  - apiGroups:
+      - argoproj.io
+    resources:
+      - applications
+    verbs:
+      - get
+      - watch
+      - list
+      - update
+      - patch
+---
+kind: ClusterRole
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: argocd-tenancy-notification
+rules:
+  - apiGroups:
+      - argoproj.io
+    resources:
+      - applications
+    verbs:
+      - get
+      - watch
+      - list
+      - update
+      - patch
+  - apiGroups:
+      - ""
+    resources:
+      - secrets
+      - configmaps
+    verbs:
+      - get
+      - watch
+      - list
+  # Repo Sever
   - apiGroups:
       - argoproj.io
     resources:
@@ -63,6 +98,16 @@ subjects:
   - kind: ServiceAccount
     name: argocd-apps-argocd-server
     namespace: argocd-apps
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: argocd-tenancy-notification
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: argocd-tenancy-notification
+subjects:
   - kind: ServiceAccount
     name: argocd-apps-argocd-notifications-controller
     namespace: argocd-apps
