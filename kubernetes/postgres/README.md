@@ -7,10 +7,20 @@ kubectl kustomize kubernetes/postgres/overlays/okd | argocd-vault-plugin generat
 ## Image Mirroring
 
 ```bash
-skopeo copy docker://registry.developers.crunchydata.com/crunchydata/crunchy-pgbackrest:ubi8-2.49-0 docker://registry.arthurvardevanyan.com/crunchydata/crunchy-pgbackrest:ubi8-2.49-0
-skopeo copy docker://registry.developers.crunchydata.com/crunchydata/crunchy-postgres-exporter:ubi8-0.15.0-3 docker://registry.arthurvardevanyan.com/crunchydata/crunchy-postgres-exporter:ubi8-0.15.0-3
-skopeo copy docker://registry.developers.crunchydata.com/crunchydata/crunchy-postgres:ubi8-15.6-0 docker://registry.arthurvardevanyan.com/crunchydata/crunchy-postgres:ubi8-15.6-0
-skopeo copy docker://registry.developers.crunchydata.com/crunchydata/postgres-operator:ubi8-5.5.1-0 docker://registry.arthurvardevanyan.com/crunchydata/postgres-operator:ubi8-5.5.1-0
+kubectl get pods -n postgres -o wide -o yaml | grep "developers.crunchydata.com" | sed 's/^.*: /: /' | sort -u
+
+skopeo copy docker://registry.developers.crunchydata.com/crunchydata/crunchy-pgadmin4:ubi8-4.30-29 docker://registry.arthurvardevanyan.com/crunchydata/crunchy-pgadmin4:ubi8-4.30-29
+skopeo copy docker://registry.developers.crunchydata.com/crunchydata/crunchy-pgadmin4:ubi8-8.10-0 docker://registry.arthurvardevanyan.com/crunchydata/crunchy-pgadmin4:ubi8-8.10-0
+skopeo copy docker://registry.developers.crunchydata.com/crunchydata/crunchy-pgbackrest:ubi8-2.52.1-1 docker://registry.arthurvardevanyan.com/crunchydata/crunchy-pgbackrest:ubi8-2.52.1-1
+skopeo copy docker://registry.developers.crunchydata.com/crunchydata/crunchy-pgbouncer:ubi8-1.22-4 docker://registry.arthurvardevanyan.com/crunchydata/crunchy-pgbouncer:ubi8-1.22-4
+skopeo copy docker://registry.developers.crunchydata.com/crunchydata/crunchy-postgres-exporter:ubi8-0.15.0-10 docker://registry.arthurvardevanyan.com/crunchydata/crunchy-postgres-exporter:ubi8-0.15.0-10
+skopeo copy docker://registry.developers.crunchydata.com/crunchydata/crunchy-postgres-gis:ubi8-15.8-3.3-0 docker://registry.arthurvardevanyan.com/crunchydata/crunchy-postgres-gis:ubi8-15.8-3.3-0
+skopeo copy docker://registry.developers.crunchydata.com/crunchydata/crunchy-postgres-gis:ubi8-16.4-3.3-0 docker://registry.arthurvardevanyan.com/crunchydata/crunchy-postgres-gis:ubi8-16.4-3.3-0
+skopeo copy docker://registry.developers.crunchydata.com/crunchydata/crunchy-postgres-gis:ubi8-16.4-3.4-0 docker://registry.arthurvardevanyan.com/crunchydata/crunchy-postgres-gis:ubi8-16.4-3.4-0
+skopeo copy docker://registry.developers.crunchydata.com/crunchydata/crunchy-postgres:ubi8-15.8-0 docker://registry.arthurvardevanyan.com/crunchydata/crunchy-postgres:ubi8-15.8-0
+skopeo copy docker://registry.developers.crunchydata.com/crunchydata/crunchy-postgres:ubi8-16.4-0 docker://registry.arthurvardevanyan.com/crunchydata/crunchy-postgres:ubi8-16.4-0
+skopeo copy docker://registry.developers.crunchydata.com/crunchydata/crunchy-upgrade:ubi8-5.6.1-0 docker://registry.arthurvardevanyan.com/crunchydata/crunchy-upgrade:ubi8-5.6.1-0
+skopeo copy docker://registry.developers.crunchydata.com/crunchydata/postgres-operator:ubi8-5.6.1-0 docker://registry.arthurvardevanyan.com/crunchydata/postgres-operator:ubi8-5.6.1-0
 ```
 
 ## REF
