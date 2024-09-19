@@ -1,0 +1,35 @@
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: deny-all
+  namespace: gitops-admin-plugin
+spec:
+  policyTypes:
+    - Ingress
+    - Egress
+  podSelector: {}
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-openshift-console
+  namespace: gitops-admin-plugin
+spec:
+  policyTypes:
+    - Ingress
+  podSelector:
+    matchLabels:
+      app: gitops-admin-plugin
+      app.kubernetes.io/instance: gitops-admin-plugin
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              app: console
+              component: ui
+          namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: openshift-console
+      ports:
+        - protocol: TCP
+          port: 9443

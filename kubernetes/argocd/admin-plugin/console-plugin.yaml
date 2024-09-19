@@ -1,0 +1,26 @@
+apiVersion: console.openshift.io/v1
+kind: ConsolePlugin
+metadata:
+  labels:
+    app: gitops-admin-plugin
+  name: gitops-admin-plugin
+spec:
+  backend:
+    service:
+      basePath: /
+      name: gitops-admin-plugin
+      namespace: gitops-admin-plugin
+      port: 9443
+    type: Service
+  displayName: GitOps Admin Plugin
+  i18n:
+    loadType: ""
+  # proxy:
+  # - alias: proxy
+  #   authorization: UserToken
+  #   endpoint:
+  #     service:
+  #       name: gitops-plugin-proxy
+  #       namespace: gitops-admin-plugin
+  #       port: 8443
+  #     type: Service

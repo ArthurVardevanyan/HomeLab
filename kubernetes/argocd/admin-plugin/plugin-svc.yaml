@@ -1,0 +1,21 @@
+apiVersion: v1
+kind: Service
+metadata:
+  annotations:
+    service.alpha.openshift.io/serving-cert-secret-name: gitops-admin-plugin-cert
+  labels:
+    app: gitops-admin-plugin
+    app.kubernetes.io/instance: gitops-admin-plugin
+    app.openshift.io/runtime: nodejs
+  name: gitops-admin-plugin
+  namespace: gitops-admin-plugin
+spec:
+  type: ClusterIP
+  ports:
+    - name: 9443-tcp
+      port: 9443
+  selector:
+    app: gitops-admin-plugin
+    app.kubernetes.io/instance: gitops-admin-plugin
+    app.kubernetes.io/name: gitops-admin-plugin
+    app.kubernetes.io/part-of: gitops-admin-plugin
