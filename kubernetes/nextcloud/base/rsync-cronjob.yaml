@@ -37,9 +37,9 @@ spec:
           #                 - nextcloud
           #         topologyKey: kubernetes.io/hostname
           volumes:
-            - name: nextcloud-data
-              persistentVolumeClaim:
-                claimName: nextcloud-data
+            # - name: nextcloud-data
+            #   persistentVolumeClaim:
+            #     claimName: nextcloud-data
             - name: nextcloud-data-backup
               persistentVolumeClaim:
                 claimName: nextcloud-data-backup
@@ -58,11 +58,11 @@ spec:
           containers:
             - name: nextcloud-rsync
               image: registry.arthurvardevanyan.com/homelab/toolbox:not_latest
-              command:
-                [
+              command: [
                   "/bin/bash",
                   "-c",
-                  "rsync --stats --archive --verbose --human-readable --stats --delete /mnt/data/Nextcloud /mnt/backup/ && rsync --stats --archive --verbose --human-readable --stats --delete /mnt/data/Nextcloud /mnt/backup1/",
+                  "rsync --stats --archive --verbose --human-readable --stats --delete /mnt/data/Nextcloud /mnt/backup1/",
+                  #"rsync --stats --archive --verbose --human-readable --stats --delete /mnt/data/Nextcloud /mnt/backup/ &&
                 ]
               resources:
                 limits:
@@ -72,9 +72,9 @@ spec:
                   cpu: 100m
                   memory: 500M
               volumeMounts:
-                - name: nextcloud-data
-                  mountPath: /mnt/backup/Nextcloud
-                  readOnly: false
+                # - name: nextcloud-data
+                # mountPath: /mnt/backup/Nextcloud
+                # readOnly: false
                 - name: nextcloud-data-backup
                   mountPath: /mnt/backup1/Nextcloud
                   readOnly: false

@@ -27,7 +27,7 @@ spec:
     - Ingress
   podSelector:
     matchLabels:
-      app: prometheus-server
+      app.kubernetes.io/name: prometheus
   ingress:
     - from:
         - namespaceSelector:
@@ -48,7 +48,7 @@ spec:
     - Egress
   podSelector:
     matchLabels:
-      app: prometheus-server
+      app.kubernetes.io/name: prometheus
   egress:
     - to:
         - ipBlock:
@@ -72,7 +72,7 @@ spec:
     - Ingress
   podSelector:
     matchLabels:
-      app: prometheus-server
+      app.kubernetes.io/name: prometheus
   ingress:
     - from:
         - namespaceSelector:
@@ -104,31 +104,31 @@ spec:
               app.kubernetes.io/instance: prometheus
           podSelector:
             matchLabels:
-              app: prometheus-server
+              app.kubernetes.io/name: prometheus
       ports:
         - protocol: TCP
           port: 9100
 ---
-apiVersion: networking.k8s.io/v1
-kind: NetworkPolicy
-metadata:
-  name: allow-ceph-ingress-prometheus
-  namespace: prometheus
-  annotations:
-    argocd.argoproj.io/sync-wave: "0"
-  labels:
-    app.kubernetes.io/instance: prometheus
-spec:
-  policyTypes:
-    - Ingress
-  podSelector:
-    matchLabels:
-      app: prometheus-server
-  ingress:
-    - from:
-        - namespaceSelector:
-            matchLabels:
-              kubernetes.io/metadata.name: rook-ceph
-          podSelector:
-            matchLabels:
-              app: rook-ceph-mgr
+# apiVersion: networking.k8s.io/v1
+# kind: NetworkPolicy
+# metadata:
+#   name: allow-ceph-ingress-prometheus
+#   namespace: prometheus
+#   annotations:
+#     argocd.argoproj.io/sync-wave: "0"
+#   labels:
+#     app.kubernetes.io/instance: prometheus
+# spec:
+#   policyTypes:
+#     - Ingress
+#   podSelector:
+#     matchLabels:
+#       app.kubernetes.io/name: prometheus
+#   ingress:
+#     - from:
+#         - namespaceSelector:
+#             matchLabels:
+#               kubernetes.io/metadata.name: rook-ceph
+#           podSelector:
+#             matchLabels:
+#               app: rook-ceph-mgr

@@ -47,48 +47,48 @@ spec:
   storageClassName: rook-cephfs
   volumeMode: Filesystem
 ---
-apiVersion: v1
-kind: PersistentVolumeClaim
-metadata:
-  namespace: nextcloud
-  name: nextcloud-data
-  labels:
-    app.kubernetes.io/instance: nextcloud
-    velero.io/exclude-from-backup: "true"
-spec:
-  storageClassName: nfs
-  volumeName: nextcloud-data
-  accessModes:
-    - ReadWriteMany
-  resources:
-    requests:
-      storage: 750G
+# apiVersion: v1
+# kind: PersistentVolumeClaim
+# metadata:
+#   namespace: nextcloud
+#   name: nextcloud-data
+#   labels:
+#     app.kubernetes.io/instance: nextcloud
+#     velero.io/exclude-from-backup: "true"
+# spec:
+#   storageClassName: nfs
+#   volumeName: nextcloud-data
+#   accessModes:
+#     - ReadWriteMany
+#   resources:
+#     requests:
+#       storage: 750G
 ---
-apiVersion: v1
-kind: PersistentVolume
-metadata:
-  namespace: nextcloud
-  name: nextcloud-data
-  labels:
-    type: local
-    app.kubernetes.io/instance: nextcloud
-    velero.io/exclude-from-backup: "true"
-spec:
-  storageClassName: nfs
-  volumeMode: Filesystem
-  capacity:
-    storage: 750G
-  accessModes:
-    - ReadWriteMany
-  mountOptions:
-    - hard
-    - nfsvers=4.1
-  nfs:
-    path: /mnt/storage/File_Storage/Nextcloud
-    server: 10.0.0.3
-  claimRef:
-    name: nextcloud-data
-    namespace: nextcloud
+# apiVersion: v1
+# kind: PersistentVolume
+# metadata:
+#   namespace: nextcloud
+#   name: nextcloud-data
+#   labels:
+#     type: local
+#     app.kubernetes.io/instance: nextcloud
+#     velero.io/exclude-from-backup: "true"
+# spec:
+#   storageClassName: nfs
+#   volumeMode: Filesystem
+#   capacity:
+#     storage: 750G
+#   accessModes:
+#     - ReadWriteMany
+#   mountOptions:
+#     - hard
+#     - nfsvers=4.1
+#   nfs:
+#     path: /mnt/storage/File_Storage/Nextcloud
+#     server: 10.0.0.3
+#   claimRef:
+#     name: nextcloud-data
+#     namespace: nextcloud
 ---
 apiVersion: v1
 kind: PersistentVolumeClaim

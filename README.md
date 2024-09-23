@@ -171,10 +171,9 @@ end
 
 **ZFS Storage:**
 
-| Machine | Use     | Dataset   | Size  | Dataset     | Size  | Dataset       | Size  |
-| ------- | ------- | --------- | ----- | ----------- | ----- | ------------- | ----- |
-| TrueNas | Primary | Nextcloud | 750GB | Ceph Backup | 175GB | N/A           | N/A   |
-| TrueNas | Backup  | Nextcloud | 750GB | Ceph Backup | 175GB | WindowsBackup | 750GB |
+| Machine | Use    | Dataset   | Size  | Dataset     | Size  | Dataset       | Size  | Disks (SSD)  |
+| ------- | ------ | --------- | ----- | ----------- | ----- | ------------- | ----- | ------------ |
+| TrueNas | Backup | Nextcloud | 750GB | Ceph Backup | 175GB | WindowsBackup | 750GB | 5x2TB RaidZ2 |
 
 **Kubernetes Nodes:**
 

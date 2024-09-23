@@ -13,3 +13,19 @@ spec:
       storage: 35Gi
   storageClassName: rook-ceph-block
   volumeMode: Filesystem
+---
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: prometheus-thanos-pvc
+  namespace: prometheus
+  labels:
+    app.kubernetes.io/instance: prometheus
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 35Gi
+  storageClassName: rook-ceph-block
+  volumeMode: Filesystem

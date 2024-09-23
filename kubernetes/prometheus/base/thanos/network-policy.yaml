@@ -146,7 +146,7 @@ spec:
               kubernetes.io/metadata.name: prometheus
           podSelector:
             matchLabels:
-              app: prometheus-server
+              app.kubernetes.io/name: prometheus
         - namespaceSelector:
             matchLabels:
               kubernetes.io/metadata.name: prometheus
@@ -168,7 +168,7 @@ spec:
     - Ingress
   podSelector:
     matchLabels:
-      app: prometheus-server
+      app.kubernetes.io/name: prometheus
   ingress:
     - from:
         - namespaceSelector:
@@ -201,3 +201,27 @@ spec:
           podSelector:
             matchLabels:
               app: thanos-querier
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-ceph-ingress-thanos-querier
+  namespace: prometheus
+  annotations:
+    argocd.argoproj.io/sync-wave: "0"
+  labels:
+    app.kubernetes.io/instance: prometheus
+spec:
+  policyTypes:
+    - Ingress
+  podSelector:
+    matchLabels:
+      app: thanos-querier
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: rook-ceph
+          podSelector:
+            matchLabels:
+              app: rook-ceph-mgr
