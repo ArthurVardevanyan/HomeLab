@@ -1,4 +1,4 @@
-<domain type='kvm' id='5' xmlns:qemu='http://libvirt.org/schemas/domain/qemu/1.0'>
+<domain type='kvm' id='3' xmlns:qemu='http://libvirt.org/schemas/domain/qemu/1.0'>
   <name>worker-1</name>
   <uuid>99be6490-8e1c-49e5-b6af-21e52911d255</uuid>
   <metadata>
@@ -36,8 +36,8 @@
   <devices>
     <emulator>/usr/libexec/qemu-kvm</emulator>
     <disk type='file' device='disk'>
-      <driver name='qemu' type='raw' cache='none' />
-      <source file='/mnt/storage/worker-1.raw' index='1' />
+      <driver name='qemu' type='raw' cache='none' discard='unmap' />
+      <source file='/mnt/okd/worker-1.raw' index='1' />
       <backingStore />
       <target dev='vda' bus='virtio' />
       <alias name='virtio-disk0' />
@@ -145,7 +145,7 @@
     <interface type='bridge'>
       <mac address='10:00:00:00:01:11' />
       <source bridge='br0' />
-      <target dev='vnet5' />
+      <target dev='vnet2' />
       <model type='virtio' />
       <alias name='net0' />
       <address type='pci' domain='0x0000' bus='0x01' slot='0x00' function='0x0' />
@@ -153,7 +153,7 @@
     <interface type='bridge'>
       <mac address='52:54:00:4c:c5:b3' />
       <source bridge='br0' />
-      <target dev='vnet6' />
+      <target dev='vnet3' />
       <model type='virtio' />
       <alias name='net1' />
       <address type='pci' domain='0x0000' bus='0x07' slot='0x00' function='0x0' />
@@ -171,7 +171,7 @@
       <alias name='serial0' />
     </console>
     <channel type='unix'>
-      <source mode='bind' path='/run/libvirt/qemu/channel/5-worker-1/org.qemu.guest_agent.0' />
+      <source mode='bind' path='/run/libvirt/qemu/channel/3-worker-1/org.qemu.guest_agent.0' />
       <target type='virtio' name='org.qemu.guest_agent.0' state='connected' />
       <alias name='channel0' />
       <address type='virtio-serial' controller='0' bus='0' port='1' />
@@ -197,8 +197,8 @@
     </rng>
   </devices>
   <seclabel type='dynamic' model='selinux' relabel='yes'>
-    <label>system_u:system_r:svirt_t:s0:c135,c151</label>
-    <imagelabel>system_u:object_r:svirt_image_t:s0:c135,c151</imagelabel>
+    <label>system_u:system_r:svirt_t:s0:c90,c535</label>
+    <imagelabel>system_u:object_r:svirt_image_t:s0:c90,c535</imagelabel>
   </seclabel>
   <seclabel type='dynamic' model='dac' relabel='yes'>
     <label>+107:+107</label>

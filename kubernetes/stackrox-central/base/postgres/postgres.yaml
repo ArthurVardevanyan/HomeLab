@@ -23,7 +23,7 @@ spec:
       global:
         repo1-retention-full: "2"
         repo1-retention-full-type: count
-        repo2-path: /stackrox
+        # repo2-path: /stackrox
         # repo2-retention-full: "3"
         # repo2-retention-full-type: count
         # repo2-s3-uri-style: path
@@ -65,14 +65,14 @@ spec:
               resources:
                 requests:
                   storage: 25Gi
-        - name: repo2
-          s3:
-            bucket: postgres
-            endpoint: "truenas.arthurvardevanyan.com:9000"
-            region: homelab
-          schedules:
-            full: "0 6 * * 0"
-            differential: "0 6 * * 1-6"
+        # - name: repo2
+        #   s3:
+        #     bucket: postgres
+        #     endpoint: "truenas.arthurvardevanyan.com:9000"
+        #     region: homelab
+        #   schedules:
+        #     full: "0 6 * * 0"
+        #     differential: "0 6 * * 1-6"
   instances:
     - dataVolumeClaimSpec:
         storageClassName: rook-ceph-block

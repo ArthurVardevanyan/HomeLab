@@ -1,4 +1,4 @@
-<domain type='kvm' id='3' xmlns:qemu='http://libvirt.org/schemas/domain/qemu/1.0'>
+<domain type='kvm' id='4' xmlns:qemu='http://libvirt.org/schemas/domain/qemu/1.0'>
   <name>infra-3</name>
   <uuid>759d2cda-f97a-4c13-a5f8-c35fde9f3bc9</uuid>
   <metadata>
@@ -37,11 +37,19 @@
     <emulator>/usr/libexec/qemu-kvm</emulator>
     <disk type='file' device='disk'>
       <driver name='qemu' type='raw' cache='none' />
-      <source file='/home/okd/infra-3.raw' index='1' />
+      <source file='/home/okd/infra-3.raw' index='2' />
       <backingStore />
       <target dev='vda' bus='virtio' />
       <alias name='virtio-disk0' />
       <address type='pci' domain='0x0000' bus='0x04' slot='0x00' function='0x0' />
+    </disk>
+    <disk type='block' device='disk'>
+      <driver name='qemu' type='raw' cache='none' discard='unmap' />
+      <source dev='/dev/disk/by-id/nvme-WD_BLACK_SN850X_4000GB_235243800548' index='1' />
+      <backingStore />
+      <target dev='vdb' bus='virtio' />
+      <alias name='virtio-disk1' />
+      <address type='pci' domain='0x0000' bus='0x08' slot='0x00' function='0x0' />
     </disk>
     <controller type='usb' index='0' model='qemu-xhci' ports='15'>
       <alias name='usb' />
@@ -145,25 +153,25 @@
     <interface type='bridge'>
       <mac address='10:00:00:00:01:23' />
       <source bridge='br0' />
-      <target dev='vnet3' />
+      <target dev='vnet4' />
       <model type='virtio' />
       <alias name='net0' />
       <address type='pci' domain='0x0000' bus='0x01' slot='0x00' function='0x0' />
     </interface>
     <serial type='pty'>
-      <source path='/dev/pts/3' />
+      <source path='/dev/pts/0' />
       <target type='isa-serial' port='0'>
         <model name='isa-serial' />
       </target>
       <alias name='serial0' />
     </serial>
-    <console type='pty' tty='/dev/pts/3'>
-      <source path='/dev/pts/3' />
+    <console type='pty' tty='/dev/pts/0'>
+      <source path='/dev/pts/0' />
       <target type='serial' port='0' />
       <alias name='serial0' />
     </console>
     <channel type='unix'>
-      <source mode='bind' path='/run/libvirt/qemu/channel/3-infra-3/org.qemu.guest_agent.0' />
+      <source mode='bind' path='/run/libvirt/qemu/channel/4-infra-3/org.qemu.guest_agent.0' />
       <target type='virtio' name='org.qemu.guest_agent.0' state='connected' />
       <alias name='channel0' />
       <address type='virtio-serial' controller='0' bus='0' port='1' />
@@ -197,8 +205,8 @@
     </rng>
   </devices>
   <seclabel type='dynamic' model='selinux' relabel='yes'>
-    <label>system_u:system_r:svirt_t:s0:c281,c627</label>
-    <imagelabel>system_u:object_r:svirt_image_t:s0:c281,c627</imagelabel>
+    <label>system_u:system_r:svirt_t:s0:c58,c952</label>
+    <imagelabel>system_u:object_r:svirt_image_t:s0:c58,c952</imagelabel>
   </seclabel>
   <seclabel type='dynamic' model='dac' relabel='yes'>
     <label>+107:+107</label>
