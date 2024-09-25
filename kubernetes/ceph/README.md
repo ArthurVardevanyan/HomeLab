@@ -18,7 +18,7 @@ ceph osd purge 0 --yes-i-really-mean-it
 ceph mon remove j
 
 ceph tell osd.\* injectargs --osd_max_backfills=32 --osd_recovery_max_active=64
-
+ceph osd unset-group noout <NODE/OSD>
 ceph crash archive-all
 ```
 
@@ -36,3 +36,4 @@ ceph crash archive-all
 - <https://access.redhat.com/documentation/en-us/red_hat_ceph_storage/4/html/troubleshooting_guide/troubleshooting-ceph-placement-groups>
 - <https://access.redhat.com/solutions/6982727>
 - <https://forum.proxmox.com/threads/health_warn-1-daemons-have-recently-crashed.63105/>
+- <https://access.redhat.com/solutions/6067551>

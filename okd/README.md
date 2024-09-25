@@ -5,6 +5,16 @@ kubectl kustomize okd/okd-configuration/overlays/okd | argocd-vault-plugin gener
 kubectl kustomize okd/openshift-monitoring/overlays/default | argocd-vault-plugin generate - | kubectl apply -f -
 ```
 
+## MTU Change
+
+- <https://docs.openshift.com/container-platform/4.16/networking/changing-cluster-network-mtu.html#nw-cluster-mtu-change_changing-cluster-network-mtu>
+
+```bash
+oc patch Network.operator.openshift.io cluster --type=merge --patch '{"spec": { "migration": { "mtu": { "network": { "from": 1400, "to": 9000 } , "machine": { "to" : 9100} } } } }'
+oc patch Network.operator.openshift.io cluster --type=merge --patch \
+  '{"spec": { "migration": null, "defaultNetwork":{ "ovnKubernetesConfig": { "mtu": 8900 }}}}'
+```
+
 ## REF
 
 - <https://blog.maumene.org/2020/11/18/OKD-or-OpenShit-in-one-box.html>
