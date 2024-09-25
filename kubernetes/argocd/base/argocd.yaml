@@ -76,33 +76,33 @@ spec:
         cpu: 50m
         memory: 150Mi
         ephemeral-storage: 256Mi
-    initContainers:
-      - name: download-tools
-        imagePullPolicy: IfNotPresent
-        image: registry.access.redhat.com/ubi9/ubi:9.4-947.1714667021@sha256:ed84f34cd929ea6b0c247b6daef54dd79602804a32480a052951021caf429494
-        env:
-          - name: AVP_VERSION
-            value: 1.17.0
-          - name: KUSTOMIZE_VERSION
-            value: 5.4.2
-        command: [sh, -c]
-        args:
-          - >-
-            cd /custom-tools &&
-            curl -L https://github.com/argoproj-labs/argocd-vault-plugin/releases/download/v$(AVP_VERSION)/argocd-vault-plugin_$(AVP_VERSION)_linux_amd64 -o argocd-vault-plugin &&
-            chmod +x argocd-vault-plugin &&
-            curl -L https://github.com/kubernetes-sigs/kustomize/releases/download/kustomize%2Fv$(KUSTOMIZE_VERSION)/kustomize_v$(KUSTOMIZE_VERSION)_linux_amd64.tar.gz -o kustomize_v${KUSTOMIZE_VERSION}_linux_amd64.tar.gz &&
-            tar -xzf kustomize_v${KUSTOMIZE_VERSION}_linux_amd64.tar.gz --no-same-owner &&
-            chmod +x kustomize &&
-            rm kustomize_v${KUSTOMIZE_VERSION}_linux_amd64.tar.gz
-        volumeMounts:
-          - mountPath: /custom-tools
-            name: custom-tools
+    # initContainers:
+    #   - name: download-tools
+    #     imagePullPolicy: IfNotPresent
+    #     image: registry.access.redhat.com/ubi9/ubi:9.4-947.1714667021@sha256:ed84f34cd929ea6b0c247b6daef54dd79602804a32480a052951021caf429494
+    #     env:
+    #       - name: AVP_VERSION
+    #         value: 1.17.0
+    #       - name: KUSTOMIZE_VERSION
+    #         value: 5.4.2
+    #     command: [sh, -c]
+    #     args:
+    #       - >-
+    #         cd /custom-tools &&
+    #         curl -L https://github.com/argoproj-labs/argocd-vault-plugin/releases/download/v$(AVP_VERSION)/argocd-vault-plugin_$(AVP_VERSION)_linux_amd64 -o argocd-vault-plugin &&
+    #         chmod +x argocd-vault-plugin &&
+    #         curl -L https://github.com/kubernetes-sigs/kustomize/releases/download/kustomize%2Fv$(KUSTOMIZE_VERSION)/kustomize_v$(KUSTOMIZE_VERSION)_linux_amd64.tar.gz -o kustomize_v${KUSTOMIZE_VERSION}_linux_amd64.tar.gz &&
+    #         tar -xzf kustomize_v${KUSTOMIZE_VERSION}_linux_amd64.tar.gz --no-same-owner &&
+    #         chmod +x kustomize &&
+    #         rm kustomize_v${KUSTOMIZE_VERSION}_linux_amd64.tar.gz
+    #     volumeMounts:
+    #       - mountPath: /custom-tools
+    #         name: custom-tools
     sidecarContainers:
       - name: avp-kustomize
         command: [/var/run/argocd/argocd-cmp-server]
         imagePullPolicy: IfNotPresent
-        image: registry.access.redhat.com/ubi9/ubi:9.4-947.1714667021@sha256:ed84f34cd929ea6b0c247b6daef54dd79602804a32480a052951021caf429494
+        image: registry.arthurvardevanyan.com/homelab/toolbox:not_latest
         resources:
           limits:
             cpu: "1"
@@ -122,12 +122,12 @@ spec:
           - name: VAULT_ADDR
             value: https://vault.arthurvardevanyan.com
         volumeMounts:
-          - name: custom-tools
-            subPath: argocd-vault-plugin
-            mountPath: /usr/local/bin/argocd-vault-plugin
-          - name: custom-tools
-            subPath: kustomize
-            mountPath: /usr/local/bin/kustomize
+          # - name: custom-tools
+          #   subPath: argocd-vault-plugin
+          #   mountPath: /usr/local/bin/argocd-vault-plugin
+          # - name: custom-tools
+          #   subPath: kustomize
+          #   mountPath: /usr/local/bin/kustomize
           - mountPath: /var/run/argocd
             name: var-files
           - mountPath: /home/argocd/cmp-server/plugins
