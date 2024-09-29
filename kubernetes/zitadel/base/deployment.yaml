@@ -66,7 +66,7 @@ spec:
             capabilities:
               drop:
                 - ALL
-          image: "ghcr.io/zitadel/zitadel:v2.56.0@sha256:ceb5c0ad89720ca8d562d1ae86e75c37c33a8b621d98e39a1d86262cae013461"
+          image: "ghcr.io/zitadel/zitadel:v2.62.3@sha256:ceb5c0ad89720ca8d562d1ae86e75c37c33a8b621d98e39a1d86262cae013461"
           imagePullPolicy: IfNotPresent
           args:
             - start
@@ -86,12 +86,12 @@ spec:
                 secretKeyRef:
                   name: zitadel-masterkey
                   key: masterkey
-            - name: ZITADEL_DATABASE_COCKROACH_USER_SSL_ROOTCERT
-              value: /.secrets/db-ssl-ca-crt/ca.crt
-            - name: ZITADEL_DATABASE_COCKROACH_USER_SSL_CERT
-              value: /.secrets/db-ssl-user-crt/tls.crt
-            - name: ZITADEL_DATABASE_COCKROACH_USER_SSL_KEY
-              value: /.secrets/db-ssl-user-crt/tls.key
+            # - name: ZITADEL_DATABASE_COCKROACH_USER_SSL_ROOTCERT
+            #   value: /.secrets/db-ssl-ca-crt/ca.crt
+            # - name: ZITADEL_DATABASE_COCKROACH_USER_SSL_CERT
+            #   value: /.secrets/db-ssl-user-crt/tls.crt
+            # - name: ZITADEL_DATABASE_COCKROACH_USER_SSL_KEY
+            #   value: /.secrets/db-ssl-user-crt/tls.key
           ports:
             - containerPort: 8080
               name: http2-server

@@ -45,7 +45,7 @@ spec:
             capabilities:
               drop:
                 - ALL
-          image: "ghcr.io/zitadel/zitadel:v2.56.0@sha256:ceb5c0ad89720ca8d562d1ae86e75c37c33a8b621d98e39a1d86262cae013461"
+          image: "ghcr.io/zitadel/zitadel:v2.62.3@sha256:ceb5c0ad89720ca8d562d1ae86e75c37c33a8b621d98e39a1d86262cae013461"
           imagePullPolicy: IfNotPresent
           args:
             - init
@@ -59,18 +59,18 @@ spec:
                 fieldRef:
                   apiVersion: v1
                   fieldPath: status.podIP
-            - name: ZITADEL_DATABASE_COCKROACH_USER_SSL_ROOTCERT
-              value: /.secrets/db-ssl-ca-crt/ca.crt
-            - name: ZITADEL_DATABASE_COCKROACH_ADMIN_SSL_ROOTCERT
-              value: /.secrets/db-ssl-ca-crt/ca.crt
-            - name: ZITADEL_DATABASE_COCKROACH_ADMIN_SSL_CERT
-              value: /.secrets/db-ssl-admin-crt/tls.crt
-            - name: ZITADEL_DATABASE_COCKROACH_ADMIN_SSL_KEY
-              value: /.secrets/db-ssl-admin-crt/tls.key
-            - name: ZITADEL_DATABASE_COCKROACH_USER_SSL_CERT
-              value: /.secrets/db-ssl-user-crt/tls.crt
-            - name: ZITADEL_DATABASE_COCKROACH_USER_SSL_KEY
-              value: /.secrets/db-ssl-user-crt/tls.key
+            # - name: ZITADEL_DATABASE_COCKROACH_USER_SSL_ROOTCERT
+            #   value: /.secrets/db-ssl-ca-crt/ca.crt
+            # - name: ZITADEL_DATABASE_COCKROACH_ADMIN_SSL_ROOTCERT
+            #   value: /.secrets/db-ssl-ca-crt/ca.crt
+            # - name: ZITADEL_DATABASE_COCKROACH_ADMIN_SSL_CERT
+            #   value: /.secrets/db-ssl-admin-crt/tls.crt
+            # - name: ZITADEL_DATABASE_COCKROACH_ADMIN_SSL_KEY
+            #   value: /.secrets/db-ssl-admin-crt/tls.key
+            # - name: ZITADEL_DATABASE_COCKROACH_USER_SSL_CERT
+            #   value: /.secrets/db-ssl-user-crt/tls.crt
+            # - name: ZITADEL_DATABASE_COCKROACH_USER_SSL_KEY
+            #   value: /.secrets/db-ssl-user-crt/tls.key
           volumeMounts:
             - name: zitadel-config-yaml
               mountPath: /config
