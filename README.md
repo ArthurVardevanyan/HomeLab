@@ -147,7 +147,7 @@ end
 
 | Kubernetes Channel | OKD Version | OKD Channel   | OKD OS    | Host Operating System | Storage Layer |
 | ------------------ | ----------- | ------------- | --------- | --------------------- | ------------- |
-| v1.29              | 4.16-\*     | stable-scos-4 | SCOS 4.17 | RHEL 9.4              | CEPH          |
+| v1.30              | 4.17-\*     | stable-scos-4 | SCOS 4.18 | RHEL 9.4              | CEPH          |
 
 **Machines:**
 
