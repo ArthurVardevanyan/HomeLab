@@ -15,9 +15,10 @@ spec:
       app.kubernetes.io/name: argocd-notifications-controller
   egress:
     - to:
+        # https://api.github.com/meta
         - ipBlock:
-            cidr: 0.0.0.0/0
-            except:
-              - 10.0.0.0/8
-              - 172.16.0.0/12
-              - 192.168.0.0/16
+            cidr: 140.82.112.0/20
+            # except:
+            #   - 10.0.0.0/8
+            #   - 172.16.0.0/12
+            #   - 192.168.0.0/16
