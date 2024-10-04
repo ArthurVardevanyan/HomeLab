@@ -45,6 +45,12 @@ spec:
         - name: run
           emptyDir:
             sizeLimit: 10Mi
+        - name: config
+          emptyDir:
+            sizeLimit: 10Mi
+        - name: cache
+          emptyDir:
+            sizeLimit: 10Mi
       serviceAccountName: homeassistant-sa
       dnsConfig:
         options:
@@ -52,7 +58,7 @@ spec:
             value: "1"
       containers:
         - name: homeassistant
-          image: docker.io/homeassistant/home-assistant:2024.7.2@sha256:e2ef2c7ba01689af8324b46558bd478daf5418c6a1abaec299bba05fd5ae0703
+          image: docker.io/homeassistant/home-assistant:2024.10.0@sha256:2c1b61c2321f2872ed5e2266b5e94a0b2bdbf70b695cb8ed783abc900154ba00
           securityContext:
             allowPrivilegeEscalation: true
             seccompProfile:
@@ -86,6 +92,10 @@ spec:
               mountPath: /ssl
             - name: run
               mountPath: /run
+            - name: config
+              mountPath: /.config
+            - name: cache
+              mountPath: /.cache
           livenessProbe:
             httpGet:
               path: /manifest.json
