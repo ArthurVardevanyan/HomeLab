@@ -1,0 +1,29 @@
+apiVersion: machineconfiguration.openshift.io/v1
+kind: MachineConfig
+metadata:
+  labels:
+    machineconfiguration.openshift.io/role: master
+  name: 99-worker-fstrim-timer-control-plane
+spec:
+  config:
+    ignition:
+      version: 3.2.0
+    systemd:
+      units:
+        - name: fstrim.timer
+          enabled: true
+---
+apiVersion: machineconfiguration.openshift.io/v1
+kind: MachineConfig
+metadata:
+  labels:
+    machineconfiguration.openshift.io/role: worker
+  name: 99-worker-fstrim-timer-worker
+spec:
+  config:
+    ignition:
+      version: 3.2.0
+    systemd:
+      units:
+        - name: fstrim.timer
+          enabled: true
