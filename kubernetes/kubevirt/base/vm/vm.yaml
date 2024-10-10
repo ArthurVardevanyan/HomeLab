@@ -81,7 +81,11 @@ spec:
           type: q35
         memory:
           guest: 8Gi
-        resources: {}
+          maxGuest: 32Gi
+        resources:
+          requests:
+            memory: 8Gi
+            cpu: 500m
       evictionStrategy: None
       networks:
         - name: default
@@ -91,6 +95,9 @@ spec:
         - dataVolume:
             name: fedora
           name: rootdisk
+        - name: tmp
+          emptyDisk:
+            capacity: 25Gi
         # - cloudInitNoCloud:
         #     userData: |-
         #       #cloud-config
