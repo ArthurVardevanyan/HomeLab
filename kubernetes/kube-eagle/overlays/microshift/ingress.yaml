@@ -1,0 +1,17 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: metrics
+  namespace: kube-eagle
+spec:
+  rules:
+    - host: metrics.microshift.arthurvardevanyan.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: kube-eagle
+                port:
+                  number: 8080

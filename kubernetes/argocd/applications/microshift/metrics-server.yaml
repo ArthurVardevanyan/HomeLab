@@ -1,7 +1,7 @@
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: kube-eagle
+  name: metrics-server-microshift
   namespace: argocd
   annotations:
     argocd.argoproj.io/sync-wave: "1"
@@ -14,13 +14,10 @@ metadata:
     app.kubernetes.io/instance: argocd
 spec:
   destination:
-    namespace: kube-eagle
-    server: https://kubernetes.default.svc
+    namespace: kube-system
+    server: https://10.0.0.4:6443
   project: default
   source:
-    path: kubernetes/kube-eagle/overlays/okd
+    path: kubernetes/metrics-server/overlays/microshift
     repoURL: https://git.arthurvardevanyan.com/ArthurVardevanyan/HomeLab
     targetRevision: HEAD
-  syncPolicy:
-    syncOptions:
-      - CreateNamespace=true

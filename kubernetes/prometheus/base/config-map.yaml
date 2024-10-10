@@ -1160,3 +1160,12 @@ data:
         - source_labels: [ __name__ ]
           regex: 'node_systemd_unit_state'
           action: drop
+
+      - job_name: 'microshift'
+        scrape_interval: 15s
+
+        static_configs:
+          - targets:
+            - metrics.microshift.arthurvardevanyan.com
+            - node-exporter.microshift.arthurvardevanyan.com
+        metrics_path: "/metrics"
