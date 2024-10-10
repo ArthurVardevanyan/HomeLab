@@ -1,0 +1,108 @@
+apiVersion: awx.ansible.com/v1beta1
+kind: AWX
+metadata:
+  name: awx
+  namespace: awx
+  annotations:
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+    argocd.argoproj.io/sync-wave: "2"
+spec:
+  web_readiness_timeout: 1
+  postgres_keepalives_count: 5
+  web_readiness_period: 0
+  postgres_keepalives_idle: 5
+  task_liveness_period: 0
+  metrics_utility_cronjob_report_schedule: "@monthly"
+  create_preload_data: true
+  route_tls_termination_mechanism: Edge
+  garbage_collect_secrets: false
+  service_type: clusterip
+  ingress_type: Route
+  loadbalancer_port: 80
+  web_liveness_failure_threshold: 3
+  task_liveness_initial_delay: 5
+  no_log: true
+  task_readiness_failure_threshold: 3
+  image_pull_policy: IfNotPresent
+  web_readiness_initial_delay: 20
+  metrics_utility_console_enabled: false
+  loadbalancer_ip: ""
+  web_manage_replicas: true
+  projects_storage_size: 8Gi
+  auto_upgrade: true
+  task_privileged: false
+  task_readiness_period: 0
+  web_liveness_timeout: 1
+  postgres_keepalives: true
+  task_readiness_timeout: 1
+  web_liveness_period: 0
+  metrics_utility_enabled: false
+  postgres_keepalives_interval: 5
+  ipv6_disabled: false
+  task_liveness_failure_threshold: 3
+  projects_storage_access_mode: ReadWriteMany
+  metrics_utility_pvc_claim_size: 5Gi
+  loadbalancer_class: ""
+  set_self_labels: true
+  web_readiness_failure_threshold: 3
+  web_liveness_initial_delay: 5
+  task_readiness_initial_delay: 20
+  projects_persistence: false
+  task_manage_replicas: true
+  replicas: 2
+  admin_user: admin
+  loadbalancer_protocol: http
+  metrics_utility_cronjob_gather_schedule: "@hourly"
+  task_liveness_timeout: 1
+  postgres_configuration_secret: postgres-configuration
+  image: quay.io/ansible/awx:24.6.1@sha256
+  image_version: 5d47e132014ae4c6a026a2e8f19ce7b3cf3c8f313d59e44fdfa95cd9f3669209
+  init_container_image: quay.io/ansible/awx-ee:24.6.1@sha256
+  init_container_image_version: 89593d2a0268acacdbd1c075d8810ab50d961cf7769e36de19219bb6cb4efcc1
+  control_plane_ee_image: quay.io/ansible/awx-ee:24.6.1@sha256:89593d2a0268acacdbd1c075d8810ab50d961cf7769e36de19219bb6cb4efcc1
+  # redis_image: docker.io/redis:7@sha256
+  # redis_image_version:
+  postgres_image: quay.io/sclorg/postgresql-15-c9s:20241002@sha256
+  postgres_image_version: 8c3ce8328c28d728db72abf3cc3369a2d1c13d5740e503341373f0fea01f0cad
+  web_resource_requirements:
+    requests:
+      cpu: 50m
+      memory: 1Gi
+    limits:
+      cpu: 1000m
+      memory: 2Gi
+  task_resource_requirements:
+    requests:
+      cpu: 50m
+      memory: 512Mi
+    limits:
+      cpu: 1000m
+      memory: 1Gi
+  ee_resource_requirements:
+    requests:
+      cpu: 10m
+      memory: 16Mi
+    limits:
+      cpu: 20m
+      memory: 32Mi
+  rsyslog_resource_requirements:
+    requests:
+      cpu: 10m
+      memory: 192Mi
+    limits:
+      cpu: 20m
+      memory: 384Mi
+  redis_resource_requirements:
+    requests:
+      cpu: 10m
+      memory: 16Mi
+    limits:
+      cpu: 20m
+      memory: 32Mi
+  init_container_resource_requirements:
+    requests:
+      cpu: 50m
+      memory: 128Mi
+    limits:
+      cpu: 100m
+      memory: 256Mi
