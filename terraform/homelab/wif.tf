@@ -71,3 +71,23 @@ resource "google_service_account_iam_member" "wif_test_wif_binding" {
   role               = "roles/iam.workloadIdentityUser"
   member             = "principal://iam.googleapis.com/projects/${local.homelab_project_num}/locations/global/workloadIdentityPools/${google_iam_workload_identity_pool.okd_homelab_wif.workload_identity_pool_id}/subject/system:serviceaccount:smoke-tests:wif-test"
 }
+
+resource "google_service_account" "remote_vscode" {
+  project      = "homelab-${local.project_id}"
+  account_id   = "vscode"
+  display_name = "vscode"
+}
+
+resource "google_project_iam_member" "remote_vscode" {
+  #checkov:skip=CKV_GCP_49: Used for Automation
+  #checkov:skip=CKV_GCP_117: Used for Automation
+  project = "homelab-${local.project_id}"
+  role    = "roles/owner"
+  member  = google_service_account.remote_vscode.member
+}
+
+resource "google_service_account_iam_member" "remote_vscode" {
+  service_account_id = google_service_account.remote_vscode.id
+  role               = "roles/iam.workloadIdentityUser"
+  member             = "principal://iam.googleapis.com/projects/${local.homelab_project_num}/locations/global/workloadIdentityPools/${google_iam_workload_identity_pool.okd_homelab_wif.workload_identity_pool_id}/subject/system:serviceaccount:arthurvardevanyan:vscode"
+}
