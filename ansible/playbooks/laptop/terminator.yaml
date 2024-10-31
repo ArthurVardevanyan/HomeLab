@@ -1,0 +1,22 @@
+- hosts: lenovo
+  gather_facts: no
+  user: arthur
+  tasks:
+    - name: Add Terminator Repo
+      become: true
+      apt_repository:
+        validate_certs: no
+        repo: "deb https://ppa.launchpadcontent.net/mattrose/terminator/ubuntu noble main"
+        state: present
+        update_cache: True
+    - name: Install Terminator
+      become: true
+      apt:
+        state: latest
+        name:
+          - terminator
+
+    - name: Copy Terminator Config
+      copy:
+        src: "../../../machineConfigs/desktop/home/arthur/.config/terminator"
+        dest: "/home/arthur/.config/"

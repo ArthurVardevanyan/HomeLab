@@ -1,0 +1,13 @@
+- hosts: lenovo
+  gather_facts: no
+  user: arthur
+  tasks:
+    - name: Discord
+      flatpak:
+        name: xyz.armcord.ArmCord
+        remote: flathub
+        method: user
+    - name: Discord Startup
+      copy:
+        src: "../../../machineConfigs/desktop/home/arthur/.config/autostart/discord-stable.desktop"
+        dest: "/home/arthur/.config/autostart/discord-stable.desktop"

@@ -1,0 +1,78 @@
+- hosts: lenovo
+  gather_facts: no
+  become: true
+  user: arthur
+  tasks:
+    - name: Upgrade all apt packages
+      apt:
+        update_cache: True
+        cache_valid_time: 3600
+        upgrade: dist
+        autoremove: yes
+    - name: install core packages
+      apt:
+        state: latest
+        name:
+          - openssh-server
+          - speedtest-cli
+          - gnome-screenshot
+          - gnome-tweaks
+          - thunderbird
+          - sshpass
+          - htop
+          - nvtop
+          - pv
+          - jq
+          - rsync
+          - gparted
+          - smartmontools
+          - caffeine
+          #- p7zip-full
+          #- remmina
+    - name: install development tools
+      apt:
+        state: latest
+        name:
+          - gnupg
+          - git
+          - gh
+          - ansible
+          - make
+          - gcc
+          - g++
+          - python3-pip
+          - cockpit
+          - gdb
+          - adb
+          - podman
+          - buildah
+          - skopeo
+          - npm
+          - tree
+          - adb
+          - podman
+          - buildah
+          - skopeo
+          #- arduino
+          #- apache2
+          #- php
+          #- mariadb-server
+          #- phpmyadmin
+          #- libmariadb-dev
+    - name: Download YQ
+      get_url:
+        url: https://github.com/mikefarah/yq/releases/latest/download/yq_linux_arm64
+        dest: /usr/local/bin/yq
+        mode: a+x
+
+    - name: install additional packages
+      apt:
+        state: latest
+        name:
+          - vlc
+          - gimp
+          - obs-studio
+          - openscad
+          - handbrake
+          - ffmpeg
+          - blender

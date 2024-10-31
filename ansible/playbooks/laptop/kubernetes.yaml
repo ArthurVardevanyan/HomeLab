@@ -1,0 +1,99 @@
+- hosts: lenovo
+  gather_facts: no
+  become: true
+  user: arthur
+  tasks:
+    - name: Add kubectl Key
+      apt_key:
+        url: https://pkgs.k8s.io/core:/stable:/v1.31/deb/Release.key
+        keyring: /usr/share/keyrings/kubernetes-archive-keyring.gpg
+        state: present
+    - name: Add kubectl Repo
+      apt_repository:
+        repo: deb [signed-by=/usr/share/keyrings/kubernetes-archive-keyring.gpg] https://pkgs.k8s.io/core:/stable:/v1.31/deb/ /
+        state: present
+        update_cache: True
+        filename: kubernetes
+    - name: Install kubectl
+      apt:
+        state: latest
+        name:
+          - kubectl
+
+    - name: Download Kubectl Neat
+      get_url:
+        url: https://github.com/itaysk/kubectl-neat/releases/download/v2.0.3/kubectl-neat_linux_arm64.tar.gz
+        dest: /tmp/kubectl-neat_linux_arm64.tar.gz
+      check_mode: false
+
+    - name: Kubectl Neat
+      file:
+        path: /tmp/kubectl-neat_linux_arm64
+        state: directory
+      check_mode: false
+
+    - name: Extract Kubectl Neat
+      unarchive:
+        src: /tmp/kubectl-neat_linux_arm64.tar.gz
+        dest: /tmp/kubectl-neat_linux_arm64
+        remote_src: yes
+      check_mode: false
+
+    - name: Copy Kubectl Neat Binary To Bin
+      copy:
+        src: /tmp/kubectl-neat_linux_arm64/kubectl-neat
+        dest: /usr/local/bin/kubectl-neat
+        mode: a+x
+        remote_src: yes
+
+    - name: Download KO
+      get_url:
+        url: https://github.com/ko-build/ko/releases/download/v0.15.4/ko_0.15.4_Linux_x86_64.tar.gz
+        dest: /tmp/ko_Linux_x86_64.tar.gz
+      check_mode: false
+
+    - name: KO Dir
+      file:
+        path: /tmp/ko_Linux_x86_64
+        state: directory
+      check_mode: false
+
+    - name: Extract KO
+      unarchive:
+        src: /tmp/ko_Linux_x86_64.tar.gz
+        dest: /tmp/ko_Linux_x86_64
+        remote_src: yes
+      check_mode: false
+
+    - name: Copy KO Binary To Bin
+      copy:
+        src: /tmp/ko_Linux_x86_64/ko
+        dest: /usr/local/bin/ko
+        mode: a+x
+        remote_src: yes
+
+    - name: Download Kubeconform
+      get_url:
+        url: https://github.com/yannh/kubeconform/releases/download/v0.6.2/kubeconform-linux-arm64.tar.gz
+        dest: /tmp/kubeconform-linux-arm64.tar.gz
+      check_mode: false
+
+    - name: Kubeconform Dir
+      file:
+        path: /tmp/kubeconform-linux-arm64
+        state: directory
+      check_mode: false
+
+    - name: Extract Kubeconform
+      unarchive:
+        src: /tmp/kubeconform-linux-arm64.tar.gz
+        dest: /tmp/kubeconform-linux-arm64
+        remote_src: yes
+      check_mode: false
+
+    - name: Copy Kubeconform Binary To Bin
+      copy:
+        src: /tmp/kubeconform-linux-arm64/kubeconform
+        dest: /usr/local/bin/kubeconform
+        mode: a+x
+        remote_src: yes
