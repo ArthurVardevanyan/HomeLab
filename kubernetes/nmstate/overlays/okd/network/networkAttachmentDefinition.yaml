@@ -2,7 +2,7 @@ apiVersion: "k8s.cni.cncf.io/v1"
 kind: NetworkAttachmentDefinition
 metadata:
   name: br1
-  namespace: k3s
+  namespace: default
   annotations:
     k8s.v1.cni.cncf.io/resourceName: bridge.network.kubevirt.io/br1
     argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
@@ -10,66 +10,8 @@ metadata:
 spec:
   config: '{
     "cniVersion": "0.3.1",
-    "name": "localnet",
+    "name": "br1",
     "type": "ovn-k8s-cni-overlay",
     "topology":"localnet",
-    "mtu": 9000,
-    "netAttachDefName": "k3s/br1"
-    }'
----
-apiVersion: "k8s.cni.cncf.io/v1"
-kind: NetworkAttachmentDefinition
-metadata:
-  name: br1
-  namespace: okd-virt
-  annotations:
-    k8s.v1.cni.cncf.io/resourceName: bridge.network.kubevirt.io/br1
-    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
-    argocd.argoproj.io/sync-wave: "4"
-spec:
-  config: '{
-    "cniVersion": "0.3.1",
-    "name": "localnet",
-    "type": "ovn-k8s-cni-overlay",
-    "topology":"localnet",
-    "mtu": 9000,
-    "netAttachDefName": "okd-virt/br1"
-    }'
----
-apiVersion: "k8s.cni.cncf.io/v1"
-kind: NetworkAttachmentDefinition
-metadata:
-  name: br1
-  namespace: homeassistant
-  annotations:
-    k8s.v1.cni.cncf.io/resourceName: bridge.network.kubevirt.io/br1
-    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
-    argocd.argoproj.io/sync-wave: "4"
-spec:
-  config: '{
-    "cniVersion": "0.3.1",
-    "name": "localnet",
-    "type": "ovn-k8s-cni-overlay",
-    "topology":"localnet",
-    "mtu": 9000,
-    "netAttachDefName": "homeassistant/br1"
-    }'
----
-apiVersion: "k8s.cni.cncf.io/v1"
-kind: NetworkAttachmentDefinition
-metadata:
-  name: br1
-  namespace: unifi-network-application
-  annotations:
-    k8s.v1.cni.cncf.io/resourceName: bridge.network.kubevirt.io/br1
-    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
-    argocd.argoproj.io/sync-wave: "4"
-spec:
-  config: '{
-    "cniVersion": "0.3.1",
-    "name": "localnet",
-    "type": "ovn-k8s-cni-overlay",
-    "topology":"localnet",
-    "mtu": 9000,
-    "netAttachDefName": "unifi-network-application/br1"
+    "netAttachDefName": "default/br1"
     }'
