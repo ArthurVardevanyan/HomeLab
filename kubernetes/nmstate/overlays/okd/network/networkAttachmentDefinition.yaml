@@ -10,17 +10,11 @@ metadata:
 spec:
   config: '{
     "cniVersion": "0.3.1",
-    "name": "br1",
-    "promiscMode": "true",
-    "plugins": [
-    {
-    "type": "cnv-bridge",
-    "bridge": "br1"
-    },
-    {
-    "type": "cnv-tuning"
-    }
-    ]
+    "name": "localnet",
+    "type": "ovn-k8s-cni-overlay",
+    "topology":"localnet",
+    "mtu": 9000,
+    "netAttachDefName": "k3s/br1"
     }'
 ---
 apiVersion: "k8s.cni.cncf.io/v1"
@@ -35,15 +29,47 @@ metadata:
 spec:
   config: '{
     "cniVersion": "0.3.1",
-    "name": "br1",
-    "promiscMode": "true",
-    "plugins": [
-    {
-    "type": "cnv-bridge",
-    "bridge": "br1"
-    },
-    {
-    "type": "cnv-tuning"
-    }
-    ]
+    "name": "localnet",
+    "type": "ovn-k8s-cni-overlay",
+    "topology":"localnet",
+    "mtu": 9000,
+    "netAttachDefName": "okd-virt/br1"
+    }'
+---
+apiVersion: "k8s.cni.cncf.io/v1"
+kind: NetworkAttachmentDefinition
+metadata:
+  name: br1
+  namespace: homeassistant
+  annotations:
+    k8s.v1.cni.cncf.io/resourceName: bridge.network.kubevirt.io/br1
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+    argocd.argoproj.io/sync-wave: "4"
+spec:
+  config: '{
+    "cniVersion": "0.3.1",
+    "name": "localnet",
+    "type": "ovn-k8s-cni-overlay",
+    "topology":"localnet",
+    "mtu": 9000,
+    "netAttachDefName": "homeassistant/br1"
+    }'
+---
+apiVersion: "k8s.cni.cncf.io/v1"
+kind: NetworkAttachmentDefinition
+metadata:
+  name: br1
+  namespace: unifi-network-application
+  annotations:
+    k8s.v1.cni.cncf.io/resourceName: bridge.network.kubevirt.io/br1
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+    argocd.argoproj.io/sync-wave: "4"
+spec:
+  config: '{
+    "cniVersion": "0.3.1",
+    "name": "localnet",
+    "type": "ovn-k8s-cni-overlay",
+    "topology":"localnet",
+    "mtu": 9000,
+    "netAttachDefName": "unifi-network-application/br1"
     }'

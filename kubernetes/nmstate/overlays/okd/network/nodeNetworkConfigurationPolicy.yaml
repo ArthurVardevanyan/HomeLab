@@ -11,8 +11,8 @@ spec:
   desiredState:
     interfaces:
       - name: br1
-        description: Linux bridge with enp7s0 as a port
-        type: linux-bridge
+        description: OVS bridge with enp7s0 as a port
+        type: ovs-bridge
         state: up
         ipv4:
           dhcp: true
@@ -24,6 +24,11 @@ spec:
           port:
             - name: enp7s0
         mtu: 9000
+    ovn:
+      bridge-mappings:
+        - localnet: localnet
+          bridge: br1
+          state: present
 ---
 apiVersion: nmstate.io/v1
 kind: NodeNetworkConfigurationPolicy
@@ -38,8 +43,8 @@ spec:
   desiredState:
     interfaces:
       - name: br1
-        description: Linux bridge with enp5s0 as a port
-        type: linux-bridge
+        description: OVS bridge with enp5s0 as a port
+        type: ovs-bridge
         state: up
         ipv4:
           dhcp: true
@@ -51,6 +56,11 @@ spec:
           port:
             - name: enp5s0
         mtu: 9000
+    ovn:
+      bridge-mappings:
+        - localnet: localnet
+          bridge: br1
+          state: present
 ---
 apiVersion: nmstate.io/v1
 kind: NodeNetworkConfigurationPolicy
