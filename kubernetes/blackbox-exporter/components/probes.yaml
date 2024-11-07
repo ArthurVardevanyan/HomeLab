@@ -1,0 +1,45 @@
+apiVersion: monitoring.coreos.com/v1
+kind: Probe
+metadata:
+  name: urls-ingress
+  namespace: blackbox-exporter
+spec:
+  jobName: url-ingress
+  interval: 30s
+  module: http_2xx
+  prober:
+    path: /probe
+    url: blackbox-exporter.blackbox-exporter.svc.cluster.local:9115
+  targets:
+    ingress:
+      namespaceSelector:
+        any: true
+      selector:
+        matchExpressions:
+          - key: blackbox
+            operator: DoesNotExist
+            values:
+              - ignore
+---
+apiVersion: monitoring.coreos.com/v1
+kind: Probe
+metadata:
+  name: urls-static
+  namespace: blackbox-exporter
+spec:
+  jobName: urls-static
+  interval: 30s
+  module: http_2xx
+  prober:
+    path: /probe
+    url: blackbox-exporter.blackbox-exporter.svc.cluster.local:9115
+  targets:
+    staticConfig:
+      static:
+        - https://1.1.1.1/
+        - http://192.168.100.1/
+        - https://api.okd.arthurvardevanyan.com:6443/healthz
+        - https://console-openshift-console.apps.okd.arthurvardevanyan.com/
+        - https://pfsense.arthurvardevanyan.com/
+        - https://pihole.arthurvardevanyan.com/admin/
+        - https://truenas.arthurvardevanyan.com/
