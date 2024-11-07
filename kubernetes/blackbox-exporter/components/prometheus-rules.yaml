@@ -1,0 +1,27 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: blackbox-exporter
+  namespace: blackbox-exporter
+  labels:
+    prometheus: kube-prometheus
+spec:
+  groups:
+    - name: thresholds
+      interval: 1m
+      rules:
+        - alert: CertificateExpiringSoon
+          expr: probe_ssl_earliest_cert_expiry - time() < 86400 * 30
+          for: 3m
+          labels:
+            severity: warning
+          annotations:
+            summary: "{{ $labels.instance }}"
+        - alert: ProbeFailure
+          expr: |
+            probe_success == 0
+          for: 1m
+          labels:
+            severity: critical
+          annotations:
+            summary: "{{ $labels.instance }}"
