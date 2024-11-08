@@ -83,6 +83,8 @@ spec:
             - name: wildcard-dns
               mountPath: "/etc/dnsmasq.d/02-my-wildcard-dns.conf"
               subPath: "02-my-wildcard-dns.conf"
+            - mountPath: /dev/shm
+              name: dshm
           resources:
             limits:
               cpu: 2000m
@@ -102,3 +104,7 @@ spec:
         - name: wildcard-dns
           configMap:
             name: wildcard-dns
+        - name: dshm
+          emptyDir:
+            medium: Memory
+            sizeLimit: 256Mi
