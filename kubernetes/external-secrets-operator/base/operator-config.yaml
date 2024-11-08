@@ -10,6 +10,13 @@ metadata:
   namespace: external-secrets-operator
 spec:
   certController:
+    resources:
+      requests:
+        cpu: 50m
+        memory: 72Mi
+      limits:
+        cpu: 50m
+        memory: 144Mi
     create: true
     fullnameOverride: ""
     image:
@@ -39,6 +46,13 @@ spec:
     pullPolicy: IfNotPresent
     repository: ghcr.io/external-secrets/external-secrets
     tag: v0.10.5@sha256:b97ebc9975ccc378a5f29e9fc77e52e1d76cdbf48acad078428392eb6114c33f
+  resources:
+    requests:
+      cpu: 50m
+      memory: 72Mi
+    limits:
+      cpu: 50m
+      memory: 144Mi
   installCRDs: false
   leaderElect: false
   nameOverride: ""
@@ -58,6 +72,13 @@ spec:
     create: true
     name: ""
   webhook:
+    resources:
+      requests:
+        cpu: 50m
+        memory: 72Mi
+      limits:
+        cpu: 50m
+        memory: 144Mi
     certCheckInterval: 5m
     certDir: /tmp/certs
     create: true

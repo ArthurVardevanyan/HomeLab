@@ -12,6 +12,15 @@ spec:
   source: devworkspace-operator-catalog
   sourceNamespace: openshift-marketplace
   startingCSV: devworkspace-operator.v0.31.0
+  config:
+    resources:
+      limits:
+        cpu: "2"
+        memory: 3Gi
+      requests:
+        cpu: 5m
+        memory: 128Mi
+
 ---
 apiVersion: operators.coreos.com/v1alpha1
 kind: Subscription
@@ -27,3 +36,11 @@ spec:
   source: community-operators
   sourceNamespace: openshift-marketplace
   startingCSV: eclipse-che.v7.94.0
+  config:
+    resources:
+      limits:
+        cpu: 500m
+        memory: 2Gi
+      requests:
+        cpu: 50m
+        memory: 128Mi

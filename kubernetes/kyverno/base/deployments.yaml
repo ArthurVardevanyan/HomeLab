@@ -61,7 +61,7 @@ spec:
       serviceAccountName: kyverno-admission-controller
       initContainers:
         - name: kyverno-pre
-          image: "ghcr.io/kyverno/kyvernopre:v1.13.0@sha256:7cae4a1da2d78ba212356deea51c69984ec2e01d9b07e4fda6a3a89179e6bcba"
+          image: "ghcr.io/kyverno/kyvernopre:v1.12.5@sha256:63f7eaf5aa8ace03b0ac7d2c4a3f3b80ad43fb2e895a9360152dde26318294b7"
           imagePullPolicy: IfNotPresent
           args:
             - --loggingFormat=text
@@ -104,7 +104,7 @@ spec:
               value: kyverno-svc
       containers:
         - name: kyverno
-          image: "ghcr.io/kyverno/kyverno:v1.13.0@sha256:ab21e9fd054d2f4197fc1e46285bd6e7b1353a7ed7749f80f75a1ac04f3426e7"
+          image: "ghcr.io/kyverno/kyverno:v1.12.5@sha256:a61c7022abcfa53e2c9c402e03c674c06ada59d19c3790d0640c903f7af5e900"
           imagePullPolicy: IfNotPresent
           args:
             - --caSecretName=kyverno-svc.kyverno.svc.kyverno-tls-ca
@@ -136,8 +136,8 @@ spec:
               cpu: 750m
               memory: 1Gi
             requests:
-              cpu: 250m
-              memory: 512Mi
+              cpu: 50m
+              memory: 256Mi
           securityContext:
             allowPrivilegeEscalation: false
             capabilities:

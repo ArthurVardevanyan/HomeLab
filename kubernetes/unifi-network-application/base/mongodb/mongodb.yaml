@@ -42,15 +42,15 @@ spec:
                   cpu: "150m"
                   memory: 768Mi
                 requests:
-                  cpu: "25m"
-                  memory: 256Mi
+                  cpu: "20m"
+                  memory: 384Mi
             - name: mongodb-agent
               resources:
                 limits:
                   cpu: "50m"
                   memory: 128Mi
                 requests:
-                  cpu: "25m"
+                  cpu: "20m"
                   memory: 64Mi
           initContainers:
             - name: mongodb-agent-readinessprobe
@@ -59,8 +59,16 @@ spec:
                   cpu: "150m"
                   memory: 512Mi
                 requests:
-                  cpu: "25m"
-                  memory: 128Mi
+                  cpu: "20m"
+                  memory: 32Mi
+            - name: mongod-posthook
+              resources:
+                limits:
+                  cpu: "150m"
+                  memory: 512Mi
+                requests:
+                  cpu: "20m"
+                  memory: 32Mi
       volumeClaimTemplates:
         - apiVersion: v1
           kind: PersistentVolumeClaim
