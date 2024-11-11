@@ -1,3 +1,5 @@
+#!/bin/bash
+
 curl --insecure --header "Authorization: Bearer $(kubectl create token -n kubernetes-dashboard admin-user)" -H 'Content-type: application/json' \
 	https://10.0.0.5:6443/healthz
 
