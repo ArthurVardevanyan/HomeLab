@@ -8,6 +8,7 @@ metadata:
   labels:
     app.kubernetes.io/name: vault
     app.kubernetes.io/instance: vault
+    app: vault
 spec:
   serviceName: vault-internal
   podManagementPolicy: Parallel
@@ -19,12 +20,14 @@ spec:
       app.kubernetes.io/name: vault
       app.kubernetes.io/instance: vault
       component: server
+      app: vault
   template:
     metadata:
       labels:
         app.kubernetes.io/name: vault
         app.kubernetes.io/instance: vault
         component: server
+        app: vault
     spec:
       affinity:
         podAntiAffinity:
