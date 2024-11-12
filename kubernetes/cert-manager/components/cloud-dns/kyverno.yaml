@@ -1,0 +1,49 @@
+apiVersion: kyverno.io/v1
+kind: Policy
+metadata:
+  name: cloud-dns-wif
+  namespace: cert-manager
+  annotations:
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+spec:
+  background: false
+  rules:
+    - name: cloud-dns-wif
+      match:
+        any:
+          - resources:
+              kinds:
+                - Deployment
+              selector:
+                matchLabels:
+                  app: cert-manager
+      mutate:
+        patchStrategicMerge:
+          spec:
+            template:
+              spec:
+                containers:
+                  - (name): cert-manager-controller
+                    env:
+                      - name: GOOGLE_APPLICATION_CREDENTIALS
+                        value: /var/run/secrets/google/credentials_config.json
+                    volumeMounts:
+                      - name: gcp-credentials-request
+                        readOnly: true
+                        mountPath: /var/run/secrets/google
+                      - name: serviceaccount-token
+                        readOnly: true
+                        mountPath: /var/run/secrets/openshift/serviceaccount
+                volumes:
+                  - name: gcp-credentials-request
+                    configMap:
+                      name: gcp-credentials-request
+                      defaultMode: 420
+                  - name: serviceaccount-token
+                    projected:
+                      sources:
+                        - serviceAccountToken:
+                            audience: openshift
+                            expirationSeconds: 3600
+                            path: token
+                      defaultMode: 420

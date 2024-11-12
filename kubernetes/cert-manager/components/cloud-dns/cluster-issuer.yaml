@@ -1,0 +1,53 @@
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  name: cloud-dns-letsencrypt-staging
+  namespace: cert-manager
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+  labels:
+    app.kubernetes.io/instance: certificate-manager
+spec:
+  acme:
+    email: arthur@arthurvardevanyan.com
+    preferredChain: "ISRG Root X2" # Doesn't Seem to Work
+    server: https://acme-staging-v02.api.letsencrypt.org/directory
+    privateKeySecretRef:
+      name: issuer-letsencrypt-staging
+    solvers:
+      - dns01:
+          cloudDNS:
+            # The ID of the GCP project
+            project: homelab-<path:secret/data/gcp/org/av/projects#project_id>
+            # This is the secret used to access the service account
+            # serviceAccountSecretRef:
+            #   name: gcp-credentials-request
+            #   key: credentials_config.json
+---
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  name: cloud-dns-letsencrypt
+  namespace: cert-manager
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+  labels:
+    app.kubernetes.io/instance: certificate-manager
+spec:
+  acme:
+    email: arthur@arthurvardevanyan.com
+    preferredChain: "ISRG Root X2" # Doesn't Seem to Work
+    server: https://acme-v02.api.letsencrypt.org/directory
+    privateKeySecretRef:
+      name: issuer-letsencrypt-staging
+    solvers:
+      - dns01:
+          cloudDNS:
+            # The ID of the GCP project
+            project: homelab-<path:secret/data/gcp/org/av/projects#project_id>
+            # This is the secret used to access the service account
+            # serviceAccountSecretRef:
+            #   name: gcp-credentials-request
+            #   key: credentials_config.json
