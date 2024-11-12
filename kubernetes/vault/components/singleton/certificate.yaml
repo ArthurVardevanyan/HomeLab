@@ -1,0 +1,14 @@
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: vault-okd-cert
+  namespace: vault
+  labels:
+    app.kubernetes.io/instance: vault
+spec:
+  secretName: vault-okd-cert
+  dnsNames:
+    - "vault.okd.arthurvardevanyan.com"
+  issuerRef:
+    kind: ClusterIssuer
+    name: cloud-dns-letsencrypt
