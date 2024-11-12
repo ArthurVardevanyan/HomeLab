@@ -1,7 +1,7 @@
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  name: vault
+  name: vault-singleton
   namespace: vault
   labels:
     app: vault
@@ -9,7 +9,7 @@ metadata:
   annotations:
     checkov.io/skip1: CKV_K8S_40=OpenShift Injects Random UID
 spec:
-  replicas: 1
+  replicas: 0
   serviceName: vault
   revisionHistoryLimit: 0
   selector:
@@ -102,10 +102,10 @@ spec:
       volumes:
         - name: vault-config
           configMap:
-            name: vault-config
+            name: vault-config-singleton
         - name: vault-cert
           secret:
-            secretName: vault-cert
+            secretName: vault-okd-cert
         - name: vault-pvc
           persistentVolumeClaim:
             claimName: vault

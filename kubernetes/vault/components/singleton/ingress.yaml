@@ -1,0 +1,29 @@
+kind: Ingress
+apiVersion: networking.k8s.io/v1
+metadata:
+  name: vault-okd
+  namespace: vault
+  labels:
+    blackbox: ignore
+    app.kubernetes.io/instance: vault
+  annotations:
+    externaldns.k8s.io: pihole
+    route.openshift.io/termination: reencrypt
+    route.openshift.io/destination-ca-certificate-secret: ca-bundle
+spec:
+  ingressClassName: openshift-default
+  rules:
+    - host: vault.okd.arthurvardevanyan.com
+      http:
+        paths:
+          - path: ""
+            pathType: ImplementationSpecific
+            backend:
+              service:
+                name: vault-singleton
+                port:
+                  name: vault
+  tls:
+    - hosts:
+        - vault.okd.arthurvardevanyan.com
+      secretName: vault-okd-cert
