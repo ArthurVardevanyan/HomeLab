@@ -2,9 +2,9 @@ ui = true
 
 listener "tcp" {
   address       = "0.0.0.0:8200"
-  tls_disable   = "0"
-  tls_cert_file = "/vault/cert/tls.crt"
-  tls_key_file  = "/vault/cert/tls.key"
+  tls_disable   = "1" # 0
+  # tls_cert_file = "/vault/cert/tls.crt"
+  # tls_key_file  = "/vault/cert/tls.key"
 }
 
 seal "gcpckms" {

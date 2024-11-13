@@ -7,8 +7,8 @@ metadata:
     app.kubernetes.io/instance: vault
   annotations:
     externaldns.k8s.io: pihole
-    route.openshift.io/termination: reencrypt
-    route.openshift.io/destination-ca-certificate-secret: ca-bundle
+    route.openshift.io/termination: edge #reencrypt
+    #route.openshift.io/destination-ca-certificate-secret: ca-bundle
 spec:
   ingressClassName: openshift-default
   rules:
@@ -19,7 +19,7 @@ spec:
             pathType: ImplementationSpecific
             backend:
               service:
-                name: vault
+                name: vault-active
                 port:
                   name: http
   tls:

@@ -29,22 +29,23 @@ spec:
         component: server
         app: vault
     spec:
-      affinity:
-        podAntiAffinity:
-          requiredDuringSchedulingIgnoredDuringExecution:
-            - labelSelector:
-                matchLabels:
-                  app.kubernetes.io/name: vault
-                  app.kubernetes.io/instance: "vault"
-                  component: server
-              topologyKey: kubernetes.io/hostname
-
+      topologySpreadConstraints:
+        - maxSkew: 1
+          topologyKey: topology.kubernetes.io/zone
+          whenUnsatisfiable: DoNotSchedule
+          labelSelector:
+            matchLabels:
+              app.kubernetes.io/name: vault
+        - maxSkew: 1
+          topologyKey: kubernetes.io/hostname
+          whenUnsatisfiable: DoNotSchedule
+          labelSelector:
+            matchLabels:
+              app.kubernetes.io/name: vault
       terminationGracePeriodSeconds: 10
       serviceAccountName: vault-sa
-
       securityContext:
         runAsNonRoot: true
-
       hostNetwork: false
       volumes:
         - name: config
@@ -69,7 +70,6 @@ spec:
           emptyDir: {}
       containers:
         - name: vault
-
           image: docker.io/hashicorp/vault:1.18.1@sha256:3580fa352195aa7e76449cb8fadeef6d2f90a454c38982d30cf094e9013be786
           imagePullPolicy: IfNotPresent
           command:
@@ -116,9 +116,9 @@ spec:
                 fieldRef:
                   fieldPath: metadata.namespace
             - name: VAULT_ADDR
-              value: "https://127.0.0.1:8200"
+              value: "http://127.0.0.1:8200"
             - name: VAULT_API_ADDR
-              value: "https://$(POD_IP):8200"
+              value: "http://$(POD_IP):8200"
             - name: SKIP_CHOWN
               value: "true"
             - name: SKIP_SETCAP
@@ -128,7 +128,7 @@ spec:
                 fieldRef:
                   fieldPath: metadata.name
             - name: VAULT_CLUSTER_ADDR
-              value: "https://$(HOSTNAME).vault-internal:8201"
+              value: "http://$(HOSTNAME).vault-internal:8201"
             - name: HOME
               value: "/home/vault"
 
