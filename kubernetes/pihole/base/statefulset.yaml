@@ -58,7 +58,7 @@ spec:
               command: ["dig", "@127.0.0.1", "cloudflare.com"]
             timeoutSeconds: 20
             initialDelaySeconds: 5
-            periodSeconds: 60
+            periodSeconds: 30
           livenessProbe:
             tcpSocket:
               port: dns-tcp
@@ -87,11 +87,11 @@ spec:
               name: dshm
           resources:
             limits:
-              cpu: 2000m
-              memory: 2048Mi
+              cpu: 50m
+              memory: 128Mi
             requests:
-              cpu: 100m
-              memory: 512Mi
+              cpu: 10m
+              memory: 64Mi
       automountServiceAccountToken: false
       serviceAccountName: pihole
       volumes:
