@@ -1,0 +1,52 @@
+---
+apiVersion: externaldns.k8s.io/v1alpha1
+kind: DNSEndpoint
+metadata:
+  name: okd-kubevirt
+  namespace: homelab
+  annotations:
+    externaldns.k8s.io: pihole
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+spec:
+  endpoints:
+    - dnsName: api.okd.virt.arthurvardevanyan.com
+      recordTTL: 60
+      recordType: A
+      targets:
+        - 10.0.0.200
+    - dnsName: api-int.okd.virt.arthurvardevanyan.com
+      recordTTL: 60
+      recordType: A
+      targets:
+        - 10.0.0.200
+    - dnsName: router-default.apps.okd.virt.arthurvardevanyan.com
+      recordTTL: 60
+      recordType: A
+      targets:
+        - 10.0.0.200
+---
+apiVersion: externaldns.k8s.io/v1alpha1
+kind: DNSEndpoint
+metadata:
+  name: okd-libvirt
+  namespace: okd-virt
+  annotations:
+    externaldns.k8s.io: pihole
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+spec:
+  endpoints:
+    - dnsName: api.okd.sandbox.arthurvardevanyan.com
+      recordTTL: 60
+      recordType: A
+      targets:
+        - 10.0.0.17
+    - dnsName: api-int.okd.sandbox.arthurvardevanyan.com
+      recordTTL: 60
+      recordType: A
+      targets:
+        - 10.0.0.17
+    - dnsName: router-default.apps.okd.sandbox.arthurvardevanyan.com
+      recordTTL: 60
+      recordType: A
+      targets:
+        - 10.0.0.17

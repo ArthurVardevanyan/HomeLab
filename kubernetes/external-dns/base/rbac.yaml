@@ -38,6 +38,12 @@ rules:
   - apiGroups: ["route.openshift.io"]
     resources: ["routes"]
     verbs: ["get", "watch", "list"]
+  - apiGroups: ["externaldns.k8s.io"]
+    resources: ["dnsendpoints"]
+    verbs: ["get", "watch", "list"]
+  - apiGroups: ["externaldns.k8s.io"]
+    resources: ["dnsendpoints/status"]
+    verbs: ["*"]
 ---
 # Source: external-dns/templates/clusterrolebinding.yaml
 apiVersion: rbac.authorization.k8s.io/v1
