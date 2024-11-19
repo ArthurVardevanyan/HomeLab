@@ -1,0 +1,25 @@
+apiVersion: externaldns.k8s.io/v1alpha1
+kind: DNSEndpoint
+metadata:
+  name: microshift
+  namespace: prometheus
+  annotations:
+    externaldns.k8s.io: pihole
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+spec:
+  endpoints:
+    - dnsName: microshift.arthurvardevanyan.com
+      recordTTL: 60
+      recordType: A
+      targets:
+        - 10.0.0.99
+    - dnsName: metrics.microshift.arthurvardevanyan.com
+      recordTTL: 60
+      recordType: CNAME
+      targets:
+        - microshift.arthurvardevanyan.com
+    - dnsName: node-exporter.microshift.arthurvardevanyan.com
+      recordTTL: 60
+      recordType: CNAME
+      targets:
+        - microshift.arthurvardevanyan.com
