@@ -1,0 +1,67 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: stackrox
+resources:
+  - ../../base
+  - ./cluster-name.yaml
+components:
+  - ../../components/openshift
+patches:
+  - target:
+      kind: DaemonSet
+      name: collector
+    patch: |-
+      - op: remove
+        path: /spec/template/spec/containers/2
+      - op: remove
+        path: /spec/template/spec/containers/0
+  - target:
+      kind: Deployment
+      name: sensor
+    patch: |-
+      - op: replace
+        path: /spec/template/spec/containers/0/env/5
+        value: { "name": "ROX_CENTRAL_ENDPOINT", "value": "central-stackrox.apps.okd.arthurvardevanyan.com:443" }
+      - op: replace
+        path: /spec/template/spec/containers/0/env/8
+        value: { "name": "ROX_HELM_CLUSTER_CONFIG_FP", "value": "<path:secret/data/homelab/stackrox/microshift#config-fingerprint>" }
+      - op: replace
+        path: /spec/template/spec/containers/0/env/7
+        value: { "name": "ROX_OPENSHIFT_API", "value": "false" }
+  - target:
+      kind: ExternalSecret
+      name: config-fingerprint
+    patch: |-
+      - op: replace
+        path: /spec/data/0/remoteRef/key
+        value: /homelab/stackrox/microshift
+  - target:
+      kind: ExternalSecret
+      name: admission-control-tls
+    patch: |-
+      - op: replace
+        path: /spec/data/1/remoteRef/key
+        value: /homelab/stackrox/microshift
+      - op: replace
+        path: /spec/data/2/remoteRef/key
+        value: /homelab/stackrox/microshift
+  - target:
+      kind: ExternalSecret
+      name: collector-tls
+    patch: |-
+      - op: replace
+        path: /spec/data/1/remoteRef/key
+        value: /homelab/stackrox/microshift
+      - op: replace
+        path: /spec/data/2/remoteRef/key
+        value: /homelab/stackrox/microshift
+  - target:
+      kind: ExternalSecret
+      name: sensor-tls
+    patch: |-
+      - op: replace
+        path: /spec/data/1/remoteRef/key
+        value: /homelab/stackrox/microshift
+      - op: replace
+        path: /spec/data/2/remoteRef/key
+        value: /homelab/stackrox/microshift
