@@ -63,6 +63,7 @@ git
 docker
 npm
 autojump
+zsh-kubectl-prompt
 )
 
 source $ZSH/oh-my-zsh.sh

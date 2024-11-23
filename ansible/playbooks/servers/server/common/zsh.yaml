@@ -40,6 +40,12 @@
         dest: /home/arthur/.oh-my-zsh
       when: not oh_my_zsh.stat.exists
 
+    - name: Cloning  zsh-kubectl-prompt
+      git:
+        repo: https://github.com/superbrothers/.git
+        dest: /home/arthur/.oh-my-zsh/custom/plugins/zsh-kubectl-prompt
+      when: not oh_my_zsh.stat.exists
+
     - name: Creating new zsh theme
       copy:
         src: "../../../../../machineConfigs/desktop/home/arthur/.oh-my-zsh/themes/custom.zsh-theme"

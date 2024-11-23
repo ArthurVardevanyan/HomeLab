@@ -28,15 +28,21 @@
         dest: /home/fedora/.oh-my-zsh
       when: not oh_my_zsh.stat.exists
 
+    - name: Cloning  zsh-kubectl-prompt
+      git:
+        repo: https://github.com/superbrothers/.git
+        dest: /home/fedora/.oh-my-zsh/custom/plugins/zsh-kubectl-prompt
+      when: not oh_my_zsh.stat.exists
+
     - name: Creating new zsh theme
       copy:
-        src: "../../../machineConfigs/desktop/home/arthur/.oh-my-zsh/themes/custom.zsh-theme"
-        dest: "/home/fedora/.oh-my-zsh/themes/custom.zsh-theme"
+        src: "../../../machineConfigs/desktop/home/fedora/.oh-my-zsh/themes/custom.zsh-theme"
+        dest: "/home/fedora/.oh-my-zsh/themes/kubectl.zsh-theme"
       when: not zshrc.stat.exists
 
     - name: Creating new ~/.zshrc
       copy:
-        src: "../../../machineConfigs/desktop/home/arthur/.zshrc"
+        src: "../../../machineConfigs/desktop/home/fedora/.zshrc"
         dest: "/home/fedora/.zshrc"
       when: not zshrc.stat.exists
 
