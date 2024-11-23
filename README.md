@@ -147,21 +147,22 @@ end
 
 | Kubernetes Channel | OKD Version | OKD Channel   | OKD OS    | Host Operating System | Storage Layer |
 | ------------------ | ----------- | ------------- | --------- | --------------------- | ------------- |
-| v1.30              | 4.17-\*     | stable-scos-4 | SCOS 4.18 | RHEL 9.4              | CEPH          |
+| v1.30.\*           | 4.17-\*     | stable-scos-4 | SCOS 4.18 | RHEL 9.5              | CEPH          |
 
 **Machines:**
 
 [CPU Benchmark](https://www.cpubenchmark.net/compare/Intel-i5-6600-vs-AMD-RX-427BB-vs-Intel-i3-2130-vs-AMD-GX-415GA-SOC-vs-AMD-Ryzen-7-5700G/2594vs2496vs755vs2081vs4323)
 
-| Machine    | Model       | CPU      | CPU | Mem  | Storage                        | ZFS Storage  |
-| ---------- | ----------- | -------- | --- | ---- | ------------------------------ | ------------ |
-| pfSense    | Hp t730     | RX-427BB | 4   | 4G   | 16G SSD                        | N/A          |
-| Bare Metal | Hp t620     | GX-415GA | 4   | 6G   | 16G SSD & 16G USB              | N/A          |
-| kvm-1      | N/A         | R7-5700G | 16  | 128G | 2x4TB NVME, 1x1TB SSD,.5TB SSD | N/A          |
-| kvm-2      | N/A         | R7-5700G | 16  | 128G | 2x4TB NVME, 1x1TB SSD,.5TB SSD | N/A          |
-| kvm-3      | N/A         | R7-5700G | 16  | 128G | 2x4TB NVME, 1x1TB SSD,.5TB SSD | N/A          |
-| TrueNas    | Hp ProDesk  | i5-6600  | 4   | 32G  | 120G SSD Boot Mirror           | 5x2TB RaidZ2 |
-| Spare      | Hp p7-1226s | i3-2130  | 4   | 8G   | 240G SSD                       | N/A          |
+| Machine    | Model          | CPU      | CPU | Mem  | Storage                        | ZFS Storage  |
+| ---------- | -------------- | -------- | --- | ---- | ------------------------------ | ------------ |
+| pfSense    | Hp t730        | RX-427BB | 4   | 4G   | 16G SSD                        | N/A          |
+| MicroShift | Raspberry Pi 5 | BCM2712  | 4   | 8G   | 1TB NVME                       | N/A          |
+| Bare Metal | Hp t620        | GX-415GA | 4   | 6G   | 16G SSD & 16G USB              | N/A          |
+| kvm-1      | N/A            | R7-5700G | 16  | 128G | 2x4TB NVME, 1x1TB SSD,.5TB SSD | N/A          |
+| kvm-2      | N/A            | R7-5700G | 16  | 128G | 2x4TB NVME, 1x1TB SSD,.5TB SSD | N/A          |
+| kvm-3      | N/A            | R7-5700G | 16  | 128G | 2x4TB NVME, 1x1TB SSD,.5TB SSD | N/A          |
+| TrueNas    | Hp ProDesk     | i5-6600  | 4   | 32G  | 120G SSD Boot Mirror           | 5x2TB RaidZ2 |
+| Spare      | Hp p7-1226s    | i3-2130  | 4   | 8G   | 240G SSD                       | N/A          |
 
 | Machine | PPT | CPU Curve | GFX Curve | CPU Frequency | vMem | Memory Freq |
 | ------- | --- | --------- | --------- | ------------- | ---- | ----------- |
