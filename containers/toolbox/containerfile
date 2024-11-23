@@ -1,20 +1,20 @@
-FROM registry.access.redhat.com/ubi9/ubi-minimal:9.4-949.1714662671@sha256:2636170dc55a0931d013014a72ae26c0c2521d4b61a28354b3e2e5369fa335a3
+FROM registry.access.redhat.com/ubi9/ubi-minimal:9.5-1731593028@sha256:8b6978d555746877c73f52375f60fd7b6fd27d6aca000eaed27d0995303c13de
 
 COPY ./containers/toolbox/repos /etc/yum.repos.d/
 #COPY ./repos /etc/yum.repos.d/
 
 ENV \
-  ARGOCD_VAULT_VERSION=1.17.0 \
-  OKD_VERSION=4.15.0-0.okd-2024-03-10-010116 \
-  OPENTOFU_VERSION=1.7.1 \
-  VAULT_VERSION=1.16.2 \
-  KO_VERSION=0.15.4 \
-  GO_VERSION=1.22.3 \
-  GH_VERSION=2.49.2 \
+  ARGOCD_VAULT_VERSION=1.18.1 \
+  OKD_VERSION=4.16.0-okd-scos.1 \
+  OPENTOFU_VERSION=1.8.6 \
+  VAULT_VERSION=1.18.2 \
+  KO_VERSION=0.17.1 \
+  GO_VERSION=1.23.3 \
+  GH_VERSION=2.62.0 \
   # 0.6.3 Not Working
   KUBECONFORM_VERSION=0.6.2  \
-  MARKDOWNLINT_CLI_VERSION=0.40.0 \
-  PRETTIER_CLI_VERSION=3.2.5 \
+  MARKDOWNLINT_CLI_VERSION=0.43.0 \
+  PRETTIER_CLI_VERSION=3.3.3 \
   HOME=/tmp \
   PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/local/go/bin \
   KICK="0"
@@ -54,7 +54,7 @@ RUN curl -L -o argocd-vault-plugin https://github.com/argoproj-labs/argocd-vault
 RUN curl -L -o yq https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64  && \
   chmod +x yq && mv yq /usr/local/bin
 
-RUN curl -L -o openshift-client-linux.tar.gz https://github.com/openshift/okd/releases/download/${OKD_VERSION}/openshift-client-linux-${OKD_VERSION}.tar.gz && \
+RUN curl -L -o openshift-client-linux.tar.gz https://github.com/okd-project/okd-scos/releases/download/${OKD_VERSION}/openshift-client-linux-${OKD_VERSION}.tar.gz && \
   tar -xzf openshift-client-linux.tar.gz && mv oc /usr/local/bin/oc && rm -f oc kubectl openshift-client-linux.tar.gz && ln -svf /usr/local/bin/oc /usr/local/bin/kubectl
 
 RUN curl -L -o vault_linux_amd64.zip https://releases.hashicorp.com/vault/${VAULT_VERSION}/vault_${VAULT_VERSION}_linux_amd64.zip && \
