@@ -58,3 +58,29 @@
         dest: /usr/local/bin/kubectl-neat
         mode: a+x
         remote_src: yes
+
+    - name: Download Kubecolor
+      get_url:
+        url: https://github.com/kubecolor/kubecolor/releases/download/v0.4.0/kubecolor_0.4.0_linux_arm64.tar.gz
+        dest: /tmp/kubecolor.tar.gz
+      check_mode: false
+
+    - name: Kubecolor Dir
+      file:
+        path: /tmp/kubecolor
+        state: directory
+      check_mode: false
+
+    - name: Extract Kubecolor
+      unarchive:
+        src: /tmp/kubecolor.tar.gz
+        dest: /tmp/kubecolor
+        remote_src: yes
+      check_mode: false
+
+    - name: Copy Kubecolor Binary To Bin
+      copy:
+        src: /tmp/kubecolor/kubecolor
+        dest: /usr/local/bin/kubecolor
+        mode: a+x
+        remote_src: yes
