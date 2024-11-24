@@ -1,3 +1,4 @@
+---
 # Source: stackrox-central-services/templates/01-central-00-serviceaccount.yaml
 apiVersion: v1
 kind: ServiceAccount
@@ -10,8 +11,8 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: stackrox
     app.kubernetes.io/part-of: stackrox-central-services
-    app.kubernetes.io/version: "4"
-    helm.sh/chart: stackrox-central-services-400
+    app.kubernetes.io/version: 4.5.5
+    helm.sh/chart: stackrox-central-services-400.5.5
   annotations:
     email: support@stackrox.com
     meta.helm.sh/release-name: stackrox-central-services
@@ -19,9 +20,6 @@ metadata:
     owner: stackrox
     serviceaccounts.openshift.io/oauth-redirectreference.main: '{"kind":"OAuthRedirectReference","apiVersion":"v1","reference":{"kind":"Route","name":"central"}}'
     serviceaccounts.openshift.io/oauth-redirecturi.main: "sso/providers/openshift/callback"
-# imagePullSecrets:
-#   - name: "stackrox"
-#   - name: "stackrox-scanner"
 ---
 # Source: stackrox-central-services/templates/02-scanner-00-serviceaccount.yaml
 apiVersion: v1
@@ -35,16 +33,13 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: stackrox
     app.kubernetes.io/part-of: stackrox-central-services
-    app.kubernetes.io/version: "4"
-    helm.sh/chart: stackrox-central-services-400
+    app.kubernetes.io/version: 4.5.5
+    helm.sh/chart: stackrox-central-services-400.5.5
   annotations:
     email: support@stackrox.com
     meta.helm.sh/release-name: stackrox-central-services
     meta.helm.sh/release-namespace: stackrox
     owner: stackrox
-# imagePullSecrets:
-#   - name: "stackrox"
-#   - name: "stackrox-scanner"
 ---
 # Source: stackrox-central-services/templates/01-central-02-psps.yaml
 kind: ClusterRole
@@ -57,8 +52,8 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: stackrox
     app.kubernetes.io/part-of: stackrox-central-services
-    app.kubernetes.io/version: "4"
-    helm.sh/chart: stackrox-central-services-400
+    app.kubernetes.io/version: 4.5.5
+    helm.sh/chart: stackrox-central-services-400.5.5
   annotations:
     email: support@stackrox.com
     meta.helm.sh/release-name: stackrox-central-services
@@ -85,8 +80,8 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: stackrox
     app.kubernetes.io/part-of: stackrox-central-services
-    app.kubernetes.io/version: "4"
-    helm.sh/chart: stackrox-central-services-400
+    app.kubernetes.io/version: 4.5.5
+    helm.sh/chart: stackrox-central-services-400.5.5
   annotations:
     email: support@stackrox.com
     meta.helm.sh/release-name: stackrox-central-services
@@ -114,8 +109,8 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: stackrox
     app.kubernetes.io/part-of: stackrox-central-services
-    app.kubernetes.io/version: "4"
-    helm.sh/chart: stackrox-central-services-400
+    app.kubernetes.io/version: 4.5.5
+    helm.sh/chart: stackrox-central-services-400.5.5
   annotations:
     email: support@stackrox.com
     meta.helm.sh/release-name: stackrox-central-services
@@ -127,9 +122,63 @@ rules:
     resources:
       - securitycontextconstraints
     resourceNames:
-      - anyuid
+      - nonroot-v2
     verbs:
       - use
+---
+# Source: stackrox-central-services/templates/01-central-02-security.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: use-central-scc
+  namespace: stackrox
+  labels:
+    app.kubernetes.io/component: central
+    app.kubernetes.io/instance: stackrox-central-services
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: stackrox
+    app.kubernetes.io/part-of: stackrox-central-services
+    app.kubernetes.io/version: 4.5.5
+    helm.sh/chart: stackrox-central-services-400.5.5
+  annotations:
+    email: support@stackrox.com
+    meta.helm.sh/release-name: stackrox-central-services
+    meta.helm.sh/release-namespace: stackrox
+    owner: stackrox
+rules:
+  - apiGroups:
+      - security.openshift.io
+    resources:
+      - securitycontextconstraints
+    resourceNames:
+      - nonroot-v2
+    verbs:
+      - use
+---
+# Source: stackrox-central-services/templates/01-central-03-cloud-credentials-rbac.yaml
+kind: Role
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: central-sts-config-reader
+  namespace: stackrox
+  annotations:
+    email: support@stackrox.com
+    meta.helm.sh/release-name: stackrox-central-services
+    meta.helm.sh/release-namespace: stackrox
+    owner: stackrox
+  labels:
+    app.kubernetes.io/component: central
+    app.kubernetes.io/instance: stackrox-central-services
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: stackrox
+    app.kubernetes.io/part-of: stackrox-central-services
+    app.kubernetes.io/version: 4.5.5
+    helm.sh/chart: stackrox-central-services-400.5.5
+rules:
+  - apiGroups: [""]
+    resources: ["secrets"]
+    resourceNames: ["gcp-cloud-credentials"]
+    verbs: ["get", "list", "watch"]
 ---
 # Source: stackrox-central-services/templates/01-central-03-diagnostics-rbac.yaml
 apiVersion: rbac.authorization.k8s.io/v1
@@ -143,8 +192,8 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: stackrox
     app.kubernetes.io/part-of: stackrox-central-services
-    app.kubernetes.io/version: "4"
-    helm.sh/chart: stackrox-central-services-400
+    app.kubernetes.io/version: 4.5.5
+    helm.sh/chart: stackrox-central-services-400.5.5
   annotations:
     email: support@stackrox.com
     meta.helm.sh/release-name: stackrox-central-services
@@ -168,6 +217,65 @@ rules:
       - get
       - list
 ---
+# Source: stackrox-central-services/templates/02-scanner-01-security.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: use-scanner-scc
+  namespace: stackrox
+  labels:
+    app.kubernetes.io/component: scanner
+    app.kubernetes.io/instance: stackrox-central-services
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: stackrox
+    app.kubernetes.io/part-of: stackrox-central-services
+    app.kubernetes.io/version: 4.5.5
+    helm.sh/chart: stackrox-central-services-400.5.5
+  annotations:
+    email: support@stackrox.com
+    meta.helm.sh/release-name: stackrox-central-services
+    meta.helm.sh/release-namespace: stackrox
+    owner: stackrox
+rules:
+  - apiGroups:
+      - security.openshift.io
+    resources:
+      - securitycontextconstraints
+    resourceNames:
+      - nonroot-v2
+    verbs:
+      - use
+---
+# Source: stackrox-central-services/templates/99-openshift-monitoring.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: central-prometheus-k8s
+  namespace: stackrox
+  labels:
+    app.kubernetes.io/instance: stackrox-central-services
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: stackrox
+    app.kubernetes.io/part-of: stackrox-central-services
+    app.kubernetes.io/version: 4.5.5
+    helm.sh/chart: stackrox-central-services-400.5.5
+  annotations:
+    email: support@stackrox.com
+    meta.helm.sh/release-name: stackrox-central-services
+    meta.helm.sh/release-namespace: stackrox
+    owner: stackrox
+rules:
+  - apiGroups:
+      - ""
+    resources:
+      - services
+      - endpoints
+      - pods
+    verbs:
+      - get
+      - list
+      - watch
+---
 # Source: stackrox-central-services/templates/01-central-02-db-security.yaml
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
@@ -180,8 +288,8 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: stackrox
     app.kubernetes.io/part-of: stackrox-central-services
-    app.kubernetes.io/version: "4"
-    helm.sh/chart: stackrox-central-services-400
+    app.kubernetes.io/version: 4.5.5
+    helm.sh/chart: stackrox-central-services-400.5.5
   annotations:
     email: support@stackrox.com
     meta.helm.sh/release-name: stackrox-central-services
@@ -208,8 +316,8 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: stackrox
     app.kubernetes.io/part-of: stackrox-central-services
-    app.kubernetes.io/version: "4"
-    helm.sh/chart: stackrox-central-services-400
+    app.kubernetes.io/version: 4.5.5
+    helm.sh/chart: stackrox-central-services-400.5.5
   annotations:
     email: support@stackrox.com
     meta.helm.sh/release-name: stackrox-central-services
@@ -224,6 +332,62 @@ subjects:
     name: central
     namespace: stackrox
 ---
+# Source: stackrox-central-services/templates/01-central-02-security.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: central-use-scc
+  namespace: stackrox
+  labels:
+    app.kubernetes.io/component: central
+    app.kubernetes.io/instance: stackrox-central-services
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: stackrox
+    app.kubernetes.io/part-of: stackrox-central-services
+    app.kubernetes.io/version: 4.5.5
+    helm.sh/chart: stackrox-central-services-400.5.5
+  annotations:
+    email: support@stackrox.com
+    meta.helm.sh/release-name: stackrox-central-services
+    meta.helm.sh/release-namespace: stackrox
+    owner: stackrox
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: use-central-scc
+subjects:
+  - kind: ServiceAccount
+    name: central
+    namespace: stackrox
+---
+# Source: stackrox-central-services/templates/01-central-03-cloud-credentials-rbac.yaml
+kind: RoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: central-sts-config-reader
+  namespace: stackrox
+  annotations:
+    email: support@stackrox.com
+    meta.helm.sh/release-name: stackrox-central-services
+    meta.helm.sh/release-namespace: stackrox
+    owner: stackrox
+  labels:
+    app.kubernetes.io/component: central
+    app.kubernetes.io/instance: stackrox-central-services
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: stackrox
+    app.kubernetes.io/part-of: stackrox-central-services
+    app.kubernetes.io/version: 4.5.5
+    helm.sh/chart: stackrox-central-services-400.5.5
+subjects:
+  - kind: ServiceAccount
+    name: central
+    namespace: stackrox
+roleRef:
+  kind: Role
+  name: central-sts-config-reader
+  apiGroup: rbac.authorization.k8s.io
+---
 # Source: stackrox-central-services/templates/01-central-03-diagnostics-rbac.yaml
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
@@ -236,8 +400,8 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: stackrox
     app.kubernetes.io/part-of: stackrox-central-services
-    app.kubernetes.io/version: "4"
-    helm.sh/chart: stackrox-central-services-400
+    app.kubernetes.io/version: 4.5.5
+    helm.sh/chart: stackrox-central-services-400.5.5
   annotations:
     email: support@stackrox.com
     meta.helm.sh/release-name: stackrox-central-services
@@ -264,8 +428,8 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: stackrox
     app.kubernetes.io/part-of: stackrox-central-services
-    app.kubernetes.io/version: "4"
-    helm.sh/chart: stackrox-central-services-400
+    app.kubernetes.io/version: 4.5.5
+    helm.sh/chart: stackrox-central-services-400.5.5
   annotations:
     email: support@stackrox.com
     meta.helm.sh/release-name: stackrox-central-services
@@ -279,3 +443,85 @@ subjects:
   - kind: ServiceAccount
     name: scanner
     namespace: stackrox
+---
+# Source: stackrox-central-services/templates/02-scanner-01-security.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: scanner-use-scc
+  namespace: stackrox
+  labels:
+    app.kubernetes.io/component: scanner
+    app.kubernetes.io/instance: stackrox-central-services
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: stackrox
+    app.kubernetes.io/part-of: stackrox-central-services
+    app.kubernetes.io/version: 4.5.5
+    helm.sh/chart: stackrox-central-services-400.5.5
+  annotations:
+    email: support@stackrox.com
+    meta.helm.sh/release-name: stackrox-central-services
+    meta.helm.sh/release-namespace: stackrox
+    owner: stackrox
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: use-scanner-scc
+subjects:
+  - kind: ServiceAccount
+    name: scanner
+    namespace: stackrox
+---
+# Source: stackrox-central-services/templates/99-openshift-monitoring.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: central-prometheus-k8s
+  namespace: stackrox
+  labels:
+    app.kubernetes.io/instance: stackrox-central-services
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: stackrox
+    app.kubernetes.io/part-of: stackrox-central-services
+    app.kubernetes.io/version: 4.5.5
+    helm.sh/chart: stackrox-central-services-400.5.5
+  annotations:
+    email: support@stackrox.com
+    meta.helm.sh/release-name: stackrox-central-services
+    meta.helm.sh/release-namespace: stackrox
+    owner: stackrox
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: central-prometheus-k8s
+subjects:
+  - kind: ServiceAccount
+    name: prometheus-k8s
+    namespace: openshift-monitoring
+---
+# Source: stackrox-central-services/templates/99-openshift-monitoring.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: "rhacs-central-auth-reader-stackrox"
+  namespace: kube-system
+  labels:
+    app.kubernetes.io/instance: stackrox-central-services
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: stackrox
+    app.kubernetes.io/part-of: stackrox-central-services
+    app.kubernetes.io/version: 4.5.5
+    helm.sh/chart: stackrox-central-services-400.5.5
+  annotations:
+    email: support@stackrox.com
+    meta.helm.sh/release-name: stackrox-central-services
+    meta.helm.sh/release-namespace: stackrox
+    owner: stackrox
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: extension-apiserver-authentication-reader
+subjects:
+  - kind: ServiceAccount
+    name: central
+    namespace: "stackrox"

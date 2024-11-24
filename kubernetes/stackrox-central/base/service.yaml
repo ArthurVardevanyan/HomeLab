@@ -1,3 +1,4 @@
+---
 # Source: stackrox-central-services/templates/01-central-14-service.yaml
 apiVersion: v1
 kind: Service
@@ -10,18 +11,22 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: stackrox
     app.kubernetes.io/part-of: stackrox-central-services
-    app.kubernetes.io/version: "4"
-    helm.sh/chart: stackrox-central-services-400
+    app.kubernetes.io/version: 4.5.5
+    helm.sh/chart: stackrox-central-services-400.5.5
   annotations:
     email: support@stackrox.com
     meta.helm.sh/release-name: stackrox-central-services
     meta.helm.sh/release-namespace: stackrox
     owner: stackrox
+    service.beta.openshift.io/serving-cert-secret-name: central-monitoring-tls
 spec:
   ports:
     - name: https
       port: 443
       targetPort: api
+    - name: monitoring-tls
+      port: 9091
+      targetPort: monitoring-tls
   selector:
     app: central
   type: ClusterIP
@@ -38,8 +43,8 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: stackrox
     app.kubernetes.io/part-of: stackrox-central-services
-    app.kubernetes.io/version: "4"
-    helm.sh/chart: stackrox-central-services-400
+    app.kubernetes.io/version: 4.5.5
+    helm.sh/chart: stackrox-central-services-400.5.5
   annotations:
     email: support@stackrox.com
     meta.helm.sh/release-name: stackrox-central-services
@@ -70,8 +75,8 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: stackrox
     app.kubernetes.io/part-of: stackrox-central-services
-    app.kubernetes.io/version: "4"
-    helm.sh/chart: stackrox-central-services-400
+    app.kubernetes.io/version: 4.5.5
+    helm.sh/chart: stackrox-central-services-400.5.5
   annotations:
     email: support@stackrox.com
     meta.helm.sh/release-name: stackrox-central-services

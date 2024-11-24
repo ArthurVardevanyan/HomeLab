@@ -1,3 +1,4 @@
+---
 # Source: stackrox-secured-cluster-services/templates/admission-controller.yaml
 apiVersion: apps/v1
 kind: Deployment
@@ -10,12 +11,11 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: stackrox
     app.kubernetes.io/part-of: stackrox-secured-cluster-services
-    app.kubernetes.io/version: "4"
-    helm.sh/chart: stackrox-secured-cluster-services-400
+    app.kubernetes.io/version: 4.5.5
+    helm.sh/chart: stackrox-secured-cluster-services-400.5.5
     app: admission-control
     auto-upgrade.stackrox.io/component: "sensor"
   annotations:
-    argocd.argoproj.io/sync-wave: "2"
     email: support@stackrox.com
     meta.helm.sh/release-name: stackrox-secured-cluster-services
     meta.helm.sh/release-namespace: stackrox
@@ -29,7 +29,7 @@ metadata:
     checkov.io/skip7: CKV_K8S_38=Security Tool
     checkov.io/skip8: CKV_K8S_40=OpenShift Injects Random UID
 spec:
-  #replicas: 3
+  # replicas: 3
   minReadySeconds: 0
   selector:
     matchLabels:
@@ -44,43 +44,41 @@ spec:
         app.kubernetes.io/managed-by: Helm
         app.kubernetes.io/name: stackrox
         app.kubernetes.io/part-of: stackrox-secured-cluster-services
-        app.kubernetes.io/version: "4"
-        helm.sh/chart: stackrox-secured-cluster-services-400
+        app.kubernetes.io/version: 4.5.5
+        helm.sh/chart: stackrox-secured-cluster-services-400.5.5
       annotations:
-        traffic.sidecar.istio.io/excludeInboundPorts: "8443"
         email: support@stackrox.com
         meta.helm.sh/release-name: stackrox-secured-cluster-services
         meta.helm.sh/release-namespace: stackrox
+        openshift.io/required-scc: restricted-v2
         owner: stackrox
+        traffic.sidecar.istio.io/excludeInboundPorts: "8443"
     spec:
       # Attempt to schedule these on master nodes
       affinity:
         nodeAffinity:
           preferredDuringSchedulingIgnoredDuringExecution:
-            # node-role.kubernetes.io/master is replaced by node-role.kubernetes.io/control-plane from certain version
-            # of k8s. We apply both to be compatible with any k8s version.
-            - weight: 50
-              preference:
+            - preference:
                 matchExpressions:
                   - key: node-role.kubernetes.io/master
                     operator: Exists
-            - weight: 50
-              preference:
+              weight: 50
+            - preference:
                 matchExpressions:
                   - key: node-role.kubernetes.io/control-plane
                     operator: Exists
+              weight: 50
         podAntiAffinity:
           preferredDuringSchedulingIgnoredDuringExecution:
-            - weight: 60
-              podAffinityTerm:
-                namespaces: ["stackrox"]
-                topologyKey: "kubernetes.io/hostname"
+            - podAffinityTerm:
                 labelSelector:
                   matchLabels:
                     app: admission-control
+                topologyKey: kubernetes.io/hostname
+              weight: 60
       serviceAccountName: admission-control
       containers:
-        - image: "quay.io/stackrox-io/main:4.4.4@sha256:5d52162e01421450c5a2dcfac121ddcd20a235c5eb2c27bb5e76f8e028ef7bee"
+        - image: "quay.io/stackrox-io/main:4.5.5@sha256:1560abe51762fa91013007c46305dccc147eae8342232ceda13ad89c37e301b5"
           imagePullPolicy: IfNotPresent
           name: admission-control
           readinessProbe:
@@ -107,7 +105,7 @@ spec:
             runAsNonRoot: true
             readOnlyRootFilesystem: true
           env:
-            - name: GOMEMLIMIT
+            - name: ROX_MEMLIMIT
               valueFrom:
                 resourceFieldRef:
                   resource: limits.memory
@@ -193,12 +191,11 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: stackrox
     app.kubernetes.io/part-of: stackrox-secured-cluster-services
-    app.kubernetes.io/version: "4"
-    helm.sh/chart: stackrox-secured-cluster-services-400
+    app.kubernetes.io/version: 4.5.5
+    helm.sh/chart: stackrox-secured-cluster-services-400.5.5
     app: sensor
     auto-upgrade.stackrox.io/component: "sensor"
   annotations:
-    argocd.argoproj.io/sync-wave: "2"
     email: support@stackrox.com
     meta.helm.sh/release-name: stackrox-secured-cluster-services
     meta.helm.sh/release-namespace: stackrox
@@ -228,51 +225,49 @@ spec:
         app.kubernetes.io/managed-by: Helm
         app.kubernetes.io/name: stackrox
         app.kubernetes.io/part-of: stackrox-secured-cluster-services
-        app.kubernetes.io/version: "4"
-        helm.sh/chart: stackrox-secured-cluster-services-400
+        app.kubernetes.io/version: 4.5.5
+        helm.sh/chart: stackrox-secured-cluster-services-400.5.5
       annotations:
         traffic.sidecar.istio.io/excludeInboundPorts: "8443,9443"
         email: support@stackrox.com
         meta.helm.sh/release-name: stackrox-secured-cluster-services
         meta.helm.sh/release-namespace: stackrox
         owner: stackrox
+        openshift.io/required-scc: restricted-v2
     spec:
       affinity:
         nodeAffinity:
           preferredDuringSchedulingIgnoredDuringExecution:
-            # Sensor is single-homed, so avoid preemptible nodes.
-            - weight: 100
-              preference:
+            - preference:
                 matchExpressions:
                   - key: cloud.google.com/gke-preemptible
                     operator: NotIn
                     values:
                       - "true"
-            - weight: 50
-              preference:
+              weight: 100
+            - preference:
                 matchExpressions:
                   - key: node-role.kubernetes.io/infra
                     operator: Exists
-            - weight: 25
-              preference:
+              weight: 50
+            - preference:
                 matchExpressions:
                   - key: node-role.kubernetes.io/compute
                     operator: Exists
-            # From v1.20 node-role.kubernetes.io/control-plane replaces node-role.kubernetes.io/master (removed in
-            # v1.25). We apply both because our goal is not to run pods on control plane nodes for any version of k8s.
-            - weight: 100
-              preference:
+              weight: 25
+            - preference:
                 matchExpressions:
                   - key: node-role.kubernetes.io/master
                     operator: DoesNotExist
-            - weight: 100
-              preference:
+              weight: 100
+            - preference:
                 matchExpressions:
                   - key: node-role.kubernetes.io/control-plane
                     operator: DoesNotExist
+              weight: 100
       serviceAccountName: sensor
       containers:
-        - image: "quay.io/stackrox-io/main:4.4.4@sha256:5d52162e01421450c5a2dcfac121ddcd20a235c5eb2c27bb5e76f8e028ef7bee"
+        - image: "quay.io/stackrox-io/main:4.5.5@sha256:1560abe51762fa91013007c46305dccc147eae8342232ceda13ad89c37e301b5"
           imagePullPolicy: IfNotPresent
           name: sensor
           readinessProbe:
@@ -285,6 +280,8 @@ spec:
               name: api
             - containerPort: 9443
               name: webhook
+            - containerPort: 9091
+              name: monitoring-tls
           command:
             - kubernetes-sensor
           resources:
@@ -298,7 +295,7 @@ spec:
             runAsNonRoot: true
             readOnlyRootFilesystem: true
           env:
-            - name: GOMEMLIMIT
+            - name: ROX_MEMLIMIT
               valueFrom:
                 resourceFieldRef:
                   resource: limits.memory
@@ -329,6 +326,9 @@ spec:
               secretKeyRef:
                 name: config-fingerprint
                 key: config-fingerprint
+            - name: ROX_ENABLE_SECURE_METRICS
+              value: "true"
+
           volumeMounts:
             - name: varlog
               mountPath: /var/log/stackrox/
@@ -344,6 +344,8 @@ spec:
               readOnly: true
             - name: cache
               mountPath: /var/cache/stackrox
+            - name: sensor-bound-sa-token
+              mountPath: /var/run/secrets/openshift/serviceaccount
             - name: helm-cluster-config
               mountPath: /run/secrets/stackrox.io/helm-cluster-config/
               readOnly: true
@@ -355,6 +357,9 @@ spec:
               mountPath: /etc/pki/injected-ca-trust/
               readOnly: true
 
+            - name: monitoring-tls
+              mountPath: /run/secrets/stackrox.io/monitoring-tls
+              readOnly: true
       volumes:
         - name: certs
           secret:
@@ -378,6 +383,14 @@ spec:
           emptyDir: {}
         - name: cache
           emptyDir: {}
+        - name: sensor-bound-sa-token
+          projected:
+            defaultMode: 420
+            sources:
+              - serviceAccountToken:
+                  path: token
+                  audience: openshift
+                  expirationSeconds: 3600
         - name: helm-cluster-config
           secret:
             secretName: helm-cluster-config
@@ -394,3 +407,7 @@ spec:
               - key: ca-bundle.crt
                 path: tls-ca-bundle.pem
             optional: true
+
+        - name: monitoring-tls
+          secret:
+            secretName: sensor-monitoring-tls

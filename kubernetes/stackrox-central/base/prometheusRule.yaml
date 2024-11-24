@@ -1,0 +1,45 @@
+# Source: stackrox-central-services/templates/99-openshift-monitoring.yaml
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: "central-telemeter-stackrox"
+  namespace: openshift-monitoring
+  labels:
+    app.kubernetes.io/instance: stackrox-central-services
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: stackrox
+    app.kubernetes.io/part-of: stackrox-central-services
+    app.kubernetes.io/version: 4.5.5
+    helm.sh/chart: stackrox-central-services-400.5.5
+  annotations:
+    email: support@stackrox.com
+    meta.helm.sh/release-name: stackrox-central-services
+    meta.helm.sh/release-namespace: stackrox
+    owner: stackrox
+spec:
+  groups:
+    - name: rhacs.telemeter
+      rules:
+        - expr: |
+            max by (build, central_id, central_version, hosting, install_method) (
+              rox_central_info{branding="RHACS"}
+            )
+          record: rhacs:telemetry:rox_central_info
+
+        - expr: |
+            max by (central_id) (
+              rox_central_secured_clusters{branding="RHACS"}
+            )
+          record: rhacs:telemetry:rox_central_secured_clusters
+
+        - expr: |
+            max by (central_id) (
+              rox_central_secured_nodes{branding="RHACS"}
+            )
+          record: rhacs:telemetry:rox_central_secured_nodes
+
+        - expr: |
+            max by (central_id) (
+              rox_central_secured_vcpus{branding="RHACS"}
+            )
+          record: rhacs:telemetry:rox_central_secured_vcpus

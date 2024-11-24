@@ -11,17 +11,14 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: stackrox
     app.kubernetes.io/part-of: stackrox-secured-cluster-services
-    app.kubernetes.io/version: "4"
-    helm.sh/chart: stackrox-secured-cluster-services-400
+    app.kubernetes.io/version: 4.5.5
+    helm.sh/chart: stackrox-secured-cluster-services-400.5.5
     auto-upgrade.stackrox.io/component: "sensor"
   annotations:
     email: support@stackrox.com
     meta.helm.sh/release-name: stackrox-secured-cluster-services
     meta.helm.sh/release-namespace: stackrox
     owner: stackrox
-# imagePullSecrets:
-#   - name: "secured-cluster-services-main"
-#   - name: "stackrox"
 ---
 # Source: stackrox-secured-cluster-services/templates/collector-rbac.yaml
 apiVersion: v1
@@ -35,19 +32,14 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: stackrox
     app.kubernetes.io/part-of: stackrox-secured-cluster-services
-    app.kubernetes.io/version: "4"
-    helm.sh/chart: stackrox-secured-cluster-services-400
+    app.kubernetes.io/version: 4.5.5
+    helm.sh/chart: stackrox-secured-cluster-services-400.5.5
     auto-upgrade.stackrox.io/component: "sensor"
   annotations:
     email: support@stackrox.com
     meta.helm.sh/release-name: stackrox-secured-cluster-services
     meta.helm.sh/release-namespace: stackrox
     owner: stackrox
-# imagePullSecrets:
-#   - name: "collector-stackrox"
-#   - name: "secured-cluster-services-collector"
-#   - name: "stackrox"
-#   - name: "secured-cluster-services-main"
 ---
 # Source: stackrox-secured-cluster-services/templates/sensor-rbac.yaml
 apiVersion: v1
@@ -61,17 +53,14 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: stackrox
     app.kubernetes.io/part-of: stackrox-secured-cluster-services
-    app.kubernetes.io/version: "4"
-    helm.sh/chart: stackrox-secured-cluster-services-400
+    app.kubernetes.io/version: 4.5.5
+    helm.sh/chart: stackrox-secured-cluster-services-400.5.5
     auto-upgrade.stackrox.io/component: "sensor"
   annotations:
     email: support@stackrox.com
     meta.helm.sh/release-name: stackrox-secured-cluster-services
     meta.helm.sh/release-namespace: stackrox
     owner: stackrox
-# imagePullSecrets:
-#   - name: "secured-cluster-services-main"
-#   - name: "stackrox"
 ---
 # Source: stackrox-secured-cluster-services/templates/admission-controller-pod-security.yaml
 kind: ClusterRole
@@ -84,8 +73,8 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: stackrox
     app.kubernetes.io/part-of: stackrox-secured-cluster-services
-    app.kubernetes.io/version: "4"
-    helm.sh/chart: stackrox-secured-cluster-services-400
+    app.kubernetes.io/version: 4.5.5
+    helm.sh/chart: stackrox-secured-cluster-services-400.5.5
     auto-upgrade.stackrox.io/component: "sensor"
   annotations:
     email: support@stackrox.com
@@ -113,8 +102,8 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: stackrox
     app.kubernetes.io/part-of: stackrox-secured-cluster-services
-    app.kubernetes.io/version: "4"
-    helm.sh/chart: stackrox-secured-cluster-services-400
+    app.kubernetes.io/version: 4.5.5
+    helm.sh/chart: stackrox-secured-cluster-services-400.5.5
     auto-upgrade.stackrox.io/component: "sensor"
   annotations:
     email: support@stackrox.com
@@ -131,6 +120,34 @@ rules:
     verbs:
       - use
 ---
+# Source: stackrox-secured-cluster-services/templates/sensor-compliance-rbac.yaml
+kind: ClusterRole
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: stackrox:edit-compliance
+  labels:
+    app.kubernetes.io/component: sensor
+    app.kubernetes.io/instance: stackrox-secured-cluster-services
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: stackrox
+    app.kubernetes.io/part-of: stackrox-secured-cluster-services
+    app.kubernetes.io/version: 4.5.5
+    helm.sh/chart: stackrox-secured-cluster-services-400.5.5
+    auto-upgrade.stackrox.io/component: "sensor"
+  annotations:
+    email: support@stackrox.com
+    meta.helm.sh/release-name: stackrox-secured-cluster-services
+    meta.helm.sh/release-namespace: stackrox
+    owner: stackrox
+    checkov.io/skip1: CKV_K8S_49=Security Tool
+rules:
+  - apiGroups:
+      - "compliance.openshift.io"
+    resources:
+      - "*"
+    verbs:
+      - "*"
+---
 # Source: stackrox-secured-cluster-services/templates/sensor-pod-security.yaml
 kind: ClusterRole
 apiVersion: rbac.authorization.k8s.io/v1
@@ -142,8 +159,8 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: stackrox
     app.kubernetes.io/part-of: stackrox-secured-cluster-services
-    app.kubernetes.io/version: "4"
-    helm.sh/chart: stackrox-secured-cluster-services-400
+    app.kubernetes.io/version: 4.5.5
+    helm.sh/chart: stackrox-secured-cluster-services-400.5.5
     auto-upgrade.stackrox.io/component: "sensor"
   annotations:
     email: support@stackrox.com
@@ -171,8 +188,8 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: stackrox
     app.kubernetes.io/part-of: stackrox-secured-cluster-services
-    app.kubernetes.io/version: "4"
-    helm.sh/chart: stackrox-secured-cluster-services-400
+    app.kubernetes.io/version: 4.5.5
+    helm.sh/chart: stackrox-secured-cluster-services-400.5.5
     auto-upgrade.stackrox.io/component: "sensor"
   annotations:
     email: support@stackrox.com
@@ -201,15 +218,14 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: stackrox
     app.kubernetes.io/part-of: stackrox-secured-cluster-services
-    app.kubernetes.io/version: "4"
-    helm.sh/chart: stackrox-secured-cluster-services-400
+    app.kubernetes.io/version: 4.5.5
+    helm.sh/chart: stackrox-secured-cluster-services-400.5.5
     auto-upgrade.stackrox.io/component: "sensor"
   annotations:
     email: support@stackrox.com
     meta.helm.sh/release-name: stackrox-secured-cluster-services
     meta.helm.sh/release-namespace: stackrox
     owner: stackrox
-    checkov.io/skip1: CKV_K8S_49=Security Tool
 rules:
   - resources:
       - cronjobs
@@ -241,8 +257,8 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: stackrox
     app.kubernetes.io/part-of: stackrox-secured-cluster-services
-    app.kubernetes.io/version: "4"
-    helm.sh/chart: stackrox-secured-cluster-services-400
+    app.kubernetes.io/version: 4.5.5
+    helm.sh/chart: stackrox-secured-cluster-services-400.5.5
     auto-upgrade.stackrox.io/component: "sensor"
   annotations:
     email: support@stackrox.com
@@ -275,8 +291,8 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: stackrox
     app.kubernetes.io/part-of: stackrox-secured-cluster-services
-    app.kubernetes.io/version: "4"
-    helm.sh/chart: stackrox-secured-cluster-services-400
+    app.kubernetes.io/version: 4.5.5
+    helm.sh/chart: stackrox-secured-cluster-services-400.5.5
     auto-upgrade.stackrox.io/component: "sensor"
   annotations:
     email: support@stackrox.com
@@ -301,8 +317,8 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: stackrox
     app.kubernetes.io/part-of: stackrox-secured-cluster-services
-    app.kubernetes.io/version: "4"
-    helm.sh/chart: stackrox-secured-cluster-services-400
+    app.kubernetes.io/version: 4.5.5
+    helm.sh/chart: stackrox-secured-cluster-services-400.5.5
     auto-upgrade.stackrox.io/component: "sensor"
   annotations:
     email: support@stackrox.com
@@ -329,8 +345,8 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: stackrox
     app.kubernetes.io/part-of: stackrox-secured-cluster-services
-    app.kubernetes.io/version: "4"
-    helm.sh/chart: stackrox-secured-cluster-services-400
+    app.kubernetes.io/version: 4.5.5
+    helm.sh/chart: stackrox-secured-cluster-services-400.5.5
     auto-upgrade.stackrox.io/component: "sensor"
   annotations:
     email: support@stackrox.com
@@ -344,6 +360,34 @@ rules:
     verbs:
       - create
 ---
+# Source: stackrox-secured-cluster-services/templates/sensor-compliance-rbac.yaml
+kind: ClusterRoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: stackrox:manage-compliance
+  labels:
+    app.kubernetes.io/component: sensor
+    app.kubernetes.io/instance: stackrox-secured-cluster-services
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: stackrox
+    app.kubernetes.io/part-of: stackrox-secured-cluster-services
+    app.kubernetes.io/version: 4.5.5
+    helm.sh/chart: stackrox-secured-cluster-services-400.5.5
+    auto-upgrade.stackrox.io/component: "sensor"
+  annotations:
+    email: support@stackrox.com
+    meta.helm.sh/release-name: stackrox-secured-cluster-services
+    meta.helm.sh/release-namespace: stackrox
+    owner: stackrox
+subjects:
+  - kind: ServiceAccount
+    name: sensor
+    namespace: stackrox
+roleRef:
+  kind: ClusterRole
+  name: stackrox:edit-compliance
+  apiGroup: rbac.authorization.k8s.io
+---
 # Source: stackrox-secured-cluster-services/templates/sensor-rbac.yaml
 kind: ClusterRoleBinding
 apiVersion: rbac.authorization.k8s.io/v1
@@ -355,11 +399,10 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: stackrox
     app.kubernetes.io/part-of: stackrox-secured-cluster-services
-    app.kubernetes.io/version: "4"
-    helm.sh/chart: stackrox-secured-cluster-services-400
+    app.kubernetes.io/version: 4.5.5
+    helm.sh/chart: stackrox-secured-cluster-services-400.5.5
     auto-upgrade.stackrox.io/component: "sensor"
   annotations:
-    checkov.io/skip1: CKV2_K8S_5=This App is a Security Monitoring Solution
     email: support@stackrox.com
     meta.helm.sh/release-name: stackrox-secured-cluster-services
     meta.helm.sh/release-namespace: stackrox
@@ -384,8 +427,8 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: stackrox
     app.kubernetes.io/part-of: stackrox-secured-cluster-services
-    app.kubernetes.io/version: "4"
-    helm.sh/chart: stackrox-secured-cluster-services-400
+    app.kubernetes.io/version: 4.5.5
+    helm.sh/chart: stackrox-secured-cluster-services-400.5.5
     auto-upgrade.stackrox.io/component: "sensor"
   annotations:
     email: support@stackrox.com
@@ -412,8 +455,8 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: stackrox
     app.kubernetes.io/part-of: stackrox-secured-cluster-services
-    app.kubernetes.io/version: "4"
-    helm.sh/chart: stackrox-secured-cluster-services-400
+    app.kubernetes.io/version: 4.5.5
+    helm.sh/chart: stackrox-secured-cluster-services-400.5.5
     auto-upgrade.stackrox.io/component: "sensor"
   annotations:
     email: support@stackrox.com
@@ -440,8 +483,8 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: stackrox
     app.kubernetes.io/part-of: stackrox-secured-cluster-services
-    app.kubernetes.io/version: "4"
-    helm.sh/chart: stackrox-secured-cluster-services-400
+    app.kubernetes.io/version: 4.5.5
+    helm.sh/chart: stackrox-secured-cluster-services-400.5.5
     auto-upgrade.stackrox.io/component: "sensor"
   annotations:
     email: support@stackrox.com
@@ -468,8 +511,8 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: stackrox
     app.kubernetes.io/part-of: stackrox-secured-cluster-services
-    app.kubernetes.io/version: "4"
-    helm.sh/chart: stackrox-secured-cluster-services-400
+    app.kubernetes.io/version: 4.5.5
+    helm.sh/chart: stackrox-secured-cluster-services-400.5.5
     auto-upgrade.stackrox.io/component: "sensor"
   annotations:
     email: support@stackrox.com
@@ -496,8 +539,8 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: stackrox
     app.kubernetes.io/part-of: stackrox-secured-cluster-services
-    app.kubernetes.io/version: "4"
-    helm.sh/chart: stackrox-secured-cluster-services-400
+    app.kubernetes.io/version: 4.5.5
+    helm.sh/chart: stackrox-secured-cluster-services-400.5.5
     auto-upgrade.stackrox.io/component: "sensor"
   annotations:
     email: support@stackrox.com
@@ -525,8 +568,8 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: stackrox
     app.kubernetes.io/part-of: stackrox-secured-cluster-services
-    app.kubernetes.io/version: "4"
-    helm.sh/chart: stackrox-secured-cluster-services-400
+    app.kubernetes.io/version: 4.5.5
+    helm.sh/chart: stackrox-secured-cluster-services-400.5.5
     auto-upgrade.stackrox.io/component: "sensor"
   annotations:
     email: support@stackrox.com
@@ -537,6 +580,67 @@ rules:
   - apiGroups: [""]
     resources: ["configmaps"]
     verbs: ["get", "list", "watch"]
+---
+# Source: stackrox-secured-cluster-services/templates/collector-scc.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: use-privileged-scc
+  namespace: stackrox
+  labels:
+    app.kubernetes.io/component: collector
+    app.kubernetes.io/instance: stackrox-secured-cluster-services
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: stackrox
+    app.kubernetes.io/part-of: stackrox-secured-cluster-services
+    app.kubernetes.io/version: 4.5.5
+    helm.sh/chart: stackrox-secured-cluster-services-400.5.5
+    auto-upgrade.stackrox.io/component: "sensor"
+  annotations:
+    email: support@stackrox.com
+    meta.helm.sh/release-name: stackrox-secured-cluster-services
+    meta.helm.sh/release-namespace: stackrox
+    owner: stackrox
+rules:
+  - apiGroups:
+      - security.openshift.io
+    resources:
+      - securitycontextconstraints
+    resourceNames:
+      - privileged
+    verbs:
+      - use
+---
+# Source: stackrox-secured-cluster-services/templates/openshift-monitoring.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: secured-cluster-prometheus-k8s
+  namespace: stackrox
+  labels:
+    app.kubernetes.io/instance: stackrox-secured-cluster-services
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: stackrox
+    app.kubernetes.io/part-of: stackrox-secured-cluster-services
+    app.kubernetes.io/version: 4.5.5
+    helm.sh/chart: stackrox-secured-cluster-services-400.5.5
+    auto-upgrade.stackrox.io/component: "sensor"
+  annotations:
+    email: support@stackrox.com
+    meta.helm.sh/release-name: stackrox-secured-cluster-services
+    meta.helm.sh/release-namespace: stackrox
+    owner: stackrox
+rules:
+  - apiGroups:
+      - ""
+    resources:
+      - services
+      - endpoints
+      - pods
+    verbs:
+      - get
+      - list
+      - watch
 ---
 # Source: stackrox-secured-cluster-services/templates/sensor-rbac.yaml
 # Role edit has all verbs but 'use' to disallow using any SCCs (resources: *).
@@ -552,8 +656,8 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: stackrox
     app.kubernetes.io/part-of: stackrox-secured-cluster-services
-    app.kubernetes.io/version: "4"
-    helm.sh/chart: stackrox-secured-cluster-services-400
+    app.kubernetes.io/version: 4.5.5
+    helm.sh/chart: stackrox-secured-cluster-services-400.5.5
     auto-upgrade.stackrox.io/component: "sensor"
   annotations:
     email: support@stackrox.com
@@ -588,8 +692,8 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: stackrox
     app.kubernetes.io/part-of: stackrox-secured-cluster-services
-    app.kubernetes.io/version: "4"
-    helm.sh/chart: stackrox-secured-cluster-services-400
+    app.kubernetes.io/version: 4.5.5
+    helm.sh/chart: stackrox-secured-cluster-services-400.5.5
     auto-upgrade.stackrox.io/component: "sensor"
   annotations:
     email: support@stackrox.com
@@ -617,8 +721,8 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: stackrox
     app.kubernetes.io/part-of: stackrox-secured-cluster-services
-    app.kubernetes.io/version: "4"
-    helm.sh/chart: stackrox-secured-cluster-services-400
+    app.kubernetes.io/version: 4.5.5
+    helm.sh/chart: stackrox-secured-cluster-services-400.5.5
     auto-upgrade.stackrox.io/component: "sensor"
   annotations:
     email: support@stackrox.com
@@ -646,8 +750,8 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: stackrox
     app.kubernetes.io/part-of: stackrox-secured-cluster-services
-    app.kubernetes.io/version: "4"
-    helm.sh/chart: stackrox-secured-cluster-services-400
+    app.kubernetes.io/version: 4.5.5
+    helm.sh/chart: stackrox-secured-cluster-services-400.5.5
     auto-upgrade.stackrox.io/component: "sensor"
   annotations:
     email: support@stackrox.com
@@ -663,6 +767,91 @@ subjects:
     name: collector
     namespace: stackrox
 ---
+# Source: stackrox-secured-cluster-services/templates/collector-scc.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: collector-use-scc
+  namespace: stackrox
+  labels:
+    app.kubernetes.io/component: collector
+    app.kubernetes.io/instance: stackrox-secured-cluster-services
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: stackrox
+    app.kubernetes.io/part-of: stackrox-secured-cluster-services
+    app.kubernetes.io/version: 4.5.5
+    helm.sh/chart: stackrox-secured-cluster-services-400.5.5
+    auto-upgrade.stackrox.io/component: "sensor"
+  annotations:
+    email: support@stackrox.com
+    meta.helm.sh/release-name: stackrox-secured-cluster-services
+    meta.helm.sh/release-namespace: stackrox
+    owner: stackrox
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: use-privileged-scc
+subjects:
+  - kind: ServiceAccount
+    name: collector
+    namespace: stackrox
+---
+# Source: stackrox-secured-cluster-services/templates/openshift-monitoring.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: secured-cluster-prometheus-k8s
+  namespace: stackrox
+  labels:
+    app.kubernetes.io/instance: stackrox-secured-cluster-services
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: stackrox
+    app.kubernetes.io/part-of: stackrox-secured-cluster-services
+    app.kubernetes.io/version: 4.5.5
+    helm.sh/chart: stackrox-secured-cluster-services-400.5.5
+    auto-upgrade.stackrox.io/component: "sensor"
+  annotations:
+    email: support@stackrox.com
+    meta.helm.sh/release-name: stackrox-secured-cluster-services
+    meta.helm.sh/release-namespace: stackrox
+    owner: stackrox
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: secured-cluster-prometheus-k8s
+subjects:
+  - kind: ServiceAccount
+    name: prometheus-k8s
+    namespace: openshift-monitoring
+---
+# Source: stackrox-secured-cluster-services/templates/openshift-monitoring.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: "rhacs-sensor-auth-reader-stackrox"
+  namespace: kube-system
+  labels:
+    app.kubernetes.io/instance: stackrox-secured-cluster-services
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: stackrox
+    app.kubernetes.io/part-of: stackrox-secured-cluster-services
+    app.kubernetes.io/version: 4.5.5
+    helm.sh/chart: stackrox-secured-cluster-services-400.5.5
+    auto-upgrade.stackrox.io/component: "sensor"
+  annotations:
+    email: support@stackrox.com
+    meta.helm.sh/release-name: stackrox-secured-cluster-services
+    meta.helm.sh/release-namespace: stackrox
+    owner: stackrox
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: extension-apiserver-authentication-reader
+subjects:
+  - kind: ServiceAccount
+    name: sensor
+    namespace: "stackrox"
+---
 # Source: stackrox-secured-cluster-services/templates/sensor-pod-security.yaml
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
@@ -675,8 +864,8 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: stackrox
     app.kubernetes.io/part-of: stackrox-secured-cluster-services
-    app.kubernetes.io/version: "4"
-    helm.sh/chart: stackrox-secured-cluster-services-400
+    app.kubernetes.io/version: 4.5.5
+    helm.sh/chart: stackrox-secured-cluster-services-400.5.5
     auto-upgrade.stackrox.io/component: "sensor"
   annotations:
     email: support@stackrox.com
@@ -707,8 +896,8 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: stackrox
     app.kubernetes.io/part-of: stackrox-secured-cluster-services
-    app.kubernetes.io/version: "4"
-    helm.sh/chart: stackrox-secured-cluster-services-400
+    app.kubernetes.io/version: 4.5.5
+    helm.sh/chart: stackrox-secured-cluster-services-400.5.5
     auto-upgrade.stackrox.io/component: "sensor"
   annotations:
     checkov.io/skip1: CKV2_K8S_4=This App is a Security Monitoring Solution

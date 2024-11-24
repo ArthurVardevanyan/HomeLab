@@ -1,3 +1,4 @@
+---
 # Source: stackrox-secured-cluster-services/templates/admission-controller.yaml
 apiVersion: v1
 kind: Service
@@ -10,8 +11,8 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: stackrox
     app.kubernetes.io/part-of: stackrox-secured-cluster-services
-    app.kubernetes.io/version: "4"
-    helm.sh/chart: stackrox-secured-cluster-services-400
+    app.kubernetes.io/version: 4.5.5
+    helm.sh/chart: stackrox-secured-cluster-services-400.5.5
     auto-upgrade.stackrox.io/component: "sensor"
   annotations:
     email: support@stackrox.com
@@ -41,19 +42,24 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: stackrox
     app.kubernetes.io/part-of: stackrox-secured-cluster-services
-    app.kubernetes.io/version: "4"
-    helm.sh/chart: stackrox-secured-cluster-services-400
+    app.kubernetes.io/version: 4.5.5
+    helm.sh/chart: stackrox-secured-cluster-services-400.5.5
     auto-upgrade.stackrox.io/component: "sensor"
   annotations:
     email: support@stackrox.com
     meta.helm.sh/release-name: stackrox-secured-cluster-services
     meta.helm.sh/release-namespace: stackrox
     owner: stackrox
+    service.beta.openshift.io/serving-cert-secret-name: sensor-monitoring-tls
 spec:
   ports:
     - name: https
       port: 443
       targetPort: api
+      protocol: TCP
+    - name: monitoring-tls
+      port: 9091
+      targetPort: monitoring-tls
       protocol: TCP
   selector:
     app: sensor
@@ -72,8 +78,8 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: stackrox
     app.kubernetes.io/part-of: stackrox-secured-cluster-services
-    app.kubernetes.io/version: "4"
-    helm.sh/chart: stackrox-secured-cluster-services-400
+    app.kubernetes.io/version: 4.5.5
+    helm.sh/chart: stackrox-secured-cluster-services-400.5.5
     auto-upgrade.stackrox.io/component: "sensor"
   annotations:
     email: support@stackrox.com

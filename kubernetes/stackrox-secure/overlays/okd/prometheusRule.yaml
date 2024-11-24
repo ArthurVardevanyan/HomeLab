@@ -1,11 +1,11 @@
 ---
-# Source: stackrox-secured-cluster-services/templates/admission-controller.yaml
-apiVersion: admissionregistration.k8s.io/v1
-kind: ValidatingWebhookConfiguration
+# Source: stackrox-secured-cluster-services/templates/openshift-monitoring.yaml
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
 metadata:
-  name: stackrox
+  name: "sensor-telemeter-stackrox"
+  namespace: openshift-monitoring
   labels:
-    app.kubernetes.io/component: admission-control
     app.kubernetes.io/instance: stackrox-secured-cluster-services
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: stackrox
@@ -18,4 +18,12 @@ metadata:
     meta.helm.sh/release-name: stackrox-secured-cluster-services
     meta.helm.sh/release-namespace: stackrox
     owner: stackrox
-webhooks: []
+spec:
+  groups:
+    - name: rhacs.telemeter
+      rules:
+        - expr: |
+            max by (build, central_id, hosting, install_method, sensor_id, sensor_version) (
+              rox_sensor_info{branding="RHACS"}
+            )
+          record: rhacs:telemetry:rox_sensor_info

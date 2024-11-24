@@ -11,8 +11,8 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: stackrox
     app.kubernetes.io/part-of: stackrox-central-services
-    app.kubernetes.io/version: "4"
-    helm.sh/chart: stackrox-central-services-400
+    app.kubernetes.io/version: 4.5.5
+    helm.sh/chart: stackrox-central-services-400.5.5
   annotations:
     email: support@stackrox.com
     meta.helm.sh/release-name: stackrox-central-services
@@ -22,6 +22,36 @@ spec:
   ingress:
     - ports:
         - port: 8443
+          protocol: TCP
+  podSelector:
+    matchLabels:
+      app: central
+  policyTypes:
+    - Ingress
+---
+# Source: stackrox-central-services/templates/01-central-10-networkpolicy.yaml
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: central-monitoring-tls
+  namespace: stackrox
+  labels:
+    app.kubernetes.io/component: central
+    app.kubernetes.io/instance: stackrox-central-services
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: stackrox
+    app.kubernetes.io/part-of: stackrox-central-services
+    app.kubernetes.io/version: 4.5.5
+    helm.sh/chart: stackrox-central-services-400.5.5
+  annotations:
+    email: support@stackrox.com
+    meta.helm.sh/release-name: stackrox-central-services
+    meta.helm.sh/release-namespace: stackrox
+    owner: stackrox
+spec:
+  ingress:
+    - ports:
+        - port: 9091
           protocol: TCP
   podSelector:
     matchLabels:
@@ -41,8 +71,8 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: stackrox
     app.kubernetes.io/part-of: stackrox-central-services
-    app.kubernetes.io/version: "4"
-    helm.sh/chart: stackrox-central-services-400
+    app.kubernetes.io/version: 4.5.5
+    helm.sh/chart: stackrox-central-services-400.5.5
   annotations:
     email: support@stackrox.com
     meta.helm.sh/release-name: stackrox-central-services
@@ -57,12 +87,15 @@ spec:
         - podSelector:
             matchLabels:
               app: central
-
+      ports:
+        - port: 8080
+          protocol: TCP
+        - port: 8443
+          protocol: TCP
     - from:
         - podSelector:
             matchLabels:
               app: sensor
-
       ports:
         - port: 8080
           protocol: TCP
@@ -83,8 +116,8 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: stackrox
     app.kubernetes.io/part-of: stackrox-central-services
-    app.kubernetes.io/version: "4"
-    helm.sh/chart: stackrox-central-services-400
+    app.kubernetes.io/version: 4.5.5
+    helm.sh/chart: stackrox-central-services-400.5.5
   annotations:
     email: support@stackrox.com
     meta.helm.sh/release-name: stackrox-central-services

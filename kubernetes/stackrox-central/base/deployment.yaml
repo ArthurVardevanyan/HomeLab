@@ -10,8 +10,8 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: stackrox
     app.kubernetes.io/part-of: stackrox-central-services
-    app.kubernetes.io/version: "4"
-    helm.sh/chart: stackrox-central-services-400
+    app.kubernetes.io/version: 4.5.5
+    helm.sh/chart: stackrox-central-services-400.5.5
     app: central
   annotations:
     argocd.argoproj.io/sync-wave: "2"
@@ -45,60 +45,60 @@ spec:
         app.kubernetes.io/managed-by: Helm
         app.kubernetes.io/name: stackrox
         app.kubernetes.io/part-of: stackrox-central-services
-        app.kubernetes.io/version: "4"
-        helm.sh/chart: stackrox-central-services-400
+        app.kubernetes.io/version: 4.5.5
+        helm.sh/chart: stackrox-central-services-400.5.5
       annotations:
         traffic.sidecar.istio.io/excludeInboundPorts: "8443"
         email: support@stackrox.com
         meta.helm.sh/release-name: stackrox-central-services
         meta.helm.sh/release-namespace: stackrox
         owner: stackrox
+        openshift.io/required-scc: nonroot-v2
     spec:
       affinity:
         nodeAffinity:
           preferredDuringSchedulingIgnoredDuringExecution:
-            # Central is single-homed, so avoid preemptible nodes.
-            - weight: 100
-              preference:
+            - preference:
                 matchExpressions:
                   - key: cloud.google.com/gke-preemptible
                     operator: NotIn
                     values:
                       - "true"
-            - weight: 50
-              preference:
+              weight: 100
+            - preference:
                 matchExpressions:
                   - key: node-role.kubernetes.io/infra
                     operator: Exists
-            - weight: 25
-              preference:
+              weight: 50
+            - preference:
                 matchExpressions:
                   - key: node-role.kubernetes.io/compute
                     operator: Exists
-            # From v1.20 node-role.kubernetes.io/control-plane replaces node-role.kubernetes.io/master (removed in
-            # v1.25). We apply both because our goal is not to run pods on control plane nodes for any version of k8s.
-            - weight: 100
-              preference:
+              weight: 25
+            - preference:
                 matchExpressions:
                   - key: node-role.kubernetes.io/master
                     operator: DoesNotExist
-            - weight: 100
-              preference:
+              weight: 100
+            - preference:
                 matchExpressions:
                   - key: node-role.kubernetes.io/control-plane
                     operator: DoesNotExist
+              weight: 100
       serviceAccountName: central
       securityContext:
         fsGroup: 4000
         runAsUser: 4000
       containers:
         - name: central
-          image: "quay.io/stackrox-io/main:4.4.4@sha256:5d52162e01421450c5a2dcfac121ddcd20a235c5eb2c27bb5e76f8e028ef7bee"
+          image: "quay.io/stackrox-io/main:4.5.5@sha256:1560abe51762fa91013007c46305dccc147eae8342232ceda13ad89c37e301b5"
           command:
             - /stackrox/central-entrypoint.sh
           ports:
             - containerPort: 8443
               name: api
+            - containerPort: 9091
+              name: monitoring-tls
           readinessProbe:
             httpGet:
               scheme: HTTPS
@@ -106,17 +106,17 @@ spec:
               port: 8443
           resources:
             limits:
-              cpu: 200m
-              memory: 2Gi
+              cpu: 4000m
+              memory: 8Gi
             requests:
-              cpu: 10m
-              memory: 1Gi
+              cpu: 1500m
+              memory: 4Gi
           securityContext:
             capabilities:
               drop: ["NET_RAW"]
             readOnlyRootFilesystem: true
           env:
-            - name: GOMEMLIMIT
+            - name: ROX_MEMLIMIT
               valueFrom:
                 resourceFieldRef:
                   resource: limits.memory
@@ -124,16 +124,24 @@ spec:
               valueFrom:
                 resourceFieldRef:
                   resource: limits.cpu
-            - name: ROX_NAMESPACE
+            - name: POD_NAMESPACE
               valueFrom:
                 fieldRef:
                   fieldPath: metadata.namespace
+            - name: ROX_TELEMETRY_ENDPOINT
+              value: "https://console.redhat.com/connections/api"
+            - name: ROX_TELEMETRY_API_WHITELIST
+              value: "/api/splunk/ta/*,/v1/auth/m2m/exchange,/api/cli/download/*"
             - name: ROX_OFFLINE_MODE
               value: "false"
             - name: ROX_ENABLE_OPENSHIFT_AUTH
               value: "true"
             - name: ROX_OPENSHIFT
               value: "true"
+            - name: ROX_ENABLE_SECURE_METRICS
+              value: "true"
+            - name: ROX_INSTALL_METHOD
+              value: "helm"
 
           volumeMounts:
             - name: varlog
@@ -176,6 +184,12 @@ spec:
               mountPath: /run/secrets/stackrox.io/db-password
             - name: central-external-db-volume
               mountPath: /etc/ext-db
+            - name: central-bound-sa-token
+              mountPath: /var/run/secrets/openshift/serviceaccount
+              readOnly: true
+            - name: monitoring-tls
+              mountPath: /run/secrets/stackrox.io/monitoring-tls
+              readOnly: true
 
             - name: trusted-ca-volume
               mountPath: /etc/pki/injected-ca-trust/
@@ -233,8 +247,19 @@ spec:
           configMap:
             name: central-external-db
             optional: true
+        - name: central-bound-sa-token
+          projected:
+            defaultMode: 420
+            sources:
+              - serviceAccountToken:
+                  path: token
+                  audience: openshift
+                  expirationSeconds: 3600
         - name: stackrox-db
           emptyDir: {}
+        - name: monitoring-tls
+          secret:
+            secretName: central-monitoring-tls
 
         - name: trusted-ca-volume
           configMap:
@@ -257,8 +282,8 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: stackrox
     app.kubernetes.io/part-of: stackrox-central-services
-    app.kubernetes.io/version: "4"
-    helm.sh/chart: stackrox-central-services-400
+    app.kubernetes.io/version: 4.5.5
+    helm.sh/chart: stackrox-central-services-400.5.5
   annotations:
     email: support@stackrox.com
     meta.helm.sh/release-name: stackrox-central-services
@@ -274,7 +299,7 @@ metadata:
     checkov.io/skip8: CKV_K8S_38=Security Tool
     checkov.io/skip9: CKV_K8S_40=OpenShift Injects Random UID
 spec:
-  #replicas: 3
+  # replicas: 3
   minReadySeconds: 15
   selector:
     matchLabels:
@@ -291,54 +316,53 @@ spec:
         app.kubernetes.io/managed-by: Helm
         app.kubernetes.io/name: stackrox
         app.kubernetes.io/part-of: stackrox-central-services
-        app.kubernetes.io/version: "4"
-        helm.sh/chart: stackrox-central-services-400
+        app.kubernetes.io/version: 4.5.5
+        helm.sh/chart: stackrox-central-services-400.5.5
       annotations:
         traffic.sidecar.istio.io/excludeInboundPorts: "8080,8443"
         email: support@stackrox.com
         meta.helm.sh/release-name: stackrox-central-services
         meta.helm.sh/release-namespace: stackrox
         owner: stackrox
+        openshift.io/required-scc: nonroot-v2
     spec:
       affinity:
+        nodeAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - preference:
+                matchExpressions:
+                  - key: node-role.kubernetes.io/infra
+                    operator: Exists
+              weight: 50
+            - preference:
+                matchExpressions:
+                  - key: node-role.kubernetes.io/compute
+                    operator: Exists
+              weight: 25
+            - preference:
+                matchExpressions:
+                  - key: node-role.kubernetes.io/master
+                    operator: DoesNotExist
+              weight: 100
+            - preference:
+                matchExpressions:
+                  - key: node-role.kubernetes.io/control-plane
+                    operator: DoesNotExist
+              weight: 100
         podAntiAffinity:
           preferredDuringSchedulingIgnoredDuringExecution:
-            - weight: 100
-              podAffinityTerm:
+            - podAffinityTerm:
                 labelSelector:
                   matchLabels:
                     app: scanner
                 topologyKey: kubernetes.io/hostname
-        nodeAffinity:
-          preferredDuringSchedulingIgnoredDuringExecution:
-            - weight: 50
-              preference:
-                matchExpressions:
-                  - key: node-role.kubernetes.io/infra
-                    operator: Exists
-            - weight: 25
-              preference:
-                matchExpressions:
-                  - key: node-role.kubernetes.io/compute
-                    operator: Exists
-            # From v1.20 node-role.kubernetes.io/control-plane replaces node-role.kubernetes.io/master (removed in
-            # v1.25). We apply both because our goal is not to run pods on control plane nodes for any version of k8s.
-            - weight: 100
-              preference:
-                matchExpressions:
-                  - key: node-role.kubernetes.io/master
-                    operator: DoesNotExist
-            - weight: 100
-              preference:
-                matchExpressions:
-                  - key: node-role.kubernetes.io/control-plane
-                    operator: DoesNotExist
+              weight: 100
       containers:
         - name: scanner
 
-          image: "quay.io/stackrox-io/scanner:4.4.4@sha256:eb3e41d62c001d0fc241cebc30eb6e8ba7ca48091156ed1458e381a81ccb5cd2"
+          image: "quay.io/stackrox-io/scanner:4.5.5@sha256:73af6271796f10cee9320ca4c1a6d752f8fb0fe8a01393fa18034dc699708f7c"
           env:
-            - name: GOMEMLIMIT
+            - name: ROX_MEMLIMIT
               valueFrom:
                 resourceFieldRef:
                   resource: limits.memory
@@ -463,10 +487,9 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: stackrox
     app.kubernetes.io/part-of: stackrox-central-services
-    app.kubernetes.io/version: "4"
-    helm.sh/chart: stackrox-central-services-400
+    app.kubernetes.io/version: 4.5.5
+    helm.sh/chart: stackrox-central-services-400.5.5
   annotations:
-    argocd.argoproj.io/sync-wave: "2"
     email: support@stackrox.com
     meta.helm.sh/release-name: stackrox-central-services
     meta.helm.sh/release-namespace: stackrox
@@ -500,14 +523,15 @@ spec:
         app.kubernetes.io/managed-by: Helm
         app.kubernetes.io/name: stackrox
         app.kubernetes.io/part-of: stackrox-central-services
-        app.kubernetes.io/version: "4"
-        helm.sh/chart: stackrox-central-services-400
+        app.kubernetes.io/version: 4.5.5
+        helm.sh/chart: stackrox-central-services-400.5.5
       annotations:
         traffic.sidecar.istio.io/excludeInboundPorts: "5432"
         email: support@stackrox.com
         meta.helm.sh/release-name: stackrox-central-services
         meta.helm.sh/release-namespace: stackrox
         owner: stackrox
+        openshift.io/required-scc: nonroot-v2
     spec:
       affinity:
         nodeAffinity:
@@ -544,7 +568,7 @@ spec:
                     operator: DoesNotExist
       initContainers:
         - name: init-db
-          image: "quay.io/stackrox-io/scanner-db:4.4.4@sha256:e1a8da5f3037e2b25876db132557af7211cfdba86c405cc9c2de574c1c79ca41"
+          image: "quay.io/stackrox-io/scanner-db:4.5.5@sha256:7377af21870d3ff70343beec91578d21ba3e20956f091903eb9f4ebfbd6ada3b"
           env:
             - name: POSTGRES_PASSWORD_FILE
               value: "/run/secrets/stackrox.io/secrets/password"
@@ -568,9 +592,7 @@ spec:
               readOnly: true
       containers:
         - name: db
-          image: "quay.io/stackrox-io/scanner-db:4.4.4@sha256:e1a8da5f3037e2b25876db132557af7211cfdba86c405cc9c2de574c1c79ca41"
-          #env:
-
+          image: "quay.io/stackrox-io/scanner-db:4.5.5@sha256:7377af21870d3ff70343beec91578d21ba3e20956f091903eb9f4ebfbd6ada3b"
           ports:
             - name: tcp-postgresql
               protocol: TCP
