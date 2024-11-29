@@ -291,4 +291,5 @@ alias l='ls -CF'
 
 alias kubectl=kubecolor
 alias k=kubecolor
+source <(kubectl completion zsh)
 compdef kubecolor=kubectl
