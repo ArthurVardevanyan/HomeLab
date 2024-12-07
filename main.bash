@@ -134,6 +134,8 @@ stateful_workload_stop() {
   kubectl scale --replicas=0 -n uptime-kuma statefulset/uptime-kuma
   kubectl scale --replicas=0 -n vault statefulset/vault
 
+  kubectl scale --replicas=0 -n zitadel statefulset/pihole
+
   #kubectl scale --replicas=0 -n minio-operator deployment/minio-operator
   kubectl scale --replicas=0 -n quay deployment/quay-operator-tng
   kubectl scale --replicas=0 -n quay deployment/quay-quay-app
@@ -220,6 +222,7 @@ stateful_workload_start_pre() {
   kubectl patch postgresCluster stackrox -n stackrox --type=merge -p '{"spec":{"shutdown":false}}'
   kubectl patch postgresCluster awx -n awx --type=merge -p '{"spec":{"shutdown":false}}'
 
+  kubectl scale --replicas=1 -n zitadel statefulset/pihole
 }
 
 stateful_workload_start() {
@@ -240,9 +243,9 @@ stateful_workload_start() {
   kubectl scale --replicas=3 -n zitadel statefulset/crdb
   kubectl scale --replicas=2 -n zitadel deployment/zitadel
 
-  kubectl scale --replicas=1 -n mongodb-operator deployments/mongodb-kubernetes-operator
-  kubectl scale --replicas=3 -n unifi-network-application statefulset/mongo-unifi-network-application
-  kubectl scale --replicas=1 -n unifi-network-application statefulset/unifi-network-application
+  # kubectl scale --replicas=1 -n mongodb-operator deployments/mongodb-kubernetes-operator
+  # kubectl scale --replicas=3 -n unifi-network-application statefulset/mongo-unifi-network-application
+  # kubectl scale --replicas=1 -n unifi-network-application statefulset/unifi-network-application
 
   kubectl scale --replicas=1 -n bitwarden statefulset/bitwarden
   kubectl scale --replicas=2 -n gitea deployment/gitea

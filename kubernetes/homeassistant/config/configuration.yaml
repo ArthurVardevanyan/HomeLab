@@ -44,12 +44,12 @@ template:
   - sensor:
       - name: "Home Network Current Consumption"
         unit_of_measurement: "W"
-        state: '{{ states("sensor.modem_current_consumption") |float + states("sensor.pfsense_current_consumption") | float + states("sensor.wifi_current_consumption") | float+ states("sensor.network_switch_current_consumption") | float}}'
+        state: '{{ states("sensor.modem_current_consumption") |float + states("sensor.udm_current_consumption") | float + states("sensor.wifi_current_consumption") | float+ states("sensor.network_switch_current_consumption") | float}}'
       - name: "Home Network Today's Consumption"
         device_class: energy
         state_class: total_increasing
         unit_of_measurement: "kWh"
-        state: '{{ states("sensor.modem_today_s_consumption") |float + states("sensor.pfsense_today_s_consumption") | float + states("sensor.wifi_today_s_consumption") | float+ states("sensor.network_switch_today_s_consumption") | float}}'
+        state: '{{ states("sensor.modem_today_s_consumption") |float + states("sensor.udm_today_s_consumption") | float + states("sensor.wifi_today_s_consumption") | float+ states("sensor.network_switch_today_s_consumption") | float}}'
       - name: "Power Monitor Current Consumption"
         unit_of_measurement: "W"
         state: '{{ states("sensor.modem_current_consumption") |float + states("sensor.truenas_current_consumption") | float + states("sensor.kvm_1_current_consumption") | float+ states("sensor.kvm_2_current_consumption") | float+ states("sensor.kvm_3_current_consumption") | float}}'

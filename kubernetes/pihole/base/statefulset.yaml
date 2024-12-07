@@ -53,14 +53,14 @@ spec:
             capabilities:
               drop:
                 - ALL
-          readinessProbe:
-            exec:
-              command: ["dig", "@127.0.0.1", "cloudflare.com"]
-            initialDelaySeconds: 15
-            timeoutSeconds: 20
-            periodSeconds: 30
-            successThreshold: 1
-            failureThreshold: 5
+            # readinessProbe:
+            #   exec:
+            #     command: ["dig", "@127.0.0.1", "cloudflare.com"]
+            # initialDelaySeconds: 15
+            # timeoutSeconds: 20
+            # periodSeconds: 30
+            # successThreshold: 1
+            # failureThreshold: 5
           livenessProbe:
             tcpSocket:
               port: dns-tcp
@@ -87,6 +87,9 @@ spec:
               mountPath: /etc/dnsmasq.d
             - name: wildcard-dns
               mountPath: "/etc/dnsmasq.d/02-my-wildcard-dns.conf"
+              subPath: "02-my-wildcard-dns.conf"
+            - name: wildcard-dns
+              mountPath: "/etc/dnsmasq.d/02-custom-settings.conf"
               subPath: "02-my-wildcard-dns.conf"
             - mountPath: /dev/shm
               name: dshm
