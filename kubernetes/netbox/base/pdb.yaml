@@ -1,0 +1,23 @@
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: netbox
+  namespace: netbox
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/component: netbox
+      app.kubernetes.io/instance: netbox
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: netbox-worker
+  namespace: netbox
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/component: worker
+      app.kubernetes.io/instance: netbox
