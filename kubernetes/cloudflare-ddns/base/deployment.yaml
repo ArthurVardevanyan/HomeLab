@@ -1,0 +1,80 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cloudflare-ddns
+  namespace: cloudflare-ddns
+  labels:
+    app: cloudflare-ddns
+    app.kubernetes.io/instance: cloudflare-ddns
+  annotations:
+    checkov.io/skip1: CKV_K8S_40=OpenShift Injects Random UID
+    checkov.io/skip2: CKV_K8S_35=Not Supported
+spec:
+  replicas: 2
+  revisionHistoryLimit: 0
+  selector:
+    matchLabels:
+      app: cloudflare-ddns
+  template:
+    metadata:
+      labels:
+        app: cloudflare-ddns
+      annotations:
+        enable.version-checker.io/cloudflare-ddns: "true"
+        seccomp.security.alpha.kubernetes.io/defaultProfileName: "runtime/default"
+    spec:
+      tolerations:
+        - key: node-role.kubernetes.io/master
+          effect: NoSchedule
+        - key: node-role.kubernetes.io/control-plane
+          effect: NoSchedule
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - key: node-role.kubernetes.io/control-plane
+                    operator: Exists
+                  - key: node-role.kubernetes.io/master
+                    operator: Exists
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - labelSelector:
+                matchLabels:
+                  app: cloudflare-ddns
+              topologyKey: "kubernetes.io/hostname"
+      securityContext:
+        seccompProfile:
+          type: RuntimeDefault
+        runAsNonRoot: true
+      hostname: cloudflare-ddns
+      restartPolicy: Always
+      automountServiceAccountToken: false
+      serviceAccountName: cloudflare-ddns
+      containers:
+        - image: docker.io/favonia/cloudflare-ddns:1.5.0@sha256:d5649aee7c9e8f7e14a6efd5f2aa0db78ff5eee597da4dc78d950cbf6131bef8
+          imagePullPolicy: IfNotPresent
+          name: cloudflare-ddns
+          securityContext:
+            runAsNonRoot: true
+            readOnlyRootFilesystem: true
+            allowPrivilegeEscalation: false
+            seccompProfile:
+              type: RuntimeDefault
+            capabilities:
+              drop:
+                - ALL
+          resources:
+            requests:
+              ephemeral-storage: "15Mi"
+              memory: "16Mi"
+              cpu: "5m"
+            limits:
+              ephemeral-storage: "15Mi"
+              memory: "32Mi"
+              cpu: "50m"
+          env:
+            - name: CLOUDFLARE_API_TOKEN
+              value: "<path:secret/data/gitlab/cloudflare#api>"
+            - name: DOMAINS
+              value: "homelab.arthurvardevanyan.com"
