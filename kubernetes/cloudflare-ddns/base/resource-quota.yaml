@@ -1,0 +1,21 @@
+apiVersion: v1
+kind: ResourceQuota
+metadata:
+  name: cloudflare-ddns-rq
+  namespace: cloudflare-ddns
+  labels:
+    app.kubernetes.io/instance: cloudflare-ddns
+spec:
+  hard:
+    requests.cpu: "50m"
+    requests.memory: "256Mi"
+    limits.cpu: "150m"
+    limits.memory: "512Mi"
+    services.nodeports: "0"
+    services.loadbalancers: "0"
+    requests.ephemeral-storage: "3Gi"
+    limits.ephemeral-storage: "6Gi"
+    local-path.storageclass.storage.k8s.io/requests.storage: "0"
+    rook-cephfs.storageclass.storage.k8s.io/requests.storage: "0"
+    rook-ceph-block.storageclass.storage.k8s.io/requests.storage: "0"
+    longhorn.storageclass.storage.k8s.io/requests.storage: "0"
