@@ -99,22 +99,25 @@ Permission Denied Issue
 graph TD
  linkStyle default interpolate basis
 
-wan1[<center>WAN<br>192.168.100.1</center>]---|1000/50 Mb|router{<center>PfSense<br>10.0.0.2</center>}
-wan2[<center>LTE<br>192.168.1.1</center>]---|100/25 Mb|router
-router---|1GbE|switch1[<center>USW-Pro-Max-16</center>]
 subgraph Networking
-    switch1---|2.5GbE|ap2{<center>U7 Pro Max<br>10.0.0.1</center>}
-    switch1----|1GbE|microshift[<center>MicroShift / PiHole<br>10.0.0.104</center>]
-    switch1----|2.5GbE|switch10[<center>USW-Flex-XG<br>10.0.0.105</center>]
+wan1[<center>WAN<br>192.168.100.1</center>]---|1000/50 Mb|router{<center>UDM Pro SE<br>10.0.0.1</center>}
+wan2[<center>LTE<br>192.168.1.1</center>]---|100/25 Mb|router
+router---|10GbE|switch1[<center>USW-Pro-Max-16<br>10.0.0.106</center>]
+switch1----|2.5GbE|switch10[<center>USW-Flex-XG<br>10.0.0.105</center>]
+switch1---|2.5GbE|ap2{<center>U7 Pro Max<br>10.0.0.104</center>}
+router-.-|1GbE Fail Over|switch10[<center>USW-Flex-XG<br>10.0.0.105</center>]
+end
 
+subgraph Homelab
+router----|1GbE|microshift[<center>MicroShift / PiHole<br>10.0.0.99</center>]
+router-.-|1GbE Fail Over|truenas(<center>TrueNas<br>10.0.0.3</center>)
 end
 
 subgraph HomeLab
     switch1-.-|1GbE Fail Over|kvm-1(<center>kvm-1<br>10.0.0.107</center>)
     switch1-.-|1GbE Fail Over|kvm-2(<center>kvm-2<br>10.0.0.108</center>)
     switch1-.-|1GbE Fail Over|kvm-3(<center>kvm-3<br>10.0.0.109</center>)
-    switch1-.-|1GbE Fail Over|truenas(<center>TrueNas<br>10.0.0.3</center>)
-    switch10-.-|1GbE|truenas(<center>TrueNas<br>10.0.0.3</center>)
+    switch1---|1GbE|truenas(<center>TrueNas<br>10.0.0.3</center>)
 
 
     switch10----|10 GbE|kvm-1(<center>kvm-1<br>10.0.0.107</center>)
