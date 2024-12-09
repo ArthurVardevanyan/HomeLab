@@ -1,0 +1,14 @@
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: registry-cert
+  namespace: quay
+spec:
+  secretName: registry-cert
+  duration: 2160h # 90d
+  renewBefore: 1080h # 45d
+  dnsNames:
+    - "registry.arthurvardevanyan.com"
+  issuerRef:
+    kind: ClusterIssuer
+    name: letsencrypt
