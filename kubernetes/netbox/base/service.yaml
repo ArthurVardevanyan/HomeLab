@@ -1,0 +1,23 @@
+# Source: netbox/templates/service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: netbox
+  namespace: "netbox"
+  labels:
+    app.kubernetes.io/instance: netbox
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: netbox
+    app.kubernetes.io/version: v4.0.0
+    helm.sh/chart: netbox-5.0.0-beta9
+spec:
+  type: ClusterIP
+  ports:
+    - port: 80
+      targetPort: http
+      protocol: TCP
+      name: http
+  selector:
+    app.kubernetes.io/name: netbox
+    app.kubernetes.io/instance: netbox
+    app.kubernetes.io/component: netbox

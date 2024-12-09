@@ -1,0 +1,151 @@
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: deny-all
+  namespace: netbox
+  annotations:
+    argocd.argoproj.io/sync-wave: "0"
+  labels:
+    app.kubernetes.io/instance: netbox
+spec:
+  policyTypes:
+    - Ingress
+    - Egress
+  podSelector: {}
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-openshift-monitoring
+  namespace: netbox
+  annotations:
+    argocd.argoproj.io/sync-wave: "0"
+  labels:
+    app.kubernetes.io/instance: netbox
+spec:
+  policyTypes:
+    - Ingress
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: netbox
+      app.kubernetes.io/instance: netbox
+      app.kubernetes.io/component: netbox
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              name: openshift-monitoring
+          podSelector:
+            matchLabels:
+              app.kubernetes.io/name: prometheus
+        - namespaceSelector:
+            matchLabels:
+              name: openshift-user-workload-monitoring
+          podSelector:
+            matchLabels:
+              app.kubernetes.io/name: prometheus
+      ports:
+        - protocol: TCP
+          port: 3000
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-from-openshift-ingress
+  namespace: netbox
+  annotations:
+    argocd.argoproj.io/sync-wave: "0"
+  labels:
+    app.kubernetes.io/instance: netbox
+spec:
+  policyTypes:
+    - Ingress
+  podSelector: {}
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              network.openshift.io/policy-group: ingress
+
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-dns-traffic
+  namespace: netbox
+  annotations:
+    argocd.argoproj.io/sync-wave: "0"
+  labels:
+    app.kubernetes.io/instance: netbox
+spec:
+  policyTypes:
+    - Egress
+  podSelector: {}
+  egress:
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: openshift-dns
+          podSelector:
+            matchLabels:
+              dns.operator.openshift.io/daemonset-dns: default
+      ports:
+        - port: 5353
+          protocol: UDP
+        - port: 5353
+          protocol: TCP
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-ceph-obj
+  namespace: netbox
+  annotations:
+    argocd.argoproj.io/sync-wave: "0"
+  labels:
+    app.kubernetes.io/instance: netbox
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: netbox
+  policyTypes:
+    - Egress
+  egress:
+    - to:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/component: cephobjectstores.ceph.rook.io
+          namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: rook-ceph
+      ports:
+        - protocol: TCP
+          port: 8080
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: internal-communication
+  namespace: netbox
+  annotations:
+    argocd.argoproj.io/sync-wave: "0"
+  labels:
+    app.kubernetes.io/instance: quay
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/instance: netbox
+      app.kubernetes.io/name: netbox
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: netbox
+  egress:
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: netbox
