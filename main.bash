@@ -201,8 +201,8 @@ stateful_workload_start_pre() {
   kubectl scale --replicas=1 -n cockroach-operator-system deployments/cockroach-operator-manager
   kubectl scale --replicas=3 -n zitadel statefulset/crdb
 
-  kubectl scale --replicas=1 -n mongodb-operator deployments/mongodb-kubernetes-operator
-  kubectl scale --replicas=3 -n unifi-network-application statefulset/mongo-unifi-network-application
+  # kubectl scale --replicas=1 -n mongodb-operator deployments/mongodb-kubernetes-operator
+  # kubectl scale --replicas=3 -n unifi-network-application statefulset/mongo-unifi-network-application
 
   kubectl scale --replicas=1 -n influxdb statefulset/influxdb
   kubectl scale --replicas=1 -n loki statefulset/loki
