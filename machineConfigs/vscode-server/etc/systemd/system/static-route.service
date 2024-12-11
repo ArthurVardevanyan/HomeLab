@@ -1,0 +1,12 @@
+[Unit]
+Description=Static route for 10.255.255.240/28
+After=network-online.target
+Wants=network-on
+
+[Service]
+Type=oneshot
+ExecStart=/usr/sbin/ip route add 10.255.255.240/28 via 10.0.0.1 dev eth1
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target

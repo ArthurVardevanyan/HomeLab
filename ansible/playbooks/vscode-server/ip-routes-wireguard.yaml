@@ -1,0 +1,13 @@
+- hosts: vscode-server
+  gather_facts: no
+  become: true
+  user: fedora
+  tasks:
+    - name: Create Wireguard Static Route Service
+      copy:
+        src: "../../../machineConfigs/vscode-server/etc/systemd/system/static-route.service"
+        dest: "/etc/systemd/system/static-route.service"
+      register: wireguard_conf
+    - name: Enable Service
+      command: systemctl enable static-route.service
+      when: wireguard_conf.changed
