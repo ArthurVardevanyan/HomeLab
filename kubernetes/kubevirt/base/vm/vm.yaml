@@ -68,6 +68,10 @@ spec:
               masquerade: {}
               model: virtio
               name: default
+            - bridge: {}
+              macAddress: "10:00:00:00:01:33"
+              model: virtio
+              name: br1
           networkInterfaceMultiqueue: true
           rng: {}
         features:
@@ -90,6 +94,9 @@ spec:
       networks:
         - name: default
           pod: {}
+        - multus:
+            networkName: default/br1
+          name: br1
       terminationGracePeriodSeconds: 180
       volumes:
         - dataVolume:
