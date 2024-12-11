@@ -5,7 +5,7 @@ COPY ./containers/toolbox/repos /etc/yum.repos.d/
 
 ENV \
   ARGOCD_VAULT_VERSION=1.18.1 \
-  OKD_VERSION=4.17.0-okd-scos.0 \
+  OKD_VERSION=4.18.0-okd-scos.ec.0 \
   OPENTOFU_VERSION=1.8.6 \
   VAULT_VERSION=1.18.2 \
   KO_VERSION=0.17.1 \
@@ -23,7 +23,7 @@ RUN rpm -Uvh https://download.postgresql.org/pub/repos/yum/reporpms/EL-9-x86_64/
   rpm -ivh https://github.com/opentofu/opentofu/releases/download/v${OPENTOFU_VERSION}/tofu_${OPENTOFU_VERSION}_amd64.rpm && \
   microdnf install --nodocs -y --disableplugin=subscription-manager libpmem -y &&\
   microdnf install --nodocs -y --disableplugin=subscription-manager \
-  sshpass rsync git jq unzip  ansible google-cloud-cli tar procps-ng make nodejs ShellCheck fio postgresql15 -y && \
+  tcpdump sshpass rsync git jq unzip  ansible google-cloud-cli tar procps-ng make nodejs ShellCheck fio postgresql15 -y && \
   microdnf install --nodocs -y --disableplugin=subscription-manager MariaDB-client --disablerepo=centos-9-appstream -y \
   && ln -s /usr/bin/python3.11 /usr/local/bin/python \
   && rm -rf /var/cache/* /var/lib/rpm/* && \
