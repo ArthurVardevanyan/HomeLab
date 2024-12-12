@@ -1,0 +1,217 @@
+# Source: external-secrets/templates/cert-controller-deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: external-secrets-cert-controller
+  namespace: external-secrets-operator
+  labels:
+    helm.sh/chart: external-secrets-0.11.0
+    app.kubernetes.io/name: external-secrets-cert-controller
+    app.kubernetes.io/instance: external-secrets
+    app.kubernetes.io/version: "v0.11.0"
+    app.kubernetes.io/managed-by: Helm
+spec:
+  replicas: 2
+  revisionHistoryLimit: 10
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: external-secrets-cert-controller
+      app.kubernetes.io/instance: external-secrets
+  template:
+    metadata:
+      labels:
+        helm.sh/chart: external-secrets-0.11.0
+        app.kubernetes.io/name: external-secrets-cert-controller
+        app.kubernetes.io/instance: external-secrets
+        app.kubernetes.io/version: "v0.11.0"
+        app.kubernetes.io/managed-by: Helm
+    spec:
+      serviceAccountName: external-secrets-cert-controller
+      automountServiceAccountToken: true
+      hostNetwork: false
+      containers:
+        - name: cert-controller
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+            readOnlyRootFilesystem: true
+            runAsNonRoot: true
+            seccompProfile:
+              type: RuntimeDefault
+          image: ghcr.io/external-secrets/external-secrets:v0.11.0@sha256:bf0747a7c8a9726a6757c185faa5a77bd0652f7aac03c9712c92fe7f26576431
+          imagePullPolicy: IfNotPresent
+          args:
+            - certcontroller
+            - --crd-requeue-interval=5m
+            - --service-name=external-secrets-webhook
+            - --service-namespace=external-secrets-operator
+            - --secret-name=external-secrets-webhook
+            - --secret-namespace=external-secrets-operator
+            - --metrics-addr=:8080
+            - --healthz-addr=:8081
+            - --loglevel=info
+            - --zap-time-encoding=epoch
+          ports:
+            - containerPort: 8080
+              protocol: TCP
+              name: metrics
+          readinessProbe:
+            httpGet:
+              port: 8081
+              path: /readyz
+            initialDelaySeconds: 20
+            periodSeconds: 5
+          resources:
+            limits:
+              cpu: 50m
+              memory: 256Mi
+            requests:
+              cpu: 50m
+              memory: 72Mi
+---
+# Source: external-secrets/templates/deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: external-secrets
+  namespace: external-secrets-operator
+  labels:
+    helm.sh/chart: external-secrets-0.11.0
+    app.kubernetes.io/name: external-secrets
+    app.kubernetes.io/instance: external-secrets
+    app.kubernetes.io/version: "v0.11.0"
+    app.kubernetes.io/managed-by: Helm
+spec:
+  replicas: 2
+  revisionHistoryLimit: 10
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: external-secrets
+      app.kubernetes.io/instance: external-secrets
+  template:
+    metadata:
+      labels:
+        helm.sh/chart: external-secrets-0.11.0
+        app.kubernetes.io/name: external-secrets
+        app.kubernetes.io/instance: external-secrets
+        app.kubernetes.io/version: "v0.11.0"
+        app.kubernetes.io/managed-by: Helm
+    spec:
+      serviceAccountName: external-secrets
+      automountServiceAccountToken: true
+      hostNetwork: false
+      containers:
+        - name: external-secrets
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+            readOnlyRootFilesystem: true
+            runAsNonRoot: true
+            seccompProfile:
+              type: RuntimeDefault
+          image: ghcr.io/external-secrets/external-secrets:v0.11.0@sha256:bf0747a7c8a9726a6757c185faa5a77bd0652f7aac03c9712c92fe7f26576431
+          imagePullPolicy: IfNotPresent
+          args:
+            - --concurrent=1
+            - --metrics-addr=:8080
+            - --loglevel=info
+            - --zap-time-encoding=epoch
+          ports:
+            - containerPort: 8080
+              protocol: TCP
+              name: metrics
+          resources:
+            limits:
+              cpu: 50m
+              memory: 144Mi
+            requests:
+              cpu: 50m
+              memory: 72Mi
+      dnsPolicy: ClusterFirst
+---
+# Source: external-secrets/templates/webhook-deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: external-secrets-webhook
+  namespace: external-secrets-operator
+  labels:
+    helm.sh/chart: external-secrets-0.11.0
+    app.kubernetes.io/name: external-secrets-webhook
+    app.kubernetes.io/instance: external-secrets
+    app.kubernetes.io/version: "v0.11.0"
+    app.kubernetes.io/managed-by: Helm
+spec:
+  replicas: 2
+  revisionHistoryLimit: 10
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: external-secrets-webhook
+      app.kubernetes.io/instance: external-secrets
+  template:
+    metadata:
+      labels:
+        helm.sh/chart: external-secrets-0.11.0
+        app.kubernetes.io/name: external-secrets-webhook
+        app.kubernetes.io/instance: external-secrets
+        app.kubernetes.io/version: "v0.11.0"
+        app.kubernetes.io/managed-by: Helm
+    spec:
+      hostNetwork: false
+      serviceAccountName: external-secrets-webhook
+      automountServiceAccountToken: true
+      containers:
+        - name: webhook
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+            readOnlyRootFilesystem: true
+            runAsNonRoot: true
+            seccompProfile:
+              type: RuntimeDefault
+          image: ghcr.io/external-secrets/external-secrets:v0.11.0@sha256:bf0747a7c8a9726a6757c185faa5a77bd0652f7aac03c9712c92fe7f26576431
+          imagePullPolicy: IfNotPresent
+          args:
+            - webhook
+            - --port=10250
+            - --dns-name=external-secrets-webhook.external-secrets-operator.svc
+            - --cert-dir=/tmp/certs
+            - --check-interval=5m
+            - --metrics-addr=:8080
+            - --healthz-addr=:8081
+            - --loglevel=info
+            - --zap-time-encoding=epoch
+          ports:
+            - containerPort: 8080
+              protocol: TCP
+              name: metrics
+            - containerPort: 10250
+              protocol: TCP
+              name: webhook
+          readinessProbe:
+            httpGet:
+              port: 8081
+              path: /readyz
+            initialDelaySeconds: 20
+            periodSeconds: 5
+          resources:
+            limits:
+              cpu: 50m
+              memory: 144Mi
+            requests:
+              cpu: 50m
+              memory: 72Mi
+          volumeMounts:
+            - name: certs
+              mountPath: /tmp/certs
+              readOnly: true
+      volumes:
+        - name: certs
+          secret:
+            secretName: external-secrets-webhook
