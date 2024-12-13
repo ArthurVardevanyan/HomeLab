@@ -1,0 +1,164 @@
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: netbox-app
+  namespace: netbox
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+  labels:
+    app.kubernetes.io/instance: netbox
+spec:
+  podSelector:
+    matchLabels:
+      postgres-operator.crunchydata.com/cluster: netbox
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: netbox
+          podSelector:
+            matchLabels:
+              app.kubernetes.io/name: netbox
+      ports:
+        - protocol: TCP
+          port: 5432
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-postgres
+  namespace: netbox
+  annotations:
+    argocd.argoproj.io/sync-wave: "0"
+  labels:
+    app.kubernetes.io/instance: netbox
+spec:
+  policyTypes:
+    - Egress
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: netbox
+  egress:
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: netbox
+          podSelector:
+            matchLabels:
+              postgres-operator.crunchydata.com/cluster: netbox
+      ports:
+        - port: 5432
+          protocol: TCP
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: netbox-postgres
+  namespace: netbox
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+  labels:
+    app.kubernetes.io/instance: netbox
+spec:
+  podSelector:
+    matchLabels:
+      postgres-operator.crunchydata.com/cluster: netbox
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: netbox
+          podSelector:
+            matchLabels:
+              postgres-operator.crunchydata.com/cluster: netbox
+  egress:
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: netbox
+          podSelector:
+            matchLabels:
+              postgres-operator.crunchydata.com/cluster: netbox
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-api-server
+  namespace: netbox
+  annotations:
+    argocd.argoproj.io/sync-wave: "0"
+  labels:
+    app.kubernetes.io/instance: netbox
+spec:
+  podSelector:
+    matchLabels:
+      postgres-operator.crunchydata.com/cluster: netbox
+  policyTypes:
+    - Egress
+  egress:
+    - to:
+        - podSelector:
+            matchLabels:
+              app: openshift-kube-apiserver
+          namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: openshift-kube-apiserver
+      ports:
+        - protocol: TCP
+          port: 6443
+
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-truenas-egress
+  namespace: netbox
+  annotations:
+    argocd.argoproj.io/sync-wave: "0"
+  labels:
+    app.kubernetes.io/instance: netbox
+spec:
+  policyTypes:
+    - Egress
+  podSelector:
+    matchLabels:
+      postgres-operator.crunchydata.com/cluster: netbox
+  egress:
+    - to:
+        - ipBlock:
+            cidr: 10.0.0.3/32
+      ports:
+        - protocol: TCP
+          port: 9000
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: pgdump-ingress
+  namespace: netbox
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+  labels:
+    app.kubernetes.io/instance: netbox
+spec:
+  podSelector:
+    matchLabels:
+      postgres-operator.crunchydata.com/cluster: netbox
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: postgres
+          podSelector:
+            matchLabels:
+              app: pgdump-cron
+      ports:
+        - protocol: TCP
+          port: 5432
