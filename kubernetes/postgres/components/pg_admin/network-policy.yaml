@@ -1,31 +1,28 @@
----
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
-  name: pgdump-allow-truenas-egress
+  name: allow-from-openshift-ingress
   namespace: postgres
   annotations:
     argocd.argoproj.io/sync-wave: "0"
   labels:
-    app.kubernetes.io/instance: postgres
+    app.kubernetes.io/instance: grafana
 spec:
   policyTypes:
-    - Egress
+    - Ingress
   podSelector:
     matchLabels:
-      app: pgdump-cron
-  egress:
-    - to:
-        - ipBlock:
-            cidr: 10.0.0.3/32
-      ports:
-        - protocol: TCP
-          port: 9000
+      postgres-operator.crunchydata.com/pgadmin: pgadmin
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              network.openshift.io/policy-group: ingress
 ---
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
-  name: pgdump-grafana-egress
+  name: pgadmin-grafana-egress
   namespace: postgres
   annotations:
     argocd.argoproj.io/sync-wave: "1"
@@ -34,7 +31,7 @@ metadata:
 spec:
   podSelector:
     matchLabels:
-      app: pgdump-cron
+      postgres-operator.crunchydata.com/pgadmin: pgadmin
   policyTypes:
     - Egress
   egress:
@@ -52,7 +49,7 @@ spec:
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
-  name: pgdump-photoprism-egress
+  name: pgadmin-photoprism-egress
   namespace: postgres
   annotations:
     argocd.argoproj.io/sync-wave: "1"
@@ -61,7 +58,7 @@ metadata:
 spec:
   podSelector:
     matchLabels:
-      app: pgdump-cron
+      postgres-operator.crunchydata.com/pgadmin: pgadmin
   policyTypes:
     - Egress
   egress:
@@ -79,7 +76,7 @@ spec:
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
-  name: pgdump-gitea-egress
+  name: pgadmin-gitea-egress
   namespace: postgres
   annotations:
     argocd.argoproj.io/sync-wave: "1"
@@ -88,7 +85,7 @@ metadata:
 spec:
   podSelector:
     matchLabels:
-      app: pgdump-cron
+      postgres-operator.crunchydata.com/pgadmin: pgadmin
   policyTypes:
     - Egress
   egress:
@@ -106,7 +103,7 @@ spec:
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
-  name: pgdump-homeassistant-egress
+  name: pgadmin-homeassistant-egress
   namespace: postgres
   annotations:
     argocd.argoproj.io/sync-wave: "1"
@@ -115,7 +112,7 @@ metadata:
 spec:
   podSelector:
     matchLabels:
-      app: pgdump-cron
+      postgres-operator.crunchydata.com/pgadmin: pgadmin
   policyTypes:
     - Egress
   egress:
@@ -133,7 +130,7 @@ spec:
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
-  name: pgdump-nextcloud-egress
+  name: pgadmin-nextcloud-egress
   namespace: postgres
   annotations:
     argocd.argoproj.io/sync-wave: "1"
@@ -142,7 +139,7 @@ metadata:
 spec:
   podSelector:
     matchLabels:
-      app: pgdump-cron
+      postgres-operator.crunchydata.com/pgadmin: pgadmin
   policyTypes:
     - Egress
   egress:
@@ -160,7 +157,7 @@ spec:
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
-  name: pgdump-quay-egress
+  name: pgadmin-quay-egress
   namespace: postgres
   annotations:
     argocd.argoproj.io/sync-wave: "1"
@@ -169,7 +166,7 @@ metadata:
 spec:
   podSelector:
     matchLabels:
-      app: pgdump-cron
+      postgres-operator.crunchydata.com/pgadmin: pgadmin
   policyTypes:
     - Egress
   egress:
@@ -187,7 +184,7 @@ spec:
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
-  name: pgdump-clair-egress
+  name: pgadmin-clair-egress
   namespace: postgres
   annotations:
     argocd.argoproj.io/sync-wave: "1"
@@ -196,7 +193,7 @@ metadata:
 spec:
   podSelector:
     matchLabels:
-      app: pgdump-cron
+      postgres-operator.crunchydata.com/pgadmin: pgadmin
   policyTypes:
     - Egress
   egress:
@@ -214,7 +211,7 @@ spec:
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
-  name: pgdump-stackrox-egress
+  name: pgadmin-stackrox-egress
   namespace: postgres
   annotations:
     argocd.argoproj.io/sync-wave: "1"
@@ -223,7 +220,7 @@ metadata:
 spec:
   podSelector:
     matchLabels:
-      app: pgdump-cron
+      postgres-operator.crunchydata.com/pgadmin: pgadmin
   policyTypes:
     - Egress
   egress:
@@ -241,7 +238,7 @@ spec:
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
-  name: pgdump-netbox-egress
+  name: pgadmin-netbox-egress
   namespace: postgres
   annotations:
     argocd.argoproj.io/sync-wave: "1"
@@ -250,7 +247,7 @@ metadata:
 spec:
   podSelector:
     matchLabels:
-      app: pgdump-cron
+      postgres-operator.crunchydata.com/pgadmin: pgadmin
   policyTypes:
     - Egress
   egress:
@@ -268,7 +265,7 @@ spec:
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
-  name: pgdump-spotify-egress
+  name: pgadmin-spotify-egress
   namespace: postgres
   annotations:
     argocd.argoproj.io/sync-wave: "1"
@@ -277,7 +274,7 @@ metadata:
 spec:
   podSelector:
     matchLabels:
-      app: pgdump-cron
+      postgres-operator.crunchydata.com/pgadmin: pgadmin
   policyTypes:
     - Egress
   egress:
@@ -296,7 +293,7 @@ spec:
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
-  name: pgdump-finance-tracker-egress
+  name: pgadmin-finance-tracker-egress
   namespace: postgres
   annotations:
     argocd.argoproj.io/sync-wave: "1"
@@ -305,7 +302,7 @@ metadata:
 spec:
   podSelector:
     matchLabels:
-      app: pgdump-cron
+      postgres-operator.crunchydata.com/pgadmin: pgadmin
   policyTypes:
     - Egress
   egress:

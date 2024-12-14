@@ -1,0 +1,26 @@
+apiVersion: postgres-operator.crunchydata.com/v1beta1
+kind: PGAdmin
+metadata:
+  name: pgadmin
+  namespace: postgres
+spec:
+  dataVolumeClaimSpec:
+    accessModes:
+      - ReadWriteOnce
+    resources:
+      requests:
+        storage: 1Gi
+  resources:
+    limits:
+      cpu: 250m
+      memory: 576Mi
+    requests:
+      cpu: 5m
+      memory: 192Mi
+  serviceName: pgadmin
+  users:
+    - username: pgadmin@pgadmin.com
+      role: Administrator
+      passwordRef:
+        name: pgadmin
+        key: password
