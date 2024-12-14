@@ -1,6 +1,27 @@
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
+  name: allow-from-openshift-ingress
+  namespace: postgres
+  annotations:
+    argocd.argoproj.io/sync-wave: "0"
+  labels:
+    app.kubernetes.io/instance: grafana
+spec:
+  policyTypes:
+    - Ingress
+  podSelector:
+    matchLabels:
+      postgres-operator.crunchydata.com/pgadmin: pgadmin
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              network.openshift.io/policy-group: ingress
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
   name: pgadmin-grafana-egress
   namespace: postgres
   annotations:
@@ -291,7 +312,7 @@ spec:
               kubernetes.io/metadata.name: finance-tracker
           podSelector:
             matchLabels:
-              postgres-operator.crunchydata.com/cluster: finance-tracker
+              postgres-operator.crunchydata.com/cluster: finance
       ports:
         - protocol: TCP
           port: 5432
