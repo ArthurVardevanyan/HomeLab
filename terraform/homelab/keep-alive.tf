@@ -10,6 +10,11 @@ resource "google_project_service" "cloudfunctions" {
   disable_on_destroy = false
 }
 
+resource "google_project_service" "cloud_run" {
+  project            = "homelab-${local.project_id}"
+  service            = "run.googleapis.com"
+  disable_on_destroy = false
+}
 
 resource "google_project_service" "cloudscheduler" {
   project            = "homelab-${local.project_id}"
@@ -73,7 +78,7 @@ resource "google_secret_manager_secret_iam_member" "secretAccessor" {
   project   = "homelab-${local.project_id}"
   secret_id = google_secret_manager_secret.discord_keep_alive.secret_id
   role      = "roles/secretmanager.secretAccessor"
-  member    = "serviceAccount:homelab-${local.project_id}@appspot.gserviceaccount.com"
+  member    = "serviceAccount:${google_service_account.keep_alive.email}"
 }
 
 resource "google_storage_bucket" "okd_homelab_keep_alive_cloud_function" {
@@ -113,14 +118,15 @@ resource "google_storage_bucket_iam_member" "okd_homelab_keep_alive_cloud_functi
 
 
 resource "google_cloudfunctions2_function" "okd_homelab_keep_alive_cloud_function" {
-  name     = "okd_homelab_keep_alive_cloud_function"
+  name     = "okd-homelab-keep-alive-cloud-function"
   project  = "homelab-${local.project_id}"
   location = "us-central1"
 
 
   build_config {
-    runtime     = "go123"
-    entry_point = "KeepAlive"
+    runtime           = "go123"
+    entry_point       = "KeepAlive"
+    docker_repository = "projects/homelab-${local.project_id}/locations/us-central1/repositories/gcf-artifacts"
     source {
       storage_source {
         bucket = google_storage_bucket.okd_homelab_keep_alive_cloud_function.name
@@ -134,10 +140,14 @@ resource "google_cloudfunctions2_function" "okd_homelab_keep_alive_cloud_functio
 
   }
   service_config {
-    available_memory   = "128Mi"
-    max_instance_count = 3
-    timeout_seconds    = 60
-    ingress_settings   = "ALLOW_ALL"
+    service_account_email = google_service_account.keep_alive.email
+    available_memory      = "128Mi"
+    max_instance_count    = 3
+    timeout_seconds       = 60
+    ingress_settings      = "ALLOW_ALL"
+    environment_variables = {
+      LOG_EXECUTION_ID = "true"
+    }
     secret_environment_variables {
       key        = "DISCORD"
       project_id = "homelab-${local.project_id}"
@@ -150,17 +160,26 @@ resource "google_cloudfunctions2_function" "okd_homelab_keep_alive_cloud_functio
   depends_on = [google_storage_bucket_object.keep_alive]
 }
 
-resource "google_cloudfunctions_function_iam_member" "member" {
-  project        = "homelab-${local.project_id}"
-  region         = "us-central1"
+resource "google_cloudfunctions2_function_iam_member" "member" {
+  project        = google_cloudfunctions2_function.okd_homelab_keep_alive_cloud_function.project
+  location       = google_cloudfunctions2_function.okd_homelab_keep_alive_cloud_function.location
   cloud_function = google_cloudfunctions2_function.okd_homelab_keep_alive_cloud_function.name
   role           = "roles/cloudfunctions.invoker"
   member         = google_service_account.keep_alive.member
 }
 
+
+resource "google_cloud_run_service_iam_member" "cloud_run_invoker" {
+  project  = google_cloudfunctions2_function.okd_homelab_keep_alive_cloud_function.project
+  location = google_cloudfunctions2_function.okd_homelab_keep_alive_cloud_function.location
+  service  = google_cloudfunctions2_function.okd_homelab_keep_alive_cloud_function.name
+  role     = "roles/run.invoker"
+  member   = google_service_account.keep_alive.member
+}
+
 resource "google_cloud_scheduler_job" "okd_homelab_keep_alive_cloud_function" {
-  name             = "okd_homelab_keep_alive_cloud_function"
-  description      = "okd_homelab_keep_alive_cloud_function"
+  name             = google_cloudfunctions2_function.okd_homelab_keep_alive_cloud_function.name
+  description      = google_cloudfunctions2_function.okd_homelab_keep_alive_cloud_function.name
   schedule         = "*/15 * * * *"
   time_zone        = "America/New_York"
   attempt_deadline = "60s"
