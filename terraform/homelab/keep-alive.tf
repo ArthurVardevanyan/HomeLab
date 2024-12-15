@@ -112,41 +112,48 @@ resource "google_storage_bucket_iam_member" "okd_homelab_keep_alive_cloud_functi
 }
 
 
-resource "google_cloudfunctions_function" "okd_homelab_keep_alive_cloud_function" {
-  available_memory_mb          = "128"
-  entry_point                  = "KeepAlive"
-  ingress_settings             = "ALLOW_ALL"
-  source_archive_bucket        = google_storage_bucket.okd_homelab_keep_alive_cloud_function.name
-  source_archive_object        = "${data.archive_file.keep_alive.output_md5}.zip"
-  max_instances                = "3"
-  name                         = "okd_homelab_keep_alive_cloud_function"
-  project                      = "homelab-${local.project_id}"
-  region                       = "us-central1"
-  runtime                      = "go123"
-  timeout                      = "60"
-  trigger_http                 = true
-  https_trigger_security_level = "SECURE_ALWAYS"
+resource "google_cloudfunctions2_function" "okd_homelab_keep_alive_cloud_function" {
+  name     = "okd_homelab_keep_alive_cloud_function"
+  project  = "homelab-${local.project_id}"
+  location = "us-central1"
 
-  environment_variables = {
-    GCS_BUCKET    = "okd_homelab_keep_alive"
-    ALLOWED_DELTA = "630" # 10.5 Minutes
+
+  build_config {
+    runtime     = "go123"
+    entry_point = "KeepAlive"
+    source {
+      storage_source {
+        bucket = google_storage_bucket.okd_homelab_keep_alive_cloud_function.name
+        object = "${data.archive_file.keep_alive.output_md5}.zip"
+      }
+    }
+    environment_variables = {
+      GCS_BUCKET    = "okd_homelab_keep_alive"
+      ALLOWED_DELTA = "630" # 10.5 Minutes
+    }
+
   }
+  service_config {
+    available_memory   = "128Mi"
+    max_instance_count = 3
+    timeout_seconds    = 60
+    ingress_settings   = "ALLOW_ALL"
+    secret_environment_variables {
+      key        = "DISCORD"
+      project_id = "homelab-${local.project_id}"
+      secret     = "discord_keep_alive"
+      version    = "latest"
+    }
 
-  secret_environment_variables {
-    key    = "DISCORD"
-    secret = "discord_keep_alive"
-    # checkov:skip=CKV_SECRET_6 Place Holder
-    version = "latest"
   }
 
   depends_on = [google_storage_bucket_object.keep_alive]
-
 }
 
 resource "google_cloudfunctions_function_iam_member" "member" {
   project        = "homelab-${local.project_id}"
   region         = "us-central1"
-  cloud_function = google_cloudfunctions_function.okd_homelab_keep_alive_cloud_function.name
+  cloud_function = google_cloudfunctions2_function.okd_homelab_keep_alive_cloud_function.name
   role           = "roles/cloudfunctions.invoker"
   member         = google_service_account.keep_alive.member
 }
@@ -167,13 +174,13 @@ resource "google_cloud_scheduler_job" "okd_homelab_keep_alive_cloud_function" {
 
 
   http_target {
+    uri         = google_cloudfunctions2_function.okd_homelab_keep_alive_cloud_function.service_config[0].uri
     http_method = "POST"
-    uri         = google_cloudfunctions_function.okd_homelab_keep_alive_cloud_function.https_trigger_url
     body        = base64encode("{}")
-
     oidc_token {
+      audience              = "${google_cloudfunctions2_function.okd_homelab_keep_alive_cloud_function.service_config[0].uri}/"
       service_account_email = google_service_account.keep_alive.email
     }
-
   }
+
 }
