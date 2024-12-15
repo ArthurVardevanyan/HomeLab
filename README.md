@@ -362,15 +362,15 @@ kubernetes_host="https://kubernetes.default.svc:443"
 # Pod With Service Account Token Mounted
 kubectl cp -n homelab toolbox-0:/var/run/secrets/kubernetes.io/serviceaccount/..data/ca.crt /tmp/ca.crt
 
-vault write auth/homelab/config \
+vault write auth/kubernetes/config \
    token_reviewer_jwt="${token_reviewer_jwt}" \
    kubernetes_host=${kubernetes_host} \
    kubernetes_ca_cert=@/tmp/ca.crt \
    disable_local_ca_jwt=true
 
 vault write auth/kubernetes/role/argocd \
-    bound_service_account_names=pipeline \
-    bound_service_account_namespaces=homelab \
+    bound_service_account_names=argocd-repo-server \
+    bound_service_account_namespaces=argocd \
     policies=argocd \
     ttl=1h
 
