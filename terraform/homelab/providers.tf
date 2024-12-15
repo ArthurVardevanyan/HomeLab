@@ -26,7 +26,8 @@ terraform {
 }
 
 provider "vault" {
-  address = "https://vault.arthurvardevanyan.com"
+  address          = "https://vault.arthurvardevanyan.com"
+  skip_child_token = true
 }
 
 provider "google" {
