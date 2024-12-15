@@ -73,7 +73,7 @@ resource "google_secret_manager_secret_iam_member" "secretAccessor" {
   project   = "homelab-${local.project_id}"
   secret_id = google_secret_manager_secret.discord_keep_alive.secret_id
   role      = "roles/secretmanager.secretAccessor"
-  member    = "serviceAccount:homelab-${local.project_id}@appspot.gserviceaccount.com"
+  member    = "serviceAccount:${google_service_account.keep_alive.email}"
 }
 
 resource "google_storage_bucket" "okd_homelab_keep_alive_cloud_function" {
@@ -134,10 +134,11 @@ resource "google_cloudfunctions2_function" "okd_homelab_keep_alive_cloud_functio
 
   }
   service_config {
-    available_memory   = "128Mi"
-    max_instance_count = 3
-    timeout_seconds    = 60
-    ingress_settings   = "ALLOW_ALL"
+    service_account_email = google_service_account.keep_alive.email
+    available_memory      = "128Mi"
+    max_instance_count    = 3
+    timeout_seconds       = 60
+    ingress_settings      = "ALLOW_ALL"
     secret_environment_variables {
       key        = "DISCORD"
       project_id = "homelab-${local.project_id}"
