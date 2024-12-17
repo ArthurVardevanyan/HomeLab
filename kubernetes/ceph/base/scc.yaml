@@ -17,7 +17,7 @@ allowHostPID: false
 allowHostNetwork: false
 # set to true if running rook with the provider as host
 allowHostPorts: false
-priority:
+priority: 0
 allowedCapabilities: ["MKNOD"]
 allowHostIPC: true
 readOnlyRootFilesystem: false
@@ -61,9 +61,11 @@ allowPrivilegedContainer: true
 allowHostNetwork: true
 # This need to be set to true as we use HostPath
 allowHostDirVolumePlugin: true
-priority:
+priority: 0
 # SYS_ADMIN is needed for rbd to execute rbd map command
 allowedCapabilities: ["SYS_ADMIN"]
+defaultAddCapabilities: []
+requiredDropCapabilities: []
 # Needed as we run liveness container on daemonset pods
 allowHostPorts: true
 # Needed as we are setting this in RBD plugin pod
