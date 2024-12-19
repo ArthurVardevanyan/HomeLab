@@ -71,9 +71,9 @@ test_overlays() {
     echo "Run KubeConform on Yaml's"
     #  -ignore-missing-schemas # -debug
     kubeconform -n 16 -verbose --summary -strict \
-      -schema-location="../kubernetes-json-schema/master-standalone-strict/{{.ResourceKind}}-{{.Group}}-{{.ResourceAPIVersion}}.json" \
-      -schema-location 'https://raw.githubusercontent.com/yannh/kubernetes-json-schema/master/master-standalone-strict/{{.ResourceKind}}{{.KindSuffix}}.json' \
-      -schema-location "https://raw.githubusercontent.com/yannh/kubernetes-json-schema/master/{{.NormalizedKubernetesVersion}}/{{.ResourceKind}}.json" \
+      -schema-location="../kubernetes-json-schema/custom-standalone-strict/{{.ResourceKind}}-{{.Group}}-{{.ResourceAPIVersion}}.json" \
+      -schema-location '../kubernetes-json-schema/master-standalone-strict/{{.ResourceKind}}{{.KindSuffix}}.json' \
+      -schema-location "../kubernetes-json-schema/master-local/{{.ResourceKind}}.json" \
       -output text "${DIR}" | grep -v "is valid"
   else
     echo "Vault Variables Missing"
