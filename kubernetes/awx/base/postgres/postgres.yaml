@@ -12,6 +12,7 @@ metadata:
   labels:
     app.kubernetes.io/instance: awx
 spec:
+  shutdown: false
   backups:
     pgbackrest:
       configuration:
@@ -135,29 +136,29 @@ spec:
   #         memory: 128Mi
   openshift: true
   port: 5432
-  postgresVersion: 15
+  postgresVersion: 17
 # ---
 # apiVersion: postgres-operator.crunchydata.com/v1beta1
 # kind: PGUpgrade
 # metadata:
 #   name: awx-upgrade
-#   namespace: postgres
+#   namespace: awx
 # spec:
-#   fromPostgresVersion: 14
+#   fromPostgresVersion: 15
 #   postgresClusterName: awx
-#   toPostgresVersion: 15
+# toPostgresVersion: 17
 
-# kubectl delete ResourceQuota -n postgres --all
-# kubectl delete LimitRange -n postgres --all
+# kubectl delete ResourceQuota -n awx --all
+# kubectl delete LimitRange -n awx --all
 
-# kubectl patch postgrescluster awx -n postgres --type=merge \
+# kubectl patch postgrescluster awx -n awx --type=merge \
 #     -p '{"spec":{"shutdown":true}}'
 
-# kubectl annotate postgrescluster awx -n postgres  \
+# kubectl annotate postgrescluster awx -n awx  \
 #     postgres-operator.crunchydata.com/allow-upgrade=awx-upgrade
 
-# kubectl patch postgrescluster awx -n postgres --type "json" -p \
-# '[{"op":"replace","path":"/spec/postgresVersion","value":15}]'
+# kubectl patch postgrescluster awx -n awx --type "json" -p \
+# '[{"op":"replace","path":"/spec/postgresVersion","value":17}]'
 
-# kubectl patch postgrescluster awx -n postgres --type=merge \
+# kubectl patch postgrescluster awx -n awx --type=merge \
 #     -p '{"spec":{"shutdown":false}}'

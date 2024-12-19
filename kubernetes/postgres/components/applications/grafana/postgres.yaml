@@ -9,6 +9,7 @@ metadata:
   labels:
     app.kubernetes.io/instance: postgres
 spec:
+  shutdown: false
   backups:
     pgbackrest:
       configuration:
@@ -135,7 +136,7 @@ spec:
   #         memory: 128Mi
   openshift: true
   port: 5432
-  postgresVersion: 15
+  postgresVersion: 17
 # ---
 # apiVersion: postgres-operator.crunchydata.com/v1beta1
 # kind: PGUpgrade
@@ -143,9 +144,9 @@ spec:
 #   name: grafana-upgrade
 #   namespace: postgres
 # spec:
-#   fromPostgresVersion: 14
+#   fromPostgresVersion: 15
 #   postgresClusterName: grafana
-#   toPostgresVersion: 15
+#   toPostgresVersion: 17
 
 # kubectl delete ResourceQuota -n postgres --all
 # kubectl delete LimitRange -n postgres --all
@@ -157,7 +158,7 @@ spec:
 #     postgres-operator.crunchydata.com/allow-upgrade=grafana-upgrade
 
 # kubectl patch postgrescluster grafana -n postgres --type "json" -p \
-# '[{"op":"replace","path":"/spec/postgresVersion","value":15}]'
+# '[{"op":"replace","path":"/spec/postgresVersion","value":17}]'
 
 # kubectl patch postgrescluster grafana -n postgres --type=merge \
 #     -p '{"spec":{"shutdown":false}}'

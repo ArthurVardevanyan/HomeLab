@@ -12,6 +12,7 @@ metadata:
   labels:
     app.kubernetes.io/instance: netbox
 spec:
+  shutdown: false
   backups:
     pgbackrest:
       configuration:
@@ -141,23 +142,23 @@ spec:
 # kind: PGUpgrade
 # metadata:
 #   name: netbox-upgrade
-#   namespace: postgres
+#   namespace: netbox
 # spec:
-#   fromPostgresVersion: 14
+#   fromPostgresVersion: 15
 #   postgresClusterName: netbox
-#   toPostgresVersion: 15
+#   toPostgresVersion: 17
 
-# kubectl delete ResourceQuota -n postgres --all
-# kubectl delete LimitRange -n postgres --all
+# kubectl delete ResourceQuota -n netbox --all
+# kubectl delete LimitRange -n netbox --all
 
-# kubectl patch postgrescluster netbox -n postgres --type=merge \
+# kubectl patch postgrescluster netbox -n netbox --type=merge \
 #     -p '{"spec":{"shutdown":true}}'
 
-# kubectl annotate postgrescluster netbox -n postgres  \
+# kubectl annotate postgrescluster netbox -n netbox  \
 #     postgres-operator.crunchydata.com/allow-upgrade=netbox-upgrade
 
-# kubectl patch postgrescluster netbox -n postgres --type "json" -p \
-# '[{"op":"replace","path":"/spec/postgresVersion","value":15}]'
+# kubectl patch postgrescluster netbox -n netbox --type "json" -p \
+# '[{"op":"replace","path":"/spec/postgresVersion","value":17}]'
 
-# kubectl patch postgrescluster netbox -n postgres --type=merge \
+# kubectl patch postgrescluster netbox -n netbox --type=merge \
 #     -p '{"spec":{"shutdown":false}}'
