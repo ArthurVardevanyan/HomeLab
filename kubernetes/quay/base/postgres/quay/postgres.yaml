@@ -13,6 +13,7 @@ metadata:
   labels:
     app.kubernetes.io/instance: quay
 spec:
+  shutdown: false
   backups:
     pgbackrest:
       configuration:
@@ -131,7 +132,7 @@ spec:
   #         memory: 128Mi
   openshift: true
   port: 5432
-  postgresVersion: 15
+  postgresVersion: 17
 # ---
 # apiVersion: postgres-operator.crunchydata.com/v1beta1
 # kind: PGUpgrade
@@ -139,21 +140,21 @@ spec:
 #   name: quay-upgrade
 #   namespace: quay
 # spec:
-#   fromPostgresVersion: 14
+#   fromPostgresVersion: 15
 #   postgresClusterName: quay
-#   toPostgresVersion: 15
+#   toPostgresVersion: 17
 
-# kubectl delete ResourceQuota -n postgres --all
-# kubectl delete LimitRange -n postgres --all
+# kubectl delete ResourceQuota -n quay --all
+# kubectl delete LimitRange -n quay --all
 
-# kubectl patch postgrescluster quay -n postgres --type=merge \
+# kubectl patch postgrescluster quay -n quay --type=merge \
 #     -p '{"spec":{"shutdown":true}}'
 
-# kubectl annotate postgrescluster quay -n postgres  \
+# kubectl annotate postgrescluster quay -n quay  \
 #     postgres-operator.crunchydata.com/allow-upgrade=quay-upgrade
 
-# kubectl patch postgrescluster quay -n postgres --type "json" -p \
-# '[{"op":"replace","path":"/spec/postgresVersion","value":15}]'
+# kubectl patch postgrescluster quay -n quay --type "json" -p \
+# '[{"op":"replace","path":"/spec/postgresVersion","value":17}]'
 
-# kubectl patch postgrescluster quay -n postgres --type=merge \
+# kubectl patch postgrescluster quay -n quay --type=merge \
 #     -p '{"spec":{"shutdown":false}}'

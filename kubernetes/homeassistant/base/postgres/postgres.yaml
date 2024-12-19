@@ -12,6 +12,7 @@ metadata:
   labels:
     app.kubernetes.io/instance: homeassistant
 spec:
+  shutdown: false
   backups:
     pgbackrest:
       # configuration:
@@ -137,4 +138,29 @@ spec:
   #         memory: 128Mi
   openshift: true
   port: 5432
-  postgresVersion: 15
+  postgresVersion: 17
+# ---
+# apiVersion: postgres-operator.crunchydata.com/v1beta1
+# kind: PGUpgrade
+# metadata:
+#   name: homeassistant-upgrade
+#   namespace: homeassistant
+# spec:
+#   fromPostgresVersion: 15
+#   postgresClusterName: homeassistant
+#   toPostgresVersion: 17
+
+# kubectl delete ResourceQuota -n homeassistant --all
+# kubectl delete LimitRange -n homeassistant --all
+
+# kubectl patch postgrescluster homeassistant -n homeassistant --type=merge \
+#     -p '{"spec":{"shutdown":true}}'
+
+# kubectl annotate postgrescluster homeassistant -n homeassistant  \
+#     postgres-operator.crunchydata.com/allow-upgrade=homeassistant-upgrade
+
+# kubectl patch postgrescluster homeassistant -n homeassistant --type "json" -p \
+# '[{"op":"replace","path":"/spec/postgresVersion","value":17}]'
+
+# kubectl patch postgrescluster homeassistant -n homeassistant --type=merge \
+#     -p '{"spec":{"shutdown":false}}'

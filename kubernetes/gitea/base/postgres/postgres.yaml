@@ -12,6 +12,7 @@ metadata:
   labels:
     app.kubernetes.io/instance: gitea
 spec:
+  shutdown: false
   backups:
     pgbackrest:
       configuration:
@@ -135,29 +136,29 @@ spec:
   #         memory: 128Mi
   openshift: true
   port: 5432
-  postgresVersion: 15
-# ---
+  postgresVersion: 17
+---
 # apiVersion: postgres-operator.crunchydata.com/v1beta1
 # kind: PGUpgrade
 # metadata:
 #   name: gitea-upgrade
-#   namespace: postgres
+#   namespace: gitea
 # spec:
-#   fromPostgresVersion: 14
+#   fromPostgresVersion: 15
 #   postgresClusterName: gitea
-#   toPostgresVersion: 15
+#   toPostgresVersion: 17
 
-# kubectl delete ResourceQuota -n postgres --all
-# kubectl delete LimitRange -n postgres --all
+# kubectl delete ResourceQuota -n gitea --all
+# kubectl delete LimitRange -n gitea --all
 
-# kubectl patch postgrescluster gitea -n postgres --type=merge \
+# kubectl patch postgrescluster gitea -n gitea --type=merge \
 #     -p '{"spec":{"shutdown":true}}'
 
-# kubectl annotate postgrescluster gitea -n postgres  \
+# kubectl annotate postgrescluster gitea -n gitea  \
 #     postgres-operator.crunchydata.com/allow-upgrade=gitea-upgrade
 
-# kubectl patch postgrescluster gitea -n postgres --type "json" -p \
-# '[{"op":"replace","path":"/spec/postgresVersion","value":15}]'
+# kubectl patch postgrescluster gitea -n gitea --type "json" -p \
+# '[{"op":"replace","path":"/spec/postgresVersion","value":17}]'
 
-# kubectl patch postgrescluster gitea -n postgres --type=merge \
+# kubectl patch postgrescluster gitea -n gitea --type=merge \
 #     -p '{"spec":{"shutdown":false}}'

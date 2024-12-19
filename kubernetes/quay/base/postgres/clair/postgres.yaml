@@ -13,6 +13,7 @@ metadata:
     app.kubernetes.io/instance: quay
     velero.io/exclude-from-backup: "true"
 spec:
+  shutdown: false
   backups:
     pgbackrest:
       # configuration:
@@ -142,3 +143,28 @@ spec:
   openshift: true
   port: 5432
   postgresVersion: 17
+# ---
+# apiVersion: postgres-operator.crunchydata.com/v1beta1
+# kind: PGUpgrade
+# metadata:
+#   name: clair-upgrade
+#   namespace: quay
+# spec:
+#   fromPostgresVersion: 15
+#   postgresClusterName: clair
+#   toPostgresVersion: 17
+
+# kubectl delete ResourceQuota -n quay --all
+# kubectl delete LimitRange -n quay --all
+
+# kubectl patch postgrescluster clair -n quay --type=merge \
+#     -p '{"spec":{"shutdown":true}}'
+
+# kubectl annotate postgrescluster clair -n quay  \
+#     postgres-operator.crunchydata.com/allow-upgrade=quay-upgrade
+
+# kubectl patch postgrescluster clair -n quay --type "json" -p \
+# '[{"op":"replace","path":"/spec/postgresVersion","value":17}]'
+
+# kubectl patch postgrescluster clair -n quay --type=merge \
+#     -p '{"spec":{"shutdown":false}}'

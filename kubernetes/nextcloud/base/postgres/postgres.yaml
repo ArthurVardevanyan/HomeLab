@@ -12,6 +12,7 @@ metadata:
   labels:
     app.kubernetes.io/instance: nextcloud
 spec:
+  shutdown: false
   backups:
     pgbackrest:
       configuration:
@@ -136,29 +137,29 @@ spec:
   #         memory: 128Mi
   openshift: true
   port: 5432
-  postgresVersion: 15
+  postgresVersion: 17
 # ---
 # apiVersion: postgres-operator.crunchydata.com/v1beta1
 # kind: PGUpgrade
 # metadata:
 #   name: nextcloud-upgrade
-#   namespace: postgres
+#   namespace: nextcloud
 # spec:
-#   fromPostgresVersion: 14
+#   fromPostgresVersion: 15
 #   postgresClusterName: nextcloud
-#   toPostgresVersion: 15
+#   toPostgresVersion: 17
 
-# kubectl delete ResourceQuota -n postgres --all
-# kubectl delete LimitRange -n postgres --all
+# kubectl delete ResourceQuota -n nextcloud --all
+# kubectl delete LimitRange -n nextcloud --all
 
-# kubectl patch postgrescluster nextcloud -n postgres --type=merge \
+# kubectl patch postgrescluster nextcloud -n nextcloud --type=merge \
 #     -p '{"spec":{"shutdown":true}}'
 
-# kubectl annotate postgrescluster nextcloud -n postgres  \
+# kubectl annotate postgrescluster nextcloud -n nextcloud  \
 #     postgres-operator.crunchydata.com/allow-upgrade=nextcloud-upgrade
 
-# kubectl patch postgrescluster nextcloud -n postgres --type "json" -p \
-# '[{"op":"replace","path":"/spec/postgresVersion","value":15}]'
+# kubectl patch postgrescluster nextcloud -n nextcloud --type "json" -p \
+# '[{"op":"replace","path":"/spec/postgresVersion","value":17}]'
 
-# kubectl patch postgrescluster nextcloud -n postgres --type=merge \
+# kubectl patch postgrescluster nextcloud -n nextcloud --type=merge \
 #     -p '{"spec":{"shutdown":false}}'
