@@ -5,7 +5,6 @@ resources:
   - ./namespace.yaml
   - ./pdb.yaml
   - ./secret.yaml
-  - ./configmap.yaml
   - ./deployment.yaml
   - ./network-policy.yaml
   - ./resource-quota.yaml
@@ -20,3 +19,18 @@ resources:
   - ./object-bucket-claim.yaml
   - ./velero.yaml
   - ./cronjob.yaml
+  # - ./oauth-client.yaml
+generatorOptions:
+  disableNameSuffixHash: false # ArgoCD Garbage Collection
+  labels:
+    app.kubernetes.io/instance: netbox
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: netbox
+    app.kubernetes.io/version: v4.0.0
+    helm.sh/chart: netbox-5.0.0-beta9
+secretGenerator:
+  - name: netbox-config
+    namespace: netbox
+    files:
+      - configs/configuration.py
+      - configs/netbox.yaml
