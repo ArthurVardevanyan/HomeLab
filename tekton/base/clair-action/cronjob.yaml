@@ -1,0 +1,93 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: clair-action-update-db
+  namespace: homelab
+spec:
+  schedule: "35 * * * *"
+  concurrencyPolicy: Replace
+  successfulJobsHistoryLimit: 1
+  failedJobsHistoryLimit: 1
+  suspend: false
+  startingDeadlineSeconds: 60
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          serviceAccountName: pipeline
+          automountServiceAccountToken: false
+          securityContext:
+            seccompProfile:
+              type: RuntimeDefault
+            runAsNonRoot: true
+          containers:
+            - name: clair-action
+              image: quay.io/projectquay/clair-action:v0.0.11@sha256:80486643baad47f2ac606e5c0e5274f296c08464aebb3dc90f97f22ba92505dd
+              command:
+                - /bin/bash
+                - -c
+                - |
+                  ##############################
+                  ### Clair Action DB Update ###
+                  ##############################
+                  clair-action update --db-path=/tmp/vuln-store/matcher.db
+
+                  ###################################
+                  ### Upload Database to Registry ###
+                  ###################################
+                  ./tmp/clair-action-quay-upload/quay.sh
+              securityContext:
+                runAsNonRoot: true
+                privileged: false
+                readOnlyRootFilesystem: true
+                allowPrivilegeEscalation: false
+                seccompProfile:
+                  type: RuntimeDefault
+                capabilities:
+                  drop:
+                    - ALL
+              resources:
+                requests:
+                  memory: "4Gi"
+                  cpu: "50m"
+                  ephemeral-storage: 3Gi
+                limits:
+                  memory: "8Gi"
+                  cpu: "1500m"
+                  ephemeral-storage: 3Gi
+              volumeMounts:
+                - name: tmp
+                  mountPath: /tmp/
+                - name: vuln-store
+                  mountPath: /tmp/vuln-store
+                - name: vuln-store-cache
+                  mountPath: /tmp/vuln-store-cache
+                - name: docker-config
+                  mountPath: /tmp/.docker
+                - name: clair-action-quay-upload
+                  mountPath: /tmp/clair-action-quay-upload
+          restartPolicy: Never
+          volumes:
+            - name: tmp
+              emptyDir:
+                sizeLimit: 3Gi
+            - name: vuln-store
+              persistentVolumeClaim:
+                claimName: clair-action-vuln-store
+            - name: vuln-store-cache
+              ephemeral:
+                volumeClaimTemplate:
+                  metadata:
+                  spec:
+                    accessModes: ["ReadWriteOnce"]
+                    storageClassName: "rook-ceph-block"
+                    resources:
+                      requests:
+                        storage: 15Gi
+            - name: docker-config
+              secret:
+                secretName: homelab-push-pull-secret
+            - name: clair-action-quay-upload
+              configMap:
+                name: clair-action-quay-upload
+                defaultMode: 0777

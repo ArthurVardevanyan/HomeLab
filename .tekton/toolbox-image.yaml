@@ -69,6 +69,19 @@ spec:
           - name: source
             workspace: data
 
+      - name: clair-action
+        runAfter:
+          - buildah
+        taskRef:
+          name: buildah
+          kind: Task
+        params:
+          - name: IMAGE
+            value: $(params.IMAGE)
+        workspaces:
+          - name: data
+            workspace: data
+
   serviceAccountName: pipeline
   workspaces:
     - name: data
