@@ -1,4 +1,4 @@
-apiVersion: tekton.dev/v1beta1
+apiVersion: tekton.dev/v1
 kind: Task
 metadata:
   name: clair-action
@@ -28,7 +28,7 @@ spec:
   steps:
     - name: clair-action
       image: "registry.arthurvardevanyan.com/homelab/toolbox:not_latest"
-      resources:
+      computeResources:
         limits:
           cpu: 500m
           memory: 512Mi
@@ -102,9 +102,10 @@ spec:
       ephemeral:
         volumeClaimTemplate:
           metadata:
+            creationTimestamp: null
           spec:
             accessModes: ["ReadWriteOnce"]
-            storageClassName: "rook-ceph-block"
+            storageClassName: "rook-ceph-block-ci"
             resources:
               requests:
                 storage: 15Gi

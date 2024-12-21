@@ -1,5 +1,5 @@
 ---
-apiVersion: tekton.dev/v1beta1
+apiVersion: tekton.dev/v1
 kind: PipelineRun
 metadata:
   name: toolbox-image
@@ -21,6 +21,7 @@ spec:
       value: "./containers/toolbox/containerfile"
     - name: IMAGE
       value: "registry.arthurvardevanyan.com/homelab/toolbox:not_latest"
+
   pipelineSpec:
     params:
       - name: git-url
@@ -34,6 +35,11 @@ spec:
         description: Path to the Dockerfile to build.
         type: string
         default: ./Dockerfile
+
+    results:
+      - description: The common vulnerabilities and exposures (CVE) result
+        name: SCAN_OUTPUT
+        value: $(tasks.clair-action.results.SCAN_OUTPUT)
 
     workspaces:
       - name: data
@@ -82,11 +88,6 @@ spec:
         workspaces:
           - name: data
             workspace: data
-
-  results:
-    - description: The common vulnerabilities and exposures (CVE) result
-      name: SCAN_OUTPUT
-      value: $(tasks.clair-action.results.SCAN_OUTPUT)
 
   serviceAccountName: pipeline
   workspaces:
