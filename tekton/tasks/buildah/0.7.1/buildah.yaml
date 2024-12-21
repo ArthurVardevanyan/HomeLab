@@ -28,7 +28,7 @@ spec:
       description: Reference of the image buildah will produce.
     - name: BUILDER_IMAGE
       description: The location of the buildah builder image.
-      default: quay.io/buildah/stable:v1.35.3
+      default: quay.io/buildah/stable:v1.38.0
     - name: STORAGE_DRIVER
       description: Set buildah storage driver
       default: vfs #overlay
@@ -138,6 +138,16 @@ spec:
     - name: varlibcontainers
       emptyDir:
         sizeLimit: 30Gi
+      # ephemeral:
+      #   volumeClaimTemplate:
+      #     metadata:
+      #       creationTimestamp: null
+      #     spec:
+      #       accessModes: ["ReadWriteOnce"]
+      #       storageClassName: "rook-ceph-block-ci"
+      #       resources:
+      #         requests:
+      #           storage: 30Gi
     - name: home
       emptyDir:
         sizeLimit: 1Mi
@@ -147,6 +157,16 @@ spec:
     - name: var-tmp
       emptyDir:
         sizeLimit: 30Gi
+      # ephemeral:
+      #   volumeClaimTemplate:
+      #     metadata:
+      #       creationTimestamp: null
+      #     spec:
+      #       accessModes: ["ReadWriteOnce"]
+      #       storageClassName: "rook-ceph-block-ci"
+      #       resources:
+      #         requests:
+      #           storage: 30Gi
     - name: root
       emptyDir:
         sizeLimit: 1Mi
