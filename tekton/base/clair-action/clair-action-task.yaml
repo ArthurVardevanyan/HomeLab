@@ -1,0 +1,110 @@
+apiVersion: tekton.dev/v1beta1
+kind: Task
+metadata:
+  name: clair-action
+  namespace: homelab
+  labels:
+    app: homelab
+    app.kubernetes.io/instance: homelab
+  annotations:
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+spec:
+  params:
+    - description: Image to be scanned
+      name: IMAGE
+      type: string
+    - description: Image to be scanned
+      name: DB_IMAGE
+      type: string
+      default: "registry.arthurvardevanyan.com/homelab/clair-action-db:latest"
+
+  results:
+    - description: CVE result format
+      name: SCAN_OUTPUT
+
+  workspaces:
+    - name: data
+
+  steps:
+    - name: clair-action
+      image: "registry.arthurvardevanyan.com/homelab/toolbox:not_latest"
+      resources:
+        limits:
+          cpu: 500m
+          memory: 512Mi
+        requests:
+          cpu: 100m
+          memory: 256Mi
+      securityContext:
+        runAsNonRoot: true
+        #runAsUser: 65532
+        privileged: false
+        readOnlyRootFilesystem: true
+        allowPrivilegeEscalation: false
+        seccompProfile:
+          type: RuntimeDefault
+        capabilities:
+          drop:
+            - ALL
+            - MKNOD
+      env:
+        - name: WORKSPACE_DATA_PATH
+          value: $(workspaces.data.path)
+        - name: IMAGE
+          value: $(params.IMAGE)
+        - name: DB_IMAGE
+          value: $(params.DB_IMAGE)
+        - name: SCAN_OUTPUT
+          value: $(results.SCAN_OUTPUT.path)
+      volumeMounts:
+        - name: tmp
+          mountPath: /tmp
+        - name: vuln-store
+          mountPath: /vuln-store
+      script: |
+        #!/bin/bash
+
+        set -o errexit
+        set -o nounset
+        set -o pipefail
+
+        mkdir -p /vuln-store/db/
+        mkdir -p  "${WORKSPACE_DATA_PATH}/clair-scan-report"
+
+        echo "Extracting Image"
+        oc image extract "${DB_IMAGE}" \
+          --path "/":"/vuln-store/db"
+
+        echo "Running Clair Action"
+        clair-action report --image-ref=${IMAGE} \
+            --db-path=/vuln-store/db/matcher.db \
+            --format=quay --docker-config-dir ${WORKSPACE_DATA_PATH} \
+            > ${WORKSPACE_DATA_PATH}/clair-scan-report/clair-result.json
+
+        # https://www.redhat.com/en/blog/announcing-open-container-initiativereferrers-api-quayio-step-towards-enhanced-security-and-compliance
+        # https://docs.openshift.com/pipelines/1.17/secure/setting-up-openshift-pipelines-to-view-software-supply-chain-security-elements.html#op-setting-up-openshift-pipelines-to-view-project-vulnerabilities_setting-up-openshift-pipelines-to-view-software-supply-chain-security-elements
+        echo "Analyzing the clair-result.json"
+        jq -rce \
+          '{vulnerabilities:{critical: [.data.Layer.Features[].Vulnerabilities[] | select(.Severity == "Critical")] | length,
+            high: [.data.Layer.Features[].Vulnerabilities[] | select(.Severity == "High")] | length,
+            medium: [.data.Layer.Features[].Vulnerabilities[] | select(.Severity == "Medium")] | length,
+            low: [.data.Layer.Features[].Vulnerabilities[] | select(.Severity == "Low")] | length }}'  ${WORKSPACE_DATA_PATH}/clair-scan-report/clair-result.json | tee "${SCAN_OUTPUT}"
+
+        cat  ${WORKSPACE_DATA_PATH}/clair-scan-report/clair-result.json
+
+  volumes:
+    - name: tmp
+      emptyDir:
+        sizeLimit: 100Mi
+    - name: vuln-store
+      # emptyDir:
+      #   sizeLimit: 15Gi
+      ephemeral:
+        volumeClaimTemplate:
+          metadata:
+          spec:
+            accessModes: ["ReadWriteOnce"]
+            storageClassName: "rook-ceph-block"
+            resources:
+              requests:
+                storage: 15Gi
