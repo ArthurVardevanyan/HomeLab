@@ -1,5 +1,5 @@
 ---
-apiVersion: tekton.dev/v1beta1
+apiVersion: tekton.dev/v1
 kind: PipelineRun
 metadata:
   name: apache-php-image
@@ -10,6 +10,7 @@ metadata:
     pipelinesascode.tekton.dev/target-namespace: "homelab"
     pipelinesascode.tekton.dev/task: "https://raw.githubusercontent.com/ArthurVardevanyan/HomeLab/main/tekton/tasks/git-clone/0.9.1/git-clone.yaml"
     pipelinesascode.tekton.dev/task-1: "https://raw.githubusercontent.com/ArthurVardevanyan/HomeLab/main/tekton/tasks/buildah/0.7.1/buildah.yaml"
+    pipelinesascode.tekton.dev/task-3: "tekton/base/clair-action/clair-action-task.yaml"
 spec:
   params:
     - name: git-url
@@ -20,6 +21,7 @@ spec:
       value: "./containers/apache-php/containerfile"
     - name: IMAGE
       value: "registry.arthurvardevanyan.com/homelab/apache-php:latest"
+
   pipelineSpec:
     params:
       - name: git-url
@@ -33,6 +35,11 @@ spec:
         description: Path to the Dockerfile to build.
         type: string
         default: ./Dockerfile
+
+    results:
+      - description: The common vulnerabilities and exposures (CVE) result
+        name: SCAN_OUTPUT
+        value: $(tasks.clair-action.results.SCAN_OUTPUT)
 
     workspaces:
       - name: data
@@ -67,6 +74,19 @@ spec:
             value: $(params.DOCKERFILE)
         workspaces:
           - name: source
+            workspace: data
+
+      - name: clair-action
+        runAfter:
+          - buildah
+        taskRef:
+          name: clair-action
+          kind: Task
+        params:
+          - name: IMAGE
+            value: $(params.IMAGE)
+        workspaces:
+          - name: data
             workspace: data
 
   serviceAccountName: pipeline

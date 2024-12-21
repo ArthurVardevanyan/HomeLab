@@ -22,7 +22,19 @@ spec:
       - name: resolverStepActions
         value: "true"
   chain:
+    artifacts.taskrun.storage: "tekton,oci"
+    artifacts.pipelinerun.storage: "tekton,oci"
+    artifacts.pipelinerun.format: in-toto
+    transparency.enabled: "true"
+    artifacts.taskrun.format: in-toto
+    artifacts.oci.signer: x509
+    artifacts.oci.storage: oci
+    #transparency.url: ""
+    artifacts.pipelinerun.signer: x509
     disabled: false
+    artifacts.oci.format: simplesigning
+    options: {}
+    artifacts.taskrun.signer: x509
   dashboard:
     options:
       disabled: false

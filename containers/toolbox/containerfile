@@ -1,5 +1,7 @@
+FROM quay.io/projectquay/clair-action:v0.0.11@sha256:80486643baad47f2ac606e5c0e5274f296c08464aebb3dc90f97f22ba92505dd
 FROM registry.access.redhat.com/ubi9/ubi-minimal:9.5-1731593028@sha256:8b6978d555746877c73f52375f60fd7b6fd27d6aca000eaed27d0995303c13de
 
+COPY --from=0 /bin/clair-action /bin/clair-action
 COPY ./containers/toolbox/repos /etc/yum.repos.d/
 #COPY ./repos /etc/yum.repos.d/
 
@@ -11,7 +13,6 @@ ENV \
   KO_VERSION=0.17.1 \
   GO_VERSION=1.23.3 \
   GH_VERSION=2.62.0 \
-  # 0.6.3 Not Working
   KUBECONFORM_VERSION=0.6.7  \
   MARKDOWNLINT_CLI_VERSION=0.43.0 \
   PRETTIER_CLI_VERSION=3.3.3 \
