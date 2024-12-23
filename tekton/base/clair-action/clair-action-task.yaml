@@ -22,9 +22,6 @@ spec:
     - description: CVE result format
       name: SCAN_OUTPUT
 
-  workspaces:
-    - name: data
-
   steps:
     - name: clair-action
       image: "registry.arthurvardevanyan.com/homelab/toolbox:not_latest"
@@ -49,7 +46,7 @@ spec:
             - MKNOD
       env:
         - name: WORKSPACE_DATA_PATH
-          value: $(workspaces.data.path)
+          value: /tmp
         - name: IMAGE
           value: $(params.IMAGE)
         - name: DB_IMAGE
