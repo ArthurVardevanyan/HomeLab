@@ -1,0 +1,53 @@
+apiVersion: actions.github.com/v1alpha1
+kind: AutoscalingRunnerSet
+metadata:
+  name: kfco-arc-runner-set
+  namespace: github-arc-runners
+  labels:
+    app.kubernetes.io/component: "autoscaling-runner-set"
+    helm.sh/chart: gha-rs-0.9.3
+    app.kubernetes.io/name: kfco-arc-runner-set
+    app.kubernetes.io/instance: kfco-arc-runner-set
+    app.kubernetes.io/version: "0.9.3"
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/part-of: gha-rs
+    actions.github.com/scale-set-name: kfco-arc-runner-set
+    actions.github.com/scale-set-namespace: github-arc-runners
+  annotations:
+    actions.github.com/cleanup-github-secret-name: arc-runner-set-gha-rs-github-secret
+    actions.github.com/cleanup-manager-role-binding: arc-runner-set-gha-rs-manager
+    actions.github.com/cleanup-manager-role-name: arc-runner-set-gha-rs-manager
+    actions.github.com/cleanup-no-permission-service-account-name: arc-runner-set-gha-rs-no-permission
+spec:
+  githubConfigUrl: https://github.com/ArthurVardevanyan/k8s-federated-credential-operator
+  githubConfigSecret: arc-runner-set-gha-rs-github-secret
+
+  template:
+    spec:
+      restartPolicy: Never
+      serviceAccountName: arc-runner-set-gha-rs-no-permission
+      containers:
+        - name: runner
+          securityContext:
+            runAsUser: 1001
+            runAsNonRoot: true
+            privileged: false
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: false
+            seccompProfile:
+              type: RuntimeDefault
+            capabilities:
+              drop:
+                - ALL
+          resources:
+            limits:
+              cpu: "3"
+              memory: "3Gi"
+              ephemeral-storage: "10Gi"
+            requests:
+              cpu: "500m"
+              memory: "512Mi"
+              ephemeral-storage: "5Gi"
+          command:
+            - /home/runner/run.sh
+          image: ghcr.io/actions/actions-runner:2.321.0@sha256:27f3f74ec6f88026491d761270525ccf630a53ce9cd5db1d5f44cd2470abe380
