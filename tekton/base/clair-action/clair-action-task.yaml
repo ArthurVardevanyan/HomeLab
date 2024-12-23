@@ -68,9 +68,9 @@ spec:
         mkdir -p /vuln-store/db/
         mkdir -p  "${WORKSPACE_DATA_PATH}/clair-scan-report"
 
-        echo "Extracting Image"
-        oc image extract "${DB_IMAGE}" \
-          --path "/":"/vuln-store/db"
+        # echo "Extracting Image"
+        # oc image extract "${DB_IMAGE}" \
+        #   --path "/":"/vuln-store/db"
 
         echo "Running Clair Action"
         clair-action report --image-ref=${IMAGE} \
@@ -94,8 +94,10 @@ spec:
       emptyDir:
         sizeLimit: 100Mi
     - name: vuln-store
-      emptyDir:
-        sizeLimit: 15Gi
+      persistentVolumeClaim:
+        claimName: clair-action-vuln-store-cache
+      # emptyDir:
+      #   sizeLimit: 15Gi
       # ephemeral:
       #   volumeClaimTemplate:
       #     metadata:
