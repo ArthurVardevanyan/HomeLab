@@ -1,0 +1,70 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: clair-action-cache-db
+  namespace: homelab
+spec:
+  schedule: "55 */2 * * *"
+  concurrencyPolicy: Replace
+  successfulJobsHistoryLimit: 1
+  failedJobsHistoryLimit: 1
+  suspend: false
+  startingDeadlineSeconds: 60
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          serviceAccountName: pipeline
+          automountServiceAccountToken: false
+          securityContext:
+            seccompProfile:
+              type: RuntimeDefault
+            runAsNonRoot: true
+          containers:
+            - name: clair-action-cache
+              image: registry.arthurvardevanyan.com/homelab/toolbox:not_latest
+              command:
+                - /bin/bash
+                - -c
+                - |
+                  #############################
+                  ### Clair Action DB Cache ###
+                  #############################
+                  export DB_IMAGE="registry.arthurvardevanyan.com/homelab/clair-action-db:latest"
+                  mkdir -p /tmp/vuln-store/db
+
+                  echo "Extracting Image"
+                  oc image extract "${DB_IMAGE}" \
+                    --path "/":"/tmp/vuln-store/db"
+              securityContext:
+                runAsNonRoot: true
+                privileged: false
+                readOnlyRootFilesystem: true
+                allowPrivilegeEscalation: false
+                seccompProfile:
+                  type: RuntimeDefault
+                capabilities:
+                  drop:
+                    - ALL
+              resources:
+                requests:
+                  memory: "128Mi"
+                  cpu: "50m"
+                  ephemeral-storage: 1Gi
+                limits:
+                  memory: "256Mi"
+                  cpu: "1000m"
+                  ephemeral-storage: 1Gi
+              volumeMounts:
+                - name: tmp
+                  mountPath: /tmp/
+                - name: vuln-store
+                  mountPath: /tmp/vuln-store
+          restartPolicy: Never
+          volumes:
+            - name: tmp
+              emptyDir:
+                sizeLimit: 1Gi
+            - name: vuln-store
+              persistentVolumeClaim:
+                claimName: clair-action-vuln-store-cache
