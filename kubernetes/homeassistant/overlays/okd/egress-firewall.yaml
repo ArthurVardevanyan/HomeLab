@@ -1,0 +1,17 @@
+apiVersion: k8s.ovn.org/v1
+kind: EgressFirewall
+metadata:
+  name: default
+  namespace: homeassistant
+spec:
+  # Doesn't Apply to Network Attach Definitions Interface
+  egress:
+    # Control Plane
+    - type: Allow
+      to:
+        nodeSelector:
+          matchLabels:
+            node-role.kubernetes.io/control-plane: ""
+    - type: Deny
+      to:
+        cidrSelector: 0.0.0.0/0

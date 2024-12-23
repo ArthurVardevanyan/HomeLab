@@ -1,0 +1,74 @@
+apiVersion: k8s.ovn.org/v1
+kind: EgressFirewall
+metadata:
+  name: default
+  namespace: container-security-operator
+spec:
+  egress:
+    # Control Plane
+    - type: Allow
+      to:
+        nodeSelector:
+          matchLabels:
+            node-role.kubernetes.io/control-plane: ""
+    # https://www.cloudflare.com/ips/
+    # Cloudflare IP Ranges
+    - type: Allow
+      to:
+        cidrSelector: 104.24.0.0/14
+    # Amazon IP Range
+    # https://ip-ranges.amazonaws.com/ip-ranges.json
+    - type: Allow
+      to:
+        cidrSelector: 52.44.0.0/15
+    - type: Allow
+      to:
+        cidrSelector: 54.236.0.0/15
+    # Google Range
+    # https://support.google.com/a/answer/10026322?hl=en
+    # https://www.gstatic.com/ipranges/goog.json
+    - type: Allow
+      to:
+        cidrSelector: 34.64.0.0/10
+    - type: Allow
+      to:
+        dnsName: registry.arthurvardevanyan.com
+    - type: Allow
+      to:
+        dnsName: apps.okd.arthurvardevanyan.com
+    - type: Allow
+      to:
+        dnsName: cgr.dev
+    - type: Allow
+      to:
+        dnsName: docker.dragonflydb.io
+    - type: Allow
+      to:
+        dnsName: docker.io
+    - type: Allow
+      to:
+        dnsName: registry-1.docker.io
+    - type: Allow
+      to:
+        dnsName: ghcr.io
+    - type: Allow
+      to:
+        dnsName: gcr.io
+    - type: Allow
+      to:
+        dnsName: quay.io
+    - type: Allow
+      to:
+        dnsName: registry.access.redhat.com
+    - type: Allow
+      to:
+        dnsName: registry.developers.crunchydata.com
+    - type: Allow
+      to:
+        dnsName: registry.k8s.io
+    - type: Allow
+      to:
+        dnsName: registry.redhat.io
+    - type: Deny
+      to:
+        cidrSelector: 0.0.0.0/0

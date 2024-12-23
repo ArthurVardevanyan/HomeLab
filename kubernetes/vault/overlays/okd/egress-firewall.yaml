@@ -1,0 +1,35 @@
+apiVersion: k8s.ovn.org/v1
+kind: EgressFirewall
+metadata:
+  name: default
+  namespace: vault
+spec:
+  egress:
+    # Control Plane
+    - type: Allow
+      to:
+        nodeSelector:
+          matchLabels:
+            node-role.kubernetes.io/control-plane: ""
+    # MicroShift
+    - type: Allow
+      to:
+        cidrSelector: 10.0.0.99/32
+    - type: Allow
+      to:
+        dnsName: microshift.arthurvardevanyan.com
+    # Google Range
+    # https://support.google.com/a/answer/10026322?hl=en
+    # https://www.gstatic.com/ipranges/goog.json
+    - type: Allow
+      to:
+        dnsName: kms.googleapis.com
+    - type: Allow
+      to:
+        cidrSelector: 142.250.0.0/15
+    - type: Allow
+      to:
+        cidrSelector: 172.217.0.0/16
+    - type: Deny
+      to:
+        cidrSelector: 0.0.0.0/0

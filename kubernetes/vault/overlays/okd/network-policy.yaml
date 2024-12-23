@@ -71,9 +71,15 @@ spec:
       app: vault
   egress:
     - to:
+        # https://support.google.com/a/answer/10026322?hl=en
+        # https://www.gstatic.com/ipranges/goog.json
         - ipBlock:
-            cidr: 0.0.0.0/0
-            except:
-              - 10.0.0.0/8
-              - 172.16.0.0/12
-              - 192.168.0.0/16
+            cidr: 142.250.0.0/15
+          # - ipBlock:
+          #     cidr: 0.0.0.0/0
+          #     except:
+          #       - 10.0.0.0/8
+          #       - 172.16.0.0/12
+          #       - 192.168.0.0/16
+        - ipBlock:
+            cidr: 172.217.0.0/16

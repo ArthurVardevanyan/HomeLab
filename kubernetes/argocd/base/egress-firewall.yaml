@@ -1,0 +1,33 @@
+apiVersion: k8s.ovn.org/v1
+kind: EgressFirewall
+metadata:
+  name: default
+  namespace: argocd
+spec:
+  egress:
+    # Control Plane
+    - type: Allow
+      to:
+        nodeSelector:
+          matchLabels:
+            node-role.kubernetes.io/control-plane: ""
+    # MicroShift
+    - type: Allow
+      to:
+        cidrSelector: 10.0.0.99/32
+    - type: Allow
+      to:
+        dnsName: microshift.arthurvardevanyan.com
+    # https://api.github.com/meta
+    - type: Allow
+      to:
+        dnsName: github.com
+    - type: Allow
+      to:
+        dnsName: api.github.com
+    - type: Allow
+      to:
+        cidrSelector: 140.82.112.0/20
+    - type: Deny
+      to:
+        cidrSelector: 0.0.0.0/0

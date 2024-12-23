@@ -1,0 +1,150 @@
+apiVersion: k8s.ovn.org/v1
+kind: EgressFirewall
+metadata:
+  name: default
+  namespace: github-arc-runners
+spec:
+  egress:
+    # GitHub Apis
+    # https://api.github.com/meta
+    - type: Allow
+      to:
+        dnsName: github.com
+    - type: Allow
+      to:
+        dnsName: api.github.com
+    - type: Allow
+      to:
+        dnsName: raw.githubusercontent.com
+    - type: Allow
+      to:
+        dnsName: pipelinesghubeus1.actions.githubusercontent.com
+    - type: Allow
+      to:
+        dnsName: pipelinesghubeus2.actions.githubusercontent.com
+    - type: Allow
+      to:
+        dnsName: pipelinesghubeus3.actions.githubusercontent.com
+    - type: Allow
+      to:
+        dnsName: pipelinesghubeus4.actions.githubusercontent.com
+    - type: Allow
+      to:
+        dnsName: pipelinesghubeus5.actions.githubusercontent.com
+    - type: Allow
+      to:
+        dnsName: pipelinesghubeus6.actions.githubusercontent.com
+    - type: Allow
+      to:
+        dnsName: pipelinesghubeus7.actions.githubusercontent.com
+    - type: Allow
+      to:
+        dnsName: pipelinesghubeus8.actions.githubusercontent.com
+    - type: Allow
+      to:
+        dnsName: pipelinesghubeus9.actions.githubusercontent.com
+    - type: Allow
+      to:
+        dnsName: pipelinesghubeus10.actions.githubusercontent.com
+    - type: Allow
+      to:
+        dnsName: pipelinesghubeus11.actions.githubusercontent.com
+    - type: Allow
+      to:
+        dnsName: pipelinesghubeus12.actions.githubusercontent.com
+    - type: Allow
+      to:
+        dnsName: pipelinesghubeus13.actions.githubusercontent.com
+    - type: Allow
+      to:
+        dnsName: pipelinesghubeus14.actions.githubusercontent.com
+    - type: Allow
+      to:
+        dnsName: pipelinesghubeus15.actions.githubusercontent.com
+    - type: Allow
+      to:
+        dnsName: pipelinesghubeus16.actions.githubusercontent.com
+    - type: Allow
+      to:
+        dnsName: pipelinesghubeus17.actions.githubusercontent.com
+    - type: Allow
+      to:
+        dnsName: pipelinesghubeus18.actions.githubusercontent.com
+    - type: Allow
+      to:
+        dnsName: pipelinesghubeus19.actions.githubusercontent.com
+    - type: Allow
+      to:
+        dnsName: pipelinesghubeus20.actions.githubusercontent.com
+    - type: Allow
+      to:
+        dnsName: pipelinesghubeus21.actions.githubusercontent.com
+    - type: Allow
+      to:
+        dnsName: pipelinesghubeus22.actions.githubusercontent.com
+    - type: Allow
+      to:
+        dnsName: pipelinesghubeus23.actions.githubusercontent.com
+    - type: Allow
+      to:
+        dnsName: pipelinesghubeus24.actions.githubusercontent.com
+    - type: Allow
+      to:
+        dnsName: pipelinesghubeus25.actions.githubusercontent.com
+    - type: Allow
+      to:
+        dnsName: pipelinesghubeus26.actions.githubusercontent.com
+    - type: Allow
+      to:
+        dnsName: pipelinesghubeus27.actions.githubusercontent.com
+    - type: Allow
+      to:
+        dnsName: pipelinesghubeus28.actions.githubusercontent.com
+    - type: Allow
+      to:
+        dnsName: pipelinesghubeus29.actions.githubusercontent.com
+    - type: Allow
+      to:
+        dnsName: pipelinesghubeus30.actions.githubusercontent.com
+    - type: Allow
+      to:
+        dnsName: pipelinesghubeus31.actions.githubusercontent.com
+    - type: Allow
+      to:
+        dnsName: broker.actions.githubusercontent.com
+    - type: Allow
+      to:
+        dnsName: objects.githubusercontent.com
+    - type: Allow
+      to:
+        cidrSelector: 140.82.112.0/20
+    - type: Allow
+      to:
+        cidrSelector: 20.72.64.0/18
+    - type: Allow
+      to:
+        cidrSelector: 20.253.0.0/17
+    - type: Allow
+      to:
+        cidrSelector: 20.85.128.0/17
+    - type: Allow
+      to:
+        cidrSelector: 185.199.108.0/22
+    - type: Allow
+      to:
+        cidrSelector: 20.232.0.0/16
+    - type: Allow
+      to:
+        cidrSelector: 20.150.82.0/24
+    # Golang
+    # https://support.google.com/a/answer/10026322?hl=en
+    # https://www.gstatic.com/ipranges/goog.json
+    - type: Allow
+      to:
+        dnsName: proxy.golang.org
+    - type: Allow
+      to:
+        cidrSelector: 142.250.0.0/15 # Google Range
+    - type: Deny
+      to:
+        cidrSelector: 0.0.0.0/0
