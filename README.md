@@ -183,12 +183,12 @@ end
 
 | NAME     | ROLES          | Machine | vCPU | Mem   | Storage         |
 | -------- | -------------- | ------- | ---- | ----- | --------------- |
-| server-1 | cp,etcd,master | kvm-1   | 8    | 34.0G | N/A             |
-| server-2 | cp,etcd,master | kvm-2   | 8    | 34.0G | N/A             |
-| server-3 | cp,etcd,master | kvm-1   | 8    | 34.0G | N/A             |
-| infra-1  | infra,worker   | kvm-1   | 6    | 30.0G | 1x4TB CEPH NVME |
-| infra-2  | infra,worker   | kvm-2   | 6    | 30.0G | 1x4TB CEPH NVME |
-| infra-3  | infra,worker   | kvm-3   | 6    | 30.0G | 1x4TB CEPH NVME |
+| server-1 | cp,etcd,master | kvm-1   | 8    | 35.0G | N/A             |
+| server-2 | cp,etcd,master | kvm-2   | 8    | 35.0G | N/A             |
+| server-3 | cp,etcd,master | kvm-1   | 8    | 35.0G | N/A             |
+| infra-1  | infra,worker   | kvm-1   | 6    | 29.0G | 1x4TB CEPH NVME |
+| infra-2  | infra,worker   | kvm-2   | 6    | 29.0G | 1x4TB CEPH NVME |
+| infra-3  | infra,worker   | kvm-3   | 6    | 29.0G | 1x4TB CEPH NVME |
 | worker-1 | worker         | kvm-1   | 12   | 57.0G | N/A             |
 | worker-2 | worker         | kvm-2   | 12   | 57.0G | N/A             |
 | worker-3 | worker         | kvm-3   | 12   | 57.0G | N/A             |

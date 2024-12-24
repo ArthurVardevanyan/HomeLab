@@ -104,6 +104,7 @@ test_overlays_k3s() {
   fi
 }
 stateful_workload_stop() {
+  kubectl patch cronjobs -n netbox netbox-housekeeping -p '{"spec" : {"suspend" : true }}'
   kubectl patch cronjobs -n photoprism photoprism-cron -p '{"spec" : {"suspend" : true }}'
   kubectl patch cronjobs -n nextcloud nextcloud-preview -p '{"spec" : {"suspend" : true }}'
   kubectl patch cronjobs -n nextcloud nextcloud-rsync -p '{"spec" : {"suspend" : true }}'
@@ -195,6 +196,9 @@ stateful_workload_stop() {
   kubectl scale --replicas=0 -n awx deployment/awx-task
   kubectl scale --replicas=0 -n awx deployment/awx-web
 
+  kubectl scale --replicas=0 -n awx deployment/netbox
+  kubectl scale --replicas=0 -n awx deployment/netbox-worker
+
   kubectl delete jobs -A --all
   kubectl delete pipelineruns -A --all
 }
@@ -223,11 +227,14 @@ stateful_workload_start_pre() {
   kubectl patch postgresCluster photoprism -n postgres --type=merge -p '{"spec":{"shutdown":false}}'
   kubectl patch postgresCluster stackrox -n stackrox --type=merge -p '{"spec":{"shutdown":false}}'
   kubectl patch postgresCluster awx -n awx --type=merge -p '{"spec":{"shutdown":false}}'
+  kubectl patch postgresCluster netbox -n netbox --type=merge -p '{"spec":{"shutdown":false}}'
 
   kubectl scale --replicas=1 -n zitadel statefulset/pihole
 }
 
 stateful_workload_start() {
+
+  kubectl patch cronjobs -n netbox netbox-housekeeping -p '{"spec" : {"suspend" : false }}'
   kubectl patch cronjobs -n photoprism photoprism-cron -p '{"spec" : {"suspend" : false }}'
   kubectl patch cronjobs -n nextcloud nextcloud-preview -p '{"spec" : {"suspend" : false }}'
   kubectl patch cronjobs -n nextcloud nextcloud-rsync -p '{"spec" : {"suspend" : false }}'
@@ -280,7 +287,8 @@ stateful_workload_start() {
   kubectl patch postgresCluster nextcloud -n nextcloud --type=merge -p '{"spec":{"shutdown":false}}'
   kubectl patch postgresCluster photoprism -n postgres --type=merge -p '{"spec":{"shutdown":false}}'
   kubectl patch postgresCluster stackrox -n stackrox --type=merge -p '{"spec":{"shutdown":false}}'
-  kubectl patch postgresCluster awx -n awx --type=merge -p '{"spec":{"shutdown":false}}'
+  kubectl patch postgresCluster awx -n awx --type=merge -p '{"spec":{"shutdown":true}}'
+  kubectl patch postgresCluster netbox -n netbox --type=merge -p '{"spec":{"shutdown":true}}'
 
   kubectl scale --replicas=1 -n argocd deployment/argocd-operator-controller-manager
   kubectl scale --replicas=1 -n argocd statefulset/argocd-application-controller
@@ -299,6 +307,9 @@ stateful_workload_start() {
 
   kubectl scale --replicas=1 -n loki-operator deployment/loki-operator-controller-manager
   kubectl scale --replicas=1 -n awx deployment/awx-operator-controller-manager
+
+  kubectl scale --replicas=1 -n awx deployment/netbox
+  kubectl scale --replicas=1 -n awx deployment/netbox-worker
 
   # echo -e "\nkubectl exec -it vault-0 -n vault -- vault operator unseal --tls-skip-verify"
 }
