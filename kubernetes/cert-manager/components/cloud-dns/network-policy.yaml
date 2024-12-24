@@ -1,0 +1,26 @@
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-google-cloud-egress
+  namespace: cert-manager
+  annotations:
+    argocd.argoproj.io/sync-wave: "0"
+  labels:
+    app.kubernetes.io/instance: certificate-manager
+spec:
+  policyTypes:
+    - Egress
+  podSelector: {}
+  egress:
+    # Google Range
+    # https://support.google.com/a/answer/10026322?hl=en
+    # https://www.gstatic.com/ipranges/goog.json
+    # Cloud DNS API?
+    - to:
+        - ipBlock:
+            cidr: 172.217.0.0/16
+      # Cloud DNS DNS LookUp?
+    - to:
+        - ipBlock:
+            cidr: 216.239.32.0/19

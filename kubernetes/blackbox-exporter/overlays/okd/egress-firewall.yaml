@@ -1,0 +1,50 @@
+apiVersion: k8s.ovn.org/v1
+kind: EgressFirewall
+metadata:
+  name: default
+  namespace: blackbox-exporter
+spec:
+  egress:
+    # Cloudflare DNS
+    - type: Allow
+      to:
+        cidrSelector: 1.1.1.1/32
+    - type: Allow
+      to:
+        cidrSelector: 1.0.0.1/32
+    # Cloudflare API Ips (arthurvardevanyan.com)
+    # https://www.cloudflare.com/ips/
+    - type: Allow
+      to:
+        cidrSelector: 104.16.0.0/13
+    - type: Allow
+      to:
+        cidrSelector: 172.64.0.0/13
+    # Modem
+    - type: Allow
+      to:
+        cidrSelector: 192.168.100.1/32
+    - type: Allow
+      to:
+        dnsName: truenas.arthurvardevanyan.com
+    - type: Allow
+      to:
+        dnsName: www.arthurvardevanyan.com
+    - type: Allow
+      to:
+        dnsName: truenas.arthurvardevanyan.com
+    - type: Allow
+      to:
+        dnsName: unifi.arthurvardevanyan.com
+    - type: Allow
+      to:
+        dnsName: pihole.arthurvardevanyan.com
+    - type: Allow
+      to:
+        dnsName: api.okd.arthurvardevanyan.com
+    - type: Allow
+      to:
+        dnsName: apps.okd.arthurvardevanyan.com
+    - type: Deny
+      to:
+        cidrSelector: 0.0.0.0/0

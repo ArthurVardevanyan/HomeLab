@@ -1,0 +1,77 @@
+apiVersion: k8s.ovn.org/v1
+kind: EgressFirewall
+metadata:
+  name: default
+  namespace: openshift-pipelines-operator
+spec:
+  egress:
+    # Control Plane
+    - type: Allow
+      to:
+        nodeSelector:
+          matchLabels:
+            node-role.kubernetes.io/control-plane: ""
+    - type: Deny
+      to:
+        cidrSelector: 0.0.0.0/0
+---
+apiVersion: k8s.ovn.org/v1
+kind: EgressFirewall
+metadata:
+  name: default
+  namespace: openshift-pipelines
+spec:
+  egress:
+    # Control Plane
+    - type: Allow
+      to:
+        nodeSelector:
+          matchLabels:
+            node-role.kubernetes.io/control-plane: ""
+    - type: Allow
+      to:
+        dnsName: hook.pipelinesascode.com
+      # Amazon IP Range
+    # https://ip-ranges.amazonaws.com/ip-ranges.json
+    - type: Allow
+      to:
+        cidrSelector: 52.44.0.0/15
+    - type: Allow
+      to:
+        cidrSelector:
+          184.72.128.0/17
+          # GitHub Apis
+    # https://api.github.com/meta
+    - type: Allow
+      to:
+        dnsName: github.com
+    - type: Allow
+      to:
+        dnsName: api.github.com
+    - type: Allow
+      to:
+        dnsName: raw.githubusercontent.com
+    - type: Allow
+      to:
+        cidrSelector: 140.82.112.0/20
+    - type: Allow
+      to:
+        cidrSelector: 20.72.64.0/18
+    - type: Allow
+      to:
+        cidrSelector: 20.253.0.0/17
+    - type: Allow
+      to:
+        cidrSelector: 20.85.128.0/17
+    - type: Allow
+      to:
+        cidrSelector: 185.199.108.0/22
+    - type: Allow
+      to:
+        cidrSelector: 20.232.0.0/16
+    - type: Allow
+      to:
+        cidrSelector: 20.150.82.0/24
+    - type: Deny
+      to:
+        cidrSelector: 0.0.0.0/0
