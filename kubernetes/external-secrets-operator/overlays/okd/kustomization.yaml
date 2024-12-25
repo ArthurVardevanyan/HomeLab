@@ -5,3 +5,10 @@ resources:
   - ./egress-firewall.yaml
 components:
   - ../../components/helm
+patches:
+  - target:
+      kind: Deployment
+    patch: |-
+      - op: replace
+        path: /spec/template/spec/containers/0/image
+        value: registry.arthurvardevanyan.com/homelab/external-secrets:quay-head@sha256:091b495923dd5b22509e8c419053b91f61ef5d871ed2c8612678b859d893e14b
