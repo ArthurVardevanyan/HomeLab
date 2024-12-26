@@ -162,6 +162,7 @@ stateful_workload_stop() {
   kubectl patch postgresCluster stackrox -n stackrox --type=merge -p '{"spec":{"shutdown":true}}'
   kubectl patch postgresCluster quay -n quay --type=merge -p '{"spec":{"shutdown":true}}'
   kubectl patch postgresCluster awx -n awx --type=merge -p '{"spec":{"shutdown":true}}'
+  kubectl patch postgresCluster netbox -n netbox --type=merge -p '{"spec":{"shutdown":true}}'
 
   kubectl scale --replicas=0 -n argocd deployment/argocd-operator-controller-manager
   kubectl scale --replicas=0 -n argocd statefulset/argocd-application-controller
@@ -226,8 +227,8 @@ stateful_workload_start_pre() {
   kubectl patch postgresCluster nextcloud -n nextcloud --type=merge -p '{"spec":{"shutdown":false}}'
   kubectl patch postgresCluster photoprism -n postgres --type=merge -p '{"spec":{"shutdown":false}}'
   kubectl patch postgresCluster stackrox -n stackrox --type=merge -p '{"spec":{"shutdown":false}}'
-  kubectl patch postgresCluster awx -n awx --type=merge -p '{"spec":{"shutdown":false}}'
-  kubectl patch postgresCluster netbox -n netbox --type=merge -p '{"spec":{"shutdown":false}}'
+  # kubectl patch postgresCluster awx -n awx --type=merge -p '{"spec":{"shutdown":false}}'
+  # kubectl patch postgresCluster netbox -n netbox --type=merge -p '{"spec":{"shutdown":false}}'
 
   kubectl scale --replicas=1 -n zitadel statefulset/pihole
 }
@@ -306,10 +307,10 @@ stateful_workload_start() {
   kubectl scale --replicas=1 -n stackrox deployment/scanner-db
 
   kubectl scale --replicas=1 -n loki-operator deployment/loki-operator-controller-manager
-  kubectl scale --replicas=1 -n awx deployment/awx-operator-controller-manager
+  # kubectl scale --replicas=1 -n awx deployment/awx-operator-controller-manager
 
-  kubectl scale --replicas=1 -n awx deployment/netbox
-  kubectl scale --replicas=1 -n awx deployment/netbox-worker
+  # kubectl scale --replicas=1 -n awx deployment/netbox
+  # kubectl scale --replicas=1 -n awx deployment/netbox-worker
 
   # echo -e "\nkubectl exec -it vault-0 -n vault -- vault operator unseal --tls-skip-verify"
 }
