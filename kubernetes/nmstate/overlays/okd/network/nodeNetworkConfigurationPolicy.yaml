@@ -18,6 +18,7 @@ spec:
           dhcp: true
           enabled: true
         bridge:
+          allow-extra-patch-ports: true
           options:
             stp:
               enabled: false
@@ -50,6 +51,7 @@ spec:
           dhcp: true
           enabled: true
         bridge:
+          allow-extra-patch-ports: true
           options:
             stp:
               enabled: false
@@ -103,3 +105,89 @@ spec:
           dhcp: false
           enabled: false
         mtu: 9000
+---
+apiVersion: nmstate.io/v1
+kind: NodeNetworkConfigurationPolicy
+metadata:
+  name: vlan3-enp5s0
+  annotations:
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+spec:
+  nodeSelector:
+    nic: enp5s0
+  desiredState:
+    interfaces:
+      - name: enp5s0.3
+        description: VLAN using enp5s0
+        type: vlan
+        state: up
+        ipv4:
+          dhcp: false
+          enabled: false
+        vlan:
+          base-iface: enp5s0
+          id: 3
+        mtu: 9000
+      - name: br1.3
+        description: OVS bridge with enp5s0.3 as a port
+        type: ovs-bridge
+        state: up
+        ipv4:
+          dhcp: true
+          enabled: true
+        bridge:
+          allow-extra-patch-ports: true
+          options:
+            stp:
+              enabled: false
+          port:
+            - name: enp5s0.3
+        mtu: 9000
+    ovn:
+      bridge-mappings:
+        - localnet: br1.3
+          bridge: br1.3
+          state: present
+---
+apiVersion: nmstate.io/v1
+kind: NodeNetworkConfigurationPolicy
+metadata:
+  name: vlan3-enp7s0
+  annotations:
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+spec:
+  nodeSelector:
+    nic: enp7s0
+  desiredState:
+    interfaces:
+      - name: enp7s0.3
+        description: VLAN using enp7s0
+        type: vlan
+        state: up
+        ipv4:
+          dhcp: false
+          enabled: false
+        vlan:
+          base-iface: enp7s0
+          id: 3
+        mtu: 9000
+      - name: br1.3
+        description: OVS bridge with enp7s0.3 as a port
+        type: ovs-bridge
+        state: up
+        ipv4:
+          dhcp: true
+          enabled: true
+        bridge:
+          allow-extra-patch-ports: true
+          options:
+            stp:
+              enabled: false
+          port:
+            - name: enp7s0.3
+        mtu: 9000
+    ovn:
+      bridge-mappings:
+        - localnet: br1.3
+          bridge: br1.3
+          state: present

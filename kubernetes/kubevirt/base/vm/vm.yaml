@@ -72,6 +72,10 @@ spec:
               macAddress: "10:00:00:00:01:33"
               model: virtio
               name: br1
+            - bridge: {}
+              macAddress: "10:01:01:00:30:03"
+              model: virtio
+              name: br1-vlan3
           networkInterfaceMultiqueue: true
           rng: {}
         features:
@@ -97,6 +101,9 @@ spec:
         - multus:
             networkName: default/br1
           name: br1
+        - multus:
+            networkName: default/br1-vlan3
+          name: br1-vlan3
       terminationGracePeriodSeconds: 180
       volumes:
         - dataVolume:
