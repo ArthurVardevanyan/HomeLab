@@ -1,10 +1,10 @@
 kind: StatefulSet
 apiVersion: apps/v1
 metadata:
-  name: pihole
+  name: pihole-vlan3
   namespace: pihole
   labels:
-    app: pihole
+    app: pihole-vlan3
     app.kubernetes.io/instance: pihole
   annotations:
     checkov.io/skip1: CKV_K8S_40=OpenShift Injects Random UID
@@ -13,15 +13,22 @@ spec:
   serviceName: pihole
   selector:
     matchLabels:
-      app: pihole
+      app: pihole-vlan3
   template:
     metadata:
       labels:
-        app: pihole
+        app: pihole-vlan3
       annotations:
         enable.version-checker.io/pihole: "true"
+        k8s.v1.cni.cncf.io/networks: |
+          [{
+            "name": "br1-vlan3",
+            "namespace": "default",
+            "mac": "10:01:01:00:30:03",
+            "ips": ["10.101.3.3/24"]
+          }]
     spec:
-      hostname: pihole
+      hostname: pihole-vlan3
       securityContext:
         seccompProfile:
           type: RuntimeDefault
@@ -33,7 +40,7 @@ spec:
       containers:
         - image: docker.io/pihole/pihole:2024.07.0@sha256:0def896a596e8d45780b6359dbf82fc8c75ef05b97e095452e67a0a4ccc95377
           imagePullPolicy: IfNotPresent
-          name: pihole
+          name: pihole-vlan3
           env:
             - name: TZ
               value: "America/Detroit"
@@ -76,7 +83,6 @@ spec:
             - name: dns-udp
               containerPort: 53
               protocol: UDP
-              hostPort: 53
             - name: web
               containerPort: 80
               protocol: TCP
@@ -85,9 +91,9 @@ spec:
               mountPath: /etc/pihole
             - name: etc-dnsmasq
               mountPath: /etc/dnsmasq.d
-            - name: wildcard-dns
-              mountPath: "/etc/dnsmasq.d/02-my-wildcard-dns.conf"
-              subPath: "02-my-wildcard-dns.conf"
+            # - name: wildcard-dns
+            #   mountPath: "/etc/dnsmasq.d/02-my-wildcard-dns.conf"
+            #   subPath: "02-my-wildcard-dns.conf"
             - name: wildcard-dns
               mountPath: "/etc/dnsmasq.d/02-custom-settings.conf"
               subPath: "02-my-wildcard-dns.conf"
@@ -105,10 +111,10 @@ spec:
       volumes:
         - name: etc-pihole
           persistentVolumeClaim:
-            claimName: etc-pihole
+            claimName: vlan3-etc-pihole
         - name: etc-dnsmasq
           persistentVolumeClaim:
-            claimName: etc-dnsmasq
+            claimName: vlan3-etc-dnsmasq
         - name: wildcard-dns
           configMap:
             name: wildcard-dns
