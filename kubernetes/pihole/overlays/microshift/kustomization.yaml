@@ -5,10 +5,14 @@ resources:
   - ingress.yaml
   - service.yaml
   - certificate.yaml
-# patches:
-#   - target:
-#       kind: StatefulSet
-#       name: pihole
-#     patch: |-
+patches:
+  - target:
+      kind: StatefulSet
+      name: pihole
+    patch: |-
+      - op: replace
+        path: /spec/template/spec/containers/0/name
+        value: pihole-microshift
+
 #       - op: remove
 #         path: /spec/template/metadata/annotations/k8s.v1.cni.cncf.io~1networks
