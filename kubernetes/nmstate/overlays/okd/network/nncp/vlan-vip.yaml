@@ -1,0 +1,34 @@
+apiVersion: nmstate.io/v1
+kind: NodeNetworkConfigurationPolicy
+metadata:
+  name: vlan3-enp8s0
+  annotations:
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+spec:
+  nodeSelector:
+    nic2: enp8s0
+  desiredState:
+    interfaces:
+      - name: enp8s0.3
+        description: VLAN using enp8s0
+        type: vlan
+        state: up
+        ipv4:
+          dhcp: false
+          enabled: false
+        vlan:
+          base-iface: enp8s0
+          id: 3
+      - name: br2.3
+        description: linux-bridge with enp8s0.3 as a port
+        type: linux-bridge
+        state: up
+        ipv4:
+          dhcp: true
+          enabled: true
+        bridge:
+          options:
+            stp:
+              enabled: false
+          port:
+            - name: enp8s0.3

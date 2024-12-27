@@ -1,0 +1,65 @@
+apiVersion: nmstate.io/v1
+kind: NodeNetworkConfigurationPolicy
+metadata:
+  name: br1-enp7s0-policy
+  annotations:
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+    argocd.argoproj.io/sync-wave: "3"
+spec:
+  nodeSelector:
+    nic: enp7s0
+  desiredState:
+    interfaces:
+      - name: br1
+        description: OVS bridge with enp7s0 as a port
+        type: ovs-bridge
+        state: up
+        ipv4:
+          dhcp: true
+          enabled: true
+        bridge:
+          allow-extra-patch-ports: true
+          options:
+            stp:
+              enabled: false
+          port:
+            - name: enp7s0
+        mtu: 9000
+    ovn:
+      bridge-mappings:
+        - localnet: br1
+          bridge: br1
+          state: present
+---
+apiVersion: nmstate.io/v1
+kind: NodeNetworkConfigurationPolicy
+metadata:
+  name: br1-enp5s0-policy
+  annotations:
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+    argocd.argoproj.io/sync-wave: "3"
+spec:
+  nodeSelector:
+    nic: enp5s0
+  desiredState:
+    interfaces:
+      - name: br1
+        description: OVS bridge with enp5s0 as a port
+        type: ovs-bridge
+        state: up
+        ipv4:
+          dhcp: true
+          enabled: true
+        bridge:
+          allow-extra-patch-ports: true
+          options:
+            stp:
+              enabled: false
+          port:
+            - name: enp5s0
+        mtu: 9000
+    ovn:
+      bridge-mappings:
+        - localnet: br1
+          bridge: br1
+          state: present

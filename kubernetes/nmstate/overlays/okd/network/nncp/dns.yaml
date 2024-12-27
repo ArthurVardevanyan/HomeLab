@@ -1,0 +1,37 @@
+apiVersion: nmstate.io/v1
+kind: NodeNetworkConfigurationPolicy
+metadata:
+  annotations:
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+  name: dns-enp5s0
+spec:
+  desiredState:
+    dns-resolver:
+      config:
+        search:
+          - arthurvardevanyan.com
+          - okd.arthurvardevanyan.com
+        server:
+          - 10.0.0.99
+          - 10.0.0.98
+  nodeSelector:
+    nic: enp5s0
+---
+apiVersion: nmstate.io/v1
+kind: NodeNetworkConfigurationPolicy
+metadata:
+  annotations:
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+  name: dns-enp7s0
+spec:
+  desiredState:
+    dns-resolver:
+      config:
+        search:
+          - arthurvardevanyan.com
+          - okd.arthurvardevanyan.com
+        server:
+          - 10.0.0.99
+          - 10.0.0.98
+  nodeSelector:
+    nic: enp7s0

@@ -7,4 +7,18 @@ resources:
   - ./dns.yaml
 components:
   - ../../components/rootless
-  - ../../components/cap
+patches:
+  - target:
+      kind: Service
+      name: ntp-rootless
+    patch: |-
+      - op: replace
+        path: /metadata/annotations/kube-vip.io~1loadbalancerIPs
+        value: "10.0.0.96"
+  - target:
+      kind: Service
+      name: ntp-rootless-vlan3
+    patch: |-
+      - op: replace
+        path: /metadata/annotations/kube-vip.io~1loadbalancerIPs
+        value: "10.101.3.3"
