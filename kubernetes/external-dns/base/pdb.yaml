@@ -10,16 +10,29 @@ spec:
   selector:
     matchLabels:
       app.kubernetes.io/name: external-dns-okd
-# ---
-# kind: PodDisruptionBudget
-# apiVersion: policy/v1
-# metadata:
-#   name: external-dns-microshift
-#   namespace: external-dns
-#   labels:
-#     app: external-dns-microshift
-# spec:
-#   minAvailable: 1
-#   selector:
-#     matchLabels:
-#       app.kubernetes.io/name: external-dns-microshift
+---
+kind: PodDisruptionBudget
+apiVersion: policy/v1
+metadata:
+  name: external-dns-microshift
+  namespace: external-dns
+  labels:
+    app: external-dns-microshift
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: external-dns-microshift
+---
+kind: PodDisruptionBudget
+apiVersion: policy/v1
+metadata:
+  name: external-dns-okd-vlan3
+  namespace: external-dns
+  labels:
+    app: external-dns-okd-vlan3
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: external-dns-okd-vlan3

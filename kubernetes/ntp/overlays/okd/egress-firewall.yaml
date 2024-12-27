@@ -1,0 +1,37 @@
+apiVersion: k8s.ovn.org/v1
+kind: EgressFirewall
+metadata:
+  name: default
+  namespace: ntp
+spec:
+  egress:
+    # Cloudflare DNS
+    - type: Allow
+      to:
+        cidrSelector: 1.1.1.1/32
+    - type: Allow
+      to:
+        cidrSelector: 1.0.0.1/32
+    # Cloudflare API Ips
+    # https://www.cloudflare.com/ips/
+    - type: Allow
+      to:
+        dnsName: api.cloudflare.com
+    - type: Allow
+      to:
+        dnsName: time.cloudflare.com
+    - type: Allow
+      to:
+        cidrSelector: 104.16.0.0/13
+    - type: Allow
+      to:
+        cidrSelector: 104.24.0.0/14
+    - type: Allow
+      to:
+        cidrSelector: 172.64.0.0/13
+    - type: Allow
+      to:
+        cidrSelector: 162.158.0.0/15
+    - type: Deny
+      to:
+        cidrSelector: 0.0.0.0/0
