@@ -1,33 +1,27 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: ntp
+  name: ntp-rootless
   namespace: ntp
   labels:
-    app: ntp
+    app: ntp-rootless
     app.kubernetes.io/instance: ntp
 spec:
-  replicas: 1 # 2?
+  replicas: 2
   strategy:
-    type: Recreate #RollingUpdate
+    type: RollingUpdate
   revisionHistoryLimit: 0
   selector:
     matchLabels:
-      app: ntp
+      app: ntp-rootless
   template:
     metadata:
       labels:
-        app: ntp
+        app: ntp-rootless
       annotations:
-        enable.version-checker.io/ntp: "true"
+        enable.version-checker.io/ntp-rootless: "true"
         seccomp.security.alpha.kubernetes.io/defaultProfileName: "runtime/default"
-        k8s.v1.cni.cncf.io/networks: |
-          [{
-            "name": "br1-vlan3",
-            "namespace": "default",
-            "mac": "10:01:01:00:30:02",
-            "ips": ["10.101.3.2/24"]
-          }]
+
     spec:
       # tolerations:
       #   - key: node-role.kubernetes.io/master
@@ -52,8 +46,8 @@ spec:
       securityContext:
         seccompProfile:
           type: RuntimeDefault
-        runAsNonRoot: false
-      hostname: ntp
+        runAsNonRoot: true
+      hostname: ntp-rootless
       restartPolicy: Always
       automountServiceAccountToken: false
       serviceAccountName: ntp
@@ -62,26 +56,21 @@ spec:
           - name: ndots
             value: "1"
       containers:
-        - image: registry.arthurvardevanyan.com/homelab/ntp:capabilities@sha256:64d1cdf99ce4615e87b4623fb3e1baac97879f0cb6f419ebb9ba72700c67a832
+        - image: registry.arthurvardevanyan.com/homelab/ntp:rootless@sha256:5a36bbb7ce0e5d877799f2a819956fd14521a1e8fa799b105e9273571ddb3ffc
           imagePullPolicy: IfNotPresent
-          name: ntp
+          name: ntp-rootless
           ports:
-            - containerPort: 123
+            - containerPort: 12345
               name: ntp
               protocol: UDP
           securityContext:
-            runAsUser: 0
             privileged: false
-            runAsNonRoot: false
+            runAsNonRoot: true
             readOnlyRootFilesystem: true
-            allowPrivilegeEscalation: true
+            allowPrivilegeEscalation: false
             seccompProfile:
               type: RuntimeDefault
             capabilities:
-              add:
-                - NET_BIND_SERVICE
-                - CAP_SETUID
-                - CAP_SETGID
               drop:
                 - ALL
           resources:
@@ -109,13 +98,13 @@ spec:
               mountPath: /run/chrony
             - name: ntp-var-run
               mountPath: /var/run/chrony
-            - mountPath: /usr/bin/probe.sh
+            - mountPath: /usr/bin/probe-rootless.sh
               name: probe
-              subPath: probe.sh
+              subPath: probe-rootless.sh
           livenessProbe:
             exec:
               command:
-                - /usr/bin/probe.sh
+                - /usr/bin/probe-rootless.sh
             initialDelaySeconds: 45
             timeoutSeconds: 10
             periodSeconds: 30
@@ -124,7 +113,7 @@ spec:
           readinessProbe:
             exec:
               command:
-                - /usr/bin/probe.sh
+                - /usr/bin/probe-rootless.sh
             initialDelaySeconds: 45
             timeoutSeconds: 10
             periodSeconds: 30
