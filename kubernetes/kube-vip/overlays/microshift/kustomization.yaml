@@ -3,9 +3,6 @@ kind: Kustomization
 apiVersion: kustomize.config.k8s.io/v1beta1
 resources:
   - ../../base
-  - ./egress-firewall.yaml
-components:
-  - ../../components/okd
 patches:
   - target:
       kind: DaemonSet
@@ -13,4 +10,11 @@ patches:
     patch: |-
       - op: add
         path: /spec/template/spec/containers/0/env/0
-        value: { "name": "address", "value": "10.0.0.130" }
+        value: { "name": "prometheus_server", "value": ":2113" }
+  - target:
+      kind: Deployment
+      name: kube-vip-cloud-provider
+    patch: |-
+      - op: replace
+        path: /spec/replicas
+        value: 1
