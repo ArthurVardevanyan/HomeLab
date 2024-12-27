@@ -5,6 +5,8 @@ resources:
   - ingress.yaml
   - service.yaml
   - certificate.yaml
+components:
+  - ../../components/vlan3
 patches:
   - target:
       kind: StatefulSet
@@ -14,5 +16,11 @@ patches:
         path: /spec/template/spec/containers/0/name
         value: pihole-microshift
 
-#       - op: remove
-#         path: /spec/template/metadata/annotations/k8s.v1.cni.cncf.io~1networks
+  #       - op: remove
+  #         path: /spec/template/metadata/annotations/k8s.v1.cni.cncf.io~1networks
+  - target:
+      kind: PersistentVolumeClaim
+    patch: |-
+      - op: replace
+        path: /spec/storageClassName
+        value: topolvm-provisioner

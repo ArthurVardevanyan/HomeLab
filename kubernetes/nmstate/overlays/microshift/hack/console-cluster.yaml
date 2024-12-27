@@ -1,0 +1,31 @@
+apiVersion: operator.openshift.io/v1
+kind: Console
+metadata:
+  annotations:
+    argocd.argoproj.io/tracking-id: okd-configuration:operator.openshift.io/Console:/cluster
+    include.release.openshift.io/ibm-cloud-managed: "true"
+    include.release.openshift.io/self-managed-high-availability: "true"
+    include.release.openshift.io/single-node-developer: "true"
+    release.openshift.io/create-only: "true"
+  labels:
+    argocd.argoproj.io/instance: okd-configuration
+  name: cluster
+spec:
+  customization:
+    customLogoFile:
+      name: ""
+    developerCatalog:
+      types:
+        state: Enabled
+  ingress:
+    clientDownloadsURL: ""
+    consoleURL: ""
+  logLevel: Normal
+  managementState: Managed
+  operatorLogLevel: Normal
+  plugins:
+    - nmstate-console-plugin
+  route:
+    hostname: ""
+    secret:
+      name: ""

@@ -1,0 +1,34 @@
+apiVersion: nmstate.io/v1
+kind: NodeNetworkConfigurationPolicy
+metadata:
+  name: vlan3-eth0
+  annotations:
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+spec:
+  nodeSelector:
+    kubernetes.io/hostname: microshift.arthurvardevanyan.com
+  desiredState:
+    interfaces:
+      - name: eth0.3
+        description: VLAN using eth0
+        type: vlan
+        state: up
+        ipv4:
+          dhcp: false
+          enabled: false
+        vlan:
+          base-iface: eth0
+          id: 3
+      - name: br1.3
+        description: linux-bridge with eth0.3 as a port
+        type: linux-bridge
+        state: up
+        ipv4:
+          dhcp: false
+          enabled: false
+        bridge:
+          options:
+            stp:
+              enabled: false
+          port:
+            - name: eth0.3
