@@ -15,6 +15,9 @@ patches:
       - op: replace
         path:  /spec/template/spec/containers/0/image
         value: registry.arthurvardevanyan.com/homelab/ntp:rootless-arm@sha256:50b77c7a71371f68ec5b16cbc611d5b363aff5d30a3b57eea39c10069e098d37
+      - op: add
+        path:  /spec/template/metadata/annotations
+        value: {"k8s.v1.cni.cncf.io/networks":"[{\n  \"name\": \"br1-vlan3\",\n  \"namespace\": \"default\",\n  \"mac\": \"10:01:01:00:30:03\",\n  \"ips\": [\"10.101.3.3/24\"]\n}]\n"}
   - target:
       kind: Service
       name: ntp-rootless
