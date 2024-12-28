@@ -183,6 +183,7 @@ stateful_workload_stop() {
   kubectl scale --replicas=0 -n nextcloud statefulset/nextcloud-dragonfly
   kubectl scale --replicas=0 -n gitea statefulset/gitea-dragonfly
   kubectl scale --replicas=0 -n quay statefulset/quay-dragonfly
+  kubectl scale --replicas=0 -n netbox statefulset/netbox-dragonfly
 
   kubectl scale --replicas=0 -n loki-operator deployment/loki-operator-controller-manager
   kubectl scale --replicas=0 -n network-observability-loki statefulset/netobserv-compactor
@@ -213,7 +214,7 @@ stateful_workload_start_pre() {
 
   kubectl scale --replicas=1 -n influxdb statefulset/influxdb
   kubectl scale --replicas=1 -n loki statefulset/loki
-  kubectl scale --replicas=3 -n mariadb-galera statefulset/mariadb-galera
+  # kubectl scale --replicas=3 -n mariadb-galera statefulset/mariadb-galera
   kubectl scale --replicas=1 -n prometheus statefulset/prometheus
   kubectl scale --replicas=1 -n prometheus statefulset/thanos-store-gateway
   kubectl scale --replicas=1 -n quay deployment/quay-operator-tng
@@ -230,7 +231,10 @@ stateful_workload_start_pre() {
   # kubectl patch postgresCluster awx -n awx --type=merge -p '{"spec":{"shutdown":false}}'
   # kubectl patch postgresCluster netbox -n netbox --type=merge -p '{"spec":{"shutdown":false}}'
 
-  kubectl scale --replicas=1 -n zitadel statefulset/pihole
+  kubectl scale --replicas=1 -n pihole statefulset/pihole
+  kubectl scale --replicas=1 -n pihole statefulset/pihole-vlan3
+
+  kubectl scale --replicas=2 -n ntp deployment/ntp-rootless
 }
 
 stateful_workload_start() {
@@ -248,6 +252,7 @@ stateful_workload_start() {
   kubectl scale --replicas=2 -n nextcloud statefulset/nextcloud-dragonfly
   kubectl scale --replicas=2 -n gitea statefulset/gitea-dragonfly
   kubectl scale --replicas=2 -n quay statefulset/quay-dragonfly
+  kubectl scale --replicas=2 -n netbox statefulset/netbox-dragonfly
 
   kubectl scale --replicas=1 -n cockroach-operator-system deployments/cockroach-operator-manager
   kubectl scale --replicas=3 -n zitadel statefulset/crdb
@@ -288,8 +293,8 @@ stateful_workload_start() {
   kubectl patch postgresCluster nextcloud -n nextcloud --type=merge -p '{"spec":{"shutdown":false}}'
   kubectl patch postgresCluster photoprism -n postgres --type=merge -p '{"spec":{"shutdown":false}}'
   kubectl patch postgresCluster stackrox -n stackrox --type=merge -p '{"spec":{"shutdown":false}}'
-  kubectl patch postgresCluster awx -n awx --type=merge -p '{"spec":{"shutdown":true}}'
-  kubectl patch postgresCluster netbox -n netbox --type=merge -p '{"spec":{"shutdown":true}}'
+  kubectl patch postgresCluster awx -n awx --type=merge -p '{"spec":{"shutdown":false}}'
+  kubectl patch postgresCluster netbox -n netbox --type=merge -p '{"spec":{"shutdown":false}}'
 
   kubectl scale --replicas=1 -n argocd deployment/argocd-operator-controller-manager
   kubectl scale --replicas=1 -n argocd statefulset/argocd-application-controller
