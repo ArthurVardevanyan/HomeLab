@@ -21,28 +21,7 @@ spec:
       annotations:
         enable.version-checker.io/ntp-rootless: "true"
         seccomp.security.alpha.kubernetes.io/defaultProfileName: "runtime/default"
-
     spec:
-      # tolerations:
-      #   - key: node-role.kubernetes.io/master
-      #     effect: NoSchedule
-      #   - key: node-role.kubernetes.io/control-plane
-      #     effect: NoSchedule
-      # affinity:
-      #   nodeAffinity:
-      #     requiredDuringSchedulingIgnoredDuringExecution:
-      #       nodeSelectorTerms:
-      #         - matchExpressions:
-      #             - key: node-role.kubernetes.io/control-plane
-      #               operator: Exists
-      #             - key: node-role.kubernetes.io/master
-      #               operator: Exists
-      # podAntiAffinity:
-      #   requiredDuringSchedulingIgnoredDuringExecution:
-      #     - labelSelector:
-      #         matchLabels:
-      #           app: ntp
-      #       topologyKey: "kubernetes.io/hostname"
       securityContext:
         seccompProfile:
           type: RuntimeDefault
@@ -56,7 +35,7 @@ spec:
           - name: ndots
             value: "1"
       containers:
-        - image: registry.arthurvardevanyan.com/homelab/ntp:rootless@sha256:17c681a97b51ed6931f1daa6d5f028c737aa7ea198947350a690aefb1637ccf6
+        - image: registry.arthurvardevanyan.com/homelab/ntp:rootless@sha256:07e1eafb90b3b0c89dfa695a4502644c196f70f8328f9c94fb6ce3b2e6847ce1
           imagePullPolicy: IfNotPresent
           name: ntp-rootless
           ports:
@@ -83,6 +62,12 @@ spec:
               memory: "32Mi"
               cpu: "50m"
           env:
+            - name: SKIP_CHOWN
+              value: "true"
+            - name: PORT
+              value: "12345"
+            - name: CMDPORT
+              value: "10323"
             - name: ENABLE_NTS
               value: "true"
             - name: TZ
@@ -98,22 +83,29 @@ spec:
               mountPath: /run/chrony
             - name: ntp-var-run
               mountPath: /var/run/chrony
-            - mountPath: /usr/bin/probe-rootless.sh
-              name: probe
-              subPath: probe-rootless.sh
           livenessProbe:
-            exec:
+            exec: # /usr/bin/chronyc -h 127.0.0.1 -p 10323 sources
               command:
-                - /usr/bin/probe-rootless.sh
+                - /usr/bin/chronyc
+                - -h
+                - 127.0.0.1
+                - -p
+                - "10323"
+                - sources
             initialDelaySeconds: 45
             timeoutSeconds: 10
             periodSeconds: 30
             successThreshold: 1
             failureThreshold: 5
           readinessProbe:
-            exec:
+            exec: # /usr/bin/chronyc -h 127.0.0.1 -p 10323 sources
               command:
-                - /usr/bin/probe-rootless.sh
+                - /usr/bin/chronyc
+                - -h
+                - 127.0.0.1
+                - -p
+                - "10323"
+                - sources
             initialDelaySeconds: 45
             timeoutSeconds: 10
             periodSeconds: 30
@@ -132,7 +124,3 @@ spec:
         - name: ntp-var-run
           emptyDir:
             sizeLimit: 10Mi
-        - configMap:
-            defaultMode: 511
-            name: probe
-          name: probe
