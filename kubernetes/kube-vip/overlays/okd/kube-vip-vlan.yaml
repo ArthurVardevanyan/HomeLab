@@ -2,7 +2,7 @@
 apiVersion: apps/v1
 kind: DaemonSet
 metadata:
-  name: kube-vip-ds-vlan3-enp8s0
+  name: kube-vip-ds-vlan3-enp9s0
   namespace: kube-vip
   annotations:
     checkov.io/skip1: CKV_K8S_8=Not Supported
@@ -33,7 +33,7 @@ spec:
                   - key: nic2
                     operator: In
                     values:
-                      - enp8s0
+                      - enp9s0
               # - matchExpressions:
               #     - key: node-role.kubernetes.io/master
               #       operator: Exists
@@ -75,7 +75,7 @@ spec:
             - name: svc_leasename
               value: "vip-vlan3"
             - name: vip_interface
-              value: "br2.3" #"enp8s0.3"
+              value: "br2.3" #"enp9s0.3"
             - name: lb_class_name
               value: "kube-vip.io/kube-vip-class-vlan3"
             - name: prometheus_server
