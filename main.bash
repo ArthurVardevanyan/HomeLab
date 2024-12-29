@@ -161,8 +161,8 @@ stateful_workload_stop() {
   kubectl patch postgresCluster photoprism -n postgres --type=merge -p '{"spec":{"shutdown":true}}'
   kubectl patch postgresCluster stackrox -n stackrox --type=merge -p '{"spec":{"shutdown":true}}'
   kubectl patch postgresCluster quay -n quay --type=merge -p '{"spec":{"shutdown":true}}'
-  kubectl patch postgresCluster awx -n awx --type=merge -p '{"spec":{"shutdown":true}}'
-  kubectl patch postgresCluster netbox -n netbox --type=merge -p '{"spec":{"shutdown":true}}'
+  # kubectl patch postgresCluster awx -n awx --type=merge -p '{"spec":{"shutdown":true}}'
+  # kubectl patch postgresCluster netbox -n netbox --type=merge -p '{"spec":{"shutdown":true}}'
 
   kubectl scale --replicas=0 -n argocd deployment/argocd-operator-controller-manager
   kubectl scale --replicas=0 -n argocd statefulset/argocd-application-controller
@@ -183,7 +183,7 @@ stateful_workload_stop() {
   kubectl scale --replicas=0 -n nextcloud statefulset/nextcloud-dragonfly
   kubectl scale --replicas=0 -n gitea statefulset/gitea-dragonfly
   kubectl scale --replicas=0 -n quay statefulset/quay-dragonfly
-  kubectl scale --replicas=0 -n netbox statefulset/netbox-dragonfly
+  # kubectl scale --replicas=0 -n netbox statefulset/netbox-dragonfly
 
   kubectl scale --replicas=0 -n loki-operator deployment/loki-operator-controller-manager
   kubectl scale --replicas=0 -n network-observability-loki statefulset/netobserv-compactor
@@ -194,12 +194,12 @@ stateful_workload_stop() {
   kubectl scale --replicas=0 -n network-observability-loki deployment/netobserv-querier
   kubectl scale --replicas=0 -n network-observability-loki deployment/netobserv-query-frontend
 
-  kubectl scale --replicas=0 -n awx deployment/awx-operator-controller-manager
-  kubectl scale --replicas=0 -n awx deployment/awx-task
-  kubectl scale --replicas=0 -n awx deployment/awx-web
+  # kubectl scale --replicas=0 -n awx deployment/awx-operator-controller-manager
+  # kubectl scale --replicas=0 -n awx deployment/awx-task
+  # kubectl scale --replicas=0 -n awx deployment/awx-web
 
-  kubectl scale --replicas=0 -n awx deployment/netbox
-  kubectl scale --replicas=0 -n awx deployment/netbox-worker
+  # kubectl scale --replicas=0 -n netbox deployment/netbox
+  # kubectl scale --replicas=0 -n netbox deployment/netbox-worker
 
   kubectl delete jobs -A --all
   kubectl delete pipelineruns -A --all
