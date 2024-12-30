@@ -8,6 +8,7 @@ resources:
   - ./egress-firewall.yaml
 components:
   - ../../components/vlan3
+  - ../../components/metrics
 patches:
   - target:
       kind: StatefulSet
@@ -16,6 +17,27 @@ patches:
       - op: replace
         path: /spec/template/spec/containers/0/name
         value: pihole-okd
+      - op: replace
+        path: /spec/template/spec/containers/1/name
+        value: pihole-exporter-okd
+      - op: replace
+        path: /spec/template/spec/containers/1/env/0/value
+        value: pihole-okd
+      # - op: remove
+      #   path: /spec/template/spec/containers/0/ports/1/hostPort
+  - target:
+      kind: StatefulSet
+      name: pihole-vlan3
+    patch: |-
+      - op: replace
+        path: /spec/template/spec/containers/0/name
+        value: pihole-okd-vlan3
+      - op: replace
+        path: /spec/template/spec/containers/1/name
+        value: pihole-exporter-okd-vlan3
+      - op: replace
+        path: /spec/template/spec/containers/1/env/0/value
+        value: pihole-okd-vlan3
       # - op: remove
       #   path: /spec/template/spec/containers/0/ports/1/hostPort
   - target:

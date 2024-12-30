@@ -1,0 +1,73 @@
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: microshift
+  namespace: pihole
+  labels:
+    app: microshift
+spec:
+  selector:
+    matchLabels:
+      app: microshift
+  namespaceSelector:
+    matchNames:
+      - pihole
+  endpoints:
+    - port: metrics
+      interval: 10s
+      honorLabels: true
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: microshift-vlan3
+  namespace: pihole
+  labels:
+    app: microshift-vlan3
+spec:
+  selector:
+    matchLabels:
+      app: microshift-vlan3
+  namespaceSelector:
+    matchNames:
+      - pihole
+  endpoints:
+    - port: metrics
+      interval: 10s
+      honorLabels: true
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: okd
+  namespace: pihole
+  labels:
+    app: okd
+spec:
+  endpoints:
+    - path: /metrics
+      port: metrics
+  namespaceSelector:
+    matchNames:
+      - pihole
+  selector:
+    matchLabels:
+      app: pihole
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: okd-vlan3
+  namespace: pihole
+  labels:
+    app: okd-vlan3
+spec:
+  endpoints:
+    - path: /metrics
+      port: metrics
+  namespaceSelector:
+    matchNames:
+      - pihole
+  selector:
+    matchLabels:
+      app: pihole-vlan3
