@@ -2,7 +2,7 @@
 apiVersion: apps/v1
 kind: DaemonSet
 metadata:
-  name: kube-vip-ds-vlan3-enp9s0
+  name: kube-vip-ds-vlan3
   namespace: kube-vip
   annotations:
     checkov.io/skip1: CKV_K8S_8=Not Supported
@@ -15,11 +15,11 @@ metadata:
 spec:
   selector:
     matchLabels:
-      app: kube-vip-ds
+      app: kube-vip-ds-vlan3
   template:
     metadata:
       labels:
-        app: kube-vip-ds
+        app: kube-vip-ds-vlan3
     spec:
       securityContext:
         seccompProfile:
@@ -34,6 +34,7 @@ spec:
                     operator: In
                     values:
                       - enp9s0
+                      - enp8s0
               # - matchExpressions:
               #     - key: node-role.kubernetes.io/master
               #       operator: Exists

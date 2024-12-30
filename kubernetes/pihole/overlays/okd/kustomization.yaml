@@ -13,11 +13,11 @@ patches:
       kind: StatefulSet
       name: pihole
     patch: |-
-      - op: remove
-        path: /spec/template/spec/containers/0/ports/1/hostPort
       - op: replace
         path: /spec/template/spec/containers/0/name
         value: pihole-okd
+      # - op: remove
+      #   path: /spec/template/spec/containers/0/ports/1/hostPort
   - target:
       kind: PersistentVolumeClaim
     patch: |-
