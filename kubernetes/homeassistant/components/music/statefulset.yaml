@@ -1,41 +1,40 @@
-kind: StatefulSet
 apiVersion: apps/v1
+kind: StatefulSet
 metadata:
-  name: homeassistant
+  name: music-assistant-server
   namespace: homeassistant
   labels:
-    app: homeassistant
-    app.kubernetes.io/instance: homeassistant
+    app: music-assistant-server
   annotations:
     #   checkov.io/skip1: CKV_K8S_40=OpenShift Injects Random UID
     checkov.io/skip2: CKV_K8S_20=Containers Runs CHOWN and MKDIR
     checkov.io/skip3: CKV_K8S_25=Containers Runs CHOWN and MKDIR
 spec:
   replicas: 1
-  serviceName: homeassistant
+  serviceName: music-assistant-server
   revisionHistoryLimit: 0
   selector:
     matchLabels:
-      app: homeassistant
+      app: music-assistant-server
   template:
     metadata:
       labels:
-        app: homeassistant
+        app: music-assistant-server
       annotations:
         enable.version-checker.io/homeassistant: "true"
         k8s.v1.cni.cncf.io/networks: |
           [{
             "name": "br1-vlan3",
             "namespace": "default",
-            "mac": "10:01:02:00:30:06",
-            "ips": ["10.102.3.6/24"]
+            "mac": "AA:57:07:55:0C:16",
+            "ips": ["10.102.3.7/24"],
+            "default-route": ["10.102.3.1"]
           },
           {
             "name": "br1",
             "namespace": "default",
-            "mac": "10:00:00:00:01:35",
-            "ips": ["10.0.0.135/24"],
-            "default-route": ["10.0.0.1"]
+            "mac": "46:5A:F1:8F:59:78",
+            "ips": ["10.0.0.136/24"]
           }]
     spec:
       securityContext:
@@ -43,90 +42,68 @@ spec:
           type: RuntimeDefault
         runAsNonRoot: true
         fsGroup: 1000790000 # Namespace Random UID, AutoDetection Not Picking Up
-      volumes:
-        - name: homeassistant
-          persistentVolumeClaim:
-            claimName: homeassistant
-        - name: certificate
-          secret:
-            secretName: homeassistant-cert
-        - name: run
-          emptyDir:
-            sizeLimit: 10Mi
-        - name: config
-          emptyDir:
-            sizeLimit: 10Mi
-        - name: cache
-          emptyDir:
-            sizeLimit: 10Mi
       serviceAccountName: homeassistant-sa
       dnsConfig:
         options:
           - name: ndots
             value: "1"
       containers:
-        - name: homeassistant
-          image: docker.io/homeassistant/home-assistant:2024.12.1@sha256:ec483debb415123b5ebe49b9e6b5021d055e5f62c832acc094503afa09bb448d
+        - name: music-assistant-server
+          image: ghcr.io/music-assistant/server:2.3.4@sha256:301cc44d2405e1f12953a44ddb65454630007755af9ada9d204bc1a3b9a06175
+          volumeMounts:
+            - name: data
+              mountPath: /data
           securityContext:
             allowPrivilegeEscalation: true
             seccompProfile:
               type: RuntimeDefault
             capabilities:
               add:
-                - CHOWN
-                - SETUID
-                - SETGID
+                - SYS_ADMIN
+                - DAC_READ_SEARCH
               drop:
                 - ALL
-            privileged: false
-            readOnlyRootFilesystem: true
+            privileged: true
+            readOnlyRootFilesystem: false
             runAsNonRoot: true
             runAsUser: 1000790000 # Namespace Random UID, AutoDetection Not Picking Up
           ports:
-            #- hostPort: 8123
-            - containerPort: 8123
+            #- hostPort: 8095
+            - containerPort: 8095
               protocol: TCP
           resources:
             limits:
-              cpu: 300m
-              memory: 2Gi
+              cpu: 500m
+              memory: 4Gi
             requests:
               cpu: 10m
               memory: 1Gi
-          volumeMounts:
-            - name: homeassistant
-              mountPath: /config
-            - name: certificate
-              mountPath: /ssl
-            - name: run
-              mountPath: /run
-            - name: config
-              mountPath: /.config
-            - name: cache
-              mountPath: /.cache
+          env:
+            - name: LOG_LEVEL
+              value: "info"
           livenessProbe:
             httpGet:
-              path: /manifest.json
-              port: 8123
-              scheme: HTTPS
+              path: /
+              port: 8095
+              scheme: HTTP
             timeoutSeconds: 1
             periodSeconds: 10
             initialDelaySeconds: 3
             failureThreshold: 3
           readinessProbe:
             httpGet:
-              path: /manifest.json
-              port: 8123
-              scheme: HTTPS
+              path: /
+              port: 8095
+              scheme: HTTP
             timeoutSeconds: 1
             periodSeconds: 10
             initialDelaySeconds: 3
             failureThreshold: 3
           startupProbe:
             httpGet:
-              path: /manifest.json
-              port: 8123
-              scheme: HTTPS
+              path: /
+              port: 8095
+              scheme: HTTP
             timeoutSeconds: 1
             periodSeconds: 5
             successThreshold: 1
@@ -142,3 +119,8 @@ spec:
       #hostNetwork: true
       hostname: homeassistant
       schedulerName: default-scheduler
+
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: music-assistant-server
