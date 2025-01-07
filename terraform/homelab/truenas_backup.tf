@@ -9,10 +9,10 @@ resource "truenas_dataset" "backup_file_storage" {
   name             = "File_Storage"
   pbkdf2iters      = 0
   pool             = "backup"
-  quota_bytes      = 1610612736000
+  quota_bytes      = 2415919104000
   readonly         = "off"
   record_size      = "128K"
-  ref_quota_bytes  = 1073741824000
+  ref_quota_bytes  = 1610612736000
   snap_dir         = "hidden"
   sync             = "standard"
 
@@ -29,10 +29,10 @@ resource "truenas_dataset" "backup_windows_backup" {
   name             = "WindowsBackup"
   pbkdf2iters      = 0
   pool             = "backup"
-  quota_bytes      = 1610612736000
+  quota_bytes      = 3221225472000
   readonly         = "off"
   #record_size      = "1024K" "1M"
-  ref_quota_bytes = 1073741824000
+  ref_quota_bytes = 2147483648000
   snap_dir        = "hidden"
   sync            = "standard"
 
