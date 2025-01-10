@@ -1,6 +1,25 @@
 apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
 metadata:
+  name: microshift-infra
+  namespace: pihole
+  labels:
+    app: microshift
+spec:
+  selector:
+    matchLabels:
+      app: microshift-infra
+  namespaceSelector:
+    matchNames:
+      - pihole
+  endpoints:
+    - port: metrics
+      interval: 10s
+      honorLabels: true
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
   name: microshift
   namespace: pihole
   labels:
@@ -39,6 +58,24 @@ spec:
 apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
 metadata:
+  name: okd-infra
+  namespace: pihole
+  labels:
+    app: okd-infra
+spec:
+  endpoints:
+    - path: /metrics
+      port: metrics
+  namespaceSelector:
+    matchNames:
+      - pihole
+  selector:
+    matchLabels:
+      app: pihole-okd-infra
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
   name: okd
   namespace: pihole
   labels:
@@ -52,7 +89,7 @@ spec:
       - pihole
   selector:
     matchLabels:
-      app: pihole
+      app: pihole-okd
 ---
 apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor

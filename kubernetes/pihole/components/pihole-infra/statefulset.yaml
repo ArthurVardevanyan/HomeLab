@@ -1,10 +1,10 @@
 kind: StatefulSet
 apiVersion: apps/v1
 metadata:
-  name: pihole-vlan3
+  name: pihole-infra
   namespace: pihole
   labels:
-    app: pihole-vlan3
+    app: pihole-infra
     app.kubernetes.io/instance: pihole
   annotations:
     checkov.io/skip1: CKV_K8S_40=OpenShift Injects Random UID
@@ -13,22 +13,15 @@ spec:
   serviceName: pihole
   selector:
     matchLabels:
-      app: pihole-vlan3
+      app: pihole-infra
   template:
     metadata:
       labels:
-        app: pihole-vlan3
+        app: pihole-infra
       annotations:
         enable.version-checker.io/pihole: "true"
-        # k8s.v1.cni.cncf.io/networks: |
-        #   [{
-        #     "name": "br1-vlan3",
-        #     "namespace": "default",
-        #     "mac": "10:01:02:00:30:05",
-        #     "ips": ["10.102.3.5/24"]
-        #   }]
     spec:
-      hostname: pihole-vlan3
+      hostname: pihole-infra
       securityContext:
         seccompProfile:
           type: RuntimeDefault
@@ -39,12 +32,12 @@ spec:
       containers:
         - image: docker.io/pihole/pihole:2024.07.0@sha256:0def896a596e8d45780b6359dbf82fc8c75ef05b97e095452e67a0a4ccc95377
           imagePullPolicy: IfNotPresent
-          name: pihole-okd-vlan3
+          name: pihole-infra
           env:
             - name: TZ
               value: "America/Detroit"
             - name: VIRTUAL_HOST
-              value: "pihole.arthurvardevanyan.com"
+              value: "pihole-infra.arthurvardevanyan.com"
             - name: DNSSEC
               value: "true"
             - name: DNSMASQ_LISTENING
@@ -82,6 +75,7 @@ spec:
             - name: dns-udp
               containerPort: 53
               protocol: UDP
+              # hostPort: 53
             - name: web
               containerPort: 80
               protocol: TCP
@@ -90,25 +84,25 @@ spec:
               mountPath: /etc/pihole
             - name: etc-dnsmasq
               mountPath: /etc/dnsmasq.d
-            # - name: wildcard-dns
-            #   mountPath: "/etc/dnsmasq.d/02-my-wildcard-dns.conf"
-            #   subPath: "02-my-wildcard-dns.conf"
+            - name: wildcard-dns
+              mountPath: "/etc/dnsmasq.d/02-my-wildcard-dns.conf"
+              subPath: "02-my-wildcard-dns.conf"
             - name: wildcard-dns
               mountPath: "/etc/dnsmasq.d/02-custom-settings.conf"
               subPath: "02-custom-settings.conf"
             - name: wildcard-dns
-              mountPath: "/etc/dnsmasq.d/99-my-settings-vlan3.conf"
-              subPath: "99-my-settings-vlan3.conf"
+              mountPath: "/etc/dnsmasq.d/99-my-settings.conf"
+              subPath: "99-my-settings.conf"
             - mountPath: /dev/shm
               name: dshm
           resources:
             limits:
-              cpu: 250m
+              cpu: 350m
               memory: 1Gi
             requests:
               cpu: 25m
               memory: 512Mi
-        - name: pihole-exporter-okd-vlan3
+        - name: pihole-exporter
           securityContext:
             runAsNonRoot: false
             privileged: false
@@ -122,10 +116,10 @@ spec:
           resources:
             limits:
               cpu: 50m
-              memory: 32Mi
+              memory: 192Mi
             requests:
               cpu: 5m
-              memory: 16Mi
+              memory: 96Mi
           image: registry.arthurvardevanyan.com/ekofr/pihole-exporter:latest@sha256:a6059c70ca4154b638ec3b20b33128a0dd8763cad108aaeaf71f98527e3d8354
           imagePullPolicy: IfNotPresent
           ports:
@@ -133,7 +127,7 @@ spec:
               name: metrics
           env:
             - name: PIHOLE_HOSTNAME
-              value: "pihole-okd-vlan3"
+              value: "pihole-okd-infra"
             - name: PORT
               value: "9617"
           envFrom:
@@ -145,10 +139,10 @@ spec:
       volumes:
         - name: etc-pihole
           persistentVolumeClaim:
-            claimName: vlan3-etc-pihole
+            claimName: infra-etc-pihole
         - name: etc-dnsmasq
           persistentVolumeClaim:
-            claimName: vlan3-etc-dnsmasq
+            claimName: infra-etc-dnsmasq
         - name: wildcard-dns
           configMap:
             name: wildcard-dns

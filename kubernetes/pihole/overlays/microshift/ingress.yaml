@@ -1,6 +1,34 @@
 kind: Ingress
 apiVersion: networking.k8s.io/v1
 metadata:
+  name: pihole-infra
+  namespace: pihole
+  labels:
+    app.kubernetes.io/instance: pihole
+  annotations:
+    argocd.argoproj.io/sync-wave: "2"
+    route.openshift.io/termination: edge
+spec:
+  #   ingressClassName: openshift-default
+  tls:
+    - hosts:
+        - pihole-infra.arthurvardevanyan.com
+      secretName: pihole-cert
+  rules:
+    - host: pihole-infra.arthurvardevanyan.com
+      http:
+        paths:
+          - path: ""
+            pathType: ImplementationSpecific
+            backend:
+              service:
+                name: pihole-microshift-infra
+                port:
+                  number: 80
+---
+kind: Ingress
+apiVersion: networking.k8s.io/v1
+metadata:
   name: pihole
   namespace: pihole
   labels:

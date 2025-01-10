@@ -1,0 +1,22 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: pihole-okd-infra
+  namespace: pihole
+  labels:
+    app: pihole-okd-infra
+    app.kubernetes.io/instance: pihole
+spec:
+  type: ClusterIP
+  clusterIP: None
+  ports:
+    - name: http
+      port: 80
+      protocol: TCP
+      targetPort: 80
+    - name: metrics
+      port: 9617
+      protocol: TCP
+      targetPort: 9617
+  selector:
+    app: pihole-infra
