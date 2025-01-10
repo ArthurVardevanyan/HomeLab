@@ -49,6 +49,24 @@
     #     name: redhat-et/microshift-testing
     #     chroot: centos-stream-9-aarch64
 
+    - name: MicroShift Dir
+      file:
+        path: "/etc/microshift"
+        state: directory
+    - name: MicroShift Config Dir
+      file:
+        path: "/etc/microshift/config.d/"
+        state: directory
+
+    - name: MicroShift HostName
+      copy:
+        src: "../../../../machineConfigs/servers/microshift/etc/microshift/config.d/10-subjectAltNames.yaml"
+        dest: "/etc/microshift/config.d/10-subjectAltNames.yaml"
+    - name: MicroShift Gateway
+      copy:
+        src: "../../../../machineConfigs/servers/microshift/etc/microshift/ovn.yaml"
+        dest: "/etc/microshift/ovn.yaml"
+
     - name: Enable project redhat-et/microshift-testing
       ansible.builtin.yum_repository:
         name: redhat-et
