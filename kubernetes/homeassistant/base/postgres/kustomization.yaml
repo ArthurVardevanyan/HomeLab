@@ -1,0 +1,11 @@
+apiVersion: kustomize.config.k8s.io/v1alpha1
+kind: Component
+resources:
+  - postgres.yaml
+  - network-policy.yaml
+  - secret.yaml
+configMapGenerator:
+  - name: central-db-init
+    namespace: stackrox
+    files:
+      - ./central-db-init.sql
