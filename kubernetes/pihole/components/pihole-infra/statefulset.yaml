@@ -42,6 +42,8 @@ spec:
               value: "true"
             - name: DNSMASQ_LISTENING
               value: all
+            - name: CACHE_SIZE
+              value: "100000"
           securityContext:
             runAsNonRoot: false
             privileged: true
@@ -52,14 +54,14 @@ spec:
             capabilities:
               drop:
                 - ALL
-            # readinessProbe:
-            #   exec:
-            #     command: ["dig", "@127.0.0.1", "cloudflare.com"]
-            # initialDelaySeconds: 15
-            # timeoutSeconds: 20
-            # periodSeconds: 30
-            # successThreshold: 1
-            # failureThreshold: 5
+          readinessProbe:
+            exec:
+              command: ["dig", "@127.0.0.1"] #, "cloudflare.com"]
+            initialDelaySeconds: 15
+            timeoutSeconds: 20
+            periodSeconds: 30
+            successThreshold: 1
+            failureThreshold: 5
           livenessProbe:
             tcpSocket:
               port: dns-tcp
