@@ -9,6 +9,20 @@ metadata:
   labels:
     app.kubernetes.io/instance: zitadel
 spec:
+  affinity:
+    podAntiAffinity:
+      preferredDuringSchedulingIgnoredDuringExecution:
+        - podAffinityTerm:
+            labelSelector:
+              matchLabels:
+                app.kubernetes.io/instance: crdb
+            topologyKey: topology.kubernetes.io/zone
+          weight: 100
+      requiredDuringSchedulingIgnoredDuringExecution:
+        - labelSelector:
+            matchLabels:
+              app.kubernetes.io/instance: crdb
+          topologyKey: kubernetes.io/hostname
   cache: ".15"
   maxSQLMemory: ".15"
   dataStore:
