@@ -196,7 +196,7 @@ end
 #### KVM Config Dump
 
 ```bash
-scp ./* arthur@10.0.0.17:/home/arthur/Downloads
+scp ./* arthur@10.102.2.117:/home/arthur/Downloads
 
 sudo virsh dumpxml infra-1 > infra-1.xml
 sudo virsh dumpxml server-1 > server-1.xml
