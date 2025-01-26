@@ -1,6 +1,6 @@
 - hosts: vscode-server
   gather_facts: no
-  user: fedora
+  user: arthur
   tasks:
     - name: Install ZSH Packages
       become: true
@@ -15,22 +15,22 @@
     - name: Cloning  oh-my-zsh
       git:
         repo: https://github.com/ohmyzsh/ohmyzsh.git
-        dest: /home/fedora/.oh-my-zsh
+        dest: /home/arthur/.oh-my-zsh
 
     - name: Cloning  zsh-kubectl-prompt
       git:
         repo: https://github.com/superbrothers/zsh-kubectl-prompt.git
-        dest: /home/fedora/.oh-my-zsh/custom/plugins/zsh-kubectl-prompt
+        dest: /home/arthur/.oh-my-zsh/custom/plugins/zsh-kubectl-prompt
 
     - name: Creating new zsh theme
       copy:
         src: "../../../machineConfigs/desktop/home/arthur/.oh-my-zsh/themes/kubectl.zsh-theme"
-        dest: "/home/fedora/.oh-my-zsh/themes/kubectl.zsh-theme"
+        dest: "/home/arthur/.oh-my-zsh/themes/kubectl.zsh-theme"
 
     - name: Creating new ~/.zshrc
       copy:
         src: "../../../machineConfigs/desktop/home/arthur/.zshrc"
-        dest: "/home/fedora/.zshrc"
+        dest: "/home/arthur/.zshrc"
 
     - name: change user shell to zsh
       become: yes
