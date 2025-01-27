@@ -1,6 +1,3 @@
-# PSQL 15 Public Scheme Tweak
-# \c clair
-# GRANT CREATE ON SCHEMA public TO clair;
 apiVersion: postgres-operator.crunchydata.com/v1beta1
 kind: PostgresCluster
 metadata:
@@ -114,6 +111,16 @@ spec:
       postgresql:
         pg_hba:
           - "host all all 0.0.0.0/0 trust"
+  users:
+    - name: clair
+      databases:
+        - clair
+      password:
+        type: "AlphaNumeric" # ASCII
+      options: "SUPERUSER CREATEDB"
+  databaseInitSQL:
+    key: central-db-init.sql
+    name: central-db-init
   monitoring:
     pgmonitor:
       exporter:
