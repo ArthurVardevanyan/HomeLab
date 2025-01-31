@@ -61,7 +61,7 @@ resource "zitadel_human_user" "arthur" {
   first_name        = "Arthur"
   last_name         = "Vardevanyan"
   display_name      = "Arthur Vardevanyan"
-  email             = local.user
+  email             = local.user_domain
   is_email_verified = true
 }
 
@@ -75,4 +75,14 @@ resource "zitadel_org_member" "zitadel_arthur" {
   org_id  = zitadel_org.zitadel.id
   user_id = zitadel_human_user.arthur.id
   roles   = ["ORG_OWNER"]
+}
+
+resource "zitadel_smtp_config" "default" {
+  sender_address   = local.smtp_username
+  sender_name      = "no-reply"
+  tls              = true
+  host             = local.smtp_host
+  user             = local.smtp_username
+  password         = local.smtp_password
+  reply_to_address = local.smtp_username
 }

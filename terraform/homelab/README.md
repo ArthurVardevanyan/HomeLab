@@ -12,7 +12,7 @@ bucket = "tf-state-homelab-${BUCKET_ID}"
 prefix = "terraform/state"
 EOF
 
-terraform init -backend-config=backend.conf
-terraform plan
-terraform apply
+tofu init -backend-config=backend.conf
+tofu plan
+tofu apply
 ```
