@@ -1,17 +1,13 @@
-# PSQL 15 Public Scheme Tweak
-# \c quay
-# GRANT CREATE ON SCHEMA public TO quay;
-# CREATE EXTENSION pg_trgm;
 apiVersion: postgres-operator.crunchydata.com/v1beta1
 kind: PostgresCluster
 metadata:
-  name: quay
-  namespace: quay
+  name: zitadel
+  namespace: zitadel
   annotations:
-    argocd.argoproj.io/sync-wave: "1"
+    argocd.argoproj.io/sync-wave: "0"
     argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
   labels:
-    app.kubernetes.io/instance: quay
+    app.kubernetes.io/instance: zitadel
 spec:
   shutdown: false
   backups:
@@ -20,26 +16,26 @@ spec:
         - secret:
             name: truenas-s3-backup
       global:
-        repo1-retention-full: "14"
+        repo1-retention-full: "1"
         repo1-retention-full-type: count
-        repo2-path: /quay
-        repo2-retention-full: "14"
+        repo2-path: /zitadel
+        repo2-retention-full: "2"
         repo2-retention-full-type: count
         repo2-s3-uri-style: path
       repoHost:
         resources:
           limits:
-            memory: "64Mi"
-            cpu: "60m"
-          requests:
             memory: "32Mi"
+            cpu: "45m"
+          requests:
+            memory: "16Mi"
             cpu: "15m"
       sidecars:
         pgbackrest:
           resources:
             limits:
               memory: "128Mi"
-              cpu: "250m"
+              cpu: "500m"
             requests:
               memory: "16Mi"
               cpu: "10m"
@@ -54,7 +50,8 @@ spec:
       repos:
         - name: repo1
           schedules:
-            full: "35 7 * * *"
+            full: "0 7 * * 0"
+            differential: "0 7 * * 1-6"
           volume:
             volumeClaimSpec:
               storageClassName: rook-ceph-block
@@ -62,14 +59,15 @@ spec:
                 - ReadWriteOnce
               resources:
                 requests:
-                  storage: 15Gi
+                  storage: 10Gi
         - name: repo2
           s3:
             bucket: postgres
             endpoint: "truenas.arthurvardevanyan.com:9000"
             region: homelab
           schedules:
-            full: "30 6 * * *"
+            full: "0 6 * * 0"
+            differential: "0 6 * * 1-6"
   instances:
     - dataVolumeClaimSpec:
         storageClassName: rook-ceph-block
@@ -77,22 +75,22 @@ spec:
           - ReadWriteOnce
         resources:
           requests:
-            storage: 10Gi
+            storage: 5Gi
       name: ""
       replicas: 2
       resources:
         requests:
-          memory: "350Mi"
-          cpu: "50m"
+          memory: "256Mi"
+          cpu: "15m"
         limits:
-          memory: "700Mi"
-          cpu: "500m"
+          memory: "512Mi"
+          cpu: "150m"
       affinity:
         podAntiAffinity:
           requiredDuringSchedulingIgnoredDuringExecution:
             - labelSelector:
                 matchLabels:
-                  postgres-operator.crunchydata.com/cluster: quay
+                  postgres-operator.crunchydata.com/cluster: zitadel
                   postgres-operator.crunchydata.com/instance-set: "00"
               topologyKey: "kubernetes.io/hostname"
           preferredDuringSchedulingIgnoredDuringExecution:
@@ -100,14 +98,24 @@ spec:
               podAffinityTerm:
                 labelSelector:
                   matchLabels:
-                    postgres-operator.crunchydata.com/cluster: quay
+                    postgres-operator.crunchydata.com/cluster: zitadel
                     postgres-operator.crunchydata.com/instance-set: "00"
                 topologyKey: topology.kubernetes.io/zone
   patroni:
     dynamicConfiguration:
       postgresql:
         pg_hba:
-          - host all all 0.0.0.0/0 trust
+          - "host all all 0.0.0.0/0 trust"
+  users:
+    - name: zitadel
+      databases:
+        - zitadel
+      password:
+        type: "AlphaNumeric" # ASCII
+      options: "SUPERUSER CREATEDB"
+  databaseInitSQL:
+    key: db-init.sql
+    name: db-init
   monitoring:
     pgmonitor:
       exporter:
@@ -142,24 +150,24 @@ spec:
 # apiVersion: postgres-operator.crunchydata.com/v1beta1
 # kind: PGUpgrade
 # metadata:
-#   name: quay-upgrade
-#   namespace: quay
+#   name: zitadel-upgrade
+#   namespace: zitadel
 # spec:
 #   fromPostgresVersion: 15
-#   postgresClusterName: quay
+#   postgresClusterName: zitadel
 #   toPostgresVersion: 17
 
-# kubectl delete ResourceQuota -n quay --all
-# kubectl delete LimitRange -n quay --all
+# kubectl delete ResourceQuota -n zitadel --all
+# kubectl delete LimitRange -n zitadel --all
 
-# kubectl patch postgrescluster quay -n quay --type=merge \
+# kubectl patch postgrescluster zitadel -n zitadel --type=merge \
 #     -p '{"spec":{"shutdown":true}}'
 
-# kubectl annotate postgrescluster quay -n quay  \
-#     postgres-operator.crunchydata.com/allow-upgrade=quay-upgrade
+# kubectl annotate postgrescluster zitadel -n zitadel  \
+#     postgres-operator.crunchydata.com/allow-upgrade=zitadel-upgrade
 
-# kubectl patch postgrescluster quay -n quay --type "json" -p \
+# kubectl patch postgrescluster zitadel -n zitadel --type "json" -p \
 # '[{"op":"replace","path":"/spec/postgresVersion","value":17}]'
 
-# kubectl patch postgrescluster quay -n quay --type=merge \
+# kubectl patch postgrescluster zitadel -n zitadel --type=merge \
 #     -p '{"spec":{"shutdown":false}}'

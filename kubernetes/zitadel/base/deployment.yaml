@@ -66,14 +66,14 @@ spec:
             capabilities:
               drop:
                 - ALL
-          image: "ghcr.io/zitadel/zitadel:v2.64.1@sha256:5dba3692aa50f55d5d36979b63ddb389ceef54ed39f6fedd91251b7fd1649d5e"
+          image: "ghcr.io/zitadel/zitadel:v2.68.1@sha256:74344030df8414add04f429b1748af89e1e1b2ff4de78c7d7dd5a2f76ba00074"
           imagePullPolicy: IfNotPresent
           args:
             - start
             - --config
             - /config/zitadel-config-yaml
             - --config
-            - /.secrets/zitadel-secrets-yaml/zitadel-secrets-yaml
+            - /secrets/zitadel-secrets-yaml
             - --masterkeyFromEnv
           env:
             - name: POD_IP
@@ -86,12 +86,6 @@ spec:
                 secretKeyRef:
                   name: zitadel-masterkey
                   key: masterkey
-            # - name: ZITADEL_DATABASE_COCKROACH_USER_SSL_ROOTCERT
-            #   value: /.secrets/db-ssl-ca-crt/ca.crt
-            # - name: ZITADEL_DATABASE_COCKROACH_USER_SSL_CERT
-            #   value: /.secrets/db-ssl-user-crt/tls.crt
-            # - name: ZITADEL_DATABASE_COCKROACH_USER_SSL_KEY
-            #   value: /.secrets/db-ssl-user-crt/tls.key
           ports:
             - containerPort: 8080
               name: http2-server
@@ -131,8 +125,8 @@ spec:
           volumeMounts:
             - name: zitadel-config-yaml
               mountPath: /config
-            - name: chowned-secrets
-              mountPath: /.secrets
+            - name: zitadel-secrets-yaml
+              mountPath: /secrets
             - name: certificate
               mountPath: /ssl
           resources:
@@ -142,42 +136,6 @@ spec:
             requests:
               cpu: 10m
               memory: 256Mi
-      initContainers:
-        - args:
-            - "cp -r /db-ssl-user-crt/ /chowned-secrets/ && cp -r /db-ssl-ca-crt/ /chowned-secrets/ && cp -r /zitadel-secrets-yaml/ /chowned-secrets/ && find /chowned-secrets/ -type f -exec chmod 400 -- {} + "
-          command:
-            - sh
-            - -c
-          image: "docker.io/alpine:3.18.3@sha256:c5c5fda71656f28e49ac9c5416b3643eaa6a108a8093151d6d1afc9463be8e33"
-          imagePullPolicy: IfNotPresent
-          name: chown
-          volumeMounts:
-            - name: chowned-secrets
-              mountPath: /chowned-secrets
-            - name: zitadel-secrets-yaml
-              mountPath: /zitadel-secrets-yaml
-            - name: db-ssl-ca-crt
-              mountPath: /db-ssl-ca-crt
-            - name: db-ssl-user-crt
-              mountPath: /db-ssl-user-crt
-            - name: certificate
-              mountPath: /ssl
-          securityContext:
-            runAsNonRoot: true
-            readOnlyRootFilesystem: true
-            allowPrivilegeEscalation: false
-            seccompProfile:
-              type: RuntimeDefault
-            capabilities:
-              drop:
-                - ALL
-          resources:
-            limits:
-              cpu: 1000m
-              memory: 512Mi
-            requests:
-              cpu: 100m
-              memory: 256Mi
       volumes:
         - name: zitadel-config-yaml
           configMap:
@@ -185,14 +143,6 @@ spec:
         - name: zitadel-secrets-yaml
           secret:
             secretName: zitadel-secrets-yaml
-        - name: db-ssl-ca-crt
-          secret:
-            secretName: crdb-ca
-        - name: db-ssl-user-crt
-          secret:
-            secretName: db-cockroachdb-zitadel-secret
-        - name: chowned-secrets
-          emptyDir: {}
         - name: certificate
           secret:
             secretName: zitadel-cert

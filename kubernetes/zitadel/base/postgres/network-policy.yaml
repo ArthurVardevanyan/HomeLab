@@ -1,0 +1,136 @@
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: zitadel-app
+  namespace: zitadel
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+  labels:
+    app.kubernetes.io/instance: zitadel
+spec:
+  podSelector:
+    matchLabels:
+      postgres-operator.crunchydata.com/cluster: zitadel
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: zitadel
+          podSelector:
+            matchLabels:
+              app: zitadel
+      ports:
+        - protocol: TCP
+          port: 5432
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: zitadel-postgres
+  namespace: zitadel
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+  labels:
+    app.kubernetes.io/instance: zitadel
+spec:
+  podSelector:
+    matchLabels:
+      postgres-operator.crunchydata.com/cluster: zitadel
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: zitadel
+          podSelector:
+            matchLabels:
+              postgres-operator.crunchydata.com/cluster: zitadel
+  egress:
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: zitadel
+          podSelector:
+            matchLabels:
+              postgres-operator.crunchydata.com/cluster: zitadel
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-truenas-egress
+  namespace: zitadel
+  annotations:
+    argocd.argoproj.io/sync-wave: "0"
+  labels:
+    app.kubernetes.io/instance: zitadel
+spec:
+  policyTypes:
+    - Egress
+  podSelector:
+    matchLabels:
+      postgres-operator.crunchydata.com/cluster: zitadel
+  egress:
+    - to:
+        - ipBlock:
+            cidr: 10.0.0.3/32
+      ports:
+        - protocol: TCP
+          port: 9000
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: pgdump-ingress
+  namespace: zitadel
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+  labels:
+    app.kubernetes.io/instance: zitadel
+spec:
+  podSelector:
+    matchLabels:
+      postgres-operator.crunchydata.com/cluster: zitadel
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: postgres
+          podSelector:
+            matchLabels:
+              app: pgdump-cron
+      ports:
+        - protocol: TCP
+          port: 5432
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: pgadmin-ingress
+  namespace: zitadel
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+  labels:
+    app.kubernetes.io/instance: zitadel
+spec:
+  podSelector:
+    matchLabels:
+      postgres-operator.crunchydata.com/cluster: zitadel
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: postgres
+          podSelector:
+            matchLabels:
+              postgres-operator.crunchydata.com/pgadmin: pgadmin
+      ports:
+        - protocol: TCP
+          port: 5432

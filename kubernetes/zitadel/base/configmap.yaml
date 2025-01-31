@@ -13,14 +13,33 @@ metadata:
 data:
   zitadel-config-yaml: |-
 
-    # Database:
-    #   cockroach:
-    #     Admin:
-    #       SSL:
-    #         Mode: disabled
-    #     User:
-    #       SSL:
-    #         Mode: disabled
+    Database:
+      postgres:
+          Host: zitadel-primary.zitadel.svc
+          Port: 5432
+          Database: zitadel
+          MaxOpenConns: 15
+          MaxIdleConns: 10
+          MaxConnLifetime: 1h
+          MaxConnIdleTime: 5m
+          Options:
+          User:
+            Host: zitadel-primary.zitadel.svc
+            Username: zitadel
+            Password: zitadel
+            SSL:
+              Mode: disable
+              RootCert:
+              Cert:
+              Key:
+          Admin:
+            Username: postgres
+            #Password:
+            SSL:
+              Mode: disable
+              RootCert:
+              Cert:
+              Key:
     ExternalDomain: zitadel.apps.okd.arthurvardevanyan.com
     ExternalPort: 443
     ExternalSecure: true
