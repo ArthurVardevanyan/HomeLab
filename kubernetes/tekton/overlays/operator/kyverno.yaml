@@ -21,3 +21,26 @@ spec:
             annotations:
               openshift.io/required-scc: restricted-v2
               openshift.io/scc: restricted-v2
+---
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: openshift-pipelines-entrypoint-image
+  annotations:
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+    argocd.argoproj.io/sync-wave: "1"
+spec:
+  background: false
+  rules:
+    - name: replace-image
+      match:
+        any:
+          - resources:
+              kinds:
+                - Pod
+      mutate:
+        patchStrategicMerge:
+          spec:
+            initContainers:
+              - (image): "ghcr.io/tektoncd/pipeline/entrypoint-bff0a22da108bc2f16c818c97641a296:v0.65.5@sha256:b93519726fc1a06ebec010121742ec1a224ad9cdb551bdc4a922963ea4e8977c"
+                image: "ghcr.io/tektoncd/pipeline/entrypoint-bff0a22da108bc2f16c818c97641a296:v0.65.5@sha256:a1b186d312e24963775520dfc1312d5eee0e24e29f002f0f92ea4649f8617259"
