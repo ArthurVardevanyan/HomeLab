@@ -8,8 +8,8 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: stackrox
     app.kubernetes.io/part-of: stackrox-secured-cluster-services
-    app.kubernetes.io/version: 4.5.5
-    helm.sh/chart: stackrox-secured-cluster-services-400.5.5
+    app.kubernetes.io/version: 4.6.1
+    helm.sh/chart: stackrox-secured-cluster-services-400.5.1
     service: collector
     app: collector
     auto-upgrade.stackrox.io/component: "sensor"
@@ -49,8 +49,8 @@ spec:
         app.kubernetes.io/managed-by: Helm
         app.kubernetes.io/name: stackrox
         app.kubernetes.io/part-of: stackrox-secured-cluster-services
-        app.kubernetes.io/version: 4.5.5
-        helm.sh/chart: stackrox-secured-cluster-services-400.5.5
+        app.kubernetes.io/version: 4.6.1
+        helm.sh/chart: stackrox-secured-cluster-services-400.5.1
       annotations:
         email: support@stackrox.com
         meta.helm.sh/release-name: stackrox-secured-cluster-services
@@ -63,7 +63,7 @@ spec:
       serviceAccountName: collector
       containers:
         - name: collector
-          image: "quay.io/stackrox-io/collector-slim:4.5.5@sha256:f58c64b4a1e54bf342ce3b7c580c17f92e1ded9204873fe5c5a852419c937973"
+          image: "quay.io/stackrox-io/collector-slim:4.6.1@sha256:7956e019af604d4f25480304a8523466b37c4a46685d9f2a11915de27d37c181"
           imagePullPolicy: IfNotPresent
           env:
             - name: COLLECTOR_CONFIG
@@ -139,7 +139,7 @@ spec:
             - name: ROX_NODE_SCANNING_ENDPOINT
               value: "127.0.0.1:8444"
 
-          image: "quay.io/stackrox-io/main:4.5.5@sha256:1560abe51762fa91013007c46305dccc147eae8342232ceda13ad89c37e301b5"
+          image: "quay.io/stackrox-io/main:4.6.1@sha256:ee4acf854561fb301b8d39463ab502a5ad70bdc509508de878e968ff2c72d958"
           imagePullPolicy: IfNotPresent
           name: compliance
           resources:
@@ -169,7 +169,7 @@ spec:
               name: certs
               readOnly: true
         - name: node-inventory
-          image: "quay.io/stackrox-io/scanner-slim:4.5.5@sha256:147168a03b0fda25b8512859cfbe0117c0fccf5758540d410657edd55702b238"
+          image: "quay.io/stackrox-io/scanner-slim:4.6.1@sha256:06e6bdd632475863c752217794443da79465f65b9df658d32f900dca3af2b37c"
           imagePullPolicy: IfNotPresent
           command: ["/scanner", "--nodeinventory", "--config=", ""]
           ports:

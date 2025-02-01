@@ -10,8 +10,8 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: stackrox
     app.kubernetes.io/part-of: stackrox-central-services
-    app.kubernetes.io/version: 4.5.5
-    helm.sh/chart: stackrox-central-services-400.5.5
+    app.kubernetes.io/version: 4.6.1
+    helm.sh/chart: stackrox-central-services-400.5.1
     app: central
   annotations:
     argocd.argoproj.io/sync-wave: "2"
@@ -45,8 +45,8 @@ spec:
         app.kubernetes.io/managed-by: Helm
         app.kubernetes.io/name: stackrox
         app.kubernetes.io/part-of: stackrox-central-services
-        app.kubernetes.io/version: 4.5.5
-        helm.sh/chart: stackrox-central-services-400.5.5
+        app.kubernetes.io/version: 4.6.1
+        helm.sh/chart: stackrox-central-services-400.5.1
       annotations:
         traffic.sidecar.istio.io/excludeInboundPorts: "8443"
         email: support@stackrox.com
@@ -91,7 +91,7 @@ spec:
         runAsUser: 4000
       containers:
         - name: central
-          image: "quay.io/stackrox-io/main:4.5.5@sha256:1560abe51762fa91013007c46305dccc147eae8342232ceda13ad89c37e301b5"
+          image: "quay.io/stackrox-io/main:4.6.1@sha256:ee4acf854561fb301b8d39463ab502a5ad70bdc509508de878e968ff2c72d958"
           command:
             - /stackrox/central-entrypoint.sh
           ports:
@@ -282,8 +282,8 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: stackrox
     app.kubernetes.io/part-of: stackrox-central-services
-    app.kubernetes.io/version: 4.5.5
-    helm.sh/chart: stackrox-central-services-400.5.5
+    app.kubernetes.io/version: 4.6.1
+    helm.sh/chart: stackrox-central-services-400.5.1
   annotations:
     email: support@stackrox.com
     meta.helm.sh/release-name: stackrox-central-services
@@ -316,8 +316,8 @@ spec:
         app.kubernetes.io/managed-by: Helm
         app.kubernetes.io/name: stackrox
         app.kubernetes.io/part-of: stackrox-central-services
-        app.kubernetes.io/version: 4.5.5
-        helm.sh/chart: stackrox-central-services-400.5.5
+        app.kubernetes.io/version: 4.6.1
+        helm.sh/chart: stackrox-central-services-400.5.1
       annotations:
         traffic.sidecar.istio.io/excludeInboundPorts: "8080,8443"
         email: support@stackrox.com
@@ -360,7 +360,7 @@ spec:
       containers:
         - name: scanner
 
-          image: "quay.io/stackrox-io/scanner:4.5.5@sha256:73af6271796f10cee9320ca4c1a6d752f8fb0fe8a01393fa18034dc699708f7c"
+          image: "quay.io/stackrox-io/scanner:4.6.1@sha256:0de24560f75adfa9d53eaa1986b7562b86b19d0336e5e0b6fb21ddcab3fbc602"
           env:
             - name: ROX_MEMLIMIT
               valueFrom:
@@ -487,8 +487,8 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: stackrox
     app.kubernetes.io/part-of: stackrox-central-services
-    app.kubernetes.io/version: 4.5.5
-    helm.sh/chart: stackrox-central-services-400.5.5
+    app.kubernetes.io/version: 4.6.1
+    helm.sh/chart: stackrox-central-services-400.5.1
   annotations:
     email: support@stackrox.com
     meta.helm.sh/release-name: stackrox-central-services
@@ -523,8 +523,8 @@ spec:
         app.kubernetes.io/managed-by: Helm
         app.kubernetes.io/name: stackrox
         app.kubernetes.io/part-of: stackrox-central-services
-        app.kubernetes.io/version: 4.5.5
-        helm.sh/chart: stackrox-central-services-400.5.5
+        app.kubernetes.io/version: 4.6.1
+        helm.sh/chart: stackrox-central-services-400.5.1
       annotations:
         traffic.sidecar.istio.io/excludeInboundPorts: "5432"
         email: support@stackrox.com
@@ -568,7 +568,7 @@ spec:
                     operator: DoesNotExist
       initContainers:
         - name: init-db
-          image: "quay.io/stackrox-io/scanner-db:4.5.5@sha256:7377af21870d3ff70343beec91578d21ba3e20956f091903eb9f4ebfbd6ada3b"
+          image: "quay.io/stackrox-io/scanner-db:4.6.1@sha256:e2c6af132cb99d8fb9ef45fa303109dbb9ef20c525589041256b2244313f2003"
           env:
             - name: POSTGRES_PASSWORD_FILE
               value: "/run/secrets/stackrox.io/secrets/password"
