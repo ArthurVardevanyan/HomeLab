@@ -1,0 +1,27 @@
+apiVersion: kyverno.io/v1
+kind: Policy
+metadata:
+  name: mutate-tls-to-ssl
+  namespace: quay
+spec:
+  background: false
+  rules:
+    - name: MutateTLSKeys
+      match:
+        resources:
+          kinds:
+            - Secret
+          name: quay-config-bundle
+      mutate:
+        patchesJson6902: |-
+          - path: /data/ssl.cert
+            op: add
+            value: '{{ request.object.data."tls.crt" }}'
+          - path: /data/ssl.key
+            op: add
+            value: '{{ request.object.data."tls.key" }}'
+      preconditions:
+        all:
+          - key: "{{ request.userInfo.username }}"
+            operator: Equals
+            value: "system:serviceaccount:cert-manager:cert-manager"
