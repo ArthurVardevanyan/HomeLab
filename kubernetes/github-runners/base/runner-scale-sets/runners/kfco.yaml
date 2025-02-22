@@ -5,10 +5,10 @@ metadata:
   namespace: github-arc-runners
   labels:
     app.kubernetes.io/component: "autoscaling-runner-set"
-    helm.sh/chart: gha-rs-0.9.3
+    helm.sh/chart: gha-rs-0.10.1
     app.kubernetes.io/name: kfco-arc-runner-set
     app.kubernetes.io/instance: kfco-arc-runner-set
-    app.kubernetes.io/version: "0.9.3"
+    app.kubernetes.io/version: "0.10.1"
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/part-of: gha-rs
     actions.github.com/scale-set-name: kfco-arc-runner-set
@@ -30,6 +30,7 @@ spec:
         - name: runner
           securityContext:
             runAsUser: 1001
+            runAsGroup: 123
             runAsNonRoot: true
             privileged: false
             allowPrivilegeEscalation: false
@@ -50,4 +51,4 @@ spec:
               ephemeral-storage: "5Gi"
           command:
             - /home/runner/run.sh
-          image: ghcr.io/actions/actions-runner:2.321.0@sha256:27f3f74ec6f88026491d761270525ccf630a53ce9cd5db1d5f44cd2470abe380
+          image: ghcr.io/actions/actions-runner:2.322.0@sha256:c02e8e1b479ea39b196c3bb0a40a66a191302654a6ef5c042eafe11c13323137
