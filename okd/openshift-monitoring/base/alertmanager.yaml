@@ -1,5 +1,5 @@
 global:
-  resolve_timeout: 5m
+  resolve_timeout: 10m
 inhibit_rules:
   - equal:
       - namespace
@@ -17,14 +17,16 @@ inhibit_rules:
       - severity = info
 receivers:
   - name: discord
-    webhook_configs:
-      - url: >-
-          http://alert-manager-discord.alert-manager-discord.svc.cluster.local:9094
+    discord_configs:
+      - send_resolved: true
+        webhook_url: https://discord.com/api/webhooks/<path:secret/data/gitlab/discord#alert-webhook>
+        title: |
+          {{- if gt (len .Alerts.Firing) 0 }} [FIRING]: {{- else }} [RESOLVED]: {{- end }}  {{ .CommonLabels.alertname }}
 route:
   group_by:
     - namespace
-  group_interval: 5m
-  group_wait: 30s
+  group_interval: 10m
+  group_wait: 60s
   receiver: discord
   repeat_interval: 12h
   routes: []
