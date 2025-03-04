@@ -11,7 +11,49 @@ spec:
       kind: DataVolume
       metadata:
         creationTimestamp: null
-        name: okd-master-3
+        name: okd-master-3-0
+      spec:
+        preallocation: false
+        source:
+          blank: {}
+        storage:
+          resources:
+            requests:
+              storage: 100Gi
+          storageClassName: rook-ceph-block-virtualization-ci
+    - apiVersion: cdi.kubevirt.io/v1beta1
+      kind: DataVolume
+      metadata:
+        creationTimestamp: null
+        name: okd-master-3-1
+      spec:
+        preallocation: false
+        source:
+          blank: {}
+        storage:
+          resources:
+            requests:
+              storage: 100Gi
+          storageClassName: rook-ceph-block-virtualization-ci
+    - apiVersion: cdi.kubevirt.io/v1beta1
+      kind: DataVolume
+      metadata:
+        creationTimestamp: null
+        name: okd-master-3-2
+      spec:
+        preallocation: false
+        source:
+          blank: {}
+        storage:
+          resources:
+            requests:
+              storage: 100Gi
+          storageClassName: rook-ceph-block-virtualization-ci
+    - apiVersion: cdi.kubevirt.io/v1beta1
+      kind: DataVolume
+      metadata:
+        creationTimestamp: null
+        name: okd-master-3-3
       spec:
         preallocation: false
         source:
@@ -57,14 +99,26 @@ spec:
           threads: 1
         devices:
           disks:
-            - bootOrder: 2
+            - bootOrder: 5
               disk:
                 bus: virtio
               name: agent
             - bootOrder: 1
               disk:
                 bus: virtio
-              name: rootdisk
+              name: rootdisk-0
+            - bootOrder: 2
+              disk:
+                bus: virtio
+              name: rootdisk-1
+            - bootOrder: 3
+              disk:
+                bus: virtio
+              name: secondary-0
+            - bootOrder: 4
+              disk:
+                bus: virtio
+              name: secondary-1
           interfaces:
             - bridge: {}
               macAddress: "10:00:00:00:01:42"
@@ -95,8 +149,17 @@ spec:
       terminationGracePeriodSeconds: 180
       volumes:
         - dataVolume:
-            name: okd-master-3
-          name: rootdisk
+            name: okd-master-3-0
+          name: rootdisk-0
+        - dataVolume:
+            name: okd-master-3-1
+          name: rootdisk-1
+        - dataVolume:
+            name: okd-master-3-2
+          name: secondary-0
+        - dataVolume:
+            name: okd-master-3-3
+          name: secondary-1
         - name: agent
           persistentVolumeClaim:
             claimName: agent-agent

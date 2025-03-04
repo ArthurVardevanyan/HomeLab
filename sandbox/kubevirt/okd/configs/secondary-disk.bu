@@ -1,0 +1,29 @@
+# butane ./sandbox/kubevirt/okd/configs/secondary-disk.bu -o ./sandbox/kubevirt/okd/configs/secondary-disk.yaml
+variant: openshift
+version: 4.18.0
+metadata:
+  name: raid1-alt-storage
+  labels:
+    machineconfiguration.openshift.io/role: master
+storage:
+  disks:
+    - device: /dev/vdd
+      wipe_table: true
+      partitions:
+        - label: data-1
+    - device: /dev/vde
+      wipe_table: true
+      partitions:
+        - label: data-2
+  raid:
+    - name: md-var-lib-containers
+      level: raid1
+      devices:
+        - /dev/disk/by-partlabel/data-1
+        - /dev/disk/by-partlabel/data-2
+  filesystems:
+    - device: /dev/md/md-var-lib-containers
+      path: /var/lib/containers
+      format: xfs
+      wipe_filesystem: true
+      with_mount_unit: true
