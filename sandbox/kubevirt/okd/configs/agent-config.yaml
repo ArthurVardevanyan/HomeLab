@@ -18,49 +18,121 @@ hosts:
     interfaces:
       - name: enp1s0
         macAddress: 10:00:00:00:01:40
-    # networkConfig:
-    #   interfaces:
-    #     - name: enp1s0
-    #       mac-address: 10:00:00:00:01:40
-    #       ipv4:
-    #         enabled: true
-    #         # address:
-    #         #   - ip: 10.0.0.140
-    #         #     prefix-length: 24
-    #         dhcp: true
-    #       ipv6:
-    #         enabled: false
+      - name: enp2s0
+        macAddress: 10:00:00:00:11:40
+    networkConfig:
+      interfaces:
+        - name: bond0
+          type: bond
+          state: up
+          mac-address: 10:00:00:00:01:40
+          mtu: 8900
+          ipv4:
+            enabled: true
+            address:
+              - ip: 10.0.0.140
+                prefix-length: 24
+            dhcp: false
+          ipv6:
+            enabled: false
+          link-aggregation:
+            mode: active-backup
+            options:
+              miimon: "150"
+              primary: enp1s0
+            port:
+              - enp1s0
+              - enp2s0
+      dns-resolver:
+        config:
+          server:
+            - 10.0.0.98
+            - 10.0.0.97
+      routes:
+        config:
+          - destination: 0.0.0.0/0
+            next-hop-address: 10.0.0.1
+            next-hop-interface: bond0
+            table-id: 254
   - hostname: server-2
     role: master
     interfaces:
       - name: enp1s0
         macAddress: 10:00:00:00:01:41
-    # networkConfig:
-    #   interfaces:
-    #     - name: enp1s0
-    #       mac-address: 10:00:00:00:01:41
-    #       ipv4:
-    #         enabled: true
-    #         # address:
-    #         #   - ip: 10.0.0.141
-    #         #     prefix-length: 24
-    #         dhcp: true
-    #       ipv6:
-    #         enabled: false
+      - name: enp2s0
+        macAddress: 10:00:00:00:11:41
+    networkConfig:
+      interfaces:
+        - name: bond0
+          type: bond
+          state: up
+          mac-address: 10:00:00:00:01:41
+          mtu: 8900
+          ipv4:
+            enabled: true
+            address:
+              - ip: 10.0.0.141
+                prefix-length: 24
+            dhcp: false
+          ipv6:
+            enabled: false
+          link-aggregation:
+            mode: active-backup
+            options:
+              miimon: "150"
+              primary: enp1s0
+            port:
+              - enp1s0
+              - enp2s0
+      dns-resolver:
+        config:
+          server:
+            - 10.0.0.98
+            - 10.0.0.97
+      routes:
+        config:
+          - destination: 0.0.0.0/0
+            next-hop-address: 10.0.0.1
+            next-hop-interface: bond0
+            table-id: 254
   - hostname: server-3
     role: master
     interfaces:
       - name: enp1s0
         macAddress: 10:00:00:00:01:42
-    # networkConfig:
-    #   interfaces:
-    #     - name: enp1s0
-    #       mac-address: 10:00:00:00:01:42
-    #       ipv4:
-    #         enabled: true
-    #         # address:
-    #         #   - ip: 10.0.0.142
-    #         #     prefix-length: 24
-    #         dhcp: true
-    #       ipv6:
-    #         enabled: false
+      - name: enp2s0
+        macAddress: 10:00:00:00:11:42
+    networkConfig:
+      interfaces:
+        - name: bond0
+          type: bond
+          state: up
+          mac-address: 10:00:00:00:01:42
+          mtu: 8900
+          ipv4:
+            enabled: true
+            address:
+              - ip: 10.0.0.142
+                prefix-length: 24
+            dhcp: false
+          ipv6:
+            enabled: false
+          link-aggregation:
+            mode: active-backup
+            options:
+              miimon: "150"
+              primary: enp1s0
+            port:
+              - enp1s0
+              - enp2s0
+      dns-resolver:
+        config:
+          server:
+            - 10.0.0.98
+            - 10.0.0.97
+      routes:
+        config:
+          - destination: 0.0.0.0/0
+            next-hop-address: 10.0.0.1
+            next-hop-interface: bond0
+            table-id: 254
