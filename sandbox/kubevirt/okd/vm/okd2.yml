@@ -11,7 +11,49 @@ spec:
       kind: DataVolume
       metadata:
         creationTimestamp: null
-        name: okd-master-2
+        name: okd-master-2-0
+      spec:
+        preallocation: false
+        source:
+          blank: {}
+        storage:
+          resources:
+            requests:
+              storage: 100Gi
+          storageClassName: rook-ceph-block-virtualization-ci
+    - apiVersion: cdi.kubevirt.io/v1beta1
+      kind: DataVolume
+      metadata:
+        creationTimestamp: null
+        name: okd-master-2-1
+      spec:
+        preallocation: false
+        source:
+          blank: {}
+        storage:
+          resources:
+            requests:
+              storage: 100Gi
+          storageClassName: rook-ceph-block-virtualization-ci
+    - apiVersion: cdi.kubevirt.io/v1beta1
+      kind: DataVolume
+      metadata:
+        creationTimestamp: null
+        name: okd-master-2-2
+      spec:
+        preallocation: false
+        source:
+          blank: {}
+        storage:
+          resources:
+            requests:
+              storage: 100Gi
+          storageClassName: rook-ceph-block-virtualization-ci
+    - apiVersion: cdi.kubevirt.io/v1beta1
+      kind: DataVolume
+      metadata:
+        creationTimestamp: null
+        name: okd-master-2-3
       spec:
         preallocation: false
         source:
@@ -57,19 +99,35 @@ spec:
           threads: 1
         devices:
           disks:
-            - bootOrder: 2
+            - bootOrder: 5
               disk:
                 bus: virtio
               name: agent
             - bootOrder: 1
               disk:
                 bus: virtio
-              name: rootdisk
+              name: rootdisk-0
+            - bootOrder: 2
+              disk:
+                bus: virtio
+              name: rootdisk-1
+            - bootOrder: 3
+              disk:
+                bus: virtio
+              name: secondary-0
+            - bootOrder: 4
+              disk:
+                bus: virtio
+              name: secondary-1
           interfaces:
             - bridge: {}
               macAddress: "10:00:00:00:01:41"
               model: virtio
               name: br1
+            - bridge: {}
+              macAddress: "10:00:00:00:11:41"
+              model: virtio
+              name: br1-vlan3
           networkInterfaceMultiqueue: true
           rng: {}
         features:
@@ -92,11 +150,23 @@ spec:
         - multus:
             networkName: default/br1
           name: br1
+        - multus:
+            networkName: default/br1-vlan3
+          name: br1-vlan3
       terminationGracePeriodSeconds: 180
       volumes:
         - dataVolume:
-            name: okd-master-2
-          name: rootdisk
+            name: okd-master-2-0
+          name: rootdisk-0
+        - dataVolume:
+            name: okd-master-2-1
+          name: rootdisk-1
+        - dataVolume:
+            name: okd-master-2-2
+          name: secondary-0
+        - dataVolume:
+            name: okd-master-2-3
+          name: secondary-1
         - name: agent
           persistentVolumeClaim:
             claimName: agent-agent
