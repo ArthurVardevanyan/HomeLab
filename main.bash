@@ -917,6 +917,22 @@ delete_okd_virt() {
   kubectl delete -f "${HOMELAB}/sandbox/kubevirt/okd/vm" --ignore-not-found
 }
 
+delete_okd_sno() {
+  export HOMELAB="${PWD}"
+  export OKD=/tmp/okd
+
+  echo -e "\n\n${BLUE}Delete All Existing Data:${NC}"
+  rm -rf \
+    "${HOME}/.cache/agent" \
+    ${OKD}/openshift-install-linux* \
+    ${OKD}/openshift-client-linux* \
+    ${OKD}/oc \
+    ${OKD}/kubectl \
+    ${OKD}/openshift-install \
+    ${OKD}/okd
+
+}
+
 install_okd_prep() {
   if [ -z "${URL}" ]; then
     echo -n URL:
@@ -1009,6 +1025,34 @@ install_okd_virt() {
   podman rmi -f "${REGISTRY}/homelab/okd-virt:latest"
 
   kubectl apply -f "${HOMELAB}/sandbox/kubevirt/okd/vm"
+
+  export KUBECONFIG="${OKD}/okd/auth/kubeconfig"
+  "${OKD}/openshift-install" agent wait-for bootstrap-complete --dir "${OKD}/okd/"
+  # "${OKD}/oc" apply -f "${HOMELAB}/okd/okd-configuration/overlays/sandbox/ingress-controller.yaml"
+  "${OKD}/openshift-install" agent wait-for install-complete --dir "${OKD}/okd/"
+}
+
+install_okd_sno() {
+
+  delete_okd_sno
+  export HOMELAB="${PWD}"
+  export OKD=/tmp/okd
+
+  export CONTROL_PLANE_COUNT
+  export WORKER_COUNT
+  CONTROL_PLANE_COUNT=${CONTROL_PLANE_COUNT:-1}
+  WORKER_COUNT=${WORKER_COUNT:-0}
+
+  echo -e "\n\n${BLUE}Get URL:${NC}"
+  URL=${URL:-sno.arthurvardevanyan.com}
+  install_okd_prep
+  export OPENSHIFT_INSTALL_OS_IMAGE_OVERRIDE=${OPENSHIFT_INSTALL_OS_IMAGE_OVERRIDE:-"https://mirror.openshift.com/pub/openshift-v4/x86_64/dependencies/rhcos/4.18/4.18.1/rhcos-4.18.1-x86_64-live.x86_64.iso"}
+
+  cp "${HOMELAB}/sandbox/sno/agent-config.yaml" "${OKD}/okd/"
+
+  "${OKD}/openshift-install" agent create cluster-manifests --dir "${OKD}/okd/"
+
+  "${OKD}/openshift-install" agent create image --dir "${OKD}/okd/"
 
   export KUBECONFIG="${OKD}/okd/auth/kubeconfig"
   "${OKD}/openshift-install" agent wait-for bootstrap-complete --dir "${OKD}/okd/"
