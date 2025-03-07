@@ -4,7 +4,6 @@
 helm template velero --include-crds vmware-tanzu/velero \
 --namespace velero \
 --create-namespace \
---set-file credentials.secretContents.cloud=/home/arthur/Projects/Code/HomeLab/notes/truenas-s3.yaml \
 --set configuration.backupStorageLocation[0].name=velero-backup \
 --set configuration.backupStorageLocation[0].provider=aws \
 --set configuration.backupStorageLocation[0].bucket=velero-backup \
