@@ -1,0 +1,110 @@
+apiVersion: nmstate.io/v1
+kind: NodeNetworkConfigurationPolicy
+metadata:
+  name: bond2-server-1
+  annotations:
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+    argocd.argoproj.io/sync-wave: "3"
+spec:
+  nodeSelector:
+    kubernetes.io/hostname: server-1
+  desiredState:
+    interfaces:
+      - name: bond2
+        type: bond
+        state: up
+        mac-address: "10:00:00:00:71:40"
+        mtu: 8900
+        ipv4:
+          enabled: true
+          dhcp: true
+        ipv6:
+          enabled: false
+        link-aggregation:
+          mode: active-backup
+          options:
+            miimon: "150"
+            primary: enp5s0
+          port:
+            - enp5s0
+            - enp6s0
+    routes:
+      config:
+        - destination: 10.0.3.0/24
+          next-hop-address: 10.0.3.1
+          next-hop-interface: bond2
+          table-id: 254
+---
+apiVersion: nmstate.io/v1
+kind: NodeNetworkConfigurationPolicy
+metadata:
+  name: bond2-server-2
+  annotations:
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+    argocd.argoproj.io/sync-wave: "3"
+spec:
+  nodeSelector:
+    kubernetes.io/hostname: server-2
+  desiredState:
+    interfaces:
+      - name: bond2
+        type: bond
+        state: up
+        mac-address: "10:00:00:00:71:41"
+        mtu: 8900
+        ipv4:
+          enabled: true
+          dhcp: true
+        ipv6:
+          enabled: false
+        link-aggregation:
+          mode: active-backup
+          options:
+            miimon: "150"
+            primary: enp5s0
+          port:
+            - enp5s0
+            - enp6s0
+    routes:
+      config:
+        - destination: 10.0.3.0/24
+          next-hop-address: 10.0.3.1
+          next-hop-interface: bond2
+          table-id: 254
+---
+apiVersion: nmstate.io/v1
+kind: NodeNetworkConfigurationPolicy
+metadata:
+  name: bond2-server-3
+  annotations:
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+    argocd.argoproj.io/sync-wave: "3"
+spec:
+  nodeSelector:
+    kubernetes.io/hostname: server-3
+  desiredState:
+    interfaces:
+      - name: bond2
+        type: bond
+        state: up
+        mac-address: "10:00:00:00:71:42"
+        mtu: 8900
+        ipv4:
+          enabled: true
+          dhcp: true
+        ipv6:
+          enabled: false
+        link-aggregation:
+          mode: active-backup
+          options:
+            miimon: "150"
+            primary: enp5s0
+          port:
+            - enp5s0
+            - enp6s0
+    routes:
+      config:
+        - destination: 10.0.3.0/24
+          next-hop-address: 10.0.3.1
+          next-hop-interface: bond2
+          table-id: 254

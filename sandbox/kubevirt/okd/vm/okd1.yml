@@ -63,6 +63,20 @@ spec:
             requests:
               storage: 100Gi
           storageClassName: rook-ceph-block-virtualization-ci
+    - apiVersion: cdi.kubevirt.io/v1beta1
+      kind: DataVolume
+      metadata:
+        creationTimestamp: null
+        name: okd-master-1-4
+      spec:
+        preallocation: false
+        source:
+          blank: {}
+        storage:
+          resources:
+            requests:
+              storage: 100Gi
+          storageClassName: rook-ceph-block-virtualization-ci
   running: true
   template:
     metadata:
@@ -119,6 +133,10 @@ spec:
               disk:
                 bus: virtio
               name: secondary-1
+            - bootOrder: 6
+              disk:
+                bus: virtio
+              name: storage-1
           interfaces:
             - bridge: {}
               macAddress: "10:00:00:00:01:40"
@@ -128,6 +146,22 @@ spec:
               macAddress: "10:00:00:00:11:40"
               model: virtio
               name: br1-vlan3
+            - bridge: {}
+              macAddress: "10:00:00:00:51:40"
+              model: virtio
+              name: br1-vlan5
+            - bridge: {}
+              macAddress: "10:00:00:00:61:40"
+              model: virtio
+              name: br1-vlan6
+            - bridge: {}
+              macAddress: "10:00:00:00:71:40"
+              model: virtio
+              name: br1-vlan7
+            - bridge: {}
+              macAddress: "10:00:00:00:81:40"
+              model: virtio
+              name: br1-vlan8
           networkInterfaceMultiqueue: true
           rng: {}
         features:
@@ -153,6 +187,18 @@ spec:
         - multus:
             networkName: default/br1-vlan3
           name: br1-vlan3
+        - multus:
+            networkName: default/br1-vlan5
+          name: br1-vlan5
+        - multus:
+            networkName: default/br1-vlan6
+          name: br1-vlan6
+        - multus:
+            networkName: default/br1-vlan7
+          name: br1-vlan7
+        - multus:
+            networkName: default/br1-vlan8
+          name: br1-vlan8
       terminationGracePeriodSeconds: 180
       volumes:
         - dataVolume:
@@ -167,6 +213,9 @@ spec:
         - dataVolume:
             name: okd-master-1-3
           name: secondary-1
+        - dataVolume:
+            name: okd-master-1-4
+          name: storage-1
         - name: agent
           persistentVolumeClaim:
             claimName: agent-agent
