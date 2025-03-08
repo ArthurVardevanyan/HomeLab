@@ -1,0 +1,23 @@
+apiVersion: lvm.topolvm.io/v1alpha1
+kind: LVMCluster
+metadata:
+  name: lvmcluster
+  namespace: openshift-storage
+  annotations:
+    argocd.argoproj.io/sync-wave: "2"
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+spec:
+  storage:
+    deviceClasses:
+      - default: true
+        deviceSelector:
+          paths:
+            - "/dev/disk/by-path/pci-0000:04:00.0-nvme-1"
+        fstype: ext4
+        name: vg1
+        thinPoolConfig:
+          chunkSizeCalculationPolicy: Static
+          metadataSizeCalculationPolicy: Host
+          name: thin-pool-1
+          overprovisionRatio: 10
+          sizePercent: 90
