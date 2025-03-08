@@ -7,11 +7,16 @@ metadata:
     blackbox: ignore
     app.kubernetes.io/instance: influxdb
   annotations:
+    externaldns.k8s.io: pihole
     route.openshift.io/termination: edge
 spec:
   ingressClassName: openshift-default
+  tls:
+    - hosts:
+        - influxdb.arthurvardevanyan.com
+      secretName: influxdb-cert
   rules:
-    - host: influxdb.apps.okd.arthurvardevanyan.com
+    - host: influxdb.arthurvardevanyan.com
       http:
         paths:
           - path: ""

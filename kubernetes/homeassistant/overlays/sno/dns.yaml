@@ -1,0 +1,20 @@
+apiVersion: externaldns.k8s.io/v1alpha1
+kind: DNSEndpoint
+metadata:
+  name: homeassistant
+  namespace: homeassistant
+  annotations:
+    externaldns.k8s.io: pihole
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+spec:
+  endpoints:
+    - dnsName: homeassistant-influxdb.arthurvardevanyan.com
+      recordTTL: 60
+      recordType: A
+      targets:
+        - 172.30.20.17
+    - dnsName: iot.home.arthurvardevanyan.com
+      recordTTL: 60
+      recordType: A
+      targets:
+        - 10.0.0.135
