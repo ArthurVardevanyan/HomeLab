@@ -1,3 +1,4 @@
+---
 # Source: external-secrets/templates/cert-controller-deployment.yaml
 apiVersion: apps/v1
 kind: Deployment
@@ -5,10 +6,10 @@ metadata:
   name: external-secrets-cert-controller
   namespace: external-secrets-operator
   labels:
-    helm.sh/chart: external-secrets-0.11.0
+    helm.sh/chart: external-secrets-0.14.3
     app.kubernetes.io/name: external-secrets-cert-controller
     app.kubernetes.io/instance: external-secrets
-    app.kubernetes.io/version: "v0.11.0"
+    app.kubernetes.io/version: "v0.14.3"
     app.kubernetes.io/managed-by: Helm
 spec:
   replicas: 2
@@ -20,10 +21,10 @@ spec:
   template:
     metadata:
       labels:
-        helm.sh/chart: external-secrets-0.11.0
+        helm.sh/chart: external-secrets-0.14.3
         app.kubernetes.io/name: external-secrets-cert-controller
         app.kubernetes.io/instance: external-secrets
-        app.kubernetes.io/version: "v0.11.0"
+        app.kubernetes.io/version: "v0.14.3"
         app.kubernetes.io/managed-by: Helm
     spec:
       serviceAccountName: external-secrets-cert-controller
@@ -38,9 +39,10 @@ spec:
                 - ALL
             readOnlyRootFilesystem: true
             runAsNonRoot: true
+            # runAsUser: 1000
             seccompProfile:
               type: RuntimeDefault
-          image: ghcr.io/external-secrets/external-secrets:v0.11.0@sha256:bf0747a7c8a9726a6757c185faa5a77bd0652f7aac03c9712c92fe7f26576431
+          image: ghcr.io/external-secrets/external-secrets:v0.14.3@sha256:91a039ca0db52ed1b85b24c3c79f6df19cbb749826f09d1811fad0fce8ed9fd2
           imagePullPolicy: IfNotPresent
           args:
             - certcontroller
@@ -78,10 +80,10 @@ metadata:
   name: external-secrets
   namespace: external-secrets-operator
   labels:
-    helm.sh/chart: external-secrets-0.11.0
+    helm.sh/chart: external-secrets-0.14.3
     app.kubernetes.io/name: external-secrets
     app.kubernetes.io/instance: external-secrets
-    app.kubernetes.io/version: "v0.11.0"
+    app.kubernetes.io/version: "v0.14.3"
     app.kubernetes.io/managed-by: Helm
 spec:
   replicas: 2
@@ -93,10 +95,10 @@ spec:
   template:
     metadata:
       labels:
-        helm.sh/chart: external-secrets-0.11.0
+        helm.sh/chart: external-secrets-0.14.3
         app.kubernetes.io/name: external-secrets
         app.kubernetes.io/instance: external-secrets
-        app.kubernetes.io/version: "v0.11.0"
+        app.kubernetes.io/version: "v0.14.3"
         app.kubernetes.io/managed-by: Helm
     spec:
       serviceAccountName: external-secrets
@@ -111,9 +113,10 @@ spec:
                 - ALL
             readOnlyRootFilesystem: true
             runAsNonRoot: true
+            # runAsUser: 1000
             seccompProfile:
               type: RuntimeDefault
-          image: ghcr.io/external-secrets/external-secrets:v0.11.0@sha256:bf0747a7c8a9726a6757c185faa5a77bd0652f7aac03c9712c92fe7f26576431
+          image: ghcr.io/external-secrets/external-secrets:v0.14.3@sha256:91a039ca0db52ed1b85b24c3c79f6df19cbb749826f09d1811fad0fce8ed9fd2
           imagePullPolicy: IfNotPresent
           args:
             - --concurrent=1
@@ -140,10 +143,10 @@ metadata:
   name: external-secrets-webhook
   namespace: external-secrets-operator
   labels:
-    helm.sh/chart: external-secrets-0.11.0
+    helm.sh/chart: external-secrets-0.14.3
     app.kubernetes.io/name: external-secrets-webhook
     app.kubernetes.io/instance: external-secrets
-    app.kubernetes.io/version: "v0.11.0"
+    app.kubernetes.io/version: "v0.14.3"
     app.kubernetes.io/managed-by: Helm
 spec:
   replicas: 2
@@ -155,10 +158,10 @@ spec:
   template:
     metadata:
       labels:
-        helm.sh/chart: external-secrets-0.11.0
+        helm.sh/chart: external-secrets-0.14.3
         app.kubernetes.io/name: external-secrets-webhook
         app.kubernetes.io/instance: external-secrets
-        app.kubernetes.io/version: "v0.11.0"
+        app.kubernetes.io/version: "v0.14.3"
         app.kubernetes.io/managed-by: Helm
     spec:
       hostNetwork: false
@@ -173,9 +176,10 @@ spec:
                 - ALL
             readOnlyRootFilesystem: true
             runAsNonRoot: true
+            # runAsUser: 1000
             seccompProfile:
               type: RuntimeDefault
-          image: ghcr.io/external-secrets/external-secrets:v0.11.0@sha256:bf0747a7c8a9726a6757c185faa5a77bd0652f7aac03c9712c92fe7f26576431
+          image: ghcr.io/external-secrets/external-secrets:v0.14.3@sha256:91a039ca0db52ed1b85b24c3c79f6df19cbb749826f09d1811fad0fce8ed9fd2
           imagePullPolicy: IfNotPresent
           args:
             - webhook
