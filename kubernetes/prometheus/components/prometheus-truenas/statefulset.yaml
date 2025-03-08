@@ -1,0 +1,176 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: prometheus-truenas
+  namespace: prometheus
+  labels:
+    app: prometheus-truenas
+    app.kubernetes.io/instance: prometheus-truenas
+  annotations:
+    checkov.io/skip1: CKV_K8S_40=OpenShift Injects Random UID
+    checkov.io/skip2: CKV_K8S_38=Monitoring Pods
+spec:
+  replicas: 1
+  serviceName: prometheus-service
+  revisionHistoryLimit: 0
+  selector:
+    matchLabels:
+      app: prometheus-truenas
+      app.kubernetes.io/name: prometheus
+  template:
+    metadata:
+      labels:
+        app: prometheus-truenas
+        app.kubernetes.io/name: prometheus
+      annotations:
+        # prometheus.io/scrape: "true"
+        # prometheus.io/port: "9090"
+        enable.version-checker.io/prometheus: "true"
+        enable.version-checker.io/thanos: "true"
+    spec:
+      topologySpreadConstraints:
+        - maxSkew: 1
+          topologyKey: topology.kubernetes.io/zone
+          whenUnsatisfiable: DoNotSchedule
+          labelSelector:
+            matchLabels:
+              app.kubernetes.io/name: prometheus
+        - maxSkew: 1
+          topologyKey: kubernetes.io/hostname
+          whenUnsatisfiable: DoNotSchedule
+          labelSelector:
+            matchLabels:
+              app.kubernetes.io/name: prometheus
+      securityContext:
+        seccompProfile:
+          type: RuntimeDefault
+        runAsNonRoot: true
+      automountServiceAccountToken: true
+      serviceAccountName: prometheus-sa
+      containers:
+        - name: prometheus
+          imagePullPolicy: IfNotPresent
+          image: docker.io/prom/prometheus:v2.55.1@sha256:2659f4c2ebb718e7695cb9b25ffa7d6be64db013daba13e05c875451cf51b0d3
+          securityContext:
+            # runAsGroup: 65534
+            # runAsUser: 65534
+            runAsNonRoot: true
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            seccompProfile:
+              type: RuntimeDefault
+            capabilities:
+              drop:
+                - ALL
+          args:
+            - "--config.file=/etc/prometheus/prometheus.yml"
+            - "--storage.tsdb.path=/prometheus_data/"
+            - "--storage.tsdb.retention.time=60d"
+            - "--web.enable-admin-api"
+            - "--storage.tsdb.min-block-duration=2h"
+            - "--storage.tsdb.max-block-duration=2h"
+          ports:
+            - containerPort: 9090
+          resources:
+            requests:
+              cpu: 50m
+              memory: 512Mi
+            limits:
+              cpu: 1500m
+              memory: 5Gi
+          readinessProbe:
+            httpGet:
+              path: /-/ready
+              port: 9090
+              scheme: HTTP
+            initialDelaySeconds: 30
+            periodSeconds: 5
+            timeoutSeconds: 4
+            failureThreshold: 3
+            successThreshold: 1
+          livenessProbe:
+            httpGet:
+              path: /-/healthy
+              port: 9090
+              scheme: HTTP
+            initialDelaySeconds: 30
+          volumeMounts:
+            - name: prometheus-config-volume
+              mountPath: /etc/prometheus/
+            - name: data
+              mountPath: /prometheus_data/
+        # https://hackernoon.com/kubernetes-monitoring-with-prometheus-and-thanos-z91w3uc2
+        - name: thanos-truenas
+          image: quay.io/thanos/thanos:v0.36.1@sha256:e542959e1b36d5046083d1b64a7049c356b68a44a173c58b3ae7c0c9ada932d5
+          securityContext:
+            runAsNonRoot: true
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            seccompProfile:
+              type: RuntimeDefault
+            capabilities:
+              drop:
+                - ALL
+          resources:
+            requests:
+              cpu: 5m
+              memory: 64Mi
+            limits:
+              cpu: 100m
+              memory: 384Mi
+          args:
+            - "sidecar"
+            - "--log.level=debug"
+            - "--tsdb.path=/prometheus_data"
+            - "--prometheus.url=http://127.0.0.1:9090"
+            - "--objstore.config-file=/etc/secret/truenas.yaml"
+            - "--http-address=0.0.0.0:10904"
+            - "--grpc-address=0.0.0.0:10903"
+          ports:
+            - name: http-sidecar
+              containerPort: 10904
+            - name: grpc
+              containerPort: 10903
+          livenessProbe:
+            httpGet:
+              port: 10904
+              path: /-/healthy
+          readinessProbe:
+            httpGet:
+              port: 10904
+              path: /-/ready
+          volumeMounts:
+            - name: prometheus-config-volume
+              mountPath: /etc/prometheus/
+            - name: data
+              mountPath: /prometheus_data/
+            - name: truenas
+              mountPath: /etc/secret
+              readOnly: true
+      volumes:
+        - name: prometheus-config-volume
+          configMap:
+            defaultMode: 420
+            name: prometheus-server-conf
+        - name: data
+          persistentVolumeClaim:
+            claimName: prometheus-thanos-pvc
+        - name: thanos-gcs-credentials
+          secret:
+            secretName: thanos-gcs-credentials
+        - name: truenas
+          secret:
+            secretName: truenas
+        - name: ceph
+          secret:
+            secretName: ceph
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+      spec:
+        accessModes:
+          - ReadWriteOnce
+        resources:
+          requests:
+            storage: "35Gi"
+        storageClassName: rook-ceph-block
