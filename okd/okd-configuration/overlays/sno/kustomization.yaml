@@ -1,0 +1,32 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - ../../base
+  - ./wif.yaml
+  - ./ingress-controller.yaml
+  - ./dns.yaml
+components:
+  - ../../components/scc
+patches:
+  - target:
+      kind: APIServer
+      name: cluster
+    patch: |-
+      - op: replace
+        path: /spec/servingCerts/namedCertificates/0/names
+        value:
+          -  api.okd.sno.arthurvardevanyan.com
+  - target:
+      kind: Certificate
+      name: api-certificate
+    patch: |-
+      - op: replace
+        path: /spec/dnsNames/0
+        value: api.okd.sno.arthurvardevanyan.com
+  - target:
+      kind: Certificate
+      name: ingress-certificate
+    patch: |-
+      - op: replace
+        path: /spec/dnsNames/0
+        value: "*.apps.okd.sno.arthurvardevanyan.com"

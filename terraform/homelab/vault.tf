@@ -16,6 +16,13 @@ resource "google_service_account_iam_member" "vault" {
   member             = "principal://iam.googleapis.com/projects/${local.homelab_project_num}/locations/global/workloadIdentityPools/${google_iam_workload_identity_pool.okd_homelab_wif.workload_identity_pool_id}/subject/system:serviceaccount:vault:vault-sa"
 }
 
+resource "google_service_account_iam_member" "vault-sno" {
+  service_account_id = google_service_account.vault.id
+  role               = "roles/iam.workloadIdentityUser"
+  member             = "principal://iam.googleapis.com/projects/${local.homelab_project_num}/locations/global/workloadIdentityPools/${google_iam_workload_identity_pool.sno_homelab_wif.workload_identity_pool_id}/subject/system:serviceaccount:vault:vault-sa"
+}
+
+
 resource "google_kms_key_ring" "key_ring" {
   project  = "homelab-${local.project_id}"
   name     = "vault"

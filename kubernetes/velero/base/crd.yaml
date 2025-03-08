@@ -1,5 +1,5 @@
 ---
-# Source: crds/backuprepositories.yaml
+# Source: velero/crds/backuprepositories.yaml
 ---
 apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
@@ -7,7 +7,7 @@ metadata:
   labels:
     component: velero
   annotations:
-    controller-gen.kubebuilder.io/version: v0.12.0
+    controller-gen.kubebuilder.io/version: v0.14.0
   name: backuprepositories.velero.io
 spec:
   group: velero.io
@@ -30,16 +30,19 @@ spec:
         openAPIV3Schema:
           properties:
             apiVersion:
-              description:
-                "APIVersion defines the versioned schema of this representation
-                of an object. Servers should convert recognized schemas to the latest
-                internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources"
+              description: |-
+                APIVersion defines the versioned schema of this representation of an object.
+                Servers should convert recognized schemas to the latest internal value, and
+                may reject unrecognized values.
+                More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
               type: string
             kind:
-              description:
-                "Kind is a string value representing the REST resource this
-                object represents. Servers may infer this from the endpoint the client
-                submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds"
+              description: |-
+                Kind is a string value representing the REST resource this object represents.
+                Servers may infer this from the endpoint the client submits requests to.
+                Cannot be updated.
+                In CamelCase.
+                More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
               type: string
             metadata:
               type: object
@@ -47,7 +50,7 @@ spec:
               description: BackupRepositorySpec is the specification for a BackupRepository.
               properties:
                 backupStorageLocation:
-                  description:
+                  description: |-
                     BackupStorageLocation is the name of the BackupStorageLocation
                     that should contain this repository.
                   type: string
@@ -56,6 +59,14 @@ spec:
                     MaintenanceFrequency is how often maintenance should
                     be run.
                   type: string
+                repositoryConfig:
+                  additionalProperties:
+                    type: string
+                  description:
+                    RepositoryConfig is for repository-specific configuration
+                    fields.
+                  nullable: true
+                  type: object
                 repositoryType:
                   description: RepositoryType indicates the type of the backend repository
                   enum:
@@ -64,14 +75,14 @@ spec:
                     - ""
                   type: string
                 resticIdentifier:
-                  description:
-                    ResticIdentifier is the full restic-compatible string
-                    for identifying this repository.
+                  description: |-
+                    ResticIdentifier is the full restic-compatible string for identifying
+                    this repository.
                   type: string
                 volumeNamespace:
-                  description:
-                    VolumeNamespace is the namespace this backup repository
-                    contains pod volume backups for.
+                  description: |-
+                    VolumeNamespace is the namespace this backup repository contains
+                    pod volume backups for.
                   type: string
               required:
                 - backupStorageLocation
@@ -106,9 +117,8 @@ spec:
       served: true
       storage: true
       subresources: {}
-
 ---
-# Source: crds/backups.yaml
+# Source: velero/crds/backups.yaml
 ---
 apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
@@ -116,7 +126,7 @@ metadata:
   labels:
     component: velero
   annotations:
-    controller-gen.kubebuilder.io/version: v0.12.0
+    controller-gen.kubebuilder.io/version: v0.14.0
   name: backups.velero.io
 spec:
   group: velero.io
@@ -130,21 +140,24 @@ spec:
     - name: v1
       schema:
         openAPIV3Schema:
-          description:
+          description: |-
             Backup is a Velero resource that represents the capture of Kubernetes
             cluster state at a point in time (API objects and associated volume state).
           properties:
             apiVersion:
-              description:
-                "APIVersion defines the versioned schema of this representation
-                of an object. Servers should convert recognized schemas to the latest
-                internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources"
+              description: |-
+                APIVersion defines the versioned schema of this representation of an object.
+                Servers should convert recognized schemas to the latest internal value, and
+                may reject unrecognized values.
+                More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
               type: string
             kind:
-              description:
-                "Kind is a string value representing the REST resource this
-                object represents. Servers may infer this from the endpoint the client
-                submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds"
+              description: |-
+                Kind is a string value representing the REST resource this object represents.
+                Servers may infer this from the endpoint the client submits requests to.
+                Cannot be updated.
+                In CamelCase.
+                More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
               type: string
             metadata:
               type: object
@@ -152,63 +165,63 @@ spec:
               description: BackupSpec defines the specification for a Velero backup.
               properties:
                 csiSnapshotTimeout:
-                  description:
-                    CSISnapshotTimeout specifies the time used to wait for
-                    CSI VolumeSnapshot status turns to ReadyToUse during creation, before
-                    returning error as timeout. The default value is 10 minute.
+                  description: |-
+                    CSISnapshotTimeout specifies the time used to wait for CSI VolumeSnapshot status turns to
+                    ReadyToUse during creation, before returning error as timeout.
+                    The default value is 10 minute.
                   type: string
                 datamover:
-                  description:
-                    DataMover specifies the data mover to be used by the
-                    backup. If DataMover is "" or "velero", the built-in data mover
-                    will be used.
+                  description: |-
+                    DataMover specifies the data mover to be used by the backup.
+                    If DataMover is "" or "velero", the built-in data mover will be used.
                   type: string
                 defaultVolumesToFsBackup:
-                  description:
-                    DefaultVolumesToFsBackup specifies whether pod volume
-                    file system backup should be used for all volumes by default.
+                  description: |-
+                    DefaultVolumesToFsBackup specifies whether pod volume file system backup should be used
+                    for all volumes by default.
                   nullable: true
                   type: boolean
                 defaultVolumesToRestic:
-                  description:
-                    "DefaultVolumesToRestic specifies whether restic should
-                    be used to take a backup of all pod volumes by default. \n Deprecated:
-                    this field is no longer used and will be removed entirely in future.
-                    Use DefaultVolumesToFsBackup instead."
+                  description: |-
+                    DefaultVolumesToRestic specifies whether restic should be used to take a
+                    backup of all pod volumes by default.
+
+
+                    Deprecated: this field is no longer used and will be removed entirely in future. Use DefaultVolumesToFsBackup instead.
                   nullable: true
                   type: boolean
                 excludedClusterScopedResources:
-                  description:
+                  description: |-
                     ExcludedClusterScopedResources is a slice of cluster-scoped
-                    resource type names to exclude from the backup. If set to "*", all
-                    cluster-scoped resource types are excluded. The default value is
-                    empty.
+                    resource type names to exclude from the backup.
+                    If set to "*", all cluster-scoped resource types are excluded.
+                    The default value is empty.
                   items:
                     type: string
                   nullable: true
                   type: array
                 excludedNamespaceScopedResources:
-                  description:
+                  description: |-
                     ExcludedNamespaceScopedResources is a slice of namespace-scoped
-                    resource type names to exclude from the backup. If set to "*", all
-                    namespace-scoped resource types are excluded. The default value
-                    is empty.
+                    resource type names to exclude from the backup.
+                    If set to "*", all namespace-scoped resource types are excluded.
+                    The default value is empty.
                   items:
                     type: string
                   nullable: true
                   type: array
                 excludedNamespaces:
-                  description:
-                    ExcludedNamespaces contains a list of namespaces that
-                    are not included in the backup.
+                  description: |-
+                    ExcludedNamespaces contains a list of namespaces that are not
+                    included in the backup.
                   items:
                     type: string
                   nullable: true
                   type: array
                 excludedResources:
-                  description:
-                    ExcludedResources is a slice of resource names that are
-                    not included in the backup.
+                  description: |-
+                    ExcludedResources is a slice of resource names that are not
+                    included in the backup.
                   items:
                     type: string
                   nullable: true
@@ -223,10 +236,9 @@ spec:
                         Resources are hooks that should be executed when
                         backing up individual instances of a resource.
                       items:
-                        description:
-                          BackupResourceHookSpec defines one or more BackupResourceHooks
-                          that should be executed based on the rules defined for namespaces,
-                          resources, and label selector.
+                        description: |-
+                          BackupResourceHookSpec defines one or more BackupResourceHooks that should be executed based on
+                          the rules defined for namespaces, resources, and label selector.
                         properties:
                           excludedNamespaces:
                             description:
@@ -245,19 +257,17 @@ spec:
                             nullable: true
                             type: array
                           includedNamespaces:
-                            description:
-                              IncludedNamespaces specifies the namespaces
-                              to which this hook spec applies. If empty, it applies
+                            description: |-
+                              IncludedNamespaces specifies the namespaces to which this hook spec applies. If empty, it applies
                               to all namespaces.
                             items:
                               type: string
                             nullable: true
                             type: array
                           includedResources:
-                            description:
-                              IncludedResources specifies the resources to
-                              which this hook spec applies. If empty, it applies to
-                              all resources.
+                            description: |-
+                              IncludedResources specifies the resources to which this hook spec applies. If empty, it applies
+                              to all resources.
                             items:
                               type: string
                             nullable: true
@@ -273,9 +283,8 @@ spec:
                                   matchExpressions is a list of label selector
                                   requirements. The requirements are ANDed.
                                 items:
-                                  description:
-                                    A label selector requirement is a selector
-                                    that contains values, a key, and an operator that
+                                  description: |-
+                                    A label selector requirement is a selector that contains values, a key, and an operator that
                                     relates the key and values.
                                   properties:
                                     key:
@@ -284,19 +293,16 @@ spec:
                                         applies to.
                                       type: string
                                     operator:
-                                      description:
-                                        operator represents a key's relationship
-                                        to a set of values. Valid operators are In,
-                                        NotIn, Exists and DoesNotExist.
+                                      description: |-
+                                        operator represents a key's relationship to a set of values.
+                                        Valid operators are In, NotIn, Exists and DoesNotExist.
                                       type: string
                                     values:
-                                      description:
-                                        values is an array of string values.
-                                        If the operator is In or NotIn, the values array
-                                        must be non-empty. If the operator is Exists
-                                        or DoesNotExist, the values array must be empty.
-                                        This array is replaced during a strategic merge
-                                        patch.
+                                      description: |-
+                                        values is an array of string values. If the operator is In or NotIn,
+                                        the values array must be non-empty. If the operator is Exists or DoesNotExist,
+                                        the values array must be empty. This array is replaced during a strategic
+                                        merge patch.
                                       items:
                                         type: string
                                       type: array
@@ -308,12 +314,10 @@ spec:
                               matchLabels:
                                 additionalProperties:
                                   type: string
-                                description:
-                                  matchLabels is a map of {key,value} pairs.
-                                  A single {key,value} in the matchLabels map is equivalent
-                                  to an element of matchExpressions, whose key field
-                                  is "key", the operator is "In", and the values array
-                                  contains only "value". The requirements are ANDed.
+                                description: |-
+                                  matchLabels is a map of {key,value} pairs. A single {key,value} in the matchLabels
+                                  map is equivalent to an element of matchExpressions, whose key field is "key", the
+                                  operator is "In", and the values array contains only "value". The requirements are ANDed.
                                 type: object
                             type: object
                             x-kubernetes-map-type: atomic
@@ -321,11 +325,9 @@ spec:
                             description: Name is the name of this hook.
                             type: string
                           post:
-                            description:
-                              PostHooks is a list of BackupResourceHooks
-                              to execute after storing the item in the backup. These
-                              are executed after all "additional items" from item actions
-                              are processed.
+                            description: |-
+                              PostHooks is a list of BackupResourceHooks to execute after storing the item in the backup.
+                              These are executed after all "additional items" from item actions are processed.
                             items:
                               description: BackupResourceHook defines a hook for a resource.
                               properties:
@@ -341,11 +343,9 @@ spec:
                                       minItems: 1
                                       type: array
                                     container:
-                                      description:
-                                        Container is the container in the
-                                        pod where the command should be executed. If
-                                        not specified, the pod's first container is
-                                        used.
+                                      description: |-
+                                        Container is the container in the pod where the command should be executed. If not specified,
+                                        the pod's first container is used.
                                       type: string
                                     onError:
                                       description:
@@ -357,10 +357,9 @@ spec:
                                         - Fail
                                       type: string
                                     timeout:
-                                      description:
-                                        Timeout defines the maximum amount
-                                        of time Velero should wait for the hook to complete
-                                        before considering the execution a failure.
+                                      description: |-
+                                        Timeout defines the maximum amount of time Velero should wait for the hook to complete before
+                                        considering the execution a failure.
                                       type: string
                                   required:
                                     - command
@@ -370,11 +369,9 @@ spec:
                               type: object
                             type: array
                           pre:
-                            description:
-                              PreHooks is a list of BackupResourceHooks to
-                              execute prior to storing the item in the backup. These
-                              are executed before any "additional items" from item actions
-                              are processed.
+                            description: |-
+                              PreHooks is a list of BackupResourceHooks to execute prior to storing the item in the backup.
+                              These are executed before any "additional items" from item actions are processed.
                             items:
                               description: BackupResourceHook defines a hook for a resource.
                               properties:
@@ -390,11 +387,9 @@ spec:
                                       minItems: 1
                                       type: array
                                     container:
-                                      description:
-                                        Container is the container in the
-                                        pod where the command should be executed. If
-                                        not specified, the pod's first container is
-                                        used.
+                                      description: |-
+                                        Container is the container in the pod where the command should be executed. If not specified,
+                                        the pod's first container is used.
                                       type: string
                                     onError:
                                       description:
@@ -406,10 +401,9 @@ spec:
                                         - Fail
                                       type: string
                                     timeout:
-                                      description:
-                                        Timeout defines the maximum amount
-                                        of time Velero should wait for the hook to complete
-                                        before considering the execution a failure.
+                                      description: |-
+                                        Timeout defines the maximum amount of time Velero should wait for the hook to complete before
+                                        considering the execution a failure.
                                       type: string
                                   required:
                                     - command
@@ -425,40 +419,41 @@ spec:
                       type: array
                   type: object
                 includeClusterResources:
-                  description:
-                    IncludeClusterResources specifies whether cluster-scoped
-                    resources should be included for consideration in the backup.
+                  description: |-
+                    IncludeClusterResources specifies whether cluster-scoped resources
+                    should be included for consideration in the backup.
                   nullable: true
                   type: boolean
                 includedClusterScopedResources:
-                  description:
+                  description: |-
                     IncludedClusterScopedResources is a slice of cluster-scoped
-                    resource type names to include in the backup. If set to "*", all
-                    cluster-scoped resource types are included. The default value is
-                    empty, which means only related cluster-scoped resources are included.
+                    resource type names to include in the backup.
+                    If set to "*", all cluster-scoped resource types are included.
+                    The default value is empty, which means only related
+                    cluster-scoped resources are included.
                   items:
                     type: string
                   nullable: true
                   type: array
                 includedNamespaceScopedResources:
-                  description:
+                  description: |-
                     IncludedNamespaceScopedResources is a slice of namespace-scoped
-                    resource type names to include in the backup. The default value
-                    is "*".
+                    resource type names to include in the backup.
+                    The default value is "*".
                   items:
                     type: string
                   nullable: true
                   type: array
                 includedNamespaces:
-                  description:
-                    IncludedNamespaces is a slice of namespace names to include
-                    objects from. If empty, all namespaces are included.
+                  description: |-
+                    IncludedNamespaces is a slice of namespace names to include objects
+                    from. If empty, all namespaces are included.
                   items:
                     type: string
                   nullable: true
                   type: array
                 includedResources:
-                  description:
+                  description: |-
                     IncludedResources is a slice of resource names to include
                     in the backup. If empty, all resources are included.
                   items:
@@ -466,16 +461,15 @@ spec:
                   nullable: true
                   type: array
                 itemOperationTimeout:
-                  description:
-                    ItemOperationTimeout specifies the time used to wait
-                    for asynchronous BackupItemAction operations The default value is
-                    1 hour.
+                  description: |-
+                    ItemOperationTimeout specifies the time used to wait for asynchronous BackupItemAction operations
+                    The default value is 4 hour.
                   type: string
                 labelSelector:
-                  description:
+                  description: |-
                     LabelSelector is a metav1.LabelSelector to filter with
-                    when adding individual objects to the backup. If empty or nil, all
-                    objects are included. Optional.
+                    when adding individual objects to the backup. If empty
+                    or nil, all objects are included. Optional.
                   nullable: true
                   properties:
                     matchExpressions:
@@ -483,10 +477,9 @@ spec:
                         matchExpressions is a list of label selector requirements.
                         The requirements are ANDed.
                       items:
-                        description:
-                          A label selector requirement is a selector that
-                          contains values, a key, and an operator that relates the key
-                          and values.
+                        description: |-
+                          A label selector requirement is a selector that contains values, a key, and an operator that
+                          relates the key and values.
                         properties:
                           key:
                             description:
@@ -494,17 +487,15 @@ spec:
                               to.
                             type: string
                           operator:
-                            description:
-                              operator represents a key's relationship to
-                              a set of values. Valid operators are In, NotIn, Exists
-                              and DoesNotExist.
+                            description: |-
+                              operator represents a key's relationship to a set of values.
+                              Valid operators are In, NotIn, Exists and DoesNotExist.
                             type: string
                           values:
-                            description:
-                              values is an array of string values. If the
-                              operator is In or NotIn, the values array must be non-empty.
-                              If the operator is Exists or DoesNotExist, the values
-                              array must be empty. This array is replaced during a strategic
+                            description: |-
+                              values is an array of string values. If the operator is In or NotIn,
+                              the values array must be non-empty. If the operator is Exists or DoesNotExist,
+                              the values array must be empty. This array is replaced during a strategic
                               merge patch.
                             items:
                               type: string
@@ -517,12 +508,10 @@ spec:
                     matchLabels:
                       additionalProperties:
                         type: string
-                      description:
-                        matchLabels is a map of {key,value} pairs. A single
-                        {key,value} in the matchLabels map is equivalent to an element
-                        of matchExpressions, whose key field is "key", the operator
-                        is "In", and the values array contains only "value". The requirements
-                        are ANDed.
+                      description: |-
+                        matchLabels is a map of {key,value} pairs. A single {key,value} in the matchLabels
+                        map is equivalent to an element of matchExpressions, whose key field is "key", the
+                        operator is "In", and the values array contains only "value". The requirements are ANDed.
                       type: object
                   type: object
                   x-kubernetes-map-type: atomic
@@ -534,28 +523,26 @@ spec:
                       type: object
                   type: object
                 orLabelSelectors:
-                  description:
-                    OrLabelSelectors is list of metav1.LabelSelector to filter
-                    with when adding individual objects to the backup. If multiple provided
+                  description: |-
+                    OrLabelSelectors is list of metav1.LabelSelector to filter with
+                    when adding individual objects to the backup. If multiple provided
                     they will be joined by the OR operator. LabelSelector as well as
-                    OrLabelSelectors cannot co-exist in backup request, only one of
-                    them can be used.
+                    OrLabelSelectors cannot co-exist in backup request, only one of them
+                    can be used.
                   items:
-                    description:
-                      A label selector is a label query over a set of resources.
-                      The result of matchLabels and matchExpressions are ANDed. An empty
-                      label selector matches all objects. A null label selector matches
-                      no objects.
+                    description: |-
+                      A label selector is a label query over a set of resources. The result of matchLabels and
+                      matchExpressions are ANDed. An empty label selector matches all objects. A null
+                      label selector matches no objects.
                     properties:
                       matchExpressions:
                         description:
                           matchExpressions is a list of label selector requirements.
                           The requirements are ANDed.
                         items:
-                          description:
-                            A label selector requirement is a selector that
-                            contains values, a key, and an operator that relates the
-                            key and values.
+                          description: |-
+                            A label selector requirement is a selector that contains values, a key, and an operator that
+                            relates the key and values.
                           properties:
                             key:
                               description:
@@ -563,18 +550,16 @@ spec:
                                 to.
                               type: string
                             operator:
-                              description:
-                                operator represents a key's relationship
-                                to a set of values. Valid operators are In, NotIn, Exists
-                                and DoesNotExist.
+                              description: |-
+                                operator represents a key's relationship to a set of values.
+                                Valid operators are In, NotIn, Exists and DoesNotExist.
                               type: string
                             values:
-                              description:
-                                values is an array of string values. If the
-                                operator is In or NotIn, the values array must be non-empty.
-                                If the operator is Exists or DoesNotExist, the values
-                                array must be empty. This array is replaced during a
-                                strategic merge patch.
+                              description: |-
+                                values is an array of string values. If the operator is In or NotIn,
+                                the values array must be non-empty. If the operator is Exists or DoesNotExist,
+                                the values array must be empty. This array is replaced during a strategic
+                                merge patch.
                               items:
                                 type: string
                               type: array
@@ -586,12 +571,10 @@ spec:
                       matchLabels:
                         additionalProperties:
                           type: string
-                        description:
-                          matchLabels is a map of {key,value} pairs. A single
-                          {key,value} in the matchLabels map is equivalent to an element
-                          of matchExpressions, whose key field is "key", the operator
-                          is "In", and the values array contains only "value". The requirements
-                          are ANDed.
+                        description: |-
+                          matchLabels is a map of {key,value} pairs. A single {key,value} in the matchLabels
+                          map is equivalent to an element of matchExpressions, whose key field is "key", the
+                          operator is "In", and the values array contains only "value". The requirements are ANDed.
                         type: object
                     type: object
                     x-kubernetes-map-type: atomic
@@ -600,12 +583,10 @@ spec:
                 orderedResources:
                   additionalProperties:
                     type: string
-                  description:
-                    OrderedResources specifies the backup order of resources
-                    of specific Kind. The map key is the resource name and value is
-                    a list of object names separated by commas. Each resource name has
-                    format "namespace/objectname".  For cluster resources, simply use
-                    "objectname".
+                  description: |-
+                    OrderedResources specifies the backup order of resources of specific Kind.
+                    The map key is the resource name and value is a list of object names separated by commas.
+                    Each resource name has format "namespace/objectname".  For cluster resources, simply use "objectname".
                   nullable: true
                   type: object
                 resourcePolicy:
@@ -614,11 +595,10 @@ spec:
                     that backup should follow
                   properties:
                     apiGroup:
-                      description:
+                      description: |-
                         APIGroup is the group for the resource being referenced.
-                        If APIGroup is not specified, the specified Kind must be in
-                        the core API group. For any other third-party types, APIGroup
-                        is required.
+                        If APIGroup is not specified, the specified Kind must be in the core API group.
+                        For any other third-party types, APIGroup is required.
                       type: string
                     kind:
                       description: Kind is the type of resource being referenced
@@ -638,9 +618,10 @@ spec:
                   nullable: true
                   type: boolean
                 snapshotVolumes:
-                  description:
-                    SnapshotVolumes specifies whether to take snapshots of
-                    any PV's referenced in the set of objects included in the Backup.
+                  description: |-
+                    SnapshotVolumes specifies whether to take snapshots
+                    of any PV's referenced in the set of objects included
+                    in the Backup.
                   nullable: true
                   type: boolean
                 storageLocation:
@@ -649,9 +630,9 @@ spec:
                     BackupStorageLocation where the backup should be stored.
                   type: string
                 ttl:
-                  description:
-                    TTL is a time.Duration-parseable string describing how
-                    long the Backup should be retained for.
+                  description: |-
+                    TTL is a time.Duration-parseable string describing how long
+                    the Backup should be retained for.
                   type: string
                 uploaderConfig:
                   description: UploaderConfig specifies the configuration for the uploader.
@@ -675,46 +656,44 @@ spec:
               description: BackupStatus captures the current status of a Velero backup.
               properties:
                 backupItemOperationsAttempted:
-                  description:
-                    BackupItemOperationsAttempted is the total number of
-                    attempted async BackupItemAction operations for this backup.
+                  description: |-
+                    BackupItemOperationsAttempted is the total number of attempted
+                    async BackupItemAction operations for this backup.
                   type: integer
                 backupItemOperationsCompleted:
-                  description:
-                    BackupItemOperationsCompleted is the total number of
-                    successfully completed async BackupItemAction operations for this
-                    backup.
+                  description: |-
+                    BackupItemOperationsCompleted is the total number of successfully completed
+                    async BackupItemAction operations for this backup.
                   type: integer
                 backupItemOperationsFailed:
-                  description:
+                  description: |-
                     BackupItemOperationsFailed is the total number of async
-                    BackupItemAction operations for this backup which ended with an
-                    error.
+                    BackupItemAction operations for this backup which ended with an error.
                   type: integer
                 completionTimestamp:
-                  description:
+                  description: |-
                     CompletionTimestamp records the time a backup was completed.
-                    Completion time is recorded even on failed backups. Completion time
-                    is recorded before uploading the backup object. The server's time
-                    is used for CompletionTimestamps
+                    Completion time is recorded even on failed backups.
+                    Completion time is recorded before uploading the backup object.
+                    The server's time is used for CompletionTimestamps
                   format: date-time
                   nullable: true
                   type: string
                 csiVolumeSnapshotsAttempted:
-                  description:
+                  description: |-
                     CSIVolumeSnapshotsAttempted is the total number of attempted
                     CSI VolumeSnapshots for this backup.
                   type: integer
                 csiVolumeSnapshotsCompleted:
-                  description:
+                  description: |-
                     CSIVolumeSnapshotsCompleted is the total number of successfully
                     completed CSI VolumeSnapshots for this backup.
                   type: integer
                 errors:
-                  description:
-                    Errors is a count of all error messages that were generated
-                    during execution of the backup.  The actual errors are in the backup's
-                    log file in object storage.
+                  description: |-
+                    Errors is a count of all error messages that were generated during
+                    execution of the backup.  The actual errors are in the backup's log
+                    file in object storage.
                   type: integer
                 expiration:
                   description: Expiration is when this Backup is eligible for garbage-collection.
@@ -738,11 +717,10 @@ spec:
                   nullable: true
                   properties:
                     hooksAttempted:
-                      description:
+                      description: |-
                         HooksAttempted is the total number of attempted hooks
-                        Specifically, HooksAttempted represents the number of hooks
-                        that failed to execute and the number of hooks that executed
-                        successfully.
+                        Specifically, HooksAttempted represents the number of hooks that failed to execute
+                        and the number of hooks that executed successfully.
                       type: integer
                     hooksFailed:
                       description:
@@ -766,70 +744,69 @@ spec:
                     - Deleting
                   type: string
                 progress:
-                  description:
-                    Progress contains information about the backup's execution
-                    progress. Note that this information is best-effort only -- if Velero
-                    fails to update it during a backup for any reason, it may be inaccurate/stale.
+                  description: |-
+                    Progress contains information about the backup's execution progress. Note
+                    that this information is best-effort only -- if Velero fails to update it
+                    during a backup for any reason, it may be inaccurate/stale.
                   nullable: true
                   properties:
                     itemsBackedUp:
-                      description:
-                        ItemsBackedUp is the number of items that have actually
-                        been written to the backup tarball so far.
+                      description: |-
+                        ItemsBackedUp is the number of items that have actually been written to the
+                        backup tarball so far.
                       type: integer
                     totalItems:
-                      description:
-                        TotalItems is the total number of items to be backed
-                        up. This number may change throughout the execution of the backup
-                        due to plugins that return additional related items to back
-                        up, the velero.io/exclude-from-backup label, and various other
+                      description: |-
+                        TotalItems is the total number of items to be backed up. This number may change
+                        throughout the execution of the backup due to plugins that return additional related
+                        items to back up, the velero.io/exclude-from-backup label, and various other
                         filters that happen as items are processed.
                       type: integer
                   type: object
                 startTimestamp:
-                  description:
+                  description: |-
                     StartTimestamp records the time a backup was started.
-                    Separate from CreationTimestamp, since that value changes on restores.
+                    Separate from CreationTimestamp, since that value changes
+                    on restores.
                     The server's time is used for StartTimestamps
                   format: date-time
                   nullable: true
                   type: string
                 validationErrors:
-                  description:
-                    ValidationErrors is a slice of all validation errors
-                    (if applicable).
+                  description: |-
+                    ValidationErrors is a slice of all validation errors (if
+                    applicable).
                   items:
                     type: string
                   nullable: true
                   type: array
                 version:
-                  description:
-                    "Version is the backup format major version. Deprecated:
-                    Please see FormatVersion"
+                  description: |-
+                    Version is the backup format major version.
+                    Deprecated: Please see FormatVersion
                   type: integer
                 volumeSnapshotsAttempted:
-                  description:
+                  description: |-
                     VolumeSnapshotsAttempted is the total number of attempted
                     volume snapshots for this backup.
                   type: integer
                 volumeSnapshotsCompleted:
-                  description:
+                  description: |-
                     VolumeSnapshotsCompleted is the total number of successfully
                     completed volume snapshots for this backup.
                   type: integer
                 warnings:
-                  description:
-                    Warnings is a count of all warning messages that were
-                    generated during execution of the backup. The actual warnings are
-                    in the backup's log file in object storage.
+                  description: |-
+                    Warnings is a count of all warning messages that were generated during
+                    execution of the backup. The actual warnings are in the backup's log
+                    file in object storage.
                   type: integer
               type: object
           type: object
       served: true
       storage: true
-
 ---
-# Source: crds/backupstoragelocations.yaml
+# Source: velero/crds/backupstoragelocations.yaml
 ---
 apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
@@ -837,7 +814,7 @@ metadata:
   labels:
     component: velero
   annotations:
-    controller-gen.kubebuilder.io/version: v0.12.0
+    controller-gen.kubebuilder.io/version: v0.14.0
   name: backupstoragelocations.velero.io
 spec:
   group: velero.io
@@ -876,16 +853,19 @@ spec:
             objects
           properties:
             apiVersion:
-              description:
-                "APIVersion defines the versioned schema of this representation
-                of an object. Servers should convert recognized schemas to the latest
-                internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources"
+              description: |-
+                APIVersion defines the versioned schema of this representation of an object.
+                Servers should convert recognized schemas to the latest internal value, and
+                may reject unrecognized values.
+                More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
               type: string
             kind:
-              description:
-                "Kind is a string value representing the REST resource this
-                object represents. Servers may infer this from the endpoint the client
-                submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds"
+              description: |-
+                Kind is a string value representing the REST resource this object represents.
+                Servers may infer this from the endpoint the client submits requests to.
+                Cannot be updated.
+                In CamelCase.
+                More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
               type: string
             metadata:
               type: object
@@ -924,9 +904,10 @@ spec:
                         valid secret key.
                       type: string
                     name:
-                      description:
-                        "Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                        TODO: Add other useful fields. apiVersion, kind, uid?"
+                      description: |-
+                        Name of the referent.
+                        More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                        TODO: Add other useful fields. apiVersion, kind, uid?
                       type: string
                     optional:
                       description: Specify whether the Secret or its key must be defined
@@ -981,33 +962,36 @@ spec:
                 BackupStorageLocation
               properties:
                 accessMode:
-                  description:
-                    "AccessMode is an unused field. \n Deprecated: there
-                    is now an AccessMode field on the Spec and this field will be removed
-                    entirely as of v2.0."
+                  description: |-
+                    AccessMode is an unused field.
+
+
+                    Deprecated: there is now an AccessMode field on the Spec and this field
+                    will be removed entirely as of v2.0.
                   enum:
                     - ReadOnly
                     - ReadWrite
                   type: string
                 lastSyncedRevision:
-                  description:
-                    "LastSyncedRevision is the value of the `metadata/revision`
-                    file in the backup storage location the last time the BSL's contents
-                    were synced into the cluster. \n Deprecated: this field is no longer
-                    updated or used for detecting changes to the location's contents
-                    and will be removed entirely in v2.0."
+                  description: |-
+                    LastSyncedRevision is the value of the `metadata/revision` file in the backup
+                    storage location the last time the BSL's contents were synced into the cluster.
+
+
+                    Deprecated: this field is no longer updated or used for detecting changes to
+                    the location's contents and will be removed entirely in v2.0.
                   type: string
                 lastSyncedTime:
-                  description:
-                    LastSyncedTime is the last time the contents of the location
-                    were synced into the cluster.
+                  description: |-
+                    LastSyncedTime is the last time the contents of the location were synced into
+                    the cluster.
                   format: date-time
                   nullable: true
                   type: string
                 lastValidationTime:
-                  description:
-                    LastValidationTime is the last time the backup store
-                    location was validated the cluster.
+                  description: |-
+                    LastValidationTime is the last time the backup store location was validated
+                    the cluster.
                   format: date-time
                   nullable: true
                   type: string
@@ -1027,9 +1011,8 @@ spec:
       served: true
       storage: true
       subresources: {}
-
 ---
-# Source: crds/datadownloads.yaml
+# Source: velero/crds/datadownloads.yaml
 ---
 apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
@@ -1037,7 +1020,7 @@ metadata:
   labels:
     component: velero
   annotations:
-    controller-gen.kubebuilder.io/version: v0.12.0
+    controller-gen.kubebuilder.io/version: v0.14.0
   name: datadownloads.velero.io
 spec:
   group: velero.io
@@ -1087,16 +1070,19 @@ spec:
             and data mover controller for the datamover restore operation
           properties:
             apiVersion:
-              description:
-                "APIVersion defines the versioned schema of this representation
-                of an object. Servers should convert recognized schemas to the latest
-                internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources"
+              description: |-
+                APIVersion defines the versioned schema of this representation of an object.
+                Servers should convert recognized schemas to the latest internal value, and
+                may reject unrecognized values.
+                More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
               type: string
             kind:
-              description:
-                "Kind is a string value representing the REST resource this
-                object represents. Servers may infer this from the endpoint the client
-                submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds"
+              description: |-
+                Kind is a string value representing the REST resource this object represents.
+                Servers may infer this from the endpoint the client submits requests to.
+                Cannot be updated.
+                In CamelCase.
+                More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
               type: string
             metadata:
               type: object
@@ -1104,14 +1090,14 @@ spec:
               description: DataDownloadSpec is the specification for a DataDownload.
               properties:
                 backupStorageLocation:
-                  description:
-                    BackupStorageLocation is the name of the backup storage
-                    location where the backup repository is stored.
+                  description: |-
+                    BackupStorageLocation is the name of the backup storage location
+                    where the backup repository is stored.
                   type: string
                 cancel:
-                  description:
-                    Cancel indicates request to cancel the ongoing DataDownload.
-                    It can be set when the DataDownload is in InProgress phase
+                  description: |-
+                    Cancel indicates request to cancel the ongoing DataDownload. It can be set
+                    when the DataDownload is in InProgress phase
                   type: boolean
                 dataMoverConfig:
                   additionalProperties:
@@ -1121,15 +1107,14 @@ spec:
                     fields.
                   type: object
                 datamover:
-                  description:
-                    DataMover specifies the data mover to be used by the
-                    backup. If DataMover is "" or "velero", the built-in data mover
-                    will be used.
+                  description: |-
+                    DataMover specifies the data mover to be used by the backup.
+                    If DataMover is "" or "velero", the built-in data mover will be used.
                   type: string
                 operationTimeout:
-                  description:
-                    OperationTimeout specifies the time used to wait internal
-                    operations, before returning error as timeout.
+                  description: |-
+                    OperationTimeout specifies the time used to wait internal operations,
+                    before returning error as timeout.
                   type: string
                 snapshotID:
                   description:
@@ -1137,10 +1122,9 @@ spec:
                     be restored from.
                   type: string
                 sourceNamespace:
-                  description:
-                    SourceNamespace is the original namespace where the volume
-                    is backed up from. It may be different from SourcePVC's namespace
-                    if namespace is remapped during restore.
+                  description: |-
+                    SourceNamespace is the original namespace where the volume is backed up from.
+                    It may be different from SourcePVC's namespace if namespace is remapped during restore.
                   type: string
                 targetVolume:
                   description:
@@ -1176,10 +1160,10 @@ spec:
               description: DataDownloadStatus is the current status of a DataDownload.
               properties:
                 completionTimestamp:
-                  description:
+                  description: |-
                     CompletionTimestamp records the time a restore was completed.
-                    Completion time is recorded even on failed restores. The server's
-                    time is used for CompletionTimestamps
+                    Completion time is recorded even on failed restores.
+                    The server's time is used for CompletionTimestamps
                   format: date-time
                   nullable: true
                   type: string
@@ -1202,10 +1186,10 @@ spec:
                     - Failed
                   type: string
                 progress:
-                  description:
-                    Progress holds the total number of bytes of the snapshot
-                    and the current number of restored bytes. This can be used to display
-                    progress information about the restore operation.
+                  description: |-
+                    Progress holds the total number of bytes of the snapshot and the current
+                    number of restored bytes. This can be used to display progress information
+                    about the restore operation.
                   properties:
                     bytesDone:
                       format: int64
@@ -1215,7 +1199,7 @@ spec:
                       type: integer
                   type: object
                 startTimestamp:
-                  description:
+                  description: |-
                     StartTimestamp records the time a restore was started.
                     The server's time is used for StartTimestamps
                   format: date-time
@@ -1226,9 +1210,8 @@ spec:
       served: true
       storage: true
       subresources: {}
-
 ---
-# Source: crds/datauploads.yaml
+# Source: velero/crds/datauploads.yaml
 ---
 apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
@@ -1236,7 +1219,7 @@ metadata:
   labels:
     component: velero
   annotations:
-    controller-gen.kubebuilder.io/version: v0.12.0
+    controller-gen.kubebuilder.io/version: v0.14.0
   name: datauploads.velero.io
 spec:
   group: velero.io
@@ -1288,16 +1271,19 @@ spec:
             data mover controller for the datamover backup operation
           properties:
             apiVersion:
-              description:
-                "APIVersion defines the versioned schema of this representation
-                of an object. Servers should convert recognized schemas to the latest
-                internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources"
+              description: |-
+                APIVersion defines the versioned schema of this representation of an object.
+                Servers should convert recognized schemas to the latest internal value, and
+                may reject unrecognized values.
+                More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
               type: string
             kind:
-              description:
-                "Kind is a string value representing the REST resource this
-                object represents. Servers may infer this from the endpoint the client
-                submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds"
+              description: |-
+                Kind is a string value representing the REST resource this object represents.
+                Servers may infer this from the endpoint the client submits requests to.
+                Cannot be updated.
+                In CamelCase.
+                More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
               type: string
             metadata:
               type: object
@@ -1305,14 +1291,14 @@ spec:
               description: DataUploadSpec is the specification for a DataUpload.
               properties:
                 backupStorageLocation:
-                  description:
-                    BackupStorageLocation is the name of the backup storage
-                    location where the backup repository is stored.
+                  description: |-
+                    BackupStorageLocation is the name of the backup storage location
+                    where the backup repository is stored.
                   type: string
                 cancel:
-                  description:
-                    Cancel indicates request to cancel the ongoing DataUpload.
-                    It can be set when the DataUpload is in InProgress phase
+                  description: |-
+                    Cancel indicates request to cancel the ongoing DataUpload. It can be set
+                    when the DataUpload is in InProgress phase
                   type: boolean
                 csiSnapshot:
                   description:
@@ -1348,15 +1334,14 @@ spec:
                   nullable: true
                   type: object
                 datamover:
-                  description:
-                    DataMover specifies the data mover to be used by the
-                    backup. If DataMover is "" or "velero", the built-in data mover
-                    will be used.
+                  description: |-
+                    DataMover specifies the data mover to be used by the backup.
+                    If DataMover is "" or "velero", the built-in data mover will be used.
                   type: string
                 operationTimeout:
-                  description:
-                    OperationTimeout specifies the time used to wait internal
-                    operations, before returning error as timeout.
+                  description: |-
+                    OperationTimeout specifies the time used to wait internal operations,
+                    before returning error as timeout.
                   type: string
                 snapshotType:
                   description:
@@ -1364,10 +1349,9 @@ spec:
                     up.
                   type: string
                 sourceNamespace:
-                  description:
-                    SourceNamespace is the original namespace where the volume
-                    is backed up from. It is the same namespace for SourcePVC and CSI
-                    namespaced objects.
+                  description: |-
+                    SourceNamespace is the original namespace where the volume is backed up from.
+                    It is the same namespace for SourcePVC and CSI namespaced objects.
                   type: string
                 sourcePVC:
                   description:
@@ -1385,11 +1369,11 @@ spec:
               description: DataUploadStatus is the current status of a DataUpload.
               properties:
                 completionTimestamp:
-                  description:
+                  description: |-
                     CompletionTimestamp records the time a backup was completed.
-                    Completion time is recorded even on failed backups. Completion time
-                    is recorded before uploading the backup object. The server's time
-                    is used for CompletionTimestamps
+                    Completion time is recorded even on failed backups.
+                    Completion time is recorded before uploading the backup object.
+                    The server's time is used for CompletionTimestamps
                   format: date-time
                   nullable: true
                   type: string
@@ -1425,10 +1409,10 @@ spec:
                     - Failed
                   type: string
                 progress:
-                  description:
-                    Progress holds the total number of bytes of the volume
-                    and the current number of backed up bytes. This can be used to display
-                    progress information about the backup operation.
+                  description: |-
+                    Progress holds the total number of bytes of the volume and the current
+                    number of backed up bytes. This can be used to display progress information
+                    about the backup operation.
                   properties:
                     bytesDone:
                       format: int64
@@ -1443,9 +1427,10 @@ spec:
                     backup repository.
                   type: string
                 startTimestamp:
-                  description:
+                  description: |-
                     StartTimestamp records the time a backup was started.
-                    Separate from CreationTimestamp, since that value changes on restores.
+                    Separate from CreationTimestamp, since that value changes
+                    on restores.
                     The server's time is used for StartTimestamps
                   format: date-time
                   nullable: true
@@ -1455,9 +1440,8 @@ spec:
       served: true
       storage: true
       subresources: {}
-
 ---
-# Source: crds/deletebackuprequests.yaml
+# Source: velero/crds/deletebackuprequests.yaml
 ---
 apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
@@ -1465,7 +1449,7 @@ metadata:
   labels:
     component: velero
   annotations:
-    controller-gen.kubebuilder.io/version: v0.12.0
+    controller-gen.kubebuilder.io/version: v0.14.0
   name: deletebackuprequests.velero.io
 spec:
   group: velero.io
@@ -1491,16 +1475,19 @@ spec:
           description: DeleteBackupRequest is a request to delete one or more backups.
           properties:
             apiVersion:
-              description:
-                "APIVersion defines the versioned schema of this representation
-                of an object. Servers should convert recognized schemas to the latest
-                internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources"
+              description: |-
+                APIVersion defines the versioned schema of this representation of an object.
+                Servers should convert recognized schemas to the latest internal value, and
+                may reject unrecognized values.
+                More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
               type: string
             kind:
-              description:
-                "Kind is a string value representing the REST resource this
-                object represents. Servers may infer this from the endpoint the client
-                submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds"
+              description: |-
+                Kind is a string value representing the REST resource this object represents.
+                Servers may infer this from the endpoint the client submits requests to.
+                Cannot be updated.
+                In CamelCase.
+                More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
               type: string
             metadata:
               type: object
@@ -1537,9 +1524,8 @@ spec:
       served: true
       storage: true
       subresources: {}
-
 ---
-# Source: crds/downloadrequests.yaml
+# Source: velero/crds/downloadrequests.yaml
 ---
 apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
@@ -1547,7 +1533,7 @@ metadata:
   labels:
     component: velero
   annotations:
-    controller-gen.kubebuilder.io/version: v0.12.0
+    controller-gen.kubebuilder.io/version: v0.14.0
   name: downloadrequests.velero.io
 spec:
   group: velero.io
@@ -1561,21 +1547,24 @@ spec:
     - name: v1
       schema:
         openAPIV3Schema:
-          description:
-            DownloadRequest is a request to download an artifact from backup
-            object storage, such as a backup log file.
+          description: |-
+            DownloadRequest is a request to download an artifact from backup object storage, such as a backup
+            log file.
           properties:
             apiVersion:
-              description:
-                "APIVersion defines the versioned schema of this representation
-                of an object. Servers should convert recognized schemas to the latest
-                internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources"
+              description: |-
+                APIVersion defines the versioned schema of this representation of an object.
+                Servers should convert recognized schemas to the latest internal value, and
+                may reject unrecognized values.
+                More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
               type: string
             kind:
-              description:
-                "Kind is a string value representing the REST resource this
-                object represents. Servers may infer this from the endpoint the client
-                submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds"
+              description: |-
+                Kind is a string value representing the REST resource this object represents.
+                Servers may infer this from the endpoint the client submits requests to.
+                Cannot be updated.
+                In CamelCase.
+                More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
               type: string
             metadata:
               type: object
@@ -1601,6 +1590,7 @@ spec:
                         - CSIBackupVolumeSnapshots
                         - CSIBackupVolumeSnapshotContents
                         - BackupVolumeInfos
+                        - RestoreVolumeInfo
                       type: string
                     name:
                       description:
@@ -1639,9 +1629,8 @@ spec:
           type: object
       served: true
       storage: true
-
 ---
-# Source: crds/podvolumebackups.yaml
+# Source: velero/crds/podvolumebackups.yaml
 ---
 apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
@@ -1649,7 +1638,7 @@ metadata:
   labels:
     component: velero
   annotations:
-    controller-gen.kubebuilder.io/version: v0.12.0
+    controller-gen.kubebuilder.io/version: v0.14.0
   name: podvolumebackups.velero.io
 spec:
   group: velero.io
@@ -1699,16 +1688,19 @@ spec:
         openAPIV3Schema:
           properties:
             apiVersion:
-              description:
-                "APIVersion defines the versioned schema of this representation
-                of an object. Servers should convert recognized schemas to the latest
-                internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources"
+              description: |-
+                APIVersion defines the versioned schema of this representation of an object.
+                Servers should convert recognized schemas to the latest internal value, and
+                may reject unrecognized values.
+                More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
               type: string
             kind:
-              description:
-                "Kind is a string value representing the REST resource this
-                object represents. Servers may infer this from the endpoint the client
-                submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds"
+              description: |-
+                Kind is a string value representing the REST resource this object represents.
+                Servers may infer this from the endpoint the client submits requests to.
+                Cannot be updated.
+                In CamelCase.
+                More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
               type: string
             metadata:
               type: object
@@ -1716,9 +1708,9 @@ spec:
               description: PodVolumeBackupSpec is the specification for a PodVolumeBackup.
               properties:
                 backupStorageLocation:
-                  description:
-                    BackupStorageLocation is the name of the backup storage
-                    location where the backup repository is stored.
+                  description: |-
+                    BackupStorageLocation is the name of the backup storage location
+                    where the backup repository is stored.
                   type: string
                 node:
                   description:
@@ -1734,35 +1726,40 @@ spec:
                       description: API version of the referent.
                       type: string
                     fieldPath:
-                      description:
-                        'If referring to a piece of an object instead of
-                        an entire object, this string should contain a valid JSON/Go
-                        field access statement, such as desiredState.manifest.containers[2].
-                        For example, if the object reference is to a container within
-                        a pod, this would take on a value like: "spec.containers{name}"
-                        (where "name" refers to the name of the container that triggered
-                        the event) or if no container name is specified "spec.containers[2]"
-                        (container with index 2 in this pod). This syntax is chosen
-                        only to have some well-defined way of referencing a part of
-                        an object. TODO: this design is not final and this field is
-                        subject to change in the future.'
+                      description: |-
+                        If referring to a piece of an object instead of an entire object, this string
+                        should contain a valid JSON/Go field access statement, such as desiredState.manifest.containers[2].
+                        For example, if the object reference is to a container within a pod, this would take on a value like:
+                        "spec.containers{name}" (where "name" refers to the name of the container that triggered
+                        the event) or if no container name is specified "spec.containers[2]" (container with
+                        index 2 in this pod). This syntax is chosen only to have some well-defined way of
+                        referencing a part of an object.
+                        TODO: this design is not final and this field is subject to change in the future.
                       type: string
                     kind:
-                      description: "Kind of the referent. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds"
+                      description: |-
+                        Kind of the referent.
+                        More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
                       type: string
                     name:
-                      description: "Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names"
+                      description: |-
+                        Name of the referent.
+                        More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
                       type: string
                     namespace:
-                      description: "Namespace of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/namespaces/"
+                      description: |-
+                        Namespace of the referent.
+                        More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/namespaces/
                       type: string
                     resourceVersion:
-                      description:
-                        "Specific resourceVersion to which this reference
-                        is made, if any. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#concurrency-control-and-consistency"
+                      description: |-
+                        Specific resourceVersion to which this reference is made, if any.
+                        More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#concurrency-control-and-consistency
                       type: string
                     uid:
-                      description: "UID of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#uids"
+                      description: |-
+                        UID of the referent.
+                        More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#uids
                       type: string
                   type: object
                   x-kubernetes-map-type: atomic
@@ -1772,16 +1769,16 @@ spec:
                 tags:
                   additionalProperties:
                     type: string
-                  description:
-                    Tags are a map of key-value pairs that should be applied
-                    to the volume backup as tags.
+                  description: |-
+                    Tags are a map of key-value pairs that should be applied to the
+                    volume backup as tags.
                   type: object
                 uploaderSettings:
                   additionalProperties:
                     type: string
-                  description:
-                    UploaderSettings are a map of key-value pairs that should
-                    be applied to the uploader configuration.
+                  description: |-
+                    UploaderSettings are a map of key-value pairs that should be applied to the
+                    uploader configuration.
                   nullable: true
                   type: object
                 uploaderType:
@@ -1794,9 +1791,9 @@ spec:
                     - ""
                   type: string
                 volume:
-                  description:
-                    Volume is the name of the volume within the Pod to be
-                    backed up.
+                  description: |-
+                    Volume is the name of the volume within the Pod to be backed
+                    up.
                   type: string
               required:
                 - backupStorageLocation
@@ -1809,11 +1806,11 @@ spec:
               description: PodVolumeBackupStatus is the current status of a PodVolumeBackup.
               properties:
                 completionTimestamp:
-                  description:
+                  description: |-
                     CompletionTimestamp records the time a backup was completed.
-                    Completion time is recorded even on failed backups. Completion time
-                    is recorded before uploading the backup object. The server's time
-                    is used for CompletionTimestamps
+                    Completion time is recorded even on failed backups.
+                    Completion time is recorded before uploading the backup object.
+                    The server's time is used for CompletionTimestamps
                   format: date-time
                   nullable: true
                   type: string
@@ -1834,10 +1831,10 @@ spec:
                     - Failed
                   type: string
                 progress:
-                  description:
-                    Progress holds the total number of bytes of the volume
-                    and the current number of backed up bytes. This can be used to display
-                    progress information about the backup operation.
+                  description: |-
+                    Progress holds the total number of bytes of the volume and the current
+                    number of backed up bytes. This can be used to display progress information
+                    about the backup operation.
                   properties:
                     bytesDone:
                       format: int64
@@ -1852,9 +1849,10 @@ spec:
                     pod volume.
                   type: string
                 startTimestamp:
-                  description:
+                  description: |-
                     StartTimestamp records the time a backup was started.
-                    Separate from CreationTimestamp, since that value changes on restores.
+                    Separate from CreationTimestamp, since that value changes
+                    on restores.
                     The server's time is used for StartTimestamps
                   format: date-time
                   nullable: true
@@ -1864,9 +1862,8 @@ spec:
       served: true
       storage: true
       subresources: {}
-
 ---
-# Source: crds/podvolumerestores.yaml
+# Source: velero/crds/podvolumerestores.yaml
 ---
 apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
@@ -1874,7 +1871,7 @@ metadata:
   labels:
     component: velero
   annotations:
-    controller-gen.kubebuilder.io/version: v0.12.0
+    controller-gen.kubebuilder.io/version: v0.14.0
   name: podvolumerestores.velero.io
 spec:
   group: velero.io
@@ -1924,16 +1921,19 @@ spec:
         openAPIV3Schema:
           properties:
             apiVersion:
-              description:
-                "APIVersion defines the versioned schema of this representation
-                of an object. Servers should convert recognized schemas to the latest
-                internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources"
+              description: |-
+                APIVersion defines the versioned schema of this representation of an object.
+                Servers should convert recognized schemas to the latest internal value, and
+                may reject unrecognized values.
+                More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
               type: string
             kind:
-              description:
-                "Kind is a string value representing the REST resource this
-                object represents. Servers may infer this from the endpoint the client
-                submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds"
+              description: |-
+                Kind is a string value representing the REST resource this object represents.
+                Servers may infer this from the endpoint the client submits requests to.
+                Cannot be updated.
+                In CamelCase.
+                More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
               type: string
             metadata:
               type: object
@@ -1941,9 +1941,9 @@ spec:
               description: PodVolumeRestoreSpec is the specification for a PodVolumeRestore.
               properties:
                 backupStorageLocation:
-                  description:
-                    BackupStorageLocation is the name of the backup storage
-                    location where the backup repository is stored.
+                  description: |-
+                    BackupStorageLocation is the name of the backup storage location
+                    where the backup repository is stored.
                   type: string
                 pod:
                   description:
@@ -1954,35 +1954,40 @@ spec:
                       description: API version of the referent.
                       type: string
                     fieldPath:
-                      description:
-                        'If referring to a piece of an object instead of
-                        an entire object, this string should contain a valid JSON/Go
-                        field access statement, such as desiredState.manifest.containers[2].
-                        For example, if the object reference is to a container within
-                        a pod, this would take on a value like: "spec.containers{name}"
-                        (where "name" refers to the name of the container that triggered
-                        the event) or if no container name is specified "spec.containers[2]"
-                        (container with index 2 in this pod). This syntax is chosen
-                        only to have some well-defined way of referencing a part of
-                        an object. TODO: this design is not final and this field is
-                        subject to change in the future.'
+                      description: |-
+                        If referring to a piece of an object instead of an entire object, this string
+                        should contain a valid JSON/Go field access statement, such as desiredState.manifest.containers[2].
+                        For example, if the object reference is to a container within a pod, this would take on a value like:
+                        "spec.containers{name}" (where "name" refers to the name of the container that triggered
+                        the event) or if no container name is specified "spec.containers[2]" (container with
+                        index 2 in this pod). This syntax is chosen only to have some well-defined way of
+                        referencing a part of an object.
+                        TODO: this design is not final and this field is subject to change in the future.
                       type: string
                     kind:
-                      description: "Kind of the referent. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds"
+                      description: |-
+                        Kind of the referent.
+                        More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
                       type: string
                     name:
-                      description: "Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names"
+                      description: |-
+                        Name of the referent.
+                        More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
                       type: string
                     namespace:
-                      description: "Namespace of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/namespaces/"
+                      description: |-
+                        Namespace of the referent.
+                        More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/namespaces/
                       type: string
                     resourceVersion:
-                      description:
-                        "Specific resourceVersion to which this reference
-                        is made, if any. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#concurrency-control-and-consistency"
+                      description: |-
+                        Specific resourceVersion to which this reference is made, if any.
+                        More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#concurrency-control-and-consistency
                       type: string
                     uid:
-                      description: "UID of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#uids"
+                      description: |-
+                        UID of the referent.
+                        More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#uids
                       type: string
                   type: object
                   x-kubernetes-map-type: atomic
@@ -2000,9 +2005,9 @@ spec:
                 uploaderSettings:
                   additionalProperties:
                     type: string
-                  description:
-                    UploaderSettings are a map of key-value pairs that should
-                    be applied to the uploader configuration.
+                  description: |-
+                    UploaderSettings are a map of key-value pairs that should be applied to the
+                    uploader configuration.
                   nullable: true
                   type: object
                 uploaderType:
@@ -2031,10 +2036,10 @@ spec:
               description: PodVolumeRestoreStatus is the current status of a PodVolumeRestore.
               properties:
                 completionTimestamp:
-                  description:
+                  description: |-
                     CompletionTimestamp records the time a restore was completed.
-                    Completion time is recorded even on failed restores. The server's
-                    time is used for CompletionTimestamps
+                    Completion time is recorded even on failed restores.
+                    The server's time is used for CompletionTimestamps
                   format: date-time
                   nullable: true
                   type: string
@@ -2050,10 +2055,10 @@ spec:
                     - Failed
                   type: string
                 progress:
-                  description:
-                    Progress holds the total number of bytes of the snapshot
-                    and the current number of restored bytes. This can be used to display
-                    progress information about the restore operation.
+                  description: |-
+                    Progress holds the total number of bytes of the snapshot and the current
+                    number of restored bytes. This can be used to display progress information
+                    about the restore operation.
                   properties:
                     bytesDone:
                       format: int64
@@ -2063,7 +2068,7 @@ spec:
                       type: integer
                   type: object
                 startTimestamp:
-                  description:
+                  description: |-
                     StartTimestamp records the time a restore was started.
                     The server's time is used for StartTimestamps
                   format: date-time
@@ -2076,7 +2081,7 @@ spec:
       subresources: {}
 
 ---
-# Source: crds/restores.yaml
+# Source: velero/crds/restores.yaml
 ---
 apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
@@ -2084,7 +2089,7 @@ metadata:
   labels:
     component: velero
   annotations:
-    controller-gen.kubebuilder.io/version: v0.12.0
+    controller-gen.kubebuilder.io/version: v0.14.0
   name: restores.velero.io
 spec:
   group: velero.io
@@ -2098,21 +2103,24 @@ spec:
     - name: v1
       schema:
         openAPIV3Schema:
-          description:
-            Restore is a Velero resource that represents the application
-            of resources from a Velero backup to a target Kubernetes cluster.
+          description: |-
+            Restore is a Velero resource that represents the application of
+            resources from a Velero backup to a target Kubernetes cluster.
           properties:
             apiVersion:
-              description:
-                "APIVersion defines the versioned schema of this representation
-                of an object. Servers should convert recognized schemas to the latest
-                internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources"
+              description: |-
+                APIVersion defines the versioned schema of this representation of an object.
+                Servers should convert recognized schemas to the latest internal value, and
+                may reject unrecognized values.
+                More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
               type: string
             kind:
-              description:
-                "Kind is a string value representing the REST resource this
-                object represents. Servers may infer this from the endpoint the client
-                submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds"
+              description: |-
+                Kind is a string value representing the REST resource this object represents.
+                Servers may infer this from the endpoint the client submits requests to.
+                Cannot be updated.
+                In CamelCase.
+                More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
               type: string
             metadata:
               type: object
@@ -2120,22 +2128,22 @@ spec:
               description: RestoreSpec defines the specification for a Velero restore.
               properties:
                 backupName:
-                  description:
-                    BackupName is the unique name of the Velero backup to
-                    restore from.
+                  description: |-
+                    BackupName is the unique name of the Velero backup to restore
+                    from.
                   type: string
                 excludedNamespaces:
-                  description:
-                    ExcludedNamespaces contains a list of namespaces that
-                    are not included in the restore.
+                  description: |-
+                    ExcludedNamespaces contains a list of namespaces that are not
+                    included in the restore.
                   items:
                     type: string
                   nullable: true
                   type: array
                 excludedResources:
-                  description:
-                    ExcludedResources is a slice of resource names that are
-                    not included in the restore.
+                  description: |-
+                    ExcludedResources is a slice of resource names that are not
+                    included in the restore.
                   items:
                     type: string
                   nullable: true
@@ -2153,10 +2161,9 @@ spec:
                   properties:
                     resources:
                       items:
-                        description:
-                          RestoreResourceHookSpec defines one or more RestoreResrouceHooks
-                          that should be executed based on the rules defined for namespaces,
-                          resources, and label selector.
+                        description: |-
+                          RestoreResourceHookSpec defines one or more RestoreResrouceHooks that should be executed based on
+                          the rules defined for namespaces, resources, and label selector.
                         properties:
                           excludedNamespaces:
                             description:
@@ -2175,19 +2182,17 @@ spec:
                             nullable: true
                             type: array
                           includedNamespaces:
-                            description:
-                              IncludedNamespaces specifies the namespaces
-                              to which this hook spec applies. If empty, it applies
+                            description: |-
+                              IncludedNamespaces specifies the namespaces to which this hook spec applies. If empty, it applies
                               to all namespaces.
                             items:
                               type: string
                             nullable: true
                             type: array
                           includedResources:
-                            description:
-                              IncludedResources specifies the resources to
-                              which this hook spec applies. If empty, it applies to
-                              all resources.
+                            description: |-
+                              IncludedResources specifies the resources to which this hook spec applies. If empty, it applies
+                              to all resources.
                             items:
                               type: string
                             nullable: true
@@ -2203,9 +2208,8 @@ spec:
                                   matchExpressions is a list of label selector
                                   requirements. The requirements are ANDed.
                                 items:
-                                  description:
-                                    A label selector requirement is a selector
-                                    that contains values, a key, and an operator that
+                                  description: |-
+                                    A label selector requirement is a selector that contains values, a key, and an operator that
                                     relates the key and values.
                                   properties:
                                     key:
@@ -2214,19 +2218,16 @@ spec:
                                         applies to.
                                       type: string
                                     operator:
-                                      description:
-                                        operator represents a key's relationship
-                                        to a set of values. Valid operators are In,
-                                        NotIn, Exists and DoesNotExist.
+                                      description: |-
+                                        operator represents a key's relationship to a set of values.
+                                        Valid operators are In, NotIn, Exists and DoesNotExist.
                                       type: string
                                     values:
-                                      description:
-                                        values is an array of string values.
-                                        If the operator is In or NotIn, the values array
-                                        must be non-empty. If the operator is Exists
-                                        or DoesNotExist, the values array must be empty.
-                                        This array is replaced during a strategic merge
-                                        patch.
+                                      description: |-
+                                        values is an array of string values. If the operator is In or NotIn,
+                                        the values array must be non-empty. If the operator is Exists or DoesNotExist,
+                                        the values array must be empty. This array is replaced during a strategic
+                                        merge patch.
                                       items:
                                         type: string
                                       type: array
@@ -2238,12 +2239,10 @@ spec:
                               matchLabels:
                                 additionalProperties:
                                   type: string
-                                description:
-                                  matchLabels is a map of {key,value} pairs.
-                                  A single {key,value} in the matchLabels map is equivalent
-                                  to an element of matchExpressions, whose key field
-                                  is "key", the operator is "In", and the values array
-                                  contains only "value". The requirements are ANDed.
+                                description: |-
+                                  matchLabels is a map of {key,value} pairs. A single {key,value} in the matchLabels
+                                  map is equivalent to an element of matchExpressions, whose key field is "key", the
+                                  operator is "In", and the values array contains only "value". The requirements are ANDed.
                                 type: object
                             type: object
                             x-kubernetes-map-type: atomic
@@ -2272,17 +2271,14 @@ spec:
                                       minItems: 1
                                       type: array
                                     container:
-                                      description:
-                                        Container is the container in the
-                                        pod where the command should be executed. If
-                                        not specified, the pod's first container is
-                                        used.
+                                      description: |-
+                                        Container is the container in the pod where the command should be executed. If not specified,
+                                        the pod's first container is used.
                                       type: string
                                     execTimeout:
-                                      description:
-                                        ExecTimeout defines the maximum amount
-                                        of time Velero should wait for the hook to complete
-                                        before considering the execution a failure.
+                                      description: |-
+                                        ExecTimeout defines the maximum amount of time Velero should wait for the hook to complete before
+                                        considering the execution a failure.
                                       type: string
                                     onError:
                                       description:
@@ -2301,10 +2297,9 @@ spec:
                                       nullable: true
                                       type: boolean
                                     waitTimeout:
-                                      description:
-                                        WaitTimeout defines the maximum amount
-                                        of time Velero should wait for the container
-                                        to be Ready before attempting to run the command.
+                                      description: |-
+                                        WaitTimeout defines the maximum amount of time Velero should wait for the container to be Ready
+                                        before attempting to run the command.
                                       type: string
                                   required:
                                     - command
@@ -2336,22 +2331,22 @@ spec:
                       type: array
                   type: object
                 includeClusterResources:
-                  description:
-                    IncludeClusterResources specifies whether cluster-scoped
-                    resources should be included for consideration in the restore. If
-                    null, defaults to true.
+                  description: |-
+                    IncludeClusterResources specifies whether cluster-scoped resources
+                    should be included for consideration in the restore. If null, defaults
+                    to true.
                   nullable: true
                   type: boolean
                 includedNamespaces:
-                  description:
-                    IncludedNamespaces is a slice of namespace names to include
-                    objects from. If empty, all namespaces are included.
+                  description: |-
+                    IncludedNamespaces is a slice of namespace names to include objects
+                    from. If empty, all namespaces are included.
                   items:
                     type: string
                   nullable: true
                   type: array
                 includedResources:
-                  description:
+                  description: |-
                     IncludedResources is a slice of resource names to include
                     in the restore. If empty, all resources in the backup are included.
                   items:
@@ -2359,15 +2354,15 @@ spec:
                   nullable: true
                   type: array
                 itemOperationTimeout:
-                  description:
-                    ItemOperationTimeout specifies the time used to wait
-                    for RestoreItemAction operations The default value is 1 hour.
+                  description: |-
+                    ItemOperationTimeout specifies the time used to wait for RestoreItemAction operations
+                    The default value is 4 hour.
                   type: string
                 labelSelector:
-                  description:
+                  description: |-
                     LabelSelector is a metav1.LabelSelector to filter with
-                    when restoring individual objects from the backup. If empty or nil,
-                    all objects are included. Optional.
+                    when restoring individual objects from the backup. If empty
+                    or nil, all objects are included. Optional.
                   nullable: true
                   properties:
                     matchExpressions:
@@ -2375,10 +2370,9 @@ spec:
                         matchExpressions is a list of label selector requirements.
                         The requirements are ANDed.
                       items:
-                        description:
-                          A label selector requirement is a selector that
-                          contains values, a key, and an operator that relates the key
-                          and values.
+                        description: |-
+                          A label selector requirement is a selector that contains values, a key, and an operator that
+                          relates the key and values.
                         properties:
                           key:
                             description:
@@ -2386,17 +2380,15 @@ spec:
                               to.
                             type: string
                           operator:
-                            description:
-                              operator represents a key's relationship to
-                              a set of values. Valid operators are In, NotIn, Exists
-                              and DoesNotExist.
+                            description: |-
+                              operator represents a key's relationship to a set of values.
+                              Valid operators are In, NotIn, Exists and DoesNotExist.
                             type: string
                           values:
-                            description:
-                              values is an array of string values. If the
-                              operator is In or NotIn, the values array must be non-empty.
-                              If the operator is Exists or DoesNotExist, the values
-                              array must be empty. This array is replaced during a strategic
+                            description: |-
+                              values is an array of string values. If the operator is In or NotIn,
+                              the values array must be non-empty. If the operator is Exists or DoesNotExist,
+                              the values array must be empty. This array is replaced during a strategic
                               merge patch.
                             items:
                               type: string
@@ -2409,47 +2401,43 @@ spec:
                     matchLabels:
                       additionalProperties:
                         type: string
-                      description:
-                        matchLabels is a map of {key,value} pairs. A single
-                        {key,value} in the matchLabels map is equivalent to an element
-                        of matchExpressions, whose key field is "key", the operator
-                        is "In", and the values array contains only "value". The requirements
-                        are ANDed.
+                      description: |-
+                        matchLabels is a map of {key,value} pairs. A single {key,value} in the matchLabels
+                        map is equivalent to an element of matchExpressions, whose key field is "key", the
+                        operator is "In", and the values array contains only "value". The requirements are ANDed.
                       type: object
                   type: object
                   x-kubernetes-map-type: atomic
                 namespaceMapping:
                   additionalProperties:
                     type: string
-                  description:
-                    NamespaceMapping is a map of source namespace names to
-                    target namespace names to restore into. Any source namespaces not
-                    included in the map will be restored into namespaces of the same
-                    name.
+                  description: |-
+                    NamespaceMapping is a map of source namespace names
+                    to target namespace names to restore into. Any source
+                    namespaces not included in the map will be restored into
+                    namespaces of the same name.
                   type: object
                 orLabelSelectors:
-                  description:
-                    OrLabelSelectors is list of metav1.LabelSelector to filter
-                    with when restoring individual objects from the backup. If multiple
-                    provided they will be joined by the OR operator. LabelSelector as
-                    well as OrLabelSelectors cannot co-exist in restore request, only
-                    one of them can be used
+                  description: |-
+                    OrLabelSelectors is list of metav1.LabelSelector to filter with
+                    when restoring individual objects from the backup. If multiple provided
+                    they will be joined by the OR operator. LabelSelector as well as
+                    OrLabelSelectors cannot co-exist in restore request, only one of them
+                    can be used
                   items:
-                    description:
-                      A label selector is a label query over a set of resources.
-                      The result of matchLabels and matchExpressions are ANDed. An empty
-                      label selector matches all objects. A null label selector matches
-                      no objects.
+                    description: |-
+                      A label selector is a label query over a set of resources. The result of matchLabels and
+                      matchExpressions are ANDed. An empty label selector matches all objects. A null
+                      label selector matches no objects.
                     properties:
                       matchExpressions:
                         description:
                           matchExpressions is a list of label selector requirements.
                           The requirements are ANDed.
                         items:
-                          description:
-                            A label selector requirement is a selector that
-                            contains values, a key, and an operator that relates the
-                            key and values.
+                          description: |-
+                            A label selector requirement is a selector that contains values, a key, and an operator that
+                            relates the key and values.
                           properties:
                             key:
                               description:
@@ -2457,18 +2445,16 @@ spec:
                                 to.
                               type: string
                             operator:
-                              description:
-                                operator represents a key's relationship
-                                to a set of values. Valid operators are In, NotIn, Exists
-                                and DoesNotExist.
+                              description: |-
+                                operator represents a key's relationship to a set of values.
+                                Valid operators are In, NotIn, Exists and DoesNotExist.
                               type: string
                             values:
-                              description:
-                                values is an array of string values. If the
-                                operator is In or NotIn, the values array must be non-empty.
-                                If the operator is Exists or DoesNotExist, the values
-                                array must be empty. This array is replaced during a
-                                strategic merge patch.
+                              description: |-
+                                values is an array of string values. If the operator is In or NotIn,
+                                the values array must be non-empty. If the operator is Exists or DoesNotExist,
+                                the values array must be empty. This array is replaced during a strategic
+                                merge patch.
                               items:
                                 type: string
                               type: array
@@ -2480,12 +2466,10 @@ spec:
                       matchLabels:
                         additionalProperties:
                           type: string
-                        description:
-                          matchLabels is a map of {key,value} pairs. A single
-                          {key,value} in the matchLabels map is equivalent to an element
-                          of matchExpressions, whose key field is "key", the operator
-                          is "In", and the values array contains only "value". The requirements
-                          are ANDed.
+                        description: |-
+                          matchLabels is a map of {key,value} pairs. A single {key,value} in the matchLabels
+                          map is equivalent to an element of matchExpressions, whose key field is "key", the
+                          operator is "In", and the values array contains only "value". The requirements are ANDed.
                         type: object
                     type: object
                     x-kubernetes-map-type: atomic
@@ -2504,11 +2488,10 @@ spec:
                   nullable: true
                   properties:
                     apiGroup:
-                      description:
+                      description: |-
                         APIGroup is the group for the resource being referenced.
-                        If APIGroup is not specified, the specified Kind must be in
-                        the core API group. For any other third-party types, APIGroup
-                        is required.
+                        If APIGroup is not specified, the specified Kind must be in the core API group.
+                        For any other third-party types, APIGroup is required.
                       type: string
                     kind:
                       description: Kind is the type of resource being referenced
@@ -2522,15 +2505,15 @@ spec:
                   type: object
                   x-kubernetes-map-type: atomic
                 restorePVs:
-                  description:
+                  description: |-
                     RestorePVs specifies whether to restore all included
                     PVs from snapshot
                   nullable: true
                   type: boolean
                 restoreStatus:
-                  description:
-                    RestoreStatus specifies which resources we should restore
-                    the status field. If nil, no objects are included. Optional.
+                  description: |-
+                    RestoreStatus specifies which resources we should restore the status
+                    field. If nil, no objects are included. Optional.
                   nullable: true
                   properties:
                     excludedResources:
@@ -2542,25 +2525,29 @@ spec:
                       nullable: true
                       type: array
                     includedResources:
-                      description:
-                        IncludedResources specifies the resources to which
-                        will restore the status. If empty, it applies to all resources.
+                      description: |-
+                        IncludedResources specifies the resources to which will restore the status.
+                        If empty, it applies to all resources.
                       items:
                         type: string
                       nullable: true
                       type: array
                   type: object
                 scheduleName:
-                  description:
-                    ScheduleName is the unique name of the Velero schedule
-                    to restore from. If specified, and BackupName is empty, Velero will
-                    restore from the most recent successful backup created from this
-                    schedule.
+                  description: |-
+                    ScheduleName is the unique name of the Velero schedule to restore
+                    from. If specified, and BackupName is empty, Velero will restore
+                    from the most recent successful backup created from this schedule.
                   type: string
                 uploaderConfig:
                   description: UploaderConfig specifies the configuration for the restore.
                   nullable: true
                   properties:
+                    parallelFilesDownload:
+                      description:
+                        ParallelFilesDownload is the concurrency number setting
+                        for restore.
+                      type: integer
                     writeSparseFiles:
                       description:
                         WriteSparseFiles is a flag to indicate whether write
@@ -2568,25 +2555,22 @@ spec:
                       nullable: true
                       type: boolean
                   type: object
-              required:
-                - backupName
               type: object
             status:
               description: RestoreStatus captures the current status of a Velero restore
               properties:
                 completionTimestamp:
-                  description:
-                    CompletionTimestamp records the time the restore operation
-                    was completed. Completion time is recorded even on failed restore.
+                  description: |-
+                    CompletionTimestamp records the time the restore operation was completed.
+                    Completion time is recorded even on failed restore.
                     The server's time is used for StartTimestamps
                   format: date-time
                   nullable: true
                   type: string
                 errors:
-                  description:
-                    Errors is a count of all error messages that were generated
-                    during execution of the restore. The actual errors are stored in
-                    object storage.
+                  description: |-
+                    Errors is a count of all error messages that were generated during
+                    execution of the restore. The actual errors are stored in object storage.
                   type: integer
                 failureReason:
                   description:
@@ -2600,11 +2584,10 @@ spec:
                   nullable: true
                   properties:
                     hooksAttempted:
-                      description:
+                      description: |-
                         HooksAttempted is the total number of attempted hooks
-                        Specifically, HooksAttempted represents the number of hooks
-                        that failed to execute and the number of hooks that executed
-                        successfully.
+                        Specifically, HooksAttempted represents the number of hooks that failed to execute
+                        and the number of hooks that executed successfully.
                       type: integer
                     hooksFailed:
                       description:
@@ -2623,12 +2606,14 @@ spec:
                     - Completed
                     - PartiallyFailed
                     - Failed
+                    - Finalizing
+                    - FinalizingPartiallyFailed
                   type: string
                 progress:
-                  description:
-                    Progress contains information about the restore's execution
-                    progress. Note that this information is best-effort only -- if Velero
-                    fails to update it during a restore for any reason, it may be inaccurate/stale.
+                  description: |-
+                    Progress contains information about the restore's execution progress. Note
+                    that this information is best-effort only -- if Velero fails to update it
+                    during a restore for any reason, it may be inaccurate/stale.
                   nullable: true
                   properties:
                     itemsRestored:
@@ -2637,57 +2622,53 @@ spec:
                         been restored so far
                       type: integer
                     totalItems:
-                      description:
-                        TotalItems is the total number of items to be restored.
-                        This number may change throughout the execution of the restore
-                        due to plugins that return additional related items to restore
+                      description: |-
+                        TotalItems is the total number of items to be restored. This number may change
+                        throughout the execution of the restore due to plugins that return additional related
+                        items to restore
                       type: integer
                   type: object
                 restoreItemOperationsAttempted:
-                  description:
-                    RestoreItemOperationsAttempted is the total number of
-                    attempted async RestoreItemAction operations for this restore.
+                  description: |-
+                    RestoreItemOperationsAttempted is the total number of attempted
+                    async RestoreItemAction operations for this restore.
                   type: integer
                 restoreItemOperationsCompleted:
-                  description:
-                    RestoreItemOperationsCompleted is the total number of
-                    successfully completed async RestoreItemAction operations for this
-                    restore.
+                  description: |-
+                    RestoreItemOperationsCompleted is the total number of successfully completed
+                    async RestoreItemAction operations for this restore.
                   type: integer
                 restoreItemOperationsFailed:
-                  description:
+                  description: |-
                     RestoreItemOperationsFailed is the total number of async
-                    RestoreItemAction operations for this restore which ended with an
-                    error.
+                    RestoreItemAction operations for this restore which ended with an error.
                   type: integer
                 startTimestamp:
-                  description:
-                    StartTimestamp records the time the restore operation
-                    was started. The server's time is used for StartTimestamps
+                  description: |-
+                    StartTimestamp records the time the restore operation was started.
+                    The server's time is used for StartTimestamps
                   format: date-time
                   nullable: true
                   type: string
                 validationErrors:
-                  description:
-                    ValidationErrors is a slice of all validation errors
-                    (if applicable)
+                  description: |-
+                    ValidationErrors is a slice of all validation errors (if
+                    applicable)
                   items:
                     type: string
                   nullable: true
                   type: array
                 warnings:
-                  description:
-                    Warnings is a count of all warning messages that were
-                    generated during execution of the restore. The actual warnings are
-                    stored in object storage.
+                  description: |-
+                    Warnings is a count of all warning messages that were generated during
+                    execution of the restore. The actual warnings are stored in object storage.
                   type: integer
               type: object
           type: object
       served: true
       storage: true
-
 ---
-# Source: crds/schedules.yaml
+# Source: velero/crds/schedules.yaml
 ---
 apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
@@ -2695,7 +2676,7 @@ metadata:
   labels:
     component: velero
   annotations:
-    controller-gen.kubebuilder.io/version: v0.12.0
+    controller-gen.kubebuilder.io/version: v0.14.0
   name: schedules.velero.io
 spec:
   group: velero.io
@@ -2728,21 +2709,24 @@ spec:
       name: v1
       schema:
         openAPIV3Schema:
-          description:
-            Schedule is a Velero resource that represents a pre-scheduled
-            or periodic Backup that should be run.
+          description: |-
+            Schedule is a Velero resource that represents a pre-scheduled or
+            periodic Backup that should be run.
           properties:
             apiVersion:
-              description:
-                "APIVersion defines the versioned schema of this representation
-                of an object. Servers should convert recognized schemas to the latest
-                internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources"
+              description: |-
+                APIVersion defines the versioned schema of this representation of an object.
+                Servers should convert recognized schemas to the latest internal value, and
+                may reject unrecognized values.
+                More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
               type: string
             kind:
-              description:
-                "Kind is a string value representing the REST resource this
-                object represents. Servers may infer this from the endpoint the client
-                submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds"
+              description: |-
+                Kind is a string value representing the REST resource this object represents.
+                Servers may infer this from the endpoint the client submits requests to.
+                Cannot be updated.
+                In CamelCase.
+                More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
               type: string
             metadata:
               type: object
@@ -2753,84 +2737,80 @@ spec:
                   description: Paused specifies whether the schedule is paused or not
                   type: boolean
                 schedule:
-                  description:
-                    Schedule is a Cron expression defining when to run the
-                    Backup.
+                  description: |-
+                    Schedule is a Cron expression defining when to run
+                    the Backup.
                   type: string
                 skipImmediately:
-                  description:
-                    "SkipImmediately specifies whether to skip backup if
-                    schedule is due immediately from `schedule.status.lastBackup` timestamp
-                    when schedule is unpaused or if schedule is new. If true, backup
-                    will be skipped immediately when schedule is unpaused if it is due
-                    based on .Status.LastBackupTimestamp or schedule is new, and will
-                    run at next schedule time. If false, backup will not be skipped
-                    immediately when schedule is unpaused, but will run at next schedule
-                    time. If empty, will follow server configuration (default: false)."
+                  description: |-
+                    SkipImmediately specifies whether to skip backup if schedule is due immediately from `schedule.status.lastBackup` timestamp when schedule is unpaused or if schedule is new.
+                    If true, backup will be skipped immediately when schedule is unpaused if it is due based on .Status.LastBackupTimestamp or schedule is new, and will run at next schedule time.
+                    If false, backup will not be skipped immediately when schedule is unpaused, but will run at next schedule time.
+                    If empty, will follow server configuration (default: false).
                   type: boolean
                 template:
-                  description:
-                    Template is the definition of the Backup to be run on
-                    the provided schedule
+                  description: |-
+                    Template is the definition of the Backup to be run
+                    on the provided schedule
                   properties:
                     csiSnapshotTimeout:
-                      description:
-                        CSISnapshotTimeout specifies the time used to wait
-                        for CSI VolumeSnapshot status turns to ReadyToUse during creation,
-                        before returning error as timeout. The default value is 10 minute.
+                      description: |-
+                        CSISnapshotTimeout specifies the time used to wait for CSI VolumeSnapshot status turns to
+                        ReadyToUse during creation, before returning error as timeout.
+                        The default value is 10 minute.
                       type: string
                     datamover:
-                      description:
-                        DataMover specifies the data mover to be used by
-                        the backup. If DataMover is "" or "velero", the built-in data
-                        mover will be used.
+                      description: |-
+                        DataMover specifies the data mover to be used by the backup.
+                        If DataMover is "" or "velero", the built-in data mover will be used.
                       type: string
                     defaultVolumesToFsBackup:
-                      description:
-                        DefaultVolumesToFsBackup specifies whether pod volume
-                        file system backup should be used for all volumes by default.
+                      description: |-
+                        DefaultVolumesToFsBackup specifies whether pod volume file system backup should be used
+                        for all volumes by default.
                       nullable: true
                       type: boolean
                     defaultVolumesToRestic:
-                      description:
-                        "DefaultVolumesToRestic specifies whether restic
-                        should be used to take a backup of all pod volumes by default.
-                        \n Deprecated: this field is no longer used and will be removed
-                        entirely in future. Use DefaultVolumesToFsBackup instead."
+                      description: |-
+                        DefaultVolumesToRestic specifies whether restic should be used to take a
+                        backup of all pod volumes by default.
+
+
+                        Deprecated: this field is no longer used and will be removed entirely in future. Use DefaultVolumesToFsBackup instead.
                       nullable: true
                       type: boolean
                     excludedClusterScopedResources:
-                      description:
+                      description: |-
                         ExcludedClusterScopedResources is a slice of cluster-scoped
-                        resource type names to exclude from the backup. If set to "*",
-                        all cluster-scoped resource types are excluded. The default
-                        value is empty.
+                        resource type names to exclude from the backup.
+                        If set to "*", all cluster-scoped resource types are excluded.
+                        The default value is empty.
                       items:
                         type: string
                       nullable: true
                       type: array
                     excludedNamespaceScopedResources:
-                      description:
+                      description: |-
                         ExcludedNamespaceScopedResources is a slice of namespace-scoped
-                        resource type names to exclude from the backup. If set to "*",
-                        all namespace-scoped resource types are excluded. The default
-                        value is empty.
+                        resource type names to exclude from the backup.
+                        If set to "*", all namespace-scoped resource types are excluded.
+                        The default value is empty.
                       items:
                         type: string
                       nullable: true
                       type: array
                     excludedNamespaces:
-                      description:
-                        ExcludedNamespaces contains a list of namespaces
-                        that are not included in the backup.
+                      description: |-
+                        ExcludedNamespaces contains a list of namespaces that are not
+                        included in the backup.
                       items:
                         type: string
                       nullable: true
                       type: array
                     excludedResources:
-                      description:
-                        ExcludedResources is a slice of resource names that
-                        are not included in the backup.
+                      description: |-
+                        ExcludedResources is a slice of resource names that are not
+                        included in the backup.
                       items:
                         type: string
                       nullable: true
@@ -2845,10 +2825,9 @@ spec:
                             Resources are hooks that should be executed when
                             backing up individual instances of a resource.
                           items:
-                            description:
-                              BackupResourceHookSpec defines one or more
-                              BackupResourceHooks that should be executed based on the
-                              rules defined for namespaces, resources, and label selector.
+                            description: |-
+                              BackupResourceHookSpec defines one or more BackupResourceHooks that should be executed based on
+                              the rules defined for namespaces, resources, and label selector.
                             properties:
                               excludedNamespaces:
                                 description:
@@ -2867,18 +2846,16 @@ spec:
                                 nullable: true
                                 type: array
                               includedNamespaces:
-                                description:
-                                  IncludedNamespaces specifies the namespaces
-                                  to which this hook spec applies. If empty, it applies
+                                description: |-
+                                  IncludedNamespaces specifies the namespaces to which this hook spec applies. If empty, it applies
                                   to all namespaces.
                                 items:
                                   type: string
                                 nullable: true
                                 type: array
                               includedResources:
-                                description:
-                                  IncludedResources specifies the resources
-                                  to which this hook spec applies. If empty, it applies
+                                description: |-
+                                  IncludedResources specifies the resources to which this hook spec applies. If empty, it applies
                                   to all resources.
                                 items:
                                   type: string
@@ -2895,10 +2872,9 @@ spec:
                                       matchExpressions is a list of label
                                       selector requirements. The requirements are ANDed.
                                     items:
-                                      description:
-                                        A label selector requirement is a
-                                        selector that contains values, a key, and an
-                                        operator that relates the key and values.
+                                      description: |-
+                                        A label selector requirement is a selector that contains values, a key, and an operator that
+                                        relates the key and values.
                                       properties:
                                         key:
                                           description:
@@ -2906,19 +2882,16 @@ spec:
                                             selector applies to.
                                           type: string
                                         operator:
-                                          description:
-                                            operator represents a key's relationship
-                                            to a set of values. Valid operators are
-                                            In, NotIn, Exists and DoesNotExist.
+                                          description: |-
+                                            operator represents a key's relationship to a set of values.
+                                            Valid operators are In, NotIn, Exists and DoesNotExist.
                                           type: string
                                         values:
-                                          description:
-                                            values is an array of string
-                                            values. If the operator is In or NotIn,
-                                            the values array must be non-empty. If the
-                                            operator is Exists or DoesNotExist, the
-                                            values array must be empty. This array is
-                                            replaced during a strategic merge patch.
+                                          description: |-
+                                            values is an array of string values. If the operator is In or NotIn,
+                                            the values array must be non-empty. If the operator is Exists or DoesNotExist,
+                                            the values array must be empty. This array is replaced during a strategic
+                                            merge patch.
                                           items:
                                             type: string
                                           type: array
@@ -2930,13 +2903,10 @@ spec:
                                   matchLabels:
                                     additionalProperties:
                                       type: string
-                                    description:
-                                      matchLabels is a map of {key,value}
-                                      pairs. A single {key,value} in the matchLabels
-                                      map is equivalent to an element of matchExpressions,
-                                      whose key field is "key", the operator is "In",
-                                      and the values array contains only "value". The
-                                      requirements are ANDed.
+                                    description: |-
+                                      matchLabels is a map of {key,value} pairs. A single {key,value} in the matchLabels
+                                      map is equivalent to an element of matchExpressions, whose key field is "key", the
+                                      operator is "In", and the values array contains only "value". The requirements are ANDed.
                                     type: object
                                 type: object
                                 x-kubernetes-map-type: atomic
@@ -2944,11 +2914,9 @@ spec:
                                 description: Name is the name of this hook.
                                 type: string
                               post:
-                                description:
-                                  PostHooks is a list of BackupResourceHooks
-                                  to execute after storing the item in the backup. These
-                                  are executed after all "additional items" from item
-                                  actions are processed.
+                                description: |-
+                                  PostHooks is a list of BackupResourceHooks to execute after storing the item in the backup.
+                                  These are executed after all "additional items" from item actions are processed.
                                 items:
                                   description:
                                     BackupResourceHook defines a hook for
@@ -2966,11 +2934,9 @@ spec:
                                           minItems: 1
                                           type: array
                                         container:
-                                          description:
-                                            Container is the container in
-                                            the pod where the command should be executed.
-                                            If not specified, the pod's first container
-                                            is used.
+                                          description: |-
+                                            Container is the container in the pod where the command should be executed. If not specified,
+                                            the pod's first container is used.
                                           type: string
                                         onError:
                                           description:
@@ -2982,11 +2948,9 @@ spec:
                                             - Fail
                                           type: string
                                         timeout:
-                                          description:
-                                            Timeout defines the maximum amount
-                                            of time Velero should wait for the hook
-                                            to complete before considering the execution
-                                            a failure.
+                                          description: |-
+                                            Timeout defines the maximum amount of time Velero should wait for the hook to complete before
+                                            considering the execution a failure.
                                           type: string
                                       required:
                                         - command
@@ -2996,11 +2960,9 @@ spec:
                                   type: object
                                 type: array
                               pre:
-                                description:
-                                  PreHooks is a list of BackupResourceHooks
-                                  to execute prior to storing the item in the backup.
-                                  These are executed before any "additional items" from
-                                  item actions are processed.
+                                description: |-
+                                  PreHooks is a list of BackupResourceHooks to execute prior to storing the item in the backup.
+                                  These are executed before any "additional items" from item actions are processed.
                                 items:
                                   description:
                                     BackupResourceHook defines a hook for
@@ -3018,11 +2980,9 @@ spec:
                                           minItems: 1
                                           type: array
                                         container:
-                                          description:
-                                            Container is the container in
-                                            the pod where the command should be executed.
-                                            If not specified, the pod's first container
-                                            is used.
+                                          description: |-
+                                            Container is the container in the pod where the command should be executed. If not specified,
+                                            the pod's first container is used.
                                           type: string
                                         onError:
                                           description:
@@ -3034,11 +2994,9 @@ spec:
                                             - Fail
                                           type: string
                                         timeout:
-                                          description:
-                                            Timeout defines the maximum amount
-                                            of time Velero should wait for the hook
-                                            to complete before considering the execution
-                                            a failure.
+                                          description: |-
+                                            Timeout defines the maximum amount of time Velero should wait for the hook to complete before
+                                            considering the execution a failure.
                                           type: string
                                       required:
                                         - command
@@ -3054,57 +3012,56 @@ spec:
                           type: array
                       type: object
                     includeClusterResources:
-                      description:
-                        IncludeClusterResources specifies whether cluster-scoped
-                        resources should be included for consideration in the backup.
+                      description: |-
+                        IncludeClusterResources specifies whether cluster-scoped resources
+                        should be included for consideration in the backup.
                       nullable: true
                       type: boolean
                     includedClusterScopedResources:
-                      description:
+                      description: |-
                         IncludedClusterScopedResources is a slice of cluster-scoped
-                        resource type names to include in the backup. If set to "*",
-                        all cluster-scoped resource types are included. The default
-                        value is empty, which means only related cluster-scoped resources
-                        are included.
+                        resource type names to include in the backup.
+                        If set to "*", all cluster-scoped resource types are included.
+                        The default value is empty, which means only related
+                        cluster-scoped resources are included.
                       items:
                         type: string
                       nullable: true
                       type: array
                     includedNamespaceScopedResources:
-                      description:
+                      description: |-
                         IncludedNamespaceScopedResources is a slice of namespace-scoped
-                        resource type names to include in the backup. The default value
-                        is "*".
+                        resource type names to include in the backup.
+                        The default value is "*".
                       items:
                         type: string
                       nullable: true
                       type: array
                     includedNamespaces:
-                      description:
-                        IncludedNamespaces is a slice of namespace names
-                        to include objects from. If empty, all namespaces are included.
+                      description: |-
+                        IncludedNamespaces is a slice of namespace names to include objects
+                        from. If empty, all namespaces are included.
                       items:
                         type: string
                       nullable: true
                       type: array
                     includedResources:
-                      description:
-                        IncludedResources is a slice of resource names to
-                        include in the backup. If empty, all resources are included.
+                      description: |-
+                        IncludedResources is a slice of resource names to include
+                        in the backup. If empty, all resources are included.
                       items:
                         type: string
                       nullable: true
                       type: array
                     itemOperationTimeout:
-                      description:
-                        ItemOperationTimeout specifies the time used to wait
-                        for asynchronous BackupItemAction operations The default value
-                        is 1 hour.
+                      description: |-
+                        ItemOperationTimeout specifies the time used to wait for asynchronous BackupItemAction operations
+                        The default value is 4 hour.
                       type: string
                     labelSelector:
-                      description:
-                        LabelSelector is a metav1.LabelSelector to filter
-                        with when adding individual objects to the backup. If empty
+                      description: |-
+                        LabelSelector is a metav1.LabelSelector to filter with
+                        when adding individual objects to the backup. If empty
                         or nil, all objects are included. Optional.
                       nullable: true
                       properties:
@@ -3113,10 +3070,9 @@ spec:
                             matchExpressions is a list of label selector
                             requirements. The requirements are ANDed.
                           items:
-                            description:
-                              A label selector requirement is a selector
-                              that contains values, a key, and an operator that relates
-                              the key and values.
+                            description: |-
+                              A label selector requirement is a selector that contains values, a key, and an operator that
+                              relates the key and values.
                             properties:
                               key:
                                 description:
@@ -3124,18 +3080,16 @@ spec:
                                   applies to.
                                 type: string
                               operator:
-                                description:
-                                  operator represents a key's relationship
-                                  to a set of values. Valid operators are In, NotIn,
-                                  Exists and DoesNotExist.
+                                description: |-
+                                  operator represents a key's relationship to a set of values.
+                                  Valid operators are In, NotIn, Exists and DoesNotExist.
                                 type: string
                               values:
-                                description:
-                                  values is an array of string values. If
-                                  the operator is In or NotIn, the values array must
-                                  be non-empty. If the operator is Exists or DoesNotExist,
-                                  the values array must be empty. This array is replaced
-                                  during a strategic merge patch.
+                                description: |-
+                                  values is an array of string values. If the operator is In or NotIn,
+                                  the values array must be non-empty. If the operator is Exists or DoesNotExist,
+                                  the values array must be empty. This array is replaced during a strategic
+                                  merge patch.
                                 items:
                                   type: string
                                 type: array
@@ -3147,12 +3101,10 @@ spec:
                         matchLabels:
                           additionalProperties:
                             type: string
-                          description:
-                            matchLabels is a map of {key,value} pairs. A
-                            single {key,value} in the matchLabels map is equivalent
-                            to an element of matchExpressions, whose key field is "key",
-                            the operator is "In", and the values array contains only
-                            "value". The requirements are ANDed.
+                          description: |-
+                            matchLabels is a map of {key,value} pairs. A single {key,value} in the matchLabels
+                            map is equivalent to an element of matchExpressions, whose key field is "key", the
+                            operator is "In", and the values array contains only "value". The requirements are ANDed.
                           type: object
                       type: object
                       x-kubernetes-map-type: atomic
@@ -3164,28 +3116,26 @@ spec:
                           type: object
                       type: object
                     orLabelSelectors:
-                      description:
-                        OrLabelSelectors is list of metav1.LabelSelector
-                        to filter with when adding individual objects to the backup.
-                        If multiple provided they will be joined by the OR operator.
-                        LabelSelector as well as OrLabelSelectors cannot co-exist in
-                        backup request, only one of them can be used.
+                      description: |-
+                        OrLabelSelectors is list of metav1.LabelSelector to filter with
+                        when adding individual objects to the backup. If multiple provided
+                        they will be joined by the OR operator. LabelSelector as well as
+                        OrLabelSelectors cannot co-exist in backup request, only one of them
+                        can be used.
                       items:
-                        description:
-                          A label selector is a label query over a set of
-                          resources. The result of matchLabels and matchExpressions
-                          are ANDed. An empty label selector matches all objects. A
-                          null label selector matches no objects.
+                        description: |-
+                          A label selector is a label query over a set of resources. The result of matchLabels and
+                          matchExpressions are ANDed. An empty label selector matches all objects. A null
+                          label selector matches no objects.
                         properties:
                           matchExpressions:
                             description:
                               matchExpressions is a list of label selector
                               requirements. The requirements are ANDed.
                             items:
-                              description:
-                                A label selector requirement is a selector
-                                that contains values, a key, and an operator that relates
-                                the key and values.
+                              description: |-
+                                A label selector requirement is a selector that contains values, a key, and an operator that
+                                relates the key and values.
                               properties:
                                 key:
                                   description:
@@ -3193,18 +3143,16 @@ spec:
                                     applies to.
                                   type: string
                                 operator:
-                                  description:
-                                    operator represents a key's relationship
-                                    to a set of values. Valid operators are In, NotIn,
-                                    Exists and DoesNotExist.
+                                  description: |-
+                                    operator represents a key's relationship to a set of values.
+                                    Valid operators are In, NotIn, Exists and DoesNotExist.
                                   type: string
                                 values:
-                                  description:
-                                    values is an array of string values.
-                                    If the operator is In or NotIn, the values array
-                                    must be non-empty. If the operator is Exists or
-                                    DoesNotExist, the values array must be empty. This
-                                    array is replaced during a strategic merge patch.
+                                  description: |-
+                                    values is an array of string values. If the operator is In or NotIn,
+                                    the values array must be non-empty. If the operator is Exists or DoesNotExist,
+                                    the values array must be empty. This array is replaced during a strategic
+                                    merge patch.
                                   items:
                                     type: string
                                   type: array
@@ -3216,12 +3164,10 @@ spec:
                           matchLabels:
                             additionalProperties:
                               type: string
-                            description:
-                              matchLabels is a map of {key,value} pairs.
-                              A single {key,value} in the matchLabels map is equivalent
-                              to an element of matchExpressions, whose key field is
-                              "key", the operator is "In", and the values array contains
-                              only "value". The requirements are ANDed.
+                            description: |-
+                              matchLabels is a map of {key,value} pairs. A single {key,value} in the matchLabels
+                              map is equivalent to an element of matchExpressions, whose key field is "key", the
+                              operator is "In", and the values array contains only "value". The requirements are ANDed.
                             type: object
                         type: object
                         x-kubernetes-map-type: atomic
@@ -3230,12 +3176,10 @@ spec:
                     orderedResources:
                       additionalProperties:
                         type: string
-                      description:
-                        OrderedResources specifies the backup order of resources
-                        of specific Kind. The map key is the resource name and value
-                        is a list of object names separated by commas. Each resource
-                        name has format "namespace/objectname".  For cluster resources,
-                        simply use "objectname".
+                      description: |-
+                        OrderedResources specifies the backup order of resources of specific Kind.
+                        The map key is the resource name and value is a list of object names separated by commas.
+                        Each resource name has format "namespace/objectname".  For cluster resources, simply use "objectname".
                       nullable: true
                       type: object
                     resourcePolicy:
@@ -3244,11 +3188,10 @@ spec:
                         policies that backup should follow
                       properties:
                         apiGroup:
-                          description:
-                            APIGroup is the group for the resource being
-                            referenced. If APIGroup is not specified, the specified
-                            Kind must be in the core API group. For any other third-party
-                            types, APIGroup is required.
+                          description: |-
+                            APIGroup is the group for the resource being referenced.
+                            If APIGroup is not specified, the specified Kind must be in the core API group.
+                            For any other third-party types, APIGroup is required.
                           type: string
                         kind:
                           description: Kind is the type of resource being referenced
@@ -3268,10 +3211,10 @@ spec:
                       nullable: true
                       type: boolean
                     snapshotVolumes:
-                      description:
+                      description: |-
                         SnapshotVolumes specifies whether to take snapshots
-                        of any PV's referenced in the set of objects included in the
-                        Backup.
+                        of any PV's referenced in the set of objects included
+                        in the Backup.
                       nullable: true
                       type: boolean
                     storageLocation:
@@ -3280,9 +3223,9 @@ spec:
                         a BackupStorageLocation where the backup should be stored.
                       type: string
                     ttl:
-                      description:
-                        TTL is a time.Duration-parseable string describing
-                        how long the Backup should be retained for.
+                      description: |-
+                        TTL is a time.Duration-parseable string describing how long
+                        the Backup should be retained for.
                       type: string
                     uploaderConfig:
                       description:
@@ -3305,9 +3248,9 @@ spec:
                       type: array
                   type: object
                 useOwnerReferencesInBackup:
-                  description:
-                    UseOwnerReferencesBackup specifies whether to use OwnerReferences
-                    on backups created by this Schedule.
+                  description: |-
+                    UseOwnerReferencesBackup specifies whether to use
+                    OwnerReferences on backups created by this Schedule.
                   nullable: true
                   type: boolean
               required:
@@ -3318,7 +3261,7 @@ spec:
               description: ScheduleStatus captures the current state of a Velero schedule
               properties:
                 lastBackup:
-                  description:
+                  description: |-
                     LastBackup is the last time a Backup was run for this
                     Schedule schedule
                   format: date-time
@@ -3337,9 +3280,9 @@ spec:
                     - FailedValidation
                   type: string
                 validationErrors:
-                  description:
-                    ValidationErrors is a slice of all validation errors
-                    (if applicable)
+                  description: |-
+                    ValidationErrors is a slice of all validation errors (if
+                    applicable)
                   items:
                     type: string
                   type: array
@@ -3350,7 +3293,7 @@ spec:
       subresources: {}
 
 ---
-# Source: crds/serverstatusrequests.yaml
+# Source: velero/crds/serverstatusrequests.yaml
 ---
 apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
@@ -3358,7 +3301,7 @@ metadata:
   labels:
     component: velero
   annotations:
-    controller-gen.kubebuilder.io/version: v0.12.0
+    controller-gen.kubebuilder.io/version: v0.14.0
   name: serverstatusrequests.velero.io
 spec:
   group: velero.io
@@ -3374,21 +3317,24 @@ spec:
     - name: v1
       schema:
         openAPIV3Schema:
-          description:
-            ServerStatusRequest is a request to access current status information
-            about the Velero server.
+          description: |-
+            ServerStatusRequest is a request to access current status information about
+            the Velero server.
           properties:
             apiVersion:
-              description:
-                "APIVersion defines the versioned schema of this representation
-                of an object. Servers should convert recognized schemas to the latest
-                internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources"
+              description: |-
+                APIVersion defines the versioned schema of this representation of an object.
+                Servers should convert recognized schemas to the latest internal value, and
+                may reject unrecognized values.
+                More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
               type: string
             kind:
-              description:
-                "Kind is a string value representing the REST resource this
-                object represents. Servers may infer this from the endpoint the client
-                submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds"
+              description: |-
+                Kind is a string value representing the REST resource this object represents.
+                Servers may infer this from the endpoint the client submits requests to.
+                Cannot be updated.
+                In CamelCase.
+                More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
               type: string
             metadata:
               type: object
@@ -3422,9 +3368,9 @@ spec:
                   nullable: true
                   type: array
                 processedTimestamp:
-                  description:
-                    ProcessedTimestamp is when the ServerStatusRequest was
-                    processed by the ServerStatusRequestController.
+                  description: |-
+                    ProcessedTimestamp is when the ServerStatusRequest was processed
+                    by the ServerStatusRequestController.
                   format: date-time
                   nullable: true
                   type: string
@@ -3437,7 +3383,7 @@ spec:
       storage: true
 
 ---
-# Source: crds/volumesnapshotlocations.yaml
+# Source: velero/crds/volumesnapshotlocations.yaml
 ---
 apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
@@ -3445,7 +3391,7 @@ metadata:
   labels:
     component: velero
   annotations:
-    controller-gen.kubebuilder.io/version: v0.12.0
+    controller-gen.kubebuilder.io/version: v0.14.0
   name: volumesnapshotlocations.velero.io
 spec:
   group: velero.io
@@ -3466,16 +3412,19 @@ spec:
             snapshots.
           properties:
             apiVersion:
-              description:
-                "APIVersion defines the versioned schema of this representation
-                of an object. Servers should convert recognized schemas to the latest
-                internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources"
+              description: |-
+                APIVersion defines the versioned schema of this representation of an object.
+                Servers should convert recognized schemas to the latest internal value, and
+                may reject unrecognized values.
+                More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
               type: string
             kind:
-              description:
-                "Kind is a string value representing the REST resource this
-                object represents. Servers may infer this from the endpoint the client
-                submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds"
+              description: |-
+                Kind is a string value representing the REST resource this object represents.
+                Servers may infer this from the endpoint the client submits requests to.
+                Cannot be updated.
+                In CamelCase.
+                More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
               type: string
             metadata:
               type: object
@@ -3500,9 +3449,10 @@ spec:
                         valid secret key.
                       type: string
                     name:
-                      description:
-                        "Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                        TODO: Add other useful fields. apiVersion, kind, uid?"
+                      description: |-
+                        Name of the referent.
+                        More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                        TODO: Add other useful fields. apiVersion, kind, uid?
                       type: string
                     optional:
                       description: Specify whether the Secret or its key must be defined
@@ -3534,3 +3484,5 @@ spec:
           type: object
       served: true
       storage: true
+---
+

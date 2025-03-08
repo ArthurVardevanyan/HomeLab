@@ -38,3 +38,10 @@ resource "google_service_account_iam_member" "avgcp-wif" {
   role               = "roles/iam.workloadIdentityUser"
   member             = "principal://iam.googleapis.com/projects/${local.homelab_project_num}/locations/global/workloadIdentityPools/${google_iam_workload_identity_pool.okd_homelab_wif.workload_identity_pool_id}/subject/system:serviceaccount:tfm:pipeline"
 }
+
+
+resource "google_service_account_iam_member" "avgcp-wif-sno" {
+  service_account_id = google_service_account.avgcp.id
+  role               = "roles/iam.workloadIdentityUser"
+  member             = "principal://iam.googleapis.com/projects/${local.homelab_project_num}/locations/global/workloadIdentityPools/${google_iam_workload_identity_pool.sno_homelab_wif.workload_identity_pool_id}/subject/system:serviceaccount:tfm:pipeline"
+}

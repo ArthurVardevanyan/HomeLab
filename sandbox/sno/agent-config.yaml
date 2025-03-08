@@ -1,0 +1,22 @@
+# PreConfigure External Load Balancer
+# Host Cluster Pod Networking Currently Disabled
+
+# Install Steps
+# oc adm release extract --tools quay.io/okd/scos-release:4.15.0-0.okd-scos-2024-01-18-223523
+#./notes/openshift-install agent create cluster-manifests --dir sandbox/kubevirt/okd/
+#./notes/openshift-install agent create image  --dir sandbox/kubevirt/okd/
+#./notes/openshift-install agent wait-for bootstrap-complete  --dir sandbox/kubevirt/okd/
+#./notes/openshift-install agent wait-for install-complete --dir sandbox/kubevirt/okd/
+apiVersion: v1beta1
+kind: AgentConfig
+metadata:
+  name: okd-sno
+rendezvousIP: 10.102.1.100
+hosts:
+  - hostname: control-plane
+    role: master
+    rootDeviceHints:
+      deviceName: "/dev/disk/by-path/pci-0000:01:00.0-nvme-1"
+    interfaces:
+      - name: enp42s0
+        macAddress: 2C:F0:5D:83:73:A2

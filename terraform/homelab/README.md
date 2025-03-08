@@ -12,6 +12,8 @@ bucket = "tf-state-homelab-${BUCKET_ID}"
 prefix = "terraform/state"
 EOF
 
+gcloud secrets versions access latest --project="homelab-${PROJECT_ID}" --out-file="/tmp/zitadel.json" --secret zitadel_pipeline
+
 tofu init -backend-config=backend.conf
 tofu plan
 tofu apply

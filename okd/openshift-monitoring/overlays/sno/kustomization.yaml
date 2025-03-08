@@ -1,0 +1,42 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - ../../base
+generatorOptions:
+  disableNameSuffixHash: true
+secretGenerator:
+  - name: alertmanager-main
+    namespace: openshift-monitoring
+    files:
+      - alertmanager.yaml
+patches:
+  - target:
+      kind: Deployment
+      name: openshift-monitoring-cr-controller-manager
+    patch: |-
+      - op: replace
+        path: /spec/replicas
+        value: 1
+  - target:
+      kind: Cluster
+      group: monitoring.arthurvardevanyan.com
+      name: cluster-monitoring-config
+    patch: |-
+      - op: replace
+        path: /spec/enableUserWorkload
+        value: false
+      - op: replace
+        path: /spec/prometheusK8s/retention
+        value: 7d
+      - op: replace
+        path: /spec/prometheusK8s/resources
+        value: {"requests": {"cpu": "100m","memory": "1Gi"},"limits": {"cpu": 1,"memory": "4Gi"}}
+      - op: replace
+        path: /spec/prometheusK8s/volumeClaimTemplate/spec/resources/requests/storage
+        value: 50Gi
+      - op: replace
+        path: /spec/prometheusK8s/volumeClaimTemplate/spec/storageClassName
+        value: lvms-vg1
+      - op: replace
+        path: /spec/alertmanagerMain/volumeClaimTemplate/spec/storageClassName
+        value: lvms-vg1

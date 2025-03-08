@@ -1,0 +1,27 @@
+kind: Ingress
+apiVersion: networking.k8s.io/v1
+metadata:
+  name: uptime-kuma
+  namespace: uptime-kuma
+  labels:
+    app.kubernetes.io/instance: uptime-kuma
+  annotations:
+    externaldns.k8s.io: pihole
+    route.openshift.io/termination: edge
+spec:
+  ingressClassName: openshift-default
+  tls:
+    - hosts:
+        - uptime.arthurvardevanyan.com
+      secretName: uptime-cert
+  rules:
+    - host: uptime.arthurvardevanyan.com
+      http:
+        paths:
+          - path: ""
+            pathType: ImplementationSpecific
+            backend:
+              service:
+                name: uptime-kuma-service
+                port:
+                  name: http

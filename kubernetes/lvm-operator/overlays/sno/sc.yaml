@@ -1,0 +1,41 @@
+kind: StorageClass
+apiVersion: storage.k8s.io/v1
+metadata:
+  name: lvms-vg1-immediate
+  annotations:
+    description: Provides RWO and RWOP Filesystem & Block volumes
+provisioner: topolvm.io
+parameters:
+  csi.storage.k8s.io/fstype: ext4
+  topolvm.io/device-class: vg1
+reclaimPolicy: Delete
+allowVolumeExpansion: true
+volumeBindingMode: Immediate
+---
+kind: StorageClass
+apiVersion: storage.k8s.io/v1
+metadata:
+  name: lvms-vg1-immediate-rwx
+  annotations:
+    description: Provides RWO and RWOP Filesystem & Block volumes
+provisioner: topolvm.io
+parameters:
+  csi.storage.k8s.io/fstype: ext4
+  topolvm.io/device-class: vg1
+reclaimPolicy: Delete
+allowVolumeExpansion: true
+volumeBindingMode: Immediate
+---
+kind: StorageClass
+apiVersion: storage.k8s.io/v1
+metadata:
+  name: lvms-vg1-immediate-virt
+  annotations:
+    description: Provides RWO and RWOP Filesystem & Block volumes
+provisioner: topolvm.io
+parameters:
+  csi.storage.k8s.io/fstype: ext4
+  topolvm.io/device-class: vg1
+reclaimPolicy: Delete
+allowVolumeExpansion: true
+volumeBindingMode: Immediate
