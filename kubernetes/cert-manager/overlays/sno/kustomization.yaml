@@ -9,3 +9,11 @@ resources:
 components:
   - ../../components/trust-manager
   - ../../components/cloud-dns
+patches:
+  - target:
+      kind: Deployment
+      name: trust-manager
+    patch: |-
+      - op: replace
+        path: /spec/replicas
+        value: 1
