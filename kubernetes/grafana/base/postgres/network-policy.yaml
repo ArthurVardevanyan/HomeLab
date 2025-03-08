@@ -2,11 +2,11 @@ apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
   name: grafana-app
-  namespace: postgres
+  namespace: grafana
   annotations:
     argocd.argoproj.io/sync-wave: "1"
   labels:
-    app.kubernetes.io/instance: postgres
+    app.kubernetes.io/instance: grafana
 spec:
   podSelector:
     matchLabels:
@@ -29,11 +29,11 @@ apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
   name: grafana-postgres
-  namespace: postgres
+  namespace: grafana
   annotations:
     argocd.argoproj.io/sync-wave: "1"
   labels:
-    app.kubernetes.io/instance: postgres
+    app.kubernetes.io/instance: grafana
 spec:
   podSelector:
     matchLabels:
@@ -45,7 +45,7 @@ spec:
     - from:
         - namespaceSelector:
             matchLabels:
-              kubernetes.io/metadata.name: postgres
+              kubernetes.io/metadata.name: grafana
           podSelector:
             matchLabels:
               postgres-operator.crunchydata.com/cluster: grafana
@@ -53,17 +53,16 @@ spec:
     - to:
         - namespaceSelector:
             matchLabels:
-              kubernetes.io/metadata.name: postgres
+              kubernetes.io/metadata.name: grafana
           podSelector:
             matchLabels:
               postgres-operator.crunchydata.com/cluster: grafana
-
 ---
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
-  name: grafana-allow-truenas-egress
-  namespace: postgres
+  name: allow-truenas-egress
+  namespace: grafana
   annotations:
     argocd.argoproj.io/sync-wave: "0"
   labels:
@@ -85,12 +84,12 @@ spec:
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
-  name: pgdump-grafana-ingress
-  namespace: postgres
+  name: pgdump-ingress
+  namespace: grafana
   annotations:
     argocd.argoproj.io/sync-wave: "1"
   labels:
-    app.kubernetes.io/instance: postgres
+    app.kubernetes.io/instance: grafana
 spec:
   podSelector:
     matchLabels:
@@ -105,6 +104,33 @@ spec:
           podSelector:
             matchLabels:
               app: pgdump-cron
+      ports:
+        - protocol: TCP
+          port: 5432
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: pgadmin-ingress
+  namespace: grafana
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+  labels:
+    app.kubernetes.io/instance: grafana
+spec:
+  podSelector:
+    matchLabels:
+      postgres-operator.crunchydata.com/cluster: grafana
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: postgres
+          podSelector:
+            matchLabels:
+              postgres-operator.crunchydata.com/pgadmin: pgadmin
       ports:
         - protocol: TCP
           port: 5432
