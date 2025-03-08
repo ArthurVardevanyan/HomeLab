@@ -68,6 +68,15 @@ resource "google_service_account_iam_member" "tekton" {
   member             = "principal://iam.googleapis.com/projects/${local.homelab_project_num}/locations/global/workloadIdentityPools/${google_iam_workload_identity_pool.okd_homelab_wif.workload_identity_pool_id}/subject/system:serviceaccount:homelab:pipeline"
 }
 
+resource "google_service_account_iam_member" "tekton_sno" {
+  #checkov:skip=CKV_GCP_49: Used for Automation
+  service_account_id = google_service_account.tekton.id
+  role               = "roles/iam.workloadIdentityUser"
+  member             = "principal://iam.googleapis.com/projects/${local.homelab_project_num}/locations/global/workloadIdentityPools/${google_iam_workload_identity_pool.sno_homelab_wif.workload_identity_pool_id}/subject/system:serviceaccount:homelab:pipeline"
+}
+
+
+
 resource "google_storage_bucket" "github-tf-bucket" {
   #checkov:skip=CKV_GCP_62:Access logs are not required.
   name                        = "tf-state-github-${local.bucket_id}"
