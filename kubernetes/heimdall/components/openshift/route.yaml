@@ -6,11 +6,16 @@ metadata:
   labels:
     app.kubernetes.io/instance: heimdall
   annotations:
+    externaldns.k8s.io: pihole
     route.openshift.io/termination: edge
 spec:
   ingressClassName: openshift-default
+  tls:
+    - hosts:
+        - heimdall.arthurvardevanyan.com
+      secretName: heimdall-cert
   rules:
-    - host: heimdall.apps.okd.arthurvardevanyan.com
+    - host: heimdall.arthurvardevanyan.com
       http:
         paths:
           - path: ""
