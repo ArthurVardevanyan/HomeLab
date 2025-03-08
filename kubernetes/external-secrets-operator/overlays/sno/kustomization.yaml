@@ -5,4 +5,10 @@ resources:
   - ./egress-firewall.yaml
 components:
   - ../../components/helm
-  - ../../components/openshift
+patches:
+  - target:
+      kind: Deployment
+    patch: |-
+      - op: replace
+        path: /spec/replicas
+        value: 1
