@@ -1,0 +1,24 @@
+apiVersion: velero.io/v1
+kind: Schedule
+metadata:
+  annotations:
+    argocd.argoproj.io/compare-options: IgnoreExtraneous
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+  name: fedora
+  namespace: velero
+spec:
+  schedule: 0 5 * * *
+  skipImmediately: false
+  template:
+    defaultVolumesToFsBackup: false
+    csiSnapshotTimeout: 60m0s
+    ttl: 180h0m0s
+    itemOperationTimeout: 360h0m0s
+    metadata: {}
+    storageLocation: velero-backup
+    hooks: {}
+    includedNamespaces:
+      - arthurvardevanyan
+    includedNamespaceScopedResources:
+      - pvc
+    snapshotMoveData: true
