@@ -1,0 +1,38 @@
+apiVersion: nmstate.io/v1
+kind: NodeNetworkConfigurationPolicy
+metadata:
+  name: vlan4
+  annotations:
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+spec:
+  desiredState:
+    interfaces:
+      - name: br-ex.4
+        description: VLAN using br-ex
+        type: vlan
+        state: up
+        ipv4:
+          dhcp: false
+          enabled: false
+        vlan:
+          base-iface: br-ex
+          id: 4
+      - name: br1.4
+        description: OVS bridge with br-ex as a port
+        type: ovs-bridge
+        state: up
+        ipv4:
+          dhcp: true
+          enabled: true
+        bridge:
+          allow-extra-patch-ports: true
+          options:
+            stp:
+              enabled: false
+          port:
+            - name: br-ex.4
+    ovn:
+      bridge-mappings:
+        - localnet: br1.4
+          bridge: br1.4
+          state: present
