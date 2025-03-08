@@ -6,11 +6,16 @@ metadata:
   labels:
     app.kubernetes.io/instance: uptime-kuma
   annotations:
+    externaldns.k8s.io: pihole
     route.openshift.io/termination: edge
 spec:
   ingressClassName: openshift-default
+  tls:
+    - hosts:
+        - uptime.arthurvardevanyan.com
+      secretName: uptime-cert
   rules:
-    - host: uptime.apps.okd.arthurvardevanyan.com
+    - host: uptime.arthurvardevanyan.com
       http:
         paths:
           - path: ""
