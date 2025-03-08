@@ -1,0 +1,41 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - ../../base
+  - ./dns.yaml
+components:
+  - ../../components/openshift
+patches:
+  - target:
+      kind: PersistentVolumeClaim
+      name: homeassistant
+    patch: |-
+      - op: replace
+        path: /spec/storageClassName
+        value: lvms-vg1-immediate
+  - target:
+      kind: PostgresCluster
+      name: homeassistant
+    patch: |-
+      - op: replace
+        path: /spec/instances/0/dataVolumeClaimSpec/storageClassName
+        value: lvms-vg1-immediate
+      - op: replace
+        path: /spec/instances/0/replicas
+        value: 1
+      - op: replace
+        path: /spec/backups/pgbackrest/repos/0/volume/volumeClaimSpec/storageClassName
+        value: lvms-vg1-immediate
+  - target:
+      kind: StatefulSet
+      name: homeassistant
+    patch: |-
+      - op: replace
+        path: /spec/template/metadata/annotations/k8s.v1.cni.cncf.io~1networks
+        value: '[{"name":"vlan3","namespace":"default","mac":"10:01:02:00:30:06","ips":["10.102.3.6/24"]},{"name":"vlan4","namespace":"default","mac":"10:00:00:00:01:35","ips":["10.0.0.135/24"],"default-route":["10.0.0.1"]}]'
+      - op: replace
+        path: /spec/template/spec/securityContext/fsGroup
+        value: 1000930000
+      - op: replace
+        path: /spec/template/spec/containers/0/securityContext/runAsUser
+        value: 1000930000
