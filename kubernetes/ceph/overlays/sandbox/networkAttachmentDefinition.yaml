@@ -1,0 +1,34 @@
+# https://docs.redhat.com/en/documentation/red_hat_openshift_data_foundation/4.13/html/managing_and_allocating_storage_resources/creating-multus-networks_rhodf#creating-network-attachment-definitions_rhodf
+apiVersion: "k8s.cni.cncf.io/v1"
+kind: NetworkAttachmentDefinition
+metadata:
+  name: ocs-public
+  namespace: rook-ceph
+spec:
+  config: '{
+    "cniVersion": "0.3.1",
+    "type": "macvlan",
+    "master": "bond1",
+    "mode": "bridge",
+    "ipam": {
+    "type": "whereabouts",
+    "range": "10.0.1.128/25"
+    }
+    }'
+---
+apiVersion: "k8s.cni.cncf.io/v1"
+kind: NetworkAttachmentDefinition
+metadata:
+  name: ocs-cluster
+  namespace: rook-ceph
+spec:
+  config: '{
+    "cniVersion": "0.3.1",
+    "type": "macvlan",
+    "master": "bond2",
+    "mode": "bridge",
+    "ipam": {
+    "type": "whereabouts",
+    "range": "10.0.3.128/25"
+    }
+    }'
