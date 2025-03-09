@@ -2,13 +2,17 @@ apiVersion: postgres-operator.crunchydata.com/v1beta1
 kind: PostgresCluster
 metadata:
   name: photoprism
-  namespace: postgres
+  namespace: photoprism
   annotations:
     argocd.argoproj.io/sync-wave: "1"
     argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
   labels:
     app.kubernetes.io/instance: postgres
 spec:
+  # dataSource:
+  #   postgresCluster:
+  #     clusterName: photoprism
+  #     repoName: repo2
   shutdown: false
   backups:
     pgbackrest:
@@ -75,7 +79,7 @@ spec:
           requests:
             storage: 3Gi
       name: ""
-      replicas: 2
+      replicas: 1
       resources:
         requests:
           memory: "250Mi"

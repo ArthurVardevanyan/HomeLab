@@ -6,11 +6,16 @@ metadata:
   labels:
     app.kubernetes.io/instance: photoprism
   annotations:
+    externaldns.k8s.io: pihole
     route.openshift.io/termination: edge
 spec:
   ingressClassName: openshift-default
+  tls:
+    - hosts:
+        - photoprism.arthurvardevanyan.com
+      secretName: photoprism-cert
   rules:
-    - host: photoprism.apps.okd.arthurvardevanyan.com
+    - host: photoprism.arthurvardevanyan.com
       http:
         paths:
           - path: ""
