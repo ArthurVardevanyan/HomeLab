@@ -1,0 +1,66 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - ../../base
+components:
+  - ../../components/openshift
+patches:
+  - target:
+      kind: PersistentVolumeClaim
+      name: nextcloud-config
+    patch: |-
+      - op: replace
+        path: /spec/storageClassName
+        value: lvms-vg1-immediate-rwx
+      - op: replace
+        path: /spec/accessModes/0
+        value: ReadWriteOnce
+  - target:
+      kind: PersistentVolumeClaim
+      name: nextcloud-preview-cache
+    patch: |-
+      - op: replace
+        path: /spec/storageClassName
+        value: lvms-vg1-immediate-rwx
+      - op: replace
+        path: /spec/accessModes/0
+        value: ReadWriteOnce
+  - target:
+      kind: PostgresCluster
+      name: nextcloud
+    patch: |-
+      - op: replace
+        path: /spec/instances/0/dataVolumeClaimSpec/storageClassName
+        value: lvms-vg1-immediate
+      - op: replace
+        path: /spec/instances/0/replicas
+        value: 1
+      - op: replace
+        path: /spec/backups/pgbackrest/repos/0/volume/volumeClaimSpec/storageClassName
+        value: lvms-vg1-immediate
+  - target:
+      kind: Dragonfly
+      name: nextcloud-dragonfly
+    patch: |-
+      - op: replace
+        path: /spec/replicas
+        value: 1
+  - target:
+      kind: Deployment
+      name: nextcloud
+    patch: |-
+      - op: remove
+        path: /spec/template/spec/runtimeClassName
+      - op: replace
+        path: /spec/replicas
+        value: 1
+      - op: replace
+        path: /spec/template/spec/volumes/2/persistentVolumeClaim/claimName
+        value: nextcloud-data-backup
+  - target:
+      kind: CronJob
+      name: nextcloud-rsync
+    patch: |-
+      - op: replace
+        path: /spec/suspend
+        value: true
