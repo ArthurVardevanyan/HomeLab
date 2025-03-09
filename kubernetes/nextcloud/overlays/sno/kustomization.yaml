@@ -64,3 +64,17 @@ patches:
       - op: replace
         path: /spec/suspend
         value: true
+  - patch: |-
+      apiVersion: policy/v1
+      kind: PodDisruptionBudget
+      metadata:
+        name: dragonfly
+        namespace: nextcloud
+      $patch: delete
+  - patch: |-
+      apiVersion: policy/v1
+      kind: PodDisruptionBudget
+      metadata:
+        name: nextcloud
+        namespace: nextcloud
+      $patch: delete

@@ -25,3 +25,10 @@ patches:
       - op: replace
         path: /spec/replicas
         value: 1
+  - patch: |-
+      apiVersion: policy/v1
+      kind: PodDisruptionBudget
+      metadata:
+        name: grafana
+        namespace: grafana
+      $patch: delete
