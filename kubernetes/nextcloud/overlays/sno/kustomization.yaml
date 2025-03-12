@@ -64,6 +64,11 @@ patches:
       - op: replace
         path: /spec/suspend
         value: true
+  - target:
+      kind: CronJob
+    patch: |-
+      - op: remove
+        path: /spec/jobTemplate/spec/template/spec/runtimeClassName
   - patch: |-
       apiVersion: policy/v1
       kind: PodDisruptionBudget
