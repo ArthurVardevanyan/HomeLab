@@ -1,0 +1,28 @@
+kind: Ingress
+apiVersion: networking.k8s.io/v1
+metadata:
+  name: influxdb
+  namespace: influxdb
+  labels:
+    blackbox: ignore
+    app.kubernetes.io/instance: influxdb
+  annotations:
+    externaldns.k8s.io: pihole
+    route.openshift.io/termination: edge
+spec:
+  ingressClassName: openshift-default
+  tls:
+    - hosts:
+        - influxdb.arthurvardevanyan.com
+      secretName: influxdb-cert
+  rules:
+    - host: influxdb.arthurvardevanyan.com
+      http:
+        paths:
+          - path: ""
+            pathType: ImplementationSpecific
+            backend:
+              service:
+                name: influxdb
+                port:
+                  name: http

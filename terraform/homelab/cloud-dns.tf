@@ -48,3 +48,9 @@ resource "google_service_account_iam_member" "cloud_dns" {
   role               = "roles/iam.workloadIdentityUser"
   member             = "principal://iam.googleapis.com/projects/${local.homelab_project_num}/locations/global/workloadIdentityPools/${google_iam_workload_identity_pool.okd_homelab_wif.workload_identity_pool_id}/subject/system:serviceaccount:cert-manager:cert-manager"
 }
+
+resource "google_service_account_iam_member" "cloud_dns_sno" {
+  service_account_id = google_service_account.cloud_dns.id
+  role               = "roles/iam.workloadIdentityUser"
+  member             = "principal://iam.googleapis.com/projects/${local.homelab_project_num}/locations/global/workloadIdentityPools/${google_iam_workload_identity_pool.sno_homelab_wif.workload_identity_pool_id}/subject/system:serviceaccount:cert-manager:cert-manager"
+}

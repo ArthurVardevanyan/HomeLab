@@ -1,0 +1,65 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - ../../base
+components:
+  - ../../components/openshift
+patches:
+  - target:
+      kind: PersistentVolumeClaim
+      name: gitea
+    patch: |-
+      - op: replace
+        path: /spec/storageClassName
+        value: lvms-vg1-immediate-rwx
+      - op: replace
+        path: /spec/accessModes/0
+        value: ReadWriteOnce
+  - target:
+      kind: PostgresCluster
+      name: gitea
+    patch: |-
+      - op: replace
+        path: /spec/instances/0/dataVolumeClaimSpec/storageClassName
+        value: lvms-vg1-immediate
+      - op: replace
+        path: /spec/instances/0/replicas
+        value: 1
+      - op: replace
+        path: /spec/backups/pgbackrest/repos/0/volume/volumeClaimSpec/storageClassName
+        value: lvms-vg1-immediate
+  - target:
+      kind: Dragonfly
+      name: gitea-dragonfly
+    patch: |-
+      - op: replace
+        path: /spec/replicas
+        value: 1
+  - target:
+      kind: Deployment
+      name: gitea
+    patch: |-
+      - op: replace
+        path: /spec/replicas
+        value: 1
+  - patch: |-
+      apiVersion: policy/v1
+      kind: PodDisruptionBudget
+      metadata:
+        name: dragonfly
+        namespace: gitea
+      $patch: delete
+  - patch: |-
+      apiVersion: policy/v1
+      kind: PodDisruptionBudget
+      metadata:
+        name: gitea
+        namespace: gitea
+      $patch: delete
+  - patch: |-
+      apiVersion: objectbucket.io/v1alpha1
+      kind: ObjectBucketClaim
+      metadata:
+        name: gitea
+        namespace: gitea
+      $patch: delete

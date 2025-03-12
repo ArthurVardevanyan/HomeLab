@@ -1,0 +1,16 @@
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: nextcloud
+  namespace: nextcloud
+  labels:
+    app.kubernetes.io/instance: nextcloud
+    velero.io/exclude-from-backup: "true"
+spec:
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 1Ti
+  storageClassName: rook-cephfs
+  volumeMode: Filesystem

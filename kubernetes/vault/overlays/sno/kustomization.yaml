@@ -1,0 +1,24 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - ../../base
+components:
+  - ../../components/ha
+  - ../../components/openshift
+generatorOptions:
+  disableNameSuffixHash: false # ArgoCD Garbage Collection
+configMapGenerator:
+  - name: gcp-credentials-request
+    namespace: vault
+    files:
+      - credentials_config.json
+patches:
+  - target:
+      kind: StatefulSet
+      name: vault
+    patch: |-
+      - op: replace
+        path: /spec/volumeClaimTemplates/0/spec/storageClassName
+        value: lvms-vg1-immediate
+      - op: remove
+        path: /spec/template/spec/topologySpreadConstraints

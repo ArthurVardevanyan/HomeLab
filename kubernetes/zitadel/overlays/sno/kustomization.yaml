@@ -1,0 +1,34 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - ../../base
+components:
+  - ../../components/openshift
+patches:
+  - target:
+      kind: PostgresCluster
+      name: zitadel
+    patch: |-
+      - op: replace
+        path: /spec/instances/0/dataVolumeClaimSpec/storageClassName
+        value: lvms-vg1-immediate
+      - op: replace
+        path: /spec/instances/0/replicas
+        value: 1
+      - op: replace
+        path: /spec/backups/pgbackrest/repos/0/volume/volumeClaimSpec/storageClassName
+        value: lvms-vg1-immediate
+  - target:
+      kind: Deployment
+      name: zitadel
+    patch: |-
+      - op: replace
+        path: /spec/replicas
+        value: 1
+  - patch: |-
+      apiVersion: policy/v1
+      kind: PodDisruptionBudget
+      metadata:
+        name: zitadel
+        namespace: zitadel
+      $patch: delete

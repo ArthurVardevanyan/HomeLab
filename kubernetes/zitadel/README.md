@@ -4,7 +4,7 @@
 helm template zitadel zitadel/zitadel \
  --set zitadel.masterkey="<path:secret/data/homelab/zitadel/config#masterkey>" \
  --set zitadel.configmapConfig.ExternalSecure=true \
- --set zitadel.configmapConfig.ExternalDomain="zitadel.apps.okd.arthurvardevanyan.com" \
+ --set zitadel.configmapConfig.ExternalDomain="zitadel.arthurvardevanyan.com" \
  --set zitadel.configmapConfig.ExternalPort="443" \
  --set zitadel.configmapConfig.TLS.Enabled=false \
  --set zitadel.configmapConfig.Database.cockroach.User.SSL.Mode="verify-full" \
@@ -42,7 +42,7 @@ kubectl kustomize kubernetes/zitadel/overlays/okd | argocd-vault-plugin generate
 Initial User
 
 ```bash
-zitadel-admin@zitadel.zitadel.apps.okd.arthurvardevanyan.com
+zitadel-admin@zitadel.zitadel.arthurvardevanyan.com
 ```
 
 Call Back URLs

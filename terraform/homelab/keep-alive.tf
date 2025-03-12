@@ -63,6 +63,11 @@ resource "google_service_account_iam_member" "keep_alive" {
   member             = "principal://iam.googleapis.com/projects/${local.homelab_project_num}/locations/global/workloadIdentityPools/${google_iam_workload_identity_pool.okd_homelab_wif.workload_identity_pool_id}/subject/system:serviceaccount:keep-alive:keep-alive"
 }
 
+resource "google_service_account_iam_member" "keep_alive_sno" {
+  service_account_id = google_service_account.keep_alive.id
+  role               = "roles/iam.workloadIdentityUser"
+  member             = "principal://iam.googleapis.com/projects/${local.homelab_project_num}/locations/global/workloadIdentityPools/${google_iam_workload_identity_pool.sno_homelab_wif.workload_identity_pool_id}/subject/system:serviceaccount:keep-alive:keep-alive"
+}
 
 resource "google_secret_manager_secret" "discord_keep_alive" {
   project   = "homelab-${local.project_id}"

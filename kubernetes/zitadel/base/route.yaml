@@ -6,12 +6,13 @@ metadata:
   labels:
     app.kubernetes.io/instance: zitadel
   annotations:
+    externaldns.k8s.io: pihole
     route.openshift.io/termination: reencrypt
     route.openshift.io/destination-ca-certificate-secret: ca-bundle
 spec:
   ingressClassName: openshift-default
   rules:
-    - host: zitadel.apps.okd.arthurvardevanyan.com
+    - host: zitadel.arthurvardevanyan.com
       http:
         paths:
           - path: ""
@@ -23,5 +24,5 @@ spec:
                   name: http2-server
   tls:
     - hosts:
-        - zitadel.apps.okd.arthurvardevanyan.com
+        - zitadel.arthurvardevanyan.com
       secretName: zitadel-cert

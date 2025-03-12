@@ -120,6 +120,8 @@ spec:
             cidr: 10.0.0.100/32 # OKD HaProxy
         - ipBlock:
             cidr: 10.0.0.131/32 # OKD KubVip
+        - ipBlock:
+            cidr: 10.102.1.100/32 # SNO
 ---
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
@@ -170,3 +172,26 @@ spec:
       ports:
         - protocol: TCP
           port: 8080
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-truenas-egress-gitea
+  namespace: gitea
+  annotations:
+    argocd.argoproj.io/sync-wave: "0"
+  labels:
+    app.kubernetes.io/instance: gitea
+spec:
+  policyTypes:
+    - Egress
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: gitea
+  egress:
+    - to:
+        - ipBlock:
+            cidr: 10.0.0.3/32
+      ports:
+        - protocol: TCP
+          port: 9000

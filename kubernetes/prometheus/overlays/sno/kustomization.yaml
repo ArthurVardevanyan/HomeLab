@@ -1,0 +1,40 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - ../../base
+components:
+  - ../../components/node-exporter
+  - ../../components/openshift
+  # - ../../components/prometheus
+  - ../../components/prometheus-truenas
+  - ../../components/thanos-querier
+  # - ../../components/thanos
+  - ../../components/thanos-truenas
+patches:
+  - target:
+      kind: StatefulSet
+    patch: |-
+      - op: replace
+        path: /spec/volumeClaimTemplates/0/spec/storageClassName
+        value: lvms-vg1-immediate
+  - target:
+      kind: Ingress
+      name: prometheus
+    patch: |-
+      - op: replace
+        path: /spec/rules/0/host
+        value: prometheus.apps.okd.sno.arthurvardevanyan.com
+  - target:
+      kind: Ingress
+      name: prometheus-truenas
+    patch: |-
+      - op: replace
+        path: /spec/rules/0/host
+        value: prometheus-truenas.apps.okd.sno.arthurvardevanyan.com
+  - target:
+      kind: Ingress
+      name: thanos-querier
+    patch: |-
+      - op: replace
+        path: /spec/rules/0/host
+        value: thanos-querier.apps.okd.sno.arthurvardevanyan.com

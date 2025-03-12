@@ -1,0 +1,27 @@
+kind: Ingress
+apiVersion: networking.k8s.io/v1
+metadata:
+  name: grafana
+  namespace: grafana
+  labels:
+    app.kubernetes.io/instance: gitea
+  annotations:
+    externaldns.k8s.io: pihole
+    route.openshift.io/termination: edge
+spec:
+  ingressClassName: openshift-default
+  tls:
+    - hosts:
+        - grafana.arthurvardevanyan.com
+      secretName: grafana-cert
+  rules:
+    - host: grafana.arthurvardevanyan.com
+      http:
+        paths:
+          - path: ""
+            pathType: ImplementationSpecific
+            backend:
+              service:
+                name: grafana
+                port:
+                  name: http

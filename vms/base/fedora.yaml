@@ -1,0 +1,114 @@
+apiVersion: kubevirt.io/v1
+kind: VirtualMachine
+metadata:
+  annotations:
+  name: fedora
+  namespace: arthurvardevanyan
+  labels:
+    app: fedora
+    vm.kubevirt.io/template: fedora-server-small
+    vm.kubevirt.io/template.namespace: openshift
+    vm.kubevirt.io/template.revision: "1"
+    vm.kubevirt.io/template.version: v0.27.0
+spec:
+  dataVolumeTemplates:
+    - metadata:
+        name: fedora
+      spec:
+        preallocation: false
+        sourceRef:
+          kind: DataSource
+          name: fedora
+          namespace: kubevirt-os-images
+        storage:
+          resources:
+            requests:
+              storage: 100Gi
+          storageClassName: rook-ceph-block-virtualization
+  runStrategy: Manual
+  template:
+    metadata:
+      annotations:
+        vm.kubevirt.io/flavor: small
+        vm.kubevirt.io/os: fedora
+        vm.kubevirt.io/workload: server
+      labels:
+        kubevirt.io/domain: fedora
+        kubevirt.io/size: small
+    spec:
+      # accessCredentials:
+      #   - sshPublicKey:
+      #       propagationMethod:
+      #         noCloud: {}
+      #       source:
+      #         secret:
+      #           secretName: ryzen-orange-rodent-83
+      architecture: amd64
+      domain:
+        cpu:
+          model: host-passthrough
+          features:
+            - name: svm
+              policy: require
+          cores: 6
+          sockets: 1
+          threads: 1
+        devices:
+          disks:
+            - bootOrder: 1
+              disk:
+                bus: virtio
+              name: rootdisk
+            # - bootOrder: 2
+            #   disk:
+            #     bus: virtio
+            #   name: cloudinitdisk
+          interfaces:
+            - macAddress: "02:81:1d:00:00:0b"
+              masquerade: {}
+              model: virtio
+              name: default
+            - bridge: {}
+              macAddress: "10:00:00:00:01:33"
+              model: virtio
+              name: vlan4
+          networkInterfaceMultiqueue: true
+          rng: {}
+        features:
+          acpi: {}
+          smm:
+            enabled: true
+        firmware:
+          bootloader:
+            efi: {}
+        machine:
+          type: q35
+        memory:
+          guest: 5Gi
+          maxGuest: 32Gi
+        resources:
+          requests:
+            memory: 5Gi
+            cpu: 20m
+      evictionStrategy: None
+      networks:
+        - name: default
+          pod: {}
+        - multus:
+            networkName: default/vlan4
+          name: vlan4
+      terminationGracePeriodSeconds: 180
+      volumes:
+        - dataVolume:
+            name: fedora
+          name: rootdisk
+        # - name: tmp
+        #   emptyDisk:
+        #     capacity: 50Gi
+        # - cloudInitNoCloud:
+        #     userData: |-
+        #       #cloud-config
+        #       user: arthur
+        #       password:
+        #       chpasswd: { expire: False }
+        #   name: cloudinitdisk

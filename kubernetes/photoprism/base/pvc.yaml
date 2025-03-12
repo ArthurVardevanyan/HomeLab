@@ -7,11 +7,11 @@ metadata:
     app.kubernetes.io/instance: photoprism
 spec:
   accessModes:
-    - ReadWriteOnce
+    - ReadWriteMany
   resources:
     requests:
       storage: 5Gi
-  storageClassName: rook-ceph-block
+  storageClassName: rook-cephfs
   volumeMode: Filesystem
 ---
 kind: PersistentVolumeClaim
@@ -23,11 +23,11 @@ metadata:
     app.kubernetes.io/instance: photoprism
 spec:
   accessModes:
-    - ReadWriteOnce
+    - ReadWriteMany
   resources:
     requests:
       storage: 50Gi
-  storageClassName: rook-ceph-block
+  storageClassName: rook-cephfs
   volumeMode: Filesystem
 ---
 apiVersion: v1
@@ -42,7 +42,7 @@ spec:
   storageClassName: nfs
   volumeName: photoprism-media
   accessModes:
-    - ReadWriteOnce
+    - ReadWriteMany
   resources:
     requests:
       storage: 250G
@@ -61,7 +61,7 @@ spec:
   capacity:
     storage: 250G
   accessModes:
-    - ReadWriteOnce
+    - ReadWriteMany
   mountOptions:
     - hard
     - nfsvers=4.1

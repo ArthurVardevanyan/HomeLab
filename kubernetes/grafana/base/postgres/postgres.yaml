@@ -1,0 +1,168 @@
+apiVersion: postgres-operator.crunchydata.com/v1beta1
+kind: PostgresCluster
+metadata:
+  name: grafana
+  namespace: grafana
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+  labels:
+    app.kubernetes.io/instance: postgres
+spec:
+  shutdown: false
+  # dataSource:
+  #   postgresCluster:
+  #     clusterName: grafana
+  #     repoName: repo2
+  backups:
+    pgbackrest:
+      configuration:
+        - secret:
+            name: truenas-s3-backup
+      global:
+        repo1-retention-full: "2"
+        repo1-retention-full-type: count
+        repo2-path: /grafana
+        repo2-retention-full: "3"
+        repo2-retention-full-type: count
+        repo2-s3-uri-style: path
+      repoHost:
+        resources:
+          limits:
+            memory: "32Mi"
+            cpu: "45m"
+          requests:
+            memory: "16Mi"
+            cpu: "10m"
+      sidecars:
+        pgbackrest:
+          resources:
+            limits:
+              memory: "128Mi"
+              cpu: "250m"
+            requests:
+              memory: "16Mi"
+              cpu: "10m"
+        pgbackrestConfig:
+          resources:
+            limits:
+              memory: "32Mi"
+              cpu: "45m"
+            requests:
+              memory: "16Mi"
+              cpu: "10m"
+      repos:
+        - name: repo1
+          schedules:
+            full: "0 7 * * 0"
+            differential: "0 7 * * 1-6"
+          volume:
+            volumeClaimSpec:
+              storageClassName: rook-ceph-block
+              accessModes:
+                - ReadWriteOnce
+              resources:
+                requests:
+                  storage: 2Gi
+        - name: repo2
+          s3:
+            bucket: postgres
+            endpoint: "truenas.arthurvardevanyan.com:9000"
+            region: homelab
+          schedules:
+            full: "0 6 * * 0"
+            differential: "0 6 * * 1-6"
+  instances:
+    - dataVolumeClaimSpec:
+        storageClassName: rook-ceph-block
+        accessModes:
+          - ReadWriteOnce
+        resources:
+          requests:
+            storage: 5Gi
+      name: ""
+      replicas: 2
+      resources:
+        requests:
+          memory: "250Mi"
+          cpu: "25m"
+        limits:
+          memory: "500Mi"
+          cpu: "50m"
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - labelSelector:
+                matchLabels:
+                  postgres-operator.crunchydata.com/cluster: grafana
+                  postgres-operator.crunchydata.com/instance-set: "00"
+              topologyKey: "kubernetes.io/hostname"
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              podAffinityTerm:
+                labelSelector:
+                  matchLabels:
+                    postgres-operator.crunchydata.com/cluster: grafana
+                    postgres-operator.crunchydata.com/instance-set: "00"
+                topologyKey: topology.kubernetes.io/zone
+  patroni:
+    dynamicConfiguration:
+      postgresql:
+        pg_hba:
+          - "host all all 0.0.0.0/0 trust"
+  monitoring:
+    pgmonitor:
+      exporter:
+        resources:
+          limits:
+            memory: "32Mi"
+            cpu: "10m"
+          requests:
+            memory: "16Mi"
+            cpu: "5m"
+  # userInterface:
+  #   pgAdmin:
+  #     dataVolumeClaimSpec:
+  #       accessModes:
+  #         - ReadWriteOnce
+  #       resources:
+  #         requests:
+  #           storage: 25Mi
+  #       storageClassName: rook-ceph-block
+
+  #     replicas: 1
+  #     resources:
+  #       limits:
+  #         cpu: 150m
+  #         memory: 256Mi
+  #       requests:
+  #         cpu: 25m
+  #         memory: 128Mi
+  openshift: true
+  port: 5432
+  postgresVersion: 17
+# ---
+# apiVersion: postgres-operator.crunchydata.com/v1beta1
+# kind: PGUpgrade
+# metadata:
+#   name: grafana-upgrade
+#   namespace: postgres
+# spec:
+#   fromPostgresVersion: 15
+#   postgresClusterName: grafana
+#   toPostgresVersion: 17
+
+# kubectl delete ResourceQuota -n postgres --all
+# kubectl delete LimitRange -n postgres --all
+
+# kubectl patch postgrescluster grafana -n postgres --type=merge \
+#     -p '{"spec":{"shutdown":true}}'
+
+# kubectl annotate postgrescluster grafana -n postgres  \
+#     postgres-operator.crunchydata.com/allow-upgrade=grafana-upgrade
+
+# kubectl patch postgrescluster grafana -n postgres --type "json" -p \
+# '[{"op":"replace","path":"/spec/postgresVersion","value":17}]'
+
+# kubectl patch postgrescluster grafana -n postgres --type=merge \
+#     -p '{"spec":{"shutdown":false}}'
