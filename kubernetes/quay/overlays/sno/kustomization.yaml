@@ -4,13 +4,6 @@ resources:
   - ../../base
 patches:
   - target:
-      kind: QuayRegistry
-      name: quay
-    patch: |-
-      - op: replace
-        path: /spec/components/0/managed
-        value: false
-  - target:
       kind: PostgresCluster
       name: quay
     patch: |-
@@ -27,9 +20,6 @@ patches:
       kind: PostgresCluster
       name: clair
     patch: |-
-      - op: replace
-        path: /spec/shutdown
-        value: true
       - op: replace
         path: /spec/instances/0/dataVolumeClaimSpec/storageClassName
         value: lvms-vg1-immediate
