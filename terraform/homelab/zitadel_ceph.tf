@@ -1,4 +1,4 @@
-# ceph dashboard sso setup saml2 https://ceph.apps.okd.arthurvardevanyan.com https://zitadel.apps.okd.arthurvardevanyan.com/saml/v2/metadata UserName
+# ceph dashboard sso setup saml2 https://ceph.apps.okd.arthurvardevanyan.com https://zitadel.arthurvardevanyan.com/saml/v2/metadata UserName
 # ceph dashboard ac-user-create ArthurVardevanyan
 # ceph dashboard ac-user-create ArthurVardevanyan --force-password --enabled -i /tmp/pass
 # ceph dashboard ac-user-add-roles ArthurVardevanyan administrator

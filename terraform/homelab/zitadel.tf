@@ -1,7 +1,7 @@
 
 
 provider "zitadel" {
-  domain           = "zitadel.apps.okd.arthurvardevanyan.com"
+  domain           = "zitadel.arthurvardevanyan.com"
   insecure         = "false"
   port             = "443"
   jwt_profile_file = "/tmp/zitadel.json"
