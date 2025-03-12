@@ -23,14 +23,24 @@ DISTRIBUTED_STORAGE_PREFERENCE:
 DISTRIBUTED_STORAGE_CONFIG:
   default:
     - RadosGWStorage
-    - access_key: <path:secret/data/homelab/quay/minio#access_key>
-      secret_key: <path:secret/data/homelab/quay/minio#secret_key>
-      hostname: rook-ceph-rgw-rook-ceph-obj.rook-ceph.svc.cluster.local
+    - access_key: <path:secret/data/homelab/minio#access_key>
+      secret_key: <path:secret/data/homelab/minio#access_key>
+      hostname: truenas.arthurvardevanyan.com
       # checkov:skip=CKV_SECRET_6 PlaceHolder Values
-      bucket_name: quay-f152d873-b952-4df3-bd9c-1de7d39cb7bf
-      port: 8080
-      is_secure: false
+      bucket_name: quay
+      port: 9000
+      is_secure: true
       storage_path: /datastorage/registry
+  # default:
+  #   - RadosGWStorage
+  #   - access_key: <path:secret/data/homelab/quay/minio#access_key>
+  #     secret_key: <path:secret/data/homelab/quay/minio#secret_key>
+  #     hostname: rook-ceph-rgw-rook-ceph-obj.rook-ceph.svc.cluster.local
+  #     # checkov:skip=CKV_SECRET_6 PlaceHolder Values
+  #     bucket_name: quay-f152d873-b952-4df3-bd9c-1de7d39cb7bf
+  #     port: 8080
+  #     is_secure: false
+  #     storage_path: /datastorage/registry
 DEFAULT_TAG_EXPIRATION: 30m
 FEATURE_PROXY_STORAGE: true
 TAG_EXPIRATION_OPTIONS:
