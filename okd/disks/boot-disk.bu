@@ -1,0 +1,36 @@
+# butane ./sandbox/kubevirt/okd/configs/boot-disk.bu -o ./sandbox/kubevirt/okd/configs/boot-disk.yaml
+variant: openshift
+version: 4.18.0
+metadata:
+  name: raid1-storage
+  labels:
+    machineconfiguration.openshift.io/role: master
+boot_device:
+  mirror:
+    devices:
+      - /dev/disk/by-path/pci-0000:02:00.1-ata-4.0
+      - /dev/disk/by-path/pci-0000:02:00.1-ata-3.0
+storage:
+  disks:
+    - device: /dev/disk/by-path/pci-0000:02:00.1-ata-4.0
+      partitions:
+        - label: root-1
+          size_mib: 100000
+        - label: var-1
+    - device: /dev/disk/by-path/pci-0000:02:00.1-ata-3.0
+      partitions:
+        - label: root-2
+          size_mib: 100000
+        - label: var-2
+  raid:
+    - name: md-var
+      level: raid1
+      devices:
+        - /dev/disk/by-partlabel/var-1
+        - /dev/disk/by-partlabel/var-2
+  filesystems:
+    - device: /dev/md/md-var
+      path: /var
+      format: xfs
+      wipe_filesystem: true
+      with_mount_unit: true
