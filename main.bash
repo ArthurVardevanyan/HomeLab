@@ -917,7 +917,7 @@ delete_okd_virt() {
   kubectl delete -f "${HOMELAB}/sandbox/kubevirt/okd/vm" --ignore-not-found
 }
 
-delete_okd_sno() {
+delete_okd_bm() {
   export HOMELAB="${PWD}"
   export OKD=/tmp/okd
 
@@ -990,6 +990,8 @@ install_okd_prep() {
   sed -i "s/<CONTROL_PLANE>/${TF_VAR_control_plane_count:-${CONTROL_PLANE_COUNT}}/g" "${OKD}/okd/install-config.yaml"
   sed -i "s/<WORKERS>/${TF_VAR_worker_count:-${WORKER_COUNT}}/g" "${OKD}/okd/install-config.yaml"
   cp "${OKD}/okd/install-config.yaml" "${OKD}/okd/install-config_backup.yaml"
+
+  export OPENSHIFT_INSTALL_OS_IMAGE_OVERRIDE=${OPENSHIFT_INSTALL_OS_IMAGE_OVERRIDE:-"https://mirror.openshift.com/pub/openshift-v4/x86_64/dependencies/rhcos/4.18/4.18.1/rhcos-4.18.1-x86_64-live.x86_64.iso"}
 }
 
 install_okd_virt() {
@@ -1007,7 +1009,6 @@ install_okd_virt() {
   echo -e "\n\n${BLUE}Get URL:${NC}"
   URL=${URL:-virt.arthurvardevanyan.com}
   install_okd_prep
-  export OPENSHIFT_INSTALL_OS_IMAGE_OVERRIDE=${OPENSHIFT_INSTALL_OS_IMAGE_OVERRIDE:-"https://mirror.openshift.com/pub/openshift-v4/x86_64/dependencies/rhcos/4.18/4.18.1/rhcos-4.18.1-x86_64-live.x86_64.iso"}
 
   cp "${HOMELAB}/sandbox/kubevirt/okd/configs/agent-config.yaml" "${OKD}/okd/"
   cp "${HOMELAB}/sandbox/kubevirt/okd/configs/containerfile" "${OKD}/okd/containerfile"
@@ -1034,7 +1035,7 @@ install_okd_virt() {
 
 install_okd_sno() {
 
-  delete_okd_sno
+  delete_okd_bm
   export HOMELAB="${PWD}"
   export OKD=/tmp/okd
 
@@ -1046,11 +1047,41 @@ install_okd_sno() {
   echo -e "\n\n${BLUE}Get URL:${NC}"
   URL=${URL:-sno.arthurvardevanyan.com}
   install_okd_prep
-  export OPENSHIFT_INSTALL_OS_IMAGE_OVERRIDE=${OPENSHIFT_INSTALL_OS_IMAGE_OVERRIDE:-"https://mirror.openshift.com/pub/openshift-v4/x86_64/dependencies/rhcos/4.18/4.18.1/rhcos-4.18.1-x86_64-live.x86_64.iso"}
 
   cp "${HOMELAB}/sandbox/sno/agent-config.yaml" "${OKD}/okd/"
 
   "${OKD}/openshift-install" agent create cluster-manifests --dir "${OKD}/okd/"
+
+  "${OKD}/openshift-install" agent create image --dir "${OKD}/okd/"
+
+  export KUBECONFIG="${OKD}/okd/auth/kubeconfig"
+  "${OKD}/openshift-install" agent wait-for bootstrap-complete --dir "${OKD}/okd/"
+  # "${OKD}/oc" apply -f "${HOMELAB}/okd/okd-configuration/overlays/sandbox/ingress-controller.yaml"
+  "${OKD}/openshift-install" agent wait-for install-complete --dir "${OKD}/okd/"
+}
+
+install_okd_bm() {
+
+  delete_okd_bm
+  export HOMELAB="${PWD}"
+  export OKD=/tmp/okd
+
+  export CONTROL_PLANE_COUNT
+  export WORKER_COUNT
+  CONTROL_PLANE_COUNT=${CONTROL_PLANE_COUNT:-3}
+  WORKER_COUNT=${WORKER_COUNT:-0}
+
+  echo -e "\n\n${BLUE}Get URL:${NC}"
+  URL=${URL:-test.arthurvardevanyan.com}
+  install_okd_prep
+
+  cp "${HOMELAB}/okd/agent-config.yaml" "${OKD}/okd/"
+
+  "${OKD}/openshift-install" agent create cluster-manifests --dir "${OKD}/okd/"
+
+  mkdir -p "${OKD}/okd/openshift"
+  cp "${HOMELAB}/okd/disks/boot-disk.yaml" "${OKD}/okd/openshift/boot-disk.yaml"
+  cp "${HOMELAB}/okd/disks/secondary-disk.yaml" "${OKD}/okd/openshift/secondary-disk.yaml"
 
   "${OKD}/openshift-install" agent create image --dir "${OKD}/okd/"
 
