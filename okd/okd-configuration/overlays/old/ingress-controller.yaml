@@ -1,0 +1,87 @@
+apiVersion: operator.openshift.io/v1
+kind: IngressController
+metadata:
+  name: default
+  namespace: openshift-ingress-operator
+  annotations:
+    ingress.operator.openshift.io/default-enable-http2: "true"
+  labels:
+    app.kubernetes.io/instance: okd-configuration
+spec:
+  replicas: 2
+  logging:
+    access:
+      destination:
+        type: Container
+  defaultCertificate:
+    name: ingress-certificate
+  # Kube Vip
+  endpointPublishingStrategy:
+    type: Private
+  # endpointPublishingStrategy:
+  #   loadBalancer:
+  #     allowedSourceRanges:
+  #       # Need to Manually Add loadBalancerIP, hence patch below
+  #       # Also need to Scale entire Ingress Operator before making the change
+  #       - 10.0.0.131/32
+  #     dnsManagementPolicy: Unmanaged
+  #     providerParameters:
+  #       type: BareMetal
+  #     scope: External
+  #   type: LoadBalancerService
+  ## HaProxy
+  # endpointPublishingStrategy:
+  #   hostNetwork:
+  #     protocol: PROXY
+  #   type: HostNetwork
+  tlsSecurityProfile:
+    type: Modern
+  # nodePlacement:
+  #   tolerations:
+  #     - key: node-role.kubernetes.io/infra
+  #       effect: NoSchedule
+  #       operator: Exists
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: router-default-lb-kube-vip
+  namespace: openshift-ingress
+  annotations:
+    kube-vip.io/loadbalancerIPs: "10.0.0.131"
+spec:
+  externalTrafficPolicy: Local
+  internalTrafficPolicy: Cluster
+  ports:
+    - name: http
+      port: 80
+      targetPort: http
+    - name: https
+      port: 443
+      targetPort: https
+  selector:
+    ingresscontroller.operator.openshift.io/deployment-ingresscontroller: default
+  type: LoadBalancer
+  loadBalancerClass: kube-vip.io/kube-vip-class
+---
+# apiVersion: v1
+# kind: Service
+# metadata:
+#   name: router-default-lb-metallb
+#   namespace: openshift-ingress
+#   annotations:
+#     metallb.universe.tf/loadBalancerIPs: "10.1.0.131"
+# spec:
+#   externalTrafficPolicy: Local
+#   internalTrafficPolicy: Cluster
+#   ports:
+#     - name: http
+#       port: 80
+#       targetPort: http
+#     - name: https
+#       port: 443
+#       targetPort: https
+#   selector:
+#     ingresscontroller.operator.openshift.io/deployment-ingresscontroller: default
+#   type: LoadBalancer
+#   loadBalancerClass: metallb.io/metallb-class
