@@ -24,7 +24,7 @@ spec:
         seccomp.security.alpha.kubernetes.io/defaultProfileName: "runtime/default"
     spec:
       tolerations:
-        - key: node-role.kubernetes.io/master
+        - key: node-role.kubernetes.io/control-plane
           effect: NoSchedule
         - key: node-role.kubernetes.io/control-plane
           effect: NoSchedule
@@ -35,7 +35,7 @@ spec:
               - matchExpressions:
                   - key: node-role.kubernetes.io/control-plane
                     operator: Exists
-                  - key: node-role.kubernetes.io/master
+                  - key: node-role.kubernetes.io/control-plane
                     operator: Exists
         podAntiAffinity:
           requiredDuringSchedulingIgnoredDuringExecution:

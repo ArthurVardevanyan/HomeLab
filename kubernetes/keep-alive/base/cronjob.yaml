@@ -26,7 +26,7 @@ spec:
             app: keep-alive
         spec:
           tolerations:
-            - key: node-role.kubernetes.io/master
+            - key: node-role.kubernetes.io/control-plane
               effect: NoSchedule
             - key: node-role.kubernetes.io/control-plane
               effect: NoSchedule
@@ -36,7 +36,7 @@ spec:
                 - weight: 1
                   preference:
                     matchExpressions:
-                      - key: node-role.kubernetes.io/master
+                      - key: node-role.kubernetes.io/control-plane
                         operator: In
                         values:
                           - "true"

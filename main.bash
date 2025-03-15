@@ -389,9 +389,9 @@ kvm() {
 
 label_nodes() {
   # Taint
-  kubectl taint node k3s-server-1 node-role.kubernetes.io/master:NoSchedule --overwrite
-  kubectl taint node k3s-server-2 node-role.kubernetes.io/master:NoSchedule --overwrite
-  kubectl taint node k3s-server-3 node-role.kubernetes.io/master:NoSchedule --overwrite
+  kubectl taint node k3s-server-1 node-role.kubernetes.io/control-plane:NoSchedule --overwrite
+  kubectl taint node k3s-server-2 node-role.kubernetes.io/control-plane:NoSchedule --overwrite
+  kubectl taint node k3s-server-3 node-role.kubernetes.io/control-plane:NoSchedule --overwrite
   kubectl taint node k3s-server-2 node-role.kubernetes.io/control-plane:NoSchedule --overwrite
   kubectl taint node k3s-server-3 node-role.kubernetes.io/control-plane:NoSchedule --overwrite
 
@@ -563,7 +563,7 @@ label_vms() {
 
     if [[ "${NODE}" =~ "master" || "${NODE}" =~ "server" ]]; then
       kubectl label nodes "${PREFIX}${NODE}" node-type=master --overwrite
-      kubectl taint node "${PREFIX}${NODE}" node-role.kubernetes.io/master:NoSchedule --overwrite
+      kubectl taint node "${PREFIX}${NODE}" node-role.kubernetes.io/control-plane:NoSchedule --overwrite
     elif [[ "${NODE}" =~ "worker" || "${NODE}" =~ "agent" ]]; then
       kubectl label node "${PREFIX}${NODE}" node-role.kubernetes.io/worker=true --overwrite
       ZONE="EVEN"

@@ -22,7 +22,7 @@ spec:
         - key: node-role.kubernetes.io/control-plane
           operator: Exists
           effect: NoSchedule
-        - key: node-role.kubernetes.io/master
+        - key: node-role.kubernetes.io/control-plane
           operator: Exists
           effect: NoSchedule
       affinity:
@@ -36,7 +36,7 @@ spec:
             - weight: 1
               preference:
                 matchExpressions:
-                  - key: node-role.kubernetes.io/master
+                  - key: node-role.kubernetes.io/control-plane
                     operator: Exists
       priorityClassName: system-cluster-critical
       securityContext:
