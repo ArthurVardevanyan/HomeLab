@@ -14,7 +14,7 @@ export GPG_TTY=$(tty)
 
 ZSH_THEME="custom"
 
-alias oclogin="oc login --web --server https://api.okd.arthurvardevanyan.com:6443"
+alias oclogin="oc login --web --server https://api.okd.homelab.arthurvardevanyan.com:6443"
 # Uncomment the following line to use case-sensitive completion.
 # CASE_SENSITIVE="true"
 
