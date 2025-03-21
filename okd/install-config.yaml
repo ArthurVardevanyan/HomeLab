@@ -12,19 +12,23 @@ metadata:
   name: okd
 networking:
   clusterNetwork:
-    - cidr: 10.128.0.0/14
-      hostPrefix: 23
+    - cidr: 10.101.32.0/19
+      hostPrefix: 22
   machineNetwork:
-    - cidr: 10.0.0.0/24
+    - cidr: 10.101.10.0/24
   networkType: OVNKubernetes
   serviceNetwork:
-    - 172.30.0.0/16
+    - 10.101.16.0/22
+  defaultNetwork:
+    type: OVNKubernetes
+    ovnKubernetesConfig:
+    v4InternalSubnet: 10.101.15.0/24
 platform:
   baremetal:
     apiVIPs:
-      - 10.0.0.100
+      - 10.101.10.3
     ingressVIPs:
-      - 10.0.0.131
+      - 10.101.10.5
 fips: false
 pullSecret: '{ "auths": { "fake": { "auth": "aWQ6cGFzcwo=" } } }'
 sshKey: "<SSH>"

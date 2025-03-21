@@ -11,7 +11,7 @@ apiVersion: v1beta1
 kind: AgentConfig
 metadata:
   name: okd-test
-rendezvousIP: 10.0.0.111
+rendezvousIP: 10.101.10.101
 hosts:
   - hostname: server-1
     role: master
@@ -32,7 +32,7 @@ hosts:
           ipv4:
             enabled: true
             address:
-              - ip: 10.0.0.111
+              - ip: 10.101.10.101
                 prefix-length: 24
             dhcp: false
           ipv6:
@@ -45,6 +45,21 @@ hosts:
             port:
               - enp1s0
               - enp10s0
+        - name: enp6s0
+          description: enp6s0
+          state: down
+        - name: enp7s0f0
+          description: enp7s0f0
+          state: down
+          ipv4:
+            dhcp: false
+            enabled: false
+        - name: enp7s0f1
+          description: enp7s0f1
+          state: down
+          ipv4:
+            dhcp: false
+            enabled: false
       dns-resolver:
         config:
           server:
@@ -53,7 +68,7 @@ hosts:
       routes:
         config:
           - destination: 0.0.0.0/0
-            next-hop-address: 10.0.0.1
+            next-hop-address: 10.101.10.1
             next-hop-interface: bond0
             table-id: 254
   - hostname: server-2
@@ -75,7 +90,7 @@ hosts:
           ipv4:
             enabled: true
             address:
-              - ip: 10.0.0.112
+              - ip: 10.101.10.102
                 prefix-length: 24
             dhcp: false
           ipv6:
@@ -88,6 +103,21 @@ hosts:
             port:
               - enp1s0
               - enp10s0
+        - name: enp6s0
+          description: enp6s0
+          state: down
+        - name: enp7s0f0
+          description: enp7s0f0
+          state: down
+          ipv4:
+            dhcp: false
+            enabled: false
+        - name: enp7s0f1
+          description: enp7s0f1
+          state: down
+          ipv4:
+            dhcp: false
+            enabled: false
       dns-resolver:
         config:
           server:
@@ -96,7 +126,7 @@ hosts:
       routes:
         config:
           - destination: 0.0.0.0/0
-            next-hop-address: 10.0.0.1
+            next-hop-address: 10.101.10.1
             next-hop-interface: bond0
             table-id: 254
   - hostname: server-3
@@ -118,7 +148,7 @@ hosts:
           ipv4:
             enabled: true
             address:
-              - ip: 10.0.0.113
+              - ip: 10.101.10.103
                 prefix-length: 24
             dhcp: false
           ipv6:
@@ -131,6 +161,21 @@ hosts:
             port:
               - enp1s0
               - enp10s0
+        - name: enp6s0
+          description: enp6s0
+          state: down
+        - name: enp7s0f0
+          description: enp7s0f0
+          state: down
+          ipv4:
+            dhcp: false
+            enabled: false
+        - name: enp7s0f1
+          description: enp7s0f1
+          state: down
+          ipv4:
+            dhcp: false
+            enabled: false
       dns-resolver:
         config:
           server:
@@ -139,6 +184,6 @@ hosts:
       routes:
         config:
           - destination: 0.0.0.0/0
-            next-hop-address: 10.0.0.1
+            next-hop-address: 10.101.10.1
             next-hop-interface: bond0
             table-id: 254

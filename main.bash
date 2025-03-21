@@ -1072,7 +1072,7 @@ install_okd_bm() {
   WORKER_COUNT=${WORKER_COUNT:-0}
 
   echo -e "\n\n${BLUE}Get URL:${NC}"
-  URL=${URL:-test.arthurvardevanyan.com}
+  URL=${URL:-homelab.arthurvardevanyan.com}
   install_okd_prep
 
   cp "${HOMELAB}/okd/agent-config.yaml" "${OKD}/okd/"
