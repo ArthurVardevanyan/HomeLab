@@ -1,0 +1,33 @@
+apiVersion: "k8s.cni.cncf.io/v1"
+kind: NetworkAttachmentDefinition
+metadata:
+  name: enp7s0f1-nad-vlan3
+  namespace: default
+  annotations:
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+    argocd.argoproj.io/sync-wave: "4"
+spec:
+  config: '{
+    "cniVersion": "0.3.1",
+    "name": "br1.3",
+    "type": "ovn-k8s-cni-overlay",
+    "topology":"localnet",
+    "netAttachDefName": "default/enp7s0f1-nad-vlan3"
+    }'
+---
+apiVersion: "k8s.cni.cncf.io/v1"
+kind: NetworkAttachmentDefinition
+metadata:
+  name: enp7s0f1-nad-vlan10
+  namespace: default
+  annotations:
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+    argocd.argoproj.io/sync-wave: "4"
+spec:
+  config: '{
+    "cniVersion": "0.3.1",
+    "name": "br1.10",
+    "type": "ovn-k8s-cni-overlay",
+    "topology":"localnet",
+    "netAttachDefName": "default/enp7s0f1-nad-vlan10"
+    }'

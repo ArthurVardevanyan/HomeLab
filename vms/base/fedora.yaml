@@ -1,7 +1,6 @@
 apiVersion: kubevirt.io/v1
 kind: VirtualMachine
 metadata:
-  annotations:
   name: fedora
   namespace: arthurvardevanyan
   labels:
@@ -68,10 +67,10 @@ spec:
               masquerade: {}
               model: virtio
               name: default
-            - bridge: {}
-              macAddress: "10:00:00:00:01:33"
-              model: virtio
-              name: vlan4
+            # - bridge: {}
+            #   macAddress: "10:00:00:00:01:33"
+            #   model: virtio
+            #   name: vlan4
           networkInterfaceMultiqueue: true
           rng: {}
         features:
@@ -94,9 +93,9 @@ spec:
       networks:
         - name: default
           pod: {}
-        - multus:
-            networkName: default/vlan4
-          name: vlan4
+        # - multus:
+        #     networkName: default/vlan4
+        #   name: vlan4
       terminationGracePeriodSeconds: 180
       volumes:
         - dataVolume:
