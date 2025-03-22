@@ -1,0 +1,13 @@
+apiVersion: nmstate.io/v1
+kind: NodeNetworkConfigurationPolicy
+metadata:
+  annotations:
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+  name: dns
+spec:
+  desiredState:
+    dns-resolver:
+      config:
+        server:
+          - 10.0.0.98
+          - 10.0.0.94
