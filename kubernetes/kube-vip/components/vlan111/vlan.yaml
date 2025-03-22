@@ -1,0 +1,101 @@
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: kube-vip-ds-vlan111
+  namespace: kube-vip
+  annotations:
+    checkov.io/skip1: CKV_K8S_8=Not Supported
+    checkov.io/skip2: CKV_K8S_9=Not Supported
+    checkov.io/skip3: CKV_K8S_38=Leader Election and Services
+    checkov.io/skip4: CKV_K8S_40=Needs to run as root
+    checkov.io/skip5: CKV_K8S_23=Needs to run as root
+    checkov.io/skip6: CKV_K8S_25=Needs Network capabilities
+    checkov.io/skip7: CKV_K8S_19=Needs Host Network to Manage Load Balancing
+spec:
+  selector:
+    matchLabels:
+      app: kube-vip-ds
+  template:
+    metadata:
+      labels:
+        app: kube-vip-ds
+    spec:
+      securityContext:
+        seccompProfile:
+          type: RuntimeDefault
+        runAsNonRoot: false
+      containers:
+        - args:
+            - manager
+          env:
+            - name: vip_arp
+              value: "true"
+            - name: port
+              value: "6443"
+            - name: vip_cidr
+              value: "32"
+            - name: cp_enable
+              value: "false" # True
+            - name: cp_namespace
+              value: kube-vip
+            - name: vip_ddns
+              value: "false"
+            - name: vip_leaderelection
+              value: "true"
+            - name: vip_leaseduration
+              value: "15"
+            - name: vip_renewdeadline
+              value: "10"
+            - name: vip_retryperiod
+              value: "2"
+            - name: svc_enable
+              value: "true"
+            - name: svc_election
+              value: "true"
+            - name: enableServicesElection
+              value: "true"
+            - name: lb_class_only
+              value: "true"
+            - name: svc_leasename
+              value: "vip-vlan111"
+            - name: vip_interface
+              value: "enp7s0f1.111"
+            - name: lb_class_name
+              value: "kube-vip.io/kube-vip-class-vlan111"
+            - name: prometheus_server
+              value: ":2117"
+          image: ghcr.io/kube-vip/kube-vip:v0.8.7@sha256:32829cc6f8630eba4e1b5e4df5bcbc34c767e70703d26e64a0f7317951c7b517
+          imagePullPolicy: IfNotPresent
+          name: kube-vip
+          resources:
+            requests:
+              ephemeral-storage: "15Mi"
+              memory: "32Mi"
+              cpu: "5m"
+            limits:
+              ephemeral-storage: "15Mi"
+              memory: "128Mi"
+              cpu: "100m"
+          securityContext:
+            runAsNonRoot: false
+            readOnlyRootFilesystem: true
+            allowPrivilegeEscalation: false
+            seccompProfile:
+              type: RuntimeDefault
+            capabilities:
+              add:
+                - NET_ADMIN
+                - NET_RAW
+                - SYS_TIME
+              drop:
+                - ALL
+      hostNetwork: true
+      serviceAccountName: kube-vip
+      automountServiceAccountToken: true
+      tolerations:
+        - effect: NoSchedule
+          operator: Exists
+          key: node.kubernetes.io/unschedulable
+        - effect: NoExecute
+          operator: Exists
+          key: node.kubernetes.io/unschedulable
