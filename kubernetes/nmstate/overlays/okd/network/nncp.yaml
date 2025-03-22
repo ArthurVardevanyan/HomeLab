@@ -42,13 +42,13 @@ spec:
 apiVersion: nmstate.io/v1
 kind: NodeNetworkConfigurationPolicy
 metadata:
-  name: enp7s0f1-nad-vlan10
+  name: enp7s0f1-nad-vlan11
   annotations:
     argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
 spec:
   desiredState:
     interfaces:
-      - name: enp7s0f1.10
+      - name: enp7s0f1.11
         description: VLAN using enp7s0f1
         type: vlan
         state: up
@@ -57,10 +57,10 @@ spec:
           enabled: false
         vlan:
           base-iface: enp7s0f1
-          id: 10
+          id: 11
         mtu: 9000
-      - name: br1.10
-        description: OVS bridge with enp7s0f1.10 as a port
+      - name: br1.11
+        description: OVS bridge with enp7s0f1.11 as a port
         type: ovs-bridge
         state: up
         ipv4:
@@ -72,10 +72,10 @@ spec:
             stp:
               enabled: false
           port:
-            - name: enp7s0f1.10
+            - name: enp7s0f1.11
         mtu: 9000
     ovn:
       bridge-mappings:
-        - localnet: br1.10
-          bridge: br1.10
+        - localnet: br1.11
+          bridge: br1.11
           state: present
