@@ -1,16 +1,16 @@
 apiVersion: cert-manager.io/v1
 kind: Certificate
 metadata:
-  name: api-certificate
-  namespace: openshift-config
+  name: ingress-certificate
+  namespace: openshift-ingress
   labels:
     app.kubernetes.io/instance: okd-configuration
 spec:
   duration: 2160h # 90d
   renewBefore: 1080h # 45d
   dnsNames:
-    - api.okd.arthurvardevanyan.com
+    - "*.apps.okd.homelab.arthurvardevanyan.com"
   issuerRef:
     kind: ClusterIssuer
     name: cloud-dns-letsencrypt
-  secretName: api-certificate
+  secretName: ingress-certificate

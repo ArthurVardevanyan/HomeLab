@@ -9,7 +9,7 @@ resource "google_project_service" "dns" {
 resource "google_dns_managed_zone" "homelab_okd" {
   name        = "homelab-okd"
   project     = "homelab-${local.project_id}"
-  dns_name    = "okd.arthurvardevanyan.com."
+  dns_name    = "okd.homelab.arthurvardevanyan.com."
   description = "okd HomeLab DNS"
 
   cloud_logging_config {

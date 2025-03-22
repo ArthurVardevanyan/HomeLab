@@ -48,7 +48,7 @@ zitadel-admin@zitadel.zitadel.arthurvardevanyan.com
 Call Back URLs
 
 ```bash
-https://oauth-openshift.apps.okd.arthurvardevanyan.com/oauth2callback/zitadel
+https://oauth-openshift.apps.okd.homelab.arthurvardevanyan.com/oauth2callback/zitadel
 https://oauth-openshift.apps.okd.sandbox.arthurvardevanyan.com/oauth2callback/zitadel
 ```
 

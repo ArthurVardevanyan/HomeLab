@@ -991,7 +991,7 @@ install_okd_prep() {
   sed -i "s/<WORKERS>/${TF_VAR_worker_count:-${WORKER_COUNT}}/g" "${OKD}/okd/install-config.yaml"
   cp "${OKD}/okd/install-config.yaml" "${OKD}/okd/install-config_backup.yaml"
 
-  export OPENSHIFT_INSTALL_OS_IMAGE_OVERRIDE=${OPENSHIFT_INSTALL_OS_IMAGE_OVERRIDE:-"https://mirror.openshift.com/pub/openshift-v4/x86_64/dependencies/rhcos/4.18/4.18.1/rhcos-4.18.1-x86_64-live.x86_64.iso"}
+  export OPENSHIFT_INSTALL_OS_IMAGE_OVERRIDE=${OPENSHIFT_INSTALL_OS_IMAGE_OVERRIDE:-"https://mirror.openshift.com/pub/openshift-v4/x86_64/dependencies/rhcos/pre-release/latest-4.19/rhcos-live-iso.x86_64.iso"}
 }
 
 install_okd_virt() {
@@ -1072,7 +1072,7 @@ install_okd_bm() {
   WORKER_COUNT=${WORKER_COUNT:-0}
 
   echo -e "\n\n${BLUE}Get URL:${NC}"
-  URL=${URL:-test.arthurvardevanyan.com}
+  URL=${URL:-homelab.arthurvardevanyan.com}
   install_okd_prep
 
   cp "${HOMELAB}/okd/agent-config.yaml" "${OKD}/okd/"
@@ -1080,6 +1080,7 @@ install_okd_bm() {
   "${OKD}/openshift-install" agent create cluster-manifests --dir "${OKD}/okd/"
 
   mkdir -p "${OKD}/okd/openshift"
+  cp "${HOMELAB}/okd/ovn.yaml" "${OKD}/okd/openshift/cluster-network-03-config.yml"
   cp "${HOMELAB}/okd/disks/boot-disk.yaml" "${OKD}/okd/openshift/boot-disk.yaml"
   cp "${HOMELAB}/okd/disks/secondary-disk.yaml" "${OKD}/okd/openshift/secondary-disk.yaml"
 

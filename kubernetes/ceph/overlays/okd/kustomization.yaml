@@ -2,4 +2,19 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
   - ../../base
+  - ./networkAttachmentDefinition.yaml
+  - ./nncp.yaml
   - ./egress-firewall.yaml
+patches:
+  - target:
+      kind: CephCluster
+      name: rook-ceph
+    patch: |-
+      - op: remove
+        path: /spec/placement
+      - op: add
+        path: /spec/network/provider
+        value: multus
+      - op: add
+        path: /spec/network/selectors
+        value: {"public":"rook-ceph/ceph-public","cluster":"rook-ceph/ceph-cluster"}
