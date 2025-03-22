@@ -1,0 +1,23 @@
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: mutate-pvc-access-modes
+spec:
+  rules:
+    - name: mutate-pvc-access-modes
+      match:
+        resources:
+          kinds:
+            - PersistentVolumeClaim
+      mutate:
+        patchesJson6902: |
+          - op: replace
+            path: /spec/accessModes/0
+            value: ReadWriteMany
+      preconditions:
+        all:
+          - key: "{{ request.object.spec.storageClassName }}"
+            operator: In
+            value:
+              - rook-cephfs
+              - rook-ceph-block-virtualization
