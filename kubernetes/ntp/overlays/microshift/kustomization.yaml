@@ -15,6 +15,18 @@ patches:
       - op: replace
         path:  /spec/template/spec/containers/0/image
         value: registry.arthurvardevanyan.com/homelab/ntp:rootless-arm@sha256:50b77c7a71371f68ec5b16cbc611d5b363aff5d30a3b57eea39c10069e098d37
+      - op: remove
+        path:  /spec/template/metadata/annotations/k8s.v1.cni.cncf.io~1networks
+      - op: remove
+        path:  /spec/template/spec/securityContext/sysctls
+      - op: remove
+        path:  /spec/template/spec/containers/0/securityContext/capabilities/add
+      - op: replace
+        path:  /spec/template/spec/containers/0/ports/0/containerPort
+        value: 12345
+      - op: replace
+        path:  /spec/template/spec/containers/0/env/1/value
+        value: "12345"
   - target:
       kind: Service
       name: ntp-rootless

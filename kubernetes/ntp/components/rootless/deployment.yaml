@@ -21,10 +21,27 @@ spec:
       annotations:
         enable.version-checker.io/ntp-rootless: "true"
         seccomp.security.alpha.kubernetes.io/defaultProfileName: "runtime/default"
+        k8s.v1.cni.cncf.io/networks: |
+          [{
+            "name": "enp7s0f1-nad-vlan3",
+            "namespace": "default",
+            "mac": "10:01:02:00:30:05",
+            "ips": ["10.102.3.5/24"]
+          },
+          {
+            "name": "enp7s0f1-nad-vlan111",
+            "namespace": "default",
+            "mac": "10:01:01:00:10:05",
+            "ips": ["10.101.1.5/24"],
+            "default-route": ["10.101.1.1"]
+          }]
     spec:
       securityContext:
         seccompProfile:
           type: RuntimeDefault
+        sysctls:
+          - name: net.ipv4.ip_unprivileged_port_start
+            value: "0"
         runAsNonRoot: true
       hostname: ntp-rootless
       restartPolicy: Always
@@ -39,7 +56,7 @@ spec:
           imagePullPolicy: IfNotPresent
           name: ntp-rootless
           ports:
-            - containerPort: 12345
+            - containerPort: 123 #12345
               name: ntp
               protocol: UDP
           securityContext:
@@ -50,6 +67,8 @@ spec:
             seccompProfile:
               type: RuntimeDefault
             capabilities:
+              add:
+                - NET_BIND_SERVICE
               drop:
                 - ALL
           resources:
@@ -65,7 +84,7 @@ spec:
             - name: SKIP_CHOWN
               value: "true"
             - name: PORT
-              value: "12345"
+              value: "123" # 12345
             - name: CMDPORT
               value: "10323"
             - name: ENABLE_NTS
