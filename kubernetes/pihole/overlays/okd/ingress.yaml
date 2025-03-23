@@ -5,7 +5,6 @@ metadata:
   namespace: pihole
   labels:
     app.kubernetes.io/instance: pihole
-    blackbox: ignore
   annotations:
     route.openshift.io/termination: edge
 spec:
@@ -14,7 +13,7 @@ spec:
     - host: pihole-infra.apps.okd.homelab.arthurvardevanyan.com
       http:
         paths:
-          - path: ""
+          - path: "/admin"
             pathType: ImplementationSpecific
             backend:
               service:
@@ -29,7 +28,6 @@ metadata:
   namespace: pihole
   labels:
     app.kubernetes.io/instance: pihole
-    blackbox: ignore
   annotations:
     route.openshift.io/termination: edge
 spec:
@@ -38,7 +36,7 @@ spec:
     - host: pihole.apps.okd.homelab.arthurvardevanyan.com
       http:
         paths:
-          - path: ""
+          - path: "/admin"
             pathType: ImplementationSpecific
             backend:
               service:
@@ -53,7 +51,6 @@ metadata:
   namespace: pihole
   labels:
     app.kubernetes.io/instance: pihole
-    blackbox: ignore
   annotations:
     route.openshift.io/termination: edge
 spec:
@@ -62,7 +59,7 @@ spec:
     - host: pihole-vlan3.apps.okd.homelab.arthurvardevanyan.com
       http:
         paths:
-          - path: ""
+          - path: "/admin"
             pathType: ImplementationSpecific
             backend:
               service:
