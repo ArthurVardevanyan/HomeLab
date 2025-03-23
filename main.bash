@@ -354,7 +354,7 @@ kvm-infra() {
 }
 
 kvm() {
-  ssh 10.0.0.3
+  ssh 10.101.1.6
 
   export LIBVIRT_DEFAULT_URI=qemu:///system
 
