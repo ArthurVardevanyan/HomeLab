@@ -4,21 +4,21 @@ resources:
   - ../../base
   - ./egress-firewall.yaml
   - ./pdb.yaml
-  - ./dns.yaml
+  # - ./dns.yaml
 components:
   - ../../components/rootless
-patches:
-  - target:
-      kind: Service
-      name: ntp-rootless
-    patch: |-
-      - op: replace
-        path: /metadata/annotations/kube-vip.io~1loadbalancerIPs
-        value: "10.0.0.95"
-  - target:
-      kind: Service
-      name: ntp-rootless-vlan3
-    patch: |-
-      - op: replace
-        path: /metadata/annotations/kube-vip.io~1loadbalancerIPs
-        value: "10.102.3.3"
+# patches:
+#   - target:
+#       kind: Service
+#       name: ntp-rootless
+#     patch: |-
+#       - op: replace
+#         path: /metadata/annotations/kube-vip.io~1loadbalancerIPs
+#         value: "10.0.0.95"
+#   - target:
+#       kind: Service
+#       name: ntp-rootless-vlan3
+#     patch: |-
+#       - op: replace
+#         path: /metadata/annotations/kube-vip.io~1loadbalancerIPs
+#         value: "10.102.3.3"
