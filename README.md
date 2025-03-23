@@ -110,14 +110,14 @@ end
 
 subgraph Homelab
 router----|1GbE|microshift[<center>MicroShift / PiHole<br>10.0.0.99</center>]
-router-.-|1GbE Fail Over|truenas(<center>TrueNas<br>10.0.0.3</center>)
+router-.-|1GbE Fail Over|truenas(<center>TrueNas<br>10.101.1.6</center>)
 end
 
 subgraph HomeLab
     switch1-.-|1GbE Fail Over|kvm-1(<center>kvm-1<br>10.0.0.107</center>)
     switch1-.-|1GbE Fail Over|kvm-2(<center>kvm-2<br>10.0.0.108</center>)
     switch1-.-|1GbE Fail Over|kvm-3(<center>kvm-3<br>10.0.0.109</center>)
-    switch1---|1GbE|truenas(<center>TrueNas<br>10.0.0.3</center>)
+    switch1---|1GbE|truenas(<center>TrueNas<br>10.101.1.6</center>)
 
 
     switch10----|10 GbE|kvm-1(<center>kvm-1<br>10.0.0.107</center>)
