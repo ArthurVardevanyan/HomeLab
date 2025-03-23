@@ -78,3 +78,8 @@ patches:
       - op: replace
         path: /spec/storageClassName
         value: topolvm-provisioner
+  - target:
+      kind: StatefulSet
+    patch: |-
+      - op: remove
+        path:  /spec/template/metadata/annotations/k8s.v1.cni.cncf.io~1networks
