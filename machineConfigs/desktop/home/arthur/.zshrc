@@ -12,7 +12,7 @@ export USE_GKE_GCLOUD_AUTH_PLUGIN=True
 
 export GPG_TTY=$(tty)
 
-ZSH_THEME="custom"
+ZSH_THEME="kubectl" # custom
 
 alias oclogin="oc login --web --server https://api.okd.homelab.arthurvardevanyan.com:6443"
 # Uncomment the following line to use case-sensitive completion.
