@@ -1,0 +1,24 @@
+apiVersion: kyverno.io/v1
+kind: Policy
+metadata:
+  name: virt-controller
+  namespace: kubevirt-hyperconverged
+  annotations:
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+spec:
+  background: false
+  rules:
+    - name: virt-controller
+      match:
+        any:
+          - resources:
+              kinds:
+                - Deployment
+                - Deployment/scale
+              selector:
+                matchLabels:
+                  kubevirt.io: virt-controller
+      mutate:
+        patchStrategicMerge:
+          spec:
+            replicas: 3
