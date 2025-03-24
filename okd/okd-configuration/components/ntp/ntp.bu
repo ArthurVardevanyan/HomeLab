@@ -1,0 +1,40 @@
+# butane okd/okd-configuration/components/ntp/ntp.bu -o okd/okd-configuration/components/ntp/ntp.yaml
+variant: openshift
+version: 4.18.0
+metadata:
+  name: 99-master-chrony-conf-override
+  labels:
+    machineconfiguration.openshift.io/role: master
+storage:
+  files:
+    - path: /etc/chrony.conf
+      mode: 0644
+      overwrite: true
+      contents:
+        inline: |
+          # Use public servers from the pool.ntp.org project.
+          # Please consider joining the pool (https://www.pool.ntp.org/join.html).
+
+          # The Machine Config Operator manages this file
+          server 10.0.0.96 iburst minpoll 6 maxpoll 10
+          server 10.101.1.2 iburst minpoll 6 maxpoll 10
+          server 10.101.1.3 iburst minpoll 6 maxpoll 10
+
+          # Record the rate at which the system clock gains/losses time.
+          driftfile /var/lib/chrony/drift
+
+          # Allow the system clock to be stepped in the first three updates
+          # if its offset is larger than 1 second.
+          makestep 1.0 3
+
+          # Enable kernel synchronization of the real-time clock (RTC).
+          rtcsync
+
+          # Specify file containing keys for NTP authentication.
+          keyfile /etc/chrony.keys
+
+          # Get TAI-UTC offset and leap seconds from the system tz database.
+          leapsectz right/UTC
+
+          # Specify directory for log files.
+          logdir /var/log/chrony
