@@ -1093,7 +1093,7 @@ install_okd_bm() {
 
   kubectl label node server-1 topology.kubernetes.io/zone=1 --overwrite
   kubectl label node server-2 topology.kubernetes.io/zone=2 --overwrite
-  kubectl label node server-1 topology.kubernetes.io/zone=3 --overwrite
+  kubectl label node server-3 topology.kubernetes.io/zone=3 --overwrite
 }
 
 delete_okd() {
