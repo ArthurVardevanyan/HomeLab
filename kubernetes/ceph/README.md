@@ -49,7 +49,29 @@ kubectl delete -f kubernetes/ceph/base/file --ignore-not-found
 kubectl delete -f kubernetes/ceph/base/block --ignore-not-found
 kubectl delete -f kubernetes/ceph/base/block-ci --ignore-not-found
 
+```
+
+## Networking Test
+
+```yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: rook-ceph-test
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: cluster-admin
+subjects:
+  - kind: ServiceAccount
+    name: rook-ceph-system
+    namespace: rook-ceph
+```
+
+```bash
 ./notes/rook multus validation run -n rook-ceph --public-network "rook-ceph/ceph-public" --cluster-network "rook-ceph/ceph-cluster" # --host-check-only
+
+./notes/rook multus validation cleanup --namespace rook-ceph
 ```
 
 ## Refs
