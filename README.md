@@ -2,96 +2,26 @@
 
 HomeLab Server/Cluster, Virtual Sandbox Cluster, & Desktop Configuration
 
-- Desktop: Fedora 39
-
 ## Table of Contents
 
 - [HomeLab](#homelab)
   - [Table of Contents](#table-of-contents)
-  - [Desktop](#desktop)
-    - [Gnome](#gnome)
-    - [Cura](#cura)
-  - [Virtual Sandbox](#virtual-sandbox)
-  - [KVM Sandbox Terraform](#kvm-sandbox-terraform)
+  - [Remote VsCode](#remote-vscode)
   - [Server](#server)
+    - [Networking](#networking)
     - [Kubernetes](#kubernetes)
-      - [KVM Config Dump](#kvm-config-dump)
-      - [OKD Longhorn Secondary Disk Setup](#okd-longhorn-secondary-disk-setup)
-      - [OKD Upgrade](#okd-upgrade)
-      - [OKD Host Disk Expansion](#okd-host-disk-expansion)
-      - [OKD Host Bad Block Recovery](#okd-host-bad-block-recovery)
       - [OKD WIF](#okd-wif)
       - [Kubernetes Commands](#kubernetes-commands)
         - [Delete Pod Using Graceful Termination Eviction Request](#delete-pod-using-graceful-termination-eviction-request)
       - [SSH Keyscan](#ssh-keyscan)
       - [Vault Kubernetes Integration](#vault-kubernetes-integration)
-      - [k3s Install](#k3s-install)
-  - [Database](#database)
-    - [MariaDB](#mariadb)
-    - [Postgres](#postgres)
-  - [Quay](#quay)
-  - [Tekton](#tekton)
 
-## Desktop
+## Remote VsCode
 
 ```bash
-ansible-playbook -i ansible/inventory --ask-become-pass ansible/desktop.yaml --ask-pass \
+ ansible-playbook -i ansible/inventory --ask-become-pass ansible/vscode-server.yaml --ask-pass \
   -e 'ansible_python_interpreter=/usr/bin/python3'
-
-git merge --no-ff
-scp -r /mnt/storage/vm/*.img windowsBackup@10.0.0.4:/backup/WindowsBackup/vm
-sudo sensors-detect
 ```
-
-### Gnome
-
-Manually Install Extensions from extensions.gnome.org
-
-- gnome-shell-extension-netspeed
-- gnome-shell-extension-places-menu
-- gnome-shell-extension-transparentnotification
-
-### Cura
-
-Config files need to be applied manually.
-
-```bash
-machineConfigs/desktop/home/arthur/cura
-```
-
-## Virtual Sandbox
-
-```bash
-# Terminal 1
-# Generate Preseed Config Password and Startup Temporary Web Server
-bash kvm_k3s.bash preseed_server
-
-# Terminal 2
-# Enter Password Defined with Hash in Pre Seed Config
-mkdir -p notes time bash kvm_k3s.bash install_cluster > notes/install.log
-
-# KubeConfig
-export KUBECONFIG=${HOME}/vm/sk3s/sk3s.yaml
-
-# Dashboard Secret
-bash main.bash get_dashboard_secret
-```
-
-## KVM Sandbox Terraform
-
-TF Provider
-
-- <https://github.com/dmacvicar/terraform-provider-libvirt>
-- <https://registry.terraform.io/providers/dmacvicar/libvirt/latest/docs>
-
-OpenShift Terraform Example
-
-- <https://github.com/openshift/installer/blob/master/docs/dev/libvirt/README.md>
-- <https://github.com/openshift/installer/tree/master/data/data/libvirt/bootstrap>
-
-Permission Denied Issue
-
-- <https://github.com/jedi4ever/veewee/issues/996#issuecomment-497976612>
 
 ## Server
 
@@ -101,11 +31,16 @@ graph TD
 
 subgraph Networking
 wan1[<center>WAN<br>192.168.100.1</center>]---|1000/50 Mb|router{<center>UDM Pro SE<br>10.0.0.1</center>}
-wan2[<center>LTE<br>192.168.1.1</center>]---|100/25 Mb|router
-router---|10GbE|switch1[<center>USW-Pro-Max-16<br>10.0.0.106</center>]
-switch1----|2.5GbE|switch10[<center>USW-Flex-XG<br>10.0.0.105</center>]
-switch1---|2.5GbE|ap2{<center>U7 Pro Max<br>10.0.0.104</center>}
-router-.-|1GbE Fail Over|switch10[<center>USW-Flex-XG<br>10.0.0.105</center>]
+wan2[<center>LTE<br>192.168.1.1</center>]---|750/25 Mb|router
+router---|10GbE|switch1[<center>USW-Pro-Max-16<br></center>]
+router---|2.5GbE|ap1{<center>U7 Pro Wall<br></center>}
+switch1---|2.5GbE|ap2{<center>U7 Pro Max<br></center>}
+switch1----|10GbE|switch10[<center>USW-Aggregation<br></center>]
+switch10----|10GbE|switch11[<center>USW-Aggregation<br></center>]
+router----|10GbE|switch11[<center>USW-Aggregation<br></center>]
+
+
+
 end
 
 subgraph Homelab
@@ -113,65 +48,113 @@ router----|1GbE|microshift[<center>MicroShift / PiHole<br>10.0.0.99</center>]
 router-.-|1GbE Fail Over|truenas(<center>TrueNas<br>10.101.1.6</center>)
 end
 
-subgraph HomeLab
-    switch1-.-|1GbE Fail Over|kvm-1(<center>kvm-1<br>10.0.0.107</center>)
-    switch1-.-|1GbE Fail Over|kvm-2(<center>kvm-2<br>10.0.0.108</center>)
-    switch1-.-|1GbE Fail Over|kvm-3(<center>kvm-3<br>10.0.0.109</center>)
-    switch1---|1GbE|truenas(<center>TrueNas<br>10.101.1.6</center>)
+subgraph OpenShift/OKD
+    switch1---|2.5GbE|truenas(<center>TrueNas<br>10.101.1.6</center>)
+    switch1-.-|1GbE Fail Over Host/Pod/LB|server-1(<center>server-1<br>10.101.10.101</center>)
+    switch1-.-|1GbE Fail Over Host/Pod/LB|server-2(<center>server-2<br>10.101.10.102</center>)
+    switch1-.-|1GbE Fail Over Host/Pod/LB|server-3(<center>server-3<br>10.101.10.103</center>)
 
+    switch1-.-|1GbE Fail Over NAD/LM|server-1(<center>server-1<br>10.101.10.101</center>)
+    switch1-.-|1GbE Fail Over NAD/LM|server-2(<center>server-2<br>10.101.10.102</center>)
+    switch1-.-|1GbE Fail Over NAD/LM|server-3(<center>server-3<br>10.101.10.103</center>)
 
-    switch10----|10 GbE|kvm-1(<center>kvm-1<br>10.0.0.107</center>)
-    switch10----|10 GbE|kvm-2(<center>kvm-2<br>10.0.0.108</center>)
-    switch10----|10 GbE|kvm-3(<center>kvm-3<br>10.0.0.109</center>)
-    subgraph OKD KVM-1
-        kvm-1-.-server-1(<center>server-1<br>10.0.0.101</center>)
-        kvm-1-.-infra-1(<center>infra-1<br>10.0.0.121</center>)
-        kvm-1-.-worker-1(<center>worker-1<br>10.0.0.111</center>)
-        kvm-1-.-worker-4(<center>worker-4<br>10.0.0.114</center>)
-    end
-    subgraph OKD KVM-2
-        kvm-2-.-server-2(<center>server-2<br>10.0.0.102</center>)
-        kvm-2-.-infra-2(<center>infra-2<br>10.0.0.121</center>)
-        kvm-2-.-worker-2(<center>worker-2<br>10.0.0.112</center>)
-        kvm-2-.-worker-5(<center>worker-5<br>10.0.0.115</center>)
-    end
-    subgraph OKD KVM-3
-        kvm-3-.-server-3(<center>server-3<br>10.0.0.103</center>)
-        kvm-3-.-infra-3(<center>infra-3<br>10.0.0.123</center>)
-        kvm-3-.-worker-3(<center>worker-3<br>10.0.0.113</center>)
-        kvm-3-.-worker-6(<center>worker-6<br>10.0.0.116</center>)
-    end
+    switch1-.-|1GbE Fail Over Ceph Public|server-1(<center>server-1<br>10.101.10.101</center>)
+    switch1-.-|1GbE Fail Over Ceph Public|server-2(<center>server-2<br>10.101.10.102</center>)
+    switch1-.-|1GbE Fail Over Ceph Public|server-3(<center>server-3<br>10.101.10.103</center>)
+
+    switch1-.-|1GbE Fail Over Ceph Private|server-1(<center>server-1<br>10.101.10.101</center>)
+    switch1-.-|1GbE Fail Over Ceph Private|server-2(<center>server-2<br>10.101.10.102</center>)
+    switch1-.-|1GbE Fail Over Ceph Private|server-3(<center>server-3<br>10.101.10.103</center>)
+
+    switch10----|10 GbE Host/Pod/LB|server-1(<center>server-1<br>10.101.10.101</center>)
+    switch10----|10 GbE Host/Pod/LB|server-2(<center>server-2<br>10.101.10.102</center>)
+    switch10----|10 GbE Host/Pod/LB|server-3(<center>server-3<br>10.101.10.103</center>)
+
+    switch10----|10 GbE NAD/LM|server-1(<center>server-1<br>10.101.10.101</center>)
+    switch10----|10 GbE NAD/LM|server-2(<center>server-2<br>10.101.10.102</center>)
+    switch10----|10 GbE NAD/LM|server-3(<center>server-3<br>10.101.10.103</center>)
+
+    switch11----|10 GbE Ceph Public|server-1(<center>server-1<br>10.101.10.101</center>)
+    switch11----|10 GbE Ceph Public|server-2(<center>server-2<br>10.101.10.102</center>)
+    switch11----|10 GbE Ceph Public|server-3(<center>server-3<br>10.101.10.103</center>)
+
+    switch11----|10 GbE Ceph Private|server-1(<center>server-1<br>10.101.10.101</center>)
+    switch11----|10 GbE Ceph Private|server-2(<center>server-2<br>10.101.10.102</center>)
+    switch11----|10 GbE Ceph Private|server-3(<center>server-3<br>10.101.10.103</center>)
 end
 ```
+
+### Networking
+
+**Networking Machines:**
+
+| NAME             | Type   | Status |
+| ---------------- | ------ | ------ |
+| SB6183           | Modem  |        |
+| UDM SE           | Router |        |
+| USW Pro Max 16   | Switch |        |
+| USW Aggregation  | Switch |        |
+| USW Aggregation  | Switch |        |
+| USWFlex XG 10GbE | Switch | Died   |
+| U7 Pro Max       | AP     |        |
+| U7 Pro Wall      | AP     |        |
+
+**Vlans:**
+
+| Site    | Range      |
+| ------- | ---------- |
+| TODO: 1 | 10.101.X.X |
+| 2       | 10.102.X.X |
+
+| Name    | VLAN ID | Subnet        | Info                   |
+| ------- | ------- | ------------- | ---------------------- |
+| infra   | 1       | 10.102.1.0/24 |                        |
+| clients | 2       | 10.102.2.0/24 |                        |
+| iot     | 3       | 10.102.3.0/24 | TODO: Enable Isolation |
+
+| Name                      | VLAN ID | Subnet         | Info                    |
+| ------------------------- | ------- | -------------- | ----------------------- |
+| infrastructure            | 111     | 10.101.1.0/24  |                         |
+| clients                   | X       | 10.101.2.0/24  | TODO: Create            |
+| iot                       | X       | 10.101.3.0/24  | TODO: Create            |
+| openshift-legacy          | 4       | 10.0.0.0/24    | To be Decommissioned    |
+| openshift-machine-network | 10      | 10.101.10.0/24 | Host/Pod/Load Balancers |
+| openshift-nad             | 11      | 10.101.11.0/24 | Virtual Machines        |
+| openshift-ceph-private    | 12      | 10.101.12.0/24 | TODO: Enable Isolation  |
+| openshift-ceph-public     | 13      | 10.101.13.0/24 | TODO: Enable Isolation  |
+| openshift-lm              | 14      | 10.101.14.0/24 | TODO: Enable Isolation  |
+| openshift-ovn-network     | 15      | 10.101.15.0/24 | Isolated                |
+| openshift-service-network | 16      | 10.101.16.0/22 | Isolated                |
+| openshift-pod-network     | 32      | 10.101.32.0/19 | Isolated                |
 
 ### Kubernetes
 
 <https://www.okd.io/>
 
-| Kubernetes Channel | OKD Version | OKD Channel   | OKD OS    | Host Operating System | Storage Layer |
-| ------------------ | ----------- | ------------- | --------- | --------------------- | ------------- |
-| v1.30.\*           | 4.17-\*     | stable-scos-4 | SCOS 4.18 | RHEL 9.5              | CEPH          |
+| Kubernetes Channel | OKD Version | OKD Channel   | OKD OS                   | Storage Layer |
+| ------------------ | ----------- | ------------- | ------------------------ | ------------- |
+| v1.33.\*           | 4.19-\*     | stable-scos-4 | CentOS Stream CoreOS 9.0 | CEPH          |
 
 **Machines:**
 
 [CPU Benchmark](https://www.cpubenchmark.net/compare/Intel-i5-6600-vs-AMD-RX-427BB-vs-Intel-i3-2130-vs-AMD-GX-415GA-SOC-vs-AMD-Ryzen-7-5700G/2594vs2496vs755vs2081vs4323)
 
-| Machine    | Model          | CPU      | CPU | Mem  | Storage                        | ZFS Storage  |
-| ---------- | -------------- | -------- | --- | ---- | ------------------------------ | ------------ |
-| pfSense    | Hp t730        | RX-427BB | 4   | 4G   | 16G SSD                        | N/A          |
-| MicroShift | Raspberry Pi 5 | BCM2712  | 4   | 8G   | 1TB NVME                       | N/A          |
-| Bare Metal | Hp t620        | GX-415GA | 4   | 6G   | 16G SSD & 16G USB              | N/A          |
-| kvm-1      | N/A            | R7-5700G | 16  | 128G | 2x4TB NVME, 1x1TB SSD,.5TB SSD | N/A          |
-| kvm-2      | N/A            | R7-5700G | 16  | 128G | 2x4TB NVME, 1x1TB SSD,.5TB SSD | N/A          |
-| kvm-3      | N/A            | R7-5700G | 16  | 128G | 2x4TB NVME, 1x1TB SSD,.5TB SSD | N/A          |
-| TrueNas    | Hp ProDesk     | i5-6600  | 4   | 32G  | 120G SSD Boot Mirror           | 5x2TB RaidZ2 |
-| Spare      | Hp p7-1226s    | i3-2130  | 4   | 8G   | 240G SSD                       | N/A          |
+| Machine    | Model          | CPU      | CPU | Mem  | Storage                           | Networking              | ZFS Storage  | Status         |
+| ---------- | -------------- | -------- | --- | ---- | --------------------------------- | ----------------------- | ------------ | -------------- |
+| MicroShift | Raspberry Pi 5 | BCM2712  | 4   | 8G   | 1TB NVME                          | 1x1GbE                  | N/A          | MicroShift     |
+| server-1   | N/A            | R7-5700G | 16  | 128G | 2x4TB NVME, 2x1TB SSD, 2x.5TB SSD | 4x10Gbe (DAC) && 4x1GbE | N/A          | OpenShift/OKD  |
+| server-2   | N/A            | R7-5700G | 16  | 128G | 2x4TB NVME, 2x1TB SSD,2x.5TB SSD  | 4x10Gbe (DAC) && 4x1GbE | N/A          | OpenShift/OKD  |
+| server-3   | N/A            | R7-5700G | 16  | 128G | 2x4TB NVME, 2x1TB SSD,2x.5TB SSD  | 4x10Gbe (DAC) && 4x1GbE | N/A          | OpenShift/OKD  |
+| TrueNas    | Hp ProDesk     | i5-6600  | 4   | 32G  | 120G SSD Boot Mirror              | 1x2.5Gbe && 1x1GbE      | 5x2TB RaidZ2 | TrueNas        |
+| pfSense    | Hp t730        | RX-427BB | 4   | 4G   | 16G SSD                           | 4x1GbE                  | N/A          | Decommissioned |
+| Bare Metal | Hp t620        | GX-415GA | 4   | 6G   | 16G SSD & 16G USB                 | 1x1GbE                  | N/A          | Decommissioned |
+| Spare      | Hp p7-1226s    | i3-2130  | 4   | 8G   | 240G SSD                          |                         | N/A          | Decommissioned |
 
-| Machine | PPT | CPU Curve | GFX Curve | CPU Frequency | vMem | Memory Freq |
-| ------- | --- | --------- | --------- | ------------- | ---- | ----------- |
-| kvm-1   | 40W | -20       | -30       | -750          | 1.35 | 3200        |
-| kvm-2   | 40W | -20       | -30       | -750          | 1.35 | 3200        |
-| kvm-3   | 40W | -20       | -30       | -750          | 1.35 | 3200        |
+| Machine  | PPT | CPU Curve | GFX Curve | CPU Frequency | vMem | Memory Freq |
+| -------- | --- | --------- | --------- | ------------- | ---- | ----------- |
+| server-1 | 40W | -20       | -30       | -750          | 1.35 | 3200        |
+| server-2 | 40W | -20       | -30       | -750          | 1.35 | 3200        |
+| server-3 | 40W | -20       | -30       | -750          | 1.35 | 3200        |
 
 **ZFS Storage:**
 
@@ -181,96 +164,23 @@ end
 
 **Kubernetes Nodes:**
 
-| NAME     | ROLES          | Machine | vCPU | Mem   | Storage         |
-| -------- | -------------- | ------- | ---- | ----- | --------------- |
-| server-1 | cp,etcd,master | kvm-1   | 8    | 35.0G | N/A             |
-| server-2 | cp,etcd,master | kvm-2   | 8    | 35.0G | N/A             |
-| server-3 | cp,etcd,master | kvm-1   | 8    | 35.0G | N/A             |
-| infra-1  | infra,worker   | kvm-1   | 6    | 29.0G | 1x4TB CEPH NVME |
-| infra-2  | infra,worker   | kvm-2   | 6    | 29.0G | 1x4TB CEPH NVME |
-| infra-3  | infra,worker   | kvm-3   | 6    | 29.0G | 1x4TB CEPH NVME |
-| worker-1 | worker         | kvm-1   | 12   | 57.0G | N/A             |
-| worker-2 | worker         | kvm-2   | 12   | 57.0G | N/A             |
-| worker-3 | worker         | kvm-3   | 12   | 57.0G | N/A             |
-
-#### KVM Config Dump
-
-```bash
-scp ./* arthur@10.102.2.117:/home/arthur/Downloads
-
-sudo virsh dumpxml infra-1 > infra-1.xml
-sudo virsh dumpxml server-1 > server-1.xml
-sudo virsh dumpxml worker-1 > worker-1.xml
-sudo virsh dumpxml worker-4 > worker-4.xml
-
-sudo virsh dumpxml infra-2 > infra-2.xml
-sudo virsh dumpxml server-2 > server-2.xml
-sudo virsh dumpxml worker-2 > worker-2.xml
-sudo virsh dumpxml worker-5 > worker-5.xml
-
-sudo virsh dumpxml infra-3 > infra-3.xml
-sudo virsh dumpxml server-3 > server-3.xml
-sudo virsh dumpxml worker-3 > worker-3.xml
-sudo virsh dumpxml worker-6 > worker-6.xml
-```
-
-#### OKD Longhorn Secondary Disk Setup
-
-```bash
-# https://askubuntu.com/questions/144894/add-physical-disk-to-kvm-virtual-machine
-sudo mkfs.ext4 -L longhorn /dev/nvme0n1
-sudo mkfs.ext4 -L longhorn1 /dev/nvme1n1
-
-# Sandbox
-sudo mkfs.ext4 -L longhorn /dev/vdb
-sudo mkfs.ext4 -L longhorn1 /dev/vdc
-
-# Pre Machine Config (Sandbox)
-sudo su
-echo "/dev/vdb /var/mnt/longhorn auto nofail" > /etc/fstab
-sudo reboot
-
-export NODE=""
-oc annotate node ${NODE} --overwrite node.longhorn.io/default-disks-config='[{"path":"/var/mnt/longhorn","allowScheduling":true}]'
-oc label node ${NODE} node.longhorn.io/create-default-disk=config
-
-# Infra
-kubectl taint node ${NODE} node-role.kubernetes.io/infra:NoSchedule
-kubectl label node ${NODE} node-role.kubernetes.io/infra=""
-
-```
-
-#### OKD Upgrade
-
-```bash
-bash main.bash stateful_workload_stop
-kubectl delete pdb -n longhorn-system --all
-bash main.bash stateful_workload_start
-```
-
-#### OKD Host Disk Expansion
-
-```bash
-# KVM
-sudo qemu-img resize X.raw +XG
-
-# Node
-# https://access.redhat.com/discussions/6230831#comment-2163981
-sudo su
-growpart /dev/vda 4
-lsblk
-sudo su -
-unshare --mount
-mount -o remount,rw /sysroot
-xfs_growfs /sysroot
-df -h | grep vda
-```
-
-#### OKD Host Bad Block Recovery
-
-```bash
-dd if=/mnt/source/source.raw  of=/mnt/destination/destination.raw bs=4k conv=noerror,sync
-```
+| Attribute             | Value                 |
+| --------------------- | --------------------- |
+| **NAME**              | server-1/2/3          |
+| **ROLES**             | control-plane, worker |
+| **CPU**               | 16                    |
+| **Mem**               | 128G                  |
+| **OS Disk**           | mdadm 2x5TB SSD       |
+| **Container Overlay** | mdadm 2x1TB SSD       |
+| **Ceph Storage**      | 2x4TB CEPH NVME       |
+| **Nic's**             | 4x10GbE/1GbE A/P      |
+| **Bond 0:** v10       | Host/Pod/LoadBalancer |
+| **Bond 2:** v12       | Ceph Private          |
+| **Bond 3:** v13       | Ceph Public           |
+| **Bond 4:** v14       | VM Live Migrate       |
+| **Bond 4.3**          | IOT                   |
+| **Bond 4.11**         | Virtual Machines      |
+| **Bond 4.111**        | Infrastructure        |
 
 #### OKD WIF
 
@@ -393,86 +303,4 @@ path "auth/token/create" {
 
 ```bash
 export VAULT_TOKEN=$(vault login --tls-skip-verify -address=https://vault.arthurvardevanyan.com -method=userpass -token-only username=arthur)
-```
-
-#### k3s Install
-
-```bash
-export K3S_TOKEN="k3s"
-export RESERVED="--kubelet-arg system-reserved=cpu=250m,memory=500Mi --kubelet-arg kube-reserved=cpu=250m,memory=500Mi"
-
-curl -sfL https://get.k3s.io | INSTALL_K3S_EXEC="server --cluster-init --disable traefik ${RESERVED}" \
-  INSTALL_K3S_CHANNEL=v1.28 sh -
-```
-
-## Database
-
-### MariaDB
-
-```sql
-CREATE USER 'arthur'@'10.0.0.X' IDENTIFIED BY 'arthur';
-GRANT ALL PRIVILEGES ON *.* TO `arthur`@`10.0.0.X`;
-
-FLUSH PRIVILEGES;
-
-# % for everything
-CREATE USER 'spotifyTest'@'10.42.0.%' IDENTIFIED BY 'spotifyTest';
-GRANT ALL PRIVILEGES ON spotifyTest.* TO `spotifyTest`@`10.42.0.%`;
-
-# View Only Access
-GRANT SELECT, LOCK TABLES, SHOW VIEW ON *.* TO 'backup'@'10.42.0.1' IDENTIFIED BY 'backup';
-```
-
-### Postgres
-
-```psql
-psql -h localhost -d quay -U quay
-\c quay
-CREATE EXTENSION pg_trgm;
-```
-
-## Quay
-
-```bash
-kubectl scale --replicas=1 -n quay deployment/quay-operator-tng
-
-kubectl scale --replicas=0 -n quay deployment/quay-operator-tng
-kubectl patch -n quay deployment/quay-quay-app --type='json' \
-  -p='[{"op": "replace", "path": "/spec/template/spec/containers/0/resources", "value": {"limits": {"cpu": "1000m","memory": "8Gi", "ephemeral-storage": "2Gi"},"requests": {"cpu": "150m","memory": "4Gi", "ephemeral-storage": "1Gi"}}}]'
-kubectl patch -n quay deployment/quay-clair-app --type='json' \
-  -p='[{"op": "replace", "path": "/spec/template/spec/containers/0/resources", "value": {"limits": {"cpu": "500m","memory": "2.5Gi", "ephemeral-storage": "3Gi"},"requests": {"cpu": "150m","memory": "756Mi", "ephemeral-storage": "1Gi"}}}]'
-kubectl patch -n quay deployment/quay-quay-mirror --type='json' \
-  -p='[{"op": "replace", "path": "/spec/template/spec/containers/0/resources", "value": {"limits": {"cpu": "250m","memory": "512Mi"},"requests": {"cpu": "50m","memory": "256Mi"}}}]'
-```
-
-## Tekton
-
-```bash
-kubectl delete replicaSet -n openshift-pipelines --all
-
-# Image Build
-tkn -n homelab pipeline start image-build -s pipeline \
-  --param="git-url=https://git.arthurvardevanyan.com/ArthurVardevanyan/HomeLab" \
-  --param="IMAGE=registry.arthurvardevanyan.com/homelab/toolbox:not_latest" \
-  --param="git-commit=$(git log --format=oneline | cut -d ' ' -f 1 | head -n 1)" \
-  --param="DOCKERFILE=./containers/toolbox/containerfile" \
-  --workspace=name=data,volumeClaimTemplateFile=tekton/base/pvc.yaml \
-  --showlog
-
-tkn -n homelab pipeline start image-build -s pipeline \
-  --param="git-url=https://git.arthurvardevanyan.com/ArthurVardevanyan/HomeLab" \
-  --param="IMAGE=registry.arthurvardevanyan.com/homelab/apache-php:$(date --utc '+%Y%m%d-%H%M')" \
-  --param="git-commit=$(git log --format=oneline | cut -d ' ' -f 1 | head -n 1)" \
-  --param="DOCKERFILE=./containers/apache-php/containerfile" \
-  --workspace=name=data,volumeClaimTemplateFile=tekton/base/pvc.yaml \
-  --showlog
-
-# Ansible
-tkn -n homelab pipeline start ansible -s pipeline \
-  --workspace=name=data,volumeClaimTemplateFile=tekton/base/pvc.yaml \
-  --param="git-url=https://git.arthurvardevanyan.com/ArthurVardevanyan/HomeLab" \
-  --param="playbooks=desktop" \
-  --param="git-name=ArthurVardevanyan/HomeLab" \
-  --param="git-commit=$(git log --format=oneline | cut -d ' ' -f 1 | head -n 1)" \
-  --showlog
 ```
