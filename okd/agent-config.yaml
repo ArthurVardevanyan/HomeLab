@@ -1,12 +1,3 @@
-# PreConfigure External Load Balancer
-# Host Cluster Pod Networking Currently Disabled
-
-# Install Steps
-# oc adm release extract --tools quay.io/okd/scos-release:4.15.0-0.okd-scos-2024-01-18-223523
-#./notes/openshift-install agent create cluster-manifests --dir sandbox/kubevirt/okd/
-#./notes/openshift-install agent create image  --dir sandbox/kubevirt/okd/
-#./notes/openshift-install agent wait-for bootstrap-complete  --dir sandbox/kubevirt/okd/
-#./notes/openshift-install agent wait-for install-complete --dir sandbox/kubevirt/okd/
 apiVersion: v1beta1
 kind: AgentConfig
 metadata:
@@ -18,16 +9,28 @@ hosts:
     rootDeviceHints:
       deviceName: "/dev/disk/by-path/pci-0000:02:00.1-ata-4.0"
     interfaces:
-      # - name: enp1s0
-      #   macAddress: 5c:e9:31:a2:58:5c
+      - name: enp1s0f0
+        macAddress: 98:b7:85:22:14:04
+      - name: enp1s0f1
+        macAddress: 98:b7:85:22:14:05
+      - name: enp1s0f2
+        macAddress: 98:b7:85:22:14:06
+      - name: enp1s0f3
+        macAddress: 98:b7:85:22:14:07
+      - name: enp6s0
+        macAddress: b0:19:21:53:e0:2c
       - name: enp10s0
         macAddress: 24:4b:fe:cd:5f:d8
+      - name: enp7s0f0
+        macAddress: 1c:86:0b:31:8e:12
+      - name: enp7s0f1
+        macAddress: 1c:86:0b:31:8e:13
     networkConfig:
       interfaces:
-        - name: enp6s0
-          type: ethernet #bond
+        - name: bond0
+          type: bond
           state: up
-          # mac-address: 24:4b:fe:cd:5f:d8
+          mac-address: 98:b7:85:22:14:04
           mtu: 9000
           ipv4:
             enabled: true
@@ -37,17 +40,28 @@ hosts:
             dhcp: false
           ipv6:
             enabled: false
-          # link-aggregation:
-          #   mode: active-backup
-          #   options:
-          #     miimon: "150"
-          #     primary: enp1s0
-          #   port:
-          #     - enp1s0
-          #     - enp10s0
+          link-aggregation:
+            mode: active-backup
+            options:
+              miimon: "150"
+              primary: enp1s0f0
+            port:
+              - enp1s0f0
+              - enp6s0
+        - name: enp1s0f1
+          description: enp1s0f1
+          state: down
+        - name: enp1s0f2
+          description: enp1s0f2
+          state: down
+        - name: enp1s0f3
+          description: enp1s0f3
+          state: down
+        - name: enp6s0
+          description: enp6s0
+          state: down
         - name: enp10s0
           description: enp10s0
-          state: down
         - name: enp7s0f0
           description: enp7s0f0
           state: down
@@ -62,23 +76,35 @@ hosts:
         config:
           - destination: 0.0.0.0/0
             next-hop-address: 10.101.10.1
-            next-hop-interface: enp6s0 #bond0
+            next-hop-interface: bond0
             table-id: 254
   - hostname: server-2
     role: master
     rootDeviceHints:
       deviceName: "/dev/disk/by-path/pci-0000:02:00.1-ata-4.0"
     interfaces:
-      # - name: enp1s0
-      #   macAddress: 3c:52:a1:8e:7e:ba
+      - name: enp1s0f0
+        macAddress: 98:b7:85:21:ed:db
+      - name: enp1s0f1
+        macAddress: 98:b7:85:21:ed:dc
+      - name: enp1s0f2
+        macAddress: 98:b7:85:21:ed:dd
+      - name: enp1s0f3
+        macAddress: 98:b7:85:21:ed:de
+      - name: enp6s0
+        macAddress: b0:19:21:53:d5:50
       - name: enp10s0
         macAddress: 24:4b:fe:cf:3d:ef
+      - name: enp7s0f0
+        macAddress: 1c:86:0b:31:90:ae
+      - name: enp7s0f1
+        macAddress: 1c:86:0b:31:90:af
     networkConfig:
       interfaces:
-        - name: enp6s0
-          type: ethernet #bond
+        - name: bond0
+          type: bond
           state: up
-          # mac-address: 24:4b:fe:cf:3d:ef
+          mac-address: 98:b7:85:21:ed:db
           mtu: 9000
           ipv4:
             enabled: true
@@ -88,14 +114,23 @@ hosts:
             dhcp: false
           ipv6:
             enabled: false
-          # link-aggregation:
-          #   mode: active-backup
-          #   options:
-          #     miimon: "150"
-          #     primary: enp1s0
-          #   port:
-          #     - enp1s0
-          #     - enp10s0
+          link-aggregation:
+            mode: active-backup
+            options:
+              miimon: "150"
+              primary: enp1s0f0
+            port:
+              - enp1s0f0
+              - enp6s0
+        - name: enp1s0f1
+          description: enp1s0f1
+          state: down
+        - name: enp1s0f2
+          description: enp1s0f2
+          state: down
+        - name: enp1s0f3
+          description: enp1s0f3
+          state: down
         - name: enp10s0
           description: enp10s0
           state: down
@@ -113,23 +148,35 @@ hosts:
         config:
           - destination: 0.0.0.0/0
             next-hop-address: 10.101.10.1
-            next-hop-interface: enp6s0 #bond0
+            next-hop-interface: bond0
             table-id: 254
   - hostname: server-3
     role: master
     rootDeviceHints:
       deviceName: "/dev/disk/by-path/pci-0000:02:00.1-ata-4.0"
     interfaces:
-      # - name: enp1s0
-      #   macAddress: 3c:52:a1:b0:c5:8b
+      - name: enp1s0f0
+        macAddress: 98:b7:85:21:ed:e7
+      - name: enp1s0f1
+        macAddress: 98:b7:85:21:ed:e8
+      - name: enp1s0f2
+        macAddress: 98:b7:85:21:ed:e9
+      - name: enp1s0f3
+        macAddress: 98:b7:85:21:ed:ea
+      - name: enp6s0
+        macAddress: d8:07:b6:f8:1a:ef
       - name: enp10s0
         macAddress: 58:11:22:ca:55:18
+      - name: enp7s0f0
+        macAddress: 1c:86:0b:31:96:5a
+      - name: enp7s0f1
+        macAddress: 1c:86:0b:31:96:5b
     networkConfig:
       interfaces:
-        - name: enp6s0
-          type: ethernet #bond
+        - name: bond0
+          type: bond
           state: up
-          # mac-address: 58:11:22:ca:55:18
+          mac-address: 98:b7:85:21:ed:e7
           mtu: 9000
           ipv4:
             enabled: true
@@ -139,14 +186,26 @@ hosts:
             dhcp: false
           ipv6:
             enabled: false
-          # link-aggregation:
-          #   mode: active-backup
-          #   options:
-          #     miimon: "150"
-          #     primary: enp1s0
-          #   port:
-          #     - enp1s0
-          #     - enp10s0
+          link-aggregation:
+            mode: active-backup
+            options:
+              miimon: "150"
+              primary: enp1s0f0
+            port:
+              - enp1s0f0
+              - enp6s0
+        - name: enp1s0f1
+          description: enp1s0f1
+          state: down
+        - name: enp1s0f2
+          description: enp1s0f2
+          state: down
+        - name: enp1s0f3
+          description: enp1s0f3
+          state: down
+        - name: enp6s0
+          description: enp6s0
+          state: down
         - name: enp10s0
           description: enp10s0
           state: down
@@ -164,5 +223,5 @@ hosts:
         config:
           - destination: 0.0.0.0/0
             next-hop-address: 10.101.10.1
-            next-hop-interface: enp6s0 #bond0
+            next-hop-interface: bond0
             table-id: 254

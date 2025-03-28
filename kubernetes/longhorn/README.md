@@ -8,6 +8,40 @@ export OVERLAY=okd
 kubectl kustomize kubernetes/longhorn/overlays/"${OVERLAY}" | argocd-vault-plugin generate - | kubectl apply -f -
 ```
 
+## OKD Longhorn Secondary Disk Setup
+
+```bash
+# https://askubuntu.com/questions/144894/add-physical-disk-to-kvm-virtual-machine
+sudo mkfs.ext4 -L longhorn /dev/nvme0n1
+sudo mkfs.ext4 -L longhorn1 /dev/nvme1n1
+
+# Sandbox
+sudo mkfs.ext4 -L longhorn /dev/vdb
+sudo mkfs.ext4 -L longhorn1 /dev/vdc
+
+# Pre Machine Config (Sandbox)
+sudo su
+echo "/dev/vdb /var/mnt/longhorn auto nofail" > /etc/fstab
+sudo reboot
+
+export NODE=""
+oc annotate node ${NODE} --overwrite node.longhorn.io/default-disks-config='[{"path":"/var/mnt/longhorn","allowScheduling":true}]'
+oc label node ${NODE} node.longhorn.io/create-default-disk=config
+
+# Infra
+kubectl taint node ${NODE} node-role.kubernetes.io/infra:NoSchedule
+kubectl label node ${NODE} node-role.kubernetes.io/infra=""
+
+```
+
+## OKD Upgrade
+
+```bash
+bash main.bash stateful_workload_stop
+kubectl delete pdb -n longhorn-system --all
+bash main.bash stateful_workload_start
+```
+
 ## REF
 
 - <https://github.com/longhorn/longhorn/pull/5004>

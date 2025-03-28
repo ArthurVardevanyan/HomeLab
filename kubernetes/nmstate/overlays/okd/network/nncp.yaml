@@ -1,25 +1,25 @@
 apiVersion: nmstate.io/v1
 kind: NodeNetworkConfigurationPolicy
 metadata:
-  name: enp7s0f1-nad-vlan3
+  name: bond4-nad-vlan3
   annotations:
     argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
 spec:
   desiredState:
     interfaces:
-      - name: enp7s0f1.3
-        description: VLAN using enp7s0f1
+      - name: bond4.3
+        description: VLAN using bond4
         type: vlan
         state: up
         ipv4:
           dhcp: false
           enabled: false
         vlan:
-          base-iface: enp7s0f1
+          base-iface: bond4
           id: 3
         mtu: 9000
-      - name: br1.3
-        description: OVS bridge with enp7s0f1.3 as a port
+      - name: br4.3
+        description: OVS bridge with bond4.3 as a port
         type: ovs-bridge
         state: up
         ipv4:
@@ -31,36 +31,36 @@ spec:
             stp:
               enabled: false
           port:
-            - name: enp7s0f1.3
+            - name: bond4.3
         mtu: 9000
     ovn:
       bridge-mappings:
-        - localnet: br1.3
-          bridge: br1.3
+        - localnet: br4.3
+          bridge: br4.3
           state: present
 ---
 apiVersion: nmstate.io/v1
 kind: NodeNetworkConfigurationPolicy
 metadata:
-  name: enp7s0f1-nad-vlan11
+  name: bond4-nad-vlan11
   annotations:
     argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
 spec:
   desiredState:
     interfaces:
-      - name: enp7s0f1.11
-        description: VLAN using enp7s0f1
+      - name: bond4.11
+        description: VLAN using bond4
         type: vlan
         state: up
         ipv4:
           dhcp: false
           enabled: false
         vlan:
-          base-iface: enp7s0f1
+          base-iface: bond4
           id: 11
         mtu: 9000
-      - name: br1.11
-        description: OVS bridge with enp7s0f1.11 as a port
+      - name: br4.11
+        description: OVS bridge with bond4.11 as a port
         type: ovs-bridge
         state: up
         ipv4:
@@ -72,36 +72,36 @@ spec:
             stp:
               enabled: false
           port:
-            - name: enp7s0f1.11
+            - name: bond4.11
         mtu: 9000
     ovn:
       bridge-mappings:
-        - localnet: br1.11
-          bridge: br1.11
+        - localnet: br4.11
+          bridge: br4.11
           state: present
 ---
 apiVersion: nmstate.io/v1
 kind: NodeNetworkConfigurationPolicy
 metadata:
-  name: enp7s0f1-nad-vlan111
+  name: bond4-nad-vlan111
   annotations:
     argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
 spec:
   desiredState:
     interfaces:
-      - name: enp7s0f1.111
-        description: VLAN using enp7s0f1
+      - name: bond4.111
+        description: VLAN using bond4
         type: vlan
         state: up
         ipv4:
           dhcp: false
           enabled: false
         vlan:
-          base-iface: enp7s0f1
+          base-iface: bond4
           id: 111
         mtu: 9000
-      - name: br1.111
-        description: OVS bridge with enp7s0f1.111 as a port
+      - name: br4.111
+        description: OVS bridge with bond4.111 as a port
         type: ovs-bridge
         state: up
         ipv4:
@@ -113,10 +113,10 @@ spec:
             stp:
               enabled: false
           port:
-            - name: enp7s0f1.111
+            - name: bond4.111
         mtu: 9000
     ovn:
       bridge-mappings:
-        - localnet: br1.111
-          bridge: br1.111
+        - localnet: br4.111
+          bridge: br4.111
           state: present
