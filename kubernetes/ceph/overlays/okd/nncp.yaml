@@ -1,13 +1,15 @@
 apiVersion: nmstate.io/v1
 kind: NodeNetworkConfigurationPolicy
 metadata:
-  name: ceph-public-net-shim
+  name: ceph-public-net-shim-server-1
 spec:
+  nodeSelector:
+    kubernetes.io/hostname: server-1
   desiredState:
     interfaces:
       - name: bond3
         type: bond
-        mac-address: X
+        mac-address: 98:b7:85:22:14:05
         state: up
         mtu: 9000
         ipv4:
@@ -19,9 +21,9 @@ spec:
           mode: active-backup
           options:
             miimon: "150"
-            primary: X
+            primary: enp1s0f3
           port:
-            - X
+            - enp1s0f3
             - enp7s0f0
       - name: ceph-pub-shim
         description: Shim interface used to connect host to OpenShift Data Foundation public Multus network
@@ -43,13 +45,15 @@ spec:
 apiVersion: nmstate.io/v1
 kind: NodeNetworkConfigurationPolicy
 metadata:
-  name: ceph-private
+  name: ceph-public-net-shim-server-2
 spec:
+  nodeSelector:
+    kubernetes.io/hostname: server-2
   desiredState:
     interfaces:
-      - name: bond2
+      - name: bond3
         type: bond
-        mac-address: X
+        mac-address: 98:b7:85:21:ed:dc
         state: up
         mtu: 9000
         ipv4:
@@ -61,7 +65,151 @@ spec:
           mode: active-backup
           options:
             miimon: "150"
-            primary: X
+            primary: enp1s0f3
           port:
-            - X
+            - enp1s0f3
+            - enp7s0f0
+      - name: ceph-pub-shim
+        description: Shim interface used to connect host to OpenShift Data Foundation public Multus network
+        type: mac-vlan
+        state: up
+        mac-vlan:
+          base-iface: bond3
+          mode: bridge
+          promiscuous: true
+        mtu: 9000
+        ipv4:
+          enabled: true
+          dhcp: true
+    routes:
+      config:
+        - destination: 10.101.13.0/24
+          next-hop-interface: ceph-pub-shim
+---
+apiVersion: nmstate.io/v1
+kind: NodeNetworkConfigurationPolicy
+metadata:
+  name: ceph-public-net-shim-server-3
+spec:
+  nodeSelector:
+    kubernetes.io/hostname: server-3
+  desiredState:
+    interfaces:
+      - name: bond3
+        type: bond
+        mac-address: 98:b7:85:21:ed:e8
+        state: up
+        mtu: 9000
+        ipv4:
+          enabled: true
+          dhcp: true
+        ipv6:
+          enabled: false
+        link-aggregation:
+          mode: active-backup
+          options:
+            miimon: "150"
+            primary: enp1s0f3
+          port:
+            - enp1s0f3
+            - enp7s0f0
+      - name: ceph-pub-shim
+        description: Shim interface used to connect host to OpenShift Data Foundation public Multus network
+        type: mac-vlan
+        state: up
+        mac-vlan:
+          base-iface: bond3
+          mode: bridge
+          promiscuous: true
+        mtu: 9000
+        ipv4:
+          enabled: true
+          dhcp: true
+    routes:
+      config:
+        - destination: 10.101.13.0/24
+          next-hop-interface: ceph-pub-shim
+---
+apiVersion: nmstate.io/v1
+kind: NodeNetworkConfigurationPolicy
+metadata:
+  name: ceph-private-server-1
+spec:
+  nodeSelector:
+    kubernetes.io/hostname: server-1
+  desiredState:
+    interfaces:
+      - name: bond2
+        type: bond
+        mac-address: 98:b7:85:22:14:06
+        state: up
+        mtu: 9000
+        ipv4:
+          enabled: true
+          dhcp: true
+        ipv6:
+          enabled: false
+        link-aggregation:
+          mode: active-backup
+          options:
+            miimon: "150"
+            primary: enp1s0f2
+          port:
+            - enp1s0f2
+            - enp10s0
+---
+apiVersion: nmstate.io/v1
+kind: NodeNetworkConfigurationPolicy
+metadata:
+  name: ceph-private-server-2
+spec:
+  nodeSelector:
+    kubernetes.io/hostname: server-2
+  desiredState:
+    interfaces:
+      - name: bond2
+        type: bond
+        mac-address: 98:b7:85:21:ed:dd
+        state: up
+        mtu: 9000
+        ipv4:
+          enabled: true
+          dhcp: true
+        ipv6:
+          enabled: false
+        link-aggregation:
+          mode: active-backup
+          options:
+            miimon: "150"
+            primary: enp1s0f2
+          port:
+            - enp1s0f2
+            - enp10s0
+---
+apiVersion: nmstate.io/v1
+kind: NodeNetworkConfigurationPolicy
+metadata:
+  name: ceph-private-server-3
+spec:
+  nodeSelector:
+    kubernetes.io/hostname: server-3
+  desiredState:
+    interfaces:
+      - name: bond2
+        type: bond
+        mac-address: 98:b7:85:21:ed:e9
+        state: up
+        mtu: 9000
+        ipv4:
+          enabled: true
+          dhcp: true
+        ipv6:
+          enabled: false
+        link-aggregation:
+          mode: active-backup
+          options:
+            miimon: "150"
+            primary: enp1s0f2
+          port:
+            - enp1s0f2
             - enp10s0
