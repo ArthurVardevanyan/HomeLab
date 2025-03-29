@@ -270,7 +270,7 @@ token_reviewer_jwt=$(kubectl get secrets -n argocd -o jsonpath="{.items[?(@.meta
 kubernetes_host="https://kubernetes.default.svc:443"
 
 # Pod With Service Account Token Mounted
-kubectl cp -n homelab toolbox-0:/var/run/secrets/kubernetes.io/serviceaccount/..data/ca.crt /tmp/ca.crt
+kubectl cp -n vault vault-0:/var/run/secrets/kubernetes.io/serviceaccount/..data/ca.crt /tmp/ca.crt
 
 vault write auth/kubernetes/config \
    token_reviewer_jwt="${token_reviewer_jwt}" \
