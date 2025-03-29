@@ -14,9 +14,9 @@ resource "zitadel_application_oidc" "quay" {
 
   name = "quay"
   redirect_uris = [
-    "https://registry.arthurvardevanyan.com/oauth2/zitadel-auth/callback",
-    "https://registry.arthurvardevanyan.com/oauth2/zitadel-auth/callback/attach",
-    "https://registry.arthurvardevanyan.com/oauth2/zitadel-auth/callback/cli",
+    "https://registry.arthurvardevanyan.com/oauth2/zitadel/callback",
+    "https://registry.arthurvardevanyan.com/oauth2/zitadel/callback/attach",
+    "https://registry.arthurvardevanyan.com/oauth2/zitadel/callback/cli",
   ]
   response_types              = ["OIDC_RESPONSE_TYPE_CODE"]
   grant_types                 = ["OIDC_GRANT_TYPE_AUTHORIZATION_CODE"]
