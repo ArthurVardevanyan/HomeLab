@@ -365,23 +365,23 @@ spec:
         - registry.arthurvardevanyan.com/envoyproxy/envoy
       source: docker.io/envoyproxy/envoy
       mirrorSourcePolicy: NeverContactSource
----
-apiVersion: config.openshift.io/v1
-kind: ImageDigestMirrorSet
-metadata:
-  name: image-policy-knative
-  labels:
-    app.kubernetes.io/instance: okd-configuration
-spec:
-  imageDigestMirrors:
-    - mirrors:
-        - registry.arthurvardevanyan.com/knative-releases
-      source: gcr.io/knative-releases/knative.dev
-      mirrorSourcePolicy: NeverContactSource
-    - mirrors:
-        - registry.arthurvardevanyan.com/knative/storageversion/migrate
-      source: gcr.io/knative-releases/knative.dev/pkg/apiextensions/storageversion/cmd/migrate
-      mirrorSourcePolicy: AllowContactingSource # NeverContactSource
+# ---
+# apiVersion: config.openshift.io/v1
+# kind: ImageDigestMirrorSet
+# metadata:
+#   name: image-policy-knative
+#   labels:
+#     app.kubernetes.io/instance: okd-configuration
+# spec:
+#   imageDigestMirrors:
+#     - mirrors:
+#         - registry.arthurvardevanyan.com/knative-releases
+#       source: gcr.io/knative-releases/knative.dev
+#       mirrorSourcePolicy: NeverContactSource
+#     - mirrors:
+#         - registry.arthurvardevanyan.com/knative/storageversion/migrate
+#       source: gcr.io/knative-releases/knative.dev/pkg/apiextensions/storageversion/cmd/migrate
+#       mirrorSourcePolicy: AllowContactingSource # NeverContactSource
 ---
 apiVersion: config.openshift.io/v1
 kind: ImageTagMirrorSet
