@@ -6,6 +6,7 @@ FEATURE_BUILD_SUPPORT: false
 FEATURE_DIRECT_LOGIN: false
 FEATURE_REFERRERS_API: true
 FEATURE_MAILING: false
+FEATURE_PROXY_CACHE: true
 REGISTRY_TITLE: Quay
 REGISTRY_TITLE_SHORT: Quay
 SETUP_COMPLETE: true
@@ -21,26 +22,26 @@ DISTRIBUTED_STORAGE_DEFAULT_LOCATIONS: []
 DISTRIBUTED_STORAGE_PREFERENCE:
   - default
 DISTRIBUTED_STORAGE_CONFIG:
-  default:
-    - RadosGWStorage
-    - access_key: <path:secret/data/homelab/minio#access_key>
-      secret_key: <path:secret/data/homelab/minio#access_key>
-      hostname: truenas.arthurvardevanyan.com
-      # checkov:skip=CKV_SECRET_6 PlaceHolder Values
-      bucket_name: quay
-      port: 9000
-      is_secure: true
-      storage_path: /datastorage/registry
   # default:
   #   - RadosGWStorage
-  #   - access_key: <path:secret/data/homelab/quay/minio#access_key>
-  #     secret_key: <path:secret/data/homelab/quay/minio#secret_key>
-  #     hostname: rook-ceph-rgw-rook-ceph-obj.rook-ceph.svc.cluster.local
+  #   - access_key: <path:secret/data/homelab/minio#access_key>
+  #     secret_key: <path:secret/data/homelab/minio#access_key>
+  #     hostname: truenas.arthurvardevanyan.com
   #     # checkov:skip=CKV_SECRET_6 PlaceHolder Values
-  #     bucket_name: quay-f152d873-b952-4df3-bd9c-1de7d39cb7bf
-  #     port: 8080
-  #     is_secure: false
+  #     bucket_name: quay
+  #     port: 9000
+  #     is_secure: true
   #     storage_path: /datastorage/registry
+  default:
+    - RadosGWStorage
+    - access_key: <path:secret/data/homelab/quay/minio#access_key>
+      secret_key: <path:secret/data/homelab/quay/minio#secret_key>
+      hostname: rook-ceph-rgw-rook-ceph-obj.rook-ceph.svc.cluster.local
+      # checkov:skip=CKV_SECRET_6 PlaceHolder Values
+      bucket_name: quay-2206daee-64c6-4ec4-bed0-7413dc7f83e7
+      port: 8080
+      is_secure: false
+      storage_path: /datastorage/registry
 DEFAULT_TAG_EXPIRATION: 30m
 FEATURE_PROXY_STORAGE: true
 TAG_EXPIRATION_OPTIONS:
@@ -56,7 +57,7 @@ FEATURE_SUPERUSERS_FULL_ACCESS: true
 FEATURE_UI_V2: true
 FEATURE_QUOTA_MANAGEMENT: true
 DEFAULT_SYSTEM_REJECT_QUOTA_BYTES: 10737418240 #10GB
-ZITADEL-AUTH_LOGIN_CONFIG:
+ZITADEL_LOGIN_CONFIG:
   CLIENT_ID: "<path:secret/data/homelab/quay/zitadel#client_id>"
   CLIENT_SECRET: <path:secret/data/homelab/quay/zitadel#client_secret>
   LOGIN_SCOPES:

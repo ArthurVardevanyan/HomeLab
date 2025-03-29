@@ -112,6 +112,16 @@ spec:
       postgresql:
         pg_hba:
           - host all all 0.0.0.0/0 trust
+  users:
+    - name: quay
+      databases:
+        - quay
+      password:
+        type: "AlphaNumeric" # ASCII
+      options: "SUPERUSER CREATEDB"
+  databaseInitSQL:
+    key: db-init.sql
+    name: db-init-quay
   monitoring:
     pgmonitor:
       exporter:
