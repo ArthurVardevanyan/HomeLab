@@ -182,6 +182,21 @@ end
 | **Bond 4.11**         | Virtual Machines      |
 | **Bond 4.111**        | Infrastructure        |
 
+**Ceph Performance Tests:**
+
+|  test   | class  | threads | bk-size | iops-min | iops-max | iops-avg |  MB/s   |
+| :-----: | :----: | :-----: | :-----: | :------: | :------: | :------: | :-----: |
+|  seq-r  | cephfs |    4    |  256k   |   3968   |   5120   |   4641   |  1216   |
+|  seq-r  | block  |    4    |  256k   |   3958   |   5120   |   4584   |  1202   |
+|  seq-w  | cephfs |    4    |  256k   |   1024   |   2048   |   1661   |   436   |
+|  seq-w  | block  |    4    |  256k   |   1023   |   2048   |   1627   |   427   |
+| rand-r  | cephfs |    4    |  256k   |   3972   |   4854   |   4441   |  1164   |
+| rand-r  | block  |    4    |  256k   |   3596   |   4726   |   4385   |  1150   |
+| rand-w  | cephfs |    4    |  256k   |   266    |   2048   |   1553   |   397   |
+| rand-w  | block  |    4    |  256k   |   1402   |   2048   |   1617   |   423   |
+| rand-rw | cephfs |    4    |  256k   |   952    |   1418   |   1202   | 313/316 |
+| rand-rw | block  |    4    |  256k   |   876    |   1410   |   1190   | 310/312 |
+
 #### OKD WIF
 
 - <https://github.com/openshift/cloud-credential-operator/blob/master/docs/gcp_workload_identity.md>
