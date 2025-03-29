@@ -5,6 +5,78 @@ metadata:
   namespace: pihole
   labels:
     app.kubernetes.io/instance: pihole
+    blackbox: ignore
+  annotations:
+    route.openshift.io/termination: edge
+spec:
+  ingressClassName: openshift-default
+  rules:
+    - host: pihole-infra.apps.okd.homelab.arthurvardevanyan.com
+      http:
+        paths:
+          - path: "/"
+            pathType: ImplementationSpecific
+            backend:
+              service:
+                name: pihole-okd-infra
+                port:
+                  number: 80
+---
+kind: Ingress
+apiVersion: networking.k8s.io/v1
+metadata:
+  name: pihole
+  namespace: pihole
+  labels:
+    app.kubernetes.io/instance: pihole
+    blackbox: ignore
+  annotations:
+    route.openshift.io/termination: edge
+spec:
+  ingressClassName: openshift-default
+  rules:
+    - host: pihole.apps.okd.homelab.arthurvardevanyan.com
+      http:
+        paths:
+          - path: "/"
+            pathType: ImplementationSpecific
+            backend:
+              service:
+                name: pihole-okd
+                port:
+                  number: 80
+---
+kind: Ingress
+apiVersion: networking.k8s.io/v1
+metadata:
+  name: pihole-vlan3
+  namespace: pihole
+  labels:
+    app.kubernetes.io/instance: pihole
+    blackbox: ignore
+  annotations:
+    route.openshift.io/termination: edge
+spec:
+  ingressClassName: openshift-default
+  rules:
+    - host: pihole-vlan3.apps.okd.homelab.arthurvardevanyan.com
+      http:
+        paths:
+          - path: "/"
+            pathType: ImplementationSpecific
+            backend:
+              service:
+                name: pihole-okd-vlan3
+                port:
+                  number: 80
+---
+kind: Ingress
+apiVersion: networking.k8s.io/v1
+metadata:
+  name: pihole-infra-admin
+  namespace: pihole
+  labels:
+    app.kubernetes.io/instance: pihole
   annotations:
     route.openshift.io/termination: edge
 spec:
@@ -24,7 +96,7 @@ spec:
 kind: Ingress
 apiVersion: networking.k8s.io/v1
 metadata:
-  name: pihole
+  name: pihole-admin
   namespace: pihole
   labels:
     app.kubernetes.io/instance: pihole
@@ -47,7 +119,7 @@ spec:
 kind: Ingress
 apiVersion: networking.k8s.io/v1
 metadata:
-  name: pihole-vlan3
+  name: pihole-vlan3-admin
   namespace: pihole
   labels:
     app.kubernetes.io/instance: pihole
