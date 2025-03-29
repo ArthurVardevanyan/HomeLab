@@ -61,13 +61,14 @@ spec:
               command: [
                   "/bin/bash",
                   "-c",
-                  "rsync --stats --archive --verbose --human-readable --stats --delete /mnt/data/Nextcloud /mnt/backup1/",
+                  "rsync --stats --archive --verbose --human-readable --stats /mnt/backup1/ /mnt/data/Nextcloud", # --delete /mnt/data/Nextcloud /mnt/backup1/",
                   #"rsync --stats --archive --verbose --human-readable --stats --delete /mnt/data/Nextcloud /mnt/backup/ &&
                 ]
               resources:
                 limits:
-                  cpu: 300m
-                  memory: 3000M
+                  cpu: 6000m # 300m TEMP
+                  memory: 6000M #  TEMP
+
                 requests:
                   cpu: 100m
                   memory: 500M
@@ -77,13 +78,13 @@ spec:
                 # readOnly: false
                 - name: nextcloud-data-backup
                   mountPath: /mnt/backup1/Nextcloud
-                  readOnly: false
+                  readOnly: true # false # TEMP
                 - name: nextcloud
                   mountPath: /mnt/data/Nextcloud
-                  readOnly: true
+                  readOnly: false # true # TEMP
                 - name: nextcloud-preview-cache
                   mountPath: /mnt/data/Nextcloud/appdata_ocv0msatgbnc/preview
-                  readOnly: true
+                  readOnly: false # true # TEMP
               securityContext:
                 runAsGroup: 33
                 runAsUser: 33
