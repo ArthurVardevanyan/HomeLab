@@ -1,0 +1,63 @@
+apiVersion: tekton.dev/v1beta1
+kind: Task
+metadata:
+  name: k8s-deploy
+  labels:
+    app.kubernetes.io/version: "0.2.0"
+  annotations:
+    argocd.argoproj.io/sync-wave: "2"
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+    tekton.dev/pipelines.minVersion: "0.38.0"
+    tekton.dev/categories: Deployment
+    tekton.dev/tags: k8s
+    tekton.dev/displayName: "k8s-deploy"
+    tekton.dev/platforms: "linux/amd64,linux/s390x,linux/ppc64le,linux/arm64"
+spec:
+  description: >-
+    A Simple Task to Deploy Manifests to a Cluster
+
+  params:
+    - name: git-commit
+      type: string
+
+  workspaces:
+    - name: data
+
+  steps:
+    - name: deploy
+      image: "registry.arthurvardevanyan.com/homelab/toolbox:not_latest"
+      env:
+        - name: SHA
+          value: $(params.git-commit)
+        - name: WORKSPACE_DATA_PATH
+          value: $(workspaces.data.path)
+      resources:
+        requests:
+          memory: 256Mi
+          cpu: 100m
+        limits:
+          memory: 512Mi
+          cpu: 300m
+      securityContext:
+        runAsNonRoot: true
+        #runAsUser: 65532
+        privileged: false
+        readOnlyRootFilesystem: true
+        allowPrivilegeEscalation: false
+        seccompProfile:
+          type: RuntimeDefault
+        capabilities:
+          drop:
+            - ALL
+            - MKNOD
+      script: |
+        #!/bin/bash
+
+        set -o errexit
+        set -o nounset
+        set -o pipefail
+
+        echo "Starting Deployment"
+
+        kubectl kustomize ${WORKSPACE_DATA_PATH}/kubernetes/overlays/okd | \
+          sed "s/<VERSION>/${SHA}/g" | kubectl apply -f -
