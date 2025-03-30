@@ -78,6 +78,28 @@ resource "truenas_dataset" "backup_ix_applications" {
 
 }
 
+
+resource "truenas_dataset" "backup_steam_backup" {
+  atime            = "on"
+  case_sensitivity = "sensitive"
+  compression      = "lz4"
+  copies           = 1
+  deduplication    = "off"
+  encrypted        = false
+  exec             = "on"
+  name             = "Steam"
+  pbkdf2iters      = 0
+  pool             = "backup"
+  quota_bytes      = 3221225472000
+  readonly         = "off"
+  #record_size      = "1024K" "1M"
+  ref_quota_bytes = 2147483648000
+  snap_dir        = "hidden"
+  sync            = "standard"
+
+}
+
+
 resource "truenas_share_smb" "backup_windows_backup" {
   aapl_name_mangling = false
   abe                = false
@@ -102,6 +124,32 @@ resource "truenas_share_smb" "backup_windows_backup" {
   streams            = true
   timemachine        = false
 }
+
+resource "truenas_share_smb" "backup_steam_backup" {
+  aapl_name_mangling = false
+  abe                = false
+  acl                = true
+  auxsmbconf         = ""
+  browsable          = true
+  comment            = ""
+  durablehandle      = true
+  enabled            = true
+  fsrvp              = false
+  guestok            = false
+  home               = false
+  hostsallow         = []
+  hostsdeny          = []
+  name               = "Steam"
+  path               = "/mnt/backup/Steam"
+  path_suffix        = ""
+  purpose            = "DEFAULT_SHARE"
+  recyclebin         = false
+  ro                 = false
+  shadowcopy         = true
+  streams            = true
+  timemachine        = false
+}
+
 
 # https://github.com/dariusbakunas/terraform-provider-truenas/issues/20
 # resource "truenas_share_nfs" "backup_file_storage_nextcloud" {
