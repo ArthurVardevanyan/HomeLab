@@ -25,6 +25,58 @@ kubectl -n vault  exec -ti vault-2 -- vault operator raft join http://vault-0.va
 kubectl -n vault  exec -ti vault-2 -- vault operator unseal
 ```
 
+## Vault Kubernetes Integration
+
+```bash
+
+# Vault
+kubectl exec -it vault-0 -n vault -- vault operator unseal --tls-skip-verify
+# https://blog.ramon-gordillo.dev/2021/03/gitops-with-argocd-and-hashicorp-vault-on-kubernetes/
+# https://cloud.redhat.com/blog/how-to-use-hashicorp-vault-and-argo-cd-for-gitops-on-openshift
+# https://itnext.io/argocd-secret-management-with-argocd-vault-plugin-539f104aff05
+vault auth enable kubernetes
+
+token_reviewer_jwt=$(kubectl get secrets -n argocd -o jsonpath="{.items[?(@.metadata.annotations.kubernetes.io/service-account.name=='argocd-repo-server')].data.token}" |base64 -d)
+
+#kubernetes_host=$(oc whoami --show-server)
+kubernetes_host="https://kubernetes.default.svc:443"
+
+# Pod With Service Account Token Mounted
+kubectl cp -n vault vault-0:/var/run/secrets/kubernetes.io/serviceaccount/..data/ca.crt /tmp/ca.crt
+
+vault write auth/kubernetes/config \
+   token_reviewer_jwt="${token_reviewer_jwt}" \
+   kubernetes_host=${kubernetes_host} \
+   kubernetes_ca_cert=@/tmp/ca.crt \
+   disable_local_ca_jwt=true
+
+vault write auth/kubernetes/role/argocd \
+    bound_service_account_names=argocd-repo-server \
+    bound_service_account_namespaces=argocd \
+    policies=argocd \
+    ttl=1h
+
+vault policy write argocd - <<EOF
+path "secret/*" {
+    capabilities = ["create", "read", "update", "delete", "list"]
+}
+EOF
+
+vault write auth/kubernetes/login role=argocd jwt=$(cat /var/run/secrets/kubernetes.io/serviceaccount/token)
+```
+
+Additional Policy for Terraform
+
+```hcl
+path "auth/token/create" {
+  capabilities = ["create", "read", "update", "list"]
+}
+```
+
+```bash
+export VAULT_TOKEN=$(vault login --tls-skip-verify -address=https://vault.arthurvardevanyan.com -method=userpass -token-only username=arthur)
+```
+
 ## REF
 
 - <https://holdmybeersecurity.com/2021/03/04/gitlab-ci-cd-pipeline-with-vault-secrets/>

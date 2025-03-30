@@ -10,11 +10,13 @@ HomeLab Server/Cluster, Virtual Sandbox Cluster, & Desktop Configuration
   - [Server](#server)
     - [Networking](#networking)
     - [Kubernetes](#kubernetes)
+      - [Machines](#machines)
+        - [ZFS Storage](#zfs-storage)
+      - [Kubernetes Nodes](#kubernetes-nodes)
+        - [Ceph Performance Tests](#ceph-performance-tests)
       - [OKD WIF](#okd-wif)
       - [Kubernetes Commands](#kubernetes-commands)
         - [Delete Pod Using Graceful Termination Eviction Request](#delete-pod-using-graceful-termination-eviction-request)
-      - [SSH Keyscan](#ssh-keyscan)
-      - [Vault Kubernetes Integration](#vault-kubernetes-integration)
 
 ## Remote VsCode
 
@@ -135,7 +137,7 @@ end
 | ------------------ | ----------- | ------------- | ------------------------ | ------------- |
 | v1.33.\*           | 4.19-\*     | stable-scos-4 | CentOS Stream CoreOS 9.0 | CEPH          |
 
-**Machines:**
+#### Machines
 
 [CPU Benchmark](https://www.cpubenchmark.net/compare/Intel-i5-6600-vs-AMD-RX-427BB-vs-Intel-i3-2130-vs-AMD-GX-415GA-SOC-vs-AMD-Ryzen-7-5700G/2594vs2496vs755vs2081vs4323)
 
@@ -156,13 +158,13 @@ end
 | server-2 | 40W | -20       | -30       | -750          | 1.35 | 3200        |
 | server-3 | 40W | -20       | -30       | -750          | 1.35 | 3200        |
 
-**ZFS Storage:**
+##### ZFS Storage
 
 | Machine | Use    | Dataset   | Size  | Dataset     | Size  | Dataset       | Size  | Disks (SSD)  |
 | ------- | ------ | --------- | ----- | ----------- | ----- | ------------- | ----- | ------------ |
 | TrueNas | Backup | Nextcloud | 750GB | Ceph Backup | 175GB | WindowsBackup | 750GB | 5x2TB RaidZ2 |
 
-**Kubernetes Nodes:**
+#### Kubernetes Nodes
 
 | Attribute             | Value                 |
 | --------------------- | --------------------- |
@@ -182,7 +184,7 @@ end
 | **Bond 4.11**         | Virtual Machines      |
 | **Bond 4.111**        | Infrastructure        |
 
-**Ceph Performance Tests:**
+##### Ceph Performance Tests
 
 |  test   | class  | threads | bk-size | iops-min | iops-max | iops-avg |  MB/s   |
 | :-----: | :----: | :-----: | :-----: | :------: | :------: | :------: | :-----: |
@@ -225,22 +227,14 @@ PROJECT_ID="$(vault kv get -field=project_id secret/gcp/org/av/projects)"
 ```bash
 oc login --web --server https://api.okd.homelab.arthurvardevanyan.com:6443
 
-# Kubernetes Dashboard
-# https://upcloud.com/community/tutorials/deploy-kubernetes-dashboard
-kubectl get secret -n kubernetes-dashboard admin-user-token -o jsonpath="{.data.token}" | base64 --decode
-
 # Watch ALl Pods
 watch kubectl get pods -A -o wide --sort-by=.metadata.creationTimestamp
 # Delete Pods that Have a Restart
 kubectl get pods -A | awk '$5>0' | awk '{print "kubectl delete pod -n " $1 " " $2}' | bash -
 # Drain Node
-kubectl drain k3s-server --ignore-daemonsets --delete-emptydir-data
-# Vault
-kubectl exec -it vault-0 -n vault -- vault operator unseal --tls-skip-verify
+ oc adm drain server-3 --delete-emptydir-data --ignore-daemonsets --force
 # Nextcloud
 kubectl exec -it nextcloud-0 -n nextcloud -- runuser -u www-data -- php -f /var/www/html/occ
-
-kubectl label node ${NODE} topology.kubernetes.io/zone=${ZONE} --overwrite
 ```
 
 ##### Delete Pod Using Graceful Termination Eviction Request
@@ -256,66 +250,3 @@ curl --header "Authorization: Bearer $(oc whoami -t)" -H 'Content-type: applicat
 
 - <https://docs.okd.io/latest/rest_api/policy_apis/eviction-policy-v1.html#eviction-policy-v1>
 - <https://unofficial-kubernetes.readthedocs.io/en/latest/tasks/configure-pod-container/configure-pod-disruption-budget/>
-
-#### SSH Keyscan
-
-```bash
-export IP_LIST="3 4 5 17 107 108 109 101 102 103 111 112 113 114 115 116 121 122 123"
-
-rm -f /tmp/ssh_keyscan.txt
-for IP in $( echo "$IP_LIST" ); do
-ssh-keyscan 10.0.0."${IP}" >> /tmp/ssh_keyscan.txt
-done
-
-echo "\n\n\nSSH Keyscan\n\n"
-cat /tmp/ssh_keyscan.txt
-```
-
-#### Vault Kubernetes Integration
-
-```bash
-# https://blog.ramon-gordillo.dev/2021/03/gitops-with-argocd-and-hashicorp-vault-on-kubernetes/
-# https://cloud.redhat.com/blog/how-to-use-hashicorp-vault-and-argo-cd-for-gitops-on-openshift
-# https://itnext.io/argocd-secret-management-with-argocd-vault-plugin-539f104aff05
-vault auth enable kubernetes
-
-token_reviewer_jwt=$(kubectl get secrets -n argocd -o jsonpath="{.items[?(@.metadata.annotations.kubernetes.io/service-account.name=='argocd-repo-server')].data.token}" |base64 -d)
-
-#kubernetes_host=$(oc whoami --show-server)
-kubernetes_host="https://kubernetes.default.svc:443"
-
-# Pod With Service Account Token Mounted
-kubectl cp -n vault vault-0:/var/run/secrets/kubernetes.io/serviceaccount/..data/ca.crt /tmp/ca.crt
-
-vault write auth/kubernetes/config \
-   token_reviewer_jwt="${token_reviewer_jwt}" \
-   kubernetes_host=${kubernetes_host} \
-   kubernetes_ca_cert=@/tmp/ca.crt \
-   disable_local_ca_jwt=true
-
-vault write auth/kubernetes/role/argocd \
-    bound_service_account_names=argocd-repo-server \
-    bound_service_account_namespaces=argocd \
-    policies=argocd \
-    ttl=1h
-
-vault policy write argocd - <<EOF
-path "secret/*" {
-    capabilities = ["create", "read", "update", "delete", "list"]
-}
-EOF
-
-vault write auth/kubernetes/login role=argocd jwt=$(cat /var/run/secrets/kubernetes.io/serviceaccount/token)
-```
-
-Additional Policy for Terraform
-
-```hcl
-path "auth/token/create" {
-  capabilities = ["create", "read", "update", "list"]
-}
-```
-
-```bash
-export VAULT_TOKEN=$(vault login --tls-skip-verify -address=https://vault.arthurvardevanyan.com -method=userpass -token-only username=arthur)
-```
