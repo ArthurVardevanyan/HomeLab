@@ -78,6 +78,26 @@ resource "truenas_dataset" "backup_ix_applications" {
 
 }
 
+resource "truenas_dataset" "backup_iso_backup" {
+  atime            = "on"
+  case_sensitivity = "sensitive"
+  compression      = "lz4"
+  copies           = 1
+  deduplication    = "off"
+  encrypted        = false
+  exec             = "on"
+  name             = "iso"
+  pbkdf2iters      = 0
+  pool             = "backup"
+  quota_bytes      = 644245094400
+  readonly         = "off"
+  #record_size      = "1024K" "1M"
+  ref_quota_bytes = 429496729600
+  snap_dir        = "hidden"
+  sync            = "standard"
+
+}
+
 
 resource "truenas_dataset" "backup_steam_backup" {
   atime            = "on"
@@ -123,6 +143,35 @@ resource "truenas_share_smb" "backup_windows_backup" {
   shadowcopy         = true
   streams            = true
   timemachine        = false
+
+  depends_on = [truenas_dataset.backup_windows_backup]
+}
+
+resource "truenas_share_smb" "backup_ios_backup" {
+  aapl_name_mangling = false
+  abe                = false
+  acl                = true
+  auxsmbconf         = ""
+  browsable          = true
+  comment            = ""
+  durablehandle      = true
+  enabled            = true
+  fsrvp              = false
+  guestok            = false
+  home               = false
+  hostsallow         = []
+  hostsdeny          = []
+  name               = "iso"
+  path               = "/mnt/backup/iso"
+  path_suffix        = ""
+  purpose            = "DEFAULT_SHARE"
+  recyclebin         = false
+  ro                 = false
+  shadowcopy         = true
+  streams            = true
+  timemachine        = false
+
+  depends_on = [truenas_dataset.backup_steam_backup]
 }
 
 resource "truenas_share_smb" "backup_steam_backup" {
@@ -148,6 +197,8 @@ resource "truenas_share_smb" "backup_steam_backup" {
   shadowcopy         = true
   streams            = true
   timemachine        = false
+
+  depends_on = [truenas_dataset.backup_steam_backup]
 }
 
 
