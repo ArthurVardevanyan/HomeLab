@@ -24,7 +24,7 @@ spec:
           annotations:
             io.kubernetes.cri-o.TrySkipVolumeSELinuxLabel: "true"
         spec:
-          # runtimeClassName: selinux
+          runtimeClassName: selinux
           serviceAccountName: nextcloud-sa
           # affinity:
           #   podAffinity:
@@ -61,35 +61,29 @@ spec:
               command: [
                   "/bin/bash",
                   "-c",
-                  "rsync --stats --archive --verbose --human-readable --stats /mnt/backup1/ /mnt/data/Nextcloud", # --delete /mnt/data/Nextcloud /mnt/backup1/",
+                  "rsync --stats --archive --verbose --human-readable --stats --delete /mnt/data/Nextcloud /mnt/backup1/",
                   #"rsync --stats --archive --verbose --human-readable --stats --delete /mnt/data/Nextcloud /mnt/backup/ &&
                 ]
               resources:
                 limits:
-                  cpu: "6"
-                  memory: 72Gi
+                  cpu: 300m
+                  memory: 3000M
                 requests:
-                  cpu: "1"
-                  memory: 48Gi
-                # limits:
-                #   cpu: 300m
-                #   memory: 3000m
-                # requests:
-                #   cpu: 100m
-                #   memory: 500M
+                  cpu: 100m
+                  memory: 500M
               volumeMounts:
                 # - name: nextcloud-data
                 # mountPath: /mnt/backup/Nextcloud
                 # readOnly: false
                 - name: nextcloud-data-backup
                   mountPath: /mnt/backup1/Nextcloud
-                  readOnly: true # false # TEMP
+                  readOnly: false
                 - name: nextcloud
                   mountPath: /mnt/data/Nextcloud
-                  readOnly: false # true # TEMP
+                  readOnly: true
                 - name: nextcloud-preview-cache
                   mountPath: /mnt/data/Nextcloud/appdata_ocv0msatgbnc/preview
-                  readOnly: false # true # TEMP
+                  readOnly: true
               securityContext:
                 runAsGroup: 33
                 runAsUser: 33
