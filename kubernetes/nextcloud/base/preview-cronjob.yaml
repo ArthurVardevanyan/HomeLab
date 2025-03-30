@@ -50,6 +50,9 @@ spec:
             - name: nextcloud-preview-cache
               persistentVolumeClaim:
                 claimName: nextcloud-preview-cache
+            - name: tmp
+              emptyDir:
+                sizeLimit: 1Gi
           securityContext:
             fsGroup: 33
             runAsGroup: 33
@@ -96,6 +99,8 @@ spec:
                   mountPath: /var/www/html/data
                 - name: nextcloud-preview-cache
                   mountPath: /var/www/html/data/appdata_ocv0msatgbnc/preview
+                - name: tmp
+                  mountPath: /tmp
               terminationMessagePath: /dev/termination-log
               terminationMessagePolicy: File
               imagePullPolicy: IfNotPresent
