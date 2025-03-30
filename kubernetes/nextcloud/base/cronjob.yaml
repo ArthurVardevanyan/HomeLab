@@ -12,7 +12,7 @@ metadata:
 spec:
   schedule: "*/10 * * * *"
   concurrencyPolicy: Forbid
-  suspend: false
+  suspend: true # False TEMP
   startingDeadlineSeconds: 60
   jobTemplate:
     spec:
@@ -25,7 +25,7 @@ spec:
           annotations:
             io.kubernetes.cri-o.TrySkipVolumeSELinuxLabel: "true"
         spec:
-          runtimeClassName: selinux
+          # runtimeClassName: selinux
           serviceAccountName: nextcloud-sa
           # affinity:
           #   podAffinity:
