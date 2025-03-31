@@ -1,5 +1,5 @@
 FROM quay.io/projectquay/clair-action:v0.0.11@sha256:80486643baad47f2ac606e5c0e5274f296c08464aebb3dc90f97f22ba92505dd
-FROM registry.access.redhat.com/ubi9/ubi-minimal:9.5-1731593028@sha256:8b6978d555746877c73f52375f60fd7b6fd27d6aca000eaed27d0995303c13de
+FROM registry.access.redhat.com/ubi9/ubi-minimal:9.5-1742914212@sha256:4c8830d349732ed8066544e1cbcf878ad64f39aa4364f13cf4a69954b0ccbda5
 
 COPY --from=0 /bin/clair-action /bin/clair-action
 COPY ./containers/toolbox/repos /etc/yum.repos.d/
@@ -7,15 +7,15 @@ COPY ./containers/toolbox/repos /etc/yum.repos.d/
 
 ENV \
   ARGOCD_VAULT_VERSION=1.18.1 \
-  OKD_VERSION=4.18.0-okd-scos.ec.1 \
-  OPENTOFU_VERSION=1.8.6 \
-  VAULT_VERSION=1.18.2 \
+  OKD_VERSION=4.19.0-okd-scos.ec.6 \
+  OPENTOFU_VERSION=1.9.0 \
+  VAULT_VERSION=1.19.0 \
   KO_VERSION=0.17.1 \
-  GO_VERSION=1.23.3 \
-  GH_VERSION=2.62.0 \
+  GO_VERSION=1.24.1\
+  GH_VERSION=2.69.0 \
   KUBECONFORM_VERSION=0.6.7  \
-  MARKDOWNLINT_CLI_VERSION=0.43.0 \
-  PRETTIER_CLI_VERSION=3.3.3 \
+  MARKDOWNLINT_CLI_VERSION=0.44.0 \
+  PRETTIER_CLI_VERSION=3.5.3 \
   HOME=/tmp \
   PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/local/go/bin \
   KICK="0"
