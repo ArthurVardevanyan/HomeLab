@@ -900,9 +900,9 @@ delete_okd_virt() {
   export OKD=/tmp/okd
 
   # TODO, Automate Finding Which IPs to Remove
-  ssh-keygen -R 10.0.0.140
-  ssh-keygen -R 10.0.0.141
-  ssh-keygen -R 10.0.0.142
+  ssh-keygen -R 10.103.10.101
+  ssh-keygen -R 10.103.10.102
+  ssh-keygen -R 10.103.10.103
 
   echo -e "\n\n${BLUE}Delete All Existing Data:${NC}"
   rm -rf \
@@ -981,7 +981,8 @@ install_okd_prep() {
   # Create okd directory of openshift-install files
   mkdir -p "${OKD}"/okd
   # Copy the install-config.yaml
-  cp "${HOMELAB}/okd/install-config.yaml" "${OKD}/okd/"
+  export INSTALL_CONFIG_DIR=${INSTALL_CONFIG_DIR:-"${HOMELAB}/okd/install-config.yaml"}
+  cp "${INSTALL_CONFIG_DIR}" "${OKD}/okd/"
 
   SSH=$(cat "${HOME}"/.ssh/id_ed25519.pub)
   sed -i "s/<SSH>/${SSH}/g" "${OKD}/okd/install-config.yaml"
@@ -1008,6 +1009,9 @@ install_okd_virt() {
 
   echo -e "\n\n${BLUE}Get URL:${NC}"
   URL=${URL:-virt.arthurvardevanyan.com}
+
+  export INSTALL_CONFIG_DIR="${HOMELAB}/sandbox/kubevirt/okd/configs/install-config.yaml"
+
   install_okd_prep
 
   cp "${HOMELAB}/sandbox/kubevirt/okd/configs/agent-config.yaml" "${OKD}/okd/"
@@ -1016,6 +1020,7 @@ install_okd_virt() {
   "${OKD}/openshift-install" agent create cluster-manifests --dir "${OKD}/okd/"
 
   mkdir -p "${OKD}/okd/openshift"
+  cp "${HOMELAB}/sandbox/kubevirt/okd/configs/ovn.yaml" "${OKD}/okd/openshift/cluster-network-03-config.yml"
   cp "${HOMELAB}/sandbox/kubevirt/okd/configs/boot-disk.yaml" "${OKD}/okd/openshift/boot-disk.yaml"
   cp "${HOMELAB}/sandbox/kubevirt/okd/configs/secondary-disk.yaml" "${OKD}/okd/openshift/secondary-disk.yaml"
 

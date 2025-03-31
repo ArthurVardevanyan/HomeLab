@@ -49,7 +49,7 @@ Call Back URLs
 
 ```bash
 https://oauth-openshift.apps.okd.homelab.arthurvardevanyan.com/oauth2callback/zitadel
-https://oauth-openshift.apps.okd.sandbox.arthurvardevanyan.com/oauth2callback/zitadel
+https://oauth-openshift.apps.okd.virt.arthurvardevanyan.com/oauth2callback/zitadel
 ```
 
 TODO: PassThrough Termination

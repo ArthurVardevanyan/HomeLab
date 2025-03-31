@@ -2,8 +2,8 @@ apiVersion: kubevirt.io/v1
 kind: VirtualMachine
 metadata:
   annotations:
-    name: okd-master-1
-  name: okd-master-1
+    name: okd-server-1
+  name: okd-server-1
   namespace: okd-virt
 spec:
   dataVolumeTemplates:
@@ -11,7 +11,7 @@ spec:
       kind: DataVolume
       metadata:
         creationTimestamp: null
-        name: okd-master-1-0
+        name: okd-server-1-0
       spec:
         preallocation: false
         source:
@@ -25,7 +25,7 @@ spec:
       kind: DataVolume
       metadata:
         creationTimestamp: null
-        name: okd-master-1-1
+        name: okd-server-1-1
       spec:
         preallocation: false
         source:
@@ -39,7 +39,7 @@ spec:
       kind: DataVolume
       metadata:
         creationTimestamp: null
-        name: okd-master-1-2
+        name: okd-server-1-2
       spec:
         preallocation: false
         source:
@@ -53,7 +53,7 @@ spec:
       kind: DataVolume
       metadata:
         creationTimestamp: null
-        name: okd-master-1-3
+        name: okd-server-1-3
       spec:
         preallocation: false
         source:
@@ -67,7 +67,7 @@ spec:
       kind: DataVolume
       metadata:
         creationTimestamp: null
-        name: okd-master-1-4
+        name: okd-server-1-4
       spec:
         preallocation: false
         source:
@@ -77,7 +77,7 @@ spec:
             requests:
               storage: 100Gi
           storageClassName: rook-ceph-block-virtualization-ci
-  running: true
+  runStrategy: Always
   template:
     metadata:
       annotations:
@@ -88,7 +88,7 @@ spec:
       creationTimestamp: null
       labels:
         vm: okd
-        kubevirt.io/domain: okd-master-1
+        kubevirt.io/domain: okd-server-1
         kubevirt.io/size: small
     spec:
       evictionStrategy: LiveMigrateIfPossible
@@ -139,29 +139,21 @@ spec:
               name: storage-1
           interfaces:
             - bridge: {}
-              macAddress: "10:00:00:00:01:40"
+              macAddress: "10:01:03:01:01:01"
               model: virtio
-              name: br1
+              name: bond4-nad-vlan310
             - bridge: {}
-              macAddress: "10:00:00:00:11:40"
+              macAddress: "10:01:03:01:21:01"
               model: virtio
-              name: br1-vlan3
+              name: bond4-nad-vlan312
             - bridge: {}
-              macAddress: "10:00:00:00:51:40"
+              macAddress: "10:01:03:01:31:01"
               model: virtio
-              name: br1-vlan5
+              name: bond4-nad-vlan313
             - bridge: {}
-              macAddress: "10:00:00:00:61:40"
+              macAddress: "10:01:03:01:41:01"
               model: virtio
-              name: br1-vlan6
-            - bridge: {}
-              macAddress: "10:00:00:00:71:40"
-              model: virtio
-              name: br1-vlan7
-            - bridge: {}
-              macAddress: "10:00:00:00:81:40"
-              model: virtio
-              name: br1-vlan8
+              name: bond4-nad-vlan314
           networkInterfaceMultiqueue: true
           rng: {}
         features:
@@ -177,44 +169,41 @@ spec:
         memory:
           guest: 18Gi
         resources:
+          limits:
+            cpu: 6
+            memory: 24Gi
           requests:
             cpu: 2
-            memory: 3Gi
+            memory: 20Gi
       networks:
         - multus:
-            networkName: default/br1
-          name: br1
+            networkName: okd-virt/bond4-nad-vlan310
+          name: bond4-nad-vlan310
         - multus:
-            networkName: default/br1-vlan3
-          name: br1-vlan3
+            networkName: okd-virt/bond4-nad-vlan312
+          name: bond4-nad-vlan312
         - multus:
-            networkName: default/br1-vlan5
-          name: br1-vlan5
+            networkName: okd-virt/bond4-nad-vlan313
+          name: bond4-nad-vlan313
         - multus:
-            networkName: default/br1-vlan6
-          name: br1-vlan6
-        - multus:
-            networkName: default/br1-vlan7
-          name: br1-vlan7
-        - multus:
-            networkName: default/br1-vlan8
-          name: br1-vlan8
+            networkName: okd-virt/bond4-nad-vlan314
+          name: bond4-nad-vlan314
       terminationGracePeriodSeconds: 180
       volumes:
         - dataVolume:
-            name: okd-master-1-0
+            name: okd-server-1-0
           name: rootdisk-0
         - dataVolume:
-            name: okd-master-1-1
+            name: okd-server-1-1
           name: rootdisk-1
         - dataVolume:
-            name: okd-master-1-2
+            name: okd-server-1-2
           name: secondary-0
         - dataVolume:
-            name: okd-master-1-3
+            name: okd-server-1-3
           name: secondary-1
         - dataVolume:
-            name: okd-master-1-4
+            name: okd-server-1-4
           name: storage-1
         - name: agent
           persistentVolumeClaim:
