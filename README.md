@@ -107,6 +107,7 @@ end
 | ------- | ---------- |
 | TODO: 1 | 10.101.X.X |
 | 2       | 10.102.X.X |
+| Sandbox | 10.103.X.X |
 
 | Name    | VLAN ID | Subnet        | Info                   |
 | ------- | ------- | ------------- | ---------------------- |
@@ -128,6 +129,17 @@ end
 | openshift-ovn-network     | 15      | 10.101.15.0/24 | Isolated                |
 | openshift-service-network | 16      | 10.101.16.0/22 | Isolated                |
 | openshift-pod-network     | 32      | 10.101.32.0/19 | Isolated                |
+
+| Name                           | VLAN ID | Subnet         | Info                    |
+| ------------------------------ | ------- | -------------- | ----------------------- |
+| virt-openshift-machine-network | 310     | 10.103.10.0/24 | Host/Pod/Load Balancers |
+| virt-openshift-nad             | 311     | 10.103.11.0/24 | Virtual Machines        |
+| virt-openshift-ceph-private    | 312     | 10.103.12.0/24 | TODO: Enable Isolation  |
+| virt-openshift-ceph-public     | 313     | 10.103.13.0/24 | TODO: Enable Isolation  |
+| virt-openshift-lm              | 314     | 10.103.14.0/24 | TODO: Enable Isolation  |
+| virt-openshift-ovn-network     | 315     | 10.103.15.0/24 | Isolated                |
+| virt-openshift-service-network | 316     | 10.103.16.0/22 | Isolated                |
+| virt-openshift-pod-network     | 332     | 10.103.32.0/19 | Isolated                |
 
 ### Kubernetes
 
