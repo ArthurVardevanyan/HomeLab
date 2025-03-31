@@ -1,0 +1,40 @@
+apiVersion: v1
+baseDomain: <URL>
+compute:
+  - hyperthreading: Enabled
+    name: worker
+    replicas: <WORKERS>
+controlPlane:
+  hyperthreading: Enabled
+  name: server
+  replicas: <CONTROL_PLANE>
+metadata:
+  name: okd
+networking:
+  clusterNetwork:
+    - cidr: 10.103.32.0/19 # Also in OVN File
+      hostPrefix: 22
+  machineNetwork:
+    - cidr: 10.103.10.0/24 # Also in OVN File
+  networkType: OVNKubernetes
+  serviceNetwork:
+    - 10.103.16.0/22
+platform:
+  baremetal:
+    apiVIPs:
+      - 10.103.10.3
+    ingressVIPs:
+      - 10.103.10.5
+fips: false
+pullSecret: '{ "auths": { "fake": { "auth": "aWQ6cGFzcwo=" } } }'
+sshKey: "<SSH>"
+ImageDigestSources:
+  - mirrors:
+      - <REGISTRY>/openshift
+    source: quay.io/openshift
+  - mirrors:
+      - <REGISTRY>/okd
+    source: quay.io/okd
+  - mirrors:
+      - <REGISTRY>/origin
+    source: registry.ci.openshift.org/origin

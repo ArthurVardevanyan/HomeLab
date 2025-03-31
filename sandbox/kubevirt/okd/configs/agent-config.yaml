@@ -11,224 +11,140 @@ apiVersion: v1beta1
 kind: AgentConfig
 metadata:
   name: okd-virt
-rendezvousIP: 10.0.0.140
+rendezvousIP: 10.103.10.101
 hosts:
   - hostname: server-1
     role: master
     interfaces:
       - name: enp1s0
-        macAddress: 10:00:00:00:01:40
+        macAddress: 10:01:03:01:01:01
       - name: enp2s0
-        macAddress: 10:00:00:00:11:40
-      - name: enp5s0
-        macAddress: 10:00:00:00:51:40
-      - name: enp6s0
-        macAddress: 10:00:00:00:61:40
-      - name: enp7s0
-        macAddress: 10:00:00:00:71:40
-      - name: enp8s0
-        macAddress: 10:00:00:00:81:40
+        macAddress: 10:01:03:01:21:01
+      - name: enp3s0
+        macAddress: 10:01:03:01:31:01
+      - name: enp4s0
+        macAddress: 10:01:03:01:41:01
     networkConfig:
       interfaces:
-        - name: bond0
-          type: bond
+        - name: enp1s0
+          type: ethernet
           state: up
-          mac-address: 10:00:00:00:01:40
           mtu: 8900
           ipv4:
             enabled: true
             address:
-              - ip: 10.0.0.140
+              - ip: 10.103.10.101
                 prefix-length: 24
             dhcp: false
           ipv6:
             enabled: false
-          link-aggregation:
-            mode: active-backup
-            options:
-              miimon: "150"
-              primary: enp1s0
-            port:
-              - enp1s0
-              - enp2s0
-        - name: enp5s0
-          description: enp5s0
+        - name: enp2s0
+          description: enp2s0
           state: down
-          ipv4:
-            dhcp: false
-            enabled: false
-        - name: enp6s0
-          description: enp6s0
+        - name: enp3s0
+          description: enp3s0
           state: down
-          ipv4:
-            dhcp: false
-            enabled: false
-        - name: enp7s0
-          description: enp7s0
+        - name: enp4s0
+          description: enp4s0
           state: down
-          ipv4:
-            dhcp: false
-            enabled: false
-        - name: enp8s0
-          description: enp8s0
-          state: down
-          ipv4:
-            dhcp: false
-            enabled: false
       dns-resolver:
         config:
           server:
             - 10.0.0.98
-            - 10.0.0.97
+            - 10.101.11.5
       routes:
         config:
           - destination: 0.0.0.0/0
-            next-hop-address: 10.0.0.1
-            next-hop-interface: bond0
+            next-hop-address: 10.103.10.1
+            next-hop-interface: enp1s0
             table-id: 254
   - hostname: server-2
     role: master
     interfaces:
       - name: enp1s0
-        macAddress: 10:00:00:00:01:41
+        macAddress: 10:01:03:01:01:02
       - name: enp2s0
-        macAddress: 10:00:00:00:11:41
-      - name: enp5s0
-        macAddress: 10:00:00:00:51:41
-      - name: enp6s0
-        macAddress: 10:00:00:00:61:41
-      - name: enp7s0
-        macAddress: 10:00:00:00:71:41
-      - name: enp8s0
-        macAddress: 10:00:00:00:81:41
+        macAddress: 10:01:03:01:21:02
+      - name: enp3s0
+        macAddress: 10:01:03:01:31:02
+      - name: enp4s0
+        macAddress: 10:01:03:01:41:02
     networkConfig:
       interfaces:
-        - name: bond0
-          type: bond
+        - name: enp1s0
+          type: ethernet
           state: up
-          mac-address: 10:00:00:00:01:41
           mtu: 8900
           ipv4:
             enabled: true
             address:
-              - ip: 10.0.0.141
+              - ip: 10.103.10.102
                 prefix-length: 24
             dhcp: false
           ipv6:
             enabled: false
-          link-aggregation:
-            mode: active-backup
-            options:
-              miimon: "150"
-              primary: enp1s0
-            port:
-              - enp1s0
-              - enp2s0
-        - name: enp5s0
-          description: enp5s0
+        - name: enp2s0
+          description: enp2s0
           state: down
-          ipv4:
-            dhcp: false
-            enabled: false
-        - name: enp6s0
-          description: enp6s0
+        - name: enp3s0
+          description: enp3s0
           state: down
-          ipv4:
-            dhcp: false
-            enabled: false
-        - name: enp7s0
-          description: enp7s0
+        - name: enp4s0
+          description: enp4s0
           state: down
-          ipv4:
-            dhcp: false
-            enabled: false
-        - name: enp8s0
-          description: enp8s0
-          state: down
-          ipv4:
-            dhcp: false
-            enabled: false
       dns-resolver:
         config:
           server:
             - 10.0.0.98
-            - 10.0.0.97
+            - 10.101.11.5
       routes:
         config:
           - destination: 0.0.0.0/0
-            next-hop-address: 10.0.0.1
-            next-hop-interface: bond0
+            next-hop-address: 10.103.10.1
+            next-hop-interface: enp1s0
             table-id: 254
   - hostname: server-3
     role: master
     interfaces:
       - name: enp1s0
-        macAddress: 10:00:00:00:01:42
+        macAddress: 10:01:03:01:01:03
       - name: enp2s0
-        macAddress: 10:00:00:00:11:42
-      - name: enp5s0
-        macAddress: 10:00:00:00:51:42
-      - name: enp6s0
-        macAddress: 10:00:00:00:61:42
-      - name: enp7s0
-        macAddress: 10:00:00:00:71:42
-      - name: enp8s0
-        macAddress: 10:00:00:00:81:42
+        macAddress: 10:01:03:01:21:03
+      - name: enp3s0
+        macAddress: 10:01:03:01:31:03
+      - name: enp4s0
+        macAddress: 10:01:03:01:41:03
     networkConfig:
       interfaces:
-        - name: bond0
-          type: bond
+        - name: enp1s0
+          type: ethernet
           state: up
-          mac-address: 10:00:00:00:01:42
           mtu: 8900
           ipv4:
             enabled: true
             address:
-              - ip: 10.0.0.142
+              - ip: 10.103.10.103
                 prefix-length: 24
             dhcp: false
           ipv6:
             enabled: false
-          link-aggregation:
-            mode: active-backup
-            options:
-              miimon: "150"
-              primary: enp1s0
-            port:
-              - enp1s0
-              - enp2s0
-        - name: enp5s0
-          description: enp5s0
+        - name: enp2s0
+          description: enp2s0
           state: down
-          ipv4:
-            dhcp: false
-            enabled: false
-        - name: enp6s0
-          description: enp6s0
+        - name: enp3s0
+          description: enp3s0
           state: down
-          ipv4:
-            dhcp: false
-            enabled: false
-        - name: enp7s0
-          description: enp7s0
+        - name: enp4s0
+          description: enp4s0
           state: down
-          ipv4:
-            dhcp: false
-            enabled: false
-        - name: enp8s0
-          description: enp8s0
-          state: down
-          ipv4:
-            dhcp: false
-            enabled: false
       dns-resolver:
         config:
           server:
             - 10.0.0.98
-            - 10.0.0.97
+            - 10.101.11.5
       routes:
         config:
           - destination: 0.0.0.0/0
-            next-hop-address: 10.0.0.1
-            next-hop-interface: bond0
+            next-hop-address: 10.103.10.1
+            next-hop-interface: enp1s0
             table-id: 254

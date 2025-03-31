@@ -15,7 +15,7 @@ resource "zitadel_application_oidc" "okd" {
   name = "okd"
   redirect_uris = [
     "https://oauth-openshift.apps.okd.homelab.arthurvardevanyan.com/oauth2callback/zitadel",
-    "https://oauth-openshift.apps.okd.sandbox.arthurvardevanyan.com/oauth2callback/zitadel",
+    "https://oauth-openshift.apps.okd.virt.arthurvardevanyan.com/oauth2callback/zitadel",
   ]
   response_types              = ["OIDC_RESPONSE_TYPE_CODE"]
   grant_types                 = ["OIDC_GRANT_TYPE_AUTHORIZATION_CODE"]
