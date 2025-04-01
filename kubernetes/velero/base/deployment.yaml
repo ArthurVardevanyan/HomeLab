@@ -49,13 +49,17 @@ spec:
             - --features=EnableCSI
             - --uploader-type=kopia
             ### Global Flags
+            - --maintenance-job-cpu-request=5m
+            - --maintenance-job-mem-request=128Mi
+            - --maintenance-job-cpu-limit=10m
+            - --maintenance-job-mem-limit=256Mi
           resources:
             limits:
               cpu: 1000m
               memory: 2Gi
             requests:
               cpu: 5m
-              memory: 128Mi
+              memory: 512Mi
           livenessProbe:
             failureThreshold: 5
             httpGet:
