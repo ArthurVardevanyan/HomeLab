@@ -1,0 +1,29 @@
+apiVersion: kyverno.io/v1
+kind: Policy
+metadata:
+  name: add-resource-limits
+  namespace: kubernetes-imagepuller-operator
+spec:
+  rules:
+    - name: add-cpu-memory-limits
+      match:
+        resources:
+          kinds:
+            - Deployment
+          selector:
+            matchLabels:
+              app: kubernetes-image-puller
+      mutate:
+        patchStrategicMerge:
+          spec:
+            template:
+              spec:
+                containers:
+                  - (name): "kubernetes-image-puller"
+                    resources:
+                      limits:
+                        cpu: 10m
+                        memory: 32Mi
+                      requests:
+                        cpu: 5m
+                        memory: 8Mi

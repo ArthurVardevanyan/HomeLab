@@ -2,7 +2,7 @@ apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
   name: deny-all
-  namespace: argocd
+  namespace: argocd-apps
   annotations:
     argocd.argoproj.io/sync-wave: "0"
   labels:
@@ -17,7 +17,7 @@ apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
   name: allow-openshift-monitoring
-  namespace: argocd
+  namespace: argocd-apps
   annotations:
     argocd.argoproj.io/sync-wave: "0"
   labels:
@@ -52,7 +52,7 @@ apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
   name: allow-api-server
-  namespace: argocd
+  namespace: argocd-apps
   annotations:
     argocd.argoproj.io/sync-wave: "0"
   labels:
@@ -77,7 +77,7 @@ apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
   name: allow-api-server-ingress
-  namespace: argocd
+  namespace: argocd-apps
   annotations:
     argocd.argoproj.io/sync-wave: "0"
   labels:
@@ -104,7 +104,7 @@ apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
   name: allow-from-openshift-ingress
-  namespace: argocd
+  namespace: argocd-apps
   annotations:
     argocd.argoproj.io/sync-wave: "0"
   labels:
@@ -126,7 +126,7 @@ apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
   name: allow-dns-traffic
-  namespace: argocd
+  namespace: argocd-apps
   annotations:
     argocd.argoproj.io/sync-wave: "0"
   labels:
@@ -153,7 +153,7 @@ apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
   name: internal-communication
-  namespace: argocd
+  namespace: argocd-apps
   annotations:
     argocd.argoproj.io/sync-wave: "0"
   labels:
@@ -167,18 +167,18 @@ spec:
     - from:
         - namespaceSelector:
             matchLabels:
-              kubernetes.io/metadata.name: argocd
+              kubernetes.io/metadata.name: argocd-apps
   egress:
     - to:
         - namespaceSelector:
             matchLabels:
-              kubernetes.io/metadata.name: argocd
+              kubernetes.io/metadata.name: argocd-apps
 ---
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
   name: allow-internal-egress
-  namespace: argocd
+  namespace: argocd-apps
   annotations:
     argocd.argoproj.io/sync-wave: "0"
   labels:
@@ -191,51 +191,12 @@ spec:
     - to:
         - ipBlock:
             cidr: 10.101.10.5/32 # OKD WildCard
-
----
-apiVersion: networking.k8s.io/v1
-kind: NetworkPolicy
-metadata:
-  name: allow-internal-egress-k3s
-  namespace: argocd
-  annotations:
-    argocd.argoproj.io/sync-wave: "0"
-  labels:
-    app.kubernetes.io/instance: argocd
-spec:
-  policyTypes:
-    - Egress
-  podSelector: {}
-  egress:
-    - to:
-        - ipBlock:
-            cidr: 10.101.10.5/32 # OKD WildCard
-        - ipBlock:
-            cidr: 10.0.0.5/32 # K3S
----
-apiVersion: networking.k8s.io/v1
-kind: NetworkPolicy
-metadata:
-  name: allow-internal-egress-microshift
-  namespace: argocd
-  annotations:
-    argocd.argoproj.io/sync-wave: "0"
-  labels:
-    app.kubernetes.io/instance: argocd
-spec:
-  policyTypes:
-    - Egress
-  podSelector: {}
-  egress:
-    - to:
-        - ipBlock:
-            cidr: 10.0.0.99/32 # Microshift
 ---
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
   name: allow-to-openshift-ingress
-  namespace: argocd
+  namespace: argocd-apps
   annotations:
     argocd.argoproj.io/sync-wave: "0"
   labels:
@@ -249,27 +210,3 @@ spec:
         - namespaceSelector:
             matchLabels:
               network.openshift.io/policy-group: ingress
-# ---
-# apiVersion: networking.k8s.io/v1
-# kind: NetworkPolicy
-# metadata:
-#   name: allow-internet-egress
-#   namespace: argocd
-#   annotations:
-#     argocd.argoproj.io/sync-wave: "0"
-#   labels:
-#     app.kubernetes.io/instance: argocd
-# spec:
-#   policyTypes:
-#     - Egress
-#   podSelector:
-#     matchLabels:
-#       app.kubernetes.io/name: argocd-repo-server
-#   egress:
-#     - to:
-#         - ipBlock:
-#             cidr: 0.0.0.0/0
-#             except:
-#               - 10.0.0.0/8
-#               - 172.16.0.0/12
-#               - 192.168.0.0/16

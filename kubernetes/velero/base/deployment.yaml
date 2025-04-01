@@ -51,8 +51,8 @@ spec:
             ### Global Flags
             - --maintenance-job-cpu-request=5m
             - --maintenance-job-mem-request=128Mi
-            - --maintenance-job-cpu-limit=10m
-            - --maintenance-job-mem-limit=256Mi
+            - --maintenance-job-cpu-limit=100m
+            - --maintenance-job-mem-limit=512Mi
           resources:
             limits:
               cpu: 1000m
@@ -109,11 +109,25 @@ spec:
       initContainers:
         - image: docker.io/velero/velero-plugin-for-aws:v1.11.1@sha256:3b0c402e0d55eb797a7ebe1f2525f18bdcdca8ee826680cd2d7cf657071e9d58
           name: velero-plugin-for-aws
+          resources:
+            limits:
+              cpu: 100m
+              memory: 48Mi
+            requests:
+              cpu: 5m
+              memory: 24Mi
           volumeMounts:
             - mountPath: /target
               name: plugins
         - image: quay.io/kubevirt/kubevirt-velero-plugin:v0.7.1@sha256:317671745fe6cdfda5cc2028fd7d992b1267e290952ff4f02b65adfd5896414e
           name: velero-plugin-for-kubevirt
+          resources:
+            limits:
+              cpu: 100m
+              memory: 48Mi
+            requests:
+              cpu: 5m
+              memory: 24Mi
           volumeMounts:
             - mountPath: /target
               name: plugins

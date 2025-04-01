@@ -2,7 +2,7 @@ apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
   name: deny-all
-  namespace: pihole
+  namespace: loki-operator
   annotations:
     argocd.argoproj.io/sync-wave: "0"
 spec:
@@ -15,7 +15,7 @@ apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
   name: allow-openshift-monitoring
-  namespace: pihole
+  namespace: loki-operator
   annotations:
     argocd.argoproj.io/sync-wave: "0"
 spec:
@@ -43,14 +43,58 @@ spec:
           port: 8083
         - protocol: TCP
           port: 9001
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-api-server
+  namespace: loki-operator
+  annotations:
+    argocd.argoproj.io/sync-wave: "0"
+spec:
+  podSelector: {}
+  policyTypes:
+    - Egress
+  egress:
+    - to:
+        - podSelector:
+            matchLabels:
+              app: openshift-kube-apiserver
+          namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: openshift-kube-apiserver
+      ports:
         - protocol: TCP
-          port: 9617
+          port: 6443
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-api-server-ingress
+  namespace: loki-operator
+  annotations:
+    argocd.argoproj.io/sync-wave: "0"
+spec:
+  podSelector: {}
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              app: openshift-kube-apiserver
+          namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: openshift-kube-apiserver
+      ports:
+        - protocol: TCP
+          port: 9443
 ---
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
   name: allow-dns-traffic
-  namespace: pihole
+  namespace: loki-operator
   annotations:
     argocd.argoproj.io/sync-wave: "0"
 spec:
@@ -70,52 +114,3 @@ spec:
           protocol: UDP
         - port: 5353
           protocol: TCP
----
-apiVersion: networking.k8s.io/v1
-kind: NetworkPolicy
-metadata:
-  name: allow-internet-egress
-  namespace: pihole
-  annotations:
-    argocd.argoproj.io/sync-wave: "0"
-spec:
-  policyTypes:
-    - Egress
-  podSelector: {}
-  egress:
-    - to:
-        - ipBlock:
-            cidr: 1.1.1.1/32
-        - ipBlock:
-            cidr: 1.0.0.1/32
-        - ipBlock:
-            cidr: 10.0.0.1/32
-        - ipBlock:
-            cidr: 10.101.1.1/32
-        - ipBlock:
-            cidr: 10.101.11.1/32
-        - ipBlock:
-            cidr: 10.102.3.1/32
-        - ipBlock:
-            cidr: 185.199.108.0/22
-        - ipBlock:
-            cidr: 185.199.111.0/22
-        - ipBlock:
-            cidr: 140.82.112.0/20
----
-apiVersion: networking.k8s.io/v1
-kind: NetworkPolicy
-metadata:
-  name: allow-from-openshift-ingress
-  namespace: pihole
-  annotations:
-    argocd.argoproj.io/sync-wave: "0"
-spec:
-  policyTypes:
-    - Ingress
-  podSelector: {}
-  ingress:
-    - from:
-        - namespaceSelector:
-            matchLabels:
-              network.openshift.io/policy-group: ingress
