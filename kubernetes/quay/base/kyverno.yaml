@@ -25,3 +25,33 @@ spec:
           - key: "{{ request.userInfo.username }}"
             operator: Equals
             value: "system:serviceaccount:cert-manager:cert-manager"
+---
+apiVersion: kyverno.io/v1
+kind: Policy
+metadata:
+  name: add-resource-limits
+  namespace: quay
+spec:
+  rules:
+    - name: add-cpu-memory-limits
+      match:
+        resources:
+          kinds:
+            - Deployment
+          selector:
+            matchLabels:
+              quay-component: quay-mirror
+      mutate:
+        patchStrategicMerge:
+          spec:
+            template:
+              spec:
+                initContainers:
+                  - (name): "quay-mirror-init"
+                    resources:
+                      limits:
+                        cpu: 100m
+                        memory: 32Mi
+                      requests:
+                        cpu: 5m
+                        memory: 16Mi
