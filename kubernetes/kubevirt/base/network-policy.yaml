@@ -2,7 +2,7 @@ apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
   name: deny-all
-  namespace: external-secrets-operator
+  namespace: kubevirt-hyperconverged
   annotations:
     argocd.argoproj.io/sync-wave: "0"
 spec:
@@ -15,7 +15,7 @@ apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
   name: allow-openshift-monitoring
-  namespace: external-secrets-operator
+  namespace: kubevirt-hyperconverged
   annotations:
     argocd.argoproj.io/sync-wave: "0"
 spec:
@@ -38,17 +38,17 @@ spec:
               app.kubernetes.io/name: prometheus
       ports:
         - protocol: TCP
-          port: 8082
+          port: 8080
         - protocol: TCP
-          port: 8083
+          port: 8383
         - protocol: TCP
-          port: 9001
+          port: 8443
 ---
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
   name: allow-api-server
-  namespace: external-secrets-operator
+  namespace: kubevirt-hyperconverged
   annotations:
     argocd.argoproj.io/sync-wave: "0"
 spec:
@@ -71,7 +71,7 @@ apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
   name: allow-api-server-ingress
-  namespace: external-secrets-operator
+  namespace: kubevirt-hyperconverged
   annotations:
     argocd.argoproj.io/sync-wave: "0"
 spec:
@@ -89,17 +89,19 @@ spec:
         - namespaceSelector:
             matchLabels:
               policy-group.network.openshift.io/host-network: ""
-      ports:
-        - protocol: TCP
-          port: 9443
-        - protocol: TCP
-          port: 10250
+      # ports:
+      #   - protocol: TCP
+      #     port: 9443
+      #   - protocol: TCP
+      #     port: 4343
+      #   - protocol: TCP
+      #     port: 443
 ---
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
   name: allow-dns-traffic
-  namespace: external-secrets-operator
+  namespace: kubevirt-hyperconverged
   annotations:
     argocd.argoproj.io/sync-wave: "0"
 spec:
@@ -123,15 +125,41 @@ spec:
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
-  name: allow-internet-egress
-  namespace: external-secrets-operator
+  name: internal-communication
+  namespace: kubevirt-hyperconverged
   annotations:
     argocd.argoproj.io/sync-wave: "0"
 spec:
-  policyTypes:
-    - Egress
   podSelector: {}
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kubevirt-hyperconverged
   egress:
     - to:
-        - ipBlock:
-            cidr: 10.101.10.5/32
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kubevirt-hyperconverged
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-openshift-console
+  namespace: kubevirt-hyperconverged
+spec:
+  policyTypes:
+    - Ingress
+  podSelector: {}
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              app: console
+              component: ui
+          namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: openshift-console

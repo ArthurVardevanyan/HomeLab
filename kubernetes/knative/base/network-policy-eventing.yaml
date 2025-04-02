@@ -162,7 +162,8 @@ spec:
         - namespaceSelector:
             matchLabels:
               network.openshift.io/policy-group: ingress
-
+        - ipBlock:
+            cidr: 10.101.10.5/32 # OKD WildCard
 ---
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
@@ -183,24 +184,20 @@ spec:
         - namespaceSelector:
             matchLabels:
               kubernetes.io/metadata.name: finance-tracker
-# ---
-# apiVersion: networking.k8s.io/v1
-# kind: NetworkPolicy
-# metadata:
-#   name: allow-openshift-console
-#   namespace: knative-serving
-# spec:
-#   policyTypes:
-#     - Ingress
-#   podSelector:
-#     matchLabels:
-#       app: netobserv-plugin
-#   ingress:
-#     - from:
-#         - podSelector:
-#             matchLabels:
-#               app: console
-#               component: ui
-#           namespaceSelector:
-#             matchLabels:
-#               kubernetes.io/metadata.name: openshift-console
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-from-openshift-ingress
+  namespace: knative-serving
+  annotations:
+    argocd.argoproj.io/sync-wave: "0"
+spec:
+  policyTypes:
+    - Ingress
+  podSelector: {}
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              network.openshift.io/policy-group: ingress
