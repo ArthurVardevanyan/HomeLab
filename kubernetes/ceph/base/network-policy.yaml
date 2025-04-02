@@ -38,7 +38,16 @@ spec:
               app.kubernetes.io/name: prometheus
         - namespaceSelector:
             matchLabels:
-              name: prometheus
+              kubernetes.io/metadata.name: prometheus
+          podSelector:
+            matchLabels:
+              app: prometheus-server
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: prometheus
+          podSelector:
+            matchLabels:
+              app: prometheus-truenas
       ports:
         - protocol: TCP
           port: 8082
