@@ -18,6 +18,13 @@ spec:
               type: RuntimeDefault
           initContainers:
             - name: config-init
+              resources:
+                limits:
+                  cpu: 100m
+                  memory: 48Mi
+                requests:
+                  cpu: 10m
+                  memory: 24Mi
               image: docker.io/rook/ceph:master
               command: ["/usr/local/bin/toolbox.sh"]
               args: ["--skip-watch"]
@@ -48,6 +55,13 @@ spec:
                 capabilities:
                   drop:
                     - ALL
+              resources:
+                limits:
+                  memory: 48Mi
+                  cpu: 100m
+                requests:
+                  cpu: 10m
+                  memory: 24Mi
               volumeMounts:
                 - mountPath: /etc/ceph
                   name: ceph-config

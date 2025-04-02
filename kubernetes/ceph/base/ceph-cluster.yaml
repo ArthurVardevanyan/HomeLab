@@ -216,53 +216,77 @@ spec:
     #     cpu: "50m"
     #     memory: 512Mi
     mgr:
-      # limits:
-      #   cpu: "1"
-      #   memory: 3Gi
+      limits:
+        cpu: "1"
+        memory: 3Gi
       requests:
         cpu: "75m"
         memory: 1Gi
     mon:
-      # limits:
-      #   cpu: "1"
-      #   memory: 2Gi
+      limits:
+        cpu: "1"
+        memory: 2Gi
       requests:
         cpu: "25m"
         memory: 512Mi
     rgw:
-      # limits:
-      #   cpu: "2"
-      #   memory: 4Gi
+      limits:
+        cpu: "2"
+        memory: 4Gi
       requests:
         cpu: "20m"
         memory: 512Mi
     osd:
       limits:
-        #   cpu: "2"
+        cpu: "2"
         memory: 4Gi
       requests:
         cpu: "300m"
         memory: 4Gi
-  #The requests and limits set here, allow the mgr pod to use half of one CPU core and 1 gigabyte of memory
-  #   mgr:
-  #     limits:
-  #       memory: "1024Mi"
-  #     requests:
-  #       cpu: "500m"
-  #       memory: "1024Mi"
-  # The above example requests/limits can also be added to the other components
-  #   mon:
-  #   osd:
-  # For OSD it also is a possible to specify requests/limits based on device class
-  #   osd-hdd:
-  #   osd-ssd:
-  #   osd-nvme:
-  #   prepareosd:
-  #   mgr-sidecar:
-  #   crashcollector:
-  #   logcollector:
-  #   cleanup:
-  #   exporter:
+      #The requests and limits set here, allow the mgr pod to use half of one CPU core and 1 gigabyte of memory
+      #   mgr:
+      #     limits:
+      #       memory: "1024Mi"
+      #     requests:
+      #       cpu: "500m"
+      #       memory: "1024Mi"
+      # The above example requests/limits can also be added to the other components
+      #   mon:
+      #   osd:
+      # For OSD it also is a possible to specify requests/limits based on device class
+      #   osd-hdd:
+      #   osd-ssd:
+      #   osd-nvme:
+    prepareosd:
+      limits:
+        cpu: "2"
+        memory: 4Gi
+      requests:
+        cpu: "20m"
+        memory: 512Mi
+    # mgr-sidecar:
+    crashcollector:
+      limits:
+        cpu: "50m"
+        memory: 128Mi
+      requests:
+        cpu: "10m"
+        memory: 24Mi
+    logcollector:
+      limits:
+        cpu: "50m"
+        memory: 128Mi
+      requests:
+        cpu: "10m"
+        memory: 24Mi
+    # cleanup:
+    exporter:
+      limits:
+        cpu: "50m"
+        memory: 128Mi
+      requests:
+        cpu: "10m"
+        memory: 48Mi
   # The option to automatically remove OSDs that are out and are safe to destroy.
   removeOSDsIfOutAndSafeToRemove: false
   priorityClassNames:

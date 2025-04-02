@@ -96,12 +96,9 @@ spec:
           namespaceSelector:
             matchLabels:
               kubernetes.io/metadata.name: openshift-kube-apiserver
-        - ipBlock:
-            cidr: 10.0.0.101/32 # Control Plane 1
-        - ipBlock:
-            cidr: 10.0.0.102/32 # Control Plane 2
-        - ipBlock:
-            cidr: 10.0.0.103/32 # Control Plane 3
+        - namespaceSelector:
+            matchLabels:
+              policy-group.network.openshift.io/host-network: ""
       ports:
         - protocol: TCP
           port: 9443

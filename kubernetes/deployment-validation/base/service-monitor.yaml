@@ -1,0 +1,15 @@
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: dvo
+  namespace: deployment-validation-operator
+spec:
+  endpoints:
+    - path: /metrics
+      port: http-metrics
+  namespaceSelector:
+    matchNames:
+      - deployment-validation-operator
+  selector:
+    matchLabels:
+      name: deployment-validation-operator

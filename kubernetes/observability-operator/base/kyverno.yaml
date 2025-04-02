@@ -1,0 +1,97 @@
+apiVersion: kyverno.io/v1
+kind: Policy
+metadata:
+  name: add-resource-limits
+  namespace: observability-operator
+spec:
+  rules:
+    - name: add-cpu-memory-limits-korrel8r
+      match:
+        resources:
+          kinds:
+            - Deployment
+          selector:
+            matchLabels:
+              app.kubernetes.io/instance: korrel8r
+      mutate:
+        patchStrategicMerge:
+          spec:
+            template:
+              spec:
+                containers:
+                  - (name): "korrel8r"
+                    resources:
+                      limits:
+                        cpu: 250m
+                        memory: 256Mi
+                      requests:
+                        cpu: 5m
+                        memory: 32Mi
+    - name: add-cpu-memory-limits-logging
+      match:
+        resources:
+          kinds:
+            - Deployment
+          selector:
+            matchLabels:
+              app.kubernetes.io/instance: logging
+      mutate:
+        patchStrategicMerge:
+          spec:
+            template:
+              spec:
+                containers:
+                  - (name): "logging"
+                    resources:
+                      limits:
+                        cpu: 250m
+                        memory: 256Mi
+                      requests:
+                        cpu: 5m
+                        memory: 32Mi
+
+    - name: add-cpu-memory-limits-observability-ui-dashboards
+      match:
+        resources:
+          kinds:
+            - Deployment
+          selector:
+            matchLabels:
+              app.kubernetes.io/instance: observability-ui-dashboards
+      mutate:
+        patchStrategicMerge:
+          spec:
+            template:
+              spec:
+                containers:
+                  - (name): "observability-ui-dashboards"
+                    resources:
+                      limits:
+                        cpu: 250m
+                        memory: 256Mi
+                      requests:
+                        cpu: 5m
+                        memory: 32Mi
+
+    - name: add-cpu-memory-limits-troubleshooting-panel
+      match:
+        resources:
+          kinds:
+            - Deployment
+          selector:
+            matchLabels:
+              app.kubernetes.io/instance: troubleshooting-panel
+      mutate:
+        patchStrategicMerge:
+          spec:
+            template:
+              spec:
+                containers:
+                  - (name): "troubleshooting-panel"
+                    resources:
+                      limits:
+                        cpu: 250m
+                        memory: 256Mi
+                      requests:
+                        cpu: 5m
+                        memory: 32Mi

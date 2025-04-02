@@ -20,7 +20,7 @@ spec:
               kubernetes.io/metadata.name: zitadel
           podSelector:
             matchLabels:
-              app: zitadel
+              app.kubernetes.io/name: zitadel
       ports:
         - protocol: TCP
           port: 5432
@@ -107,6 +107,31 @@ spec:
       ports:
         - protocol: TCP
           port: 5432
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-postgres
+  namespace: zitadel
+  annotations:
+    argocd.argoproj.io/sync-wave: "0"
+spec:
+  policyTypes:
+    - Egress
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: zitadel
+  egress:
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: zitadel
+          podSelector:
+            matchLabels:
+              postgres-operator.crunchydata.com/cluster: zitadel
+      ports:
+        - port: 5432
+          protocol: TCP
 ---
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
