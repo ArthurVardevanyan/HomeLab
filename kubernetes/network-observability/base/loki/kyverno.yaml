@@ -286,3 +286,51 @@ spec:
 #             containers:
 #               - (image): "quay.io/netobserv/netobserv-ebpf-agent:v0.3.2"
 #                 image: "quay.io/netobserv/netobserv-ebpf-agent:main"
+---
+apiVersion: kyverno.io/v1
+kind: Policy
+metadata:
+  name: add-resource-limits
+  namespace: network-observability-loki
+spec:
+  rules:
+    - name: add-cpu-memory-limits
+      match:
+        resources:
+          kinds:
+            - Deployment
+            - StatefulSet
+      mutate:
+        patchStrategicMerge:
+          spec:
+            template:
+              spec:
+                initContainers:
+                  - (name): "*"
+                    resources:
+                      limits:
+                        cpu: 100m
+                        memory: 32Mi
+                      requests:
+                        cpu: 5m
+                        memory: 16Mi
+    - name: add-cpu-memory-limits-opa
+      match:
+        resources:
+          kinds:
+            - Deployment
+            - StatefulSet
+      mutate:
+        patchStrategicMerge:
+          spec:
+            template:
+              spec:
+                containers:
+                  - (name): opa
+                    resources:
+                      limits:
+                        cpu: 150m
+                        memory: 128Mi
+                      requests:
+                        cpu: 15m
+                        memory: 32Mi
