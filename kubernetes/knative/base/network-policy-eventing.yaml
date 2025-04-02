@@ -2,7 +2,7 @@ apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
   name: deny-all
-  namespace: knative-operator
+  namespace: knative-serving
   annotations:
     argocd.argoproj.io/sync-wave: "0"
 spec:
@@ -15,7 +15,7 @@ apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
   name: allow-openshift-monitoring
-  namespace: knative-operator
+  namespace: knative-serving
   annotations:
     argocd.argoproj.io/sync-wave: "0"
 spec:
@@ -42,13 +42,15 @@ spec:
         - protocol: TCP
           port: 8083
         - protocol: TCP
-          port: 9001
+          port: 8443
+        - protocol: TCP
+          port: 9102
 ---
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
   name: allow-api-server
-  namespace: knative-operator
+  namespace: knative-serving
   annotations:
     argocd.argoproj.io/sync-wave: "0"
 spec:
@@ -71,7 +73,7 @@ apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
   name: allow-api-server-ingress
-  namespace: knative-operator
+  namespace: knative-serving
   annotations:
     argocd.argoproj.io/sync-wave: "0"
 spec:
@@ -99,7 +101,7 @@ apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
   name: allow-dns-traffic
-  namespace: knative-operator
+  namespace: knative-serving
   annotations:
     argocd.argoproj.io/sync-wave: "0"
 spec:
@@ -119,3 +121,86 @@ spec:
           protocol: UDP
         - port: 5353
           protocol: TCP
+
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: internal-communication
+  namespace: knative-serving
+  annotations:
+    argocd.argoproj.io/sync-wave: "0"
+spec:
+  podSelector: {}
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: knative-serving
+  egress:
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: knative-serving
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-to-openshift-ingress
+  namespace: knative-serving
+  annotations:
+    argocd.argoproj.io/sync-wave: "0"
+spec:
+  policyTypes:
+    - Egress
+  podSelector: {}
+  egress:
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              network.openshift.io/policy-group: ingress
+
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-egress-apps
+  namespace: knative-serving
+  annotations:
+    argocd.argoproj.io/sync-wave: "0"
+spec:
+  policyTypes:
+    - Egress
+  podSelector: {}
+  egress:
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: analytics-for-spotify
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: finance-tracker
+# ---
+# apiVersion: networking.k8s.io/v1
+# kind: NetworkPolicy
+# metadata:
+#   name: allow-openshift-console
+#   namespace: knative-serving
+# spec:
+#   policyTypes:
+#     - Ingress
+#   podSelector:
+#     matchLabels:
+#       app: netobserv-plugin
+#   ingress:
+#     - from:
+#         - podSelector:
+#             matchLabels:
+#               app: console
+#               component: ui
+#           namespaceSelector:
+#             matchLabels:
+#               kubernetes.io/metadata.name: openshift-console
