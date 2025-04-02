@@ -1,0 +1,60 @@
+apiVersion: kyverno.io/v1
+kind: Policy
+metadata:
+  name: add-resource-limits
+  namespace: rook-ceph
+spec:
+  rules:
+    - name: add-cpu-memory-limits-mgr
+      match:
+        resources:
+          kinds:
+            - Deployment
+          selector:
+            matchLabels:
+              app: rook-ceph-mgr
+      mutate:
+        patchStrategicMerge:
+          spec:
+            template:
+              spec:
+                containers:
+                  - (name): watch-active
+                    resources:
+                      limits:
+                        cpu: 150m
+                        memory: 128Mi
+                      requests:
+                        cpu: 15m
+                        memory: 32Mi
+                initContainers:
+                  - (name): chown-container-data-dir
+                    resources:
+                      limits:
+                        cpu: 150m
+                        memory: 128Mi
+                      requests:
+                        cpu: 15m
+                        memory: 32Mi
+    - name: add-cpu-memory-limits-rgw
+      match:
+        resources:
+          kinds:
+            - Deployment
+          selector:
+            matchLabels:
+              app: rook-ceph-mgr
+      mutate:
+        patchStrategicMerge:
+          spec:
+            template:
+              spec:
+                initContainers:
+                  - (name): chown-container-data-dir
+                    resources:
+                      limits:
+                        cpu: 150m
+                        memory: 128Mi
+                      requests:
+                        cpu: 15m
+                        memory: 32Mi
