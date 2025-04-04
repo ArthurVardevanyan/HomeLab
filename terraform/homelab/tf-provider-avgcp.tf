@@ -17,7 +17,7 @@ resource "google_service_account_iam_member" "avgcp-au" {
 }
 
 resource "google_storage_bucket" "avgcp" {
-  #checkov:skip=CKV_GCP_78:Versioning is Handleed by GitHub
+  #checkov:skip=CKV_GCP_78:Versioning is handled by GitHub
   #checkov:skip=CKV_GCP_62:Access logs are not required.
   name                        = "terraform_provider_avgcp"
   location                    = "US"

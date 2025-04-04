@@ -1,6 +1,6 @@
 
 resource "google_storage_bucket" "truenas_nextcloud" {
-  #checkov:skip=CKV_GCP_78:Versioning is Handleed by GitHub
+  #checkov:skip=CKV_GCP_78:Versioning is handled by GitHub
   #checkov:skip=CKV_GCP_62:Access logs are not required.
   name          = "truenas_homelab_nextcloud"
   location      = "US"

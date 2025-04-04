@@ -87,7 +87,7 @@ resource "google_secret_manager_secret_iam_member" "secretAccessor" {
 }
 
 resource "google_storage_bucket" "okd_homelab_keep_alive_cloud_function" {
-  #checkov:skip=CKV_GCP_78:Versioning is Handleed by GitHub
+  #checkov:skip=CKV_GCP_78:Versioning is handled by GitHub
   #checkov:skip=CKV_GCP_62:Access logs are not required.
   name                        = "okd_homelab_keep_alive_cloud_function"
   location                    = "US"

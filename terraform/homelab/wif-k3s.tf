@@ -1,5 +1,5 @@
 resource "google_storage_bucket" "k3s_homelab_wif_oidc" {
-  #checkov:skip=CKV_GCP_78:Versioning is Handleed by GitHub
+  #checkov:skip=CKV_GCP_78:Versioning is handled by GitHub
   #checkov:skip=CKV_GCP_62:Access logs are not required.
   #checkov:skip=CKV_GCP_114:This Bucket Needs to be Public
   name          = "k3s-homelab-wif-oidc"

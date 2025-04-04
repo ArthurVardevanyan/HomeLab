@@ -7,7 +7,7 @@ resource "google_project_service" "workload-identity-federation" {
 
 
 resource "google_storage_bucket" "okd_homelab_wif_oidc" {
-  #checkov:skip=CKV_GCP_78:Versioning is Handleed by GitHub
+  #checkov:skip=CKV_GCP_78:Versioning is handled by GitHub
   #checkov:skip=CKV_GCP_62:Access logs are not required.
   #checkov:skip=CKV_GCP_114:This Bucket Needs to be Public
   name          = "okd-homelab-wif-oidc"
