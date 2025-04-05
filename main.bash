@@ -1434,6 +1434,7 @@ install_addons_okd_virt() {
   sleep 120
 
   oc patch --type=merge --patch='{"spec":{"paused":false}}' machineconfigpool/master
+  oc patch --type=merge --patch='{"spec":{"paused":false}}' machineconfigpool/worker
 
   echo -e "\n\n${BLUE}Addons Installed!${NC}"
 }
