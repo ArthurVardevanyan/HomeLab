@@ -2,8 +2,8 @@ apiVersion: kubevirt.io/v1
 kind: VirtualMachine
 metadata:
   annotations:
-    name: okd-server-2
-  name: okd-server-2
+    name: okd-sandbox-2
+  name: okd-sandbox-2
   namespace: okd-virt
 spec:
   dataVolumeTemplates:
@@ -11,7 +11,7 @@ spec:
       kind: DataVolume
       metadata:
         creationTimestamp: null
-        name: okd-server-2-0
+        name: okd-sandbox-2-0
       spec:
         preallocation: false
         source:
@@ -25,7 +25,7 @@ spec:
       kind: DataVolume
       metadata:
         creationTimestamp: null
-        name: okd-server-2-1
+        name: okd-sandbox-2-1
       spec:
         preallocation: false
         source:
@@ -39,7 +39,7 @@ spec:
       kind: DataVolume
       metadata:
         creationTimestamp: null
-        name: okd-server-2-2
+        name: okd-sandbox-2-2
       spec:
         preallocation: false
         source:
@@ -53,7 +53,7 @@ spec:
       kind: DataVolume
       metadata:
         creationTimestamp: null
-        name: okd-server-2-3
+        name: okd-sandbox-2-3
       spec:
         preallocation: false
         source:
@@ -67,7 +67,7 @@ spec:
       kind: DataVolume
       metadata:
         creationTimestamp: null
-        name: okd-server-2-4
+        name: okd-sandbox-2-4
       spec:
         preallocation: false
         source:
@@ -83,12 +83,12 @@ spec:
       annotations:
         vm.kubevirt.io/flavor: small
         vm.kubevirt.io/os: fedora
-        vm.kubevirt.io/workload: server
+        vm.kubevirt.io/workload: sandbox
         vm: okd
       creationTimestamp: null
       labels:
         vm: okd
-        kubevirt.io/domain: okd-server-2
+        kubevirt.io/domain: okd-sandbox-2
         kubevirt.io/size: small
     spec:
       evictionStrategy: LiveMigrateIfPossible
@@ -167,14 +167,14 @@ spec:
         machine:
           type: q35
         memory:
-          guest: 18Gi
+          guest: 30Gi
         resources:
           limits:
             cpu: 6
-            memory: 24Gi
+            memory: 31Gi
           requests:
             cpu: 2
-            memory: 20Gi
+            memory: 30Gi
       networks:
         - multus:
             networkName: okd-virt/bond4-nad-vlan310
@@ -191,19 +191,19 @@ spec:
       terminationGracePeriodSeconds: 180
       volumes:
         - dataVolume:
-            name: okd-server-2-0
+            name: okd-sandbox-2-0
           name: rootdisk-0
         - dataVolume:
-            name: okd-server-2-1
+            name: okd-sandbox-2-1
           name: rootdisk-1
         - dataVolume:
-            name: okd-server-2-2
+            name: okd-sandbox-2-2
           name: secondary-0
         - dataVolume:
-            name: okd-server-2-3
+            name: okd-sandbox-2-3
           name: secondary-1
         - dataVolume:
-            name: okd-server-2-4
+            name: okd-sandbox-2-4
           name: storage-1
         - name: agent
           persistentVolumeClaim:

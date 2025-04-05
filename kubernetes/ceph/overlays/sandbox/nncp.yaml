@@ -1,0 +1,130 @@
+apiVersion: nmstate.io/v1
+kind: NodeNetworkConfigurationPolicy
+metadata:
+  name: ceph-public-net-shim-server-1
+spec:
+  nodeSelector:
+    kubernetes.io/hostname: server-1
+  desiredState:
+    interfaces:
+      - name: enp3s0
+        type: ethernet
+        state: up
+        mtu: 1500
+        ipv4:
+          enabled: true
+          dhcp: true
+        ipv6:
+          enabled: false
+    #   - name: ceph-pub-shim
+    #     description: Shim interface used to connect host to OpenShift Data Foundation public Multus network
+    #     type: mac-vlan
+    #     state: up
+    #     mac-vlan:
+    #       base-iface: enp3s0
+    #       mode: bridge
+    #       promiscuous: true
+    #     mtu: 1500
+    #     ipv4:
+    #       enabled: true
+    #       dhcp: true
+    #       address:
+    #         - ip: 10.103.13.101 # DHCP Not Working ?
+    #           prefix-length: 24
+    # routes:
+    #   config:
+    #     - destination: 10.103.13.0/24
+    #       next-hop-interface: ceph-pub-shim
+---
+apiVersion: nmstate.io/v1
+kind: NodeNetworkConfigurationPolicy
+metadata:
+  name: ceph-public-net-shim-server-2
+spec:
+  nodeSelector:
+    kubernetes.io/hostname: server-2
+  desiredState:
+    interfaces:
+      - name: enp3s0
+        type: ethernet
+        state: up
+        mtu: 1500
+        ipv4:
+          enabled: true
+          dhcp: true
+        ipv6:
+          enabled: false
+    #   - name: ceph-pub-shim
+    #     description: Shim interface used to connect host to OpenShift Data Foundation public Multus network
+    #     type: mac-vlan
+    #     state: up
+    #     mac-vlan:
+    #       base-iface: enp3s0
+    #       mode: bridge
+    #       promiscuous: true
+    #     mtu: 1500
+    #     ipv4:
+    #       enabled: true
+    #       dhcp: true
+    #       # address:
+    #       #   - ip: 10.103.13.102 # DHCP Not Working ?
+    #       #     prefix-length: 24
+    # routes:
+    #   config:
+    #     - destination: 10.103.13.0/24
+    #       next-hop-interface: ceph-pub-shim
+---
+apiVersion: nmstate.io/v1
+kind: NodeNetworkConfigurationPolicy
+metadata:
+  name: ceph-public-net-shim-server-3
+spec:
+  nodeSelector:
+    kubernetes.io/hostname: server-3
+  desiredState:
+    interfaces:
+      - name: enp3s0
+        type: ethernet
+        state: up
+        mtu: 1500
+        ipv4:
+          enabled: true
+          dhcp: true
+        ipv6:
+          enabled: false
+    #   - name: ceph-pub-shim
+    #     description: Shim interface used to connect host to OpenShift Data Foundation public Multus network
+    #     type: mac-vlan
+    #     state: up
+    #     mac-vlan:
+    #       base-iface: enp3s0
+    #       mode: bridge
+    #       promiscuous: true
+    #     mtu: 1500
+    #     ipv4:
+    #       enabled: true
+    #       dhcp: true
+    #       # address:
+    #       #   - ip: 10.103.13.103 # DHCP Not Working ?
+    #       #     prefix-length: 24
+    # routes:
+    #   config:
+    #     - destination: 10.103.13.0/24
+    #       next-hop-interface: ceph-pub-shim
+---
+apiVersion: nmstate.io/v1
+kind: NodeNetworkConfigurationPolicy
+metadata:
+  name: ceph-private
+spec:
+  desiredState:
+    interfaces:
+      - name: enp2s0
+        type: ethernet
+        state: up
+        mtu: 1500
+        ipv4:
+          enabled: true
+          dhcp: true
+        ipv6:
+          enabled: false
