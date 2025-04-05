@@ -906,13 +906,14 @@ delete_okd_virt() {
 
   echo -e "\n\n${BLUE}Delete All Existing Data:${NC}"
   rm -rf \
-    "${HOME}/.cache/agent" \
-    ${OKD}/openshift-install-linux* \
-    ${OKD}/openshift-client-linux* \
     ${OKD}/oc \
     ${OKD}/kubectl \
     ${OKD}/openshift-install \
     ${OKD}/okd
+
+  # "${HOME}/.cache/agent" \
+  # ${OKD}/openshift-install-linux* \
+  # ${OKD}/openshift-client-linux* \
 
   kubectl delete -f "${HOMELAB}/sandbox/kubevirt/okd/vm" --ignore-not-found
 }
@@ -923,17 +924,22 @@ delete_okd_bm() {
 
   echo -e "\n\n${BLUE}Delete All Existing Data:${NC}"
   rm -rf \
-    "${HOME}/.cache/agent" \
-    ${OKD}/openshift-install-linux* \
-    ${OKD}/openshift-client-linux* \
     ${OKD}/oc \
     ${OKD}/kubectl \
     ${OKD}/openshift-install \
     ${OKD}/okd
 
+  #     "${HOME}/.cache/agent" \
+  # ${OKD}/openshift-install-linux* \
+  # ${OKD}/openshift-client-linux* \
 }
 
 install_okd_prep() {
+
+  sudo mount -o remount,size=8G,noatime /tmp
+
+  export XDG_CACHE_HOME="/tmp/cache"
+  mkdir -p "${XDG_CACHE_HOME}"
 
   export AVP_TYPE=vault
   export AVP_AUTH_TYPE=token
@@ -975,14 +981,18 @@ install_okd_prep() {
     export OKD_URL="quay.io/openshift/okd:${OKD_VERSION}"
     export OKD_URL_CI="registry.ci.openshift.org/origin/release:${OKD_VERSION}"
   fi
-  if ! oc adm release extract --tools "${OKD_URL}" --to="${OKD}/"; then
-    echo -e "${BLUE}Trying CI Registry:${NC}"
-    oc adm release extract --tools "${OKD_URL_CI}" --to="${OKD}/"
+  if [ ! -f "${OKD}/openshift-install-linux-${OKD_VERSION}.tar.gz" ]; then
+    echo "Required tools not found. Downloading..."
+    if ! oc adm release extract --tools "${OKD_URL}" --to="${OKD}/"; then
+      echo -e "${BLUE}Trying CI Registry:${NC}"
+      oc adm release extract --tools "${OKD_URL_CI}" --to="${OKD}/"
+    fi
+  else
+    echo "Tools already present. Skipping download."
   fi
 
   tar xvzf "${OKD}"/openshift-install-linux-4* -C "${OKD}"
   tar xvzf "${OKD}"/openshift-client-linux-4* -C "${OKD}"
-
   mkdir -p "${OKD}/vm"
 
   echo -e "\n\n${BLUE}Create Config Files:${NC}"
@@ -1002,7 +1012,7 @@ install_okd_prep() {
   sed -i "s/<PULL_SECRET>/\'$(printf '%s\n' "${PULL_SECRET}'" | sed 's/[&/\]/\\&/g')/g" "${OKD}/okd/install-config.yaml"
   cp "${OKD}/okd/install-config.yaml" "${OKD}/okd/install-config_backup.yaml"
 
-  export OPENSHIFT_INSTALL_OS_IMAGE_OVERRIDE=${OPENSHIFT_INSTALL_OS_IMAGE_OVERRIDE:-"https://mirror.openshift.com/pub/openshift-v4/x86_64/dependencies/rhcos/pre-release/latest-4.19/rhcos-live-iso.x86_64.iso"}
+  # export OPENSHIFT_INSTALL_OS_IMAGE_OVERRIDE=${OPENSHIFT_INSTALL_OS_IMAGE_OVERRIDE:-"https://mirror.openshift.com/pub/openshift-v4/x86_64/dependencies/rhcos/pre-release/latest/rhcos-live-iso.x86_64.iso"}
 }
 
 install_okd_virt() {

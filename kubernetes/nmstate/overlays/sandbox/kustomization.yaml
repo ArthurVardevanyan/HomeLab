@@ -8,3 +8,10 @@ resources:
 components:
   - ../../components/openshift
   - ../../components/olm
+patches:
+  - target:
+      kind: Subscription
+    patch: |-
+      - op: replace
+        path: /spec/installPlanApproval
+        value: Automatic
