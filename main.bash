@@ -999,7 +999,7 @@ install_okd_prep() {
   sed -i "s/<REGISTRY>/${REGISTRY}/g" "${OKD}/okd/install-config.yaml"
   sed -i "s/<CONTROL_PLANE>/${TF_VAR_control_plane_count:-${CONTROL_PLANE_COUNT}}/g" "${OKD}/okd/install-config.yaml"
   sed -i "s/<WORKERS>/${TF_VAR_worker_count:-${WORKER_COUNT}}/g" "${OKD}/okd/install-config.yaml"
-  sed -i "s/<PULL_SECRET>/${PULL_SECRET}/g" "${OKD}/okd/install-config.yaml"
+  sed -i "s/<PULL_SECRET>/\'$(printf '%s\n' "${PULL_SECRET}'" | sed 's/[&/\]/\\&/g')/g" "${OKD}/okd/install-config.yaml"
   cp "${OKD}/okd/install-config.yaml" "${OKD}/okd/install-config_backup.yaml"
 
   export OPENSHIFT_INSTALL_OS_IMAGE_OVERRIDE=${OPENSHIFT_INSTALL_OS_IMAGE_OVERRIDE:-"https://mirror.openshift.com/pub/openshift-v4/x86_64/dependencies/rhcos/pre-release/latest-4.19/rhcos-live-iso.x86_64.iso"}
