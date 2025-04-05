@@ -22,7 +22,7 @@ function retry {
   local count=0
   until "$@"; do
     exit=$?
-    wait=$((10 + 5 ** count))
+    wait=$((15 + 5 ** count))
     count=$((count + 1))
     if [ $count -lt "$retries" ]; then
       echo "Retry $count/$retries exited $exit, retrying in $wait seconds..."
@@ -934,6 +934,14 @@ delete_okd_bm() {
 }
 
 install_okd_prep() {
+
+  export AVP_TYPE=vault
+  export AVP_AUTH_TYPE=token
+  if [ -z "${VAULT_TOKEN}" ]; then
+    export VAULT_TOKEN
+    VAULT_TOKEN=$(vault login --tls-skip-verify -address="${URL}" -method=userpass -token-only username=arthur)
+  fi
+
   if [ -z "${URL}" ]; then
     echo -n URL:
     read -r -s URL
@@ -984,12 +992,14 @@ install_okd_prep() {
   export INSTALL_CONFIG_DIR=${INSTALL_CONFIG_DIR:-"${HOMELAB}/okd/install-config.yaml"}
   cp "${INSTALL_CONFIG_DIR}" "${OKD}/okd/"
 
+  PULL_SECRET=$(vault kv get -field=auth secret/docker | jq -c)
   SSH=$(cat "${HOME}"/.ssh/id_ed25519.pub)
   sed -i "s/<SSH>/${SSH}/g" "${OKD}/okd/install-config.yaml"
   sed -i "s/<URL>/${URL}/g" "${OKD}/okd/install-config.yaml"
   sed -i "s/<REGISTRY>/${REGISTRY}/g" "${OKD}/okd/install-config.yaml"
   sed -i "s/<CONTROL_PLANE>/${TF_VAR_control_plane_count:-${CONTROL_PLANE_COUNT}}/g" "${OKD}/okd/install-config.yaml"
   sed -i "s/<WORKERS>/${TF_VAR_worker_count:-${WORKER_COUNT}}/g" "${OKD}/okd/install-config.yaml"
+  sed -i "s/<PULL_SECRET>/${PULL_SECRET}/g" "${OKD}/okd/install-config.yaml"
   cp "${OKD}/okd/install-config.yaml" "${OKD}/okd/install-config_backup.yaml"
 
   export OPENSHIFT_INSTALL_OS_IMAGE_OVERRIDE=${OPENSHIFT_INSTALL_OS_IMAGE_OVERRIDE:-"https://mirror.openshift.com/pub/openshift-v4/x86_64/dependencies/rhcos/pre-release/latest-4.19/rhcos-live-iso.x86_64.iso"}
@@ -1320,6 +1330,102 @@ single_server() {
   "${OKD}/oc" scale --replicas=1 deployment.apps/thanos-querier -n openshift-monitoring
   "${OKD}/oc" scale --replicas=1 statefulset.apps/prometheus-k8s -n openshift-monitoring
   "${OKD}/oc" scale --replicas=1 statefulset.apps/alertmanager-main -n openshift-monitoring
+}
+
+install_addons_okd_virt() {
+  # Tweak Settings from Physical HomeLab
+  export OKD=/tmp/okd
+  export KUBECONFIG="${OKD}/okd/auth/kubeconfig"
+  export HOMELAB="${PWD}"
+
+  echo -e "\n${BLUE}Installing Cluster Addons:${NC}"
+  echo -e "\n\n${BLUE}Get URL:${NC}"
+  URL=${URL:-virt.arthurvardevanyan.com}
+  if [ -z "${URL}" ]; then
+    echo -n URL:
+    read -r -s URL
+    echo ""
+  fi
+  echo "${URL}"
+
+  export AVP_TYPE=vault
+  export AVP_AUTH_TYPE=token
+  if [ -z "${VAULT_TOKEN}" ]; then
+    export VAULT_TOKEN
+    VAULT_TOKEN=$(vault login --tls-skip-verify -address="${URL}" -method=userpass -token-only username=arthur)
+  fi
+
+  kubectl config set-cluster okd --insecure-skip-tls-verify=true
+
+  echo -e "\n${BLUE}Pull Secret:${NC}"
+  argocd-vault-plugin generate "${HOMELAB}"/okd/okd-configuration/base/pull-secret.yaml | kubectl apply -f -
+  sleep 30s
+  while [ "$(kubectl get mcp master -o yaml | yq '.status.conditions[] | select(.type == "Updating") | .status')" == "True" ]; do
+    echo "Waiting for MCPs"
+    sleep 30s
+  done
+  oc patch --type=merge --patch='{"spec":{"paused":true}}' machineconfigpool/master
+  echo -e "\n${BLUE}OperatorHub:${NC}"
+  kubectl apply -f "${HOMELAB}"/okd/okd-configuration/base/operator-hub.yaml
+
+  sleep 30s
+  echo -e "\n${BLUE}Waiting for MarketPlace Pods to Boot:${NC}"
+  while [ "$(kubectl get pods -n openshift-marketplace | grep -v "Completed" | grep -cv Running)" -ne 1 ]; do
+    sleep 1
+  done
+
+  echo -e "\n${BLUE}Kyverno:${NC}"
+  kubectl kustomize "${HOMELAB}"/kubernetes/kyverno/overlays/okd/ | argocd-vault-plugin generate - | kubectl apply -f - --server-side
+
+  echo -e "\n${BLUE}Cert Manager:${NC}"
+  # shellcheck disable=SC2317
+  cert_manager() {
+    kubectl kustomize "${HOMELAB}"/kubernetes/cert-manager/overlays/okd-sandbox | argocd-vault-plugin generate - | kubectl apply -f -
+  }
+  retry 5 cert_manager
+
+  echo -e "\n${BLUE}Nmstate:${NC}"
+  # shellcheck disable=SC2317
+  nmstate() {
+    kubectl create ns openshift-nmstate
+    kubectl kustomize "${HOMELAB}"/kubernetes/nmstate/overlays/sandbox | kubectl apply -f -
+  }
+  retry 5 nmstate
+
+  echo -e "\n${BLUE}OKD Configuration:${NC}"
+  # shellcheck disable=SC2317
+  okd_configuration() {
+    kubectl kustomize "${HOMELAB}"/okd/okd-configuration/overlays/sandbox | argocd-vault-plugin generate - | kubectl apply -f -
+  }
+
+  kubectl kustomize kubernetes/nmstate/overlays/sandbox | kubectl apply -f -
+
+  retry 5 okd_configuration
+
+  cert_check() {
+
+    # shellcheck disable=SC2317
+    while [ "$(kubectl get certificate -n openshift-config api-certificate -o yaml | yq '.status.conditions[] | select(.type == "Ready") | .status')" == "False" ]; do
+      echo "Waiting for API Certificate to Generate"
+      sleep 30
+    done
+
+    # shellcheck disable=SC2317
+    while [ "$(kubectl get certificate -n openshift-ingress ingress-certificate -o yaml | yq '.status.conditions[] | select(.type == "Ready") | .status')" == "False" ]; do
+      echo "Waiting for Ingress Certificate to Generate"
+      sleep 30
+    done
+  }
+
+  sleep 30
+
+  retry 5 cert_check
+
+  sleep 120
+
+  oc patch --type=merge --patch='{"spec":{"paused":false}}' machineconfigpool/master
+
+  echo -e "\n\n${BLUE}Addons Installed!${NC}"
 }
 
 install_addons_okd() {
