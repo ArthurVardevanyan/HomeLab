@@ -1,25 +1,23 @@
 apiVersion: nmstate.io/v1
 kind: NodeNetworkConfigurationPolicy
 metadata:
-  name: enp4s0-nad-vlan311
+  name: enp5s0-nad-vlan311
   annotations:
     argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
 spec:
   desiredState:
     interfaces:
-      - name: enp4s0.311
-        description: VLAN using enp4s0
-        type: vlan
+      - name: enp5s0
+        type: ethernet
         state: up
-        ipv4:
-          dhcp: false
-          enabled: false
-        vlan:
-          base-iface: enp4s0
-          id: 311
         mtu: 1500
+        ipv4:
+          enabled: false
+          dhcp: false
+        ipv6:
+          enabled: false
       - name: br4.311
-        description: OVS bridge with enp4s0.311 as a port
+        description: OVS bridge with enp5s0 as a port
         type: ovs-bridge
         state: up
         ipv4:
@@ -31,7 +29,7 @@ spec:
             stp:
               enabled: false
           port:
-            - name: enp4s0.311
+            - name: enp5s0
         mtu: 1500
     ovn:
       bridge-mappings:

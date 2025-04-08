@@ -19,7 +19,41 @@ spec:
           id: 310
         mtu: 9000
       - name: br4.310
-        description: OVS bridge with bond4.310 as a port
+        description: Linux bridge with bond4.310 as a port
+        type: linux-bridge
+        state: up
+        ipv4:
+          enabled: false
+        mtu: 9000
+        bridge:
+          options:
+            stp:
+              enabled: false
+          port:
+            - name: bond4.310
+---
+apiVersion: nmstate.io/v1
+kind: NodeNetworkConfigurationPolicy
+metadata:
+  name: bond4-nad-vlan311
+  annotations:
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+spec:
+  desiredState:
+    interfaces:
+      - name: bond4.311
+        description: VLAN using bond4
+        type: vlan
+        state: up
+        ipv4:
+          dhcp: false
+          enabled: false
+        vlan:
+          base-iface: bond4
+          id: 311
+        mtu: 9000
+      - name: br4.311
+        description: OVS bridge with bond4.311 as a port
         type: ovs-bridge
         state: up
         ipv4:
@@ -31,12 +65,12 @@ spec:
             stp:
               enabled: false
           port:
-            - name: bond4.310
+            - name: bond4.311
         mtu: 9000
     ovn:
       bridge-mappings:
-        - localnet: br4.310
-          bridge: br4.310
+        - localnet: br4.311
+          bridge: br4.311
           state: present
 ---
 apiVersion: nmstate.io/v1
@@ -60,25 +94,18 @@ spec:
           id: 312
         mtu: 9000
       - name: br4.312
-        description: OVS bridge with bond4.312 as a port
-        type: ovs-bridge
+        description: Linux bridge with bond4.312 as a port
+        type: linux-bridge
         state: up
         ipv4:
-          dhcp: true
-          enabled: true
+          enabled: false
+        mtu: 9000
         bridge:
-          allow-extra-patch-ports: true
           options:
             stp:
               enabled: false
           port:
             - name: bond4.312
-        mtu: 9000
-    ovn:
-      bridge-mappings:
-        - localnet: br4.312
-          bridge: br4.312
-          state: present
 ---
 apiVersion: nmstate.io/v1
 kind: NodeNetworkConfigurationPolicy
@@ -101,25 +128,18 @@ spec:
           id: 313
         mtu: 9000
       - name: br4.313
-        description: OVS bridge with bond4.313 as a port
-        type: ovs-bridge
+        description: Linux bridge with bond4.313 as a port
+        type: linux-bridge
         state: up
         ipv4:
-          dhcp: true
-          enabled: true
+          enabled: false
+        mtu: 9000
         bridge:
-          allow-extra-patch-ports: true
           options:
             stp:
               enabled: false
           port:
             - name: bond4.313
-        mtu: 9000
-    ovn:
-      bridge-mappings:
-        - localnet: br4.313
-          bridge: br4.313
-          state: present
 ---
 apiVersion: nmstate.io/v1
 kind: NodeNetworkConfigurationPolicy
@@ -142,22 +162,15 @@ spec:
           id: 314
         mtu: 9000
       - name: br4.314
-        description: OVS bridge with bond4.314 as a port
-        type: ovs-bridge
+        description: Linux bridge with bond4.314 as a port
+        type: linux-bridge
         state: up
         ipv4:
-          dhcp: true
-          enabled: true
+          enabled: false
+        mtu: 9000
         bridge:
-          allow-extra-patch-ports: true
           options:
             stp:
               enabled: false
           port:
             - name: bond4.314
-        mtu: 9000
-    ovn:
-      bridge-mappings:
-        - localnet: br4.314
-          bridge: br4.314
-          state: present
