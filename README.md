@@ -46,7 +46,7 @@ router----|10GbE|switch11[<center>USW-Aggregation<br></center>]
 end
 
 subgraph Homelab
-router----|1GbE|microshift[<center>MicroShift / PiHole<br>10.0.0.99</center>]
+router----|1GbE|microshift[<center>MicroShift / PiHole<br>10.101.1.7</center>]
 router-.-|1GbE Fail Over|truenas(<center>TrueNas<br>10.101.1.6</center>)
 end
 
