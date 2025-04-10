@@ -1056,6 +1056,10 @@ install_okd_virt() {
   "${OKD}/openshift-install" agent wait-for bootstrap-complete --dir "${OKD}/okd/"
   # "${OKD}/oc" apply -f "${HOMELAB}/okd/okd-configuration/overlays/sandbox/ingress-controller.yaml"
   "${OKD}/openshift-install" agent wait-for install-complete --dir "${OKD}/okd/"
+
+  kubectl label node sandbox-1 topology.kubernetes.io/zone=1 --overwrite
+  kubectl label node sandbox-2 topology.kubernetes.io/zone=2 --overwrite
+  kubectl label node sandbox-3 topology.kubernetes.io/zone=3 --overwrite
 }
 
 install_okd_sno() {
