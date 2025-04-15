@@ -1,0 +1,41 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: vm
+  namespace: arthurvardevanyan
+  annotations:
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+    notifications.argoproj.io/subscribe.on-sync-succeeded.gh-tenant: ""
+    notifications.argoproj.io/subscribe.on-sync-failed.gh-tenant: ""
+    notifications.argoproj.io/subscribe.on-sync-status-unknown.gh-tenant: ""
+    notifications.argoproj.io/subscribe.on-health-degraded.gh-tenant: ""
+spec:
+  destination:
+    namespace: arthurvardevanyan
+    server: https://kubernetes.default.svc
+  project: arthurvardevanyan
+  source:
+    path: vms/overlays/okd
+    repoURL: https://git.arthurvardevanyan.com/ArthurVardevanyan/HomeLab
+    targetRevision: vm
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: vm-velero
+  namespace: arthurvardevanyan
+  annotations:
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+    notifications.argoproj.io/subscribe.on-sync-succeeded.gh-tenant: ""
+    notifications.argoproj.io/subscribe.on-sync-failed.gh-tenant: ""
+    notifications.argoproj.io/subscribe.on-sync-status-unknown.gh-tenant: ""
+    notifications.argoproj.io/subscribe.on-health-degraded.gh-tenant: ""
+spec:
+  destination:
+    namespace: velero
+    server: https://kubernetes.default.svc
+  project: arthurvardevanyan
+  source:
+    path: vms/overlays/okd-velero
+    repoURL: https://git.arthurvardevanyan.com/ArthurVardevanyan/HomeLab
+    targetRevision: vm
