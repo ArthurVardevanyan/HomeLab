@@ -1,0 +1,78 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: k8s-federated-credential-api
+  annotations:
+    checkov.io/skip1: CKV_K8S_40=OpenShift Injects Random UID
+    checkov.io/skip2: CKV_K8S_38=Operator Requires use of Tokens
+  name: k8s-federated-credential-api
+  namespace: k8s-federated-credential
+spec:
+  #replicas: 1
+  selector:
+    matchLabels:
+      app: k8s-federated-credential-api
+  template:
+    metadata:
+      labels:
+        app: k8s-federated-credential-api
+    spec:
+      securityContext:
+        seccompProfile:
+          type: RuntimeDefault
+      topologySpreadConstraints:
+        - maxSkew: 1
+          topologyKey: topology.kubernetes.io/zone
+          whenUnsatisfiable: ScheduleAnyway
+          labelSelector:
+            matchLabels:
+              app: k8s-federated-credential-api
+        - maxSkew: 1
+          topologyKey: kubernetes.io/hostname
+          whenUnsatisfiable: DoNotSchedule
+          labelSelector:
+            matchLabels:
+              app: k8s-federated-credential-api
+      containers:
+        - image: "registry.arthurvardevanyan.com/homelab/k8s-federated-credential-api@sha256:a9e42719ffcadab89b9d23e6cc333b7052ad7d089e3647d15d7645eec1912e93"
+          name: k8s-federated-credential-api
+          ports:
+            - containerPort: 8088
+              name: http
+              protocol: TCP
+          livenessProbe:
+            httpGet:
+              path: /livez
+              port: 8088
+            timeoutSeconds: 1
+            periodSeconds: 30
+            successThreshold: 1
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /readyz
+              port: 8088
+            timeoutSeconds: 1
+            periodSeconds: 30
+            successThreshold: 1
+            failureThreshold: 3
+          resources:
+            limits:
+              cpu: 100m
+              memory: 128Mi
+            requests:
+              cpu: 10m
+              memory: 64Mi
+          securityContext:
+            runAsNonRoot: true
+            readOnlyRootFilesystem: true
+            allowPrivilegeEscalation: false
+            seccompProfile:
+              type: RuntimeDefault
+            capabilities:
+              drop:
+                - ALL
+      serviceAccountName: k8s-federated-credential-api
+      terminationGracePeriodSeconds: 10
+      automountServiceAccountToken: true
