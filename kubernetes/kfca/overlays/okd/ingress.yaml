@@ -1,0 +1,43 @@
+kind: Ingress
+apiVersion: networking.k8s.io/v1
+metadata:
+  name: k8s-federated-credential-api
+  namespace: k8s-federated-credential
+  labels:
+    blackbox: ignore
+  annotations:
+    route.openshift.io/termination: edge
+spec:
+  ingressClassName: openshift-default
+  rules:
+    - host: "kfca.apps.okd.homelab.arthurvardevanyan.com"
+      http:
+        paths:
+          - path: ""
+            pathType: ImplementationSpecific
+            backend:
+              service:
+                name: k8s-federated-credential-api
+                port:
+                  name: http
+---
+kind: Ingress
+apiVersion: networking.k8s.io/v1
+metadata:
+  name: k8s-federated-credential-api-live
+  namespace: k8s-federated-credential
+  annotations:
+    route.openshift.io/termination: edge
+spec:
+  ingressClassName: openshift-default
+  rules:
+    - host: "kfca.apps.okd.homelab.arthurvardevanyan.com"
+      http:
+        paths:
+          - path: "/livez"
+            pathType: ImplementationSpecific
+            backend:
+              service:
+                name: k8s-federated-credential-api
+                port:
+                  name: http
