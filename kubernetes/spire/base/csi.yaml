@@ -1,0 +1,93 @@
+---
+# Source: spire/charts/spiffe-csi-driver/templates/spiffe-csi-driver.yaml
+apiVersion: storage.k8s.io/v1
+kind: CSIDriver
+metadata:
+  name: "csi.spiffe.io"
+  labels:
+    security.openshift.io/csi-ephemeral-volume-profile: restricted
+
+spec:
+  # Only ephemeral, inline volumes are supported. There is no need for a
+  # controller to provision and attach volumes.
+  attachRequired: false
+
+  # Request the pod information which the CSI driver uses to verify that an
+  # ephemeral mount was requested.
+  podInfoOnMount: true
+
+  # Don't change ownership on the contents of the mount since the Workload API
+  # Unix Domain Socket is typically open to all (i.e. 0777).
+  fsGroupPolicy: None
+
+  # Declare support for ephemeral volumes only.
+  volumeLifecycleModes:
+    - Ephemeral
+---
+# Source: spire/charts/spire-server/templates/controller-manager-cluster-ids.yaml
+apiVersion: spire.spiffe.io/v1alpha1
+kind: ClusterSPIFFEID
+metadata:
+  name: spire-mgmt-spire-default
+spec:
+  className: "spire-mgmt-spire"
+  hint: default
+  spiffeIDTemplate: "spiffe://{{ .TrustDomain }}/ns/{{ .PodMeta.Namespace }}/sa/{{ .PodSpec.ServiceAccountName }}"
+  namespaceSelector:
+    matchExpressions:
+      - key: kubernetes.io/metadata.name
+        operator: NotIn
+        values:
+          - spire-mgmt
+          - spire-server
+          - spire-system
+  fallback: true
+---
+# Source: spire/charts/spire-server/templates/controller-manager-cluster-ids.yaml
+apiVersion: spire.spiffe.io/v1alpha1
+kind: ClusterSPIFFEID
+metadata:
+  name: spire-mgmt-spire-oidc-discovery-provider
+spec:
+  className: "spire-mgmt-spire"
+  hint: oidc-discovery-provider
+  spiffeIDTemplate: "spiffe://{{ .TrustDomain }}/ns/{{ .PodMeta.Namespace }}/sa/{{ .PodSpec.ServiceAccountName }}"
+  podSelector:
+    matchLabels:
+      component: oidc-discovery-provider
+      release: spire
+      release-namespace: spire-mgmt
+  namespaceSelector:
+    matchExpressions:
+      - key: kubernetes.io/metadata.name
+        operator: In
+        values:
+          - spire-mgmt
+          - spire-server
+          - spire-system
+  dnsNameTemplates:
+    - oidc-discovery.{{ .TrustDomain }}
+  autoPopulateDNSNames: true
+---
+# Source: spire/charts/spire-server/templates/controller-manager-cluster-ids.yaml
+apiVersion: spire.spiffe.io/v1alpha1
+kind: ClusterSPIFFEID
+metadata:
+  name: spire-mgmt-spire-test-keys
+spec:
+  className: "spire-mgmt-spire"
+  hint: test-keys
+  spiffeIDTemplate: "spiffe://{{ .TrustDomain }}/ns/{{ .PodMeta.Namespace }}/sa/{{ .PodSpec.ServiceAccountName }}"
+  podSelector:
+    matchLabels:
+      component: test-keys
+      release: spire
+      release-namespace: spire-mgmt
+  namespaceSelector:
+    matchExpressions:
+      - key: kubernetes.io/metadata.name
+        operator: In
+        values:
+          - spire-mgmt
+          - spire-server
+          - spire-system

@@ -1,0 +1,63 @@
+---
+# Source: spire/charts/spiffe-oidc-discovery-provider/templates/service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: spire-spiffe-oidc-discovery-provider
+  namespace: spire-server
+spec:
+  type: ClusterIP
+  ports:
+    - name: https
+      port: 443
+      targetPort: https
+      protocol: TCP
+  selector:
+    app.kubernetes.io/name: spiffe-oidc-discovery-provider
+    app.kubernetes.io/instance: spire
+---
+# Source: spire/charts/spire-server/templates/controller-manager-service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: spire-controller-manager-webhook
+  namespace: spire-server
+  labels:
+    helm.sh/chart: spire-server-0.1.0
+    app.kubernetes.io/name: server
+    app.kubernetes.io/instance: spire
+    app.kubernetes.io/version: "1.12.0"
+    app.kubernetes.io/managed-by: Helm
+spec:
+  type: ClusterIP
+  ports:
+    - name: https
+      port: 443
+      targetPort: https
+      protocol: TCP
+  selector:
+    app.kubernetes.io/name: server
+    app.kubernetes.io/instance: spire
+---
+# Source: spire/charts/spire-server/templates/service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: spire-server
+  namespace: spire-server
+  labels:
+    helm.sh/chart: spire-server-0.1.0
+    app.kubernetes.io/name: server
+    app.kubernetes.io/instance: spire
+    app.kubernetes.io/version: "1.12.0"
+    app.kubernetes.io/managed-by: Helm
+spec:
+  type: ClusterIP
+  ports:
+    - name: grpc
+      port: 443
+      targetPort: grpc
+      protocol: TCP
+  selector:
+    app.kubernetes.io/name: server
+    app.kubernetes.io/instance: spire
