@@ -6,10 +6,7 @@ resources:
 components:
   - ../../components/rootless
 patches:
-  - target:
-      kind: Deployment
-      name: ntp-rootless
-    patch: |-
+  - patch: |-
       - op: replace
         path: /spec/replicas
         value: 1
@@ -28,17 +25,20 @@ patches:
       - op: replace
         path:  /spec/template/spec/containers/0/env/1/value
         value: "12345"
-  - target:
-      kind: Service
+    target:
+      kind: Deployment
       name: ntp-rootless
-    patch: |-
+  - patch: |-
       - op: replace
         path: /metadata/annotations/kube-vip.io~1loadbalancerIPs
         value: "10.101.1.2"
-  - target:
+    target:
       kind: Service
-      name: ntp-rootless-vlan3
-    patch: |-
+      name: ntp-rootless
+  - patch: |-
       - op: replace
         path: /metadata/annotations/kube-vip.io~1loadbalancerIPs
         value: "10.102.3.2"
+    target:
+      kind: Service
+      name: ntp-rootless-vlan3

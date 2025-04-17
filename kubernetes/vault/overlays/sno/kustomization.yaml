@@ -5,20 +5,19 @@ resources:
 components:
   - ../../components/ha
   - ../../components/openshift
-generatorOptions:
-  disableNameSuffixHash: false # ArgoCD Garbage Collection
+generatorOptions: {}
 configMapGenerator:
-  - name: gcp-credentials-request
-    namespace: vault
-    files:
+  - files:
       - credentials_config.json
+    name: gcp-credentials-request
+    namespace: vault
 patches:
-  - target:
-      kind: StatefulSet
-      name: vault
-    patch: |-
+  - patch: |-
       - op: replace
         path: /spec/volumeClaimTemplates/0/spec/storageClassName
         value: lvms-vg1-immediate
       - op: remove
         path: /spec/template/spec/topologySpreadConstraints
+    target:
+      kind: StatefulSet
+      name: vault

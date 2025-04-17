@@ -5,10 +5,10 @@ resources:
 components:
   - ../../components/openshift
 patches:
-  - target:
-      kind: PersistentVolumeClaim
-      name: bitwarden
-    patch: |-
+  - patch: |-
       - op: replace
         path: /spec/storageClassName
         value: lvms-vg1-immediate
+    target:
+      kind: PersistentVolumeClaim
+      name: bitwarden

@@ -6,10 +6,9 @@ resources:
   - ./service.yaml
   - ./statefulset.yaml
   - ./pvc.yaml
-generatorOptions:
-  disableNameSuffixHash: false # ArgoCD Garbage Collection
+generatorOptions: {}
 configMapGenerator:
-  - name: vault-config-singleton
-    namespace: vault
-    files:
+  - files:
       - vault.json
+    name: vault-config-singleton
+    namespace: vault

@@ -7,10 +7,7 @@ resources:
 components:
   - ../../components/openshift
 patches:
-  - target:
-      kind: Deployment
-      name: sensor
-    patch: |-
+  - patch: |-
       - op: replace
         path: /spec/template/spec/containers/0/env/5
         value: { "name": "ROX_CENTRAL_ENDPOINT", "value": "central-stackrox.apps.okd.homelab.arthurvardevanyan.com:443" }
@@ -20,3 +17,6 @@ patches:
       - op: replace
         path: /spec/template/spec/containers/0/env/7
         value: { "name": "ROX_OPENSHIFT_API", "value": "true" }
+    target:
+      kind: Deployment
+      name: sensor

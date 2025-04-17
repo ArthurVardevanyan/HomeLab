@@ -5,30 +5,27 @@ resources:
 components:
   - ../../components/openshift
 patches:
-  - target:
+  - patch: |-
+      - op: replace
+        path: /spec/storageClassName
+        value: lvms-vg1-immediate-rwx
+      - op: replace
+        path: /spec/accessModes/0
+        value: ReadWriteOnce
+    target:
       kind: PersistentVolumeClaim
       name: photoprism-cache
-    patch: |-
+  - patch: |-
       - op: replace
         path: /spec/storageClassName
         value: lvms-vg1-immediate-rwx
       - op: replace
         path: /spec/accessModes/0
         value: ReadWriteOnce
-  - target:
+    target:
       kind: PersistentVolumeClaim
       name: photoprism-storage
-    patch: |-
-      - op: replace
-        path: /spec/storageClassName
-        value: lvms-vg1-immediate-rwx
-      - op: replace
-        path: /spec/accessModes/0
-        value: ReadWriteOnce
-  - target:
-      kind: PostgresCluster
-      name: photoprism
-    patch: |-
+  - patch: |-
       - op: replace
         path: /spec/instances/0/dataVolumeClaimSpec/storageClassName
         value: lvms-vg1-immediate
@@ -38,3 +35,6 @@ patches:
       - op: replace
         path: /spec/backups/pgbackrest/repos/0/volume/volumeClaimSpec/storageClassName
         value: lvms-vg1-immediate
+    target:
+      kind: PostgresCluster
+      name: photoprism

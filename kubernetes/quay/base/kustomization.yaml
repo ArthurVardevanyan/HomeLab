@@ -1,5 +1,8 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
-kind: Kustomization
+kind:
+  Kustomization
+  # - ./minio/tenant.yaml
+  # - ./minio/pdb.yaml
 resources:
   - ./namespace.yaml
   - ./resource-quota.yaml
@@ -13,8 +16,6 @@ resources:
   - ./certificate.yaml
   - ./kyverno.yaml
   - ./egress-firewall.yaml
-  # - ./minio/tenant.yaml
-  # - ./minio/pdb.yaml
   - ./dragonfly/dragonfly.yaml
   - ./dragonfly/network-policy.yaml
   - ./dragonfly/pdb.yaml
@@ -30,8 +31,8 @@ components:
 generatorOptions:
   disableNameSuffixHash: true
 secretGenerator:
-  - name: quay-config-bundle
-    namespace: quay
-    files:
+  - files:
       - config.yaml
       - clair-config.yaml
+    name: quay-config-bundle
+    namespace: quay

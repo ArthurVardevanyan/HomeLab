@@ -4,11 +4,11 @@ resources:
   - ../../base
   - traefik.yaml
 patches:
-  - target:
-      kind: Deployment
-      name: longhorn-ui
-    patch: |-
+  - patch: |-
       - op: remove
         path: /spec/template/spec/containers/0
       - op: remove
         path: /spec/template/spec/volumes/0
+    target:
+      kind: Deployment
+      name: longhorn-ui

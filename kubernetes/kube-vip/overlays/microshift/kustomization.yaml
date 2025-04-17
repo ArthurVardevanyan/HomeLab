@@ -1,4 +1,3 @@
----
 kind: Kustomization
 apiVersion: kustomize.config.k8s.io/v1beta1
 resources:
@@ -6,17 +5,17 @@ resources:
   - ./vlan3.yaml
   - ./vlan11.yaml
 patches:
-  - target:
-      kind: DaemonSet
-      name: kube-vip-ds
-    patch: |-
+  - patch: |-
       - op: add
         path: /spec/template/spec/containers/0/env/0
         value: { "name": "prometheus_server", "value": ":2113" }
-  - target:
-      kind: Deployment
-      name: kube-vip-cloud-provider
-    patch: |-
+    target:
+      kind: DaemonSet
+      name: kube-vip-ds
+  - patch: |-
       - op: replace
         path: /spec/replicas
         value: 1
+    target:
+      kind: Deployment
+      name: kube-vip-cloud-provider
