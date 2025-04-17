@@ -1,0 +1,15 @@
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: k8s-federated-credential-cert
+  namespace: k8s-federated-credential
+  labels:
+spec:
+  secretName: k8s-federated-credential-cert
+  duration: 2160h # 90d
+  renewBefore: 1080h # 45d
+  dnsNames:
+    - "kfca.microshift.arthurvardevanyan.com"
+  issuerRef:
+    kind: ClusterIssuer
+    name: letsencrypt
