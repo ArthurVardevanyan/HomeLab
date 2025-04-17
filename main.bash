@@ -1,8 +1,10 @@
 #!/bin/bash
 
-set -o errexit
-set -o nounset
-set -o pipefail
+set -o errexit  # exit on any failure
+set -o nounset  # exit on undeclared variables
+set -o pipefail # return value of all commands in a pipe
+## set -o xtrace  # command tracing
+shopt -s failglob # If no matches are found, an error message is printed and the command is not executed
 
 # PRESEED CONFIG: /machineConfigs/servers/preseed.cfg
 # ANSIBLE CONFIG: /ansible/k3s.yaml
