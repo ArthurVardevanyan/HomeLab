@@ -4,10 +4,10 @@ namespace: kyverno
 resources:
   - ../../base
 patches:
-  - target:
-      kind: Deployment
-      name: kyverno-admission-controller
-    patch: |-
+  - patch: |-
       - op: replace
         path: /spec/replicas
         value: 1
+    target:
+      kind: Deployment
+      name: kyverno-admission-controller

@@ -40,6 +40,38 @@ ansible() {
     -e 'ansible_python_interpreter=/usr/bin/python3'
 }
 
+function kustomize_fix() {
+  local option="$1"
+  local target_dir="${2:-}"
+
+  if [[ "$option" == "--all" ]]; then
+    find . -type f -name "kustomization.yaml" | while read -r FILE; do
+      DIR=$(dirname "${FILE}")
+      pushd "${DIR}" && kustomize edit fix --vars 1>/dev/null && popd
+    done
+    prettier ./ --write
+  elif [[ "$option" == "--dir" ]]; then
+    if [[ -z "$target_dir" ]]; then
+      echo "Error: --dir requires a directory argument."
+      return 1
+    fi
+
+    if [[ -d "$target_dir" ]]; then
+      find "$target_dir" -type f -name "kustomization.yaml" | while read -r FILE; do
+        DIR=$(dirname "${FILE}")
+        pushd "${DIR}" && kustomize edit fix --vars 1>/dev/null && popd
+      done
+    else
+      echo "Error: Specified directory does not exist."
+      return 1
+    fi
+    prettier "./$target_dir" --write
+  else
+    echo "Error: Invalid option."
+    return 1
+  fi
+}
+
 test_overlays() {
 
   if [ -n "$VAULT_ADDR" ] && [ -n "$VAULT_TOKEN" ]; then

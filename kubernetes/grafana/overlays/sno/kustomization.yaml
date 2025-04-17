@@ -5,10 +5,7 @@ resources:
 components:
   - ../../components/openshift
 patches:
-  - target:
-      kind: PostgresCluster
-      name: grafana
-    patch: |-
+  - patch: |-
       - op: replace
         path: /spec/instances/0/dataVolumeClaimSpec/storageClassName
         value: lvms-vg1-immediate
@@ -18,13 +15,16 @@ patches:
       - op: replace
         path: /spec/backups/pgbackrest/repos/0/volume/volumeClaimSpec/storageClassName
         value: lvms-vg1-immediate
-  - target:
-      kind: Deployment
+    target:
+      kind: PostgresCluster
       name: grafana
-    patch: |-
+  - patch: |-
       - op: replace
         path: /spec/replicas
         value: 1
+    target:
+      kind: Deployment
+      name: grafana
   - patch: |-
       apiVersion: policy/v1
       kind: PodDisruptionBudget

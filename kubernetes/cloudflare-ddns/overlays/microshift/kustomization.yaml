@@ -3,12 +3,12 @@ kind: Kustomization
 resources:
   - ../../base
 patches:
-  - target:
-      kind: Deployment
-      name: cloudflare-ddns
-    patch: |-
+  - patch: |-
       - op: replace
         path: /spec/replicas
         value: 1
       - op: remove
         path: /spec/template/spec/affinity
+    target:
+      kind: Deployment
+      name: cloudflare-ddns

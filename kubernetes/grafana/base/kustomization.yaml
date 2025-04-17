@@ -15,12 +15,9 @@ resources:
   - pdb.yaml
 components:
   - ./postgres/
-generatorOptions:
-  disableNameSuffixHash: false # ArgoCD Garbage Collection
+generatorOptions: {}
 configMapGenerator:
-  - name: grafana-dashboards
-    namespace: grafana
-    files:
+  - files:
       - dashboards/black-box.json
       - dashboards/eagle.json
       - dashboards/homeassistant.json
@@ -29,3 +26,5 @@ configMapGenerator:
       - dashboards/node-exporter.json
       - dashboards/pfsense_lite.json
       - dashboards/version-checker.json
+    name: grafana-dashboards
+    namespace: grafana

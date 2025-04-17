@@ -1,9 +1,10 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
-kind: Kustomization
+kind:
+  Kustomization
+  # - ./service.yaml
 resources:
   - ../../base
   - ./ingress.yaml
-  # - ./service.yaml
   - ./dns.yaml
   - ./egress-firewall.yaml
   - network-policy.yaml
@@ -12,11 +13,14 @@ components:
   - ../../components/pihole
   - ../../components/vlan3
   - ../../components/metrics
+    # - op: remove
+    #   path: /spec/template/spec/containers/0/ports/1/hostPort
+    # - op: remove
+    #   path: /spec/template/spec/containers/0/ports/1/hostPort
+    # - op: remove
+    #   path: /spec/template/spec/containers/0/ports/1/hostPort
 patches:
-  - target:
-      kind: StatefulSet
-      name: pihole-infra
-    patch: |-
+  - patch: |-
       - op: replace
         path: /spec/template/spec/containers/0/name
         value: pihole-okd-infra
@@ -28,10 +32,10 @@ patches:
         value: pihole-okd-infra
       # - op: remove
       #   path: /spec/template/spec/containers/0/ports/1/hostPort
-  - target:
+    target:
       kind: StatefulSet
-      name: pihole
-    patch: |-
+      name: pihole-infra
+  - patch: |-
       - op: replace
         path: /spec/template/spec/containers/0/name
         value: pihole-okd
@@ -43,10 +47,10 @@ patches:
         value: pihole-okd
       # - op: remove
       #   path: /spec/template/spec/containers/0/ports/1/hostPort
-  - target:
+    target:
       kind: StatefulSet
-      name: pihole-vlan3
-    patch: |-
+      name: pihole
+  - patch: |-
       - op: replace
         path: /spec/template/spec/containers/0/name
         value: pihole-okd-vlan3
@@ -58,9 +62,12 @@ patches:
         value: pihole-okd-vlan3
       # - op: remove
       #   path: /spec/template/spec/containers/0/ports/1/hostPort
-  - target:
-      kind: PersistentVolumeClaim
-    patch: |-
+    target:
+      kind: StatefulSet
+      name: pihole-vlan3
+  - patch: |-
       - op: replace
         path: /spec/storageClassName
         value: rook-ceph-block
+    target:
+      kind: PersistentVolumeClaim

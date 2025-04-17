@@ -5,12 +5,12 @@ resources:
 components:
   - ../../components/openshift
 patches:
-  - target:
-      kind: Deployment
-    patch: |-
+  - patch: |-
       - op: replace
         path: /spec/replicas
         value: 1
+    target:
+      kind: Deployment
   - patch: |-
       apiVersion: policy/v1
       kind: PodDisruptionBudget

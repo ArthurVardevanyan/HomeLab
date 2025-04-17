@@ -4,10 +4,7 @@ resources:
   - ../../base
   - traefik.yaml
 patches:
-  - target:
-      kind: Volume
-      name: heimdall
-    patch: |-
+  - patch: |-
       - op: replace
         path: /metadata/name
         value: heimdall-k3s
@@ -17,17 +14,20 @@ patches:
       - op: replace
         path: /spec/numberOfReplicas
         value: 1
-  - target:
-      kind: PersistentVolume
-      name: heimdall-pv
-    patch: |-
+    target:
+      kind: Volume
+      name: heimdall
+  - patch: |-
       - op: replace
         path: /spec/csi/volumeHandle
         value: heimdall-k3s
-  - target:
-      kind: StatefulSet
-      name: heimdall
-    patch: |-
+    target:
+      kind: PersistentVolume
+      name: heimdall-pv
+  - patch: |-
       - op: replace
         path: /spec/template/spec/containers/0/resources/limits/cpu
         value: 500m
+    target:
+      kind: StatefulSet
+      name: heimdall

@@ -3,10 +3,7 @@ kind: Kustomization
 resources:
   - ../../base
 patches:
-  - target:
-      kind: PostgresCluster
-      name: quay
-    patch: |-
+  - patch: |-
       - op: replace
         path: /spec/instances/0/dataVolumeClaimSpec/storageClassName
         value: lvms-vg1-immediate
@@ -16,33 +13,36 @@ patches:
       - op: replace
         path: /spec/backups/pgbackrest/repos/0/volume/volumeClaimSpec/storageClassName
         value: lvms-vg1-immediate
-  - target:
+    target:
+      kind: PostgresCluster
+      name: quay
+  - patch: |-
+      - op: replace
+        path: /spec/instances/0/dataVolumeClaimSpec/storageClassName
+        value: lvms-vg1-immediate
+      - op: replace
+        path: /spec/instances/0/replicas
+        value: 1
+      - op: replace
+        path: /spec/backups/pgbackrest/repos/0/volume/volumeClaimSpec/storageClassName
+        value: lvms-vg1-immediate
+    target:
       kind: PostgresCluster
       name: clair
-    patch: |-
+  - patch: |-
       - op: replace
-        path: /spec/instances/0/dataVolumeClaimSpec/storageClassName
-        value: lvms-vg1-immediate
-      - op: replace
-        path: /spec/instances/0/replicas
+        path: /spec/replicas
         value: 1
-      - op: replace
-        path: /spec/backups/pgbackrest/repos/0/volume/volumeClaimSpec/storageClassName
-        value: lvms-vg1-immediate
-  - target:
+    target:
       kind: Dragonfly
       name: quay-dragonfly
-    patch: |-
+  - patch: |-
       - op: replace
         path: /spec/replicas
         value: 1
-  - target:
+    target:
       kind: Deployment
       name: quay
-    patch: |-
-      - op: replace
-        path: /spec/replicas
-        value: 1
   - patch: |-
       apiVersion: policy/v1
       kind: PodDisruptionBudget

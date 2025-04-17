@@ -3,10 +3,10 @@ kind: Kustomization
 resources:
   - ../../base
 patches:
-  - target:
-      kind: VirtualMachine
-      name: fedora
-    patch: |-
+  - patch: |-
       - op: replace
         path: /spec/dataVolumeTemplates/0/spec/storage/storageClassName
         value: lvms-vg1-immediate-virt
+    target:
+      kind: VirtualMachine
+      name: fedora

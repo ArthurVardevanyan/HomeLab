@@ -21,10 +21,9 @@ resources:
   - ui-deployment.yaml
   - driver-deployment.yaml
   - snapshot-cron.yaml
-generatorOptions:
-  disableNameSuffixHash: false # ArgoCD Garbage Collection
+generatorOptions: {}
 configMapGenerator:
-  - name: longhorn-default-setting
-    namespace: longhorn-system
-    files:
+  - files:
       - default-setting.yaml
+    name: longhorn-default-setting
+    namespace: longhorn-system

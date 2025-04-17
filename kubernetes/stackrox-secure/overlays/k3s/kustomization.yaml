@@ -4,43 +4,43 @@ resources:
   - ../../base
   - cluster-name.yaml
 patches:
-  - target:
-      kind: Deployment
-      name: sensor
-    patch: |-
+  - patch: |-
       - op: replace
         path: /spec/template/spec/containers/0/env/5
         value: { "name": "ROX_CENTRAL_ENDPOINT", "value": "central-stackrox.apps.okd.homelab.arthurvardevanyan.com:443" }
       - op: replace
         path: /spec/template/spec/containers/0/env/8
         value: { "name": "ROX_HELM_CLUSTER_CONFIG_FP", "value": "<path:secret/data/homelab/stackrox/k3s#config-fingerprint>" }
-  - target:
-      kind: Secret
-      name: admission-control-tls
-    patch: |-
+    target:
+      kind: Deployment
+      name: sensor
+  - patch: |-
       - op: replace
         path: /data/admission-control-cert.pem
         value: <path:secret/data/homelab/stackrox/k3s#admission-control-cert-pem | base64encode>
       - op: replace
         path: /data/admission-control-key.pem
         value: <path:secret/data/homelab/stackrox/k3s#admission-control-key-pem | base64encode>
-  - target:
+    target:
       kind: Secret
-      name: collector-tls
-    patch: |-
+      name: admission-control-tls
+  - patch: |-
       - op: replace
         path: /data/collector-cert.pem
         value: <path:secret/data/homelab/stackrox/k3s#collector-cert-pem | base64encode>
       - op: replace
         path: /data/collector-key.pem
         value: <path:secret/data/homelab/stackrox/k3s#collector-key-pem | base64encode>
-  - target:
+    target:
       kind: Secret
-      name: sensor-tls
-    patch: |-
+      name: collector-tls
+  - patch: |-
       - op: replace
         path: /data/sensor-cert.pem
         value: <path:secret/data/homelab/stackrox/k3s#sensor-cert-pem | base64encode>
       - op: replace
         path: /data/sensor-key.pem
         value: <path:secret/data/homelab/stackrox/k3s#sensor-key-pem | base64encode>
+    target:
+      kind: Secret
+      name: sensor-tls

@@ -4,25 +4,21 @@ resources:
   - ../../base
   - traefik.yaml
   - network-policy.yaml
-generatorOptions:
-  disableNameSuffixHash: false # ArgoCD Garbage Collection
+generatorOptions: {}
 configMapGenerator:
-  - name: vault-config
-    namespace: vault
-    files:
+  - files:
       - vault.json
+    name: vault-config
+    namespace: vault
 patches:
-  - target:
-      kind: Certificate
-      name: vault-cert
-    patch: |-
+  - patch: |-
       - op: add
         path: /spec/dnsNames
         value: [vault.k3s.arthurvardevanyan.com]
-  - target:
-      kind: Volume
-      name: vault
-    patch: |-
+    target:
+      kind: Certificate
+      name: vault-cert
+  - patch: |-
       - op: replace
         path: /metadata/name
         value: vault-k3s
@@ -32,17 +28,17 @@ patches:
       - op: replace
         path: /spec/numberOfReplicas
         value: 1
-  - target:
-      kind: PersistentVolume
-      name: vault-pv
-    patch: |-
+    target:
+      kind: Volume
+      name: vault
+  - patch: |-
       - op: replace
         path: /spec/csi/volumeHandle
         value: vault-k3s
-  - target:
-      kind: StatefulSet
-      name: vault
-    patch: |-
+    target:
+      kind: PersistentVolume
+      name: vault-pv
+  - patch: |-
       - op: add
         path: /spec/template/spec/securityContext/fsGroup
         value: 11000
@@ -63,3 +59,6 @@ patches:
       - op: replace
         path: /spec/template/spec/containers/0/resources/limits/cpu
         value: 300m
+    target:
+      kind: StatefulSet
+      name: vault
