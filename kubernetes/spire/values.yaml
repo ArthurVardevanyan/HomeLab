@@ -1,0 +1,17 @@
+global:
+  openshift: true # If running on openshift, set to true
+  spire:
+    recommendations:
+      enabled: true
+    namespaces:
+      create: true
+    ingressControllerType: "" # If not openshift, and want to expose services, set to a supported option [ingress-nginx]
+    # Update these
+    clusterName: okd
+    trustDomain: apps.okd.homelab.arthurvardevanyan.com
+    caSubject:
+      country: US
+      organization: arthurvardevanyan.com
+      commonName: apps.okd.homelab.arthurvardevanyan.com
+  persistence:
+    storageClass: rook-ceph-block-ci
