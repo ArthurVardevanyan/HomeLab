@@ -29,6 +29,9 @@ apiVersion: spire.spiffe.io/v1alpha1
 kind: ClusterSPIFFEID
 metadata:
   name: spire-mgmt-spire-default
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
 spec:
   className: "spire-mgmt-spire"
   hint: default
@@ -48,6 +51,9 @@ apiVersion: spire.spiffe.io/v1alpha1
 kind: ClusterSPIFFEID
 metadata:
   name: spire-mgmt-spire-oidc-discovery-provider
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
 spec:
   className: "spire-mgmt-spire"
   hint: oidc-discovery-provider
@@ -74,6 +80,9 @@ apiVersion: spire.spiffe.io/v1alpha1
 kind: ClusterSPIFFEID
 metadata:
   name: spire-mgmt-spire-test-keys
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
 spec:
   className: "spire-mgmt-spire"
   hint: test-keys

@@ -36,7 +36,7 @@ spec:
             - "-Rvt"
             - container_file_t
             - spire-agent-socket/
-          image: "registry.access.redhat.com/ubi9:latest"
+          image: "registry.access.redhat.com/ubi9/ubi:9.5-1744101466@sha256:6db9bfa8c17ca247dcd53970df5f4e90fa423d6deaaa7096e48aba986de906e8"
           imagePullPolicy: Always
           securityContext:
             capabilities:
@@ -51,7 +51,7 @@ spec:
       containers:
         # This is the container which runs the SPIFFE CSI driver.
         - name: spiffe-csi-driver
-          image: "ghcr.io/spiffe/spiffe-csi-driver:0.2.7"
+          image: "ghcr.io/spiffe/spiffe-csi-driver:0.2.7@sha256:9dfe4f0caff096164fd921aa7f15319804df2fc0325f1d90bc793ef3256ab1cd"
           imagePullPolicy: IfNotPresent
           args:
             [
@@ -94,7 +94,7 @@ spec:
         # of all the little details required to register a CSI driver with
         # the kubelet.
         - name: node-driver-registrar
-          image: "registry.k8s.io/sig-storage/csi-node-driver-registrar:v2.9.4"
+          image: "registry.k8s.io/sig-storage/csi-node-driver-registrar:v2.9.4@sha256:ab6c4603d8da43d9f33361a5716552080e3f72badfad099d76fcf4b59e547d80"
           imagePullPolicy: IfNotPresent
           args:
             [
@@ -105,7 +105,6 @@ spec:
               "-health-port",
               "9809",
             ]
-          env:
           volumeMounts:
             # The registrar needs access to the SPIFFE CSI driver socket
             - mountPath: /spiffe-csi
@@ -212,7 +211,7 @@ spec:
             runAsGroup: 0
       containers:
         - name: "spire-agent"
-          image: "ghcr.io/spiffe/spire-agent:1.12.0"
+          image: "ghcr.io/spiffe/spire-agent:1.12.0@sha256:8fd8061d354dab68b64b000f74603d2be7a667f04bdb349b665ab064cb7aff9b"
           imagePullPolicy: "IfNotPresent"
           args: ["-config", "/opt/spire/conf/agent/agent.conf"]
           securityContext: {}

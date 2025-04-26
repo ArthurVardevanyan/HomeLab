@@ -53,7 +53,7 @@ spec:
             runAsNonRoot: true
             seccompProfile:
               type: RuntimeDefault
-          image: "ghcr.io/spiffe/spire-server:1.12.0"
+          image: "ghcr.io/spiffe/spire-server:1.12.0@sha256:5e2d487cd6c0a0521978ee101126c922dce22f6f1c77e88ad4cac24f27b799d4"
           imagePullPolicy: IfNotPresent
           args:
             - -expandEnv
@@ -109,7 +109,7 @@ spec:
             runAsNonRoot: true
             seccompProfile:
               type: RuntimeDefault
-          image: "ghcr.io/spiffe/spire-controller-manager:0.6.0"
+          image: "ghcr.io/spiffe/spire-controller-manager:0.6.0@sha256:1a6876c5c66d836a1697492f431e1ff4e52e4a6d61200574535af33e72b1668b"
           imagePullPolicy: IfNotPresent
           args:
             - --config=controller-manager-config.yaml
@@ -162,6 +162,7 @@ spec:
     - metadata:
         name: spire-data
       spec:
+        storageClassName: rook-ceph-block-ci
         accessModes:
           - ReadWriteOnce
         resources:
