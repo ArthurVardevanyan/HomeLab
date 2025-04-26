@@ -84,7 +84,13 @@ spec:
               port: healthz
             initialDelaySeconds: 5
             periodSeconds: 5
-          resources: {}
+          resources:
+            limits:
+              cpu: 100m
+              memory: 128Mi
+            requests:
+              cpu: 50m
+              memory: 64Mi
           volumeMounts:
             - name: spire-server-socket
               mountPath: /tmp/spire-server/private
@@ -132,7 +138,13 @@ spec:
             httpGet:
               path: /readyz
               port: healthz
-          resources: {}
+          resources:
+            limits:
+              cpu: 250m
+              memory: 128Mi
+            requests:
+              cpu: 100m
+              memory: 64Mi
           volumeMounts:
             - name: spire-server-socket
               mountPath: /tmp/spire-server/private

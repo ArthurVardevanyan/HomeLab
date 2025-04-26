@@ -42,7 +42,13 @@ spec:
             runAsNonRoot: true
             seccompProfile:
               type: RuntimeDefault
-          resources: {}
+          resources:
+            limits:
+              cpu: 20m
+              memory: 24Mi
+            requests:
+              cpu: 10m
+              memory: 12Mi
           image: "ghcr.io/spiffe/spiffe-helper:0.10.0@sha256:95f5000aa1e0aadbfde20d66f1ad25733034162825aa51cc922ac78365bb8ee8"
           imagePullPolicy: IfNotPresent
           args:
@@ -106,9 +112,21 @@ spec:
               port: healthz
             initialDelaySeconds: 5
             periodSeconds: 5
-          resources: {}
+          resources:
+            limits:
+              cpu: 20m
+              memory: 24Mi
+            requests:
+              cpu: 10m
+              memory: 12Mi
         - name: spiffe-helper
-          resources: {}
+          resources:
+            limits:
+              cpu: 20m
+              memory: 24Mi
+            requests:
+              cpu: 10m
+              memory: 12Mi
           securityContext:
             allowPrivilegeEscalation: false
             capabilities:
