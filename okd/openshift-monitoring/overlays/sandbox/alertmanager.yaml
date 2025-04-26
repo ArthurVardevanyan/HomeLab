@@ -1,0 +1,32 @@
+global:
+  resolve_timeout: 10m
+inhibit_rules:
+  - equal:
+      - namespace
+      - alertname
+    source_matchers:
+      - severity = critical
+    target_matchers:
+      - severity =~ warning|info
+  - equal:
+      - namespace
+      - alertname
+    source_matchers:
+      - severity = warning
+    target_matchers:
+      - severity = info
+receivers:
+  - name: discord
+    discord_configs:
+      - send_resolved: true
+        webhook_url: https://discord.com/api/webhooks/<path:secret/data/gitlab/discord#alert-webhook-sandbox>
+        title: |
+          {{- if gt (len .Alerts.Firing) 0 }} [FIRING]: {{- else }} [RESOLVED]: {{- end }}  {{ .CommonLabels.alertname }}
+route:
+  group_by:
+    - namespace
+  group_interval: 10m
+  group_wait: 60s
+  receiver: discord
+  repeat_interval: 12h
+  routes: []

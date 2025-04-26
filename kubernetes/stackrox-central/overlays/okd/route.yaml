@@ -19,13 +19,16 @@ metadata:
     meta.helm.sh/release-namespace: stackrox
     owner: stackrox
 spec:
+  host: central-stackrox.apps.okd.homelab.arthurvardevanyan.com
+  to:
+    kind: Service
+    name: central
+    weight: 100
   port:
     targetPort: https
   tls:
     termination: passthrough
-  to:
-    kind: Service
-    name: central
+  wildcardPolicy: None
 ---
 # Source: stackrox-central-services/templates/01-central-15-exposure.yaml
 apiVersion: route.openshift.io/v1
@@ -47,11 +50,13 @@ metadata:
     meta.helm.sh/release-namespace: stackrox
     owner: stackrox
 spec:
-  host: "central.stackrox"
+  host: central.stackrox
+  to:
+    kind: Service
+    name: central
+    weight: 100
   port:
     targetPort: https
   tls:
     termination: passthrough
-  to:
-    kind: Service
-    name: central
+  wildcardPolicy: None
