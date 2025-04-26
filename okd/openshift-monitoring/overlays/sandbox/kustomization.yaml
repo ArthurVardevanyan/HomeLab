@@ -4,15 +4,12 @@ resources:
   - ../../base
 generatorOptions:
   disableNameSuffixHash: true
-
+secretGenerator:
+  - files:
+      - alertmanager.yaml
+    name: alertmanager-main
+    namespace: openshift-monitoring
 patches:
-  - patch: |-
-      - op: replace
-        path: /stringData/DISCORD_WEBHOOK
-        value: https://discord.com/api/webhooks/<path:secret/data/gitlab/discord#alert-webhook-sandbox>
-    target:
-      kind: Secret
-      name: discord-webhook
   - patch: |-
       - op: replace
         path: /spec/prometheusK8s/retention

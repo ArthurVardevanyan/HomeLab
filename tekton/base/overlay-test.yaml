@@ -64,6 +64,13 @@ spec:
       script: |
         #!/bin/bash
 
+        set -o errexit  # exit on any failure
+        set -o nounset  # exit on undeclared variables
+        set -o pipefail # return value of all commands in a pipe
+        ## set -o xtrace  # command tracing
+        shopt -s failglob # If no matches are found, an error message is printed and the command is not executed
+
+
         export URL=arthurvardevanyan.com
 
         export AVP_TYPE=vault
