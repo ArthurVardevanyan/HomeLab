@@ -39,6 +39,16 @@ spec:
   workspaces:
     - name: data
 
+  volumes:
+    - name: serviceaccount-token
+      projected:
+        sources:
+          - serviceAccountToken:
+              audience: openshift
+              expirationSeconds: 3600
+              path: token
+        defaultMode: 420
+
   steps:
     - name: deploy
       image: "registry.arthurvardevanyan.com/homelab/toolbox:not_latest"
@@ -74,6 +84,10 @@ spec:
           drop:
             - ALL
             - MKNOD
+      volumeMounts:
+        - name: serviceaccount-token
+          readOnly: true
+          mountPath: /var/run/secrets/openshift/serviceaccount
       script: |
         #!/bin/bash
 
@@ -87,12 +101,12 @@ spec:
           echo "Exchanging Token"
           export KUBECONFIG="${WORKSPACE_DATA_PATH}/kubeconfig"
 
-          export JSON='{
-            "namespace": "${TARGET_NAMESPACE}",
-            "serviceAccountName": "${TARGET_SERVICE_ACCOUNT}",
-          }'
+          export JSON="{
+            \"namespace\": \"${TARGET_NAMESPACE}\",
+            \"serviceAccountName\": \"${TARGET_SERVICE_ACCOUNT}\"
+          }"
 
-          export TOKEN=$(curl --header "Authorization: Bearer $(cat /var/run/secrets/kubernetes.io/serviceaccount/token)"\
+          export TOKEN=$(curl --header "Authorization: Bearer $(cat /var/run/secrets/openshift/serviceaccount/token)"\
             "${TOKEN_EXCHANGE_ENDPOINT}" -X POST \
             -H "Content-type: application/json" \
             -H "Accept: application/json" \
