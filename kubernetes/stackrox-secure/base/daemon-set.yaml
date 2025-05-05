@@ -1,3 +1,4 @@
+---
 # Source: stackrox-secured-cluster-services/templates/collector.yaml
 apiVersion: apps/v1
 kind: DaemonSet
@@ -8,8 +9,8 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: stackrox
     app.kubernetes.io/part-of: stackrox-secured-cluster-services
-    app.kubernetes.io/version: 4.6.2
-    helm.sh/chart: stackrox-secured-cluster-services-400.6.2
+    app.kubernetes.io/version: 4.7.2
+    helm.sh/chart: stackrox-secured-cluster-services-400.7.2
     service: collector
     app: collector
     auto-upgrade.stackrox.io/component: "sensor"
@@ -49,8 +50,8 @@ spec:
         app.kubernetes.io/managed-by: Helm
         app.kubernetes.io/name: stackrox
         app.kubernetes.io/part-of: stackrox-secured-cluster-services
-        app.kubernetes.io/version: 4.6.2
-        helm.sh/chart: stackrox-secured-cluster-services-400.6.2
+        app.kubernetes.io/version: 4.7.2
+        helm.sh/chart: stackrox-secured-cluster-services-400.7.2
       annotations:
         email: support@stackrox.com
         meta.helm.sh/release-name: stackrox-secured-cluster-services
@@ -61,9 +62,37 @@ spec:
       tolerations:
         - operator: Exists
       serviceAccountName: collector
+      initContainers:
+        - name: init-tls-certs
+          image: "quay.io/stackrox-io/main:4.7.2"
+          command:
+            - /stackrox/bin/init-tls-certs
+          args:
+            - --legacy=/run/secrets/stackrox.io/certs-legacy/
+            - --new=/run/secrets/stackrox.io/certs-new/
+            - --destination=/run/secrets/stackrox.io/certs/
+          resources:
+            requests:
+              memory: "100Mi"
+              cpu: "60m"
+            limits:
+              memory: "200Mi"
+              cpu: "1000m"
+          securityContext:
+            runAsNonRoot: true
+            readOnlyRootFilesystem: true
+          volumeMounts:
+            - name: certs-legacy
+              mountPath: /run/secrets/stackrox.io/certs-legacy/
+              readOnly: true
+            - name: certs-new
+              mountPath: /run/secrets/stackrox.io/certs-new/
+              readOnly: true
+            - name: certs
+              mountPath: /run/secrets/stackrox.io/certs/
       containers:
         - name: collector
-          image: "quay.io/stackrox-io/collector-slim:4.6.2@sha256:9c1ffe2d53f7f44e44f657964205a48fe414908587f5a57b10ec29b1240f6e69"
+          image: "quay.io/stackrox-io/collector:4.7.2"
           imagePullPolicy: IfNotPresent
           env:
             - name: COLLECTOR_CONFIG
@@ -93,8 +122,6 @@ spec:
               name: proc-ro
               readOnly: true
               mountPropagation: HostToContainer
-            - mountPath: /module
-              name: tmpfs-module
             - mountPath: /host/etc
               name: etc-ro
               readOnly: true
@@ -114,6 +141,9 @@ spec:
             - mountPath: /run/secrets/stackrox.io/certs/
               name: certs
               readOnly: true
+            - mountPath: "/etc/stackrox"
+              name: collector-config
+              readOnly: true
         - command:
             - stackrox/compliance
           env:
@@ -127,6 +157,8 @@ spec:
                   resource: limits.cpu
             - name: ROX_CALL_NODE_INVENTORY_ENABLED
               value: "true"
+            - name: ROX_NODE_INDEX_HOST_PATH
+              value: "/hostindex"
             - name: ROX_METRICS_PORT
               value: "disabled"
             - name: ROX_NODE_NAME
@@ -139,16 +171,16 @@ spec:
             - name: ROX_NODE_SCANNING_ENDPOINT
               value: "127.0.0.1:8444"
 
-          image: "quay.io/stackrox-io/main:4.6.2@sha256:39f89bbe66046df875b7738729782888d65f055a6ba0ee43a828902acc832e06"
+          image: "quay.io/stackrox-io/main:4.7.2"
           imagePullPolicy: IfNotPresent
           name: compliance
           resources:
             limits:
-              cpu: "50m"
-              memory: 96Mi
+              cpu: "1"
+              memory: 2Gi
             requests:
               cpu: 10m
-              memory: 48Mi
+              memory: 10Mi
           securityContext:
             runAsUser: 0
             readOnlyRootFilesystem: true
@@ -168,8 +200,13 @@ spec:
             - mountPath: /run/secrets/stackrox.io/certs/
               name: certs
               readOnly: true
+            - mountPath: /hostindex/usr/share
+              name: usr-share-ro
+              readOnly: true
+            - mountPath: /tmp
+              name: index-volume
         - name: node-inventory
-          image: "quay.io/stackrox-io/scanner-slim:4.6.2@sha256:d9370de6103ed89240e36544dd25c5a4bef44e2fda1a72b9a9b954109a8127f7"
+          image: "quay.io/stackrox-io/scanner-slim:4.7.2"
           imagePullPolicy: IfNotPresent
           command: ["/scanner", "--nodeinventory", "--config=", ""]
           ports:
@@ -204,9 +241,6 @@ spec:
         - hostPath:
             path: /proc
           name: proc-ro
-        - emptyDir:
-            medium: Memory
-          name: tmpfs-module
         - hostPath:
             path: /etc
           name: etc-ro
@@ -220,18 +254,30 @@ spec:
             path: /dev
           name: dev-ro
         - name: certs
+          emptyDir: {}
+        - name: certs-legacy
           secret:
-            secretName: collector-tls
+            secretName: "collector-tls"
+            optional: true
             items:
-              - key: collector-cert.pem
+              - key: "collector-cert.pem"
                 path: cert.pem
-              - key: collector-key.pem
+              - key: "collector-key.pem"
                 path: key.pem
               - key: ca.pem
                 path: ca.pem
+        - name: certs-new
+          secret:
+            secretName: "tls-cert-collector"
+            optional: true
         - hostPath:
             path: /
           name: host-root-ro
+        - hostPath:
+            path: /usr/share
+          name: usr-share-ro
+        - name: index-volume
+          emptyDir: {}
         - name: etc-ssl
           emptyDir: {}
         - name: etc-pki-volume
@@ -241,3 +287,7 @@ spec:
         - name: cache-volume
           emptyDir:
             sizeLimit: 200Mi
+        - name: collector-config
+          configMap:
+            name: collector-config
+            optional: true
