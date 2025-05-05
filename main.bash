@@ -155,7 +155,7 @@ stateful_workload_stop() {
   kubectl scale --replicas=0 -n heimdall statefulset/heimdall
   kubectl scale --replicas=0 -n homeassistant statefulset/homeassistant
   kubectl scale --replicas=0 -n influxdb statefulset/influxdb
-  kubectl scale --replicas=0 -n loki statefulset/loki
+  # kubectl scale --replicas=0 -n loki statefulset/loki
   # kubectl scale --replicas=0 -n mariadb-galera statefulset/mariadb-galera
   kubectl scale --replicas=0 -n nextcloud deployment/nextcloud
   kubectl scale --replicas=0 -n photoprism statefulset/photoprism
@@ -265,7 +265,7 @@ stateful_workload_start_pre() {
   # kubectl scale --replicas=3 -n unifi-network-application statefulset/mongo-unifi-network-application
 
   kubectl scale --replicas=1 -n influxdb statefulset/influxdb
-  kubectl scale --replicas=1 -n loki statefulset/loki
+  # kubectl scale --replicas=1 -n loki statefulset/loki
   # kubectl scale --replicas=3 -n mariadb-galera statefulset/mariadb-galera
   kubectl scale --replicas=1 -n prometheus statefulset/prometheus
   kubectl scale --replicas=1 -n prometheus statefulset/thanos-store-gateway
