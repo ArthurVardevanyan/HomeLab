@@ -8,7 +8,8 @@ metadata:
     app.kubernetes.io/name: velero
     app.kubernetes.io/instance: velero
     app.kubernetes.io/managed-by: Helm
-    helm.sh/chart: velero-6.4.0
+    app.kubernetes.io/version: 1.16.0
+    helm.sh/chart: velero-9.0.4
     component: velero
 spec:
   replicas: 1
@@ -25,7 +26,8 @@ spec:
         app.kubernetes.io/name: velero
         app.kubernetes.io/instance: velero
         app.kubernetes.io/managed-by: Helm
-        helm.sh/chart: velero-6.4.0
+        app.kubernetes.io/version: 1.16.0
+        helm.sh/chart: velero-9.0.4
       annotations:
         prometheus.io/path: /metrics
         prometheus.io/port: "8085"
@@ -36,7 +38,7 @@ spec:
       terminationGracePeriodSeconds: 3600
       containers:
         - name: velero
-          image: "velero/velero:v1.15.2@sha256:668467fdf39f3a610ed6f27431f38a6fbb6143a2ab302ad3e839b0074aaeba39"
+          image: "velero/velero:v1.16.0@sha256:e78aaa24545299b6d154c79ed39107c7fe4dce916c973d989e04837af96887da"
           imagePullPolicy: IfNotPresent
           ports:
             - name: http-monitoring
@@ -107,7 +109,7 @@ spec:
               value: /credentials/cloud
       dnsPolicy: ClusterFirst
       initContainers:
-        - image: docker.io/velero/velero-plugin-for-aws:v1.11.1@sha256:3b0c402e0d55eb797a7ebe1f2525f18bdcdca8ee826680cd2d7cf657071e9d58
+        - image: docker.io/velero/velero-plugin-for-aws:v1.12.0@sha256:c648365557865767366eb6597ebebf722d508dfbb1c163ca1ffd848ecf1c6dfc
           name: velero-plugin-for-aws
           resources:
             limits:
@@ -119,7 +121,7 @@ spec:
           volumeMounts:
             - mountPath: /target
               name: plugins
-        - image: quay.io/kubevirt/kubevirt-velero-plugin:v0.7.1@sha256:317671745fe6cdfda5cc2028fd7d992b1267e290952ff4f02b65adfd5896414e
+        - image: quay.io/kubevirt/kubevirt-velero-plugin:v0.8.0@sha256:9169abc2e70ec53f5762ad8df27a1a8c4adedf8be45808e4d126c8d496f2046f
           name: velero-plugin-for-kubevirt
           resources:
             limits:
