@@ -1,0 +1,656 @@
+---
+# Source: spire/charts/spiffe-oidc-discovery-provider/templates/pre-delete-hook.yaml
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: spire-spiffe-oidc-discovery-provider-pre-delete
+  namespace: spire-server
+  labels:
+    helm.sh/chart: spiffe-oidc-discovery-provider-0.1.0
+    app.kubernetes.io/name: spiffe-oidc-discovery-provider
+    app.kubernetes.io/instance: spire
+    app.kubernetes.io/version: "1.12.0"
+    app.kubernetes.io/managed-by: Helm
+  annotations:
+    "helm.sh/hook": pre-delete
+    "helm.sh/hook-delete-policy": before-hook-creation, hook-succeeded, hook-failed
+---
+# Source: spire/charts/spire-server/templates/post-install-hook.yaml
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: spire-server-post-install
+  namespace: spire-server
+  labels:
+    helm.sh/chart: spire-server-0.1.0
+    app.kubernetes.io/name: server
+    app.kubernetes.io/instance: spire
+    app.kubernetes.io/version: "1.12.0"
+    app.kubernetes.io/managed-by: Helm
+  annotations:
+    "helm.sh/hook": post-install
+    "helm.sh/hook-delete-policy": before-hook-creation, hook-succeeded, hook-failed
+---
+# Source: spire/charts/spire-server/templates/post-upgrade-hook.yaml
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: spire-server-post-upgrade
+  namespace: spire-server
+  labels:
+    helm.sh/chart: spire-server-0.1.0
+    app.kubernetes.io/name: server
+    app.kubernetes.io/instance: spire
+    app.kubernetes.io/version: "1.12.0"
+    app.kubernetes.io/managed-by: Helm
+  annotations:
+    "helm.sh/hook": post-upgrade
+    "helm.sh/hook-delete-policy": before-hook-creation, hook-succeeded, hook-failed
+---
+# Source: spire/charts/spire-server/templates/pre-upgrade-hook.yaml
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: spire-server-pre-upgrade
+  namespace: spire-server
+  labels:
+    helm.sh/chart: spire-server-0.1.0
+    app.kubernetes.io/name: server
+    app.kubernetes.io/instance: spire
+    app.kubernetes.io/version: "1.12.0"
+    app.kubernetes.io/managed-by: Helm
+  annotations:
+    "helm.sh/hook": pre-upgrade
+    "helm.sh/hook-delete-policy": before-hook-creation, hook-succeeded, hook-failed
+---
+# Source: spire/charts/spire-server/templates/post-install-hook.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: spire-server-post-install
+  annotations:
+    "helm.sh/hook": post-install
+    "helm.sh/hook-delete-policy": before-hook-creation, hook-succeeded, hook-failed
+rules:
+  - apiGroups: ["admissionregistration.k8s.io"]
+    resources: ["validatingwebhookconfigurations"]
+    resourceNames: ["spire-mgmt-spire-controller-manager-webhook"]
+    verbs: ["get", "patch"]
+---
+# Source: spire/charts/spire-server/templates/post-upgrade-hook.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: spire-server-post-upgrade
+  annotations:
+    "helm.sh/hook": post-upgrade
+    "helm.sh/hook-delete-policy": before-hook-creation, hook-succeeded, hook-failed
+rules:
+  - apiGroups: ["admissionregistration.k8s.io"]
+    resources: ["validatingwebhookconfigurations"]
+    resourceNames: ["spire-mgmt-spire-controller-manager-webhook"]
+    verbs: ["get", "patch"]
+---
+# Source: spire/charts/spire-server/templates/pre-upgrade-hook.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: spire-server-pre-upgrade
+  annotations:
+    "helm.sh/hook": pre-upgrade
+    "helm.sh/hook-delete-policy": before-hook-creation, hook-succeeded, hook-failed
+rules:
+  - apiGroups: ["admissionregistration.k8s.io"]
+    resources: ["validatingwebhookconfigurations"]
+    resourceNames: ["spire-mgmt-spire-controller-manager-webhook"]
+    verbs: ["get", "patch"]
+---
+# Source: spire/charts/spire-server/templates/post-install-hook.yaml
+kind: ClusterRoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: spire-server-post-install
+  annotations:
+    "helm.sh/hook": post-install
+    "helm.sh/hook-delete-policy": before-hook-creation, hook-succeeded, hook-failed
+subjects:
+  - kind: ServiceAccount
+    name: spire-server-post-install
+    namespace: spire-server
+roleRef:
+  kind: ClusterRole
+  name: spire-server-post-install
+  apiGroup: rbac.authorization.k8s.io
+---
+# Source: spire/charts/spire-server/templates/post-upgrade-hook.yaml
+kind: ClusterRoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: spire-server-post-upgrade
+  annotations:
+    "helm.sh/hook": post-upgrade
+    "helm.sh/hook-delete-policy": before-hook-creation, hook-succeeded, hook-failed
+subjects:
+  - kind: ServiceAccount
+    name: spire-server-post-upgrade
+    namespace: spire-server
+roleRef:
+  kind: ClusterRole
+  name: spire-server-post-upgrade
+  apiGroup: rbac.authorization.k8s.io
+---
+# Source: spire/charts/spire-server/templates/pre-upgrade-hook.yaml
+kind: ClusterRoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: spire-server-pre-upgrade
+  annotations:
+    "helm.sh/hook": pre-upgrade
+    "helm.sh/hook-delete-policy": before-hook-creation, hook-succeeded, hook-failed
+subjects:
+  - kind: ServiceAccount
+    name: spire-server-pre-upgrade
+    namespace: spire-server
+roleRef:
+  kind: ClusterRole
+  name: spire-server-pre-upgrade
+  apiGroup: rbac.authorization.k8s.io
+---
+# Source: spire/charts/spiffe-oidc-discovery-provider/templates/pre-delete-hook.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: spire-spiffe-oidc-discovery-provider-pre-delete
+  namespace: spire-server
+  annotations:
+    "helm.sh/hook": pre-delete
+    "helm.sh/hook-delete-policy": before-hook-creation, hook-succeeded, hook-failed
+rules:
+  - apiGroups: ["apps"]
+    resources: ["deployments"]
+    resourceNames: ["spire-spiffe-oidc-discovery-provider"]
+    verbs: ["get", "delete"]
+---
+# Source: spire/charts/spiffe-oidc-discovery-provider/templates/pre-delete-hook.yaml
+kind: RoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: spire-spiffe-oidc-discovery-provider-pre-delete
+  namespace: spire-server
+  annotations:
+    "helm.sh/hook": pre-delete
+    "helm.sh/hook-delete-policy": before-hook-creation, hook-succeeded, hook-failed
+subjects:
+  - kind: ServiceAccount
+    name: spire-spiffe-oidc-discovery-provider-pre-delete
+    namespace: spire-server
+roleRef:
+  kind: Role
+  name: spire-spiffe-oidc-discovery-provider-pre-delete
+  apiGroup: rbac.authorization.k8s.io
+---
+# Source: spire/charts/spiffe-oidc-discovery-provider/templates/tests/test-connection.yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: "spire-spiffe-oidc-discovery-provider-test-connection"
+  namespace: spire-server
+  labels:
+    helm.sh/chart: spiffe-oidc-discovery-provider-0.1.0
+    app.kubernetes.io/name: spiffe-oidc-discovery-provider
+    app.kubernetes.io/instance: spire
+    app.kubernetes.io/version: "1.12.0"
+    app.kubernetes.io/managed-by: Helm
+  annotations:
+    "helm.sh/hook": test
+spec:
+  securityContext:
+    fsGroupChangePolicy: OnRootMismatch
+  containers:
+    - name: curl-service-name
+      image: "cgr.dev/chainguard/bash:latest@sha256:ce272ee5a3739a3c45784c317b2fb1e93a4cc4ea1f4d3feabb702b278e5bf514"
+      command: ["curl"]
+      args:
+        [
+          "-s",
+          "-f",
+          "-k",
+          "https://spire-spiffe-oidc-discovery-provider:443/.well-known/openid-configuration",
+        ]
+      securityContext:
+        allowPrivilegeEscalation: false
+        capabilities:
+          drop:
+            - ALL
+        readOnlyRootFilesystem: true
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
+    - name: curl-service-name-namespace
+      image: "cgr.dev/chainguard/bash:latest@sha256:ce272ee5a3739a3c45784c317b2fb1e93a4cc4ea1f4d3feabb702b278e5bf514"
+      command: ["curl"]
+      args:
+        [
+          "-s",
+          "-f",
+          "-k",
+          "https://spire-spiffe-oidc-discovery-provider.spire-server:443/.well-known/openid-configuration",
+        ]
+      securityContext:
+        allowPrivilegeEscalation: false
+        capabilities:
+          drop:
+            - ALL
+        readOnlyRootFilesystem: true
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
+    - name: curl-service-name-namespace-svc-cluster-local
+      image: "cgr.dev/chainguard/bash:latest@sha256:ce272ee5a3739a3c45784c317b2fb1e93a4cc4ea1f4d3feabb702b278e5bf514"
+      command: ["curl"]
+      args:
+        [
+          "-s",
+          "-f",
+          "-k",
+          "https://spire-spiffe-oidc-discovery-provider.spire-server.svc.cluster.local:443/.well-known/openid-configuration",
+        ]
+      securityContext:
+        allowPrivilegeEscalation: false
+        capabilities:
+          drop:
+            - ALL
+        readOnlyRootFilesystem: true
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
+  restartPolicy: Never
+---
+# Source: spire/charts/spiffe-oidc-discovery-provider/templates/tests/test-keys.yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: "spire-spiffe-oidc-discovery-provider-test-keys"
+  namespace: spire-server
+  labels:
+    helm.sh/chart: spiffe-oidc-discovery-provider-0.1.0
+    app.kubernetes.io/name: spiffe-oidc-discovery-provider
+    app.kubernetes.io/instance: spire
+    app.kubernetes.io/version: "1.12.0"
+    app.kubernetes.io/managed-by: Helm
+    release: spire
+    release-namespace: spire-mgmt
+    component: test-keys
+  annotations:
+    "helm.sh/hook": test
+spec:
+  securityContext:
+    fsGroupChangePolicy: OnRootMismatch
+  serviceAccountName: spire-spiffe-oidc-discovery-provider
+  initContainers:
+    - name: static-busybox
+      image: "busybox:1.37.0-uclibc"
+      command:
+        - sh
+        - -c
+        - |
+          cp /bin/busybox /data/busybox
+          chmod +x /data/busybox
+      securityContext:
+        allowPrivilegeEscalation: false
+        capabilities:
+          drop:
+            - ALL
+        readOnlyRootFilesystem: true
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
+      volumeMounts:
+        - name: data-volume
+          mountPath: /data
+    - name: install-step
+      image: "docker.io/smallstep/step-cli:0.28.6"
+      workingDir: /data
+      command:
+        - sh
+        - -c
+        - |
+          cp /usr/local/bin/step /data/step
+      securityContext:
+        allowPrivilegeEscalation: false
+        capabilities:
+          drop:
+            - ALL
+        readOnlyRootFilesystem: true
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
+      volumeMounts:
+        - name: data-volume
+          mountPath: /data
+    - name: gettoken
+      image: "ghcr.io/spiffe/spire-agent:1.12.0"
+      command:
+        - /data/busybox
+        - sh
+        - -c
+        - |
+          while true; do
+            /opt/spire/bin/spire-agent api fetch jwt -audience foo -format json -socketPath /spire-agent/spire-agent.sock -timeout 5s > /data/token.svid
+            [ $? -eq 0 ] && break
+            sleep 1
+          done
+      securityContext:
+        allowPrivilegeEscalation: false
+        capabilities:
+          drop:
+            - ALL
+        readOnlyRootFilesystem: true
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
+      volumeMounts:
+        - name: data-volume
+          mountPath: /data
+        - name: spire-api
+          mountPath: /spire-agent
+          readOnly: true
+  containers:
+    - name: verify-keys
+      image: "cgr.dev/chainguard/min-toolkit-debug:latest@sha256:2f8ac6547029ed217bb40167bf39883b4bc606b3b747ecaf710fab9779ef786f"
+      command:
+        - bash
+      workingDir: /data
+      env:
+        - name: TMPDIR
+          value: /data
+      args:
+        - -cx
+        - |
+          URL=https://spire-spiffe-oidc-discovery-provider.spire-server.svc.cluster.local:443
+
+          cat /data/token.svid
+          JWT=$(cat /data/token.svid | jq -r '.[] | select(.svids) | .svids[0].svid' | xargs)
+          KID=$(echo $JWT | base64 -d 2>/dev/null | jq -r '.kid')
+          # Retrieve public key from JWK set, match kid from JWT to locate the correct one
+          curl -k -s --fail-with-body "${URL}"/keys | jq '.keys[] | select(.kid == "'${KID}'")' > public.pem
+          # Verify JWT with public pem
+          echo $JWT | /data/step crypto jwt verify --key=public.pem --alg=RS256 --subtle
+      securityContext:
+        allowPrivilegeEscalation: false
+        capabilities:
+          drop:
+            - ALL
+        readOnlyRootFilesystem: true
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
+      volumeMounts:
+        - mountPath: /data
+          name: data-volume
+  restartPolicy: Never
+  volumes:
+    - csi:
+        driver: csi.spiffe.io
+        readOnly: true
+      name: spire-api
+    - name: data-volume
+      emptyDir: {}
+---
+# Source: spire/charts/spire-server/templates/tests/test-connection.yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: "spire-server-test-connection"
+  namespace: spire-server
+  labels:
+    helm.sh/chart: spire-server-0.1.0
+    app.kubernetes.io/name: server
+    app.kubernetes.io/instance: spire
+    app.kubernetes.io/version: "1.12.0"
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/component: test
+  annotations:
+    "helm.sh/hook": test
+spec:
+  securityContext:
+    fsGroupChangePolicy: OnRootMismatch
+  containers:
+    - name: curl
+      image: "cgr.dev/chainguard/bash:latest@sha256:ce272ee5a3739a3c45784c317b2fb1e93a4cc4ea1f4d3feabb702b278e5bf514"
+      command: ["bash"]
+      args:
+        - -c
+        - |
+          curl -f -s 'https://spire-server:443'
+          NOCA=$?
+          curl -k -f -s 'https://spire-server:443'
+          IGNORECA=$?
+          echo $NOCA $IGNORECA
+          if [ $NOCA -eq 60 -a $IGNORECA -eq 22 ]; then
+            # We were able to connect to the server but didn't recognize the ca (60) and the page not found (22) because we're not using grpc
+            exit 0
+          fi
+          exit 1
+      securityContext:
+        allowPrivilegeEscalation: false
+        capabilities:
+          drop:
+            - ALL
+        readOnlyRootFilesystem: true
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
+  restartPolicy: Never
+---
+# Source: spire/charts/spiffe-oidc-discovery-provider/templates/pre-delete-hook.yaml
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: spire-spiffe-oidc-discovery-provider-pre-delete
+  namespace: spire-server
+  labels:
+    helm.sh/chart: spiffe-oidc-discovery-provider-0.1.0
+    app.kubernetes.io/name: spiffe-oidc-discovery-provider
+    app.kubernetes.io/instance: spire
+    app.kubernetes.io/version: "1.12.0"
+    app.kubernetes.io/managed-by: Helm
+  annotations:
+    "helm.sh/hook": pre-delete
+    "helm.sh/hook-delete-policy": before-hook-creation, hook-succeeded, hook-failed
+spec:
+  template:
+    metadata:
+      name: spire-spiffe-oidc-discovery-provider-pre-delete
+    spec:
+      restartPolicy: Never
+      serviceAccountName: spire-spiffe-oidc-discovery-provider-pre-delete
+      securityContext:
+        fsGroupChangePolicy: OnRootMismatch
+      containers:
+        - name: pre-delete-job
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+            readOnlyRootFilesystem: true
+            runAsNonRoot: true
+            seccompProfile:
+              type: RuntimeDefault
+          image: "docker.io/rancher/kubectl:v1.31.0"
+          args:
+            - delete
+            - -n
+            - spire-server
+            - deployment
+            - spire-spiffe-oidc-discovery-provider
+            - --wait
+---
+# Source: spire/charts/spire-server/templates/post-install-hook.yaml
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: spire-server-post-install
+  namespace: spire-server
+  labels:
+    helm.sh/chart: spire-server-0.1.0
+    app.kubernetes.io/name: server
+    app.kubernetes.io/instance: spire
+    app.kubernetes.io/version: "1.12.0"
+    app.kubernetes.io/managed-by: Helm
+  annotations:
+    "helm.sh/hook": post-install
+    "helm.sh/hook-delete-policy": before-hook-creation, hook-succeeded, hook-failed
+spec:
+  template:
+    metadata:
+      name: spire-server-post-install
+    spec:
+      restartPolicy: Never
+      serviceAccountName: spire-server-post-install
+      securityContext:
+        fsGroupChangePolicy: OnRootMismatch
+      containers:
+        - name: post-install-job
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+            readOnlyRootFilesystem: true
+            runAsNonRoot: true
+            seccompProfile:
+              type: RuntimeDefault
+          image: "docker.io/rancher/kubectl:v1.31.0"
+          args:
+            - patch
+            - validatingwebhookconfiguration
+            - spire-mgmt-spire-controller-manager-webhook
+            - --type=strategic
+            - -p
+            - |
+              {
+                "webhooks":[
+                  {
+                    "name":"vclusterspiffeid.kb.io",
+                    "failurePolicy":"Fail"
+                  },
+                  {
+                    "name":"vclusterfederatedtrustdomain.kb.io",
+                    "failurePolicy":"Fail"
+                  }
+                ]
+              }
+---
+# Source: spire/charts/spire-server/templates/post-upgrade-hook.yaml
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: spire-server-post-upgrade
+  namespace: spire-server
+  labels:
+    helm.sh/chart: spire-server-0.1.0
+    app.kubernetes.io/name: server
+    app.kubernetes.io/instance: spire
+    app.kubernetes.io/version: "1.12.0"
+    app.kubernetes.io/managed-by: Helm
+  annotations:
+    "helm.sh/hook": post-upgrade
+    "helm.sh/hook-delete-policy": before-hook-creation, hook-succeeded, hook-failed
+spec:
+  template:
+    metadata:
+      name: spire-server-post-upgrade
+    spec:
+      restartPolicy: Never
+      serviceAccountName: spire-server-post-upgrade
+      securityContext:
+        fsGroupChangePolicy: OnRootMismatch
+      containers:
+        - name: post-upgrade-job
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+            readOnlyRootFilesystem: true
+            runAsNonRoot: true
+            seccompProfile:
+              type: RuntimeDefault
+          image: "docker.io/rancher/kubectl:v1.31.0"
+          args:
+            - patch
+            - validatingwebhookconfiguration
+            - spire-mgmt-spire-controller-manager-webhook
+            - --type=strategic
+            - -p
+            - |
+              {
+                "webhooks":[
+                  {
+                    "name":"vclusterspiffeid.kb.io",
+                    "failurePolicy":"Fail"
+                  },
+                  {
+                    "name":"vclusterfederatedtrustdomain.kb.io",
+                    "failurePolicy":"Fail"
+                  }
+                ]
+              }
+---
+# Source: spire/charts/spire-server/templates/pre-upgrade-hook.yaml
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: spire-server-pre-upgrade
+  namespace: spire-server
+  labels:
+    helm.sh/chart: spire-server-0.1.0
+    app.kubernetes.io/name: server
+    app.kubernetes.io/instance: spire
+    app.kubernetes.io/version: "1.12.0"
+    app.kubernetes.io/managed-by: Helm
+  annotations:
+    "helm.sh/hook": pre-upgrade
+    "helm.sh/hook-delete-policy": before-hook-creation, hook-succeeded, hook-failed
+spec:
+  template:
+    metadata:
+      name: spire-server-pre-upgrade
+    spec:
+      restartPolicy: Never
+      serviceAccountName: spire-server-pre-upgrade
+      securityContext:
+        fsGroupChangePolicy: OnRootMismatch
+      containers:
+        - name: post-install-job
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+            readOnlyRootFilesystem: true
+            runAsNonRoot: true
+            seccompProfile:
+              type: RuntimeDefault
+          image: "docker.io/rancher/kubectl:v1.31.0"
+          args:
+            - patch
+            - validatingwebhookconfiguration
+            - spire-mgmt-spire-controller-manager-webhook
+            - --type=strategic
+            - -p
+            - |
+              {
+                "webhooks":[
+                  {
+                    "name":"vclusterspiffeid.kb.io",
+                    "failurePolicy":"Ignore"
+                  },
+                  {
+                    "name":"vclusterfederatedtrustdomain.kb.io",
+                    "failurePolicy":"Ignore"
+                  }
+                ]
+              }
