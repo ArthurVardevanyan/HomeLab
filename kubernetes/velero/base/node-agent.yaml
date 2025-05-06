@@ -9,7 +9,7 @@ metadata:
     app.kubernetes.io/name: velero
     app.kubernetes.io/instance: velero
     app.kubernetes.io/managed-by: Helm
-    helm.sh/chart: velero-6.4.0
+    helm.sh/chart: velero-9.0.4
 spec:
   selector:
     matchLabels:
@@ -18,10 +18,11 @@ spec:
     metadata:
       labels:
         name: node-agent
+        role: node-agent
         app.kubernetes.io/name: velero
         app.kubernetes.io/instance: velero
         app.kubernetes.io/managed-by: Helm
-        helm.sh/chart: velero-6.4.0
+        helm.sh/chart: velero-9.0.4
       annotations:
         prometheus.io/path: /metrics
         prometheus.io/port: "8085"
@@ -38,12 +39,15 @@ spec:
         - name: host-pods
           hostPath:
             path: /var/lib/kubelet/pods
+        - name: host-plugins
+          hostPath:
+            path: /var/lib/kubelet/plugins
         - name: scratch
           emptyDir: {}
       dnsPolicy: ClusterFirst
       containers:
         - name: node-agent
-          image: "docker.io/velero/velero:v1.15.2@sha256:668467fdf39f3a610ed6f27431f38a6fbb6143a2ab302ad3e839b0074aaeba39"
+          image: "velero/velero:v1.16.0@sha256:e78aaa24545299b6d154c79ed39107c7fe4dce916c973d989e04837af96887da"
           imagePullPolicy: IfNotPresent
           ports:
             - name: http-monitoring
@@ -58,6 +62,9 @@ spec:
               mountPath: /credentials
             - name: host-pods
               mountPath: /host_pods
+              mountPropagation: HostToContainer
+            - name: host-plugins
+              mountPath: /host_plugins
               mountPropagation: HostToContainer
             - name: scratch
               mountPath: /scratch
