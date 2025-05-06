@@ -11,8 +11,8 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: stackrox
     app.kubernetes.io/part-of: stackrox-secured-cluster-services
-    app.kubernetes.io/version: 4.6.2
-    helm.sh/chart: stackrox-secured-cluster-services-400.6.2
+    app.kubernetes.io/version: 4.7.2
+    helm.sh/chart: stackrox-secured-cluster-services-400.7.2
     app: admission-control
     auto-upgrade.stackrox.io/component: "sensor"
   annotations:
@@ -44,8 +44,8 @@ spec:
         app.kubernetes.io/managed-by: Helm
         app.kubernetes.io/name: stackrox
         app.kubernetes.io/part-of: stackrox-secured-cluster-services
-        app.kubernetes.io/version: 4.6.2
-        helm.sh/chart: stackrox-secured-cluster-services-400.6.2
+        app.kubernetes.io/version: 4.7.2
+        helm.sh/chart: stackrox-secured-cluster-services-400.7.2
       annotations:
         email: support@stackrox.com
         meta.helm.sh/release-name: stackrox-secured-cluster-services
@@ -77,8 +77,36 @@ spec:
                 topologyKey: kubernetes.io/hostname
               weight: 60
       serviceAccountName: admission-control
+      initContainers:
+        - name: init-tls-certs
+          image: "quay.io/stackrox-io/main:4.7.2@sha256:904d9ab92b2f20f7fee3a9d04900dcf330d2e2bf3f088cf45d17afc2f64e0635"
+          command:
+            - /stackrox/bin/init-tls-certs
+          args:
+            - --legacy=/run/secrets/stackrox.io/certs-legacy/
+            - --new=/run/secrets/stackrox.io/certs-new/
+            - --destination=/run/secrets/stackrox.io/certs/
+          resources:
+            requests:
+              memory: "100Mi"
+              cpu: "60m"
+            limits:
+              memory: "200Mi"
+              cpu: "1000m"
+          securityContext:
+            runAsNonRoot: true
+            readOnlyRootFilesystem: true
+          volumeMounts:
+            - name: certs-legacy
+              mountPath: /run/secrets/stackrox.io/certs-legacy/
+              readOnly: true
+            - name: certs-new
+              mountPath: /run/secrets/stackrox.io/certs-new/
+              readOnly: true
+            - name: certs
+              mountPath: /run/secrets/stackrox.io/certs/
       containers:
-        - image: "quay.io/stackrox-io/main:4.6.2@sha256:39f89bbe66046df875b7738729782888d65f055a6ba0ee43a828902acc832e06"
+        - image: "quay.io/stackrox-io/main:4.7.2@sha256:904d9ab92b2f20f7fee3a9d04900dcf330d2e2bf3f088cf45d17afc2f64e0635"
           imagePullPolicy: IfNotPresent
           name: admission-control
           readinessProbe:
@@ -113,6 +141,10 @@ spec:
               valueFrom:
                 resourceFieldRef:
                   resource: limits.cpu
+            - name: POD_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
             - name: ROX_SENSOR_ENDPOINT
               value: sensor.stackrox.svc:443
 
@@ -142,16 +174,22 @@ spec:
 
       volumes:
         - name: certs
+          emptyDir: {}
+        - name: certs-legacy
           secret:
-            secretName: admission-control-tls
+            secretName: "admission-control-tls"
             optional: true
             items:
-              - key: admission-control-cert.pem
+              - key: "admission-control-cert.pem"
                 path: cert.pem
-              - key: admission-control-key.pem
+              - key: "admission-control-key.pem"
                 path: key.pem
               - key: ca.pem
                 path: ca.pem
+        - name: certs-new
+          secret:
+            secretName: "tls-cert-admission-control"
+            optional: true
         - name: ca
           secret:
             secretName: service-ca
@@ -191,8 +229,8 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: stackrox
     app.kubernetes.io/part-of: stackrox-secured-cluster-services
-    app.kubernetes.io/version: 4.6.2
-    helm.sh/chart: stackrox-secured-cluster-services-400.6.2
+    app.kubernetes.io/version: 4.7.2
+    helm.sh/chart: stackrox-secured-cluster-services-400.7.2
     app: sensor
     auto-upgrade.stackrox.io/component: "sensor"
   annotations:
@@ -225,8 +263,8 @@ spec:
         app.kubernetes.io/managed-by: Helm
         app.kubernetes.io/name: stackrox
         app.kubernetes.io/part-of: stackrox-secured-cluster-services
-        app.kubernetes.io/version: 4.6.2
-        helm.sh/chart: stackrox-secured-cluster-services-400.6.2
+        app.kubernetes.io/version: 4.7.2
+        helm.sh/chart: stackrox-secured-cluster-services-400.7.2
       annotations:
         traffic.sidecar.istio.io/excludeInboundPorts: "8443,9443"
         email: support@stackrox.com
@@ -266,8 +304,36 @@ spec:
                     operator: DoesNotExist
               weight: 100
       serviceAccountName: sensor
+      initContainers:
+        - name: init-tls-certs
+          image: "quay.io/stackrox-io/main:4.7.2@sha256:904d9ab92b2f20f7fee3a9d04900dcf330d2e2bf3f088cf45d17afc2f64e0635"
+          command:
+            - /stackrox/bin/init-tls-certs
+          args:
+            - --legacy=/run/secrets/stackrox.io/certs-legacy/
+            - --new=/run/secrets/stackrox.io/certs-new/
+            - --destination=/run/secrets/stackrox.io/certs/
+          resources:
+            requests:
+              memory: "100Mi"
+              cpu: "60m"
+            limits:
+              memory: "200Mi"
+              cpu: "1000m"
+          securityContext:
+            runAsNonRoot: true
+            readOnlyRootFilesystem: true
+          volumeMounts:
+            - name: certs-legacy
+              mountPath: /run/secrets/stackrox.io/certs-legacy/
+              readOnly: true
+            - name: certs-new
+              mountPath: /run/secrets/stackrox.io/certs-new/
+              readOnly: true
+            - name: certs
+              mountPath: /run/secrets/stackrox.io/certs/
       containers:
-        - image: "quay.io/stackrox-io/main:4.6.2@sha256:39f89bbe66046df875b7738729782888d65f055a6ba0ee43a828902acc832e06"
+        - image: "quay.io/stackrox-io/main:4.7.2@sha256:904d9ab92b2f20f7fee3a9d04900dcf330d2e2bf3f088cf45d17afc2f64e0635"
           imagePullPolicy: IfNotPresent
           name: sensor
           readinessProbe:
@@ -323,9 +389,9 @@ spec:
               value: "true"
             - name: ROX_HELM_CLUSTER_CONFIG_FP
               valueFrom:
-              secretKeyRef:
-                name: config-fingerprint
-                key: config-fingerprint
+                secretKeyRef:
+                  name: config-fingerprint
+                  key: config-fingerprint
             - name: ROX_ENABLE_SECURE_METRICS
               value: "true"
 
@@ -362,15 +428,22 @@ spec:
               readOnly: true
       volumes:
         - name: certs
+          emptyDir: {}
+        - name: certs-legacy
           secret:
-            secretName: sensor-tls
+            secretName: "sensor-tls"
+            optional: true
             items:
-              - key: sensor-cert.pem
+              - key: "sensor-cert.pem"
                 path: cert.pem
-              - key: sensor-key.pem
+              - key: "sensor-key.pem"
                 path: key.pem
               - key: ca.pem
                 path: ca.pem
+        - name: certs-new
+          secret:
+            secretName: "tls-cert-sensor"
+            optional: true
         - name: sensor-etc-ssl-volume
           emptyDir: {}
         - name: sensor-etc-pki-volume

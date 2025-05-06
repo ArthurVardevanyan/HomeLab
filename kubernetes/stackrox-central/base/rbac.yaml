@@ -11,8 +11,8 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: stackrox
     app.kubernetes.io/part-of: stackrox-central-services
-    app.kubernetes.io/version: 4.6.2
-    helm.sh/chart: stackrox-central-services-400.6.2
+    app.kubernetes.io/version: 4.7.2
+    helm.sh/chart: stackrox-central-services-400.7.2
   annotations:
     email: support@stackrox.com
     meta.helm.sh/release-name: stackrox-central-services
@@ -20,6 +20,26 @@ metadata:
     owner: stackrox
     serviceaccounts.openshift.io/oauth-redirectreference.main: '{"kind":"OAuthRedirectReference","apiVersion":"v1","reference":{"kind":"Route","name":"central"}}'
     serviceaccounts.openshift.io/oauth-redirecturi.main: "sso/providers/openshift/callback"
+---
+# Source: stackrox-central-services/templates/02-config-controller-00-serviceaccount.yaml
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: config-controller
+  namespace: stackrox
+  labels:
+    app.kubernetes.io/component: config-controller
+    app.kubernetes.io/instance: stackrox-central-services
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: stackrox
+    app.kubernetes.io/part-of: stackrox-central-services
+    app.kubernetes.io/version: 4.7.2
+    helm.sh/chart: stackrox-central-services-400.7.2
+  annotations:
+    email: support@stackrox.com
+    meta.helm.sh/release-name: stackrox-central-services
+    meta.helm.sh/release-namespace: stackrox
+    owner: stackrox
 ---
 # Source: stackrox-central-services/templates/02-scanner-00-serviceaccount.yaml
 apiVersion: v1
@@ -33,8 +53,8 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: stackrox
     app.kubernetes.io/part-of: stackrox-central-services
-    app.kubernetes.io/version: 4.6.2
-    helm.sh/chart: stackrox-central-services-400.6.2
+    app.kubernetes.io/version: 4.7.2
+    helm.sh/chart: stackrox-central-services-400.7.2
   annotations:
     email: support@stackrox.com
     meta.helm.sh/release-name: stackrox-central-services
@@ -52,8 +72,8 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: stackrox
     app.kubernetes.io/part-of: stackrox-central-services
-    app.kubernetes.io/version: 4.6.2
-    helm.sh/chart: stackrox-central-services-400.6.2
+    app.kubernetes.io/version: 4.7.2
+    helm.sh/chart: stackrox-central-services-400.7.2
   annotations:
     email: support@stackrox.com
     meta.helm.sh/release-name: stackrox-central-services
@@ -80,8 +100,8 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: stackrox
     app.kubernetes.io/part-of: stackrox-central-services
-    app.kubernetes.io/version: 4.6.2
-    helm.sh/chart: stackrox-central-services-400.6.2
+    app.kubernetes.io/version: 4.7.2
+    helm.sh/chart: stackrox-central-services-400.7.2
   annotations:
     email: support@stackrox.com
     meta.helm.sh/release-name: stackrox-central-services
@@ -109,8 +129,8 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: stackrox
     app.kubernetes.io/part-of: stackrox-central-services
-    app.kubernetes.io/version: 4.6.2
-    helm.sh/chart: stackrox-central-services-400.6.2
+    app.kubernetes.io/version: 4.7.2
+    helm.sh/chart: stackrox-central-services-400.7.2
   annotations:
     email: support@stackrox.com
     meta.helm.sh/release-name: stackrox-central-services
@@ -138,8 +158,8 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: stackrox
     app.kubernetes.io/part-of: stackrox-central-services
-    app.kubernetes.io/version: 4.6.2
-    helm.sh/chart: stackrox-central-services-400.6.2
+    app.kubernetes.io/version: 4.7.2
+    helm.sh/chart: stackrox-central-services-400.7.2
   annotations:
     email: support@stackrox.com
     meta.helm.sh/release-name: stackrox-central-services
@@ -172,8 +192,8 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: stackrox
     app.kubernetes.io/part-of: stackrox-central-services
-    app.kubernetes.io/version: 4.6.2
-    helm.sh/chart: stackrox-central-services-400.6.2
+    app.kubernetes.io/version: 4.7.2
+    helm.sh/chart: stackrox-central-services-400.7.2
 rules:
   - apiGroups: [""]
     resources: ["secrets"]
@@ -192,14 +212,13 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: stackrox
     app.kubernetes.io/part-of: stackrox-central-services
-    app.kubernetes.io/version: 4.6.2
-    helm.sh/chart: stackrox-central-services-400.6.2
+    app.kubernetes.io/version: 4.7.2
+    helm.sh/chart: stackrox-central-services-400.7.2
   annotations:
     email: support@stackrox.com
     meta.helm.sh/release-name: stackrox-central-services
     meta.helm.sh/release-namespace: stackrox
     owner: stackrox
-    checkov.io/skip1: CKV_K8S_49=Security Tool
 rules:
   - apiGroups:
       - "*"
@@ -217,6 +236,40 @@ rules:
       - get
       - list
 ---
+# Source: stackrox-central-services/templates/02-config-controller-01-rbac.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: config-controller-manager-role
+  namespace: stackrox
+  labels:
+    app.kubernetes.io/component: config-controller
+    app.kubernetes.io/instance: stackrox-central-services
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: stackrox
+    app.kubernetes.io/part-of: stackrox-central-services
+    app.kubernetes.io/version: 4.7.2
+    helm.sh/chart: stackrox-central-services-400.7.2
+  annotations:
+    email: support@stackrox.com
+    meta.helm.sh/release-name: stackrox-central-services
+    meta.helm.sh/release-namespace: stackrox
+    owner: stackrox
+rules:
+  - apiGroups:
+      - config.stackrox.io
+    resources:
+      - securitypolicies
+      - securitypolicies/status
+    verbs:
+      - create
+      - delete
+      - get
+      - list
+      - patch
+      - update
+      - watch
+---
 # Source: stackrox-central-services/templates/02-scanner-01-security.yaml
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
@@ -229,8 +282,8 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: stackrox
     app.kubernetes.io/part-of: stackrox-central-services
-    app.kubernetes.io/version: 4.6.2
-    helm.sh/chart: stackrox-central-services-400.6.2
+    app.kubernetes.io/version: 4.7.2
+    helm.sh/chart: stackrox-central-services-400.7.2
   annotations:
     email: support@stackrox.com
     meta.helm.sh/release-name: stackrox-central-services
@@ -257,8 +310,8 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: stackrox
     app.kubernetes.io/part-of: stackrox-central-services
-    app.kubernetes.io/version: 4.6.2
-    helm.sh/chart: stackrox-central-services-400.6.2
+    app.kubernetes.io/version: 4.7.2
+    helm.sh/chart: stackrox-central-services-400.7.2
   annotations:
     email: support@stackrox.com
     meta.helm.sh/release-name: stackrox-central-services
@@ -288,8 +341,8 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: stackrox
     app.kubernetes.io/part-of: stackrox-central-services
-    app.kubernetes.io/version: 4.6.2
-    helm.sh/chart: stackrox-central-services-400.6.2
+    app.kubernetes.io/version: 4.7.2
+    helm.sh/chart: stackrox-central-services-400.7.2
   annotations:
     email: support@stackrox.com
     meta.helm.sh/release-name: stackrox-central-services
@@ -316,8 +369,8 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: stackrox
     app.kubernetes.io/part-of: stackrox-central-services
-    app.kubernetes.io/version: 4.6.2
-    helm.sh/chart: stackrox-central-services-400.6.2
+    app.kubernetes.io/version: 4.7.2
+    helm.sh/chart: stackrox-central-services-400.7.2
   annotations:
     email: support@stackrox.com
     meta.helm.sh/release-name: stackrox-central-services
@@ -344,8 +397,8 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: stackrox
     app.kubernetes.io/part-of: stackrox-central-services
-    app.kubernetes.io/version: 4.6.2
-    helm.sh/chart: stackrox-central-services-400.6.2
+    app.kubernetes.io/version: 4.7.2
+    helm.sh/chart: stackrox-central-services-400.7.2
   annotations:
     email: support@stackrox.com
     meta.helm.sh/release-name: stackrox-central-services
@@ -377,8 +430,8 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: stackrox
     app.kubernetes.io/part-of: stackrox-central-services
-    app.kubernetes.io/version: 4.6.2
-    helm.sh/chart: stackrox-central-services-400.6.2
+    app.kubernetes.io/version: 4.7.2
+    helm.sh/chart: stackrox-central-services-400.7.2
 subjects:
   - kind: ServiceAccount
     name: central
@@ -400,8 +453,8 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: stackrox
     app.kubernetes.io/part-of: stackrox-central-services
-    app.kubernetes.io/version: 4.6.2
-    helm.sh/chart: stackrox-central-services-400.6.2
+    app.kubernetes.io/version: 4.7.2
+    helm.sh/chart: stackrox-central-services-400.7.2
   annotations:
     email: support@stackrox.com
     meta.helm.sh/release-name: stackrox-central-services
@@ -416,6 +469,34 @@ subjects:
     name: central
     namespace: stackrox
 ---
+# Source: stackrox-central-services/templates/02-config-controller-01-rbac.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: config-controller-manager-rolebinding
+  namespace: stackrox
+  labels:
+    app.kubernetes.io/component: config-controller
+    app.kubernetes.io/instance: stackrox-central-services
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: stackrox
+    app.kubernetes.io/part-of: stackrox-central-services
+    app.kubernetes.io/version: 4.7.2
+    helm.sh/chart: stackrox-central-services-400.7.2
+  annotations:
+    email: support@stackrox.com
+    meta.helm.sh/release-name: stackrox-central-services
+    meta.helm.sh/release-namespace: stackrox
+    owner: stackrox
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: config-controller-manager-role
+subjects:
+  - kind: ServiceAccount
+    name: config-controller
+    namespace: stackrox
+---
 # Source: stackrox-central-services/templates/02-scanner-01-psps.yaml
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
@@ -428,8 +509,8 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: stackrox
     app.kubernetes.io/part-of: stackrox-central-services
-    app.kubernetes.io/version: 4.6.2
-    helm.sh/chart: stackrox-central-services-400.6.2
+    app.kubernetes.io/version: 4.7.2
+    helm.sh/chart: stackrox-central-services-400.7.2
   annotations:
     email: support@stackrox.com
     meta.helm.sh/release-name: stackrox-central-services
@@ -456,8 +537,8 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: stackrox
     app.kubernetes.io/part-of: stackrox-central-services
-    app.kubernetes.io/version: 4.6.2
-    helm.sh/chart: stackrox-central-services-400.6.2
+    app.kubernetes.io/version: 4.7.2
+    helm.sh/chart: stackrox-central-services-400.7.2
   annotations:
     email: support@stackrox.com
     meta.helm.sh/release-name: stackrox-central-services
@@ -483,8 +564,8 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: stackrox
     app.kubernetes.io/part-of: stackrox-central-services
-    app.kubernetes.io/version: 4.6.2
-    helm.sh/chart: stackrox-central-services-400.6.2
+    app.kubernetes.io/version: 4.7.2
+    helm.sh/chart: stackrox-central-services-400.7.2
   annotations:
     email: support@stackrox.com
     meta.helm.sh/release-name: stackrox-central-services
@@ -510,8 +591,8 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: stackrox
     app.kubernetes.io/part-of: stackrox-central-services
-    app.kubernetes.io/version: 4.6.2
-    helm.sh/chart: stackrox-central-services-400.6.2
+    app.kubernetes.io/version: 4.7.2
+    helm.sh/chart: stackrox-central-services-400.7.2
   annotations:
     email: support@stackrox.com
     meta.helm.sh/release-name: stackrox-central-services
