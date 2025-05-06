@@ -79,7 +79,7 @@ spec:
       serviceAccountName: admission-control
       initContainers:
         - name: init-tls-certs
-          image: "quay.io/stackrox-io/main:4.7.2"
+          image: "quay.io/stackrox-io/main:4.7.2@sha256:904d9ab92b2f20f7fee3a9d04900dcf330d2e2bf3f088cf45d17afc2f64e0635"
           command:
             - /stackrox/bin/init-tls-certs
           args:
@@ -106,7 +106,7 @@ spec:
             - name: certs
               mountPath: /run/secrets/stackrox.io/certs/
       containers:
-        - image: "quay.io/stackrox-io/main:4.7.2"
+        - image: "quay.io/stackrox-io/main:4.7.2@sha256:904d9ab92b2f20f7fee3a9d04900dcf330d2e2bf3f088cf45d17afc2f64e0635"
           imagePullPolicy: IfNotPresent
           name: admission-control
           readinessProbe:
@@ -306,7 +306,7 @@ spec:
       serviceAccountName: sensor
       initContainers:
         - name: init-tls-certs
-          image: "quay.io/stackrox-io/main:4.7.2"
+          image: "quay.io/stackrox-io/main:4.7.2@sha256:904d9ab92b2f20f7fee3a9d04900dcf330d2e2bf3f088cf45d17afc2f64e0635"
           command:
             - /stackrox/bin/init-tls-certs
           args:
@@ -333,7 +333,7 @@ spec:
             - name: certs
               mountPath: /run/secrets/stackrox.io/certs/
       containers:
-        - image: "quay.io/stackrox-io/main:4.7.2"
+        - image: "quay.io/stackrox-io/main:4.7.2@sha256:904d9ab92b2f20f7fee3a9d04900dcf330d2e2bf3f088cf45d17afc2f64e0635"
           imagePullPolicy: IfNotPresent
           name: sensor
           readinessProbe:
@@ -483,4 +483,4 @@ spec:
 
         - name: monitoring-tls
           secret:
-            secretName: sensor-monitoring-tlspported
+            secretName: sensor-monitoring-tls

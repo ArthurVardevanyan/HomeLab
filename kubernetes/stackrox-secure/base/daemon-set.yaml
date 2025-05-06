@@ -64,7 +64,7 @@ spec:
       serviceAccountName: collector
       initContainers:
         - name: init-tls-certs
-          image: "quay.io/stackrox-io/main:4.7.2"
+          image: "quay.io/stackrox-io/main:4.7.2@sha256:904d9ab92b2f20f7fee3a9d04900dcf330d2e2bf3f088cf45d17afc2f64e0635"
           command:
             - /stackrox/bin/init-tls-certs
           args:
@@ -92,7 +92,7 @@ spec:
               mountPath: /run/secrets/stackrox.io/certs/
       containers:
         - name: collector
-          image: "quay.io/stackrox-io/collector:4.7.2"
+          image: "quay.io/stackrox-io/collector:4.7.2@sha256:6170564a25c8e2baae19b49c34e925e0465beed178213d56805fcf6c41d4294f"
           imagePullPolicy: IfNotPresent
           env:
             - name: COLLECTOR_CONFIG
@@ -171,7 +171,7 @@ spec:
             - name: ROX_NODE_SCANNING_ENDPOINT
               value: "127.0.0.1:8444"
 
-          image: "quay.io/stackrox-io/main:4.7.2"
+          image: "quay.io/stackrox-io/main:4.7.2@sha256:904d9ab92b2f20f7fee3a9d04900dcf330d2e2bf3f088cf45d17afc2f64e0635"
           imagePullPolicy: IfNotPresent
           name: compliance
           resources:
@@ -206,7 +206,7 @@ spec:
             - mountPath: /tmp
               name: index-volume
         - name: node-inventory
-          image: "quay.io/stackrox-io/scanner-slim:4.7.2"
+          image: "quay.io/stackrox-io/scanner-slim:4.7.2@sha256:448c83efd34fc8fb95a412e17370bcb76011647adde437fa8c9743ccb0d2d67b"
           imagePullPolicy: IfNotPresent
           command: ["/scanner", "--nodeinventory", "--config=", ""]
           ports:

@@ -91,7 +91,7 @@ spec:
         runAsUser: 4000
       containers:
         - name: central
-          image: "quay.io/stackrox-io/main:4.7.2"
+          image: "quay.io/stackrox-io/main:4.7.2@sha256:904d9ab92b2f20f7fee3a9d04900dcf330d2e2bf3f088cf45d17afc2f64e0635"
           command:
             - /stackrox/central-entrypoint.sh
           ports:
@@ -314,7 +314,7 @@ spec:
       serviceAccountName: config-controller
       containers:
         - name: manager
-          image: "quay.io/stackrox-io/main:4.7.2"
+          image: "quay.io/stackrox-io/main:4.7.2@sha256:904d9ab92b2f20f7fee3a9d04900dcf330d2e2bf3f088cf45d17afc2f64e0635"
           command:
             - /stackrox/bin/config-controller
           args:
@@ -456,7 +456,7 @@ spec:
       containers:
         - name: scanner
 
-          image: "quay.io/stackrox-io/scanner:4.7.2"
+          image: "quay.io/stackrox-io/scanner:4.7.2@sha256:07bbdb588e896979e475f890653b31f23d14e6a4f9eac34f55abc7815848711a"
           env:
             - name: ROX_MEMLIMIT
               valueFrom:
@@ -664,7 +664,7 @@ spec:
                     operator: DoesNotExist
       initContainers:
         - name: init-db
-          image: "quay.io/stackrox-io/scanner-db:4.7.2"
+          image: "quay.io/stackrox-io/scanner-db:4.7.2@sha256:796b3421864aea819fea346eaac89c0b7d1dbb02ea9e265bc545f8a0715f5c05"
           env:
             - name: POSTGRES_PASSWORD_FILE
               value: "/run/secrets/stackrox.io/secrets/password"
@@ -688,7 +688,7 @@ spec:
               readOnly: true
       containers:
         - name: db
-          image: "quay.io/stackrox-io/scanner-db:4.7.2"
+          image: "quay.io/stackrox-io/scanner-db:4.7.2@sha256:796b3421864aea819fea346eaac89c0b7d1dbb02ea9e265bc545f8a0715f5c05"
           ports:
             - name: tcp-postgresql
               protocol: TCP
