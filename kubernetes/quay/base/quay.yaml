@@ -25,15 +25,6 @@ spec:
         affinity:
           podAntiAffinity:
             preferredDuringSchedulingIgnoredDuringExecution:
-              - weight: 100
-                podAffinityTerm:
-                  labelSelector:
-                    matchExpressions:
-                      - key: quay-component
-                        operator: In
-                        values:
-                          - clair-app
-                  topologyKey: topology.kubernetes.io/zone
               - weight: 1
                 podAffinityTerm:
                   labelSelector:
@@ -43,6 +34,15 @@ spec:
                         values:
                           - clair-app
                   topologyKey: kubernetes.io/hostname
+          podAffinity:
+            requiredDuringSchedulingIgnoredDuringExecution:
+              - labelSelector:
+                  matchExpressions:
+                    - key: quay-component
+                      operator: In
+                      values:
+                        - clair-app
+                topologyKey: topology.kubernetes.io/zone
     - kind: postgres
       managed: false
     - kind: objectstorage
@@ -116,15 +116,6 @@ spec:
         affinity:
           podAntiAffinity:
             preferredDuringSchedulingIgnoredDuringExecution:
-              - weight: 100
-                podAffinityTerm:
-                  labelSelector:
-                    matchExpressions:
-                      - key: quay-component
-                        operator: In
-                        values:
-                          - quay-app
-                  topologyKey: topology.kubernetes.io/zone
               - weight: 1
                 podAffinityTerm:
                   labelSelector:
@@ -134,5 +125,14 @@ spec:
                         values:
                           - quay-app
                   topologyKey: kubernetes.io/hostname
+          podAffinity:
+            requiredDuringSchedulingIgnoredDuringExecution:
+              - labelSelector:
+                  matchExpressions:
+                    - key: quay-component
+                      operator: In
+                      values:
+                        - quay-app
+                topologyKey: topology.kubernetes.io/zone
   configBundleSecret: quay-config-bundle
   # checkov:skip=CKV_SECRET_6 Place Holder
