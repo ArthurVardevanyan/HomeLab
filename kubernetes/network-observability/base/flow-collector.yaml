@@ -1,128 +1,128 @@
-apiVersion: flows.netobserv.io/v1beta2
-kind: FlowCollector
-metadata:
-  name: cluster
-  annotations:
-    argocd.argoproj.io/sync-wave: "3"
-    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
-  labels:
-    app.kubernetes.io/instance: network-observability
-spec:
-  agent:
-    ebpf:
-      cacheActiveTimeout: 5s
-      cacheMaxFlows: 100000
-      excludeInterfaces:
-        - lo
-      imagePullPolicy: IfNotPresent
-      kafkaBatchSize: 1048576
-      logLevel: info
-      resources:
-        limits:
-          cpu: 200m
-          memory: 256Mi
-        requests:
-          cpu: 10m
-          memory: 64Mi
-      sampling: 75 #50 # 35 # 5 # 0 # Send All Flows, 50 Default
-    ipfix:
-      cacheActiveTimeout: 20s
-      cacheMaxFlows: 400
-      clusterNetworkOperator:
-        namespace: openshift-network-operator
-      ovnKubernetes:
-        containerName: ovnkube-node
-        daemonSetName: ovnkube-node
-        namespace: ovn-kubernetes
-      sampling: 400
-    type: eBPF
-  consolePlugin:
-    autoscaler:
-      maxReplicas: 3
-      status: Disabled
-    enable: true
-    imagePullPolicy: IfNotPresent
-    logLevel: info
-    portNaming:
-      enable: true
-    quickFilters:
-      - default: true
-        filter:
-          flow_layer: app
-        name: Applications
-      - filter:
-          flow_layer: infra
-        name: Infrastructure
-      - default: true
-        filter:
-          dst_kind: Pod
-          src_kind: Pod
-        name: Pods network
-      - filter:
-          dst_kind: Service
-        name: Services network
-    replicas: 2
-    resources:
-      limits:
-        cpu: 150m
-        memory: 128Mi
-      requests:
-        cpu: 5m
-        memory: 32Mi
-  deploymentModel: Direct
-  kafka:
-    address: ""
-    sasl:
-      type: Disabled
-    topic: ""
-  loki:
-    enable: true
-    lokiStack:
-      name: loki
-    manual:
-      authToken: Forward
-      ingesterUrl: https://netobserv-gateway-http.network-observability-loki.svc:8080/api/logs/v1/network/
-      querierUrl: https://netobserv-gateway-http.network-observability-loki.svc:8080/api/logs/v1/network/
-      statusUrl: https://netobserv-query-frontend-http.network-observability-loki.svc:3100/
-      tenantID: netobserv
-      tls:
-        enable: true
-        insecureSkipVerify: true
-    microservices:
-      ingesterUrl: https://netobserv-distributor.network-observability-loki.svc:3100/
-      querierUrl: https://netobserv-query-frontend.network-observability-loki.svc:3100/
-      tenantID: netobserv
-    mode: Manual
-    monolithic:
-      tenantID: netobserv
-      tls:
-        insecureSkipVerify: true
-      url: http://loki.loki.svc:3100/
-    readTimeout: 30s
-    writeBatchSize: 102760448
-    writeBatchWait: 15s
-    writeTimeout: 30s
-  namespace: network-observability
-  processor:
-    imagePullPolicy: IfNotPresent
-    kafkaConsumerAutoscaler:
-      maxReplicas: 3
-      status: Disabled
-    kafkaConsumerBatchSize: 10485760
-    kafkaConsumerQueueCapacity: 1000
-    kafkaConsumerReplicas: 3
-    logLevel: info
-    logTypes: Flows
-    metrics:
-      server:
-        port: 9102
-        tls:
-          type: Disabled
-    multiClusterDeployment: false
-    resources:
-      limits:
-        cpu: 150m
-        memory: 256Mi
-      requests:
-        cpu: 25m
-        memory: 64Mi
+# apiVersion: flows.netobserv.io/v1beta2
+# kind: FlowCollector
+# metadata:
+#   name: cluster
+#   annotations:
+#     argocd.argoproj.io/sync-wave: "3"
+#     argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+#   labels:
+#     app.kubernetes.io/instance: network-observability
+# spec:
+#   agent:
+#     ebpf:
+#       cacheActiveTimeout: 5s
+#       cacheMaxFlows: 100000
+#       excludeInterfaces:
+#         - lo
+#       imagePullPolicy: IfNotPresent
+#       kafkaBatchSize: 1048576
+#       logLevel: info
+#       resources:
+#         limits:
+#           cpu: 200m
+#           memory: 256Mi
+#         requests:
+#           cpu: 10m
+#           memory: 64Mi
+#       sampling: 75 #50 # 35 # 5 # 0 # Send All Flows, 50 Default
+#     ipfix:
+#       cacheActiveTimeout: 20s
+#       cacheMaxFlows: 400
+#       clusterNetworkOperator:
+#         namespace: openshift-network-operator
+#       ovnKubernetes:
+#         containerName: ovnkube-node
+#         daemonSetName: ovnkube-node
+#         namespace: ovn-kubernetes
+#       sampling: 400
+#     type: eBPF
+#   consolePlugin:
+#     autoscaler:
+#       maxReplicas: 3
+#       status: Disabled
+#     enable: true
+#     imagePullPolicy: IfNotPresent
+#     logLevel: info
+#     portNaming:
+#       enable: true
+#     quickFilters:
+#       - default: true
+#         filter:
+#           flow_layer: app
+#         name: Applications
+#       - filter:
+#           flow_layer: infra
+#         name: Infrastructure
+#       - default: true
+#         filter:
+#           dst_kind: Pod
+#           src_kind: Pod
+#         name: Pods network
+#       - filter:
+#           dst_kind: Service
+#         name: Services network
+#     replicas: 2
+#     resources:
+#       limits:
+#         cpu: 150m
+#         memory: 128Mi
+#       requests:
+#         cpu: 5m
+#         memory: 32Mi
+#   deploymentModel: Direct
+#   kafka:
+#     address: ""
+#     sasl:
+#       type: Disabled
+#     topic: ""
+#   loki:
+#     enable: true
+#     lokiStack:
+#       name: loki
+#     manual:
+#       authToken: Forward
+#       ingesterUrl: https://netobserv-gateway-http.network-observability-loki.svc:8080/api/logs/v1/network/
+#       querierUrl: https://netobserv-gateway-http.network-observability-loki.svc:8080/api/logs/v1/network/
+#       statusUrl: https://netobserv-query-frontend-http.network-observability-loki.svc:3100/
+#       tenantID: netobserv
+#       tls:
+#         enable: true
+#         insecureSkipVerify: true
+#     microservices:
+#       ingesterUrl: https://netobserv-distributor.network-observability-loki.svc:3100/
+#       querierUrl: https://netobserv-query-frontend.network-observability-loki.svc:3100/
+#       tenantID: netobserv
+#     mode: Manual
+#     monolithic:
+#       tenantID: netobserv
+#       tls:
+#         insecureSkipVerify: true
+#       url: http://loki.loki.svc:3100/
+#     readTimeout: 30s
+#     writeBatchSize: 102760448
+#     writeBatchWait: 15s
+#     writeTimeout: 30s
+#   namespace: network-observability
+#   processor:
+#     imagePullPolicy: IfNotPresent
+#     kafkaConsumerAutoscaler:
+#       maxReplicas: 3
+#       status: Disabled
+#     kafkaConsumerBatchSize: 10485760
+#     kafkaConsumerQueueCapacity: 1000
+#     kafkaConsumerReplicas: 3
+#     logLevel: info
+#     logTypes: Flows
+#     metrics:
+#       server:
+#         port: 9102
+#         tls:
+#           type: Disabled
+#     multiClusterDeployment: false
+#     resources:
+#       limits:
+#         cpu: 150m
+#         memory: 256Mi
+#       requests:
+#         cpu: 25m
+#         memory: 64Mi
