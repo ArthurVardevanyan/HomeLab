@@ -1,16 +1,16 @@
 apiVersion: cert-manager.io/v1
 kind: Certificate
 metadata:
-  name: central-default-tls-cert
-  namespace: stackrox
+  name: apps-ingress-certificate
+  namespace: openshift-ingress
   labels:
-    app.kubernetes.io/instance: stackrox-central
+    app.kubernetes.io/instance: okd-configuration
 spec:
-  secretName: central-default-tls-cert
   duration: 2160h # 90d
   renewBefore: 1080h # 45d
   dnsNames:
-    - "central-stackrox.app.okd.homelab.arthurvardevanyan.com"
+    - "*.app.okd.homelab.arthurvardevanyan.com"
   issuerRef:
     kind: ClusterIssuer
     name: letsencrypt #cloud-dns-letsencrypt
+  secretName: apps-ingress-certificate
