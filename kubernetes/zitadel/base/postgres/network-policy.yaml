@@ -28,6 +28,33 @@ spec:
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
+  name: allow-postgres
+  namespace: zitadel
+  annotations:
+    argocd.argoproj.io/sync-wave: "0"
+  labels:
+    app.kubernetes.io/instance: zitadel
+spec:
+  policyTypes:
+    - Egress
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: zitadel
+  egress:
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: zitadel
+          podSelector:
+            matchLabels:
+              postgres-operator.crunchydata.com/cluster: zitadel
+      ports:
+        - port: 5432
+          protocol: TCP
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
   name: zitadel-postgres
   namespace: zitadel
   annotations:
@@ -57,6 +84,33 @@ spec:
           podSelector:
             matchLabels:
               postgres-operator.crunchydata.com/cluster: zitadel
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-api-server
+  namespace: zitadel
+  annotations:
+    argocd.argoproj.io/sync-wave: "0"
+  labels:
+    app.kubernetes.io/instance: zitadel
+spec:
+  podSelector:
+    matchLabels:
+      postgres-operator.crunchydata.com/cluster: zitadel
+  policyTypes:
+    - Egress
+  egress:
+    - to:
+        - podSelector:
+            matchLabels:
+              app: openshift-kube-apiserver
+          namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: openshift-kube-apiserver
+      ports:
+        - protocol: TCP
+          port: 6443
 ---
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
@@ -111,31 +165,6 @@ spec:
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
-  name: allow-postgres
-  namespace: zitadel
-  annotations:
-    argocd.argoproj.io/sync-wave: "0"
-spec:
-  policyTypes:
-    - Egress
-  podSelector:
-    matchLabels:
-      app.kubernetes.io/name: zitadel
-  egress:
-    - to:
-        - namespaceSelector:
-            matchLabels:
-              kubernetes.io/metadata.name: zitadel
-          podSelector:
-            matchLabels:
-              postgres-operator.crunchydata.com/cluster: zitadel
-      ports:
-        - port: 5432
-          protocol: TCP
----
-apiVersion: networking.k8s.io/v1
-kind: NetworkPolicy
-metadata:
   name: pgadmin-ingress
   namespace: zitadel
   annotations:
@@ -159,30 +188,3 @@ spec:
       ports:
         - protocol: TCP
           port: 5432
----
-apiVersion: networking.k8s.io/v1
-kind: NetworkPolicy
-metadata:
-  name: allow-api-server
-  namespace: zitadel
-  annotations:
-    argocd.argoproj.io/sync-wave: "0"
-  labels:
-    app.kubernetes.io/instance: zitadel
-spec:
-  podSelector:
-    matchLabels:
-      postgres-operator.crunchydata.com/cluster: zitadel
-  policyTypes:
-    - Egress
-  egress:
-    - to:
-        - podSelector:
-            matchLabels:
-              app: openshift-kube-apiserver
-          namespaceSelector:
-            matchLabels:
-              kubernetes.io/metadata.name: openshift-kube-apiserver
-      ports:
-        - protocol: TCP
-          port: 6443
