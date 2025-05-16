@@ -123,3 +123,20 @@ spec:
             cidr: 10.101.10.5/32 # OKD WildCard
         - ipBlock:
             cidr: 10.101.10.7/32 # OKD APP WildCard
+---
+kind: NetworkPolicy
+apiVersion: networking.k8s.io/v1
+metadata:
+  name: allow-to-openshift-ingress
+  namespace: external-dns
+  annotations:
+    argocd.argoproj.io/sync-wave: "0"
+spec:
+  podSelector: {}
+  egress:
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              network.openshift.io/policy-group: ingress
+  policyTypes:
+    - Egress
