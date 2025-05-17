@@ -5,16 +5,16 @@ resources:
 components:
   - ../../components/helm
 patches:
-  - target:
-      kind: ClusterSecretStore
-      name: vault
-    patch: |-
+  - patch: |-
       - op: replace
         path: /spec/provider/vault/auth/kubernetes
         value: {"mountPath":"microshift","role":"microshift","serviceAccountRef":{"name":"argocd","namespace":"default"}}
-  - target:
-      kind: Deployment
-    patch: |-
+    target:
+      kind: ClusterSecretStore
+      name: vault
+  - patch: |-
       - op: replace
         path: /spec/replicas
         value: 1
+    target:
+      kind: Deployment

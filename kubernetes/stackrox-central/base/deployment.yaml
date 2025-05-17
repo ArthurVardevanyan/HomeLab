@@ -1,3 +1,4 @@
+---
 # Source: stackrox-central-services/templates/01-central-13-deployment.yaml
 apiVersion: apps/v1
 kind: Deployment
@@ -10,11 +11,10 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: stackrox
     app.kubernetes.io/part-of: stackrox-central-services
-    app.kubernetes.io/version: 4.6.2
-    helm.sh/chart: stackrox-central-services-400.6.2
+    app.kubernetes.io/version: 4.7.2
+    helm.sh/chart: stackrox-central-services-400.7.2
     app: central
   annotations:
-    argocd.argoproj.io/sync-wave: "2"
     email: support@stackrox.com
     meta.helm.sh/release-name: stackrox-central-services
     meta.helm.sh/release-namespace: stackrox
@@ -28,7 +28,7 @@ metadata:
     checkov.io/skip7: CKV_K8S_38=Security Tool
     checkov.io/skip8: CKV_K8S_40=OpenShift Injects Random UID
 spec:
-  replicas: 1
+  replicas: 0
   minReadySeconds: 15
   selector:
     matchLabels:
@@ -45,8 +45,8 @@ spec:
         app.kubernetes.io/managed-by: Helm
         app.kubernetes.io/name: stackrox
         app.kubernetes.io/part-of: stackrox-central-services
-        app.kubernetes.io/version: 4.6.2
-        helm.sh/chart: stackrox-central-services-400.6.2
+        app.kubernetes.io/version: 4.7.2
+        helm.sh/chart: stackrox-central-services-400.7.2
       annotations:
         traffic.sidecar.istio.io/excludeInboundPorts: "8443"
         email: support@stackrox.com
@@ -91,7 +91,7 @@ spec:
         runAsUser: 4000
       containers:
         - name: central
-          image: "quay.io/stackrox-io/main:4.6.2@sha256:39f89bbe66046df875b7738729782888d65f055a6ba0ee43a828902acc832e06"
+          image: "quay.io/stackrox-io/main:4.7.2@sha256:904d9ab92b2f20f7fee3a9d04900dcf330d2e2bf3f088cf45d17afc2f64e0635"
           command:
             - /stackrox/central-entrypoint.sh
           ports:
@@ -170,8 +170,6 @@ spec:
             - name: central-license-volume
               mountPath: /run/secrets/stackrox.io/central-license/
               readOnly: true
-            - name: stackrox-db
-              mountPath: /var/lib/stackrox
             - name: central-config-volume
               mountPath: /etc/stackrox
             - name: proxy-config-volume
@@ -255,8 +253,6 @@ spec:
                   path: token
                   audience: openshift
                   expirationSeconds: 3600
-        - name: stackrox-db
-          emptyDir: {}
         - name: monitoring-tls
           secret:
             secretName: central-monitoring-tls
@@ -268,6 +264,106 @@ spec:
               - key: ca-bundle.crt
                 path: tls-ca-bundle.pem
             optional: true
+---
+# Source: stackrox-central-services/templates/02-config-controller-02-deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: config-controller
+  namespace: stackrox
+  labels:
+    app: config-controller
+    app.kubernetes.io/component: config-controller
+    app.kubernetes.io/instance: stackrox-central-services
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: stackrox
+    app.kubernetes.io/part-of: stackrox-central-services
+    app.kubernetes.io/version: 4.7.2
+    helm.sh/chart: stackrox-central-services-400.7.2
+  annotations:
+    email: support@stackrox.com
+    meta.helm.sh/release-name: stackrox-central-services
+    meta.helm.sh/release-namespace: stackrox
+    owner: stackrox
+spec:
+  replicas: 0
+  minReadySeconds: 15
+  selector:
+    matchLabels:
+      app: config-controller
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      namespace: stackrox
+      labels:
+        app: config-controller
+        app.kubernetes.io/component: config-controller
+        app.kubernetes.io/instance: stackrox-central-services
+        app.kubernetes.io/managed-by: Helm
+        app.kubernetes.io/name: stackrox
+        app.kubernetes.io/part-of: stackrox-central-services
+        app.kubernetes.io/version: 4.7.2
+        helm.sh/chart: stackrox-central-services-400.7.2
+      annotations:
+        email: support@stackrox.com
+        meta.helm.sh/release-name: stackrox-central-services
+        meta.helm.sh/release-namespace: stackrox
+        owner: stackrox
+    spec:
+      serviceAccountName: config-controller
+      containers:
+        - name: manager
+          image: "quay.io/stackrox-io/main:4.7.2@sha256:904d9ab92b2f20f7fee3a9d04900dcf330d2e2bf3f088cf45d17afc2f64e0635"
+          command:
+            - /stackrox/bin/config-controller
+          args:
+            - --health-probe-bind-address=:8081
+          env:
+            - name: POD_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: 8081
+            initialDelaySeconds: 15
+            periodSeconds: 20
+            failureThreshold: 50
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - "ALL"
+            readOnlyRootFilesystem: true
+          readinessProbe:
+            httpGet:
+              path: /readyz
+              port: 8081
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          resources:
+            requests:
+              cpu: "10m"
+              memory: "64Mi"
+            limits:
+              cpu: "500m"
+              memory: "128Mi"
+          volumeMounts:
+            - mountPath: /run/secrets/stackrox.io/certs/
+              name: central-certs-volume
+              readOnly: true
+      terminationGracePeriodSeconds: 10
+      volumes:
+        - name: central-certs-volume
+          secret:
+            defaultMode: 420
+            items:
+              - key: ca.pem
+                path: ca.pem
+            secretName: central-tls
 ---
 # Source: stackrox-central-services/templates/02-scanner-06-deployment.yaml
 apiVersion: apps/v1
@@ -282,8 +378,8 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: stackrox
     app.kubernetes.io/part-of: stackrox-central-services
-    app.kubernetes.io/version: 4.6.2
-    helm.sh/chart: stackrox-central-services-400.6.2
+    app.kubernetes.io/version: 4.7.2
+    helm.sh/chart: stackrox-central-services-400.7.2
   annotations:
     email: support@stackrox.com
     meta.helm.sh/release-name: stackrox-central-services
@@ -299,7 +395,7 @@ metadata:
     checkov.io/skip8: CKV_K8S_38=Security Tool
     checkov.io/skip9: CKV_K8S_40=OpenShift Injects Random UID
 spec:
-  # replicas: 3
+  replicas: 0
   minReadySeconds: 15
   selector:
     matchLabels:
@@ -316,8 +412,8 @@ spec:
         app.kubernetes.io/managed-by: Helm
         app.kubernetes.io/name: stackrox
         app.kubernetes.io/part-of: stackrox-central-services
-        app.kubernetes.io/version: 4.6.2
-        helm.sh/chart: stackrox-central-services-400.6.2
+        app.kubernetes.io/version: 4.7.2
+        helm.sh/chart: stackrox-central-services-400.7.2
       annotations:
         traffic.sidecar.istio.io/excludeInboundPorts: "8080,8443"
         email: support@stackrox.com
@@ -360,7 +456,7 @@ spec:
       containers:
         - name: scanner
 
-          image: "quay.io/stackrox-io/scanner:4.6.2@sha256:643864d4957523a4276278f04a9e6d425c35d1a404cfbf35acf20ec80ed7cbf8"
+          image: "quay.io/stackrox-io/scanner:4.7.2@sha256:07bbdb588e896979e475f890653b31f23d14e6a4f9eac34f55abc7815848711a"
           env:
             - name: ROX_MEMLIMIT
               valueFrom:
@@ -420,7 +516,7 @@ spec:
             - name: scanner-config-volume
               mountPath: /etc/scanner
               readOnly: true
-            - name: scanner-tls-volume
+            - name: certs
               mountPath: /run/secrets/stackrox.io/certs/
               readOnly: true
             - name: vuln-temp-db
@@ -453,7 +549,7 @@ spec:
         - name: scanner-config-volume
           configMap:
             name: scanner-config
-        - name: scanner-tls-volume
+        - name: certs
           secret:
             secretName: scanner-tls
         - name: vuln-temp-db
@@ -487,8 +583,8 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: stackrox
     app.kubernetes.io/part-of: stackrox-central-services
-    app.kubernetes.io/version: 4.6.2
-    helm.sh/chart: stackrox-central-services-400.6.2
+    app.kubernetes.io/version: 4.7.2
+    helm.sh/chart: stackrox-central-services-400.7.2
   annotations:
     email: support@stackrox.com
     meta.helm.sh/release-name: stackrox-central-services
@@ -506,7 +602,7 @@ metadata:
     checkov.io/skip10: CKV_K8S_38=Security Tool
     checkov.io/skip11: CKV_K8S_40=OpenShift Injects Random UID
 spec:
-  replicas: 1
+  replicas: 0
   minReadySeconds: 15
   selector:
     matchLabels:
@@ -523,8 +619,8 @@ spec:
         app.kubernetes.io/managed-by: Helm
         app.kubernetes.io/name: stackrox
         app.kubernetes.io/part-of: stackrox-central-services
-        app.kubernetes.io/version: 4.6.2
-        helm.sh/chart: stackrox-central-services-400.6.2
+        app.kubernetes.io/version: 4.7.2
+        helm.sh/chart: stackrox-central-services-400.7.2
       annotations:
         traffic.sidecar.istio.io/excludeInboundPorts: "5432"
         email: support@stackrox.com
@@ -568,7 +664,7 @@ spec:
                     operator: DoesNotExist
       initContainers:
         - name: init-db
-          image: "quay.io/stackrox-io/scanner-db:4.6.2@sha256:d898159ba7ccc69fd4aed1c03ed50d5bdf4c873aaa8a8ffcda38fa8c07751337"
+          image: "quay.io/stackrox-io/scanner-db:4.7.2@sha256:796b3421864aea819fea346eaac89c0b7d1dbb02ea9e265bc545f8a0715f5c05"
           env:
             - name: POSTGRES_PASSWORD_FILE
               value: "/run/secrets/stackrox.io/secrets/password"
@@ -584,7 +680,7 @@ spec:
           volumeMounts:
             - name: scanner-db-data
               mountPath: /var/lib/postgresql/data
-            - name: scanner-db-tls-volume
+            - name: certs
               mountPath: /run/secrets/stackrox.io/certs
               readOnly: true
             - name: scanner-db-password
@@ -592,7 +688,7 @@ spec:
               readOnly: true
       containers:
         - name: db
-          image: "quay.io/stackrox-io/scanner-db:4.6.2@sha256:d898159ba7ccc69fd4aed1c03ed50d5bdf4c873aaa8a8ffcda38fa8c07751337"
+          image: "quay.io/stackrox-io/scanner-db:4.7.2@sha256:796b3421864aea819fea346eaac89c0b7d1dbb02ea9e265bc545f8a0715f5c05"
           ports:
             - name: tcp-postgresql
               protocol: TCP
@@ -607,7 +703,7 @@ spec:
           volumeMounts:
             - name: scanner-db-data
               mountPath: /var/lib/postgresql/data
-            - name: scanner-db-tls-volume
+            - name: certs
               mountPath: /run/secrets/stackrox.io/certs
               readOnly: true
       serviceAccountName: scanner
@@ -620,10 +716,7 @@ spec:
         - name: scanner-config-volume
           configMap:
             name: scanner-config
-        - name: scanner-tls-volume
-          secret:
-            secretName: scanner-tls
-        - name: scanner-db-tls-volume
+        - name: certs
           secret:
             secretName: scanner-db-tls
             defaultMode: 0640

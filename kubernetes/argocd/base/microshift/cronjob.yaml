@@ -1,0 +1,101 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: microshift-credential-rotation
+  namespace: argocd
+spec:
+  schedule: "0 * * * *"
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          tolerations:
+            - key: node-role.kubernetes.io/control-plane
+              effect: NoSchedule
+            - key: node-role.kubernetes.io/control-plane
+              effect: NoSchedule
+          affinity:
+            nodeAffinity:
+              requiredDuringSchedulingIgnoredDuringExecution:
+                nodeSelectorTerms:
+                  - matchExpressions:
+                      - key: node-role.kubernetes.io/control-plane
+                        operator: Exists
+                      - key: node-role.kubernetes.io/control-plane
+                        operator: Exists
+          securityContext:
+            runAsNonRoot: true
+            seccompProfile:
+              type: RuntimeDefault
+          serviceAccountName: argocd-creds
+          containers:
+            - name: microshift-credential-rotation
+              image: registry.arthurvardevanyan.com/homelab/toolbox:not_latest
+              securityContext:
+                runAsNonRoot: true
+                privileged: false
+                readOnlyRootFilesystem: true
+                allowPrivilegeEscalation: false
+                seccompProfile:
+                  type: RuntimeDefault
+                capabilities:
+                  drop:
+                    - ALL
+              resources:
+                limits:
+                  cpu: 50m
+                  ephemeral-storage: 32Mi
+                  memory: 128Mi
+                requests:
+                  cpu: 5m
+                  ephemeral-storage: 16Mi
+                  memory: 32Mi
+              command:
+                - "bash"
+                - "-c"
+                - |
+                  set -o errexit
+                  set -o nounset
+                  set -o pipefail
+
+                  export JSON='{
+                    "namespace": "default",
+                    "serviceAccountName": "argocd"
+                  }'
+
+                  export TOKEN=$(curl --header "Authorization: Bearer $(cat /var/run/secrets/openshift/serviceaccount/token)"\
+                    "https://kfca.microshift.arthurvardevanyan.com/exchangeToken" -X POST \
+                    -H "Content-type: application/json" \
+                    -H "Accept: application/json" \
+                    -d "${JSON}" | jq --raw-output '.status.token')
+
+                  export CA_DATA=$(kubectl get secret -n argocd microshift -o yaml | yq '.data.caData' | base64 -d)
+                  CONFIG_JSON=$(jq -n \
+                    --arg token "$TOKEN" \
+                    --arg ca "$CA_DATA" \
+                    '{"bearerToken": $token, "tlsClientConfig": {"insecure": false, "caData": $ca}}')
+
+                  CONFIG_BASE64=$(echo -n "$CONFIG_JSON" | base64 | tr -d '\n')
+
+                  kubectl patch secret microshift -n argocd \
+                    --type='merge' \
+                    -p="{\"data\": {\"config\": \"$CONFIG_BASE64\"}}"
+
+              volumeMounts:
+                - name: serviceaccount-token
+                  readOnly: true
+                  mountPath: /var/run/secrets/openshift/serviceaccount
+                - name: tmp
+                  mountPath: /tmp
+          volumes:
+            - name: serviceaccount-token
+              projected:
+                sources:
+                  - serviceAccountToken:
+                      audience: openshift
+                      expirationSeconds: 3600
+                      path: token
+                defaultMode: 420
+            - name: tmp
+              emptyDir:
+                sizeLimit: 32Mi

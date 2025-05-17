@@ -5,13 +5,12 @@ resources:
   - ./service-account.yaml
   - ./rbac.yaml
   - ./secret.yaml
-generatorOptions:
-  disableNameSuffixHash: false # ArgoCD Garbage Collection
+generatorOptions: {}
 configMapGenerator:
-  - name: wildcard-dns
-    namespace: pihole
-    files:
+  - files:
       - 02-my-wildcard-dns.conf
       - 02-custom-settings.conf
       - 99-my-settings.conf
       - 99-my-settings-vlan3.conf
+    name: wildcard-dns
+    namespace: pihole

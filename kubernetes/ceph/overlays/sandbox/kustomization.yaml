@@ -7,18 +7,21 @@ resources:
 components:
   - ../../components/block
   - ../../components/block-ci
+  - ../../components/file
+  - ../../components/file-ci
+  - ../../components/object
 patches:
-  - target:
-      kind: Ingress
-      name: ceph
-    patch: |-
+  - patch: |-
       - op: replace
         path: /spec/rules/0/host
         value: ceph.apps.okd.virt.arthurvardevanyan.com
-  - target:
+    target:
       kind: Ingress
-      name: Certificate
-    patch: |-
+      name: ceph
+  - patch: |-
       - op: replace
         path: /spec/dnsNames/0
         value: ceph.apps.okd.virt.arthurvardevanyan.com
+    target:
+      kind: Ingress
+      name: Certificate

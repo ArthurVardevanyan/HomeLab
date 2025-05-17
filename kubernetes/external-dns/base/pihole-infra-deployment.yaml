@@ -68,7 +68,7 @@ spec:
             requests:
               cpu: 5m
               memory: 96Mi
-          image: registry.k8s.io/external-dns/external-dns:v0.15.0@sha256:338dd8c526e1337a12db0c8ee81a59ce5815ea51b73756affcd1e5dca530105c
+          image: registry.k8s.io/external-dns/external-dns:v0.17.0@sha256:85eba2727b410c8f8093d641a4b1a29671878db94d525a70a4108d10ba8eef5f
           imagePullPolicy: IfNotPresent
           args:
             - --log-level=info
@@ -82,8 +82,9 @@ spec:
             - --crd-source-kind=DNSEndpoint
             - --registry=noop
             - --provider=pihole
+            - --pihole-api-version=6
             # Change this to the actual address of your Pi-hole web server
-            - "--pihole-server=https://pihole-infra.apps.okd.homelab.arthurvardevanyan.com/"
+            - "--pihole-server=https://pihole-infra.app.okd.homelab.arthurvardevanyan.com"
             - --annotation-filter=externaldns.k8s.io in (pihole)
             # - --policy=sync #upsert-only
           envFrom:
@@ -182,7 +183,7 @@ spec:
             requests:
               cpu: 5m
               memory: 96Mi
-          image: registry.k8s.io/external-dns/external-dns:v0.15.0@sha256:338dd8c526e1337a12db0c8ee81a59ce5815ea51b73756affcd1e5dca530105c
+          image: registry.k8s.io/external-dns/external-dns:v0.17.0@sha256:85eba2727b410c8f8093d641a4b1a29671878db94d525a70a4108d10ba8eef5f
           imagePullPolicy: IfNotPresent
           args:
             - --log-level=info
@@ -196,8 +197,9 @@ spec:
             - --crd-source-kind=DNSEndpoint
             - --registry=noop
             - --provider=pihole
+            - --pihole-api-version=6
             # Change this to the actual address of your Pi-hole web server
-            - --pihole-server=https://pihole-infra.arthurvardevanyan.com/
+            - --pihole-server=https://pihole-infra.arthurvardevanyan.com
             - --annotation-filter=externaldns.k8s.io in (pihole)
             #- --policy=sync #upsert-only
           envFrom:

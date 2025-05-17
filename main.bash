@@ -1,8 +1,10 @@
 #!/bin/bash
 
-set -o errexit
-set -o nounset
-set -o pipefail
+set -o errexit  # exit on any failure
+set -o nounset  # exit on undeclared variables
+set -o pipefail # return value of all commands in a pipe
+## set -o xtrace  # command tracing
+shopt -s failglob # If no matches are found, an error message is printed and the command is not executed
 
 # PRESEED CONFIG: /machineConfigs/servers/preseed.cfg
 # ANSIBLE CONFIG: /ansible/k3s.yaml
@@ -40,6 +42,38 @@ ansible() {
     -e 'ansible_python_interpreter=/usr/bin/python3'
 }
 
+function kustomize_fix() {
+  local option="$1"
+  local target_dir="${2:-}"
+
+  if [[ "$option" == "--all" ]]; then
+    find . -type f -name "kustomization.yaml" | while read -r FILE; do
+      DIR=$(dirname "${FILE}")
+      pushd "${DIR}" && kustomize edit fix --vars 1>/dev/null && popd
+    done
+    prettier ./ --write
+  elif [[ "$option" == "--dir" ]]; then
+    if [[ -z "$target_dir" ]]; then
+      echo "Error: --dir requires a directory argument."
+      return 1
+    fi
+
+    if [[ -d "$target_dir" ]]; then
+      find "$target_dir" -type f -name "kustomization.yaml" | while read -r FILE; do
+        DIR=$(dirname "${FILE}")
+        pushd "${DIR}" && kustomize edit fix --vars 1>/dev/null && popd
+      done
+    else
+      echo "Error: Specified directory does not exist."
+      return 1
+    fi
+    prettier "./$target_dir" --write
+  else
+    echo "Error: Invalid option."
+    return 1
+  fi
+}
+
 test_overlays() {
 
   if [ -n "$VAULT_ADDR" ] && [ -n "$VAULT_TOKEN" ]; then
@@ -47,12 +81,7 @@ test_overlays() {
     rm -rf /tmp/yaml
     mkdir -p /tmp/yaml
     echo "Build Yaml's"
-    for OVERLAY in ./kubernetes/*/overlays/okd; do # *
-      echo "${OVERLAY}"
-      OUTPUT=$(echo "${OVERLAY}" | sed 's/\.//g' | sed 's/\//_/g')
-      kubectl kustomize "${OVERLAY}" | argocd-vault-plugin generate - >"${DIR}/${OUTPUT}.yaml"
-    done
-    for OVERLAY in ./kubernetes/*/overlays/microshift; do # *
+    for OVERLAY in ./kubernetes/*/overlays/*; do # *
       echo "${OVERLAY}"
       OUTPUT=$(echo "${OVERLAY}" | sed 's/\.//g' | sed 's/\//_/g')
       kubectl kustomize "${OVERLAY}" | argocd-vault-plugin generate - >"${DIR}/${OUTPUT}.yaml"
@@ -104,12 +133,12 @@ test_overlays_k3s() {
   fi
 }
 stateful_workload_stop() {
-  kubectl patch cronjobs -n netbox netbox-housekeeping -p '{"spec" : {"suspend" : true }}'
+  # kubectl patch cronjobs -n netbox netbox-housekeeping -p '{"spec" : {"suspend" : true }}'
   kubectl patch cronjobs -n photoprism photoprism-cron -p '{"spec" : {"suspend" : true }}'
   kubectl patch cronjobs -n nextcloud nextcloud-preview -p '{"spec" : {"suspend" : true }}'
   kubectl patch cronjobs -n nextcloud nextcloud-rsync -p '{"spec" : {"suspend" : true }}'
   kubectl patch cronjobs -n nextcloud nextcloud-cron -p '{"spec" : {"suspend" : true }}'
-  kubectl patch cronjobs -n mariadb-galera mysqldump-cron -p '{"spec" : {"suspend" : true }}'
+  # kubectl patch cronjobs -n mariadb-galera mysqldump-cron -p '{"spec" : {"suspend" : true }}'
 
   kubectl scale --replicas=0 -n openshift-monitoring deployment/cluster-monitoring-operator
   kubectl scale --replicas=0 -n openshift-monitoring deployment/prometheus-operator
@@ -126,8 +155,8 @@ stateful_workload_stop() {
   kubectl scale --replicas=0 -n heimdall statefulset/heimdall
   kubectl scale --replicas=0 -n homeassistant statefulset/homeassistant
   kubectl scale --replicas=0 -n influxdb statefulset/influxdb
-  kubectl scale --replicas=0 -n loki statefulset/loki
-  kubectl scale --replicas=0 -n mariadb-galera statefulset/mariadb-galera
+  # kubectl scale --replicas=0 -n loki statefulset/loki
+  # kubectl scale --replicas=0 -n mariadb-galera statefulset/mariadb-galera
   kubectl scale --replicas=0 -n nextcloud deployment/nextcloud
   kubectl scale --replicas=0 -n photoprism statefulset/photoprism
   kubectl scale --replicas=0 -n prometheus statefulset/prometheus
@@ -137,7 +166,19 @@ stateful_workload_stop() {
   kubectl scale --replicas=0 -n uptime-kuma statefulset/uptime-kuma
   kubectl scale --replicas=0 -n vault statefulset/vault
 
-  kubectl scale --replicas=0 -n zitadel statefulset/pihole
+  kubectl scale --replicas=0 -n pihole statefulset/pihole
+  kubectl scale --replicas=0 -n pihole statefulset/pihole-infra
+  kubectl scale --replicas=0 -n pihole statefulset/pihole-vlan3
+
+  kubectl scale --replicas=0 -n external-dns deployment/external-dns-microshift
+  kubectl scale --replicas=0 -n external-dns deployment/external-dns-microshift-infra
+  kubectl scale --replicas=0 -n external-dns deployment/external-dns-microshift-vlan3
+  kubectl scale --replicas=0 -n external-dns deployment/external-dns-okd
+  kubectl scale --replicas=0 -n external-dns deployment/external-dns-okd-infra
+  kubectl scale --replicas=0 -n external-dns deployment/external-dns-okd-vlan3
+
+  kubectl scale --replicas=0 -n ntp deployment/ntp-rootless
+  kubectl scale --replicas=0 -n cloudflare-ddns deployment/cloudflare-ddns
 
   #kubectl scale --replicas=0 -n minio-operator deployment/minio-operator
   kubectl scale --replicas=0 -n quay deployment/quay-operator-tng
@@ -145,22 +186,25 @@ stateful_workload_stop() {
   kubectl scale --replicas=0 -n quay deployment/quay-clair-app
   kubectl scale --replicas=0 -n quay deployment/quay-quay-mirror
 
-  kubectl scale --replicas=0 -n cockroach-operator-system deployments/cockroach-operator-manager
-  kubectl scale --replicas=0 -n zitadel statefulset/crdb
+  # kubectl scale --replicas=0 -n cockroach-operator-system deployments/cockroach-operator-manager
+  # kubectl scale --replicas=0 -n zitadel statefulset/crdb
   kubectl scale --replicas=0 -n zitadel deployment/zitadel
 
-  kubectl scale --replicas=0 -n mongodb-operator deployments/mongodb-kubernetes-operator
-  kubectl scale --replicas=0 -n unifi-network-application statefulset/unifi-network-application
-  kubectl scale --replicas=0 -n unifi-network-application statefulset/mongo-unifi-network-application
+  # kubectl scale --replicas=0 -n mongodb-operator deployments/mongodb-kubernetes-operator
+  # kubectl scale --replicas=0 -n unifi-network-application statefulset/unifi-network-application
+  # kubectl scale --replicas=0 -n unifi-network-application statefulset/mongo-unifi-network-application
 
   kubectl patch postgresCluster clair -n quay --type=merge -p '{"spec":{"shutdown":true}}'
   kubectl patch postgresCluster gitea -n gitea --type=merge -p '{"spec":{"shutdown":true}}'
-  kubectl patch postgresCluster grafana -n postgres --type=merge -p '{"spec":{"shutdown":true}}'
+  kubectl patch postgresCluster grafana -n grafana --type=merge -p '{"spec":{"shutdown":true}}'
   kubectl patch postgresCluster homeassistant -n homeassistant --type=merge -p '{"spec":{"shutdown":true}}'
   kubectl patch postgresCluster nextcloud -n nextcloud --type=merge -p '{"spec":{"shutdown":true}}'
-  kubectl patch postgresCluster photoprism -n postgres --type=merge -p '{"spec":{"shutdown":true}}'
+  kubectl patch postgresCluster photoprism -n photoprism --type=merge -p '{"spec":{"shutdown":true}}'
   kubectl patch postgresCluster stackrox -n stackrox --type=merge -p '{"spec":{"shutdown":true}}'
   kubectl patch postgresCluster quay -n quay --type=merge -p '{"spec":{"shutdown":true}}'
+  kubectl patch postgresCluster zitadel -n zitadel --type=merge -p '{"spec":{"shutdown":true}}'
+  kubectl patch postgresCluster finance -n finance-tracker --type=merge -p '{"spec":{"shutdown":true}}'
+  kubectl patch postgresCluster spotify -n analytics-for-spotify --type=merge -p '{"spec":{"shutdown":true}}'
   # kubectl patch postgresCluster awx -n awx --type=merge -p '{"spec":{"shutdown":true}}'
   # kubectl patch postgresCluster netbox -n netbox --type=merge -p '{"spec":{"shutdown":true}}'
 
@@ -194,6 +238,14 @@ stateful_workload_stop() {
   kubectl scale --replicas=0 -n network-observability-loki deployment/netobserv-querier
   kubectl scale --replicas=0 -n network-observability-loki deployment/netobserv-query-frontend
 
+  kubectl scale --replicas=0 -n openshift-logging statefulset/logging-loki-compactor
+  kubectl scale --replicas=0 -n openshift-logging statefulset/logging-loki-index-gateway
+  kubectl scale --replicas=0 -n openshift-logging statefulset/logging-loki-ingester
+  kubectl scale --replicas=0 -n openshift-logging deployment/logging-loki-distributor
+  kubectl scale --replicas=0 -n openshift-logging deployment/logging-loki-gateway
+  kubectl scale --replicas=0 -n openshift-logging deployment/logging-loki-querier
+  kubectl scale --replicas=0 -n openshift-logging deployment/logging-loki-query-frontend
+
   # kubectl scale --replicas=0 -n awx deployment/awx-operator-controller-manager
   # kubectl scale --replicas=0 -n awx deployment/awx-task
   # kubectl scale --replicas=0 -n awx deployment/awx-web
@@ -206,14 +258,14 @@ stateful_workload_stop() {
 }
 
 stateful_workload_start_pre() {
-  kubectl scale --replicas=1 -n cockroach-operator-system deployments/cockroach-operator-manager
-  kubectl scale --replicas=3 -n zitadel statefulset/crdb
+  # kubectl scale --replicas=1 -n cockroach-operator-system deployments/cockroach-operator-manager
+  # kubectl scale --replicas=3 -n zitadel statefulset/crdb
 
   # kubectl scale --replicas=1 -n mongodb-operator deployments/mongodb-kubernetes-operator
   # kubectl scale --replicas=3 -n unifi-network-application statefulset/mongo-unifi-network-application
 
   kubectl scale --replicas=1 -n influxdb statefulset/influxdb
-  kubectl scale --replicas=1 -n loki statefulset/loki
+  # kubectl scale --replicas=1 -n loki statefulset/loki
   # kubectl scale --replicas=3 -n mariadb-galera statefulset/mariadb-galera
   kubectl scale --replicas=1 -n prometheus statefulset/prometheus
   kubectl scale --replicas=1 -n prometheus statefulset/thanos-store-gateway
@@ -224,14 +276,17 @@ stateful_workload_start_pre() {
   kubectl patch postgresCluster quay -n quay --type=merge -p '{"spec":{"shutdown":false}}'
   kubectl patch postgresCluster homeassistant -n homeassistant --type=merge -p '{"spec":{"shutdown":false}}'
   kubectl patch postgresCluster gitea -n gitea --type=merge -p '{"spec":{"shutdown":false}}'
-  kubectl patch postgresCluster grafana -n postgres --type=merge -p '{"spec":{"shutdown":false}}'
+  kubectl patch postgresCluster grafana -n grafana --type=merge -p '{"spec":{"shutdown":false}}'
   kubectl patch postgresCluster nextcloud -n nextcloud --type=merge -p '{"spec":{"shutdown":false}}'
-  kubectl patch postgresCluster photoprism -n postgres --type=merge -p '{"spec":{"shutdown":false}}'
+  kubectl patch postgresCluster photoprism -n photoprism --type=merge -p '{"spec":{"shutdown":false}}'
   kubectl patch postgresCluster stackrox -n stackrox --type=merge -p '{"spec":{"shutdown":false}}'
+  kubectl patch postgresCluster finance -n finance-tracker --type=merge -p '{"spec":{"shutdown":false}}'
+  kubectl patch postgresCluster spotify -n analytics-for-spotify --type=merge -p '{"spec":{"shutdown":false}}'
   # kubectl patch postgresCluster awx -n awx --type=merge -p '{"spec":{"shutdown":false}}'
   # kubectl patch postgresCluster netbox -n netbox --type=merge -p '{"spec":{"shutdown":false}}'
 
   kubectl scale --replicas=1 -n pihole statefulset/pihole
+  kubectl scale --replicas=1 -n pihole statefulset/pihole-infra
   kubectl scale --replicas=1 -n pihole statefulset/pihole-vlan3
 
   kubectl scale --replicas=2 -n ntp deployment/ntp-rootless
@@ -239,12 +294,25 @@ stateful_workload_start_pre() {
 
 stateful_workload_start() {
 
-  kubectl patch cronjobs -n netbox netbox-housekeeping -p '{"spec" : {"suspend" : false }}'
+  kubectl scale --replicas=1 -n pihole statefulset/pihole
+  kubectl scale --replicas=1 -n pihole statefulset/pihole-infra
+  kubectl scale --replicas=1 -n pihole statefulset/pihole-vlan3
+
+  kubectl scale --replicas=2 -n external-dns deployment/external-dns-microshift
+  kubectl scale --replicas=2 -n external-dns deployment/external-dns-microshift-infra
+  kubectl scale --replicas=2 -n external-dns deployment/external-dns-microshift-vlan3
+  kubectl scale --replicas=2 -n external-dns deployment/external-dns-okd
+  kubectl scale --replicas=2 -n external-dns deployment/external-dns-okd-infra
+  kubectl scale --replicas=2 -n external-dns deployment/external-dns-okd-vlan3
+
+  kubectl scale --replicas=2 -n cloudflare-ddns deployment/cloudflare-ddns
+
+  # kubectl patch cronjobs -n netbox netbox-housekeeping -p '{"spec" : {"suspend" : false }}'
   kubectl patch cronjobs -n photoprism photoprism-cron -p '{"spec" : {"suspend" : false }}'
   kubectl patch cronjobs -n nextcloud nextcloud-preview -p '{"spec" : {"suspend" : false }}'
   kubectl patch cronjobs -n nextcloud nextcloud-rsync -p '{"spec" : {"suspend" : false }}'
   kubectl patch cronjobs -n nextcloud nextcloud-cron -p '{"spec" : {"suspend" : false }}'
-  kubectl patch cronjobs -n mariadb-galera mysqldump-cron -p '{"spec" : {"suspend" : false }}'
+  # kubectl patch cronjobs -n mariadb-galera mysqldump-cron -p '{"spec" : {"suspend" : false }}'
 
   kubectl scale --replicas=1 -n openshift-monitoring deployment/cluster-monitoring-operator
 
@@ -252,10 +320,10 @@ stateful_workload_start() {
   kubectl scale --replicas=2 -n nextcloud statefulset/nextcloud-dragonfly
   kubectl scale --replicas=2 -n gitea statefulset/gitea-dragonfly
   kubectl scale --replicas=2 -n quay statefulset/quay-dragonfly
-  kubectl scale --replicas=2 -n netbox statefulset/netbox-dragonfly
+  # kubectl scale --replicas=2 -n netbox statefulset/netbox-dragonfly
 
-  kubectl scale --replicas=1 -n cockroach-operator-system deployments/cockroach-operator-manager
-  kubectl scale --replicas=3 -n zitadel statefulset/crdb
+  # kubectl scale --replicas=1 -n cockroach-operator-system deployments/cockroach-operator-manager
+  # kubectl scale --replicas=3 -n zitadel statefulset/crdb
   kubectl scale --replicas=2 -n zitadel deployment/zitadel
 
   # kubectl scale --replicas=1 -n mongodb-operator deployments/mongodb-kubernetes-operator
@@ -269,7 +337,7 @@ stateful_workload_start() {
   kubectl scale --replicas=1 -n homeassistant statefulset/homeassistant
   kubectl scale --replicas=1 -n influxdb statefulset/influxdb
   kubectl scale --replicas=1 -n loki statefulset/loki
-  kubectl scale --replicas=3 -n mariadb-galera statefulset/mariadb-galera
+  # kubectl scale --replicas=3 -n mariadb-galera statefulset/mariadb-galera
   kubectl scale --replicas=2 -n nextcloud deployment/nextcloud
   kubectl scale --replicas=1 -n photoprism statefulset/photoprism
   kubectl scale --replicas=1 -n prometheus statefulset/prometheus
@@ -289,12 +357,14 @@ stateful_workload_start() {
   kubectl patch postgresCluster quay -n quay --type=merge -p '{"spec":{"shutdown":false}}'
   kubectl patch postgresCluster homeassistant -n homeassistant --type=merge -p '{"spec":{"shutdown":false}}'
   kubectl patch postgresCluster gitea -n gitea --type=merge -p '{"spec":{"shutdown":false}}'
-  kubectl patch postgresCluster grafana -n postgres --type=merge -p '{"spec":{"shutdown":false}}'
+  kubectl patch postgresCluster grafana -n grafana --type=merge -p '{"spec":{"shutdown":false}}'
   kubectl patch postgresCluster nextcloud -n nextcloud --type=merge -p '{"spec":{"shutdown":false}}'
-  kubectl patch postgresCluster photoprism -n postgres --type=merge -p '{"spec":{"shutdown":false}}'
+  kubectl patch postgresCluster photoprism -n photoprism --type=merge -p '{"spec":{"shutdown":false}}'
   kubectl patch postgresCluster stackrox -n stackrox --type=merge -p '{"spec":{"shutdown":false}}'
-  kubectl patch postgresCluster awx -n awx --type=merge -p '{"spec":{"shutdown":false}}'
-  kubectl patch postgresCluster netbox -n netbox --type=merge -p '{"spec":{"shutdown":false}}'
+  kubectl patch postgresCluster finance -n finance-tracker --type=merge -p '{"spec":{"shutdown":false}}'
+  kubectl patch postgresCluster spotify -n analytics-for-spotify --type=merge -p '{"spec":{"shutdown":false}}'
+  # kubectl patch postgresCluster awx -n awx --type=merge -p '{"spec":{"shutdown":false}}'
+  # kubectl patch postgresCluster netbox -n netbox --type=merge -p '{"spec":{"shutdown":false}}'
 
   kubectl scale --replicas=1 -n argocd deployment/argocd-operator-controller-manager
   kubectl scale --replicas=1 -n argocd statefulset/argocd-application-controller

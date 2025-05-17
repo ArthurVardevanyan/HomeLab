@@ -67,7 +67,7 @@ spec:
                   description: Mirroring configuration of CephBlockPoolRadosNamespace
                   properties:
                     mode:
-                      description: Mode is the mirroring mode; either pool or image
+                      description: Mode is the mirroring mode; either pool or image.
                       enum:
                         - ""
                         - pool
@@ -390,7 +390,11 @@ spec:
                       description: Enabled whether this pool is mirrored or not
                       type: boolean
                     mode:
-                      description: "Mode is the mirroring mode: either pool or image"
+                      description: "Mode is the mirroring mode: pool, image or init-only."
+                      enum:
+                        - pool
+                        - image
+                        - init-only
                       type: string
                     peers:
                       description: Peers represents the peers spec
@@ -950,6 +954,50 @@ spec:
                     kafka:
                       description: Spec of Kafka endpoint
                       properties:
+                        PasswordSecretRef:
+                          description: The kafka password to use for authentication
+                          properties:
+                            key:
+                              description: The key of the secret to select from.  Must be a valid secret key.
+                              type: string
+                            name:
+                              default: ""
+                              description: |-
+                                Name of the referent.
+                                This field is effectively required, but due to backwards compatibility is
+                                allowed to be empty. Instances of this type with an empty value here are
+                                almost certainly wrong.
+                                More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                              type: string
+                            optional:
+                              description: Specify whether the Secret or its key must be defined
+                              type: boolean
+                          required:
+                            - key
+                          type: object
+                          x-kubernetes-map-type: atomic
+                        UserSecretRef:
+                          description: The kafka user name to use for authentication
+                          properties:
+                            key:
+                              description: The key of the secret to select from.  Must be a valid secret key.
+                              type: string
+                            name:
+                              default: ""
+                              description: |-
+                                Name of the referent.
+                                This field is effectively required, but due to backwards compatibility is
+                                allowed to be empty. Instances of this type with an empty value here are
+                                almost certainly wrong.
+                                More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                              type: string
+                            optional:
+                              description: Specify whether the Secret or its key must be defined
+                              type: boolean
+                          required:
+                            - key
+                          type: object
+                          x-kubernetes-map-type: atomic
                         ackLevel:
                           default: broker
                           description: The ack level required for this topic (none/broker)
@@ -960,6 +1008,16 @@ spec:
                         disableVerifySSL:
                           description: Indicate whether the server certificate is validated by the client or not
                           type: boolean
+                        mechanism:
+                          default: PLAIN
+                          description: The authentication mechanism for this topic (PLAIN/SCRAM-SHA-512/SCRAM-SHA-256/GSSAPI/OAUTHBEARER)
+                          enum:
+                            - PLAIN
+                            - SCRAM-SHA-512
+                            - SCRAM-SHA-256
+                            - GSSAPI
+                            - OAUTHBEARER
+                          type: string
                         uri:
                           description: The URI of the Kafka endpoint to push notification to
                           minLength: 1
@@ -1003,6 +1061,26 @@ spec:
                   type: integer
                 phase:
                   type: string
+                secrets:
+                  items:
+                    properties:
+                      name:
+                        description: name is unique within a namespace to reference a secret resource.
+                        type: string
+                      namespace:
+                        description: namespace defines the space within which the secret name must be unique.
+                        type: string
+                      resourceVersion:
+                        type: string
+                      uid:
+                        description: |-
+                          UID is a type that holds unique ID values, including UUIDs.  Because we
+                          don't ONLY use UUIDs, this is an alias to string.  Being a type captures
+                          intent and helps make sure that UIDs and names do not get conflated.
+                        type: string
+                    type: object
+                    x-kubernetes-map-type: atomic
+                  type: array
               type: object
               x-kubernetes-preserve-unknown-fields: true
           required:
@@ -1185,6 +1263,34 @@ spec:
                   description: Ceph Config options
                   nullable: true
                   type: object
+                cephConfigFromSecret:
+                  additionalProperties:
+                    additionalProperties:
+                      description: SecretKeySelector selects a key of a Secret.
+                      properties:
+                        key:
+                          description: The key of the secret to select from.  Must be a valid secret key.
+                          type: string
+                        name:
+                          default: ""
+                          description: |-
+                            Name of the referent.
+                            This field is effectively required, but due to backwards compatibility is
+                            allowed to be empty. Instances of this type with an empty value here are
+                            almost certainly wrong.
+                            More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                          type: string
+                        optional:
+                          description: Specify whether the Secret or its key must be defined
+                          type: boolean
+                      required:
+                        - key
+                      type: object
+                      x-kubernetes-map-type: atomic
+                    type: object
+                  description: CephConfigFromSecret works exactly like CephConfig but takes config value from Secret Key reference.
+                  nullable: true
+                  type: object
                 cephVersion:
                   description: The version information that instructs Rook to orchestrate a particular version of Ceph.
                   nullable: true
@@ -1340,11 +1446,7 @@ spec:
                       format: int64
                       type: integer
                     pgHealthCheckTimeout:
-                      description: |-
-                        PGHealthCheckTimeout is the time (in minutes) that the operator will wait for the placement groups to become
-                        healthy (active+clean) after a drain was completed and OSDs came back up. Rook will continue with the next drain
-                        if the timeout exceeds. It only works if managePodBudgets is true.
-                        No values or 0 means that the operator will wait until the placement groups are healthy before unblocking the next drain.
+                      description: "DEPRECATED: PGHealthCheckTimeout is no longer implemented"
                       format: int64
                       type: integer
                     pgHealthyRegex:
@@ -1787,6 +1889,16 @@ spec:
                       maximum: 9
                       minimum: 0
                       type: integer
+                    externalMonIDs:
+                      description: |-
+                        ExternalMonIDs - optional list of monitor IDs which are deployed externally and not managed by Rook.
+                        If set, Rook will not remove mons with given IDs from quorum.
+                        This parameter is used only for local Rook cluster running in normal mode
+                        and will be ignored if external or stretched mode is used.
+                        leading
+                      items:
+                        type: string
+                      type: array
                     failureDomainLabel:
                       type: string
                     stretchCluster:
@@ -3818,8 +3930,8 @@ spec:
                             properties:
                               nodeAffinity:
                                 properties:
-                                  ? preferredDuringSchedulingIgnoredDuringExecution
-                                  : items:
+                                  preferredDuringSchedulingIgnoredDuringExecution:
+                                    items:
                                       properties:
                                         preference:
                                           properties:
@@ -3870,8 +3982,8 @@ spec:
                                       type: object
                                     type: array
                                     x-kubernetes-list-type: atomic
-                                  ? requiredDuringSchedulingIgnoredDuringExecution
-                                  : properties:
+                                  requiredDuringSchedulingIgnoredDuringExecution:
+                                    properties:
                                       nodeSelectorTerms:
                                         items:
                                           properties:
@@ -3922,8 +4034,8 @@ spec:
                                 type: object
                               podAffinity:
                                 properties:
-                                  ? preferredDuringSchedulingIgnoredDuringExecution
-                                  : items:
+                                  preferredDuringSchedulingIgnoredDuringExecution:
+                                    items:
                                       properties:
                                         podAffinityTerm:
                                           properties:
@@ -4008,8 +4120,8 @@ spec:
                                       type: object
                                     type: array
                                     x-kubernetes-list-type: atomic
-                                  ? requiredDuringSchedulingIgnoredDuringExecution
-                                  : items:
+                                  requiredDuringSchedulingIgnoredDuringExecution:
+                                    items:
                                       properties:
                                         labelSelector:
                                           properties:
@@ -4088,8 +4200,8 @@ spec:
                                 type: object
                               podAntiAffinity:
                                 properties:
-                                  ? preferredDuringSchedulingIgnoredDuringExecution
-                                  : items:
+                                  preferredDuringSchedulingIgnoredDuringExecution:
+                                    items:
                                       properties:
                                         podAffinityTerm:
                                           properties:
@@ -4174,8 +4286,8 @@ spec:
                                       type: object
                                     type: array
                                     x-kubernetes-list-type: atomic
-                                  ? requiredDuringSchedulingIgnoredDuringExecution
-                                  : items:
+                                  requiredDuringSchedulingIgnoredDuringExecution:
+                                    items:
                                       properties:
                                         labelSelector:
                                           properties:
@@ -4332,8 +4444,8 @@ spec:
                             properties:
                               nodeAffinity:
                                 properties:
-                                  ? preferredDuringSchedulingIgnoredDuringExecution
-                                  : items:
+                                  preferredDuringSchedulingIgnoredDuringExecution:
+                                    items:
                                       properties:
                                         preference:
                                           properties:
@@ -4384,8 +4496,8 @@ spec:
                                       type: object
                                     type: array
                                     x-kubernetes-list-type: atomic
-                                  ? requiredDuringSchedulingIgnoredDuringExecution
-                                  : properties:
+                                  requiredDuringSchedulingIgnoredDuringExecution:
+                                    properties:
                                       nodeSelectorTerms:
                                         items:
                                           properties:
@@ -4436,8 +4548,8 @@ spec:
                                 type: object
                               podAffinity:
                                 properties:
-                                  ? preferredDuringSchedulingIgnoredDuringExecution
-                                  : items:
+                                  preferredDuringSchedulingIgnoredDuringExecution:
+                                    items:
                                       properties:
                                         podAffinityTerm:
                                           properties:
@@ -4522,8 +4634,8 @@ spec:
                                       type: object
                                     type: array
                                     x-kubernetes-list-type: atomic
-                                  ? requiredDuringSchedulingIgnoredDuringExecution
-                                  : items:
+                                  requiredDuringSchedulingIgnoredDuringExecution:
+                                    items:
                                       properties:
                                         labelSelector:
                                           properties:
@@ -4602,8 +4714,8 @@ spec:
                                 type: object
                               podAntiAffinity:
                                 properties:
-                                  ? preferredDuringSchedulingIgnoredDuringExecution
-                                  : items:
+                                  preferredDuringSchedulingIgnoredDuringExecution:
+                                    items:
                                       properties:
                                         podAffinityTerm:
                                           properties:
@@ -4688,8 +4800,8 @@ spec:
                                       type: object
                                     type: array
                                     x-kubernetes-list-type: atomic
-                                  ? requiredDuringSchedulingIgnoredDuringExecution
-                                  : items:
+                                  requiredDuringSchedulingIgnoredDuringExecution:
+                                    items:
                                       properties:
                                         labelSelector:
                                           properties:
@@ -7002,7 +7114,11 @@ spec:
                             description: Enabled whether this pool is mirrored or not
                             type: boolean
                           mode:
-                            description: "Mode is the mirroring mode: either pool or image"
+                            description: "Mode is the mirroring mode: pool, image or init-only."
+                            enum:
+                              - pool
+                              - image
+                              - init-only
                             type: string
                           peers:
                             description: Peers represents the peers spec
@@ -7186,7 +7302,11 @@ spec:
                           description: Enabled whether this pool is mirrored or not
                           type: boolean
                         mode:
-                          description: "Mode is the mirroring mode: either pool or image"
+                          description: "Mode is the mirroring mode: pool, image or init-only."
+                          enum:
+                            - pool
+                            - image
+                            - init-only
                           type: string
                         peers:
                           description: Peers represents the peers spec
@@ -10838,7 +10958,11 @@ spec:
                           description: Enabled whether this pool is mirrored or not
                           type: boolean
                         mode:
-                          description: "Mode is the mirroring mode: either pool or image"
+                          description: "Mode is the mirroring mode: pool, image or init-only."
+                          enum:
+                            - pool
+                            - image
+                            - init-only
                           type: string
                         peers:
                           description: Peers represents the peers spec
@@ -11863,6 +11987,25 @@ spec:
                     priorityClassName:
                       description: PriorityClassName sets priority classes on the rgw pods
                       type: string
+                    readAffinity:
+                      description: |-
+                        ReadAffinity defines the RGW read affinity policy to optimize the read requests for the RGW clients
+                        Note: Only supported from Ceph Tentacle (v20)
+                      properties:
+                        type:
+                          description: |-
+                            Type defines the RGW ReadAffinity type
+                            localize: read from the nearest OSD based on crush location of the RGW client
+                            balance: picks a random OSD from the PG's active set
+                            default: read from the primary OSD
+                          enum:
+                            - localize
+                            - balance
+                            - default
+                          type: string
+                      required:
+                        - type
+                      type: object
                     resources:
                       description: The resource requirements for the rgw pods
                       nullable: true
@@ -11939,6 +12082,36 @@ spec:
                         type: string
                       description: |-
                         RgwConfig sets Ceph RGW config values for the gateway clients that serve this object store.
+                        Values are modified at runtime without RGW restart.
+                        This feature is intended for advanced users. It allows breaking configurations to be easily
+                        applied. Use with caution.
+                      nullable: true
+                      type: object
+                    rgwConfigFromSecret:
+                      additionalProperties:
+                        description: SecretKeySelector selects a key of a Secret.
+                        properties:
+                          key:
+                            description: The key of the secret to select from.  Must be a valid secret key.
+                            type: string
+                          name:
+                            default: ""
+                            description: |-
+                              Name of the referent.
+                              This field is effectively required, but due to backwards compatibility is
+                              allowed to be empty. Instances of this type with an empty value here are
+                              almost certainly wrong.
+                              More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                            type: string
+                          optional:
+                            description: Specify whether the Secret or its key must be defined
+                            type: boolean
+                        required:
+                          - key
+                        type: object
+                        x-kubernetes-map-type: atomic
+                      description: |-
+                        RgwConfigFromSecret works exactly like RgwConfig but takes config value from Secret Key reference.
                         Values are modified at runtime without RGW restart.
                         This feature is intended for advanced users. It allows breaking configurations to be easily
                         applied. Use with caution.
@@ -12385,7 +12558,11 @@ spec:
                           description: Enabled whether this pool is mirrored or not
                           type: boolean
                         mode:
-                          description: "Mode is the mirroring mode: either pool or image"
+                          description: "Mode is the mirroring mode: pool, image or init-only."
+                          enum:
+                            - pool
+                            - image
+                            - init-only
                           type: string
                         peers:
                           description: Peers represents the peers spec
@@ -12695,7 +12872,7 @@ spec:
                   nullable: true
                   properties:
                     name:
-                      description: RGW Zone the Object Store is in
+                      description: CephObjectStoreZone name this CephObjectStore is part of
                       type: string
                   required:
                     - name
@@ -12953,6 +13130,61 @@ spec:
                 displayName:
                   description: The display name for the ceph users
                   type: string
+                keys:
+                  description: |-
+                    Allows specifying credentials for the user. If not provided, the operator
+                    will generate them.
+                  items:
+                    description: |-
+                      ObjectUserKey defines a set of rgw user access credentials to be retrieved
+                      from secret resources.
+                    properties:
+                      accessKeyRef:
+                        description: Secret key selector for the access_key (commonly referred to as AWS_ACCESS_KEY_ID).
+                        properties:
+                          key:
+                            description: The key of the secret to select from.  Must be a valid secret key.
+                            type: string
+                          name:
+                            default: ""
+                            description: |-
+                              Name of the referent.
+                              This field is effectively required, but due to backwards compatibility is
+                              allowed to be empty. Instances of this type with an empty value here are
+                              almost certainly wrong.
+                              More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                            type: string
+                          optional:
+                            description: Specify whether the Secret or its key must be defined
+                            type: boolean
+                        required:
+                          - key
+                        type: object
+                        x-kubernetes-map-type: atomic
+                      secretKeyRef:
+                        description: Secret key selector for the secret_key (commonly referred to as AWS_SECRET_ACCESS_KEY).
+                        properties:
+                          key:
+                            description: The key of the secret to select from.  Must be a valid secret key.
+                            type: string
+                          name:
+                            default: ""
+                            description: |-
+                              Name of the referent.
+                              This field is effectively required, but due to backwards compatibility is
+                              allowed to be empty. Instances of this type with an empty value here are
+                              almost certainly wrong.
+                              More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                            type: string
+                          optional:
+                            description: Specify whether the Secret or its key must be defined
+                            type: boolean
+                        required:
+                          - key
+                        type: object
+                        x-kubernetes-map-type: atomic
+                    type: object
+                  type: array
                 quotas:
                   description: ObjectUserQuotaSpec can be used to set quotas for the object store user to limit their usage. See the [Ceph docs](https://docs.ceph.com/en/latest/radosgw/admin/?#quota-management) for more
                   nullable: true
@@ -12989,6 +13221,27 @@ spec:
                     type: string
                   nullable: true
                   type: object
+                keys:
+                  items:
+                    properties:
+                      name:
+                        description: name is unique within a namespace to reference a secret resource.
+                        type: string
+                      namespace:
+                        description: namespace defines the space within which the secret name must be unique.
+                        type: string
+                      resourceVersion:
+                        type: string
+                      uid:
+                        description: |-
+                          UID is a type that holds unique ID values, including UUIDs.  Because we
+                          don't ONLY use UUIDs, this is an alias to string.  Being a type captures
+                          intent and helps make sure that UIDs and names do not get conflated.
+                        type: string
+                    type: object
+                    x-kubernetes-map-type: atomic
+                  nullable: true
+                  type: array
                 observedGeneration:
                   description: ObservedGeneration is the latest generation observed by the controller.
                   format: int64
@@ -13231,7 +13484,11 @@ spec:
                           description: Enabled whether this pool is mirrored or not
                           type: boolean
                         mode:
-                          description: "Mode is the mirroring mode: either pool or image"
+                          description: "Mode is the mirroring mode: pool, image or init-only."
+                          enum:
+                            - pool
+                            - image
+                            - init-only
                           type: string
                         peers:
                           description: Peers represents the peers spec
@@ -13410,7 +13667,11 @@ spec:
                           description: Enabled whether this pool is mirrored or not
                           type: boolean
                         mode:
-                          description: "Mode is the mirroring mode: either pool or image"
+                          description: "Mode is the mirroring mode: pool, image or init-only."
+                          enum:
+                            - pool
+                            - image
+                            - init-only
                           type: string
                         peers:
                           description: Peers represents the peers spec

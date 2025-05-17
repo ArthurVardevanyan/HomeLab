@@ -4,17 +4,17 @@ resources:
   - ../../base
   - ../../components/operator
   - ../../components/cloudflare
-  # - ../../components/network-policy/base
-  # - ../../components/network-policy/okd
-  # - ../../components/network-policy/microshift
+    # - ../../components/network-policy/base
+    # - ../../components/network-policy/okd
+    # - ../../components/network-policy/microshift
 patches:
-  - target:
-      kind: Subscription
-      name: cert-manager
-    patch: |-
+  - patch: |-
       - op: replace
         path: /spec/source
         value: operatorhubio-catalog
       - op: replace
         path: /spec/sourceNamespace
         value: olm
+    target:
+      kind: Subscription
+      name: cert-manager

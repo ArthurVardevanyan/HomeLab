@@ -1,0 +1,136 @@
+apiVersion: tekton.dev/v1beta1
+kind: Task
+metadata:
+  name: k8s-deploy
+  labels:
+    app.kubernetes.io/version: "0.3.0"
+  annotations:
+    argocd.argoproj.io/sync-wave: "2"
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+    tekton.dev/pipelines.minVersion: "0.38.0"
+    tekton.dev/categories: Deployment
+    tekton.dev/tags: k8s
+    tekton.dev/displayName: "k8s-deploy"
+    tekton.dev/platforms: "linux/amd64,linux/s390x,linux/ppc64le,linux/arm64"
+spec:
+  description: >-
+    A Simple Task to Deploy Manifests to a Cluster
+
+  params:
+    - name: git-commit
+      type: string
+    - name: cluster-api
+      type: string
+      optional: true
+      default: ""
+    - name: target-namespace
+      type: string
+      optional: true
+      default: ""
+    - name: target-service-account
+      type: string
+      optional: true
+      default: ""
+    - name: token-exchange-endpoint
+      type: string
+      optional: true
+      default: ""
+
+  workspaces:
+    - name: data
+
+  volumes:
+    - name: serviceaccount-token
+      projected:
+        sources:
+          - serviceAccountToken:
+              audience: openshift
+              expirationSeconds: 3600
+              path: token
+        defaultMode: 420
+
+  steps:
+    - name: deploy
+      image: "registry.arthurvardevanyan.com/homelab/toolbox:not_latest"
+      env:
+        - name: SHA
+          value: $(params.git-commit)
+        - name: CLUSTER_API
+          value: $(params.cluster-api)
+        - name: TARGET_NAMESPACE
+          value: $(params.target-namespace)
+        - name: TARGET_SERVICE_ACCOUNT
+          value: $(params.target-service-account)
+        - name: TOKEN_EXCHANGE_ENDPOINT
+          value: $(params.token-exchange-endpoint)
+        - name: WORKSPACE_DATA_PATH
+          value: $(workspaces.data.path)
+      resources:
+        requests:
+          memory: 256Mi
+          cpu: 100m
+        limits:
+          memory: 512Mi
+          cpu: 300m
+      securityContext:
+        runAsNonRoot: true
+        #runAsUser: 65532
+        privileged: false
+        readOnlyRootFilesystem: true
+        allowPrivilegeEscalation: false
+        seccompProfile:
+          type: RuntimeDefault
+        capabilities:
+          drop:
+            - ALL
+            - MKNOD
+      volumeMounts:
+        - name: serviceaccount-token
+          readOnly: true
+          mountPath: /var/run/secrets/openshift/serviceaccount
+      script: |
+        #!/bin/bash
+
+        set -o errexit
+        set -o nounset
+        set -o pipefail
+
+        echo "Starting Deployment"
+
+        if [[ -n "${TOKEN_EXCHANGE_ENDPOINT}" ]]; then
+          echo "Exchanging Token"
+          export KUBECONFIG="${WORKSPACE_DATA_PATH}/kubeconfig"
+
+          export JSON="{
+            \"namespace\": \"${TARGET_NAMESPACE}\",
+            \"serviceAccountName\": \"${TARGET_SERVICE_ACCOUNT}\"
+          }"
+
+          export TOKEN=$(curl --header "Authorization: Bearer $(cat /var/run/secrets/openshift/serviceaccount/token)"\
+            "${TOKEN_EXCHANGE_ENDPOINT}" -X POST \
+            -H "Content-type: application/json" \
+            -H "Accept: application/json" \
+            -d "${JSON}" | jq --raw-output '.status.token')
+
+        cat <<EOF > "${WORKSPACE_DATA_PATH}/kubeconfig"
+        apiVersion: v1
+        kind: Config
+        clusters:
+          - name: cluster
+            cluster:
+              server: "${CLUSTER_API}"
+        contexts:
+          - name: context
+            context:
+              cluster: cluster
+              user: user
+        users:
+          - name: user
+            user:
+              token: ${TOKEN}
+        current-context: context
+        EOF
+        fi
+
+        kubectl kustomize ${WORKSPACE_DATA_PATH}/kubernetes/overlays/okd | \
+          sed "s/<VERSION>/${SHA}/g" | kubectl apply -f -

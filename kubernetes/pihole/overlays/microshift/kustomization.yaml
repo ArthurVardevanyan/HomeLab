@@ -9,11 +9,10 @@ components:
   - ../../components/pihole-infra
   - ../../components/pihole
   - ../../components/vlan3
+    #       - op: remove
+    #         path: /spec/template/metadata/annotations/k8s.v1.cni.cncf.io~1networks
 patches:
-  - target:
-      kind: StatefulSet
-      name: pihole-infra
-    patch: |-
+  - patch: |-
       - op: replace
         path: /spec/template/spec/containers/0/name
         value: pihole-microshift-infra
@@ -23,10 +22,10 @@ patches:
       - op: replace
         path: /spec/template/spec/containers/1/env/0/value
         value: pihole-microshift-infra
-  - target:
+    target:
       kind: StatefulSet
-      name: pihole
-    patch: |-
+      name: pihole-infra
+  - patch: |-
       - op: replace
         path: /spec/template/spec/containers/0/name
         value: pihole-microshift
@@ -36,10 +35,10 @@ patches:
       - op: replace
         path: /spec/template/spec/containers/1/env/0/value
         value: pihole-microshift
-  - target:
+    target:
       kind: StatefulSet
-      name: pihole-vlan3
-    patch: |-
+      name: pihole
+  - patch: |-
       - op: replace
         path: /spec/template/spec/containers/0/name
         value: pihole-microshift-vlan3
@@ -49,37 +48,38 @@ patches:
       - op: replace
         path: /spec/template/spec/containers/1/env/0/value
         value: pihole-microshift-vlan3
-  - target:
-      kind: Service
-      name: pihole-okd-infra
-    patch: |-
+    target:
+      kind: StatefulSet
+      name: pihole-vlan3
+  - patch: |-
       - op: replace
         path: /metadata/name
         value: pihole-microshift-infra
-  - target:
+    target:
       kind: Service
-      name: pihole-okd
-    patch: |-
+      name: pihole-okd-infra
+  - patch: |-
       - op: replace
         path: /metadata/name
         value: pihole-microshift
-  - target:
+    target:
       kind: Service
-      name: pihole-okd-vlan3
-    patch: |-
+      name: pihole-okd
+  - patch: |-
       - op: replace
         path: /metadata/name
         value: pihole-microshift-vlan3
-  #       - op: remove
-  #         path: /spec/template/metadata/annotations/k8s.v1.cni.cncf.io~1networks
-  - target:
-      kind: PersistentVolumeClaim
-    patch: |-
+    target:
+      kind: Service
+      name: pihole-okd-vlan3
+  - patch: |-
       - op: replace
         path: /spec/storageClassName
         value: topolvm-provisioner
-  - target:
-      kind: StatefulSet
-    patch: |-
+    target:
+      kind: PersistentVolumeClaim
+  - patch: |-
       - op: remove
         path:  /spec/template/metadata/annotations/k8s.v1.cni.cncf.io~1networks
+    target:
+      kind: StatefulSet

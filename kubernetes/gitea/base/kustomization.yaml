@@ -1,5 +1,9 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
-kind: Kustomization
+kind:
+  Kustomization
+  #  - ./minio/tenant.yaml
+  #  - ./minio/network-policy.yaml
+  #  - ./minio/pdb.yaml
 resources:
   - ./certificate.yaml
   - ./limit-range.yaml
@@ -21,9 +25,6 @@ resources:
   - ./meilisearch/service-account.yaml
   - ./meilisearch/service.yaml
   - ./meilisearch/network-policy.yaml
-  #  - ./minio/tenant.yaml
-  #  - ./minio/network-policy.yaml
-  #  - ./minio/pdb.yaml
   - ./postgres/postgres.yaml
   - ./postgres/network-policy.yaml
   - ./postgres/secret.yaml

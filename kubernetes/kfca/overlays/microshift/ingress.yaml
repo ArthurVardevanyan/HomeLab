@@ -1,0 +1,24 @@
+kind: Ingress
+apiVersion: networking.k8s.io/v1
+metadata:
+  name: k8s-federated-credential-api
+  namespace: k8s-federated-credential
+  annotations:
+    route.openshift.io/termination: edge
+spec:
+  # ingressClassName: openshift-default
+  tls:
+    - hosts:
+        - kfca.microshift.arthurvardevanyan.com
+      secretName: k8s-federated-credential-cert
+  rules:
+    - host: "kfca.microshift.arthurvardevanyan.com"
+      http:
+        paths:
+          - path: ""
+            pathType: ImplementationSpecific
+            backend:
+              service:
+                name: k8s-federated-credential-api
+                port:
+                  name: http

@@ -5,23 +5,19 @@ resources:
 generatorOptions:
   disableNameSuffixHash: true
 secretGenerator:
-  - name: alertmanager-main
-    namespace: openshift-monitoring
-    files:
+  - files:
       - alertmanager.yaml
+    name: alertmanager-main
+    namespace: openshift-monitoring
 patches:
-  - target:
-      kind: Deployment
-      name: openshift-monitoring-cr-controller-manager
-    patch: |-
+  - patch: |-
       - op: replace
         path: /spec/replicas
         value: 1
-  - target:
-      kind: Cluster
-      group: monitoring.arthurvardevanyan.com
-      name: cluster-monitoring-config
-    patch: |-
+    target:
+      kind: Deployment
+      name: openshift-monitoring-cr-controller-manager
+  - patch: |-
       - op: replace
         path: /spec/enableUserWorkload
         value: false
@@ -40,3 +36,7 @@ patches:
       - op: replace
         path: /spec/alertmanagerMain/volumeClaimTemplate/spec/storageClassName
         value: lvms-vg1
+    target:
+      group: monitoring.arthurvardevanyan.com
+      kind: Cluster
+      name: cluster-monitoring-config

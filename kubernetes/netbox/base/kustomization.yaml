@@ -1,28 +1,28 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
-kind: Kustomization
+kind:
+  Kustomization
+  # - ./pdb.yaml
+  # - ./ingress.yaml
+  # - ./dragonfly/dragonfly.yaml
+  # - ./dragonfly/pdb.yaml
+  # - ./postgres/postgres.yaml
 resources:
   - ./limit-range.yaml
   - ./namespace.yaml
-  # - ./pdb.yaml
-  # - ./ingress.yaml
   - ./secret.yaml
   - ./deployment.yaml
   - ./network-policy.yaml
   - ./resource-quota.yaml
   - ./service-account.yaml
   - ./service.yaml
-  # - ./dragonfly/dragonfly.yaml
   - ./dragonfly/network-policy.yaml
-  # - ./dragonfly/pdb.yaml
-  # - ./postgres/postgres.yaml
   - ./postgres/network-policy.yaml
   - ./postgres/secret.yaml
   - ./object-bucket-claim.yaml
   - ./velero.yaml
   - ./cronjob.yaml
-  # - ./oauth-client.yaml
+    # - ./oauth-client.yaml
 generatorOptions:
-  disableNameSuffixHash: false # ArgoCD Garbage Collection
   labels:
     app.kubernetes.io/instance: netbox
     app.kubernetes.io/managed-by: Helm
@@ -30,8 +30,8 @@ generatorOptions:
     app.kubernetes.io/version: v4.0.0
     helm.sh/chart: netbox-5.0.0-beta9
 secretGenerator:
-  - name: netbox-config
-    namespace: netbox
-    files:
+  - files:
       - configs/configuration.py
       - configs/netbox.yaml
+    name: netbox-config
+    namespace: netbox

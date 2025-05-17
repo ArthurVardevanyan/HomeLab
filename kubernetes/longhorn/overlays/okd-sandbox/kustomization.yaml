@@ -5,17 +5,17 @@ resources:
 components:
   - ../../components/okd
 patches:
-  - target:
-      kind: Ingress
-      name: longhorn-ui
-    patch: |-
+  - patch: |-
       - op: replace
-        path: /spec/rules/0/host
+        path: /spec/host
         value: longhorn.apps.okd.virt.arthurvardevanyan.com
-  - target:
-      kind: DaemonSet
-      name: longhorn-manager
-    patch: |-
+    target:
+      kind: Route
+      name: longhorn-ui
+  - patch: |-
       - op: replace
         path: /spec/template/spec/containers/0/resources/requests/memory
         value: 512Mi
+    target:
+      kind: DaemonSet
+      name: longhorn-manager

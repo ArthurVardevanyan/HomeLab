@@ -41,22 +41,22 @@ spec:
         nameservers:
           - 10.102.3.1
       containers:
-        - image: docker.io/pihole/pihole:2024.07.0@sha256:0def896a596e8d45780b6359dbf82fc8c75ef05b97e095452e67a0a4ccc95377
+        - image: docker.io/pihole/pihole:2025.04.0@sha256:c2215c570976ebc23ab6688f556a80133d4236dae0bffee678129da4396fbd61
           imagePullPolicy: IfNotPresent
           name: pihole-okd-vlan3
           env:
             - name: TZ
               value: "America/Detroit"
-            - name: VIRTUAL_HOST
-              value: "pihole.arthurvardevanyan.com"
-            - name: DNSSEC
+            - name: FTLCONF_dns_dnssec
               value: "false"
-            - name: DNSMASQ_LISTENING
+            - name: FTLCONF_dns_listeningMode
               value: all
-            - name: CUSTOM_CACHE_SIZE
+            - name: FTLCONF_dns_cache_size
               value: "10000"
-            - name: PIHOLE_DNS_
+            - name: FTLCONF_dns_upstreams
               value: "10.101.11.4;10.101.11.5" #"10.101.11.5"
+            - name: FTLCONF_misc_etc_dnsmasq_d
+              value: "true"
           securityContext:
             runAsNonRoot: false
             privileged: true
@@ -136,7 +136,7 @@ spec:
             requests:
               cpu: 5m
               memory: 16Mi
-          image: docker.io/ekofr/pihole-exporter:v0.4.0@sha256:b101b2beb6787aee407be287fe35426cf88f15233ed01aeeef445931232d89e4
+          image: docker.io/ekofr/pihole-exporter:v1.0.1@sha256:c33eec2a8308fa510608b93d4921bb62f75f6132f8792b24e63972835f624496
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 9617

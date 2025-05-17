@@ -1,0 +1,24 @@
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-internet-egress-notifications
+  namespace: argocd-apps
+  annotations:
+    argocd.argoproj.io/sync-wave: "0"
+  labels:
+    app.kubernetes.io/instance: argocd
+spec:
+  policyTypes:
+    - Egress
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: argocd-apps-notifications-controller
+  egress:
+    - to:
+        # https://api.github.com/meta
+        - ipBlock:
+            cidr: 140.82.112.0/20
+            # except:
+            #   - 10.0.0.0/8
+            #   - 172.16.0.0/12
+            #   - 192.168.0.0/16

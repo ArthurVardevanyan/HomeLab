@@ -7,16 +7,16 @@ resources:
 components:
   - ../../components/openshift
 patches:
-  - target:
-      kind: Deployment
-      name: sensor
-    patch: |-
+  - patch: |-
       - op: replace
         path: /spec/template/spec/containers/0/env/5
-        value: { "name": "ROX_CENTRAL_ENDPOINT", "value": "central-stackrox.apps.okd.homelab.arthurvardevanyan.com:443" }
+        value: { "name": "ROX_CENTRAL_ENDPOINT", "value": "central-stackrox.app.okd.homelab.arthurvardevanyan.com:443" }
       - op: replace
         path: /spec/template/spec/containers/0/env/8
         value: { "name": "ROX_HELM_CLUSTER_CONFIG_FP", "value": "<path:secret/data/homelab/stackrox/sandbox#config-fingerprint>" }
       - op: replace
         path: /spec/template/spec/containers/0/env/7
         value: { "name": "ROX_OPENSHIFT_API", "value": "true" }
+    target:
+      kind: Deployment
+      name: sensor

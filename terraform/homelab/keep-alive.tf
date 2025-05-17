@@ -138,11 +138,6 @@ resource "google_cloudfunctions2_function" "okd_homelab_keep_alive_cloud_functio
         object = "${data.archive_file.keep_alive.output_md5}.zip"
       }
     }
-    environment_variables = {
-      GCS_BUCKET    = "okd_homelab_keep_alive"
-      ALLOWED_DELTA = "630" # 10.5 Minutes
-    }
-
   }
   service_config {
     service_account_email = google_service_account.keep_alive.email
@@ -152,6 +147,8 @@ resource "google_cloudfunctions2_function" "okd_homelab_keep_alive_cloud_functio
     ingress_settings      = "ALLOW_ALL"
     environment_variables = {
       LOG_EXECUTION_ID = "true"
+      GCS_BUCKET       = "okd_homelab_keep_alive"
+      ALLOWED_DELTA    = "630" # 10.5 Minutes
     }
     secret_environment_variables {
       key        = "DISCORD"

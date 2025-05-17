@@ -8,10 +8,9 @@ resources:
   - ./service.yaml
   - ./statefulset.yaml
   - ./rbac.yaml
-generatorOptions:
-  disableNameSuffixHash: false # ArgoCD Garbage Collection
+generatorOptions: {}
 configMapGenerator:
-  - name: vault-config
-    namespace: vault
-    files:
+  - files:
       - extraconfig-from-values.hcl
+    name: vault-config
+    namespace: vault
