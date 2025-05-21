@@ -89,6 +89,20 @@ spec:
           echo "${FILE_PATH}" | cut -d'/' -f1,2 >>/tmp/files_changed.log
         done
 
+        TEST_DIR="/tmp/lint"
+        rm -rf /tmp/lint
+        mkdir -p /tmp/lint
+        echo "Build Lint"
+
+        for FILE_PATH in ${WHATS_CHANGED}; do
+          echo "/${TEST_DIR:-tmp}/${FILE_PATH//\//_}"
+          cp "${WORKSPACE_DATA_PATH}/${FILE_PATH}" "/${TEST_DIR:-tmp}/${FILE_PATH//\//_}" 2>/dev/null || :
+        done
+        if grep -q "\.md$" "${WHATS_CHANGED}"; then
+          markdownlint --disable MD013 -- /${TEST_DIR:-tmp}/*.md
+        fi
+        prettier /${TEST_DIR:-tmp}/* --check
+
         export FOLDER_LIST
         FOLDER_LIST=$(sort -u /tmp/files_changed.log | grep -E "kubernetes/|okd/")
         echo "${FOLDER_LIST}"
