@@ -102,6 +102,8 @@ spec:
               mountPath: /etc/pihole
             - name: etc-dnsmasq
               mountPath: /etc/dnsmasq.d
+            - name: var-log
+              mountPath: /var/log/pihole
             - name: wildcard-dns
               mountPath: "/etc/dnsmasq.d/02-my-wildcard-dns.conf"
               subPath: "02-my-wildcard-dns.conf"
@@ -168,3 +170,6 @@ spec:
           emptyDir:
             medium: Memory
             sizeLimit: 512Mi
+        - name: var-log
+          emptyDir:
+            sizeLimit: 25Gi

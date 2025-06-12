@@ -102,6 +102,8 @@ spec:
               mountPath: /etc/pihole
             - name: etc-dnsmasq
               mountPath: /etc/dnsmasq.d
+            - name: var-log
+              mountPath: /var/log/pihole
             - name: wildcard-dns
               mountPath: "/etc/dnsmasq.d/02-my-wildcard-dns.conf"
               subPath: "02-my-wildcard-dns.conf"
@@ -116,10 +118,10 @@ spec:
           resources:
             limits:
               cpu: 500m
-              memory: 2Gi
+              memory: 3Gi
             requests:
               cpu: 25m
-              memory: 512Mi
+              memory: 1Gi
         - name: pihole-exporter
           securityContext:
             runAsNonRoot: false
@@ -168,3 +170,6 @@ spec:
           emptyDir:
             medium: Memory
             sizeLimit: 512Mi
+        - name: var-log
+          emptyDir:
+            sizeLimit: 25Gi
