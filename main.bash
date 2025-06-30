@@ -1123,6 +1123,7 @@ install_okd_virt() {
   kubectl apply -f "${HOMELAB}/sandbox/kubevirt/okd/vm"
 
   export KUBECONFIG="${OKD}/okd/auth/kubeconfig"
+  kubectl config set-cluster okd --insecure-skip-tls-verify=true
   "${OKD}/openshift-install" agent wait-for bootstrap-complete --dir "${OKD}/okd/"
   # "${OKD}/oc" apply -f "${HOMELAB}/okd/okd-configuration/overlays/sandbox/ingress-controller.yaml"
   "${OKD}/openshift-install" agent wait-for install-complete --dir "${OKD}/okd/"
@@ -1421,6 +1422,7 @@ install_addons_okd_virt() {
   export OKD=/tmp/okd
   export KUBECONFIG="${OKD}/okd/auth/kubeconfig"
   export HOMELAB="${PWD}"
+  kubectl config set-cluster okd --insecure-skip-tls-verify=true
 
   echo -e "\n${BLUE}Installing Cluster Addons:${NC}"
   echo -e "\n\n${BLUE}Get URL:${NC}"
