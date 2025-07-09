@@ -1,32 +1,32 @@
-apiVersion: kyverno.io/v1
-kind: Policy
-metadata:
-  name: selinux
-  namespace: velero
-  annotations:
-    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
-    argocd.argoproj.io/sync-wave: "1"
-spec:
-  background: false
-  rules:
-    - name: selinux
-      match:
-        any:
-          - resources:
-              kinds:
-                - Pod
-              selector:
-                matchLabels:
-                  velero.io/exposer-pod-group: snapshot-exposer
-      preconditions:
-        all:
-          - key: "{{ request.object.metadata.name }}"
-            operator: AnyIn
-            value: ["nextcloud*"]
-      mutate:
-        patchStrategicMerge:
-          metadata:
-            annotations:
-              io.kubernetes.cri-o.TrySkipVolumeSELinuxLabel: "true"
-          spec:
-            runtimeClassName: selinux
+# apiVersion: kyverno.io/v1
+# kind: Policy
+# metadata:
+#   name: selinux
+#   namespace: velero
+#   annotations:
+#     argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+#     argocd.argoproj.io/sync-wave: "1"
+# spec:
+#   background: false
+#   rules:
+#     - name: selinux
+#       match:
+#         any:
+#           - resources:
+#               kinds:
+#                 - Pod
+#               selector:
+#                 matchLabels:
+#                   velero.io/exposer-pod-group: snapshot-exposer
+#       preconditions:
+#         all:
+#           - key: "{{ request.object.metadata.name }}"
+#             operator: AnyIn
+#             value: ["nextcloud*"]
+#       mutate:
+#         patchStrategicMerge:
+#           metadata:
+#             annotations:
+#               io.kubernetes.cri-o.TrySkipVolumeSELinuxLabel: "true"
+#           spec:
+#             runtimeClassName: selinux
