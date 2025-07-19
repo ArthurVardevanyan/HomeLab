@@ -1,0 +1,74 @@
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: immich
+  namespace: immich
+spec:
+  accessModes:
+    - ReadWriteMany
+  volumeMode: Filesystem
+  storageClassName: rook-cephfs
+  resources:
+    requests:
+      storage: 50Gi
+---
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: immich-machine-learning-cache
+  namespace: immich
+  labels:
+    app.kubernetes.io/instance: immich
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: machine-learning
+    app.kubernetes.io/version: v1.119.0
+    helm.sh/chart: immich-0.9.3
+spec:
+  accessModes:
+    - "ReadWriteMany"
+  resources:
+    requests:
+      storage: "10Gi"
+  storageClassName: "rook-cephfs-ci"
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  namespace: immich
+  name: immich-media
+  labels:
+    app.kubernetes.io/instance: immich
+    velero.io/exclude-from-backup: "true"
+spec:
+  storageClassName: nfs
+  volumeName: immich-media
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 250G
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  namespace: immich
+  name: immich-media
+  labels:
+    type: local
+    app.kubernetes.io/instance: immich
+    velero.io/exclude-from-backup: "true"
+spec:
+  storageClassName: nfs
+  capacity:
+    storage: 512Gi
+  accessModes:
+    - ReadWriteMany
+  mountOptions:
+    - hard
+    - nfsvers=4.1
+  nfs:
+    path: /mnt/backup/File_Storage/Nextcloud
+    server: 10.101.1.6
+  claimRef:
+    name: immich-media
+    namespace: immich
