@@ -12,25 +12,6 @@ spec:
     requests:
       storage: 100Gi
 ---
-kind: PersistentVolumeClaim
-apiVersion: v1
-metadata:
-  name: immich-machine-learning-cache
-  namespace: immich
-  labels:
-    app.kubernetes.io/instance: immich
-    app.kubernetes.io/managed-by: Helm
-    app.kubernetes.io/name: machine-learning
-    app.kubernetes.io/version: v1.119.0
-    helm.sh/chart: immich-0.9.3
-spec:
-  accessModes:
-    - "ReadWriteMany"
-  resources:
-    requests:
-      storage: "10Gi"
-  storageClassName: "rook-cephfs-ci"
----
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
