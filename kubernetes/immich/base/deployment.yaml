@@ -13,7 +13,7 @@ metadata:
     helm.sh/chart: immich-0.9.3
 spec:
   revisionHistoryLimit: 3
-  replicas: 1
+  replicas: 2
   strategy:
     type: RollingUpdate
   selector:
@@ -58,7 +58,7 @@ spec:
             limits:
               cpu: 6000m
               ephemeral-storage: 5Gi
-              memory: 5Gi
+              memory: 6Gi
             requests:
               cpu: 50m
               ephemeral-storage: 1Gi
@@ -125,8 +125,8 @@ spec:
             timeoutSeconds: 1
       volumes:
         - name: cache
-          persistentVolumeClaim:
-            claimName: immich-machine-learning-cache
+          emptyDir:
+            sizeLimit: 10Gi
         - name: tmp
           emptyDir:
             sizeLimit: 5Gi
@@ -200,7 +200,7 @@ spec:
             limits:
               cpu: 3000m
               ephemeral-storage: 5Gi
-              memory: 5Gi
+              memory: 6Gi
             requests:
               cpu: 50m
               ephemeral-storage: 1Gi
