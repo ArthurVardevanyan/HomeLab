@@ -27,7 +27,7 @@ spec:
         app.kubernetes.io/instance: immich
     spec:
       securityContext:
-        runAsNonRoot: false # true
+        runAsNonRoot: true
         fsGroupChangePolicy: OnRootMismatch
         seccompProfile:
           type: RuntimeDefault
@@ -64,10 +64,10 @@ spec:
               ephemeral-storage: 1Gi
               memory: 384Mi
           securityContext:
-            runAsNonRoot: false # true
+            runAsNonRoot: true
             privileged: false
-            readOnlyRootFilesystem: false # true
-            allowPrivilegeEscalation: true # false
+            readOnlyRootFilesystem: true
+            allowPrivilegeEscalation: false
             seccompProfile:
               type: RuntimeDefault
             capabilities:
@@ -79,7 +79,7 @@ spec:
             - name: DB_HOSTNAME
               value: immich-primary.immich.svc
             - name: DB_PASSWORD
-              value: immich
+              value: "immich" # TODO
             - name: DB_USERNAME
               value: immich
             - name: IMMICH_MACHINE_LEARNING_URL
@@ -97,6 +97,12 @@ spec:
           volumeMounts:
             - name: cache
               mountPath: /cache
+            - name: dot-cache
+              mountPath: /.cache
+            - name: dot-config
+              mountPath: /.config
+            - name: data
+              mountPath: /data
             - name: tmp
               mountPath: /tmp
           livenessProbe:
@@ -125,6 +131,15 @@ spec:
             timeoutSeconds: 1
       volumes:
         - name: cache
+          emptyDir:
+            sizeLimit: 10Gi
+        - name: dot-cache
+          emptyDir:
+            sizeLimit: 10Gi
+        - name: dot-config
+          emptyDir:
+            sizeLimit: 10Gi
+        - name: data
           emptyDir:
             sizeLimit: 10Gi
         - name: tmp
@@ -189,7 +204,7 @@ spec:
           securityContext:
             runAsNonRoot: true
             privileged: false
-            readOnlyRootFilesystem: false # true
+            readOnlyRootFilesystem: true
             allowPrivilegeEscalation: false
             seccompProfile:
               type: RuntimeDefault
@@ -211,7 +226,7 @@ spec:
             - name: DB_HOSTNAME
               value: immich-primary.immich.svc
             - name: DB_PASSWORD
-              value: "" # TODO
+              value: "immich" # TODO
             - name: DB_USERNAME
               value: immich
             - name: IMMICH_MACHINE_LEARNING_URL
@@ -234,16 +249,7 @@ spec:
             - name: library
               mountPath: /usr/src/app/upload
             - name: immich-media
-              mountPath: /mnt/media/Photos
-              subPath: Arthur/files/Photos/
-              readOnly: true
-            - name: immich-media
-              mountPath: /mnt/media/Trips-Events
-              subPath: Arthur/files/Trips-Events/
-              readOnly: true
-            - name: immich-media
-              mountPath: /mnt/media/Trips
-              subPath: Arthur/files/Trips-Events/
+              mountPath: /mnt/media
               readOnly: true
           livenessProbe:
             failureThreshold: 3
