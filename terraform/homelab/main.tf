@@ -2,9 +2,9 @@ terraform {
   backend "gcs" {}
 }
 
-data "vault_generic_secret" "truenas" {
-  path = "secret/truenas/api"
-}
+# data "vault_generic_secret" "truenas" {
+#   path = "secret/truenas/api"
+# }
 
 data "vault_generic_secret" "org" {
   path = "secret/gcp/org/av/projects"
@@ -25,10 +25,10 @@ locals {
   homelab_project_num = data.vault_generic_secret.homelab.data["homelab_project_num"]
   user                = data.vault_generic_secret.projects.data["user"]
   user_domain         = data.vault_generic_secret.projects.data["user_domain"]
-  api_key             = data.vault_generic_secret.truenas.data["key"]
-  smtp_host           = data.vault_generic_secret.smtp.data["host"]
-  smtp_username       = data.vault_generic_secret.smtp.data["username"]
-  smtp_password       = data.vault_generic_secret.smtp.data["password"]
+  # api_key             = data.vault_generic_secret.truenas.data["key"]
+  smtp_host     = data.vault_generic_secret.smtp.data["host"]
+  smtp_username = data.vault_generic_secret.smtp.data["username"]
+  smtp_password = data.vault_generic_secret.smtp.data["password"]
 
 }
 
