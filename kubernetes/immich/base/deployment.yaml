@@ -75,13 +75,25 @@ spec:
                 - ALL
           env:
             - name: DB_DATABASE_NAME
-              value: immich
+              valueFrom:
+                secretKeyRef:
+                  name: immich-pguser-immich
+                  key: dbname
             - name: DB_HOSTNAME
-              value: immich-primary.immich.svc
+              valueFrom:
+                secretKeyRef:
+                  name: immich-pguser-immich
+                  key: host
             - name: DB_PASSWORD
-              value: "immich" # TODO
+              valueFrom:
+                secretKeyRef:
+                  name: immich-pguser-immich
+                  key: password
             - name: DB_USERNAME
-              value: immich
+              valueFrom:
+                secretKeyRef:
+                  name: immich-pguser-immich
+                  key: user
             - name: IMMICH_MACHINE_LEARNING_URL
               value: http://immich-machine-learning.immich.svc:3003
             - name: REDIS_HOSTNAME
@@ -222,13 +234,25 @@ spec:
               memory: 512Mi
           env:
             - name: DB_DATABASE_NAME
-              value: immich
+              valueFrom:
+                secretKeyRef:
+                  name: immich-pguser-immich
+                  key: dbname
             - name: DB_HOSTNAME
-              value: immich-primary.immich.svc
+              valueFrom:
+                secretKeyRef:
+                  name: immich-pguser-immich
+                  key: host
             - name: DB_PASSWORD
-              value: "immich" # TODO
+              valueFrom:
+                secretKeyRef:
+                  name: immich-pguser-immich
+                  key: password
             - name: DB_USERNAME
-              value: immich
+              valueFrom:
+                secretKeyRef:
+                  name: immich-pguser-immich
+                  key: user
             - name: IMMICH_MACHINE_LEARNING_URL
               value: http://immich-machine-learning.immich.svc:3003
             - name: IMMICH_TELEMETRY_INCLUDE
