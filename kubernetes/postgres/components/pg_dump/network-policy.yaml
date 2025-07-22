@@ -41,7 +41,7 @@ spec:
     - to:
         - namespaceSelector:
             matchLabels:
-              kubernetes.io/metadata.name: postgres
+              kubernetes.io/metadata.name: grafana
           podSelector:
             matchLabels:
               postgres-operator.crunchydata.com/cluster: grafana
@@ -52,7 +52,7 @@ spec:
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
-  name: pgdump-photoprism-egress
+  name: pgdump-immich-egress
   namespace: postgres
   annotations:
     argocd.argoproj.io/sync-wave: "1"
@@ -68,10 +68,10 @@ spec:
     - to:
         - namespaceSelector:
             matchLabels:
-              kubernetes.io/metadata.name: postgres
+              kubernetes.io/metadata.name: immich
           podSelector:
             matchLabels:
-              postgres-operator.crunchydata.com/cluster: photoprism
+              postgres-operator.crunchydata.com/cluster: immich
       ports:
         - protocol: TCP
           port: 5432

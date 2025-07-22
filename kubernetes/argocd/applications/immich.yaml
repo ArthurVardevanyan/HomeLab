@@ -1,7 +1,7 @@
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: photoprism
+  name: immich
   namespace: argocd
   annotations:
     argocd.argoproj.io/sync-wave: "1"
@@ -14,11 +14,11 @@ metadata:
     app.kubernetes.io/instance: argocd
 spec:
   destination:
-    namespace: photoprism
+    namespace: immich
     server: https://kubernetes.default.svc
   project: default
   source:
-    path: kubernetes/photoprism/overlays/okd
+    path: kubernetes/immich/overlays/okd
     repoURL: https://git.arthurvardevanyan.com/ArthurVardevanyan/HomeLab
     targetRevision: HEAD
   syncPolicy:

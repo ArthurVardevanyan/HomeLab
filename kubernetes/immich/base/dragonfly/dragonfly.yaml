@@ -1,0 +1,45 @@
+apiVersion: dragonflydb.io/v1alpha1
+kind: Dragonfly
+metadata:
+  name: immich-dragonfly
+  namespace: immich
+  annotations:
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+spec:
+  replicas: 2
+  skipFSGroup: true
+  image: docker.dragonflydb.io/dragonflydb/dragonfly:v1.29.0@sha256:714c979a384513febdb751749db33125894ba834a0d7847d88d1abea501e669d
+  resources:
+    limits:
+      cpu: 75m
+      memory: 320Mi
+    requests:
+      cpu: 15m
+      memory: 64Mi
+  args:
+    - "--default_lua_flags=allow-undeclared-keys"
+  # https://github.com/immich-app/immich/issues/2542#issuecomment-2564396901
+  affinity:
+    podAntiAffinity:
+      preferredDuringSchedulingIgnoredDuringExecution:
+        - podAffinityTerm:
+            labelSelector:
+              matchLabels:
+                app.kubernetes.io/name: dragonfly
+            topologyKey: topology.kubernetes.io/zone
+          weight: 100
+      requiredDuringSchedulingIgnoredDuringExecution:
+        - labelSelector:
+            matchLabels:
+              app.kubernetes.io/name: dragonfly
+          topologyKey: kubernetes.io/hostname
+  # snapshot:
+  #   cron: "*/5 * * * *"
+  #   persistentVolumeClaimSpec:
+  #     storageClassName: rook-ceph-block
+
+  #     accessModes:
+  #       - ReadWriteOnce
+  #     resources:
+  #       requests:
+  #         storage: 1Gi
