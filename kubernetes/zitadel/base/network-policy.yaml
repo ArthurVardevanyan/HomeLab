@@ -61,29 +61,6 @@ spec:
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
-  name: allow-api-server
-  namespace: zitadel
-  annotations:
-    argocd.argoproj.io/sync-wave: "0"
-spec:
-  podSelector: {}
-  policyTypes:
-    - Egress
-  egress:
-    - to:
-        - podSelector:
-            matchLabels:
-              app: openshift-kube-apiserver
-          namespaceSelector:
-            matchLabels:
-              kubernetes.io/metadata.name: openshift-kube-apiserver
-      ports:
-        - protocol: TCP
-          port: 6443
----
-apiVersion: networking.k8s.io/v1
-kind: NetworkPolicy
-metadata:
   name: allow-dns-traffic
   namespace: zitadel
   annotations:
