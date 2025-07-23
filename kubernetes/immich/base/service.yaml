@@ -1,0 +1,55 @@
+# Source: immich/templates/machine-learning.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: immich-machine-learning
+  namespace: immich
+  labels:
+    app.kubernetes.io/service: immich-machine-learning
+    app.kubernetes.io/instance: immich
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: machine-learning
+    app.kubernetes.io/version: v1.119.0
+    helm.sh/chart: immich-0.9.3
+spec:
+  type: ClusterIP
+  ports:
+    - port: 3003
+      targetPort: http
+      protocol: TCP
+      name: http
+  selector:
+    app.kubernetes.io/instance: immich
+    app.kubernetes.io/name: machine-learning
+---
+# Source: immich/templates/server.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: immich-server
+  namespace: immich
+  labels:
+    app.kubernetes.io/service: immich-server
+    app.kubernetes.io/instance: immich
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: server
+    app.kubernetes.io/version: v1.119.0
+    helm.sh/chart: immich-0.9.3
+spec:
+  type: ClusterIP
+  ports:
+    - port: 2283
+      targetPort: http
+      protocol: TCP
+      name: http
+    - port: 8081
+      targetPort: metrics-api
+      protocol: TCP
+      name: metrics-api
+    - port: 8082
+      targetPort: metrics-ms
+      protocol: TCP
+      name: metrics-ms
+  selector:
+    app.kubernetes.io/instance: immich
+    app.kubernetes.io/name: server

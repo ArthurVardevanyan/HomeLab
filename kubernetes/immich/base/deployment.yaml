@@ -1,0 +1,308 @@
+---
+# Source: immich/templates/machine-learning.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: immich-machine-learning
+  namespace: immich
+  labels:
+    app.kubernetes.io/instance: immich
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: machine-learning
+    app.kubernetes.io/version: v1.119.0
+    helm.sh/chart: immich-0.9.3
+spec:
+  revisionHistoryLimit: 3
+  replicas: 2
+  strategy:
+    type: RollingUpdate
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: machine-learning
+      app.kubernetes.io/instance: immich
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: machine-learning
+        app.kubernetes.io/instance: immich
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        fsGroupChangePolicy: OnRootMismatch
+        seccompProfile:
+          type: RuntimeDefault
+      serviceAccountName: machine-learning
+      automountServiceAccountToken: false
+      dnsPolicy: ClusterFirst
+      enableServiceLinks: true
+      topologySpreadConstraints:
+        - maxSkew: 1
+          topologyKey: topology.kubernetes.io/zone
+          whenUnsatisfiable: DoNotSchedule
+          labelSelector:
+            matchLabels:
+              app.kubernetes.io/name: machine-learning
+              app.kubernetes.io/instance: immich
+        - maxSkew: 1
+          topologyKey: kubernetes.io/hostname
+          whenUnsatisfiable: DoNotSchedule
+          labelSelector:
+            matchLabels:
+              app.kubernetes.io/name: machine-learning
+              app.kubernetes.io/instance: immich
+      containers:
+        - name: immich-machine-learning
+          image: ghcr.io/immich-app/immich-machine-learning:v1.135.2
+          imagePullPolicy: IfNotPresent
+          resources:
+            limits:
+              cpu: 6000m
+              ephemeral-storage: 5Gi
+              memory: 6Gi
+            requests:
+              cpu: 50m
+              ephemeral-storage: 1Gi
+              memory: 384Mi
+          securityContext:
+            runAsNonRoot: true
+            privileged: false
+            readOnlyRootFilesystem: true
+            allowPrivilegeEscalation: false
+            seccompProfile:
+              type: RuntimeDefault
+            capabilities:
+              drop:
+                - ALL
+          env:
+            - name: DB_DATABASE_NAME
+              valueFrom:
+                secretKeyRef:
+                  name: immich-pguser-immich
+                  key: dbname
+            - name: DB_HOSTNAME
+              valueFrom:
+                secretKeyRef:
+                  name: immich-pguser-immich
+                  key: host
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: immich-pguser-immich
+                  key: password
+            - name: DB_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: immich-pguser-immich
+                  key: user
+            - name: IMMICH_MACHINE_LEARNING_URL
+              value: http://immich-machine-learning.immich.svc:3003
+            - name: REDIS_HOSTNAME
+              value: immich-dragonfly.immich.svc
+            - name: TRANSFORMERS_CACHE
+              value: /cache
+            - name: MPLCONFIGDIR
+              value: /tmp
+          ports:
+            - name: http
+              containerPort: 3003
+              protocol: TCP
+          volumeMounts:
+            - name: cache
+              mountPath: /cache
+            - name: dot-cache
+              mountPath: /.cache
+            - name: dot-config
+              mountPath: /.config
+            - name: data
+              mountPath: /data
+            - name: tmp
+              mountPath: /tmp
+          livenessProbe:
+            failureThreshold: 3
+            httpGet:
+              path: /ping
+              port: http
+            initialDelaySeconds: 0
+            periodSeconds: 10
+            timeoutSeconds: 1
+          readinessProbe:
+            failureThreshold: 3
+            httpGet:
+              path: /ping
+              port: http
+            initialDelaySeconds: 0
+            periodSeconds: 10
+            timeoutSeconds: 1
+          startupProbe:
+            failureThreshold: 60
+            httpGet:
+              path: /ping
+              port: http
+            initialDelaySeconds: 0
+            periodSeconds: 10
+            timeoutSeconds: 1
+      volumes:
+        - name: cache
+          emptyDir:
+            sizeLimit: 10Gi
+        - name: dot-cache
+          emptyDir:
+            sizeLimit: 10Gi
+        - name: dot-config
+          emptyDir:
+            sizeLimit: 10Gi
+        - name: data
+          emptyDir:
+            sizeLimit: 10Gi
+        - name: tmp
+          emptyDir:
+            sizeLimit: 5Gi
+---
+# Source: immich/templates/server.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: immich-server
+  namespace: immich
+  labels:
+    app.kubernetes.io/instance: immich
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: server
+    app.kubernetes.io/version: v1.119.0
+    helm.sh/chart: immich-0.9.3
+spec:
+  revisionHistoryLimit: 3
+  replicas: 2
+  strategy:
+    type: RollingUpdate
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: server
+      app.kubernetes.io/instance: immich
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: server
+        app.kubernetes.io/instance: immich
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        fsGroupChangePolicy: OnRootMismatch
+        seccompProfile:
+          type: RuntimeDefault
+      serviceAccountName: server
+      automountServiceAccountToken: false
+      dnsPolicy: ClusterFirst
+      enableServiceLinks: true
+      topologySpreadConstraints:
+        - maxSkew: 1
+          topologyKey: topology.kubernetes.io/zone
+          whenUnsatisfiable: DoNotSchedule
+          labelSelector:
+            matchLabels:
+              app.kubernetes.io/name: server
+              app.kubernetes.io/instance: immich
+        - maxSkew: 1
+          topologyKey: kubernetes.io/hostname
+          whenUnsatisfiable: DoNotSchedule
+          labelSelector:
+            matchLabels:
+              app.kubernetes.io/name: server
+              app.kubernetes.io/instance: immich
+      containers:
+        - name: immich-server
+          image: ghcr.io/immich-app/immich-server:v1.135.2
+          imagePullPolicy: IfNotPresent
+          securityContext:
+            runAsNonRoot: true
+            privileged: false
+            readOnlyRootFilesystem: true
+            allowPrivilegeEscalation: false
+            seccompProfile:
+              type: RuntimeDefault
+            capabilities:
+              drop:
+                - ALL
+          resources:
+            limits:
+              cpu: 3000m
+              ephemeral-storage: 5Gi
+              memory: 6Gi
+            requests:
+              cpu: 50m
+              ephemeral-storage: 1Gi
+              memory: 512Mi
+          env:
+            - name: DB_DATABASE_NAME
+              valueFrom:
+                secretKeyRef:
+                  name: immich-pguser-immich
+                  key: dbname
+            - name: DB_HOSTNAME
+              valueFrom:
+                secretKeyRef:
+                  name: immich-pguser-immich
+                  key: host
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: immich-pguser-immich
+                  key: password
+            - name: DB_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: immich-pguser-immich
+                  key: user
+            - name: IMMICH_MACHINE_LEARNING_URL
+              value: http://immich-machine-learning.immich.svc:3003
+            - name: IMMICH_TELEMETRY_INCLUDE
+              value: all
+            - name: REDIS_HOSTNAME
+              value: "immich-dragonfly.immich.svc"
+          ports:
+            - name: http
+              containerPort: 2283
+              protocol: TCP
+            - name: metrics-api
+              containerPort: 8081
+              protocol: TCP
+            - name: metrics-ms
+              containerPort: 8082
+              protocol: TCP
+          volumeMounts:
+            - name: library
+              mountPath: /usr/src/app/upload
+            - name: immich-media
+              mountPath: /mnt/media
+              readOnly: true
+          livenessProbe:
+            failureThreshold: 3
+            httpGet:
+              path: /api/server/ping
+              port: http
+            initialDelaySeconds: 0
+            periodSeconds: 10
+            timeoutSeconds: 1
+          readinessProbe:
+            failureThreshold: 3
+            httpGet:
+              path: /api/server/ping
+              port: http
+            initialDelaySeconds: 0
+            periodSeconds: 10
+            timeoutSeconds: 1
+          startupProbe:
+            failureThreshold: 30
+            httpGet:
+              path: /api/server/ping
+              port: http
+            initialDelaySeconds: 0
+            periodSeconds: 10
+            timeoutSeconds: 1
+      volumes:
+        - name: library
+          persistentVolumeClaim:
+            claimName: immich
+        - name: immich-media
+          persistentVolumeClaim:
+            claimName: immich-media

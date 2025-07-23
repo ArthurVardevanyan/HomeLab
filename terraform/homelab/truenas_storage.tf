@@ -18,21 +18,21 @@
 
 # }
 
-# # https://github.com/dariusbakunas/terraform-provider-truenas/issues/20
-# # resource "truenas_share_nfs" "storage_file_storage_nextcloud" {
-# #   paths = [
-# #     "/mnt/storage/File_Storage/Nextcloud",
-# #   ]
-# #   comment       = ""
-# #   hosts         = []
-# #   networks      = []
-# #   alldirs       = false
-# #   enabled       = true
-# #   maproot_user  = null
-# #   maproot_group = null
-# #   mapall_user   = null
-# #   mapall_group  = null
-# #   quiet         = false
-# #   ro            = false
-# #   security      = []
-# # }
+# https://github.com/dariusbakunas/terraform-provider-truenas/issues/20
+# resource "truenas_share_nfs" "storage_file_storage_nextcloud" {
+#   paths = [
+#     "/mnt/storage/File_Storage/Nextcloud",
+#   ]
+#   comment       = ""
+#   hosts         = []
+#   networks      = []
+#   alldirs       = false
+#   enabled       = true
+#   maproot_user  = null
+#   maproot_group = null
+#   mapall_user   = null
+#   mapall_group  = null
+#   quiet         = false
+#   ro            = false
+#   security      = []
+# }

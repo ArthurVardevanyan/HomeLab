@@ -46,8 +46,8 @@ patches:
       kind: Dragonfly
       name: nextcloud-dragonfly
   - patch: |-
-      - op: remove
-        path: /spec/template/spec/runtimeClassName
+      # - op: remove
+      #   path: /spec/template/spec/runtimeClassName
       - op: replace
         path: /spec/replicas
         value: 1
@@ -64,11 +64,11 @@ patches:
     target:
       kind: CronJob
       name: nextcloud-rsync
-  - patch: |-
-      - op: remove
-        path: /spec/jobTemplate/spec/template/spec/runtimeClassName
-    target:
-      kind: CronJob
+  # - patch: |-
+  #     - op: remove
+  #       path: /spec/jobTemplate/spec/template/spec/runtimeClassName
+  #   target:
+  #     kind: CronJob
   - patch: |-
       apiVersion: policy/v1
       kind: PodDisruptionBudget

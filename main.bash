@@ -134,7 +134,7 @@ test_overlays_k3s() {
 }
 stateful_workload_stop() {
   # kubectl patch cronjobs -n netbox netbox-housekeeping -p '{"spec" : {"suspend" : true }}'
-  kubectl patch cronjobs -n photoprism photoprism-cron -p '{"spec" : {"suspend" : true }}'
+  kubectl patch cronjobs -n immich immich-cron -p '{"spec" : {"suspend" : true }}'
   kubectl patch cronjobs -n nextcloud nextcloud-preview -p '{"spec" : {"suspend" : true }}'
   kubectl patch cronjobs -n nextcloud nextcloud-rsync -p '{"spec" : {"suspend" : true }}'
   kubectl patch cronjobs -n nextcloud nextcloud-cron -p '{"spec" : {"suspend" : true }}'
@@ -158,7 +158,7 @@ stateful_workload_stop() {
   # kubectl scale --replicas=0 -n loki statefulset/loki
   # kubectl scale --replicas=0 -n mariadb-galera statefulset/mariadb-galera
   kubectl scale --replicas=0 -n nextcloud deployment/nextcloud
-  kubectl scale --replicas=0 -n photoprism statefulset/photoprism
+  kubectl scale --replicas=0 -n immich statefulset/immich
   kubectl scale --replicas=0 -n prometheus statefulset/prometheus
   kubectl scale --replicas=0 -n prometheus statefulset/thanos-store-gateway
   kubectl scale --replicas=0 -n prometheus statefulset/prometheus-truenas
@@ -199,7 +199,7 @@ stateful_workload_stop() {
   kubectl patch postgresCluster grafana -n grafana --type=merge -p '{"spec":{"shutdown":true}}'
   kubectl patch postgresCluster homeassistant -n homeassistant --type=merge -p '{"spec":{"shutdown":true}}'
   kubectl patch postgresCluster nextcloud -n nextcloud --type=merge -p '{"spec":{"shutdown":true}}'
-  kubectl patch postgresCluster photoprism -n photoprism --type=merge -p '{"spec":{"shutdown":true}}'
+  kubectl patch postgresCluster immich -n immich --type=merge -p '{"spec":{"shutdown":true}}'
   kubectl patch postgresCluster stackrox -n stackrox --type=merge -p '{"spec":{"shutdown":true}}'
   kubectl patch postgresCluster quay -n quay --type=merge -p '{"spec":{"shutdown":true}}'
   kubectl patch postgresCluster zitadel -n zitadel --type=merge -p '{"spec":{"shutdown":true}}'
@@ -278,7 +278,7 @@ stateful_workload_start_pre() {
   kubectl patch postgresCluster gitea -n gitea --type=merge -p '{"spec":{"shutdown":false}}'
   kubectl patch postgresCluster grafana -n grafana --type=merge -p '{"spec":{"shutdown":false}}'
   kubectl patch postgresCluster nextcloud -n nextcloud --type=merge -p '{"spec":{"shutdown":false}}'
-  kubectl patch postgresCluster photoprism -n photoprism --type=merge -p '{"spec":{"shutdown":false}}'
+  kubectl patch postgresCluster immich -n immich --type=merge -p '{"spec":{"shutdown":false}}'
   kubectl patch postgresCluster stackrox -n stackrox --type=merge -p '{"spec":{"shutdown":false}}'
   kubectl patch postgresCluster finance -n finance-tracker --type=merge -p '{"spec":{"shutdown":false}}'
   kubectl patch postgresCluster spotify -n analytics-for-spotify --type=merge -p '{"spec":{"shutdown":false}}'
@@ -308,7 +308,7 @@ stateful_workload_start() {
   kubectl scale --replicas=2 -n cloudflare-ddns deployment/cloudflare-ddns
 
   # kubectl patch cronjobs -n netbox netbox-housekeeping -p '{"spec" : {"suspend" : false }}'
-  kubectl patch cronjobs -n photoprism photoprism-cron -p '{"spec" : {"suspend" : false }}'
+  kubectl patch cronjobs -n immich immich-cron -p '{"spec" : {"suspend" : false }}'
   kubectl patch cronjobs -n nextcloud nextcloud-preview -p '{"spec" : {"suspend" : false }}'
   kubectl patch cronjobs -n nextcloud nextcloud-rsync -p '{"spec" : {"suspend" : false }}'
   kubectl patch cronjobs -n nextcloud nextcloud-cron -p '{"spec" : {"suspend" : false }}'
@@ -339,7 +339,7 @@ stateful_workload_start() {
   kubectl scale --replicas=1 -n loki statefulset/loki
   # kubectl scale --replicas=3 -n mariadb-galera statefulset/mariadb-galera
   kubectl scale --replicas=2 -n nextcloud deployment/nextcloud
-  kubectl scale --replicas=1 -n photoprism statefulset/photoprism
+  kubectl scale --replicas=1 -n immich statefulset/immich
   kubectl scale --replicas=1 -n prometheus statefulset/prometheus
   kubectl scale --replicas=1 -n prometheus statefulset/thanos-store-gateway
   kubectl scale --replicas=1 -n prometheus statefulset/prometheus-truenas
@@ -359,7 +359,7 @@ stateful_workload_start() {
   kubectl patch postgresCluster gitea -n gitea --type=merge -p '{"spec":{"shutdown":false}}'
   kubectl patch postgresCluster grafana -n grafana --type=merge -p '{"spec":{"shutdown":false}}'
   kubectl patch postgresCluster nextcloud -n nextcloud --type=merge -p '{"spec":{"shutdown":false}}'
-  kubectl patch postgresCluster photoprism -n photoprism --type=merge -p '{"spec":{"shutdown":false}}'
+  kubectl patch postgresCluster immich -n immich --type=merge -p '{"spec":{"shutdown":false}}'
   kubectl patch postgresCluster stackrox -n stackrox --type=merge -p '{"spec":{"shutdown":false}}'
   kubectl patch postgresCluster finance -n finance-tracker --type=merge -p '{"spec":{"shutdown":false}}'
   kubectl patch postgresCluster spotify -n analytics-for-spotify --type=merge -p '{"spec":{"shutdown":false}}'
