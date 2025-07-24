@@ -1,3 +1,4 @@
+---
 # Source: cert-manager/templates/webhook-mutating-webhook.yaml
 apiVersion: admissionregistration.k8s.io/v1
 kind: MutatingWebhookConfiguration
@@ -8,7 +9,7 @@ metadata:
     app.kubernetes.io/name: webhook
     app.kubernetes.io/instance: cert-manager
     app.kubernetes.io/component: "webhook"
-    app.kubernetes.io/version: "v1.13.1"
+    app.kubernetes.io/version: "v1.18.2"
   annotations:
     cert-manager.io/inject-ca-from-secret: "cert-manager/cert-manager-webhook-ca"
 webhooks:
@@ -16,20 +17,18 @@ webhooks:
     rules:
       - apiGroups:
           - "cert-manager.io"
-          - "acme.cert-manager.io"
         apiVersions:
           - "v1"
         operations:
           - CREATE
-          - UPDATE
         resources:
-          - "*/*"
+          - "certificaterequests"
     admissionReviewVersions: ["v1"]
     # This webhook only accepts v1 cert-manager resources.
     # Equivalent matchPolicy ensures that non-v1 resource requests are sent to
     # this webhook (after the resources have been converted to v1).
     matchPolicy: Equivalent
-    timeoutSeconds: 10
+    timeoutSeconds: 30
     failurePolicy: Fail
     # Only include 'sideEffects' field in Kubernetes 1.12+
     sideEffects: None
@@ -49,15 +48,15 @@ metadata:
     app.kubernetes.io/name: webhook
     app.kubernetes.io/instance: cert-manager
     app.kubernetes.io/component: "webhook"
-    app.kubernetes.io/version: "v1.13.1"
+    app.kubernetes.io/version: "v1.18.2"
   annotations:
     cert-manager.io/inject-ca-from-secret: "cert-manager/cert-manager-webhook-ca"
 webhooks:
   - name: webhook.cert-manager.io
     namespaceSelector:
       matchExpressions:
-        - key: "cert-manager.io/disable-validation"
-          operator: "NotIn"
+        - key: cert-manager.io/disable-validation
+          operator: NotIn
           values:
             - "true"
     rules:
@@ -76,7 +75,7 @@ webhooks:
     # Equivalent matchPolicy ensures that non-v1 resource requests are sent to
     # this webhook (after the resources have been converted to v1).
     matchPolicy: Equivalent
-    timeoutSeconds: 10
+    timeoutSeconds: 30
     failurePolicy: Fail
     sideEffects: None
     clientConfig:
@@ -84,31 +83,3 @@ webhooks:
         name: cert-manager-webhook
         namespace: cert-manager
         path: /validate
----
-# Source: cert-manager/templates/controller-config.yaml
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: cert-manager
-  namespace: cert-manager
-  labels:
-    app: cert-manager
-    app.kubernetes.io/name: cert-manager
-    app.kubernetes.io/instance: cert-manager
-    app.kubernetes.io/component: "controller"
-    app.kubernetes.io/version: "v1.13.1"
-data:
----
-# Source: cert-manager/templates/webhook-config.yaml
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: cert-manager-webhook
-  namespace: cert-manager
-  labels:
-    app: webhook
-    app.kubernetes.io/name: webhook
-    app.kubernetes.io/instance: cert-manager
-    app.kubernetes.io/component: "webhook"
-    app.kubernetes.io/version: "v1.13.1"
-data:
