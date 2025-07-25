@@ -1,63 +1,63 @@
-# apiVersion: loki.grafana.com/v1
-# kind: LokiStack
-# metadata:
-#   name: logging-loki
-#   namespace: openshift-logging
-#   annotations:
-#     argocd.argoproj.io/sync-wave: "1"
-#     argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
-# spec:
-#   limits:
-#     global:
-#       retention:
-#         days: 5
-#       ingestion:
-#         ingestionBurstSize: 50000
-#         ingestionRate: 50000
-#         maxGlobalStreamsPerTenant: 50000000
-#       queries:
-#         maxChunksPerQuery: 20000000
-#         maxEntriesLimitPerQuery: 100000
-#         maxQuerySeries: 30000
-#   managementState: Managed
-#   size: 1x.extra-small
-#   storage:
-#     schemas:
-#       - effectiveDate: "2020-10-11"
-#         version: v13
-#     secret:
-#       name: logging-loki-s3
-#       type: s3
-#   storageClassName: rook-ceph-block-ci
-#   tenants:
-#     mode: openshift-logging
-#   replication:
-#     factor: 2
-#     zones:
-#       - maxSkew: 1
-#         topologyKey: topology.kubernetes.io/zone
-#       - maxSkew: 1
-#         topologyKey: kubernetes.io/hostname
-#   template:
-#     distributor:
-#       replicas: 2
-#     querier:
-#       replicas: 2
-#     ingester:
-#       replicas: 2
-# ---
-# apiVersion: rbac.authorization.k8s.io/v1
-# kind: RoleBinding
-# metadata:
-#   name: loki-operator
-#   namespace: openshift-logging
-#   annotations:
-#     argocd.argoproj.io/sync-wave: "1"
-# roleRef:
-#   apiGroup: rbac.authorization.k8s.io
-#   kind: ClusterRole
-#   name: admin
-# subjects:
-#   - kind: ServiceAccount
-#     name: loki-operator-controller-manager
-#     namespace: loki-operator
+apiVersion: loki.grafana.com/v1
+kind: LokiStack
+metadata:
+  name: logging-loki
+  namespace: openshift-logging
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+spec:
+  limits:
+    global:
+      retention:
+        days: 5
+      ingestion:
+        ingestionBurstSize: 50000
+        ingestionRate: 50000
+        maxGlobalStreamsPerTenant: 50000000
+      queries:
+        maxChunksPerQuery: 20000000
+        maxEntriesLimitPerQuery: 100000
+        maxQuerySeries: 30000
+  managementState: Managed
+  size: 1x.extra-small
+  storage:
+    schemas:
+      - effectiveDate: "2020-10-11"
+        version: v13
+    secret:
+      name: logging-loki-s3
+      type: s3
+  storageClassName: rook-ceph-block-ci
+  tenants:
+    mode: openshift-logging
+  replication:
+    factor: 2
+    zones:
+      - maxSkew: 1
+        topologyKey: topology.kubernetes.io/zone
+      - maxSkew: 1
+        topologyKey: kubernetes.io/hostname
+  template:
+    distributor:
+      replicas: 2
+    querier:
+      replicas: 2
+    ingester:
+      replicas: 2
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: loki-operator
+  namespace: openshift-logging
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: admin
+subjects:
+  - kind: ServiceAccount
+    name: loki-operator-controller-manager
+    namespace: loki-operator
