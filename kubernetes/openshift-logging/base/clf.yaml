@@ -1,50 +1,50 @@
-# apiVersion: observability.openshift.io/v1
-# kind: ClusterLogForwarder
-# metadata:
-#   name: collector
-#   namespace: openshift-logging
-#   annotations:
-#     argocd.argoproj.io/sync-wave: "1"
-#     argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
-# spec:
-#   collector:
-#     resources:
-#       limits:
-#         cpu: 500m
-#         memory: 1.5Gi
-#       requests:
-#         cpu: 50m
-#         memory: 256Mi
-#     tolerations:
-#       - effect: NoSchedule
-#         key: node-role.kubernetes.io/infra
-#         operator: Exists
-#   filters:
-#     - name: detectmultiline
-#       type: detectMultilineException
-#   managementState: Managed
-#   outputs:
-#     - lokiStack:
-#         authentication:
-#           token:
-#             from: serviceAccount
-#         target:
-#           name: logging-loki
-#           namespace: openshift-logging
-#       name: default-lokistack
-#       tls:
-#         ca:
-#           configMapName: openshift-service-ca.crt
-#           key: service-ca.crt
-#       type: lokiStack
-#   pipelines:
-#     - filterRefs:
-#         - detectmultiline
-#       inputRefs:
-#         - application
-#         - infrastructure
-#       name: default-logstore
-#       outputRefs:
-#         - default-lokistack
-#   serviceAccount:
-#     name: collector
+apiVersion: observability.openshift.io/v1
+kind: ClusterLogForwarder
+metadata:
+  name: collector
+  namespace: openshift-logging
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+spec:
+  collector:
+    resources:
+      limits:
+        cpu: 500m
+        memory: 1.5Gi
+      requests:
+        cpu: 50m
+        memory: 256Mi
+    tolerations:
+      - effect: NoSchedule
+        key: node-role.kubernetes.io/infra
+        operator: Exists
+  filters:
+    - name: detectmultiline
+      type: detectMultilineException
+  managementState: Managed
+  outputs:
+    - lokiStack:
+        authentication:
+          token:
+            from: serviceAccount
+        target:
+          name: logging-loki
+          namespace: openshift-logging
+      name: default-lokistack
+      tls:
+        ca:
+          configMapName: openshift-service-ca.crt
+          key: service-ca.crt
+      type: lokiStack
+  pipelines:
+    - filterRefs:
+        - detectmultiline
+      inputRefs:
+        - application
+        - infrastructure
+      name: default-logstore
+      outputRefs:
+        - default-lokistack
+  serviceAccount:
+    name: collector
