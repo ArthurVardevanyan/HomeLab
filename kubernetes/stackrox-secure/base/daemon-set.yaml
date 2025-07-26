@@ -9,8 +9,8 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: stackrox
     app.kubernetes.io/part-of: stackrox-secured-cluster-services
-    app.kubernetes.io/version: 4.7.2
-    helm.sh/chart: stackrox-secured-cluster-services-400.7.2
+    app.kubernetes.io/version: 4.8.0
+    helm.sh/chart: stackrox-secured-cluster-services-400.8.0
     service: collector
     app: collector
     auto-upgrade.stackrox.io/component: "sensor"
@@ -50,8 +50,8 @@ spec:
         app.kubernetes.io/managed-by: Helm
         app.kubernetes.io/name: stackrox
         app.kubernetes.io/part-of: stackrox-secured-cluster-services
-        app.kubernetes.io/version: 4.7.2
-        helm.sh/chart: stackrox-secured-cluster-services-400.7.2
+        app.kubernetes.io/version: 4.8.0
+        helm.sh/chart: stackrox-secured-cluster-services-400.8.0
       annotations:
         email: support@stackrox.com
         meta.helm.sh/release-name: stackrox-secured-cluster-services
@@ -64,7 +64,7 @@ spec:
       serviceAccountName: collector
       initContainers:
         - name: init-tls-certs
-          image: "quay.io/stackrox-io/main:4.7.2@sha256:904d9ab92b2f20f7fee3a9d04900dcf330d2e2bf3f088cf45d17afc2f64e0635"
+          image: "quay.io/stackrox-io/main:4.8.0@sha256:b46f3af214cc748c61a044865e8c52ae318ec1f5fa6edede4eef66b14d38095d"
           command:
             - /stackrox/bin/init-tls-certs
           args:
@@ -92,7 +92,7 @@ spec:
               mountPath: /run/secrets/stackrox.io/certs/
       containers:
         - name: collector
-          image: "quay.io/stackrox-io/collector:4.7.2@sha256:6170564a25c8e2baae19b49c34e925e0465beed178213d56805fcf6c41d4294f"
+          image: "quay.io/stackrox-io/collector:4.8.0@sha256:14814d797f1340eae34eb0aeb573abca0b40d6eda5eac8fb03829af5d584d832"
           imagePullPolicy: IfNotPresent
           env:
             - name: COLLECTOR_CONFIG
@@ -144,6 +144,8 @@ spec:
             - mountPath: "/etc/stackrox"
               name: collector-config
               readOnly: true
+            - mountPath: /var/profiles
+              name: collector-profiles
         - command:
             - stackrox/compliance
           env:
@@ -155,6 +157,14 @@ spec:
               valueFrom:
                 resourceFieldRef:
                   resource: limits.cpu
+            - name: POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: POD_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
             - name: ROX_CALL_NODE_INVENTORY_ENABLED
               value: "true"
             - name: ROX_NODE_INDEX_HOST_PATH
@@ -171,7 +181,7 @@ spec:
             - name: ROX_NODE_SCANNING_ENDPOINT
               value: "127.0.0.1:8444"
 
-          image: "quay.io/stackrox-io/main:4.7.2@sha256:904d9ab92b2f20f7fee3a9d04900dcf330d2e2bf3f088cf45d17afc2f64e0635"
+          image: "quay.io/stackrox-io/main:4.8.0@sha256:b46f3af214cc748c61a044865e8c52ae318ec1f5fa6edede4eef66b14d38095d"
           imagePullPolicy: IfNotPresent
           name: compliance
           resources:
@@ -206,7 +216,7 @@ spec:
             - mountPath: /tmp
               name: index-volume
         - name: node-inventory
-          image: "quay.io/stackrox-io/scanner-slim:4.7.2@sha256:448c83efd34fc8fb95a412e17370bcb76011647adde437fa8c9743ccb0d2d67b"
+          image: "quay.io/stackrox-io/scanner-slim:4.8.0@sha256:f80ce290c5d94e42858afd6f2acebcf965c113eb068628b281e25ca875c59d32"
           imagePullPolicy: IfNotPresent
           command: ["/scanner", "--nodeinventory", "--config=", ""]
           ports:
@@ -227,6 +237,14 @@ spec:
                 fieldRef:
                   apiVersion: v1
                   fieldPath: spec.nodeName
+            - name: POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: POD_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
 
           volumeMounts:
             - mountPath: /host
@@ -283,6 +301,8 @@ spec:
         - name: etc-pki-volume
           emptyDir: {}
         - name: tmp-volume
+          emptyDir: {}
+        - name: collector-profiles
           emptyDir: {}
         - name: cache-volume
           emptyDir:

@@ -10,8 +10,8 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: stackrox
     app.kubernetes.io/part-of: stackrox-central-services
-    app.kubernetes.io/version: 4.7.2
-    helm.sh/chart: stackrox-central-services-400.7.2
+    app.kubernetes.io/version: 4.8.0
+    helm.sh/chart: stackrox-central-services-400.8.0
   annotations:
     email: support@stackrox.com
     meta.helm.sh/release-name: stackrox-central-services
@@ -31,6 +31,51 @@ spec:
   selector:
     matchLabels:
       app.kubernetes.io/component: central
+  namespaceSelector:
+    matchNames:
+      - "stackrox"
+---
+# Source: stackrox-central-services/templates/99-scanner-v4-openshift-monitoring.yaml
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: "scanner-v4-monitor-stackrox"
+  namespace: openshift-monitoring
+  labels:
+    app.kubernetes.io/instance: stackrox-central-services
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: stackrox
+    app.kubernetes.io/part-of: stackrox-central-services
+    app.kubernetes.io/version: 4.8.0
+    helm.sh/chart: stackrox-central-services-400.8.0
+  annotations:
+    email: support@stackrox.com
+    meta.helm.sh/release-name: stackrox-central-services
+    meta.helm.sh/release-namespace: stackrox
+    owner: stackrox
+spec:
+  endpoints:
+    - interval: 30s
+      path: metrics
+      port: indexer-monitoring-tls
+      scheme: https
+      tlsConfig:
+        caFile: /etc/prometheus/configmaps/serving-certs-ca-bundle/service-ca.crt
+        certFile: /etc/prometheus/secrets/metrics-client-certs/tls.crt
+        keyFile: /etc/prometheus/secrets/metrics-client-certs/tls.key
+        serverName: "scanner-v4-indexer.stackrox.svc"
+    - interval: 30s
+      path: metrics
+      port: matcher-monitoring-tls
+      scheme: https
+      tlsConfig:
+        caFile: /etc/prometheus/configmaps/serving-certs-ca-bundle/service-ca.crt
+        certFile: /etc/prometheus/secrets/metrics-client-certs/tls.crt
+        keyFile: /etc/prometheus/secrets/metrics-client-certs/tls.key
+        serverName: "scanner-v4-matcher.stackrox.svc"
+  selector:
+    matchLabels:
+      app.kubernetes.io/component: scanner-v4
   namespaceSelector:
     matchNames:
       - "stackrox"

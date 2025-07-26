@@ -11,8 +11,8 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: stackrox
     app.kubernetes.io/part-of: stackrox-secured-cluster-services
-    app.kubernetes.io/version: 4.7.2
-    helm.sh/chart: stackrox-secured-cluster-services-400.7.2
+    app.kubernetes.io/version: 4.8.0
+    helm.sh/chart: stackrox-secured-cluster-services-400.8.0
     app: admission-control
     auto-upgrade.stackrox.io/component: "sensor"
   annotations:
@@ -44,8 +44,8 @@ spec:
         app.kubernetes.io/managed-by: Helm
         app.kubernetes.io/name: stackrox
         app.kubernetes.io/part-of: stackrox-secured-cluster-services
-        app.kubernetes.io/version: 4.7.2
-        helm.sh/chart: stackrox-secured-cluster-services-400.7.2
+        app.kubernetes.io/version: 4.8.0
+        helm.sh/chart: stackrox-secured-cluster-services-400.8.0
       annotations:
         email: support@stackrox.com
         meta.helm.sh/release-name: stackrox-secured-cluster-services
@@ -63,11 +63,6 @@ spec:
                   - key: node-role.kubernetes.io/control-plane
                     operator: Exists
               weight: 50
-            - preference:
-                matchExpressions:
-                  - key: node-role.kubernetes.io/control-plane
-                    operator: Exists
-              weight: 50
         podAntiAffinity:
           preferredDuringSchedulingIgnoredDuringExecution:
             - podAffinityTerm:
@@ -79,7 +74,7 @@ spec:
       serviceAccountName: admission-control
       initContainers:
         - name: init-tls-certs
-          image: "quay.io/stackrox-io/main:4.7.2@sha256:904d9ab92b2f20f7fee3a9d04900dcf330d2e2bf3f088cf45d17afc2f64e0635"
+          image: "quay.io/stackrox-io/main:4.8.0@sha256:b46f3af214cc748c61a044865e8c52ae318ec1f5fa6edede4eef66b14d38095d"
           command:
             - /stackrox/bin/init-tls-certs
           args:
@@ -106,7 +101,7 @@ spec:
             - name: certs
               mountPath: /run/secrets/stackrox.io/certs/
       containers:
-        - image: "quay.io/stackrox-io/main:4.7.2@sha256:904d9ab92b2f20f7fee3a9d04900dcf330d2e2bf3f088cf45d17afc2f64e0635"
+        - image: "quay.io/stackrox-io/main:4.8.0@sha256:b46f3af214cc748c61a044865e8c52ae318ec1f5fa6edede4eef66b14d38095d"
           imagePullPolicy: IfNotPresent
           name: admission-control
           readinessProbe:
@@ -145,6 +140,10 @@ spec:
               valueFrom:
                 fieldRef:
                   fieldPath: metadata.namespace
+            - name: POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
             - name: ROX_SENSOR_ENDPOINT
               value: sensor.stackrox.svc:443
 
@@ -229,8 +228,8 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: stackrox
     app.kubernetes.io/part-of: stackrox-secured-cluster-services
-    app.kubernetes.io/version: 4.7.2
-    helm.sh/chart: stackrox-secured-cluster-services-400.7.2
+    app.kubernetes.io/version: 4.8.0
+    helm.sh/chart: stackrox-secured-cluster-services-400.8.0
     app: sensor
     auto-upgrade.stackrox.io/component: "sensor"
   annotations:
@@ -263,8 +262,8 @@ spec:
         app.kubernetes.io/managed-by: Helm
         app.kubernetes.io/name: stackrox
         app.kubernetes.io/part-of: stackrox-secured-cluster-services
-        app.kubernetes.io/version: 4.7.2
-        helm.sh/chart: stackrox-secured-cluster-services-400.7.2
+        app.kubernetes.io/version: 4.8.0
+        helm.sh/chart: stackrox-secured-cluster-services-400.8.0
       annotations:
         traffic.sidecar.istio.io/excludeInboundPorts: "8443,9443"
         email: support@stackrox.com
@@ -298,15 +297,10 @@ spec:
                   - key: node-role.kubernetes.io/control-plane
                     operator: DoesNotExist
               weight: 100
-            - preference:
-                matchExpressions:
-                  - key: node-role.kubernetes.io/control-plane
-                    operator: DoesNotExist
-              weight: 100
       serviceAccountName: sensor
       initContainers:
         - name: init-tls-certs
-          image: "quay.io/stackrox-io/main:4.7.2@sha256:904d9ab92b2f20f7fee3a9d04900dcf330d2e2bf3f088cf45d17afc2f64e0635"
+          image: "quay.io/stackrox-io/main:4.8.0@sha256:b46f3af214cc748c61a044865e8c52ae318ec1f5fa6edede4eef66b14d38095d"
           command:
             - /stackrox/bin/init-tls-certs
           args:
@@ -333,7 +327,7 @@ spec:
             - name: certs
               mountPath: /run/secrets/stackrox.io/certs/
       containers:
-        - image: "quay.io/stackrox-io/main:4.7.2@sha256:904d9ab92b2f20f7fee3a9d04900dcf330d2e2bf3f088cf45d17afc2f64e0635"
+        - image: "quay.io/stackrox-io/main:4.8.0@sha256:b46f3af214cc748c61a044865e8c52ae318ec1f5fa6edede4eef66b14d38095d"
           imagePullPolicy: IfNotPresent
           name: sensor
           readinessProbe:
@@ -352,8 +346,8 @@ spec:
             - kubernetes-sensor
           resources:
             limits:
-              cpu: 150m
-              memory: 1Gi
+              cpu: 250m
+              memory: 2Gi
             requests:
               cpu: 50m
               memory: 512Mi
@@ -391,7 +385,7 @@ spec:
               valueFrom:
                 secretKeyRef:
                   name: config-fingerprint
-                  key: config-fingerprint
+                  key: ROX_HELM_CLUSTER_CONFIG_FP
             - name: ROX_ENABLE_SECURE_METRICS
               value: "true"
 
