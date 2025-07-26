@@ -6,7 +6,9 @@ export CLUSTER="homelab"
 #   --set env.openshift=k8s
 
 helm template -n stackrox stackrox-secured-cluster-services stackrox/stackrox-secured-cluster-services \
- -f stackrox-init-bundle.yaml \
+ -f notes/stackrox-init-bundle.yaml \
+ --set scanner.disable=true \
+ --set scannerV4.disable=true \
  --set clusterName="${CLUSTER}" \
  --set sensor.resources.requests.memory=125Mi \
  --set sensor.resources.requests.cpu=125m \
