@@ -101,11 +101,11 @@ spec:
               port: 8443
           resources:
             limits:
-              cpu: 4000m
-              memory: 8Gi
+              cpu: 500m
+              memory: 768Mi
             requests:
-              cpu: 1500m
-              memory: 4Gi
+              cpu: 10m
+              memory: 256Mi
           securityContext:
             capabilities:
               drop: ["NET_RAW"]
@@ -347,11 +347,11 @@ spec:
             - --health-probe-bind-address=:8081
           resources:
             limits:
-              cpu: 500m
-              memory: 128Mi
+              cpu: 250m
+              memory: 192Mi
             requests:
               cpu: 10m
-              memory: 64Mi
+              memory: 96Mi
           env:
             - name: POD_NAMESPACE
               valueFrom:
@@ -504,7 +504,7 @@ spec:
               memory: 1Gi
             requests:
               cpu: 10m
-              memory: 500Mi
+              memory: 256Mi
           command:
             - /entrypoint.sh
           ports:
@@ -687,7 +687,7 @@ spec:
           resources:
             limits:
               cpu: 2000m
-              memory: 4Gi
+              memory: 3Gi
             requests:
               cpu: 10m
               memory: 200Mi
@@ -712,8 +712,8 @@ spec:
               cpu: 300m
               memory: 3Gi
             requests:
-              cpu: 100m
-              memory: 1536Mi
+              cpu: 10m
+              memory: 768Mi
           volumeMounts:
             - name: scanner-db-data
               mountPath: /var/lib/postgresql/data
@@ -876,11 +876,11 @@ spec:
             timeoutSeconds: 1
           resources:
             limits:
-              cpu: 2000m
+              cpu: 1000m
               memory: 4Gi
             requests:
-              cpu: 200m
-              memory: 3Gi
+              cpu: 10m
+              memory: 2Gi
           volumeMounts:
             - name: disk
               mountPath: /var/lib/postgresql/data
@@ -1028,11 +1028,11 @@ spec:
 
           resources:
             limits:
-              cpu: 2000m
-              memory: 3Gi
-            requests:
               cpu: 1000m
-              memory: 1500Mi
+              memory: 768Mi
+            requests:
+              cpu: 10m
+              memory: 384Mi
           command:
             - entrypoint.sh
             - --conf=/etc/scanner/config.yaml
@@ -1229,11 +1229,11 @@ spec:
 
           resources:
             limits:
-              cpu: 2000m
-              memory: 2Gi
+              cpu: 100m
+              memory: 768Gi
             requests:
-              cpu: 1000m
-              memory: 500Mi
+              cpu: 10m
+              memory: 256Mi
           command:
             - entrypoint.sh
             - --conf=/etc/scanner/config.yaml
