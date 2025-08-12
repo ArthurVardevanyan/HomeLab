@@ -94,8 +94,10 @@ spec:
       emptyDir:
         sizeLimit: 100Mi
     - name: vuln-store
-      persistentVolumeClaim:
-        claimName: clair-action-vuln-store-cache
+      image:
+        reference: registry.arthurvardevanyan.com/homelab/clair-action-db:latest
+        pullPolicy: IfNotPresent
+
       # emptyDir:
       #   sizeLimit: 15Gi
       # ephemeral:
