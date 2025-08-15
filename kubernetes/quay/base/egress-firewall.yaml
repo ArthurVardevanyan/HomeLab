@@ -120,9 +120,6 @@ spec:
         dnsName: registry.developers.crunchydata.com
     - type: Allow
       to:
-        dnsName: registry.k8s.io
-    - type: Allow
-      to:
         dnsName: registry.redhat.io
     - type: Allow
       to:
@@ -196,6 +193,23 @@ spec:
     - type: Allow
       to:
         cidrSelector: "185.199.108.0/22"
+    # registry.k8s.io / GitHub
+    - type: Allow
+      to:
+        dnsName: registry.k8s.io
+    - type: Allow
+      to:
+        cidrSelector: 34.96.108.209/32
+    - type: Allow
+      to:
+        cidrSelector: 52.219.103.0/24
+    - type: Allow
+      to:
+        cidrSelector: 3.5.128.0/2
+      # https://api.github.com/meta
+    - type: Allow
+      to:
+        cidrSelector: 140.82.114.0/24
     # Quay CIDR List
     # https://access.redhat.com/articles/1525183
     - type: Allow
