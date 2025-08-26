@@ -2,7 +2,7 @@
 apiVersion: velero.io/v1
 kind: BackupStorageLocation
 metadata:
-  name: velero-backup
+  name: velero-backup-microshift
   namespace: velero
   annotations:
     argocd.argoproj.io/sync-wave: "1"
@@ -14,6 +14,31 @@ metadata:
     helm.sh/chart: velero-6.4.0
 spec:
   default: true
+  provider: aws
+  accessMode: ReadWrite
+  objectStorage:
+    bucket: "velero-backup"
+  config:
+    region: "homelab"
+    s3Url: "https://minio.microshift.arthurvardevanyan.com" #"https://truenas.arthurvardevanyan.com:9000"
+    s3ForcePathStyle: "true"
+    checksumAlgorithm: ""
+---
+# Source: velero/templates/backupstoragelocation.yaml
+apiVersion: velero.io/v1
+kind: BackupStorageLocation
+metadata:
+  name: velero-backup
+  namespace: velero
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+  labels:
+    app.kubernetes.io/name: velero
+    app.kubernetes.io/instance: velero
+    app.kubernetes.io/managed-by: Helm
+    helm.sh/chart: velero-6.4.0
+spec:
   provider: aws
   accessMode: ReadWrite
   objectStorage:

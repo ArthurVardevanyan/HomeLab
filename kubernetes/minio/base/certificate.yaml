@@ -1,0 +1,17 @@
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: minio-cert
+  namespace: minio
+  annotations:
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+spec:
+  secretName: minio-cert
+  duration: 2160h # 90d
+  renewBefore: 1080h # 45d
+  dnsNames:
+    - "minio.microshift.arthurvardevanyan.com"
+    - "console.minio.microshift.arthurvardevanyan.com"
+  issuerRef:
+    kind: ClusterIssuer
+    name: letsencrypt
