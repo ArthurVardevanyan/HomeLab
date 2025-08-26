@@ -8,6 +8,7 @@ metadata:
     argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
   labels:
     app.kubernetes.io/instance: homeassistant
+    velero.io/exclude-from-backup: "true"
 spec:
   # dataSource:
   #   postgresCluster:
@@ -98,6 +99,9 @@ spec:
             limits:
               memory: "48Mi"
               cpu: "10m"
+      metadata:
+        labels:
+          velero.io/exclude-from-backup: "true"
       replicas: 2
       resources:
         requests:
