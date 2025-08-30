@@ -1,0 +1,47 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: minio-unas
+resources:
+  - ../../base
+  - ./pvc.yaml
+patches:
+  - patch: |-
+      - op: replace
+        path: /spec/dnsNames/0
+        value: s3.unas.arthurvardevanyan.com
+      - op: replace
+        path: /spec/dnsNames/1
+        value: console.s3.unas.arthurvardevanyan.com
+    target:
+      kind: Certificate
+      name: minio-cert
+  - patch: |-
+      - op: replace
+        path: /spec/tls/0/hosts/0
+        value: console.s3.unas.arthurvardevanyan.com
+      - op: replace
+        path: /spec/rules/0/host
+        value: console.s3.unas.arthurvardevanyan.com
+    target:
+      kind: Ingress
+      name: minio-console
+  - patch: |-
+      - op: replace
+        path: /spec/tls/0/hosts/0
+        value: s3.unas.arthurvardevanyan.com
+      - op: replace
+        path: /spec/rules/0/host
+        value: s3.unas.arthurvardevanyan.com
+    target:
+      kind: Ingress
+      name: minio
+  - patch: |-
+      - op: replace
+        path: /spec/template/spec/containers/0/env/0/value
+        value: https://s3.unas.arthurvardevanyan.com
+      - op: replace
+        path: /spec/template/spec/containers/0/env/1/value
+        value: https://console.s3.unas.arthurvardevanyan.com
+    target:
+      kind: Deployment
+      name: minio
