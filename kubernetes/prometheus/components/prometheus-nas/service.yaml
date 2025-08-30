@@ -1,18 +1,18 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: prometheus-truenas
+  name: prometheus-nas
   namespace: prometheus
   annotations:
     prometheus.io/scrape: "true"
     prometheus.io/port: "9090"
   labels:
-    app.kubernetes.io/instance: prometheus-truenas
+    app.kubernetes.io/instance: prometheus-nas
 spec:
   type: ClusterIP
   clusterIP: None
   selector:
-    app: prometheus-truenas
+    app: prometheus-nas
   ports:
     - name: metrics
       protocol: TCP

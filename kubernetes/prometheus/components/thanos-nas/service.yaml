@@ -1,7 +1,7 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: thanos-store-truenas-gateway
+  name: thanos-store-nas-gateway
   namespace: prometheus
   labels:
     app.kubernetes.io/instance: prometheus
@@ -13,12 +13,12 @@ spec:
       port: 10901
       targetPort: grpc
   selector:
-    thanos-store-api-truenas: "true"
+    thanos-store-api-nas: "true"
 ---
 kind: Service
 apiVersion: v1
 metadata:
-  name: thanos-prometheus-truenas-headless
+  name: thanos-prometheus-nas-headless
   namespace: prometheus
   labels:
     app.kubernetes.io/instance: prometheus
@@ -27,7 +27,7 @@ spec:
   publishNotReadyAddresses: true
   type: ClusterIP
   selector:
-    app: prometheus-truenas
+    app: prometheus-nas
   ports:
     - name: grpc
       protocol: TCP

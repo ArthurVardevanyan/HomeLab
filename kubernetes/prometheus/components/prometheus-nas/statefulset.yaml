@@ -1,11 +1,11 @@
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  name: prometheus-truenas
+  name: prometheus-nas
   namespace: prometheus
   labels:
-    app: prometheus-truenas
-    app.kubernetes.io/instance: prometheus-truenas
+    app: prometheus-nas
+    app.kubernetes.io/instance: prometheus-nas
   annotations:
     checkov.io/skip1: CKV_K8S_40=OpenShift Injects Random UID
     checkov.io/skip2: CKV_K8S_38=Monitoring Pods
@@ -15,12 +15,12 @@ spec:
   revisionHistoryLimit: 0
   selector:
     matchLabels:
-      app: prometheus-truenas
+      app: prometheus-nas
       app.kubernetes.io/name: prometheus
   template:
     metadata:
       labels:
-        app: prometheus-truenas
+        app: prometheus-nas
         app.kubernetes.io/name: prometheus
       annotations:
         # prometheus.io/scrape: "true"
@@ -100,7 +100,7 @@ spec:
             - name: data
               mountPath: /prometheus_data/
         # https://hackernoon.com/kubernetes-monitoring-with-prometheus-and-thanos-z91w3uc2
-        - name: thanos-truenas
+        - name: thanos-nas
           image: quay.io/thanos/thanos:v0.39.2@sha256:1d022ef4b8eff056a0e3b7822f953d931c5704d068413f2d7ce5266aa96c9e80
           securityContext:
             runAsNonRoot: true
@@ -123,7 +123,7 @@ spec:
             - "--log.level=debug"
             - "--tsdb.path=/prometheus_data"
             - "--prometheus.url=http://127.0.0.1:9090"
-            - "--objstore.config-file=/etc/secret/truenas.yaml"
+            - "--objstore.config-file=/etc/secret/nas.yaml"
             - "--http-address=0.0.0.0:10904"
             - "--grpc-address=0.0.0.0:10903"
           ports:
@@ -144,7 +144,7 @@ spec:
               mountPath: /etc/prometheus/
             - name: data
               mountPath: /prometheus_data/
-            - name: truenas
+            - name: nas
               mountPath: /etc/secret
               readOnly: true
       volumes:
@@ -158,9 +158,9 @@ spec:
         - name: thanos-gcs-credentials
           secret:
             secretName: thanos-gcs-credentials
-        - name: truenas
+        - name: nas
           secret:
-            secretName: truenas
+            secretName: nas
         - name: ceph
           secret:
             secretName: ceph
