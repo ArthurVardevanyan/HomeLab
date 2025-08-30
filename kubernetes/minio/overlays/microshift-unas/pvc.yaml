@@ -1,0 +1,38 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: minio
+  namespace: minio-unas
+  labels:
+    velero.io/exclude-from-backup: "true"
+spec:
+  storageClassName: nfs
+  volumeName: minio-unas
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 1Ti
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: minio-unas
+  labels:
+    type: local
+    velero.io/exclude-from-backup: "true"
+spec:
+  storageClassName: nfs
+  volumeMode: Filesystem
+  capacity:
+    storage: 1Ti
+  accessModes:
+    - ReadWriteMany
+  mountOptions:
+    - vers=3
+  nfs:
+    path: /var/nfs/shared/s3
+    server: 10.102.1.6
+  claimRef:
+    name: minio
+    namespace: minio-unas
