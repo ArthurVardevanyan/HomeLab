@@ -2,7 +2,7 @@ apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
   name: deny-all
-  namespace: zitadel
+  namespace: minio-unas
   annotations:
     argocd.argoproj.io/sync-wave: "0"
 spec:
@@ -15,7 +15,7 @@ apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
   name: allow-openshift-monitoring
-  namespace: zitadel
+  namespace: minio-unas
   annotations:
     argocd.argoproj.io/sync-wave: "0"
 spec:
@@ -54,15 +54,15 @@ spec:
         - protocol: TCP
           port: 8083
         - protocol: TCP
-          port: 9001
+          port: 8085
         - protocol: TCP
-          port: 8080
+          port: 9001
 ---
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
   name: allow-dns-traffic
-  namespace: zitadel
+  namespace: minio-unas
   annotations:
     argocd.argoproj.io/sync-wave: "0"
 spec:
@@ -86,8 +86,8 @@ spec:
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
-  name: allow-internet-egress
-  namespace: zitadel
+  name: allow-unas-egress
+  namespace: minio-unas
   annotations:
     argocd.argoproj.io/sync-wave: "0"
 spec:
@@ -97,33 +97,19 @@ spec:
   egress:
     - to:
         - ipBlock:
-            cidr: 10.101.1.6/32
-    - to:
-        - ipBlock:
-            cidr: 10.101.1.7/32
-    - to:
-        - ipBlock:
-            cidr: 10.101.10.7/32
-        - ipBlock:
-            cidr: 10.101.10.5/32 # OKD WildCard
-        - ipBlock:
-            cidr: 10.101.10.7/32 # OKD APP WildCard
-        - ipBlock:
-            cidr: 198.91.81.15/32 # x15.x10hosting.com
+            cidr: 10.102.1.6/32
 ---
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
-  name: allow-to-openshift-ingress
-  namespace: zitadel
-  annotations:
-    argocd.argoproj.io/sync-wave: "0"
+  name: allow-from-openshift-ingress
+  namespace: minio-unas
 spec:
   policyTypes:
-    - Egress
+    - Ingress
   podSelector: {}
-  egress:
-    - to:
+  ingress:
+    - from:
         - namespaceSelector:
             matchLabels:
               network.openshift.io/policy-group: ingress
@@ -131,16 +117,14 @@ spec:
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
-  name: allow-from-openshift-ingress
-  namespace: zitadel
-  annotations:
-    argocd.argoproj.io/sync-wave: "0"
+  name: allow-to-openshift-ingress
+  namespace: minio-unas
 spec:
   policyTypes:
-    - Ingress
+    - Egress
   podSelector: {}
-  ingress:
-    - from:
+  egress:
+    - to:
         - namespaceSelector:
             matchLabels:
               network.openshift.io/policy-group: ingress

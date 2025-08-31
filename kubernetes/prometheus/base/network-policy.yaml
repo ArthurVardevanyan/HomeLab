@@ -132,3 +132,20 @@ spec:
 #           podSelector:
 #             matchLabels:
 #               app: rook-ceph-mgr
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-to-openshift-ingress-psql
+  namespace: prometheus
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+spec:
+  policyTypes:
+    - Egress
+  podSelector: {}
+  egress:
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              network.openshift.io/policy-group: ingress
