@@ -103,21 +103,21 @@ spec:
         - protocol: TCP
           port: 5432
 ---
-apiVersion: networking.k8s.io/v1
-kind: NetworkPolicy
-metadata:
-  name: allow-to-openshift-ingress-psql
-  namespace: stackrox
-  annotations:
-    argocd.argoproj.io/sync-wave: "1"
-spec:
-  policyTypes:
-    - Egress
-  podSelector:
-    matchLabels:
-      postgres-operator.crunchydata.com/cluster: stackrox
-  egress:
-    - to:
-        - namespaceSelector:
-            matchLabels:
-              network.openshift.io/policy-group: ingress
+# apiVersion: networking.k8s.io/v1
+# kind: NetworkPolicy
+# metadata:
+#   name: allow-to-openshift-ingress-psql
+#   namespace: stackrox
+#   annotations:
+#     argocd.argoproj.io/sync-wave: "1"
+# spec:
+#   policyTypes:
+#     - Egress
+#   podSelector:
+#     matchLabels:
+#       postgres-operator.crunchydata.com/cluster: stackrox
+#   egress:
+#     - to:
+#         - namespaceSelector:
+#             matchLabels:
+#               network.openshift.io/policy-group: ingress
