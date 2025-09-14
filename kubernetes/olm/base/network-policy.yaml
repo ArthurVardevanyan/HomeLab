@@ -1,0 +1,114 @@
+# Source: olm/templates/0000_50_olm_01-networkpolicies.yaml
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: default-deny-all-traffic
+  namespace: operator-lifecycle-manager
+spec:
+  podSelector: {}
+  policyTypes:
+    - Ingress
+    - Egress
+---
+# Source: olm/templates/0000_50_olm_01-networkpolicies.yaml
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: olm-operator
+  namespace: operator-lifecycle-manager
+spec:
+  podSelector:
+    matchLabels:
+      app: olm-operator
+  ingress:
+    - ports:
+        - port: metrics
+          protocol: TCP
+  egress:
+    - ports:
+        - port: 6443
+          protocol: TCP
+    - ports:
+        - port: 53
+          protocol: TCP
+        - port: 53
+          protocol: UDP
+  policyTypes:
+    - Ingress
+    - Egress
+---
+# Source: olm/templates/0000_50_olm_01-networkpolicies.yaml
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: catalog-operator
+  namespace: operator-lifecycle-manager
+spec:
+  podSelector:
+    matchLabels:
+      app: catalog-operator
+  ingress:
+    - ports:
+        - port: metrics
+          protocol: TCP
+  egress:
+    - ports:
+        - port: 6443
+          protocol: TCP
+    - ports:
+        - port: 53
+          protocol: TCP
+        - port: 53
+          protocol: UDP
+    - ports:
+        - protocol: TCP
+          port: 50051
+  policyTypes:
+    - Ingress
+    - Egress
+---
+# Source: olm/templates/0000_50_olm_01-networkpolicies.yaml
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: packageserver
+  namespace: operator-lifecycle-manager
+spec:
+  podSelector:
+    matchLabels:
+      app: packageserver
+  ingress:
+    - ports:
+        - protocol: TCP
+          port: 5443
+  egress:
+    - ports:
+        - port: 6443
+          protocol: TCP
+    - ports:
+        - port: 53
+          protocol: TCP
+        - port: 53
+          protocol: UDP
+    - ports:
+        - protocol: TCP
+          port: 50051
+  policyTypes:
+    - Ingress
+    - Egress
+---
+# Source: olm/templates/0000_50_olm_01-networkpolicies.yaml
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: default-allow-all
+  namespace: operators
+spec:
+  podSelector: {}
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    - {}
+  egress:
+    - {}

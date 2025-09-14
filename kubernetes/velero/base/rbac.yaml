@@ -9,7 +9,22 @@ metadata:
     app.kubernetes.io/name: velero
     app.kubernetes.io/instance: velero
     app.kubernetes.io/managed-by: Helm
-    helm.sh/chart: velero-9.0.4
+    helm.sh/chart: velero-10.1.2
+automountServiceAccountToken: true
+---
+# Source: velero/templates/secret.yaml
+apiVersion: v1
+kind: Secret
+metadata:
+  name: velero
+  namespace: velero
+  labels:
+    app.kubernetes.io/name: velero
+    app.kubernetes.io/instance: velero
+    app.kubernetes.io/managed-by: Helm
+    helm.sh/chart: velero-10.1.2
+type: Opaque
+data:
 ---
 # Source: velero/templates/clusterrolebinding.yaml
 apiVersion: rbac.authorization.k8s.io/v1
@@ -21,7 +36,7 @@ metadata:
     app.kubernetes.io/name: velero
     app.kubernetes.io/instance: velero
     app.kubernetes.io/managed-by: Helm
-    helm.sh/chart: velero-9.0.4
+    helm.sh/chart: velero-10.1.2
 subjects:
   - kind: ServiceAccount
     namespace: velero
@@ -42,7 +57,7 @@ metadata:
     app.kubernetes.io/name: velero
     app.kubernetes.io/instance: velero
     app.kubernetes.io/managed-by: Helm
-    helm.sh/chart: velero-9.0.4
+    helm.sh/chart: velero-10.1.2
 rules:
   - apiGroups:
       - "*"
@@ -62,7 +77,7 @@ metadata:
     app.kubernetes.io/name: velero
     app.kubernetes.io/instance: velero
     app.kubernetes.io/managed-by: Helm
-    helm.sh/chart: velero-9.0.4
+    helm.sh/chart: velero-10.1.2
 subjects:
   - kind: ServiceAccount
     namespace: velero
