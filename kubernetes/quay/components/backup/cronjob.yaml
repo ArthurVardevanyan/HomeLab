@@ -1,15 +1,15 @@
 kind: CronJob
 apiVersion: batch/v1
 metadata:
-  name: pgdump-cron
-  namespace: postgres
+  name: s3-cron
+  namespace: quay
   labels:
-    app.kubernetes.io/instance: postgres
+    app.kubernetes.io/instance: quay
   annotations:
     checkov.io/skip1: CKV_K8S_40=OpenShift Injects Random UID
     checkov.io/skip3: CKV_K8S_43=Don't Mind Tag for This
 spec:
-  schedule: "30 */1 * * *"
+  schedule: "30 */6 * * *"
   concurrencyPolicy: Forbid
   suspend: false
   startingDeadlineSeconds: 60
@@ -19,14 +19,14 @@ spec:
       template:
         metadata:
           labels:
-            app: pgdump-cron
+            app: s3-cron
         spec:
-          serviceAccountName: pgdump-sa
+          serviceAccountName: s3
           volumes:
-            - name: pgdump-config
+            - name: s3-config
               secret:
-                secretName: pgdump-config
-            - name: pgdump-emptydir
+                secretName: s3-config
+            - name: s3-emptydir
               emptyDir:
                 sizeLimit: 5Gi
             - name: tmp
@@ -37,26 +37,24 @@ spec:
             seccompProfile:
               type: RuntimeDefault
           containers:
-            - name: pgdump-cron
+            - name: s3-cron
               image: registry.arthurvardevanyan.com/homelab/toolbox:not_latest
-              command: ["/bin/bash", "-c", "sh /mnt/pg_dump/pgdump.sh"]
+              command: ["/bin/bash", "-c", "sh /mnt/s3/s3.sh"]
               resources:
                 limits:
                   cpu: 150m
-                  memory: 256M
-                  ephemeral-storage: "5Gi"
+                  memory: 256Mi
+                  ephemeral-storage: "256Mi"
                 requests:
                   cpu: 25m
-                  memory: 128M
-                  ephemeral-storage: "5Gi"
+                  memory: 128Mi
+                  ephemeral-storage: "128Mi"
               volumeMounts:
                 - name: tmp
                   mountPath: /tmp
-                  subPath: pgdump.sh
-                - name: pgdump-emptydir
-                  mountPath: /mnt/db-dump
-                - name: pgdump-config
-                  mountPath: /mnt/pg_dump
+                  subPath: s3.sh
+                - name: s3-config
+                  mountPath: /mnt/s3
               securityContext:
                 runAsNonRoot: true
                 readOnlyRootFilesystem: true
@@ -73,7 +71,7 @@ spec:
           terminationGracePeriodSeconds: 30
           dnsPolicy: ClusterFirst
           automountServiceAccountToken: false
-          hostname: pgdump-cron
+          hostname: s3-cron
           schedulerName: default-scheduler
   successfulJobsHistoryLimit: 1
   failedJobsHistoryLimit: 1
