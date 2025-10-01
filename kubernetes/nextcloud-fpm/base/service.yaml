@@ -1,0 +1,31 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: nextcloud
+  namespace: nextcloud-fpm
+spec:
+  selector:
+    app: nextcloud
+  ports:
+    - protocol: TCP
+      port: 9000
+      targetPort: 9000
+      name: http
+  type: ClusterIP
+  clusterIP: None
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: nginx
+  namespace: nextcloud-fpm
+spec:
+  selector:
+    app: nginx
+  ports:
+    - protocol: TCP
+      port: 8080
+      targetPort: 8080
+      name: http
+  type: ClusterIP
+  clusterIP: None

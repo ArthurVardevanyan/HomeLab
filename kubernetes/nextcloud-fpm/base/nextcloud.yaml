@@ -1,0 +1,231 @@
+kind: Deployment
+apiVersion: apps/v1
+metadata:
+  name: nextcloud
+  namespace: nextcloud-fpm
+  labels:
+    app: nextcloud
+    app.kubernetes.io/instance: nextcloud
+spec:
+  # replicas: 0
+  revisionHistoryLimit: 0
+  selector:
+    matchLabels:
+      app: nextcloud
+  template:
+    metadata:
+      labels:
+        app: nextcloud
+        db: nextcloud-pg
+      annotations:
+        enable.version-checker.io/nextcloud: "true"
+    spec:
+      topologySpreadConstraints:
+        - maxSkew: 1
+          topologyKey: topology.kubernetes.io/zone
+          whenUnsatisfiable: DoNotSchedule
+          labelSelector:
+            matchLabels:
+              app: nextcloud
+              db: nextcloud-pg
+        - maxSkew: 1
+          topologyKey: kubernetes.io/hostname
+          whenUnsatisfiable: DoNotSchedule
+          labelSelector:
+            matchLabels:
+              app: nextcloud
+              db: nextcloud-pg
+      serviceAccountName: nextcloud
+      volumes:
+        - name: nextcloud
+          persistentVolumeClaim:
+            claimName: nextcloud
+        - name: nextcloud-custom-apps
+          persistentVolumeClaim:
+            claimName: nextcloud-custom-apps
+        - name: nextcloud-config
+          persistentVolumeClaim:
+            claimName: nextcloud-config
+        - name: nextcloud-data
+          persistentVolumeClaim:
+            claimName: nextcloud-data
+        - name: nextcloud-themes
+          persistentVolumeClaim:
+            claimName: nextcloud-themes
+        - name: tmp
+          emptyDir:
+            sizeLimit: 5Gi
+        - name: php-conf
+          emptyDir:
+            sizeLimit: 1Gi
+      securityContext:
+        # fsGroup: 33
+        # runAsGroup: 33
+        # runAsUser: 33
+        runAsNonRoot: true
+        fsGroupChangePolicy: OnRootMismatch
+      initContainers:
+        - name: init-redis-session-ini
+          # https://github.com/nextcloud/helm/pull/752
+          image: docker.io/nextcloud:32.0.0-fpm
+          command: ["touch", "/usr/local/etc/php/conf.d/redis-session.ini"]
+          securityContext:
+            # runAsGroup: 33
+            # runAsUser: 33
+            privileged: false
+            runAsNonRoot: true
+            readOnlyRootFilesystem: true
+            allowPrivilegeEscalation: false
+            seccompProfile:
+              type: RuntimeDefault
+            capabilities:
+              drop:
+                - ALL
+          volumeMounts:
+            - name: php-conf
+              mountPath: "/usr/local/etc/php/conf.d"
+      containers:
+        - name: nextcloud
+          image: docker.io/nextcloud:32.0.0-fpm
+          env:
+            - name: NEXTCLOUD_TRUSTED_DOMAINS
+              value: files.arthurvardevanyan.com,nextcloud.kube.home
+            - name: FORWARDED_FOR_HEADERS
+              value: X-Forwarded-For,HTTP_X_FORWARDED_FOR
+            - name: TRUSTED_PROXIES
+              value: 10.0.0.0/8
+            - name: REDIS_HOST
+              value: nextcloud-dragonfly.nextcloud-fpm.svc.cluster.local
+            - name: REDIS_PORT
+              value: "6379"
+            - name: POSTGRES_DB
+              valueFrom:
+                secretKeyRef:
+                  name: nextcloud-pguser-nextcloud
+                  key: dbname
+            - name: POSTGRES_USER
+              valueFrom:
+                secretKeyRef:
+                  name: nextcloud-pguser-nextcloud
+                  key: user
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: nextcloud-pguser-nextcloud
+                  key: password
+            - name: POSTGRES_HOST
+              valueFrom:
+                secretKeyRef:
+                  name: nextcloud-pguser-nextcloud
+                  key: host
+            - name: OBJECTSTORE_S3_BUCKET
+              valueFrom:
+                configMapKeyRef:
+                  name: nextcloud
+                  key: BUCKET_NAME
+            - name: OBJECTSTORE_S3_HOST
+              valueFrom:
+                configMapKeyRef:
+                  name: nextcloud
+                  key: BUCKET_HOST
+            - name: OBJECTSTORE_S3_PORT
+              valueFrom:
+                configMapKeyRef:
+                  name: nextcloud
+                  key: BUCKET_PORT
+            - name: OBJECTSTORE_S3_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: nextcloud
+                  key: AWS_ACCESS_KEY_ID
+            - name: OBJECTSTORE_S3_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: nextcloud
+                  key: AWS_SECRET_ACCESS_KEY
+            - name: OBJECTSTORE_S3_SSL
+              value: "false"
+            - name: OBJECTSTORE_S3_AUTOCREATE
+              value: "false"
+            - name: OBJECTSTORE_S3_USEPATH_STYLE
+              value: "true"
+            - name: PHP_MEMORY_LIMIT
+              value: 3G
+            - name: PHP_UPLOAD_LIMIT
+              value: 10G
+          securityContext:
+            # runAsGroup: 33
+            # runAsUser: 33
+            privileged: false
+            runAsNonRoot: true
+            readOnlyRootFilesystem: true
+            allowPrivilegeEscalation: false
+            seccompProfile:
+              type: RuntimeDefault
+            capabilities:
+              drop:
+                - ALL
+          ports:
+            - containerPort: 9000
+              name: http
+              protocol: TCP
+          resources:
+            limits:
+              cpu: 2000m
+              ephemeral-storage: 5Gi
+              memory: 5Gi
+            requests:
+              cpu: 50m
+              ephemeral-storage: 1Gi
+              memory: 512Mi
+          volumeMounts:
+            - name: nextcloud
+              mountPath: /var/www/html
+            - name: nextcloud-custom-apps
+              mountPath: /var/www/html/custom_apps
+            - name: nextcloud-config
+              mountPath: /var/www/html/config
+            - name: nextcloud-data
+              mountPath: /var/www/html/data
+            - name: nextcloud-themes
+              mountPath: /var/www/html/themes
+            - name: tmp
+              mountPath: /tmp
+            - name: php-conf
+              mountPath: "/usr/local/etc/php/conf.d/redis-session.ini" # fix permission denied error
+              subPath: redis-session.ini
+          livenessProbe:
+            # tcpSocket:
+            #   port: 9000
+            exec:
+              command:
+                - "sh"
+                - "-c"
+                - 'count=$(/usr/local/bin/php /var/www/html/occ status 2>/dev/null | grep -E "installed: true" | grep -E "maintenance: false" | grep -E "needsDbUpgrade: false" | wc -l); if [ "$count" -eq 0 ] || [ "$count" -eq 3 ]; then exit 0; else exit 1; fi'
+            initialDelaySeconds: 15
+            timeoutSeconds: 10
+            periodSeconds: 20
+            successThreshold: 1
+            failureThreshold: 15
+          readinessProbe:
+            # tcpSocket:
+            #   port: 9000
+            exec:
+              command:
+                - "sh"
+                - "-c"
+                - 'count=$(/usr/local/bin/php /var/www/html/occ status 2>/dev/null | grep -E "installed: true" | grep -E "maintenance: false" | grep -E "needsDbUpgrade: false" | wc -l); if [ "$count" -eq 0 ] || [ "$count" -eq 3 ]; then exit 0; else exit 1; fi'
+            initialDelaySeconds: 15
+            timeoutSeconds: 10
+            periodSeconds: 20
+            successThreshold: 1
+            failureThreshold: 3
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+          imagePullPolicy: IfNotPresent
+      restartPolicy: Always
+      terminationGracePeriodSeconds: 30
+      dnsPolicy: ClusterFirst
+      automountServiceAccountToken: false
+      hostname: nextcloud
+      schedulerName: default-scheduler
