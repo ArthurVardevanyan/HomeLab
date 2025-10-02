@@ -2,22 +2,16 @@
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
-  name: unas-allow-smb-egress
-  namespace: nextcloud
-  annotations:
-    argocd.argoproj.io/sync-wave: "0"
+  name: allow-to-openshift-ingress-transfer
+  namespace: nextcloud-fpm
 spec:
   policyTypes:
     - Egress
   podSelector:
     matchLabels:
-      app: unas-cron
+      app: nextcloud-transfer-cron
   egress:
     - to:
-        - ipBlock:
-            cidr: 10.102.1.6/32
-      ports:
-        - protocol: TCP
-          port: 445
-        - protocol: TCP
-          port: 139
+        - namespaceSelector:
+            matchLabels:
+              network.openshift.io/policy-group: ingress

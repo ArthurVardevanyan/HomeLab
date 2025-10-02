@@ -1,16 +1,16 @@
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
-  name: allow-to-openshift-ingress-backup-s3
+  name: allow-from-openshift-ingress-nginx
   namespace: nextcloud-fpm
 spec:
   policyTypes:
-    - Egress
+    - Ingress
   podSelector:
     matchLabels:
-      app: s3-cron
-  egress:
-    - to:
+      app: nginx
+  ingress:
+    - from:
         - namespaceSelector:
             matchLabels:
               network.openshift.io/policy-group: ingress
@@ -18,22 +18,22 @@ spec:
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
-  name: allow-ceph-obj-s3-backup
+  name: nextcloud-nginx-egress
   namespace: nextcloud-fpm
 spec:
   podSelector:
     matchLabels:
-      app: s3-cron
+      app: nginx
   policyTypes:
     - Egress
   egress:
     - to:
-        - podSelector:
+        - namespaceSelector:
             matchLabels:
-              app.kubernetes.io/component: cephobjectstores.ceph.rook.io
-          namespaceSelector:
+              kubernetes.io/metadata.name: nextcloud-fpm
+          podSelector:
             matchLabels:
-              kubernetes.io/metadata.name: rook-ceph
+              db: nextcloud-pg
       ports:
         - protocol: TCP
-          port: 8080
+          port: 9000

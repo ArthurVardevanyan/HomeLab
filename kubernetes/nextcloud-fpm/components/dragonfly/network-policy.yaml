@@ -2,11 +2,9 @@ apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
   name: dragonfly
-  namespace: nextcloud
+  namespace: nextcloud-fpm
   annotations:
     argocd.argoproj.io/sync-wave: "1"
-  labels:
-    app.kubernetes.io/instance: nextcloud
 spec:
   podSelector:
     matchLabels:
@@ -20,7 +18,7 @@ spec:
     - from:
         - namespaceSelector:
             matchLabels:
-              kubernetes.io/metadata.name: nextcloud
+              kubernetes.io/metadata.name: nextcloud-fpm
           podSelector:
             matchLabels:
               app: nextcloud-dragonfly
@@ -35,7 +33,7 @@ spec:
     - to:
         - namespaceSelector:
             matchLabels:
-              kubernetes.io/metadata.name: nextcloud
+              kubernetes.io/metadata.name: nextcloud-fpm
           podSelector:
             matchLabels:
               app: nextcloud-dragonfly
@@ -51,11 +49,9 @@ apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
   name: dragonfly-nextcloud
-  namespace: nextcloud
+  namespace: nextcloud-fpm
   annotations:
     argocd.argoproj.io/sync-wave: "1"
-  labels:
-    app.kubernetes.io/instance: nextcloud
 spec:
   podSelector:
     matchLabels:
@@ -68,7 +64,7 @@ spec:
     - from:
         - namespaceSelector:
             matchLabels:
-              kubernetes.io/metadata.name: nextcloud
+              kubernetes.io/metadata.name: nextcloud-fpm
           podSelector:
             matchLabels:
               db: nextcloud-pg
@@ -80,11 +76,7 @@ apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
   name: dragonfly-nextcloud-egress
-  namespace: nextcloud
-  annotations:
-    argocd.argoproj.io/sync-wave: "0"
-  labels:
-    app.kubernetes.io/instance: nextcloud
+  namespace: nextcloud-fpm
 spec:
   policyTypes:
     - Egress
@@ -95,7 +87,7 @@ spec:
     - to:
         - namespaceSelector:
             matchLabels:
-              kubernetes.io/metadata.name: nextcloud
+              kubernetes.io/metadata.name: nextcloud-fpm
           podSelector:
             matchLabels:
               app: nextcloud-dragonfly
@@ -108,65 +100,10 @@ spec:
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
-  name: allow-internet-egress-dragonfly
-  namespace: nextcloud
-  annotations:
-    argocd.argoproj.io/sync-wave: "0"
-  labels:
-    app.kubernetes.io/instance: nextcloud
-spec:
-  policyTypes:
-    - Egress
-  podSelector:
-    matchLabels:
-      app: nextcloud-dragonfly
-      app.kubernetes.io/name: dragonfly
-      app.kubernetes.io/part-of: dragonfly
-  egress:
-    - to:
-        - ipBlock:
-            cidr: 0.0.0.0/0
-            except:
-              - 10.0.0.0/8
-              - 172.16.0.0/12
-              - 192.168.0.0/16
-        - ipBlock:
-            cidr: 10.101.10.5/32 # OKD WildCard
-        - ipBlock:
-            cidr: 10.101.10.7/32 # OKD APP WildCard
----
-apiVersion: networking.k8s.io/v1
-kind: NetworkPolicy
-metadata:
-  name: dragonfly-allow-to-openshift-ingress
-  namespace: nextcloud
-  annotations:
-    argocd.argoproj.io/sync-wave: "0"
-  labels:
-    app.kubernetes.io/instance: nextcloud
-spec:
-  policyTypes:
-    - Egress
-  podSelector:
-    matchLabels:
-      app: nextcloud-dragonfly
-      app.kubernetes.io/name: dragonfly
-      app.kubernetes.io/part-of: dragonfly
-  egress:
-    - to:
-        - namespaceSelector:
-            matchLabels:
-              network.openshift.io/policy-group: ingress
----
-apiVersion: networking.k8s.io/v1
-kind: NetworkPolicy
-metadata:
   name: dragonfly-operator-system
-  namespace: nextcloud
+  namespace: nextcloud-fpm
   annotations:
     argocd.argoproj.io/sync-wave: "1"
-  labels:
-    app.kubernetes.io/instance: nextcloud
 spec:
   podSelector:
     matchLabels:

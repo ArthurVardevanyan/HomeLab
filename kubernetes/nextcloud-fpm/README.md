@@ -1,7 +1,7 @@
 # NextCloud
 
 ```bash
-kubectl kustomize kubernetes/nextcloud/overlays/okd | argocd-vault-plugin generate - | kubectl apply -f -
+kubectl kustomize kubernetes/nextcloud-fpm/overlays/okd | argocd-vault-plugin generate - | kubectl apply -f -
 ```
 
 ## REF
