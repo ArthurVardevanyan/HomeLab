@@ -4,7 +4,7 @@ metadata:
   name: s3-cron
   namespace: nextcloud-fpm
 spec:
-  schedule: "30 */6 * * *"
+  schedule: "45 */2 * * *"
   concurrencyPolicy: Forbid
   suspend: false
   startingDeadlineSeconds: 60
@@ -24,7 +24,7 @@ spec:
                 secretName: unas
             - name: s3-script
               configMap:
-                name: unas
+                name: s3
             - name: s3-emptydir
               emptyDir:
                 sizeLimit: 5Gi
@@ -38,7 +38,7 @@ spec:
           containers:
             - name: s3-cron
               image: registry.arthurvardevanyan.com/homelab/toolbox:not_latest
-              command: ["/bin/bash", "-c", "sh /mnt/s3/s3.sh"]
+              command: ["/bin/bash", "-c", "sh /tmp/s3/s3.sh"]
               resources:
                 limits:
                   cpu: 250m
@@ -52,9 +52,9 @@ spec:
                 - name: tmp
                   mountPath: /tmp
                 - name: s3-script
-                  mountPath: /tmp/unas
+                  mountPath: /tmp/s3
                 - name: s3-config
-                  mountPath: /mnt/unas
+                  mountPath: /mnt/s3
               securityContext:
                 runAsNonRoot: true
                 privileged: false
