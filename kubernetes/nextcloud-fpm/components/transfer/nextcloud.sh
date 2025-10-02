@@ -45,7 +45,7 @@ while IFS= read -r line || [ -n "$line" ]; do
   [ -z "$user" ] && continue
 
   src="nextcloud-${user}:"
-  dst="nextcloud-${user}-new:"
+  dst="nextcloud-${user}-fpm:"
 
   exclude_args=()
   if [ "$user" != "arthur" ]; then

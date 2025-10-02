@@ -44,7 +44,7 @@ while IFS= read -r line || [ -n "$line" ]; do
   user="${user%"${user##*[![:space:]]}"}"
   [ -z "$user" ] && continue
 
-  src="nextcloud-${user}:"
+  src="nextcloud-${user}-fpm:"
   dst="unas-${user}:Personal-Drive/nextcloud"
 
   exclude_args=()
