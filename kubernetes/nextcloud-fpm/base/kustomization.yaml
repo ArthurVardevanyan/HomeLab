@@ -2,26 +2,4 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
   - namespace.yaml
-  - service-account.yaml
   - pvc.yaml
-  - nextcloud.yaml
-  - service.yaml
-  - pdb.yaml
-  - ./dragonfly/dragonfly.yaml
-  # - ./dragonfly/network-policy.yaml
-  - ./dragonfly/pdb.yaml
-  - ./object-bucket-claim.yaml
-  - ./nginx.yaml
-  - certificate.yaml
-  - ingress.yaml
-  - rbac.yaml
-  - hpa.yaml
-  - ./cronjob.yaml
-  - ./preview-cronjob.yaml
-components:
-  - ./postgres
-configMapGenerator:
-  - files:
-      - nginx.conf
-    name: nginx
-    namespace: nextcloud-fpm

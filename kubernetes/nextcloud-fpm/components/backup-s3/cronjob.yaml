@@ -36,10 +36,10 @@ spec:
               image: registry.arthurvardevanyan.com/homelab/toolbox:not_latest
               command: ["/bin/bash", "-c", "sh /mnt/s3/s3.sh"]
               resources:
-                # limits:
-                #   cpu: 150m
-                #   memory: 256Mi
-                #   ephemeral-storage: "256Mi"
+                limits:
+                  cpu: 250m
+                  memory: 1Gi
+                  ephemeral-storage: "256Mi"
                 requests:
                   cpu: 25m
                   memory: 128Mi
@@ -52,6 +52,7 @@ spec:
                   mountPath: /mnt/s3
               securityContext:
                 runAsNonRoot: true
+                privileged: false
                 readOnlyRootFilesystem: true
                 allowPrivilegeEscalation: false
                 seccompProfile:
