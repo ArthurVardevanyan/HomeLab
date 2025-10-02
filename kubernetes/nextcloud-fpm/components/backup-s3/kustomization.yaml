@@ -3,5 +3,10 @@ kind: Component
 resources:
   - ./cronjob.yaml
   - ./rbac.yaml
-  - ./secret.yaml
   - ./network-policy.yaml
+generatorOptions: {}
+configMapGenerator:
+  - files:
+      - s3.sh
+    name: s3
+    namespace: nextcloud-fpm

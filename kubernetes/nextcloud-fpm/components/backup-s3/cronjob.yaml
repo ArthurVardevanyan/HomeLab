@@ -21,7 +21,10 @@ spec:
           volumes:
             - name: s3-config
               secret:
-                secretName: s3-config
+                secretName: unas
+            - name: s3-script
+              configMap:
+                name: unas
             - name: s3-emptydir
               emptyDir:
                 sizeLimit: 5Gi
@@ -48,9 +51,10 @@ spec:
               volumeMounts:
                 - name: tmp
                   mountPath: /tmp
-                  subPath: s3.sh
+                - name: s3-script
+                  mountPath: /tmp/unas
                 - name: s3-config
-                  mountPath: /mnt/s3
+                  mountPath: /mnt/unas
               securityContext:
                 runAsNonRoot: true
                 privileged: false
