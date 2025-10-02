@@ -60,9 +60,6 @@ spec:
           emptyDir:
             sizeLimit: 1Gi
       securityContext:
-        # fsGroup: 33
-        # runAsGroup: 33
-        # runAsUser: 33
         runAsNonRoot: true
         fsGroupChangePolicy: OnRootMismatch
       initContainers:
@@ -70,9 +67,16 @@ spec:
           # https://github.com/nextcloud/helm/pull/752
           image: docker.io/nextcloud:32.0.0-fpm
           command: ["touch", "/usr/local/etc/php/conf.d/redis-session.ini"]
+          resources:
+            limits:
+              cpu: 50m
+              ephemeral-storage: 64Mi
+              memory: 64Mi
+            requests:
+              cpu: 25m
+              ephemeral-storage: 32Mi
+              memory: 32Mi
           securityContext:
-            # runAsGroup: 33
-            # runAsUser: 33
             privileged: false
             runAsNonRoot: true
             readOnlyRootFilesystem: true
@@ -170,7 +174,7 @@ spec:
               protocol: TCP
           resources:
             limits:
-              cpu: 2000m
+              cpu: 1500m
               ephemeral-storage: 10Gi
               memory: 5Gi
             requests:
