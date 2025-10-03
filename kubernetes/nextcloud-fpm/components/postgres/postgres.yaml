@@ -27,10 +27,10 @@ spec:
       global:
         repo1-retention-full: "14"
         repo1-retention-full-type: count
-        # repo2-path: /nextcloud
-        # repo2-retention-full: "14"
-        # repo2-retention-full-type: count
-        # repo2-s3-uri-style: path
+        repo2-path: /nextcloud-fpm
+        repo2-retention-full: "14"
+        repo2-retention-full-type: count
+        repo2-s3-uri-style: path
       repoHost:
         resources:
           limits:
@@ -68,13 +68,13 @@ spec:
               resources:
                 requests:
                   storage: 20Gi
-        # - name: repo2
-        #   s3:
-        #     bucket: postgres
-        #     endpoint: "minio.microshift.arthurvardevanyan.com"
-        #     region: homelab
-        #   schedules:
-        #     full: "15 6 * * *"
+        - name: repo2
+          s3:
+            bucket: postgres
+            endpoint: "minio.microshift.arthurvardevanyan.com"
+            region: homelab
+          schedules:
+            full: "15 6 * * *"
   instances:
     - dataVolumeClaimSpec:
         storageClassName: rook-ceph-block
@@ -100,7 +100,7 @@ spec:
           cpu: "100m"
         limits:
           memory: "2Gi"
-          cpu: "750m"
+          cpu: "1500m"
       affinity:
         podAntiAffinity:
           requiredDuringSchedulingIgnoredDuringExecution:
