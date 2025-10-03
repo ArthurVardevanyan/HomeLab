@@ -28,7 +28,8 @@ else
   RCLONE_OPTS=( "${RCLONE_BASE_OPTS[@]}" )
 fi
 
-EXCLUDES=( 'Trips/**' 'Trips-Events/**' 'Family/**' )
+EXCLUDES=( 'Trips-Events/**' 'Family/**' )
+EXCLUDES_ARTHUR=( 'raw/**' )
 
 if [ ! -f "$LIST_FILE" ]; then
   echo "List file not found: $LIST_FILE" >&2
@@ -49,11 +50,15 @@ while IFS= read -r line || [ -n "$line" ]; do
   mkdir -p "$dst"
 
   exclude_args=()
-  # if [ "$user" != "arthur" ]; then
+  if [ "$user" != "arthur" ]; then
     for p in "${EXCLUDES[@]}"; do
       exclude_args+=( --exclude "$p" )
     done
-  # fi
+  else
+    for p in "${EXCLUDES_ARTHUR[@]}"; do
+      exclude_args+=( --exclude "$p" )
+    done
+  fi
 
   echo "Syncing ${src} -> ${dst}"
   rclone "${RCLONE_OPTS[@]}" "${exclude_args[@]}" \
