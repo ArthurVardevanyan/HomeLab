@@ -2,20 +2,20 @@ kind: Deployment
 apiVersion: apps/v1
 metadata:
   namespace: minio
-  name: minio
+  name: minio-ssd
   labels:
-    app: minio
+    app: minio-ssd
 spec:
   strategy:
     type: Recreate
   replicas: 1
   selector:
     matchLabels:
-      app: minio
+      app: minio-ssd
   template:
     metadata:
       labels:
-        app: minio
+        app: minio-ssd
     spec:
       automountServiceAccountToken: false
       securityContext:
@@ -38,13 +38,13 @@ spec:
             - name: minio
               containerPort: 9000
           volumeMounts:
-            - name: minio
+            - name: minio-ssd
               mountPath: /data
           env:
             - name: MINIO_SERVER_URL
-              value: https://minio.microshift.arthurvardevanyan.com
+              value: https://minio.ssd.microshift.arthurvardevanyan.com
             - name: MINIO_BROWSER_REDIRECT_URL
-              value: https://console.minio.microshift.arthurvardevanyan.com
+              value: https://console.minio.ssd.microshift.arthurvardevanyan.com
             - name: MINIO_ROOT_USER
               valueFrom:
                 secretKeyRef:
@@ -84,6 +84,6 @@ spec:
               drop:
                 - ALL
       volumes:
-        - name: minio
+        - name: minio-ssd
           persistentVolumeClaim:
-            claimName: minio
+            claimName: minio-ssd

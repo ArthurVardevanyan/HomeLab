@@ -1,13 +1,13 @@
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
-  name: minio
+  name: minio-ssd
   namespace: minio-unas
   labels:
     velero.io/exclude-from-backup: "true"
 spec:
   storageClassName: nfs
-  volumeName: minio-unas
+  volumeName: minio-unas-ssd
   accessModes:
     - ReadWriteMany
   resources:
@@ -17,7 +17,7 @@ spec:
 apiVersion: v1
 kind: PersistentVolume
 metadata:
-  name: minio-unas
+  name: minio-unas-ssd
   labels:
     type: local
     velero.io/exclude-from-backup: "true"
@@ -32,8 +32,8 @@ spec:
     - hard
     - nfsvers=3 #4.1
   nfs:
-    path: /var/nfs/shared/s3 # /var/nfs/shared/s3 *(rw,sync,no_subtree_check,crossmnt,no_root_squash,insecure)
+    path: /var/nfs/shared/s3ssd # /var/nfs/shared/s3ssd *(rw,sync,no_subtree_check,crossmnt,no_root_squash,insecure)
     server: 10.102.1.6
   claimRef:
-    name: minio
+    name: minio-ssd
     namespace: minio-unas

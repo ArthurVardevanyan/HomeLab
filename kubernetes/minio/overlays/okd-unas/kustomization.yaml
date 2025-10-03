@@ -5,6 +5,9 @@ resources:
   - ../microshift-unas
   - ./egress-firewall.yaml
   - ./network-policy.yaml
+  - ./pvc.yaml
+components:
+  - ../../components/ssd
 patches:
   - patch: |-
       - op: replace
@@ -18,3 +21,43 @@ patches:
         value: openshift-default
     target:
       kind: Ingress
+  - patch: |-
+      - op: replace
+        path: /spec/tls/0/hosts/0
+        value: console.s3.ssd.unas.arthurvardevanyan.com
+      - op: replace
+        path: /spec/rules/0/host
+        value: console.s3.ssd.unas.arthurvardevanyan.com
+    target:
+      kind: Ingress
+      name: minio-console-ssd
+  - patch: |-
+      - op: replace
+        path: /spec/tls/0/hosts/0
+        value: s3.ssd.unas.arthurvardevanyan.com
+      - op: replace
+        path: /spec/rules/0/host
+        value: s3.ssd.unas.arthurvardevanyan.com
+    target:
+      kind: Ingress
+      name: minio-ssd
+  - patch: |-
+      - op: replace
+        path: /spec/template/spec/containers/0/env/0/value
+        value: https://s3.unas.arthurvardevanyan.com
+      - op: replace
+        path: /spec/template/spec/containers/0/env/1/value
+        value: https://console.s3.unas.arthurvardevanyan.com
+    target:
+      kind: Deployment
+      name: minio
+  - patch: |-
+      - op: replace
+        path: /spec/template/spec/containers/0/env/0/value
+        value: https://s3.ssd.unas.arthurvardevanyan.com
+      - op: replace
+        path: /spec/template/spec/containers/0/env/1/value
+        value: https://console.s3.ssd.unas.arthurvardevanyan.com
+    target:
+      kind: Deployment
+      name: minio-ssd

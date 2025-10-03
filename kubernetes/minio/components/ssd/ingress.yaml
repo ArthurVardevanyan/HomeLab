@@ -1,7 +1,7 @@
 kind: Ingress
 apiVersion: networking.k8s.io/v1
 metadata:
-  name: minio
+  name: minio-ssd
   namespace: minio
   labels:
     blackbox: ignore
@@ -11,24 +11,24 @@ metadata:
 spec:
   tls:
     - hosts:
-        - minio.microshift.arthurvardevanyan.com
+        - minio.ssd.microshift.arthurvardevanyan.com
       secretName: minio-cert
   rules:
-    - host: minio.microshift.arthurvardevanyan.com
+    - host: minio.ssd.microshift.arthurvardevanyan.com
       http:
         paths:
           - path: ""
             pathType: ImplementationSpecific
             backend:
               service:
-                name: minio
+                name: minio-ssd
                 port:
                   number: 9000
 ---
 kind: Ingress
 apiVersion: networking.k8s.io/v1
 metadata:
-  name: minio-console
+  name: minio-console-ssd
   namespace: minio
   labels:
     app.kubernetes.io/instance: minio
@@ -37,16 +37,16 @@ metadata:
 spec:
   tls:
     - hosts:
-        - console.minio.microshift.arthurvardevanyan.com
+        - console.minio.ssd.microshift.arthurvardevanyan.com
       secretName: minio-cert
   rules:
-    - host: console.minio.microshift.arthurvardevanyan.com
+    - host: console.minio.ssd.microshift.arthurvardevanyan.com
       http:
         paths:
           - path: ""
             pathType: ImplementationSpecific
             backend:
               service:
-                name: minio
+                name: minio-ssd
                 port:
                   number: 9001
