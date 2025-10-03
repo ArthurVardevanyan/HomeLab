@@ -28,7 +28,7 @@ else
   RCLONE_OPTS=( "${RCLONE_BASE_OPTS[@]}" )
 fi
 
-EXCLUDES=( 'Trips/**' 'Trips-Events/**' 'Family, Friends and People Pictures/**' )
+EXCLUDES=( 'Trips/**' 'Trips-Events/**' 'Family/**' )
 
 if [ ! -f "$LIST_FILE" ]; then
   echo "List file not found: $LIST_FILE" >&2
