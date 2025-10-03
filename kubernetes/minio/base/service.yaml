@@ -14,3 +14,19 @@ spec:
       port: 9001
   selector:
     app: minio
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: minio-ssd
+  namespace: minio
+spec:
+  ports:
+    - protocol: TCP
+      name: minio
+      port: 9000
+    - protocol: TCP
+      name: minio-console
+      port: 9001
+  selector:
+    app: minio-ssd
