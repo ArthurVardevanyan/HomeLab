@@ -1,0 +1,16 @@
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-to-openshift-ingress-immich
+  namespace: nextcloud-fpm
+spec:
+  policyTypes:
+    - Egress
+  podSelector:
+    matchLabels:
+      app: immich-cron
+  egress:
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              network.openshift.io/policy-group: ingress

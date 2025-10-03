@@ -1,0 +1,78 @@
+kind: CronJob
+apiVersion: batch/v1
+metadata:
+  name: s3-cron
+  namespace: nextcloud-fpm
+spec:
+  schedule: "45 */3 * * *"
+  concurrencyPolicy: Forbid
+  suspend: false
+  startingDeadlineSeconds: 60
+  jobTemplate:
+    spec:
+      backoffLimit: 0
+      template:
+        metadata:
+          labels:
+            app: s3-cron
+            storage: ceph-s3
+        spec:
+          serviceAccountName: s3
+          volumes:
+            - name: s3-config
+              secret:
+                secretName: unas
+            - name: s3-script
+              configMap:
+                name: s3
+            - name: s3-emptydir
+              emptyDir:
+                sizeLimit: 5Gi
+            - name: tmp
+              emptyDir:
+                sizeLimit: 1Gi
+          securityContext:
+            runAsNonRoot: true
+            seccompProfile:
+              type: RuntimeDefault
+          containers:
+            - name: s3-cron
+              image: registry.arthurvardevanyan.com/homelab/toolbox:not_latest
+              command: ["/bin/bash", "-c", "sh /tmp/s3/s3.sh"]
+              resources:
+                limits:
+                  cpu: "500m"
+                  memory: 3Gi
+                  ephemeral-storage: "256Mi"
+                requests:
+                  cpu: 25m
+                  memory: 128Mi
+                  ephemeral-storage: "128Mi"
+              volumeMounts:
+                - name: tmp
+                  mountPath: /tmp
+                - name: s3-script
+                  mountPath: /tmp/s3
+                - name: s3-config
+                  mountPath: /mnt/s3
+              securityContext:
+                runAsNonRoot: true
+                privileged: false
+                readOnlyRootFilesystem: true
+                allowPrivilegeEscalation: false
+                seccompProfile:
+                  type: RuntimeDefault
+                capabilities:
+                  drop:
+                    - ALL
+              terminationMessagePath: /dev/termination-log
+              terminationMessagePolicy: File
+              imagePullPolicy: IfNotPresent
+          restartPolicy: Never
+          terminationGracePeriodSeconds: 30
+          dnsPolicy: ClusterFirst
+          automountServiceAccountToken: false
+          hostname: s3-cron
+          schedulerName: default-scheduler
+  successfulJobsHistoryLimit: 1
+  failedJobsHistoryLimit: 1

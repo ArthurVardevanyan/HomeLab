@@ -1,0 +1,76 @@
+kind: CronJob
+apiVersion: batch/v1
+metadata:
+  name: nextcloud-transfer-cron
+  namespace: nextcloud-fpm
+spec:
+  schedule: "0 */5 * * *"
+  concurrencyPolicy: Forbid
+  suspend: true
+  startingDeadlineSeconds: 60
+  jobTemplate:
+    spec:
+      backoffLimit: 0
+      template:
+        metadata:
+          labels:
+            app: nextcloud-transfer-cron
+        spec:
+          serviceAccountName: nextcloud-transfer
+          volumes:
+            - name: nextcloud-transfer-config
+              secret:
+                secretName: unas
+            - name: nextcloud-transfer-script
+              configMap:
+                name: nextcloud-transfer
+            - name: nextcloud-transfer-emptydir
+              emptyDir:
+                sizeLimit: 5Gi
+            - name: tmp
+              emptyDir:
+                sizeLimit: 1Gi
+          securityContext:
+            runAsNonRoot: true
+            seccompProfile:
+              type: RuntimeDefault
+          containers:
+            - name: nextcloud-transfer-cron
+              image: registry.arthurvardevanyan.com/homelab/toolbox:not_latest
+              command: ["/bin/bash", "-c", "sh /tmp/nextcloud/nextcloud.sh"]
+              resources:
+                limits:
+                  cpu: 750m
+                  memory: 5Gi
+                  ephemeral-storage: "256Mi"
+                requests:
+                  cpu: 25m
+                  memory: 128Mi
+                  ephemeral-storage: "128Mi"
+              volumeMounts:
+                - name: tmp
+                  mountPath: /tmp
+                - name: nextcloud-transfer-script
+                  mountPath: /tmp/nextcloud
+                - name: nextcloud-transfer-config
+                  mountPath: /mnt/nextcloud
+              securityContext:
+                runAsNonRoot: true
+                readOnlyRootFilesystem: true
+                allowPrivilegeEscalation: false
+                seccompProfile:
+                  type: RuntimeDefault
+                capabilities:
+                  drop:
+                    - ALL
+              terminationMessagePath: /dev/termination-log
+              terminationMessagePolicy: File
+              imagePullPolicy: IfNotPresent
+          restartPolicy: Never
+          terminationGracePeriodSeconds: 30
+          dnsPolicy: ClusterFirst
+          automountServiceAccountToken: false
+          hostname: nextcloud-transfer-cron
+          schedulerName: default-scheduler
+  successfulJobsHistoryLimit: 1
+  failedJobsHistoryLimit: 1
