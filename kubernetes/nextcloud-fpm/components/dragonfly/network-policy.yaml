@@ -4,7 +4,7 @@ metadata:
   name: dragonfly
   namespace: nextcloud-fpm
   annotations:
-    argocd.argoproj.io/sync-wave: "1"
+    argocd.argoproj.io/sync-wave: "0"
 spec:
   podSelector:
     matchLabels:
@@ -51,7 +51,7 @@ metadata:
   name: dragonfly-nextcloud
   namespace: nextcloud-fpm
   annotations:
-    argocd.argoproj.io/sync-wave: "1"
+    argocd.argoproj.io/sync-wave: "0"
 spec:
   podSelector:
     matchLabels:
@@ -77,6 +77,8 @@ kind: NetworkPolicy
 metadata:
   name: dragonfly-nextcloud-egress
   namespace: nextcloud-fpm
+  annotations:
+    argocd.argoproj.io/sync-wave: "0"
 spec:
   policyTypes:
     - Egress
@@ -103,7 +105,7 @@ metadata:
   name: dragonfly-operator-system
   namespace: nextcloud-fpm
   annotations:
-    argocd.argoproj.io/sync-wave: "1"
+    argocd.argoproj.io/sync-wave: "0"
 spec:
   podSelector:
     matchLabels:

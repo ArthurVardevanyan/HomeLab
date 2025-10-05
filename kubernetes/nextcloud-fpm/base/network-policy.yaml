@@ -3,6 +3,8 @@ kind: NetworkPolicy
 metadata:
   name: deny-all
   namespace: nextcloud-fpm
+  annotations:
+    argocd.argoproj.io/sync-wave: "0"
 spec:
   policyTypes:
     - Ingress
@@ -14,6 +16,8 @@ kind: NetworkPolicy
 metadata:
   name: allow-dns-traffic
   namespace: nextcloud-fpm
+  annotations:
+    argocd.argoproj.io/sync-wave: "0"
 spec:
   policyTypes:
     - Egress
