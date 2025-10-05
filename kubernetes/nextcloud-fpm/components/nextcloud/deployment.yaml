@@ -59,6 +59,9 @@ spec:
         - name: php-conf
           emptyDir:
             sizeLimit: 1Gi
+        - name: www-conf
+          emptyDir:
+            sizeLimit: 1Mi
       securityContext:
         runAsNonRoot: true
         fsGroupChangePolicy: OnRootMismatch
@@ -89,6 +92,37 @@ spec:
           volumeMounts:
             - name: php-conf
               mountPath: "/usr/local/etc/php/conf.d"
+        - name: init-max-children
+          # https://github.com/nextcloud/helm/pull/752
+          image: docker.io/nextcloud:32.0.0-fpm
+          command:
+            [
+              "sh",
+              "-c",
+              "echo 'pm = dynamic\npm.max_children = 25\npm.start_servers = 5\npm.min_spare_servers = 5\npm.max_spare_servers = 10' > /usr/local/etc/php-fpm.d/www.conf",
+            ]
+          resources:
+            limits:
+              cpu: 50m
+              ephemeral-storage: 64Mi
+              memory: 64Mi
+            requests:
+              cpu: 25m
+              ephemeral-storage: 32Mi
+              memory: 32Mi
+          securityContext:
+            privileged: false
+            runAsNonRoot: true
+            readOnlyRootFilesystem: true
+            allowPrivilegeEscalation: false
+            seccompProfile:
+              type: RuntimeDefault
+            capabilities:
+              drop:
+                - ALL
+          volumeMounts:
+            - name: www-conf
+              mountPath: "/usr/local/etc/php-fpm.d"
       containers:
         - name: nextcloud
           image: docker.io/nextcloud:32.0.0-fpm
@@ -155,7 +189,7 @@ spec:
             - name: OBJECTSTORE_S3_USEPATH_STYLE
               value: "true"
             - name: PHP_MEMORY_LIMIT
-              value: 3G
+              value: 2G
             - name: PHP_UPLOAD_LIMIT
               value: 10G
           securityContext:
@@ -174,13 +208,13 @@ spec:
               protocol: TCP
           resources:
             limits:
-              cpu: 1500m
-              ephemeral-storage: 10Gi
-              memory: 5Gi
+              cpu: 1000m
+              ephemeral-storage: 5Gi
+              memory: 2Gi
             requests:
-              cpu: 50m
+              cpu: 150m
               ephemeral-storage: 1Gi
-              memory: 512Mi
+              memory: 384Mi
           volumeMounts:
             - name: nextcloud
               mountPath: /var/www/html
@@ -197,31 +231,30 @@ spec:
             - name: php-conf
               mountPath: "/usr/local/etc/php/conf.d/redis-session.ini" # fix permission denied error
               subPath: redis-session.ini
+            - name: www-conf
+              mountPath: "/usr/local/etc/php-fpm.d/www.conf"
+              subPath: www.conf
           livenessProbe:
-            # tcpSocket:
-            #   port: 9000
             exec:
               command:
                 - "sh"
                 - "-c"
                 - 'count=$(/usr/local/bin/php /var/www/html/occ status 2>/dev/null | grep -E "installed: true" | grep -E "maintenance: false" | grep -E "needsDbUpgrade: false" | wc -l); if [ "$count" -eq 0 ] || [ "$count" -eq 3 ]; then exit 0; else exit 1; fi'
-            initialDelaySeconds: 15
-            timeoutSeconds: 10
+            initialDelaySeconds: 5
+            timeoutSeconds: 3
             periodSeconds: 20
             successThreshold: 1
-            failureThreshold: 15
+            failureThreshold: 10
           readinessProbe:
-            # tcpSocket:
-            #   port: 9000
             exec:
               command:
                 - "sh"
                 - "-c"
-                - 'count=$(/usr/local/bin/php /var/www/html/occ status 2>/dev/null | grep -E "installed: true" | grep -E "maintenance: false" | grep -E "needsDbUpgrade: false" | wc -l); if [ "$count" -eq 0 ] || [ "$count" -eq 3 ]; then exit 0; else exit 1; fi'
-            initialDelaySeconds: 15
-            timeoutSeconds: 10
-            periodSeconds: 20
-            successThreshold: 1
+                - "/usr/local/bin/php /var/www/html/occ check"
+            initialDelaySeconds: 5
+            timeoutSeconds: 3
+            periodSeconds: 10
+            successThreshold: 2
             failureThreshold: 3
           terminationMessagePath: /dev/termination-log
           terminationMessagePolicy: File
