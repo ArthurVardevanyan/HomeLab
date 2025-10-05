@@ -4,7 +4,7 @@ metadata:
   name: nextcloud-app
   namespace: nextcloud-fpm
   annotations:
-    argocd.argoproj.io/sync-wave: "1"
+    argocd.argoproj.io/sync-wave: "0"
 spec:
   podSelector:
     matchLabels:
@@ -29,7 +29,7 @@ metadata:
   name: nextcloud-postgres
   namespace: nextcloud-fpm
   annotations:
-    argocd.argoproj.io/sync-wave: "1"
+    argocd.argoproj.io/sync-wave: "0"
 spec:
   podSelector:
     matchLabels:
@@ -59,6 +59,8 @@ kind: NetworkPolicy
 metadata:
   name: allow-postgres
   namespace: nextcloud-fpm
+  annotations:
+    argocd.argoproj.io/sync-wave: "0"
 spec:
   policyTypes:
     - Egress
@@ -82,6 +84,8 @@ kind: NetworkPolicy
 metadata:
   name: allow-api-server
   namespace: nextcloud-fpm
+  annotations:
+    argocd.argoproj.io/sync-wave: "0"
 spec:
   podSelector:
     matchLabels:
@@ -105,6 +109,8 @@ kind: NetworkPolicy
 metadata:
   name: allow-s3-egress-psql
   namespace: nextcloud-fpm
+  annotations:
+    argocd.argoproj.io/sync-wave: "0"
 spec:
   policyTypes:
     - Egress
@@ -128,7 +134,7 @@ metadata:
   name: pgdump-ingress
   namespace: nextcloud-fpm
   annotations:
-    argocd.argoproj.io/sync-wave: "1"
+    argocd.argoproj.io/sync-wave: "0"
 spec:
   podSelector:
     matchLabels:
@@ -153,7 +159,7 @@ metadata:
   name: pgadmin-ingress
   namespace: nextcloud-fpm
   annotations:
-    argocd.argoproj.io/sync-wave: "1"
+    argocd.argoproj.io/sync-wave: "0"
 spec:
   podSelector:
     matchLabels:

@@ -3,6 +3,8 @@ kind: NetworkPolicy
 metadata:
   name: allow-from-openshift-ingress-nginx
   namespace: nextcloud-fpm
+  annotations:
+    argocd.argoproj.io/sync-wave: "0"
 spec:
   policyTypes:
     - Ingress
@@ -20,6 +22,8 @@ kind: NetworkPolicy
 metadata:
   name: nextcloud-nginx-egress
   namespace: nextcloud-fpm
+  annotations:
+    argocd.argoproj.io/sync-wave: "0"
 spec:
   podSelector:
     matchLabels:
