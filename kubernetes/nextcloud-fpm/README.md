@@ -35,3 +35,4 @@ kubectl kustomize kubernetes/nextcloud-fpm/overlays/okd | argocd-vault-plugin ge
 - <https://github.com/nextcloud/docker>
 - <https://serverfault.com/questions/638822/nginx-resolver-address-from-etc-resolv-conf>
 - <https://github.com/nextcloud/helm/pull/752>
+- <https://github.com/nextcloud/previewgenerator/issues/328>
