@@ -19,7 +19,7 @@ LIST_FILE="${1:-/mnt/immich/nextcloud-users.txt}"
 
 RCLONE_BASE_OPTS=( sync --ignore-existing --stats=10s --fast-list --stats-log-level NOTICE \
   --multi-thread-streams 4 --drive-chunk-size 128M --max-backlog 999999 \
-  --transfers=15 --checkers=20 --buffer-size=75M )
+  --transfers=15 --checkers=15 --buffer-size=75M )
 
 # include --verbose when requested
 if [ "${VERBOSE:-0}" -eq 1 ]; then
