@@ -17,9 +17,10 @@ done
 
 LIST_FILE="${1:-/mnt/unas/nextcloud-users.txt}"
 
-RCLONE_BASE_OPTS=( sync --ignore-existing --stats=10s --fast-list --stats-log-level NOTICE \
-  --multi-thread-streams 4 --drive-chunk-size 128M --max-backlog 999999 \
-  --transfers=15 --checkers=15 --buffer-size=75M )
+RCLONE_BASE_OPTS=( sync --ignore-existing \
+  --stats=25s --stats-log-level NOTICE --fast-list \
+  --multi-thread-streams=1 --drive-chunk-size 64M --max-backlog 250000 \
+  --transfers=4 --checkers=1 --buffer-size=48M )
 
 # include --verbose when requested
 if [ "${VERBOSE:-0}" -eq 1 ]; then
