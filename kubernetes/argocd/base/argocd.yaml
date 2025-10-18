@@ -13,7 +13,7 @@ spec:
   resourceTrackingMethod: annotation+label
   notifications:
     enabled: true
-    replicas: 2
+    replicas: 1
     resources:
       limits:
         cpu: 20m
@@ -57,13 +57,11 @@ spec:
   usersAnonymousEnabled: false
   rbac:
     policy: |
-      g, system:cluster-admins, role:admin
-      g, cluster-admins, role:admin
-  # image: registry.arthurvardevanyan.com/homelab/argocd
+      g, arthur@arthurvardevanyan.com, role:admin
+      g, 305070630980550817, role:admin
   version: sha256:2815b045273dc14b271c40d01a75ae2efa88613c90300e778d5ad5171e2b0f7f # v3.1.5
   repo:
     replicas: 3
-    # image: registry.arthurvardevanyan.com/homelab/argocd
     version: sha256:2815b045273dc14b271c40d01a75ae2efa88613c90300e778d5ad5171e2b0f7f # v3.1.5
     mountsatoken: true
     serviceaccount: argocd-repo-server
@@ -76,28 +74,6 @@ spec:
         cpu: 50m
         memory: 150Mi
         ephemeral-storage: 256Mi
-    # initContainers:
-    #   - name: download-tools
-    #     imagePullPolicy: IfNotPresent
-    #     image: registry.access.redhat.com/ubi9/ubi:9.4-947.1714667021@sha256:ed84f34cd929ea6b0c247b6daef54dd79602804a32480a052951021caf429494
-    #     env:
-    #       - name: AVP_VERSION
-    #         value: 1.17.0
-    #       - name: KUSTOMIZE_VERSION
-    #         value: 5.4.2
-    #     command: [sh, -c]
-    #     args:
-    #       - >-
-    #         cd /custom-tools &&
-    #         curl -L https://github.com/argoproj-labs/argocd-vault-plugin/releases/download/v$(AVP_VERSION)/argocd-vault-plugin_$(AVP_VERSION)_linux_amd64 -o argocd-vault-plugin &&
-    #         chmod +x argocd-vault-plugin &&
-    #         curl -L https://github.com/kubernetes-sigs/kustomize/releases/download/kustomize%2Fv$(KUSTOMIZE_VERSION)/kustomize_v$(KUSTOMIZE_VERSION)_linux_amd64.tar.gz -o kustomize_v${KUSTOMIZE_VERSION}_linux_amd64.tar.gz &&
-    #         tar -xzf kustomize_v${KUSTOMIZE_VERSION}_linux_amd64.tar.gz --no-same-owner &&
-    #         chmod +x kustomize &&
-    #         rm kustomize_v${KUSTOMIZE_VERSION}_linux_amd64.tar.gz
-    #     volumeMounts:
-    #       - mountPath: /custom-tools
-    #         name: custom-tools
     sidecarContainers:
       - name: avp-kustomize
         command: [/var/run/argocd/argocd-cmp-server]
@@ -122,12 +98,6 @@ spec:
           - name: VAULT_ADDR
             value: https://vault.arthurvardevanyan.com
         volumeMounts:
-          # - name: custom-tools
-          #   subPath: argocd-vault-plugin
-          #   mountPath: /usr/local/bin/argocd-vault-plugin
-          # - name: custom-tools
-          #   subPath: kustomize
-          #   mountPath: /usr/local/bin/kustomize
           - mountPath: /var/run/argocd
             name: var-files
           - mountPath: /home/argocd/cmp-server/plugins
@@ -146,17 +116,13 @@ spec:
         name: cmp-tmp
       - name: custom-tools
         emptyDir: {}
-  sso:
-    provider: dex
-    dex:
-      openShiftOAuth: true
-      resources:
-        limits:
-          cpu: 50m
-          memory: 192Mi
-        requests:
-          cpu: 10m
-          memory: 96Mi
+  oidcConfig: |
+    name: Zitadel
+    issuer: https://zitadel.arthurvardevanyan.com
+    clientID: "<path:secret/data/homelab/zitadel/okd#client_id>"
+    clientSecret: "$oidc.zitadel.clientSecret"
+    requestedScopes: ["openid", "profile", "email"]
+    requestedIDTokenClaims: {"groups": {"essential": true}}
   ha:
     enabled: false
   tls:
