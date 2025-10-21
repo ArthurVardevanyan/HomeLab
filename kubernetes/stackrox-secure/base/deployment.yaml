@@ -1,4 +1,3 @@
----
 # Source: stackrox-secured-cluster-services/templates/admission-controller.yaml
 apiVersion: apps/v1
 kind: Deployment
@@ -215,6 +214,7 @@ spec:
               - key: ca-bundle.crt
                 path: tls-ca-bundle.pem
             optional: true
+      enableServiceLinks: false
 ---
 # Source: stackrox-secured-cluster-services/templates/sensor.yaml
 apiVersion: apps/v1
@@ -478,3 +478,4 @@ spec:
         - name: monitoring-tls
           secret:
             secretName: sensor-monitoring-tls
+      enableServiceLinks: false

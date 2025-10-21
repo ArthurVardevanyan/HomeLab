@@ -97,11 +97,11 @@ spec:
         - name: init-max-children
           # https://github.com/nextcloud/helm/pull/752
           image: docker.io/nextcloud:32.0.0-fpm
-          command:
-            [
+          command: [
               "sh",
               "-c",
-              "echo 'pm = dynamic\npm.max_children = 25\npm.start_servers = 5\npm.min_spare_servers = 5\npm.max_spare_servers = 10' > /usr/local/etc/php-fpm.d/www.conf",
+              "echo 'pm = dynamic\npm.max_children = 25\npm.start_servers
+              = 5\npm.min_spare_servers = 5\npm.max_spare_servers = 10' > /usr/local/etc/php-fpm.d/www.conf",
             ]
           resources:
             limits:
@@ -241,7 +241,10 @@ spec:
               command:
                 - "sh"
                 - "-c"
-                - 'count=$(/usr/local/bin/php /var/www/html/occ status 2>/dev/null | grep -E "installed: true" | grep -E "maintenance: false" | grep -E "needsDbUpgrade: false" | wc -l); if [ "$count" -eq 0 ] || [ "$count" -eq 3 ]; then exit 0; else exit 1; fi'
+                - 'count=$(/usr/local/bin/php /var/www/html/occ status 2>/dev/null
+                  | grep -E "installed: true" | grep -E "maintenance: false" | grep
+                  -E "needsDbUpgrade: false" | wc -l); if [ "$count" -eq 0 ] || [
+                  "$count" -eq 3 ]; then exit 0; else exit 1; fi'
             initialDelaySeconds: 5
             timeoutSeconds: 3
             periodSeconds: 20
@@ -267,3 +270,4 @@ spec:
       automountServiceAccountToken: false
       hostname: nextcloud
       schedulerName: default-scheduler
+      enableServiceLinks: false
