@@ -145,8 +145,12 @@ spec:
   policyTypes:
     - Ingress
   podSelector:
-    matchLabels:
-      app: netobserv-plugin
+    matchExpressions:
+      - key: app
+        operator: In
+        values:
+          - netobserv-plugin
+          - netobserv-plugin-static
   ingress:
     - from:
         - podSelector:
@@ -156,7 +160,6 @@ spec:
           namespaceSelector:
             matchLabels:
               kubernetes.io/metadata.name: openshift-console
-
 ---
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
