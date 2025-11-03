@@ -33,6 +33,9 @@ spec:
         - namespaceSelector:
             matchLabels:
               network.openshift.io/policy-group: ingress
+          podSelector:
+            matchLabels:
+              ingresscontroller.operator.openshift.io/deployment-ingresscontroller: apps
 ---
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
@@ -151,6 +154,6 @@ spec:
               network.openshift.io/policy-group: ingress
       ports:
         - protocol: TCP
-          port: 443 # Passthrough Termination
+          port: 443 # Passthrough/ReEncrypt Termination
         - protocol: TCP
           port: 80 # Edge Termination
