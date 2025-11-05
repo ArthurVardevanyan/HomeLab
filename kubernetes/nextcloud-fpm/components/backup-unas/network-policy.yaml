@@ -1,0 +1,47 @@
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: unas-allow-smb-egress
+  namespace: nextcloud-fpm
+  annotations:
+    argocd.argoproj.io/sync-wave: "0"
+spec:
+  policyTypes:
+    - Egress
+  podSelector:
+    matchLabels:
+      app: unas-cron
+  egress:
+    - to:
+        - ipBlock:
+            cidr: 10.102.1.6/32 # unas.arthurvardevanyan.com.
+      ports:
+        - protocol: TCP
+          port: 445
+        - protocol: TCP
+          port: 139
+
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-to-openshift-ingress-unas
+  namespace: nextcloud-fpm
+  annotations:
+    argocd.argoproj.io/sync-wave: "0"
+spec:
+  policyTypes:
+    - Egress
+  podSelector:
+    matchLabels:
+      app: unas-cron
+  egress:
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              network.openshift.io/policy-group: ingress
+      ports:
+        - protocol: TCP
+          port: 443 # Passthrough/ReEncrypt Termination
+        - protocol: TCP
+          port: 80 # Edge Termination

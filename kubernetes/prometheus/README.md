@@ -5,8 +5,8 @@ kubectl kustomize kubernetes/prometheus/overlays/okd | argocd-vault-plugin gener
 ```
 
 ```bash
-mc cp --recursive  ceph/prometheus-thanos-d76a2930-3b8c-4e6b-b76b-335cfe5c135c truenas/prometheus-thanos
-rclone --progress copy ceph:prometheus-thanos-d76a2930-3b8c-4e6b-b76b-335cfe5c135c truenas:prometheus-thanos --ignore-existing
+mc cp --recursive  ceph-prom/prometheus-thanos-b844685d-00fd-4751-ae74-250f839a54e0 nas/prometheus-thanos
+rclone --progress copy ceph-prom:prometheus-thanos-b844685d-00fd-4751-ae74-250f839a54e0 nas:prometheus-thanos --ignore-existing
 ```
 
 ## REF

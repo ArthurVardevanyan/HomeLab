@@ -1,0 +1,90 @@
+kind: Deployment
+apiVersion: apps/v1
+metadata:
+  namespace: minio
+  name: minio
+  labels:
+    app: minio
+spec:
+  strategy:
+    type: Recreate
+  replicas: 1
+  selector:
+    matchLabels:
+      app: minio
+  template:
+    metadata:
+      labels:
+        app: minio
+    spec:
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        fsGroupChangePolicy: "OnRootMismatch"
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: minio
+          image: quay.io/minio/minio:RELEASE.2025-09-07T16-13-09Z@sha256:14cea493d9a34af32f524e538b8346cf79f3321eff8e708c1e2960462bd8936e
+          args: ["server", "/data", "--console-address", ":9001"]
+          resources:
+            limits:
+              cpu: 750m
+              memory: 3Gi
+            requests:
+              cpu: 100m
+              memory: 2Gi
+          ports:
+            - name: minio
+              containerPort: 9000
+          volumeMounts:
+            - name: minio
+              mountPath: /data
+          env:
+            - name: MINIO_SERVER_URL
+              value: https://minio.microshift.arthurvardevanyan.com
+            - name: MINIO_BROWSER_REDIRECT_URL
+              value: https://console.minio.microshift.arthurvardevanyan.com
+            - name: MINIO_ROOT_USER
+              valueFrom:
+                secretKeyRef:
+                  name: minio
+                  key: MINIO_ROOT_USER
+            - name: MINIO_ROOT_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: minio
+                  key: MINIO_ROOT_PASSWORD
+          livenessProbe:
+            httpGet:
+              path: /minio/health/ready
+              port: minio
+            initialDelaySeconds: 5
+            timeoutSeconds: 1
+            periodSeconds: 45
+            successThreshold: 1
+            failureThreshold: 10
+          readinessProbe:
+            httpGet:
+              path: /minio/health/live
+              port: minio
+            initialDelaySeconds: 5
+            timeoutSeconds: 1
+            periodSeconds: 10
+            successThreshold: 1
+            failureThreshold: 3
+          securityContext:
+            runAsNonRoot: true
+            privileged: false
+            readOnlyRootFilesystem: true
+            allowPrivilegeEscalation: false
+            seccompProfile:
+              type: RuntimeDefault
+            capabilities:
+              drop:
+                - ALL
+      volumes:
+        - name: minio
+          persistentVolumeClaim:
+            claimName: minio
+      enableServiceLinks: false

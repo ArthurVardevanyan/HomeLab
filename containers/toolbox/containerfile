@@ -1,5 +1,5 @@
-FROM quay.io/projectquay/clair-action:v0.0.11@sha256:80486643baad47f2ac606e5c0e5274f296c08464aebb3dc90f97f22ba92505dd
-FROM registry.access.redhat.com/ubi9/ubi-minimal:9.5-1745855087@sha256:e1c4703364c5cb58f5462575dc90345bcd934ddc45e6c32f9c162f2b5617681c
+FROM quay.io/projectquay/clair-action:v0.0.12@sha256:adfc28d51f08b82978aa6dc41b166b05a2a728fa9643c3a1b73b2032f18e7c30
+FROM registry.access.redhat.com/ubi9/ubi-minimal:9.6-1755695350@sha256:2f06ae0e6d3d9c4f610d32c480338eef474867f435d8d28625f2985e8acde6e8
 
 COPY --from=0 /bin/clair-action /bin/clair-action
 COPY ./containers/toolbox/repos /etc/yum.repos.d/
@@ -7,16 +7,15 @@ COPY ./containers/toolbox/repos /etc/yum.repos.d/
 
 ENV \
   ARGOCD_VAULT_VERSION=1.18.1 \
-  OKD_VERSION=4.20.0-okd-scos.ec.9 \
-  OPENTOFU_VERSION=1.9.1 \
-  VAULT_VERSION=1.19.3 \
+  OKD_VERSION=4.20.0-okd-scos.ec.16 \
+  OPENTOFU_VERSION=1.10.6 \
+  VAULT_VERSION=1.20.3 \
   KO_VERSION=0.18.0 \
-  GO_VERSION=1.24.2\
-  GH_VERSION=2.72.0 \
-  KUBECONFORM_VERSION=0.6.7  \
-  MARKDOWNLINT_CLI_VERSION=0.44.0 \
-  PRETTIER_CLI_VERSION=3.5.3 \
-  INCERT_VERSION=v0.5.0 \
+  GO_VERSION=1.25.1\
+  GH_VERSION=2.79.0 \
+  KUBECONFORM_VERSION=0.7.0  \
+  MARKDOWNLINT_CLI_VERSION=0.45.0 \
+  PRETTIER_CLI_VERSION=3.6.2 \
   HOME=/tmp \
   PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/local/go/bin \
   KICK="0"
@@ -25,7 +24,7 @@ RUN rpm -Uvh https://download.postgresql.org/pub/repos/yum/reporpms/EL-9-x86_64/
   rpm -ivh https://github.com/opentofu/opentofu/releases/download/v${OPENTOFU_VERSION}/tofu_${OPENTOFU_VERSION}_amd64.rpm && \
   microdnf install --nodocs -y --disableplugin=subscription-manager libpmem -y &&\
   microdnf install --nodocs -y --disableplugin=subscription-manager \
-  tcpdump sshpass rsync git jq unzip  ansible google-cloud-cli tar procps-ng make nodejs ShellCheck fio postgresql17 -y && \
+  tcpdump sshpass rsync rclone git jq unzip  ansible google-cloud-cli tar procps-ng make nodejs ShellCheck fio postgresql17 -y && \
   microdnf install --nodocs -y --disableplugin=subscription-manager MariaDB-client --disablerepo=centos-9-appstream -y \
   && ln -s /usr/bin/python3.11 /usr/local/bin/python \
   && rm -rf /var/cache/* /var/lib/rpm/* && \

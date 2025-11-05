@@ -1,0 +1,140 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nginx
+  namespace: nextcloud-fpm
+  annotations:
+    argocd.argoproj.io/sync-wave: "3"
+  labels:
+    app: nginx
+spec:
+  # replicas: 0
+  selector:
+    matchLabels:
+      app: nginx
+  template:
+    metadata:
+      labels:
+        app: nginx
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        fsGroupChangePolicy: OnRootMismatch
+      serviceAccountName: nginx
+      topologySpreadConstraints:
+        - maxSkew: 1
+          topologyKey: topology.kubernetes.io/zone
+          whenUnsatisfiable: DoNotSchedule
+          labelSelector:
+            matchLabels:
+              app: nginx
+        - maxSkew: 1
+          topologyKey: kubernetes.io/hostname
+          whenUnsatisfiable: DoNotSchedule
+          labelSelector:
+            matchLabels:
+              app: nginx
+      containers:
+        - name: nginx
+          image: nginx:1.29.1-bookworm@sha256:8adbdcb969e2676478ee2c7ad333956f0c8e0e4c5a7463f4611d7a2e7a7ff5dc
+          securityContext:
+            runAsNonRoot: true
+            privileged: false
+            readOnlyRootFilesystem: true
+            allowPrivilegeEscalation: false
+            seccompProfile:
+              type: RuntimeDefault
+            capabilities:
+              drop:
+                - ALL
+          ports:
+            - containerPort: 8080
+              name: http
+              protocol: TCP
+          resources:
+            requests:
+              cpu: 25m
+              memory: 64Mi
+            limits:
+              cpu: 100m
+              memory: 192Mi
+          volumeMounts:
+            - name: nextcloud
+              mountPath: /var/www/html
+            - name: nextcloud-custom-apps
+              mountPath: /var/www/html/custom_apps
+            - name: nextcloud-config
+              mountPath: /var/www/html/config
+            - name: nextcloud-data
+              mountPath: /var/www/html/data
+            - name: nextcloud-themes
+              mountPath: /var/www/html/themes
+            - name: tmp
+              mountPath: /tmp
+            - name: nginx-cache
+              mountPath: /var/cache/nginx
+            - name: var-run
+              mountPath: /var/run
+            - name: nginx-conf
+              mountPath: /etc/nginx/nginx.conf
+              subPath: nginx.conf
+          livenessProbe:
+            httpGet:
+              path: /status.php
+              port: http
+              scheme: HTTP
+              httpHeaders:
+                - name: Host
+                  value: "nextcloud.kube.home"
+            initialDelaySeconds: 15
+            timeoutSeconds: 10
+            periodSeconds: 20
+            successThreshold: 1
+            failureThreshold: 15
+          readinessProbe:
+            httpGet:
+              path: /status.php
+              port: http
+              scheme: HTTP
+              httpHeaders:
+                - name: Host
+                  value: "nextcloud.kube.home"
+            initialDelaySeconds: 15
+            timeoutSeconds: 10
+            periodSeconds: 20
+            successThreshold: 1
+            failureThreshold: 3
+      volumes:
+        - name: nextcloud
+          persistentVolumeClaim:
+            claimName: nextcloud
+        - name: nextcloud-custom-apps
+          persistentVolumeClaim:
+            claimName: nextcloud-custom-apps
+        - name: nextcloud-config
+          persistentVolumeClaim:
+            claimName: nextcloud-config
+        - name: nextcloud-data
+          persistentVolumeClaim:
+            claimName: nextcloud-data
+        - name: nextcloud-themes
+          persistentVolumeClaim:
+            claimName: nextcloud-themes
+        - name: tmp
+          emptyDir:
+            sizeLimit: 1Gi
+        - name: nginx-cache
+          emptyDir:
+            sizeLimit: 1Gi
+        - name: var-run
+          emptyDir:
+            sizeLimit: 1Gi
+        - name: nginx-conf
+          configMap:
+            name: nginx
+            defaultMode: 0444
+            items:
+              - key: nginx.conf
+                path: nginx.conf
+      restartPolicy: Always
+      enableServiceLinks: false

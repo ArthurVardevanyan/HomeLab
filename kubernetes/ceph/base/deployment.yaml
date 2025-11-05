@@ -32,30 +32,39 @@ spec:
       serviceAccountName: rook-ceph-system
       containers:
         - name: rook-ceph-operator
-          image: docker.io/rook/ceph:v1.17.6
+          image: docker.io/rook/ceph:v1.18.2
           args: ["ceph", "operator"]
           securityContext:
             runAsNonRoot: true
             runAsUser: 2016
             runAsGroup: 2016
+            capabilities:
+              drop: ["ALL"]
           volumeMounts:
             - mountPath: /var/lib/rook
               name: rook-config
             - mountPath: /etc/ceph
               name: default-config-dir
           env:
+            # If the operator should only watch for cluster CRDs in the same namespace, set this to "true".
+            # If this is not set to true, the operator will watch for cluster CRDs in all namespaces.
             - name: ROOK_CURRENT_NAMESPACE_ONLY
               value: "false"
 
-            # Whether to start pods as privileged that mount a host path, which includes the Ceph mon and osd pods.
+            # Whether to start pods as privileged that mount a host path, which includes the Ceph mon, osd pods and csi provisioners(if logrotation is on).
             # Set this to true if SELinux is enabled (e.g. OpenShift) to workaround the anyuid issues.
             # For more details see https://github.com/rook/rook/issues/1314#issuecomment-355799641
             - name: ROOK_HOSTPATH_REQUIRES_PRIVILEGED
               value: "true"
-            # Provide customized regex as the values using comma. For eg. regex for rbd based volume, value will be like "(?i)rbd[0-9]+".
+            # Whether to run Ceph mon pods as root (runAsUser: 0) at the pod level.
+            # Set this to true if mon pods are CrashLooping on SELinux-enabled systems despite other settings.
+            # For more context, see https://github.com/rook/rook/issues/15564
+            - name: ROOK_CEPH_MON_RUN_AS_ROOT
+              value: "true"
+            # Provide customised regex as the values using comma. For eg. regex for rbd based volume, value will be like "(?i)rbd[0-9]+".
             # In case of more than one regex, use comma to separate between them.
             # Default regex will be "(?i)dm-[0-9]+,(?i)rbd[0-9]+,(?i)nbd[0-9]+"
-            # add regex expression after putting a comma to blacklist a disk
+            # Add regex expression after putting a comma to blacklist a disk
             # If value is empty, the default regex will be used.
             - name: DISCOVER_DAEMON_UDEV_BLACKLIST
               value: "(?i)dm-[0-9]+,(?i)rbd[0-9]+,(?i)nbd[0-9]+"
@@ -116,8 +125,12 @@ spec:
           #- name: LIB_BUCKET_PROVISIONER_THREADS
           #  value: "5"
 
+      # Uncomment these two settings to run the operator on the host network
+      # hostNetwork: true
+      # dnsPolicy: ClusterFirstWithHostNet
       volumes:
         - name: rook-config
           emptyDir: {}
         - name: default-config-dir
           emptyDir: {}
+      enableServiceLinks: false

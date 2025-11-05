@@ -98,10 +98,18 @@ spec:
     - to:
         - ipBlock:
             cidr: 10.101.1.6/32
+    - to:
+        - ipBlock:
+            cidr: 10.101.1.7/32
+    - to:
+        - ipBlock:
+            cidr: 10.101.10.7/32
         - ipBlock:
             cidr: 10.101.10.5/32 # OKD WildCard
         - ipBlock:
             cidr: 10.101.10.7/32 # OKD APP WildCard
+        - ipBlock:
+            cidr: 198.91.81.15/32 # x15.x10hosting.com
 ---
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
@@ -119,6 +127,11 @@ spec:
         - namespaceSelector:
             matchLabels:
               network.openshift.io/policy-group: ingress
+      ports:
+        - protocol: TCP
+          port: 443 # Passthrough/ReEncrypt Termination
+        - protocol: TCP
+          port: 80 # Edge Termination
 ---
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
@@ -136,3 +149,6 @@ spec:
         - namespaceSelector:
             matchLabels:
               network.openshift.io/policy-group: ingress
+          podSelector:
+            matchLabels:
+              ingresscontroller.operator.openshift.io/deployment-ingresscontroller: apps

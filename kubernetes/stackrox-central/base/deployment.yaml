@@ -1,4 +1,3 @@
----
 # Source: stackrox-central-services/templates/01-central-13-deployment.yaml
 apiVersion: apps/v1
 kind: Deployment
@@ -265,6 +264,7 @@ spec:
               - key: ca-bundle.crt
                 path: tls-ca-bundle.pem
             optional: true
+      enableServiceLinks: false
 ---
 # Source: stackrox-central-services/templates/02-config-controller-02-deployment.yaml
 apiVersion: apps/v1
@@ -390,6 +390,7 @@ spec:
               - key: ca.pem
                 path: ca.pem
             secretName: central-tls
+      enableServiceLinks: false
 ---
 # Source: stackrox-central-services/templates/02-scanner-06-deployment.yaml
 apiVersion: apps/v1
@@ -590,6 +591,7 @@ spec:
               - key: ca-bundle.crt
                 path: tls-ca-bundle.pem
             optional: true
+      enableServiceLinks: false
 ---
 # Source: stackrox-central-services/templates/02-scanner-06-deployment.yaml
 apiVersion: apps/v1
@@ -746,6 +748,7 @@ spec:
         - name: scanner-db-password
           secret:
             secretName: scanner-db-password
+      enableServiceLinks: false
 ---
 # Source: stackrox-central-services/templates/02-scanner-v4-07-db-deployment.yaml
 apiVersion: apps/v1
@@ -920,6 +923,7 @@ spec:
         - name: scanner-v4-db-password
           secret:
             secretName: scanner-v4-db-password
+      enableServiceLinks: false
 ---
 # Source: stackrox-central-services/templates/02-scanner-v4-07-indexer-deployment.yaml
 apiVersion: apps/v1
@@ -1121,6 +1125,7 @@ spec:
               - key: ca-bundle.crt
                 path: tls-ca-bundle.pem
             optional: true
+      enableServiceLinks: false
 ---
 # Source: stackrox-central-services/templates/02-scanner-v4-07-matcher-deployment.yaml
 apiVersion: apps/v1
@@ -1230,7 +1235,7 @@ spec:
           resources:
             limits:
               cpu: 100m
-              memory: 768Gi
+              memory: 768Mi
             requests:
               cpu: 10m
               memory: 256Mi
@@ -1322,3 +1327,4 @@ spec:
               - key: ca-bundle.crt
                 path: tls-ca-bundle.pem
             optional: true
+      enableServiceLinks: false

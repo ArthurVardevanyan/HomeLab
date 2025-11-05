@@ -1,0 +1,19 @@
+apiVersion: v1
+kind: ResourceQuota
+metadata:
+  name: default
+  namespace: nextcloud-fpm
+  annotations:
+    argocd.argoproj.io/sync-wave: "0"
+spec:
+  hard:
+    requests.cpu: "15"
+    requests.memory: "75Gi"
+    limits.cpu: "35"
+    limits.memory: "125Gi"
+    services.nodeports: "0"
+    services.loadbalancers: "0"
+    requests.ephemeral-storage: "50Gi"
+    limits.ephemeral-storage: "175Gi"
+    rook-ceph-block.storageclass.storage.k8s.io/requests.storage: "200Gi"
+    rook-cephfs.storageclass.storage.k8s.io/requests.storage: "100Gi"

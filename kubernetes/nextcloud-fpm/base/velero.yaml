@@ -1,0 +1,24 @@
+apiVersion: velero.io/v1
+kind: Schedule
+metadata:
+  name: nextcloud-fpm
+  namespace: velero
+  annotations:
+    argocd.argoproj.io/sync-wave: "0"
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+    argocd.argoproj.io/compare-options: IgnoreExtraneous
+spec:
+  schedule: "35 5 * * *"
+  template:
+    defaultVolumesToFsBackup: false
+    csiSnapshotTimeout: 10m0s
+    ttl: 180h0m0s #360h0m0s #720h0m0s
+    itemOperationTimeout: 360h0m0s #720h0m0s
+    metadata: {}
+    storageLocation: velero-backup-unas
+    hooks: {}
+    snapshotMoveData: true
+    includedNamespaces:
+      - nextcloud-fpm
+    includedNamespaceScopedResources:
+      - pvc

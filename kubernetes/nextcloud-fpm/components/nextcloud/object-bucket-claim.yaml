@@ -1,0 +1,15 @@
+apiVersion: objectbucket.io/v1alpha1
+kind: ObjectBucketClaim
+metadata:
+  labels:
+    bucket-provisioner: rook-ceph.ceph.rook.io-bucket
+  annotations:
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+    argocd.argoproj.io/sync-wave: "1"
+  name: nextcloud
+  namespace: nextcloud-fpm
+spec:
+  generateBucketName: nextcloud
+  storageClassName: rook-ceph-bucket
+  additionalConfig:
+    maxSize: "2Ti"

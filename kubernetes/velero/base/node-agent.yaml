@@ -1,4 +1,3 @@
----
 # Source: velero/templates/node-agent-daemonset.yaml
 apiVersion: apps/v1
 kind: DaemonSet
@@ -9,7 +8,7 @@ metadata:
     app.kubernetes.io/name: velero
     app.kubernetes.io/instance: velero
     app.kubernetes.io/managed-by: Helm
-    helm.sh/chart: velero-9.0.4
+    helm.sh/chart: velero-10.1.2
 spec:
   selector:
     matchLabels:
@@ -22,13 +21,14 @@ spec:
         app.kubernetes.io/name: velero
         app.kubernetes.io/instance: velero
         app.kubernetes.io/managed-by: Helm
-        helm.sh/chart: velero-9.0.4
+        helm.sh/chart: velero-10.1.2
       annotations:
         prometheus.io/path: /metrics
         prometheus.io/port: "8085"
         prometheus.io/scrape: "true"
     spec:
       serviceAccountName: velero-server
+      automountServiceAccountToken: true
       securityContext:
         runAsUser: 0
       terminationGracePeriodSeconds: 3600
@@ -47,7 +47,7 @@ spec:
       dnsPolicy: ClusterFirst
       containers:
         - name: node-agent
-          image: "docker.io/velero/velero:v1.16.1@sha256:c790429fcd543f0a5eed3a490e85a2c39bf9aefb8ce7ddbc7a158557745ab33f"
+          image: "docker.io/velero/velero:v1.16.2@sha256:ff208717857140f0b51a440fe9611f7d19f21eacc17318cb4bcd44d66ed04086"
           imagePullPolicy: IfNotPresent
           ports:
             - name: http-monitoring
@@ -94,3 +94,4 @@ spec:
             requests:
               cpu: 5m
               memory: 128Mi
+      enableServiceLinks: false

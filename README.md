@@ -11,7 +11,7 @@ HomeLab Server/Cluster, Virtual Sandbox Cluster, & Desktop Configuration
     - [Networking](#networking)
     - [Kubernetes](#kubernetes)
       - [Machines](#machines)
-        - [ZFS Storage](#zfs-storage)
+        - [Storage](#storage)
       - [Kubernetes Nodes](#kubernetes-nodes)
         - [Ceph Performance Tests](#ceph-performance-tests)
       - [OKD WIF](#okd-wif)
@@ -47,6 +47,7 @@ end
 
 subgraph Homelab
 router----|1GbE|microshift[<center>MicroShift / PiHole<br>10.101.1.7</center>]
+router-.-|10GbE|unas(<center>UNAS<br>10.101.2.6</center>)
 router-.-|1GbE Fail Over|truenas(<center>TrueNas<br>10.101.1.6</center>)
 end
 
@@ -152,28 +153,30 @@ end
 
 [CPU Benchmark](https://www.cpubenchmark.net/compare/Intel-i5-6600-vs-AMD-RX-427BB-vs-Intel-i3-2130-vs-AMD-GX-415GA-SOC-vs-AMD-Ryzen-7-5700G/2594vs2496vs755vs2081vs4323)
 
-| Machine    | Model          | CPU      | CPU | Mem  | Storage                           | Networking              | ZFS Storage  | Status         |
-| ---------- | -------------- | -------- | --- | ---- | --------------------------------- | ----------------------- | ------------ | -------------- |
-| MicroShift | Raspberry Pi 5 | BCM2712  | 4   | 8G   | 1TB NVME                          | 1x1GbE                  | N/A          | MicroShift     |
-| server-1   | N/A            | R7-5700G | 16  | 128G | 2x4TB NVME, 2x1TB SSD, 2x.5TB SSD | 4x10Gbe (DAC) && 4x1GbE | N/A          | OpenShift/OKD  |
-| server-2   | N/A            | R7-5700G | 16  | 128G | 2x4TB NVME, 2x1TB SSD,2x.5TB SSD  | 4x10Gbe (DAC) && 4x1GbE | N/A          | OpenShift/OKD  |
-| server-3   | N/A            | R7-5700G | 16  | 128G | 2x4TB NVME, 2x1TB SSD,2x.5TB SSD  | 4x10Gbe (DAC) && 4x1GbE | N/A          | OpenShift/OKD  |
-| TrueNas    | Hp ProDesk     | i5-6600  | 4   | 32G  | 120G SSD Boot Mirror              | 1x2.5Gbe && 1x1GbE      | 5x2TB RaidZ2 | TrueNas        |
-| pfSense    | Hp t730        | RX-427BB | 4   | 4G   | 16G SSD                           | 4x1GbE                  | N/A          | Decommissioned |
-| Bare Metal | Hp t620        | GX-415GA | 4   | 6G   | 16G SSD & 16G USB                 | 1x1GbE                  | N/A          | Decommissioned |
-| Spare      | Hp p7-1226s    | i3-2130  | 4   | 8G   | 240G SSD                          |                         | N/A          | Decommissioned |
+| Machine    | Model          | CPU        | CPU | Mem  | Storage                           | Networking              | ZFS Storage                       | Status         |
+| ---------- | -------------- | ---------- | --- | ---- | --------------------------------- | ----------------------- | --------------------------------- | -------------- |
+| MicroShift | Raspberry Pi 5 | BCM2712    | 4   | 8G   | 1TB NVME                          | 1x1GbE                  | N/A                               | MicroShift     |
+| server-1   | N/A            | R7-5700G   | 16  | 128G | 2x4TB NVME, 2x1TB SSD, 2x.5TB SSD | 4x10Gbe (DAC) && 4x1GbE | N/A                               | OpenShift/OKD  |
+| server-2   | N/A            | R7-5700G   | 16  | 128G | 2x4TB NVME, 2x1TB SSD,2x.5TB SSD  | 4x10Gbe (DAC) && 4x1GbE | N/A                               | OpenShift/OKD  |
+| server-3   | N/A            | R7-5700G   | 16  | 128G | 2x4TB NVME, 2x1TB SSD,2x.5TB SSD  | 4x10Gbe (DAC) && 4x1GbE | N/A                               | OpenShift/OKD  |
+| TrueNas    | unas-pro       | Arm Cortex | 4   | 8G   | N/A                               | 1x2.5Gbe && 1x1GbE      | 3x2TB RaidZ1 SSD                  | TrueNas        |
+| UNAS       | Hp ProDesk     | i5-6600    | 4   | 32G  | 120G SSD Boot Mirror              | 1x1Gbe && 1x10GbE       | 4x4TB Raid6 HDD / 3x2TB Raid5 SSD | UNAS           |
+| pfSense    | Hp t730        | RX-427BB   | 4   | 4G   | 16G SSD                           | 4x1GbE                  | N/A                               | Decommissioned |
+| Bare Metal | Hp t620        | GX-415GA   | 4   | 6G   | 16G SSD & 16G USB                 | 1x1GbE                  | N/A                               | Decommissioned |
+| Spare      | Hp p7-1226s    | i3-2130    | 4   | 8G   | 240G SSD                          |                         | N/A                               | Decommissioned |
 
 | Machine  | PPT | CPU Curve | GFX Curve | CPU Frequency | vMem | Memory Freq |
 | -------- | --- | --------- | --------- | ------------- | ---- | ----------- |
-| server-1 | 40W | -20       | -30       | -750          | 1.35 | 3200        |
-| server-2 | 40W | -20       | -30       | -750          | 1.35 | 3200        |
-| server-3 | 40W | -20       | -30       | -750          | 1.35 | 3200        |
+| server-1 | 35W | -30       | -30       | -1000         | 1.30 | 3200        |
+| server-2 | 35W | -30       | -30       | -1000         | 1.30 | 3200        |
+| server-3 | 35W | -30       | -30       | -1000         | 1.30 | 3200        |
 
-##### ZFS Storage
+##### Storage
 
-| Machine | Use    | Dataset   | Size  | Dataset     | Size  | Dataset       | Size  | Disks (SSD)  |
-| ------- | ------ | --------- | ----- | ----------- | ----- | ------------- | ----- | ------------ |
-| TrueNas | Backup | Nextcloud | 750GB | Ceph Backup | 175GB | WindowsBackup | 750GB | 5x2TB RaidZ2 |
+| Machine | Use                                            | Disks (SSD)                       |
+| ------- | ---------------------------------------------- | --------------------------------- |
+| UNAS    | Backup Nextcloud / Ceph Backup / WindowsBackup | 4x4TB HDD Raid6 / 3x2TB SSD Raid5 |
+| TrueNas | UNAS Backup                                    | 3x2TB SSD RaidZ1                  |
 
 #### Kubernetes Nodes
 

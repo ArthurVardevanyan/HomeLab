@@ -1,0 +1,44 @@
+apiVersion: csi.ceph.io/v1
+kind: OperatorConfig
+metadata:
+  name: ceph-csi-operator-config
+  namespace: rook-ceph
+  annotations:
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+spec:
+  driverSpecDefaults:
+    fsGroupPolicy: File
+    log: {}
+    deployCsiAddons: false
+    clusterName: rook-ceph
+    imageSet:
+      name: rook-csi-operator-image-set-configmap
+    cephFsClientType: kernel
+    controllerPlugin:
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - key: node-role.kubernetes.io/control-plane
+                    operator: Exists
+      imagePullPolicy: ""
+      priorityClassName: system-node-critical
+      replicas: 2
+      resources: {}
+      tolerations:
+        - key: node-role.kubernetes.io/control-plane
+          operator: Exists
+    generateOMapInfo: false
+    enableMetadata: true
+    nodePlugin:
+      affinity:
+        nodeAffinity: {}
+      enableSeLinuxHostMount: false
+      imagePullPolicy: ""
+      kubeletDirPath: /var/lib/kubelet
+      priorityClassName: system-cluster-critical
+      resources: {}
+      tolerations:
+        - key: node-role.kubernetes.io/control-plane
+          operator: Exists

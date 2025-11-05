@@ -70,7 +70,7 @@ spec:
           emptyDir: {}
       containers:
         - name: vault
-          image: docker.io/hashicorp/vault:1.20.1@sha256:50e1ecbe385742293c4a7e18c90f55d4dcc39724a05c6ab35933305fe7622cf3
+          image: docker.io/hashicorp/vault:1.20.3@sha256:1262354cd28697b7982ea3b9b6f159a996bdaad0b5270765e31b67797ce15bea
           imagePullPolicy: IfNotPresent
           command:
             - "/bin/sh"
@@ -176,15 +176,10 @@ spec:
             # from Consul (zombie services).
             preStop:
               exec:
-                command: [
-                    "/bin/sh",
-                    "-c",
-                    # Adding a sleep here to give the pod eviction a
-                    # chance to propagate, so requests will not be made
-                    # to this pod while it's terminating
-                    "sleep 5 && kill -SIGTERM $(pidof vault)",
-                  ]
+                command:
+                  ["/bin/sh", "-c", "sleep 5 && kill -SIGTERM $(pidof vault)"]
 
+      enableServiceLinks: false
   volumeClaimTemplates:
     - metadata:
         name: data

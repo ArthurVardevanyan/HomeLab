@@ -112,14 +112,16 @@ metadata:
   name: nextcloud
   namespace: dragonfly-operator-system
 spec:
-  podSelector: {}
+  podSelector:
+    matchLabels:
+      control-plane: controller-manager
   policyTypes:
     - Egress
   egress:
     - to:
         - namespaceSelector:
             matchLabels:
-              kubernetes.io/metadata.name: nextcloud
+              kubernetes.io/metadata.name: nextcloud-fpm
           podSelector:
             matchLabels:
               app: nextcloud-dragonfly
@@ -135,7 +137,9 @@ metadata:
   name: argocd
   namespace: dragonfly-operator-system
 spec:
-  podSelector: {}
+  podSelector:
+    matchLabels:
+      control-plane: controller-manager
   policyTypes:
     - Egress
   egress:

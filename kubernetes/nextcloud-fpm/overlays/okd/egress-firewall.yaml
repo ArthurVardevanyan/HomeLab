@@ -1,0 +1,115 @@
+apiVersion: k8s.ovn.org/v1
+kind: EgressFirewall
+metadata:
+  name: default
+  namespace: nextcloud-fpm
+  annotations:
+    argocd.argoproj.io/sync-wave: "0"
+spec:
+  egress:
+    # Control Plane
+    - type: Allow
+      to:
+        nodeSelector:
+          matchLabels:
+            node-role.kubernetes.io/control-plane: ""
+      ports:
+        - protocol: TCP
+          port: 6443
+    - type: Allow
+      to:
+        dnsName: unas.arthurvardevanyan.com
+      ports:
+        - protocol: TCP
+          port: 445
+        - protocol: TCP
+          port: 139
+    - type: Allow
+      to:
+        dnsName: minio.microshift.arthurvardevanyan.com
+      ports:
+        - protocol: TCP
+          port: 443
+    - type: Allow
+      to:
+        dnsName: s3.unas.arthurvardevanyan.com
+      ports:
+        - protocol: TCP
+          port: 443
+    - type: Allow
+      to:
+        dnsName: s3.ssd.unas.arthurvardevanyan.com
+      ports:
+        - protocol: TCP
+          port: 443
+    - type: Allow
+      to:
+        dnsName: router-apps.app.okd.homelab.arthurvardevanyan.com
+      ports:
+        - protocol: TCP
+          port: 443
+    - type: Allow
+      to:
+        dnsName: files.arthurvardevanyan.com
+      ports:
+        - protocol: TCP
+          port: 443
+    - type: Allow
+      to:
+        dnsName: nextcloud.com
+      ports:
+        - protocol: TCP
+          port: 443
+    - type: Allow
+      to:
+        dnsName: download.nextcloud.com
+      ports:
+        - protocol: TCP
+          port: 443
+    - type: Allow
+      to:
+        dnsName: apps.nextcloud.com
+      ports:
+        - protocol: TCP
+          port: 443
+    - type: Allow
+      to:
+        dnsName: push-notifications.nextcloud.com
+      ports:
+        - protocol: TCP
+          port: 443
+    - type: Allow
+      to:
+        dnsName: s16.nextcloud.com
+      ports:
+        - protocol: TCP
+          port: 443
+    - type: Allow
+      to:
+        dnsName: x15.x10hosting.com
+      ports:
+        - protocol: TCP
+          port: 465
+    # GitHub Apis
+    # https://api.github.com/meta
+    - type: Allow
+      to:
+        dnsName: raw.githubusercontent.com
+      ports:
+        - protocol: TCP
+          port: 443
+    - type: Allow
+      to:
+        cidrSelector: 185.199.108.0/22
+      ports:
+        - protocol: TCP
+          port: 443
+    - type: Allow
+      to:
+        cidrSelector: 185.199.111.0/22
+      ports:
+        - protocol: TCP
+          port: 443
+    - type: Deny
+      to:
+        cidrSelector: 0.0.0.0/0

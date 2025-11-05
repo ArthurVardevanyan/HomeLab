@@ -1,0 +1,77 @@
+kind: CronJob
+apiVersion: batch/v1
+metadata:
+  name: s3-cron
+  namespace: gitea
+  labels:
+    app.kubernetes.io/instance: gitea
+  annotations:
+    checkov.io/skip1: CKV_K8S_40=OpenShift Injects Random UID
+    checkov.io/skip3: CKV_K8S_43=Don't Mind Tag for This
+spec:
+  schedule: "30 */6 * * *"
+  concurrencyPolicy: Forbid
+  suspend: false
+  startingDeadlineSeconds: 60
+  jobTemplate:
+    spec:
+      backoffLimit: 0
+      template:
+        metadata:
+          labels:
+            app: s3-cron
+        spec:
+          serviceAccountName: s3
+          volumes:
+            - name: s3-config
+              secret:
+                secretName: s3-config
+            - name: s3-emptydir
+              emptyDir:
+                sizeLimit: 5Gi
+            - name: tmp
+              emptyDir:
+                sizeLimit: 1Gi
+          securityContext:
+            runAsNonRoot: true
+            seccompProfile:
+              type: RuntimeDefault
+          containers:
+            - name: s3-cron
+              image: registry.arthurvardevanyan.com/homelab/toolbox:not_latest
+              command: ["/bin/bash", "-c", "sh /mnt/s3/s3.sh"]
+              resources:
+                limits:
+                  cpu: 150m
+                  memory: 256Mi
+                  ephemeral-storage: "256Mi"
+                requests:
+                  cpu: 25m
+                  memory: 128Mi
+                  ephemeral-storage: "128Mi"
+              volumeMounts:
+                - name: tmp
+                  mountPath: /tmp
+                  subPath: s3.sh
+                - name: s3-config
+                  mountPath: /mnt/s3
+              securityContext:
+                runAsNonRoot: true
+                readOnlyRootFilesystem: true
+                allowPrivilegeEscalation: false
+                seccompProfile:
+                  type: RuntimeDefault
+                capabilities:
+                  drop:
+                    - ALL
+              terminationMessagePath: /dev/termination-log
+              terminationMessagePolicy: File
+              imagePullPolicy: IfNotPresent
+          restartPolicy: Never
+          terminationGracePeriodSeconds: 30
+          dnsPolicy: ClusterFirst
+          automountServiceAccountToken: false
+          hostname: s3-cron
+          schedulerName: default-scheduler
+  successfulJobsHistoryLimit: 1
+  failedJobsHistoryLimit: 1

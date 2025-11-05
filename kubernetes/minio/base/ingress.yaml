@@ -1,0 +1,52 @@
+kind: Ingress
+apiVersion: networking.k8s.io/v1
+metadata:
+  name: minio
+  namespace: minio
+  labels:
+    blackbox: ignore
+    app.kubernetes.io/instance: minio
+  annotations:
+    route.openshift.io/termination: edge
+spec:
+  tls:
+    - hosts:
+        - minio.microshift.arthurvardevanyan.com
+      secretName: minio-cert
+  rules:
+    - host: minio.microshift.arthurvardevanyan.com
+      http:
+        paths:
+          - path: ""
+            pathType: ImplementationSpecific
+            backend:
+              service:
+                name: minio
+                port:
+                  number: 9000
+---
+kind: Ingress
+apiVersion: networking.k8s.io/v1
+metadata:
+  name: minio-console
+  namespace: minio
+  labels:
+    app.kubernetes.io/instance: minio
+  annotations:
+    route.openshift.io/termination: edge
+spec:
+  tls:
+    - hosts:
+        - console.minio.microshift.arthurvardevanyan.com
+      secretName: minio-cert
+  rules:
+    - host: console.minio.microshift.arthurvardevanyan.com
+      http:
+        paths:
+          - path: ""
+            pathType: ImplementationSpecific
+            backend:
+              service:
+                name: minio
+                port:
+                  number: 9001
