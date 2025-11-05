@@ -65,3 +65,30 @@ subjects:
   - kind: ServiceAccount
     name: pipeline
     namespace: homelab
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: homelab-image
+rules:
+  - apiGroups:
+      - security.openshift.io
+    resourceNames:
+      - restricted-v2-image
+    resources:
+      - securitycontextconstraints
+    verbs:
+      - use
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: homelab-image
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: homelab-image
+subjects:
+  - kind: ServiceAccount
+    name: homelab
+    namespace: homelab

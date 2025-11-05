@@ -1,75 +1,123 @@
-FROM quay.io/projectquay/clair-action:v0.0.12@sha256:adfc28d51f08b82978aa6dc41b166b05a2a728fa9643c3a1b73b2032f18e7c30
-FROM registry.access.redhat.com/ubi9/ubi-minimal:9.6-1755695350@sha256:2f06ae0e6d3d9c4f610d32c480338eef474867f435d8d28625f2985e8acde6e8
+FROM quay.io/projectquay/clair-action:v0.0.12@sha256:adfc28d51f08b82978aa6dc41b166b05a2a728fa9643c3a1b73b2032f18e7c30 AS clair
 
-COPY --from=0 /bin/clair-action /bin/clair-action
-COPY ./containers/toolbox/repos /etc/yum.repos.d/
-#COPY ./repos /etc/yum.repos.d/
+FROM quay.io/centos/centos:stream10-minimal@sha256:308328cfe82a473da8d5d8ca0c18d50be898f337ea433d57b7d4f2fcf0cbfccb
 
-ENV \
+# Copy clair-action binary
+COPY --from=clair /bin/clair-action /bin/clair-action
+
+# -----------------------------
+# Environment variables
+# -----------------------------
+ENV LANG=en_US.UTF-8 \
+  LC_ALL=en_US.UTF-8 \
+  HOME=/tmp \
+  PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/local/go/bin \
   ARGOCD_VAULT_VERSION=1.18.1 \
-  OKD_VERSION=4.20.0-okd-scos.ec.16 \
+  OKD_VERSION=4.20.0-okd-scos.7 \
   OPENTOFU_VERSION=1.10.6 \
   VAULT_VERSION=1.20.3 \
   KO_VERSION=0.18.0 \
-  GO_VERSION=1.25.1\
+  GO_VERSION=1.25.1 \
   GH_VERSION=2.79.0 \
-  KUBECONFORM_VERSION=0.7.0  \
+  KUBECONFORM_VERSION=0.7.0 \
   MARKDOWNLINT_CLI_VERSION=0.45.0 \
   PRETTIER_CLI_VERSION=3.6.2 \
-  HOME=/tmp \
-  PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/local/go/bin \
-  KICK="0"
+  ANSIBLE_VERSION=12.2.0
 
-RUN rpm -Uvh https://download.postgresql.org/pub/repos/yum/reporpms/EL-9-x86_64/pgdg-redhat-repo-latest.noarch.rpm && \
+# -----------------------------
+# Install OS packages
+# -----------------------------
+RUN rpm --import https://dl.fedoraproject.org/pub/epel/RPM-GPG-KEY-EPEL-10 && \
+  rpm -Uvh https://dl.fedoraproject.org/pub/epel/epel-release-latest-10.noarch.rpm && \
+  rpm -Uvh https://download.postgresql.org/pub/repos/yum/reporpms/EL-10-x86_64/pgdg-redhat-repo-latest.noarch.rpm && \
   rpm -ivh https://github.com/opentofu/opentofu/releases/download/v${OPENTOFU_VERSION}/tofu_${OPENTOFU_VERSION}_amd64.rpm && \
-  microdnf install --nodocs -y --disableplugin=subscription-manager libpmem -y &&\
-  microdnf install --nodocs -y --disableplugin=subscription-manager \
-  tcpdump sshpass rsync rclone git jq unzip  ansible google-cloud-cli tar procps-ng make nodejs ShellCheck fio postgresql17 -y && \
-  microdnf install --nodocs -y --disableplugin=subscription-manager MariaDB-client --disablerepo=centos-9-appstream -y \
-  && ln -s /usr/bin/python3.11 /usr/local/bin/python \
-  && rm -rf /var/cache/* /var/lib/rpm/* && \
-  rm -rf /usr/lib64/google-cloud-sdk/{platform,data,bin/anthoscli}
+  microdnf -y update && \
+  microdnf -y install --nodocs \
+  libpmem \
+  tcpdump \
+  sshpass \
+  rsync \
+  rclone \
+  git \
+  jq \
+  unzip \
+  tar \
+  make \
+  nodejs \
+  ShellCheck \
+  fio \
+  mariadb \
+  postgresql17 \
+  python3 \
+  python3-pip \
+  procps && \
+  ln -sf /usr/bin/python3 /usr/local/bin/python && \
+  microdnf clean all && rm -rf /var/cache/*
 
-## gh-cli
-RUN \
-  TEMP_DIR="$(mktemp -d)"; \
-  cd "${TEMP_DIR}"; \
-  GH_ARCH="linux_amd64"; \
-  GH_TGZ="gh_${GH_VERSION}_${GH_ARCH}.tar.gz"; \
-  GH_TGZ_URL="https://github.com/cli/cli/releases/download/v${GH_VERSION}/${GH_TGZ}"; \
-  GH_CHECKSUMS_URL="https://github.com/cli/cli/releases/download/v${GH_VERSION}/gh_${GH_VERSION}_checksums.txt"; \
-  curl -sSLO "${GH_TGZ_URL}"; \
-  curl -sSLO "${GH_CHECKSUMS_URL}"; \
-  sha256sum --ignore-missing -c "gh_${GH_VERSION}_checksums.txt" 2>&1 | grep OK; \
-  tar -zxvf "${GH_TGZ}"; \
-  mv "gh_${GH_VERSION}_${GH_ARCH}"/bin/gh /usr/local/bin/; \
-  mv "gh_${GH_VERSION}_${GH_ARCH}"/share/man/man1/* /usr/local/share/man/man1; \
-  cd -; \
-  rm -rf "${TEMP_DIR}"
+# -----------------------------
+# Python tools
+# -----------------------------
+RUN pip3 install --no-cache-dir \
+  "ansible==${ANSIBLE_VERSION}"
 
-RUN npm install -g markdownlint-cli@${MARKDOWNLINT_CLI_VERSION} prettier@${PRETTIER_CLI_VERSION}
+# -----------------------------
+# Node.js tools
+# -----------------------------
+RUN npm install -g \
+  "markdownlint-cli@${MARKDOWNLINT_CLI_VERSION}" \
+  "prettier@${PRETTIER_CLI_VERSION}"
 
-RUN curl -L -o argocd-vault-plugin https://github.com/argoproj-labs/argocd-vault-plugin/releases/download/v${ARGOCD_VAULT_VERSION}/argocd-vault-plugin_${ARGOCD_VAULT_VERSION}_linux_amd64 && \
-  chmod +x argocd-vault-plugin && mv argocd-vault-plugin /usr/local/bin
+# -----------------------------
+# GitHub CLI
+# -----------------------------
+RUN TEMP_DIR="$(mktemp -d)" && cd "$TEMP_DIR" && \
+  GH_TGZ="gh_${GH_VERSION}_linux_amd64.tar.gz" && \
+  curl -sSLO "https://github.com/cli/cli/releases/download/v${GH_VERSION}/${GH_TGZ}" && \
+  curl -sSLO "https://github.com/cli/cli/releases/download/v${GH_VERSION}/gh_${GH_VERSION}_checksums.txt" && \
+  sha256sum --ignore-missing -c "gh_${GH_VERSION}_checksums.txt" 2>&1 | grep OK && \
+  tar -xzf "$GH_TGZ" && \
+  mv "gh_${GH_VERSION}_linux_amd64/bin/gh" /usr/local/bin/ && \
+  mv "gh_${GH_VERSION}_linux_amd64/share/man/man1/"* /usr/local/share/man/man1/ && \
+  cd / && rm -rf "$TEMP_DIR"
 
-RUN curl -L -o yq https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64  && \
-  chmod +x yq && mv yq /usr/local/bin
+# -----------------------------
+# Other binaries
+# -----------------------------
+RUN set -eux; \
+  # ArgoCD Vault Plugin
+  curl -L -o /usr/local/bin/argocd-vault-plugin \
+  "https://github.com/argoproj-labs/argocd-vault-plugin/releases/download/v${ARGOCD_VAULT_VERSION}/argocd-vault-plugin_${ARGOCD_VAULT_VERSION}_linux_amd64" && \
+  chmod +x /usr/local/bin/argocd-vault-plugin && \
+  # yq CLI
+  curl -L -o /usr/local/bin/yq \
+  "https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64" && chmod +x /usr/local/bin/yq && \
+  # OpenShift client
+  curl -L -o openshift-client.tar.gz \
+  "https://github.com/okd-project/okd/releases/download/${OKD_VERSION}/openshift-client-linux-${OKD_VERSION}.tar.gz" && \
+  tar -xzf openshift-client.tar.gz -C /usr/local/bin oc && \
+  ln -sf /usr/local/bin/oc /usr/local/bin/kubectl && \
+  rm -f openshift-client.tar.gz kubectl && \
+  # Vault
+  curl -L -o vault.zip \
+  "https://releases.hashicorp.com/vault/${VAULT_VERSION}/vault_${VAULT_VERSION}_linux_amd64.zip" && \
+  unzip vault.zip && chmod +x vault && mv vault /usr/local/bin/ && rm -f vault.zip && \
+  # ko
+  curl -L -o ko.tar.gz \
+  "https://github.com/ko-build/ko/releases/download/v${KO_VERSION}/ko_${KO_VERSION}_Linux_x86_64.tar.gz" && \
+  tar -xzf ko.tar.gz -C /usr/local/bin ko && rm -f ko.tar.gz && \
+  # Go
+  curl -L -o go.tar.gz \
+  "https://go.dev/dl/go${GO_VERSION}.linux-amd64.tar.gz" && \
+  tar -xzf go.tar.gz -C /usr/local --no-same-owner && rm -f go.tar.gz && \
+  # kubeconform
+  curl -L -o kubeconform.tar.gz \
+  "https://github.com/yannh/kubeconform/releases/download/v${KUBECONFORM_VERSION}/kubeconform-linux-amd64.tar.gz" && \
+  tar -xzf kubeconform.tar.gz -C /usr/local/bin kubeconform && chmod +x /usr/local/bin/kubeconform && rm -f kubeconform.tar.gz && \
+  # MinIO client
+  curl -L -o /usr/local/bin/mc \
+  "https://dl.min.io/client/mc/release/linux-amd64/mc" && chmod +x /usr/local/bin/mc
 
-RUN curl -L -o openshift-client-linux.tar.gz https://github.com/okd-project/okd/releases/download/${OKD_VERSION}/openshift-client-linux-${OKD_VERSION}.tar.gz && \
-  tar -xzf openshift-client-linux.tar.gz && mv oc /usr/local/bin/oc && rm -f oc kubectl openshift-client-linux.tar.gz && ln -svf /usr/local/bin/oc /usr/local/bin/kubectl
-
-RUN curl -L -o vault_linux_amd64.zip https://releases.hashicorp.com/vault/${VAULT_VERSION}/vault_${VAULT_VERSION}_linux_amd64.zip && \
-  unzip vault_linux_amd64.zip && chmod +x vault && mv vault /usr/local/bin/ && rm -f vault_linux_amd64.zip
-
-RUN  curl -L -o ko_Linux_x86_64.tar.gz https://github.com/ko-build/ko/releases/download/v${KO_VERSION}/ko_${KO_VERSION}_Linux_x86_64.tar.gz && \
-  tar -xzf ko_Linux_x86_64.tar.gz && mv ko /usr/local/bin/ko && rm -f ko_Linux_x86_64.tar.gz
-
-RUN curl -L -o go.linux-amd64.tar.gz https://golang.org/dl/go${GO_VERSION}.linux-amd64.tar.gz && \
-  tar -xzf go.linux-amd64.tar.gz --no-same-owner -C /usr/local && rm -f go.linux-amd64.tar.gz
-
-RUN curl -L -o kubeconform-linux-amd64.tar.gz https://github.com/yannh/kubeconform/releases/download/v${KUBECONFORM_VERSION}/kubeconform-linux-amd64.tar.gz && \
-  tar -xzf kubeconform-linux-amd64.tar.gz && chmod +x kubeconform && mv kubeconform /usr/local/bin/ && rm -f kubeconform-linux-amd64.tar.gz
-
-RUN curl https://dl.min.io/client/mc/release/linux-amd64/mc -o /usr/local/bin/mc && chmod +x /usr/local/bin/mc
-
+# -----------------------------
+# Default command
+# -----------------------------
 CMD ["sleep", "infinity"]
