@@ -115,7 +115,13 @@ RUN set -eux; \
   tar -xzf kubeconform.tar.gz -C /usr/local/bin kubeconform && chmod +x /usr/local/bin/kubeconform && rm -f kubeconform.tar.gz && \
   # MinIO client
   curl -L -o /usr/local/bin/mc \
-  "https://dl.min.io/client/mc/release/linux-amd64/mc" && chmod +x /usr/local/bin/mc
+  "https://dl.min.io/client/mc/release/linux-amd64/mc" && chmod +x /usr/local/bin/mc && \
+  # Google Cloud CLI
+  curl -L -o /tmp/google-cloud-cli.tar.gz \
+  "https://dl.google.com/dl/cloudsdk/channels/rapid/downloads/google-cloud-cli-432.0.0-linux-x86_64.tar.gz" && \
+  tar -xzf /tmp/google-cloud-cli.tar.gz -C /usr/local && rm -f /tmp/google-cloud-cli.tar.gz && \
+  /usr/local/google-cloud-sdk/install.sh --quiet && \
+  ln -sf /usr/local/google-cloud-sdk/bin/gcloud /usr/local/bin/gcloud
 
 # -----------------------------
 # Default command
