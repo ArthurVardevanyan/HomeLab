@@ -121,9 +121,24 @@ RUN set -eux; \
   curl -L -o /tmp/google-cloud-cli.tar.gz \
   "https://dl.google.com/dl/cloudsdk/channels/rapid/downloads/google-cloud-cli-${GCLOUD_VERSION}-linux-x86_64.tar.gz" && \
   tar -xzf /tmp/google-cloud-cli.tar.gz -C /usr/local && rm -f /tmp/google-cloud-cli.tar.gz && \
-  /usr/local/google-cloud-sdk/install.sh --quiet && \
-  ln -sf /usr/local/google-cloud-sdk/bin/gcloud /usr/local/bin/gcloud
-
+  /usr/local/google-cloud-sdk/install.sh \
+  --usage-reporting=false \
+  --bash-completion=false \
+  --path-update=false \
+  --rc-path=${HOME}/.bashrc \
+  --additional-components=gke-gcloud-auth-plugin \
+  --quiet && \
+  ln -sf /usr/local/google-cloud-sdk/bin/gcloud /usr/local/bin/gcloud && \
+  gcloud config set core/disable_usage_reporting true && \
+  gcloud config set component_manager/disable_update_check true && \
+  gcloud config set metrics/environment github_docker_image && \
+  gcloud config set survey/disable_prompts true && \
+  rm -rf /usr/lib64/google-cloud-sdk/.install/.backup && \
+  rm -rf /usr/local/google-cloud-sdk/.install/.backup && \
+  rm -rf /usr/local/google-cloud-sdk/{.install,VERSION,LICENSE,README,RELEASE_NOTES,platform,deb,install.*,rpm,data,properties,bin/anthoscli} && \
+  rm -rf /usr/local/.config/gcloud/ && \
+  rm -rf ${HOME}/.config/gcloud && \
+  mkdir -p ${HOME}/.config
 # -----------------------------
 # Default command
 # -----------------------------
