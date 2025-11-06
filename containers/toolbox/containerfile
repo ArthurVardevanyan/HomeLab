@@ -31,6 +31,7 @@ ENV \
 
 COPY --from=clair /bin/clair-action /usr/local/bin/clair-action
 COPY --from=node-tools /usr/local/bin/* /usr/local/bin/
+COPY --from=node-tools /usr/local/lib/node_modules /usr/local/lib/node_modules
 
 RUN rpm --import https://dl.fedoraproject.org/pub/epel/RPM-GPG-KEY-EPEL-10 && \
   rpm -Uvh https://dl.fedoraproject.org/pub/epel/epel-release-latest-10.noarch.rpm && \
@@ -39,7 +40,7 @@ RUN rpm --import https://dl.fedoraproject.org/pub/epel/RPM-GPG-KEY-EPEL-10 && \
   microdnf -y update && \
   microdnf -y install --nodocs --setopt=install_weak_deps=0 \
   libpmem tcpdump sshpass rsync rclone git jq unzip tar make ShellCheck \
-  fio postgresql17 python3 python3-pip procps && \
+  fio postgresql17 python3 python3-pip procps libatomic && \
   ln -sf /usr/bin/python3 /usr/local/bin/python && \
   microdnf clean all && rm -rf /var/cache/*  && \
   pip3 install --no-cache-dir ansible==${ANSIBLE_VERSION} && \
