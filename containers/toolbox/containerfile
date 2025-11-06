@@ -93,9 +93,8 @@ RUN curl -L -o go.tar.gz "https://go.dev/dl/go${GO_VERSION}.linux-amd64.tar.gz" 
 
 # Precompile stdlib for faster x86 + arm64 builds
 RUN mkdir -p /go && \
-  GOOS=linux GOARCH=amd64 GOAMD64=v3 go build -std -v std && \
-  GOOS=linux GOARCH=arm64 go build -std -v std
-
+  GOOS=linux GOARCH=amd64 GOAMD64=v3 go build -v std && \
+  GOOS=linux GOARCH=arm64 go build -v std
 
 # Remove unnecessary runtime debris
 RUN rm -rf /usr/local/go/test /usr/local/go/doc /usr/local/go/api /usr/local/go/misc
