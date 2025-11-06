@@ -1,7 +1,5 @@
-# Clair base extractor
 FROM quay.io/projectquay/clair-action:v0.0.12@sha256:adfc28d51f08b82978aa6dc41b166b05a2a728fa9643c3a1b73b2032f18e7c30 AS clair
 
-# Node tool build stage (Node is NOT in final image)
 FROM node:25.1.0-trixie@sha256:61d7b34e007da0a6403408afc0a79f7313b414a45ee221d273b39ff5a6f59bb4 AS node-tools
 ENV MARKDOWNLINT_CLI_VERSION=0.45.0
 ENV PRETTIER_CLI_VERSION=3.6.2
@@ -9,10 +7,8 @@ RUN npm install -g \
   markdownlint-cli@${MARKDOWNLINT_CLI_VERSION} \
   prettier@${PRETTIER_CLI_VERSION}
 
-# Final base image
 FROM quay.io/centos/centos:stream10-minimal@sha256:308328cfe82a473da8d5d8ca0c18d50be898f337ea433d57b7d4f2fcf0cbfccb
 
-# ---- ALL VERSION VARIABLES HERE — SINGLE SOURCE OF TRUTH ----
 ENV \
   ARGOCD_VAULT_VERSION=1.18.1 \
   OKD_VERSION=4.20.0-okd-scos.7 \
@@ -23,10 +19,7 @@ ENV \
   KUBECONFORM_VERSION=0.7.0 \
   ANSIBLE_VERSION=12.2.0 \
   GCLOUD_VERSION=546.0.0 \
-  GO_VERSION=1.25.1
-
-# System paths
-ENV \
+  GO_VERSION=1.25.1 \
   LANG=en_US.UTF-8 \
   LC_ALL=en_US.UTF-8 \
   HOME=/tmp \
@@ -36,10 +29,9 @@ ENV \
   CGO_ENABLED=0 \
   PATH=/usr/local/go/bin:/go/bin:/usr/local/bin:/usr/bin:/bin
 
-# Pull clair binary
 COPY --from=clair /bin/clair-action /usr/local/bin/clair-action
+COPY --from=node-tools /usr/local/bin/* /usr/local/bin/
 
-# Base packages — optimized install
 RUN rpm --import https://dl.fedoraproject.org/pub/epel/RPM-GPG-KEY-EPEL-10 && \
   rpm -Uvh https://dl.fedoraproject.org/pub/epel/epel-release-latest-10.noarch.rpm && \
   rpm -Uvh https://download.postgresql.org/pub/repos/yum/reporpms/EL-10-x86_64/pgdg-redhat-repo-latest.noarch.rpm && \
@@ -47,23 +39,12 @@ RUN rpm --import https://dl.fedoraproject.org/pub/epel/RPM-GPG-KEY-EPEL-10 && \
   microdnf -y update && \
   microdnf -y install --nodocs --setopt=install_weak_deps=0 \
   libpmem tcpdump sshpass rsync rclone git jq unzip tar make ShellCheck \
-  fio mariadb postgresql17 python3 python3-pip procps && \
+  fio postgresql17 python3 python3-pip procps && \
   ln -sf /usr/bin/python3 /usr/local/bin/python && \
-  microdnf clean all && rm -rf /var/cache/*
-
-# Python tooling
-RUN pip3 install --no-cache-dir ansible==${ANSIBLE_VERSION}
-
-# Copy node CLIs into final image (runtime NOT included)
-COPY --from=node-tools /usr/local/bin/* /usr/local/bin/
-COPY --from=node-tools /usr/local/lib/node_modules /usr/local/lib/node_modules
-
-# GitHub CLI (version referenced from ENV)
-RUN curl -sSL https://github.com/cli/cli/releases/download/v${GH_VERSION}/gh_${GH_VERSION}_linux_amd64.tar.gz \
-  | tar -xz --strip-components=2 -C /usr/local/bin "gh_${GH_VERSION}_linux_amd64/bin/gh"
-
-# Core CLI binaries — all versioned
-RUN set -eux; \
+  microdnf clean all && rm -rf /var/cache/*  && \
+  pip3 install --no-cache-dir ansible==${ANSIBLE_VERSION} && \
+  curl -sSL https://github.com/cli/cli/releases/download/v${GH_VERSION}/gh_${GH_VERSION}_linux_amd64.tar.gz \
+  | tar -xz --strip-components=2 -C /usr/local/bin "gh_${GH_VERSION}_linux_amd64/bin/gh" && \
   curl -L -o /usr/local/bin/argocd-vault-plugin \
   "https://github.com/argoproj-labs/argocd-vault-plugin/releases/download/v${ARGOCD_VAULT_VERSION}/argocd-vault-plugin_${ARGOCD_VAULT_VERSION}_linux_amd64" && \
   chmod +x /usr/local/bin/argocd-vault-plugin && \
@@ -72,10 +53,8 @@ RUN set -eux; \
   curl -L https://github.com/yannh/kubeconform/releases/download/v${KUBECONFORM_VERSION}/kubeconform-linux-amd64.tar.gz \
   | tar -xz -C /usr/local/bin kubeconform && chmod +x /usr/local/bin/kubeconform && \
   curl -L -o /usr/local/bin/mc \
-  "https://dl.min.io/client/mc/release/linux-amd64/mc" && chmod +x /usr/local/bin/mc
-
-# Google Cloud CLI
-RUN  curl -L -o /tmp/google-cloud-cli.tar.gz \
+  "https://dl.min.io/client/mc/release/linux-amd64/mc" && chmod +x /usr/local/bin/mc && \
+  curl -L -o /tmp/google-cloud-cli.tar.gz \
   "https://dl.google.com/dl/cloudsdk/channels/rapid/downloads/google-cloud-cli-${GCLOUD_VERSION}-linux-x86_64.tar.gz" && \
   tar -xzf /tmp/google-cloud-cli.tar.gz -C /usr/local && rm -f /tmp/google-cloud-cli.tar.gz && \
   /usr/local/google-cloud-sdk/install.sh \
@@ -95,24 +74,19 @@ RUN  curl -L -o /tmp/google-cloud-cli.tar.gz \
   rm -rf /usr/local/google-cloud-sdk/{.install,VERSION,LICENSE,README,RELEASE_NOTES,platform,deb,install.*,rpm,data,properties,bin/anthoscli} && \
   rm -rf /usr/local/.config/gcloud/ && \
   rm -rf ${HOME}/.config/gcloud && \
-  mkdir -p ${HOME}/.config
-
-# Go install, stdlib precompile, and cleanup in one block
-RUN curl -L -o go.tar.gz "https://go.dev/dl/go${GO_VERSION}.linux-amd64.tar.gz" && \
+  mkdir -p ${HOME}/.config && \
+  curl -L -o go.tar.gz "https://go.dev/dl/go${GO_VERSION}.linux-amd64.tar.gz" && \
   tar -xzf go.tar.gz -C /usr/local --no-same-owner && rm -f go.tar.gz && \
   mkdir -p /go && \
   GOOS=linux GOARCH=amd64 GOAMD64=v3 go build -v std && \
   GOOS=linux GOARCH=arm64 go build -v std && \
-  rm -rf /usr/local/go/test /usr/local/go/doc /usr/local/go/api /usr/local/go/misc
-
-# Install OKD oc/kubectl and ko in one block
-RUN curl -L -o openshift-client-linux.tar.gz https://github.com/okd-project/okd/releases/download/${OKD_VERSION}/openshift-client-linux-${OKD_VERSION}.tar.gz && \
+  rm -rf /usr/local/go/test /usr/local/go/doc /usr/local/go/api /usr/local/go/misc && \
+  curl -L -o openshift-client-linux.tar.gz https://github.com/okd-project/okd/releases/download/${OKD_VERSION}/openshift-client-linux-${OKD_VERSION}.tar.gz && \
   tar -xzf openshift-client-linux.tar.gz && mv oc /usr/local/bin/oc && rm -f oc kubectl openshift-client-linux.tar.gz && ln -svf /usr/local/bin/oc /usr/local/bin/kubectl && \
   curl -L -o ko_Linux_x86_64.tar.gz https://github.com/ko-build/ko/releases/download/v${KO_VERSION}/ko_${KO_VERSION}_Linux_x86_64.tar.gz && \
-  tar -xzf ko_Linux_x86_64.tar.gz && mv ko /usr/local/bin/ko && rm -f ko_Linux_x86_64.tar.gz
-
-# Final slim-down
-RUN strip /usr/local/bin/* || true && \
-  rm -rf /usr/share/doc/* /usr/share/man/* /usr/share/info/* /tmp/*
+  tar -xzf ko_Linux_x86_64.tar.gz && mv ko /usr/local/bin/ko && rm -f ko_Linux_x86_64.tar.gz && \
+  curl -L -o vault_linux_amd64.zip https://releases.hashicorp.com/vault/${VAULT_VERSION}/vault_${VAULT_VERSION}_linux_amd64.zip && \
+  unzip vault_linux_amd64.zip && chmod +x vault && mv vault /usr/local/bin/ && rm -f vault_linux_amd64.zip && \
+  rm -rf /usr/share/doc/* /usr/share/man/* /usr/share/info/* /tmp/* && find /usr -name '*.pyc' -delete
 
 CMD ["sleep", "infinity"]
