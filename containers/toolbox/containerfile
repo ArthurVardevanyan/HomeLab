@@ -114,7 +114,6 @@ RUN curl -L -o openshift-client-linux.tar.gz https://github.com/okd-project/okd/
   unzip vault_linux_amd64.zip && chmod +x vault && mv vault /usr/local/bin/ && rm -f vault_linux_amd64.zip
 
 # Final slim-down
-RUN strip /usr/local/bin/* || true && \
-  rm -rf /usr/share/doc/* /usr/share/man/* /usr/share/info/* /tmp/*
+RUN rm -rf /usr/share/doc/* /usr/share/man/* /usr/share/info/* /tmp/*
 
 CMD ["sleep", "infinity"]
