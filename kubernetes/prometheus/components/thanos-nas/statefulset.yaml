@@ -1,0 +1,105 @@
+# https://hackernoon.com/kubernetes-monitoring-with-prometheus-and-thanos-z91w3uc2
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: thanos-nas-store-gateway
+  namespace: prometheus
+  labels:
+    app: thanos-nas-store-gateway
+    app.kubernetes.io/instance: prometheus
+  annotations:
+    checkov.io/skip1: CKV_K8S_40=OpenShift Injects Random UID
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: thanos-store-gateway
+  serviceName: thanos-store-gateway
+  template:
+    metadata:
+      labels:
+        app: thanos-store-gateway
+        thanos-store-api-nas: "true"
+      annotations:
+        enable.version-checker.io/thanos-store-gateway: "true"
+    spec:
+      topologySpreadConstraints:
+        - maxSkew: 1
+          topologyKey: topology.kubernetes.io/zone
+          whenUnsatisfiable: DoNotSchedule
+          labelSelector:
+            matchLabels:
+              app: thanos-store-gateway
+        - maxSkew: 1
+          topologyKey: kubernetes.io/hostname
+          whenUnsatisfiable: DoNotSchedule
+          labelSelector:
+            matchLabels:
+              app: thanos-store-gateway
+      automountServiceAccountToken: false
+      securityContext:
+        seccompProfile:
+          type: RuntimeDefault
+        runAsNonRoot: true
+      containers:
+        - name: thanos-store-gateway
+          image: quay.io/thanos/thanos:v0.39.2@sha256:1d022ef4b8eff056a0e3b7822f953d931c5704d068413f2d7ce5266aa96c9e80
+          securityContext:
+            runAsNonRoot: true
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            seccompProfile:
+              type: RuntimeDefault
+            capabilities:
+              drop:
+                - ALL
+          resources:
+            requests:
+              cpu: 25m
+              memory: 512Mi
+              ephemeral-storage: 3Gi
+            limits:
+              cpu: 1000m
+              memory: 10Gi
+              ephemeral-storage: 5Gi
+          args:
+            - "store"
+            - "--log.level=debug"
+            - "--data-dir=/data"
+            - "--objstore.config-file=/etc/secret/nas.yaml"
+            - "--index-cache-size=500MB"
+            - "--chunk-pool-size=500MB"
+          ports:
+            - name: http
+              containerPort: 10902
+            - name: grpc
+              containerPort: 10901
+          livenessProbe:
+            httpGet:
+              port: 10902
+              path: /-/healthy
+          readinessProbe:
+            httpGet:
+              port: 10902
+              path: /-/ready
+          volumeMounts:
+            - name: nas
+              mountPath: /etc/secret
+              readOnly: false
+            - name: data
+              mountPath: /data
+      volumes:
+        - name: nas
+          secret:
+            secretName: nas
+      enableServiceLinks: false
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+      spec:
+        accessModes:
+          - ReadWriteOnce
+        resources:
+          requests:
+            storage: "10Gi"
+        storageClassName: rook-ceph-block-ci

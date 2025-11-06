@@ -77,9 +77,17 @@ spec:
     - to:
         - ipBlock:
             cidr: 10.101.1.6/32
+    - to:
+        - ipBlock:
+            cidr: 10.101.1.7/32
+    - to:
+        - ipBlock:
+            cidr: 10.101.10.7/32
       ports:
         - protocol: TCP
           port: 9000
+        - protocol: TCP
+          port: 443
 ---
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
@@ -134,3 +142,27 @@ spec:
       ports:
         - protocol: TCP
           port: 5432
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-to-openshift-ingress-psql-clair
+  namespace: quay
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+spec:
+  policyTypes:
+    - Egress
+  podSelector:
+    matchLabels:
+      postgres-operator.crunchydata.com/cluster: clair
+  egress:
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              network.openshift.io/policy-group: ingress
+      ports:
+        - protocol: TCP
+          port: 443 # Passthrough/ReEncrypt Termination
+        - protocol: TCP
+          port: 80 # Edge Termination

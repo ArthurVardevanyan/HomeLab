@@ -12,6 +12,7 @@ metadata:
     tekton.dev/tags: git
     tekton.dev/displayName: "git clone"
     tekton.dev/platforms: "linux/amd64,linux/s390x,linux/ppc64le,linux/arm64"
+    tekton.dev/deprecated: "true"
 spec:
   description: >-
     These Tasks are Git tasks to work with repositories used by other tasks
@@ -104,7 +105,7 @@ spec:
     - name: gitInitImage
       description: The image providing the git-init binary that this Task runs.
       type: string
-      default: "gcr.io/tekton-releases/github.com/tektoncd/pipeline/cmd/git-init:v0.44.5@sha256:579c564732c96e2bb337aef223c5d52e5cec277f1f46be0eaa0df0f2797e0cb4"
+      default: "ghcr.io/tektoncd/github.com/tektoncd/pipeline/cmd/git-init:v44.5@sha256:579c564732c96e2bb337aef223c5d52e5cec277f1f46be0eaa0df0f2797e0cb4"
     - name: userHome
       description: |
         Absolute path to the user's home directory.
@@ -115,6 +116,8 @@ spec:
       description: The precise commit SHA that was fetched by this Task.
     - name: url
       description: The precise URL that was fetched by this Task.
+    - name: committer-date
+      description: The epoch timestamp of the commit that was fetched by this Task.
   steps:
     - name: clone
       image: "$(params.gitInitImage)"
@@ -232,7 +235,7 @@ spec:
         }
 
         if [ "${PARAM_DELETE_EXISTING}" = "true" ] ; then
-          cleandir
+          cleandir || true
         fi
 
         test -z "${PARAM_HTTP_PROXY}" || export HTTP_PROXY="${PARAM_HTTP_PROXY}"
@@ -255,6 +258,8 @@ spec:
         if [ "${EXIT_CODE}" != 0 ] ; then
           exit "${EXIT_CODE}"
         fi
+        RESULT_COMMITTER_DATE="$(git log -1 --pretty=%ct)"
+        printf "%s" "${RESULT_COMMITTER_DATE}" > "$(results.committer-date.path)"
         printf "%s" "${RESULT_SHA}" > "$(results.commit.path)"
         printf "%s" "${PARAM_URL}" > "$(results.url.path)"
   volumes:

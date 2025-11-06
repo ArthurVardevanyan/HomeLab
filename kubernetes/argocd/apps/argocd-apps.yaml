@@ -21,7 +21,7 @@ spec:
     #     value: "true"
     #   - name: ARGOCD_APPLICATION_NAMESPACES
     #     value: /^((?!argocd).)*$/
-    replicas: 2
+    replicas: 1
     resources:
       limits:
         cpu: 20m
@@ -65,14 +65,12 @@ spec:
   usersAnonymousEnabled: false
   rbac:
     policy: |
-      g, system:cluster-admins, role:admin
-      g, cluster-admins, role:admin
-  # image: registry.arthurvardevanyan.com/homelab/argocd
-  version: sha256:a45307e2695d0fd93713e3d211b71086ac75a85dc8afbb28a249bdc4b3b0b2b9 # v3.0.6
+      g, arthur@arthurvardevanyan.com, role:admin
+      g, 305070630980550817, role:admin
+  version: sha256:2815b045273dc14b271c40d01a75ae2efa88613c90300e778d5ad5171e2b0f7f # v3.1.5
   repo:
     replicas: 3
-    # image: registry.arthurvardevanyan.com/homelab/argocd
-    version: sha256:a45307e2695d0fd93713e3d211b71086ac75a85dc8afbb28a249bdc4b3b0b2b9 # v3.0.6
+    version: sha256:2815b045273dc14b271c40d01a75ae2efa88613c90300e778d5ad5171e2b0f7f # v3.1.5
     mountsatoken: true
     serviceaccount: argocd-repo-server
     resources:
@@ -84,17 +82,13 @@ spec:
         cpu: 10m
         memory: 150Mi
         ephemeral-storage: 256Mi
-  sso:
-    provider: dex
-    dex:
-      openShiftOAuth: true
-      resources:
-        limits:
-          cpu: 50m
-          memory: 192Mi
-        requests:
-          cpu: 10m
-          memory: 96Mi
+  oidcConfig: |
+    name: Zitadel
+    issuer: https://zitadel.arthurvardevanyan.com
+    clientID: "<path:secret/data/homelab/zitadel/okd#client_id>"
+    clientSecret: "$oidc.zitadel.clientSecret"
+    requestedScopes: ["openid", "profile", "email"]
+    requestedIDTokenClaims: {"groups": {"essential": true}}
   ha:
     enabled: false
   tls:

@@ -8,8 +8,8 @@ metadata:
     app.kubernetes.io/name: velero
     app.kubernetes.io/instance: velero
     app.kubernetes.io/managed-by: Helm
-    app.kubernetes.io/version: 1.16.0
-    helm.sh/chart: velero-9.0.4
+    app.kubernetes.io/version: 1.16.2
+    helm.sh/chart: velero-10.1.2
     component: velero
 spec:
   replicas: 1
@@ -26,8 +26,8 @@ spec:
         app.kubernetes.io/name: velero
         app.kubernetes.io/instance: velero
         app.kubernetes.io/managed-by: Helm
-        app.kubernetes.io/version: 1.16.0
-        helm.sh/chart: velero-9.0.4
+        app.kubernetes.io/version: 1.16.2
+        helm.sh/chart: velero-10.1.2
       annotations:
         prometheus.io/path: /metrics
         prometheus.io/port: "8085"
@@ -35,10 +35,11 @@ spec:
     spec:
       restartPolicy: Always
       serviceAccountName: velero-server
+      automountServiceAccountToken: true
       terminationGracePeriodSeconds: 3600
       containers:
         - name: velero
-          image: "velero/velero:v1.16.0@sha256:e78aaa24545299b6d154c79ed39107c7fe4dce916c973d989e04837af96887da"
+          image: "docker.io/velero/velero:v1.16.2@sha256:ff208717857140f0b51a440fe9611f7d19f21eacc17318cb4bcd44d66ed04086"
           imagePullPolicy: IfNotPresent
           ports:
             - name: http-monitoring
@@ -109,7 +110,7 @@ spec:
               value: /credentials/cloud
       dnsPolicy: ClusterFirst
       initContainers:
-        - image: docker.io/velero/velero-plugin-for-aws:v1.12.0@sha256:c648365557865767366eb6597ebebf722d508dfbb1c163ca1ffd848ecf1c6dfc
+        - image: docker.io/velero/velero-plugin-for-aws:v1.12.2@sha256:bef271808e0547bb70f69f0430cc73f7a2fa938949c50f7b31171018be967335
           name: velero-plugin-for-aws
           resources:
             limits:
@@ -146,3 +147,4 @@ spec:
           emptyDir: {}
         - name: scratch
           emptyDir: {}
+      enableServiceLinks: false

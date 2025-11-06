@@ -15,3 +15,21 @@ spec:
           for: 5m
           labels:
             severity: critical
+    - name: NetworkTraffic
+      rules:
+        - alert: NetworkTrafficTransmit
+          annotations:
+            description: "Transmit Network Traffic for {{ $labels.device }} on {{ $labels.instance  }} is above 75%"
+            summary: "Transmit Network Traffic for {{ $labels.device }} on {{ $labels.instance  }} is above 75%"
+          expr: (rate(node_network_transmit_bytes_total{device=~"enp.*|bond.*"}[1m])) / node_network_speed_bytes{device=~"enp.*|bond.*"} *100 > 75
+          for: 1m
+          labels:
+            severity: critical
+        - alert: NetworkTrafficReceive
+          annotations:
+            description: "Receive Network Traffic for {{ $labels.device }} on {{ $labels.instance  }} is above 75%"
+            summary: "Receive Network Traffic for {{ $labels.device }} on {{ $labels.instance  }} is above 75%"
+          expr: (rate(node_network_receive_bytes_total{device=~"enp.*|bond.*"}[1m])) / node_network_speed_bytes{device=~"enp.*|bond.*"} *100 > 75
+          for: 1m
+          labels:
+            severity: critical

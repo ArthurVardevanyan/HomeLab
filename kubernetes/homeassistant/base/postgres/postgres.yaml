@@ -8,6 +8,7 @@ metadata:
     argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
   labels:
     app.kubernetes.io/instance: homeassistant
+    velero.io/exclude-from-backup: "true"
 spec:
   # dataSource:
   #   postgresCluster:
@@ -71,11 +72,11 @@ spec:
                 - ReadWriteOnce
               resources:
                 requests:
-                  storage: 50Gi
+                  storage: 100Gi
         # - name: repo2
         #   s3:
         #     bucket: postgres
-        #     endpoint: "truenas.arthurvardevanyan.com:9000"
+        #     endpoint: "minio.microshift.arthurvardevanyan.com"
         #     region: homelab
         #   schedules:
         #     full: "0 6 * * 0"
@@ -87,7 +88,7 @@ spec:
           - ReadWriteOnce
         resources:
           requests:
-            storage: 25Gi
+            storage: 35Gi
       name: ""
       sidecars:
         replicaCertCopy:
@@ -98,6 +99,9 @@ spec:
             limits:
               memory: "48Mi"
               cpu: "10m"
+      metadata:
+        labels:
+          velero.io/exclude-from-backup: "true"
       replicas: 2
       resources:
         requests:

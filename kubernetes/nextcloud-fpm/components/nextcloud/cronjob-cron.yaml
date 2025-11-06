@@ -1,0 +1,95 @@
+kind: CronJob
+apiVersion: batch/v1
+metadata:
+  name: nextcloud-cron
+  namespace: nextcloud-fpm
+  annotations:
+    argocd.argoproj.io/sync-wave: "3"
+spec:
+  schedule: "*/10 * * * *"
+  concurrencyPolicy: Forbid
+  suspend: false
+  startingDeadlineSeconds: 60
+  jobTemplate:
+    spec:
+      backoffLimit: 1
+      template:
+        metadata:
+          labels:
+            app: nextcloud-cron
+            db: nextcloud-pg
+            storage: ceph-s3
+        spec:
+          serviceAccountName: nextcloud
+          securityContext:
+            runAsNonRoot: true
+            fsGroupChangePolicy: OnRootMismatch
+          volumes:
+            - name: nextcloud
+              persistentVolumeClaim:
+                claimName: nextcloud
+            - name: nextcloud-custom-apps
+              persistentVolumeClaim:
+                claimName: nextcloud-custom-apps
+            - name: nextcloud-config
+              persistentVolumeClaim:
+                claimName: nextcloud-config
+            - name: nextcloud-data
+              persistentVolumeClaim:
+                claimName: nextcloud-data
+            - name: nextcloud-themes
+              persistentVolumeClaim:
+                claimName: nextcloud-themes
+            - name: tmp
+              emptyDir:
+                sizeLimit: 5Gi
+          containers:
+            - name: nextcloud-cron
+              image: docker.io/nextcloud:32.0.0-fpm
+              env:
+                - name: PHP_MEMORY_LIMIT
+                  value: 3G
+              command:
+                - /bin/sh
+                - "-c"
+                - php /var/www/html/cron.php
+              resources:
+                limits:
+                  cpu: 500m
+                  memory: 2Gi
+                requests:
+                  cpu: 25m
+                  memory: 128Mi
+              securityContext:
+                runAsNonRoot: true
+                readOnlyRootFilesystem: true
+                allowPrivilegeEscalation: false
+                seccompProfile:
+                  type: RuntimeDefault
+                capabilities:
+                  drop:
+                    - ALL
+              volumeMounts:
+                - name: nextcloud
+                  mountPath: /var/www/html
+                - name: nextcloud-custom-apps
+                  mountPath: /var/www/html/custom_apps
+                - name: nextcloud-config
+                  mountPath: /var/www/html/config
+                - name: nextcloud-data
+                  mountPath: /var/www/html/data
+                - name: nextcloud-themes
+                  mountPath: /var/www/html/themes
+                - name: tmp
+                  mountPath: /tmp
+              terminationMessagePath: /dev/termination-log
+              terminationMessagePolicy: File
+              imagePullPolicy: IfNotPresent
+          restartPolicy: Never
+          terminationGracePeriodSeconds: 30
+          dnsPolicy: ClusterFirst
+          automountServiceAccountToken: false
+          hostname: nextcloud-cron
+          schedulerName: default-scheduler
+  successfulJobsHistoryLimit: 1
+  failedJobsHistoryLimit: 1

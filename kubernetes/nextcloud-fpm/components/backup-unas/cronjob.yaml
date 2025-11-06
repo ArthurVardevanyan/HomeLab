@@ -1,0 +1,78 @@
+kind: CronJob
+apiVersion: batch/v1
+metadata:
+  name: unas-cron
+  namespace: nextcloud-fpm
+  annotations:
+    argocd.argoproj.io/sync-wave: "3"
+spec:
+  schedule: "45 */3 * * *"
+  concurrencyPolicy: Forbid
+  suspend: false
+  startingDeadlineSeconds: 60
+  jobTemplate:
+    spec:
+      backoffLimit: 0
+      template:
+        metadata:
+          labels:
+            app: unas-cron
+        spec:
+          serviceAccountName: unas
+          volumes:
+            - name: unas-config
+              secret:
+                secretName: unas
+            - name: unas-script
+              configMap:
+                name: unas
+            - name: unas-emptydir
+              emptyDir:
+                sizeLimit: 5Gi
+            - name: tmp
+              emptyDir:
+                sizeLimit: 1Gi
+          securityContext:
+            runAsNonRoot: true
+            seccompProfile:
+              type: RuntimeDefault
+          containers:
+            - name: unas-cron
+              image: registry.arthurvardevanyan.com/homelab/toolbox:not_latest
+              command: ["/bin/bash", "-c", "sh /tmp/unas/unas.sh"]
+              resources:
+                limits:
+                  cpu: "500m"
+                  memory: 1Gi
+                  ephemeral-storage: "256Mi"
+                requests:
+                  cpu: 35m
+                  memory: 128Mi
+                  ephemeral-storage: "128Mi"
+              volumeMounts:
+                - name: tmp
+                  mountPath: /tmp
+                - name: unas-script
+                  mountPath: /tmp/unas
+                - name: unas-config
+                  mountPath: /mnt/unas
+              securityContext:
+                runAsNonRoot: true
+                readOnlyRootFilesystem: true
+                allowPrivilegeEscalation: false
+                seccompProfile:
+                  type: RuntimeDefault
+                capabilities:
+                  drop:
+                    - ALL
+              terminationMessagePath: /dev/termination-log
+              terminationMessagePolicy: File
+              imagePullPolicy: IfNotPresent
+          restartPolicy: Never
+          terminationGracePeriodSeconds: 30
+          dnsPolicy: ClusterFirst
+          automountServiceAccountToken: false
+          hostname: unas-cron
+          schedulerName: default-scheduler
+  successfulJobsHistoryLimit: 1
+  failedJobsHistoryLimit: 1

@@ -24,7 +24,7 @@ spec:
 kind: Ingress
 apiVersion: networking.k8s.io/v1
 metadata:
-  name: prometheus-truenas
+  name: prometheus-nas
   namespace: prometheus
   labels:
     app.kubernetes.io/instance: prometheus
@@ -33,14 +33,14 @@ metadata:
 spec:
   ingressClassName: openshift-default
   rules:
-    - host: prometheus-truenas.app.okd.homelab.arthurvardevanyan.com
+    - host: prometheus-nas.app.okd.homelab.arthurvardevanyan.com
       http:
         paths:
           - path: ""
             pathType: ImplementationSpecific
             backend:
               service:
-                name: prometheus-truenas
+                name: prometheus-nas
                 port:
                   name: metrics
 ---

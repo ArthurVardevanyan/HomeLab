@@ -16,6 +16,8 @@ resource "zitadel_application_oidc" "okd" {
   redirect_uris = [
     "https://oauth-openshift.apps.okd.homelab.arthurvardevanyan.com/oauth2callback/zitadel",
     "https://oauth-openshift.apps.okd.virt.arthurvardevanyan.com/oauth2callback/zitadel",
+    "https://argocd.app.okd.homelab.arthurvardevanyan.com/auth/callback",
+    "https://argocd-apps.app.okd.homelab.arthurvardevanyan.com/auth/callback",
   ]
   response_types              = ["OIDC_RESPONSE_TYPE_CODE"]
   grant_types                 = ["OIDC_GRANT_TYPE_AUTHORIZATION_CODE"]
@@ -28,7 +30,7 @@ resource "zitadel_application_oidc" "okd" {
   access_token_type           = "OIDC_TOKEN_TYPE_BEARER"
   access_token_role_assertion = false
   id_token_role_assertion     = false
-  id_token_userinfo_assertion = false
+  id_token_userinfo_assertion = true
   additional_origins          = []
 }
 

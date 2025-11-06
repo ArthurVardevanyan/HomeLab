@@ -1,50 +1,50 @@
-# apiVersion: loki.grafana.com/v1
-# kind: LokiStack
-# metadata:
-#   name: netobserv
-#   namespace: network-observability-loki
-#   annotations:
-#     argocd.argoproj.io/sync-wave: "2"
-#     argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
-# spec:
-#   limits:
-#     global:
-#       retention:
-#         days: 1
-#       ingestion:
-#         ingestionBurstSize: 400
-#         ingestionRate: 200
-#         maxGlobalStreamsPerTenant: 250000
-#       queries:
-#         maxChunksPerQuery: 20000000
-#         maxEntriesLimitPerQuery: 100000
-#         maxQuerySeries: 30000
-#   managementState: Managed
-#   size: 1x.extra-small
-#   storage:
-#     schemas:
-#       - effectiveDate: "2020-10-11"
-#         version: v13
-#     secret:
-#       name: logging-loki-minio
-#       type: s3
-#   storageClassName: rook-ceph-block-ci
-#   tenants:
-#     mode: openshift-network
-#     openshift:
-#       adminGroups:
-#         - cluster-admins
-#   replication:
-#     factor: 2
-#     zones:
-#       - maxSkew: 1
-#         topologyKey: topology.kubernetes.io/zone
-#       - maxSkew: 1
-#         topologyKey: kubernetes.io/hostname
-#   template:
-#     distributor:
-#       replicas: 2
-#     querier:
-#       replicas: 2
-#     ingester:
-#       replicas: 2
+apiVersion: loki.grafana.com/v1
+kind: LokiStack
+metadata:
+  name: netobserv
+  namespace: network-observability-loki
+  annotations:
+    argocd.argoproj.io/sync-wave: "2"
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+spec:
+  limits:
+    global:
+      retention:
+        days: 1
+      ingestion:
+        ingestionBurstSize: 400
+        ingestionRate: 200
+        maxGlobalStreamsPerTenant: 250000
+      queries:
+        maxChunksPerQuery: 20000000
+        maxEntriesLimitPerQuery: 100000
+        maxQuerySeries: 30000
+  managementState: Managed
+  size: 1x.extra-small
+  storage:
+    schemas:
+      - effectiveDate: "2020-10-11"
+        version: v13
+    secret:
+      name: logging-loki-minio
+      type: s3
+  storageClassName: rook-ceph-block-ci
+  tenants:
+    mode: openshift-network
+    openshift:
+      adminGroups:
+        - cluster-admins
+  replication:
+    factor: 2
+    zones:
+      - maxSkew: 1
+        topologyKey: topology.kubernetes.io/zone
+      - maxSkew: 1
+        topologyKey: kubernetes.io/hostname
+  template:
+    distributor:
+      replicas: 2
+    querier:
+      replicas: 2
+    ingester:
+      replicas: 2

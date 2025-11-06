@@ -1,4 +1,3 @@
----
 # Source: stackrox-central-services/templates/01-central-13-deployment.yaml
 apiVersion: apps/v1
 kind: Deployment
@@ -11,8 +10,8 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: stackrox
     app.kubernetes.io/part-of: stackrox-central-services
-    app.kubernetes.io/version: 4.7.2
-    helm.sh/chart: stackrox-central-services-400.7.2
+    app.kubernetes.io/version: 4.8.0
+    helm.sh/chart: stackrox-central-services-400.8.0
     app: central
   annotations:
     email: support@stackrox.com
@@ -28,7 +27,7 @@ metadata:
     checkov.io/skip7: CKV_K8S_38=Security Tool
     checkov.io/skip8: CKV_K8S_40=OpenShift Injects Random UID
 spec:
-  replicas: 0
+  replicas: 1
   minReadySeconds: 15
   selector:
     matchLabels:
@@ -45,8 +44,8 @@ spec:
         app.kubernetes.io/managed-by: Helm
         app.kubernetes.io/name: stackrox
         app.kubernetes.io/part-of: stackrox-central-services
-        app.kubernetes.io/version: 4.7.2
-        helm.sh/chart: stackrox-central-services-400.7.2
+        app.kubernetes.io/version: 4.8.0
+        helm.sh/chart: stackrox-central-services-400.8.0
       annotations:
         traffic.sidecar.istio.io/excludeInboundPorts: "8443"
         email: support@stackrox.com
@@ -80,18 +79,13 @@ spec:
                   - key: node-role.kubernetes.io/control-plane
                     operator: DoesNotExist
               weight: 100
-            - preference:
-                matchExpressions:
-                  - key: node-role.kubernetes.io/control-plane
-                    operator: DoesNotExist
-              weight: 100
       serviceAccountName: central
       securityContext:
         fsGroup: 4000
         runAsUser: 4000
       containers:
         - name: central
-          image: "quay.io/stackrox-io/main:4.7.2@sha256:904d9ab92b2f20f7fee3a9d04900dcf330d2e2bf3f088cf45d17afc2f64e0635"
+          image: "quay.io/stackrox-io/main:4.8.0@sha256:b46f3af214cc748c61a044865e8c52ae318ec1f5fa6edede4eef66b14d38095d"
           command:
             - /stackrox/central-entrypoint.sh
           ports:
@@ -106,11 +100,11 @@ spec:
               port: 8443
           resources:
             limits:
-              cpu: 4000m
-              memory: 8Gi
+              cpu: 500m
+              memory: 768Mi
             requests:
-              cpu: 1500m
-              memory: 4Gi
+              cpu: 10m
+              memory: 256Mi
           securityContext:
             capabilities:
               drop: ["NET_RAW"]
@@ -128,6 +122,10 @@ spec:
               valueFrom:
                 fieldRef:
                   fieldPath: metadata.namespace
+            - name: POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
             - name: ROX_TELEMETRY_ENDPOINT
               value: "https://console.redhat.com/connections/api"
             - name: ROX_TELEMETRY_API_WHITELIST
@@ -142,6 +140,8 @@ spec:
               value: "true"
             - name: ROX_INSTALL_METHOD
               value: "helm"
+            - name: ROX_SCANNER_V4
+              value: "true"
 
           volumeMounts:
             - name: varlog
@@ -264,6 +264,7 @@ spec:
               - key: ca-bundle.crt
                 path: tls-ca-bundle.pem
             optional: true
+      enableServiceLinks: false
 ---
 # Source: stackrox-central-services/templates/02-config-controller-02-deployment.yaml
 apiVersion: apps/v1
@@ -278,15 +279,15 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: stackrox
     app.kubernetes.io/part-of: stackrox-central-services
-    app.kubernetes.io/version: 4.7.2
-    helm.sh/chart: stackrox-central-services-400.7.2
+    app.kubernetes.io/version: 4.8.0
+    helm.sh/chart: stackrox-central-services-400.8.0
   annotations:
     email: support@stackrox.com
     meta.helm.sh/release-name: stackrox-central-services
     meta.helm.sh/release-namespace: stackrox
     owner: stackrox
 spec:
-  replicas: 0
+  replicas: 1
   minReadySeconds: 15
   selector:
     matchLabels:
@@ -303,22 +304,54 @@ spec:
         app.kubernetes.io/managed-by: Helm
         app.kubernetes.io/name: stackrox
         app.kubernetes.io/part-of: stackrox-central-services
-        app.kubernetes.io/version: 4.7.2
-        helm.sh/chart: stackrox-central-services-400.7.2
+        app.kubernetes.io/version: 4.8.0
+        helm.sh/chart: stackrox-central-services-400.8.0
       annotations:
         email: support@stackrox.com
         meta.helm.sh/release-name: stackrox-central-services
         meta.helm.sh/release-namespace: stackrox
         owner: stackrox
     spec:
+      affinity:
+        nodeAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - preference:
+                matchExpressions:
+                  - key: cloud.google.com/gke-preemptible
+                    operator: NotIn
+                    values:
+                      - "true"
+              weight: 100
+            - preference:
+                matchExpressions:
+                  - key: node-role.kubernetes.io/infra
+                    operator: Exists
+              weight: 50
+            - preference:
+                matchExpressions:
+                  - key: node-role.kubernetes.io/compute
+                    operator: Exists
+              weight: 25
+            - preference:
+                matchExpressions:
+                  - key: node-role.kubernetes.io/control-plane
+                    operator: DoesNotExist
+              weight: 100
       serviceAccountName: config-controller
       containers:
         - name: manager
-          image: "quay.io/stackrox-io/main:4.7.2@sha256:904d9ab92b2f20f7fee3a9d04900dcf330d2e2bf3f088cf45d17afc2f64e0635"
+          image: "quay.io/stackrox-io/main:4.8.0@sha256:b46f3af214cc748c61a044865e8c52ae318ec1f5fa6edede4eef66b14d38095d"
           command:
             - /stackrox/bin/config-controller
           args:
             - --health-probe-bind-address=:8081
+          resources:
+            limits:
+              cpu: 250m
+              memory: 192Mi
+            requests:
+              cpu: 10m
+              memory: 96Mi
           env:
             - name: POD_NAMESPACE
               valueFrom:
@@ -344,13 +377,6 @@ spec:
               port: 8081
             initialDelaySeconds: 5
             periodSeconds: 10
-          resources:
-            requests:
-              cpu: "10m"
-              memory: "64Mi"
-            limits:
-              cpu: "500m"
-              memory: "128Mi"
           volumeMounts:
             - mountPath: /run/secrets/stackrox.io/certs/
               name: central-certs-volume
@@ -364,6 +390,7 @@ spec:
               - key: ca.pem
                 path: ca.pem
             secretName: central-tls
+      enableServiceLinks: false
 ---
 # Source: stackrox-central-services/templates/02-scanner-06-deployment.yaml
 apiVersion: apps/v1
@@ -378,8 +405,8 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: stackrox
     app.kubernetes.io/part-of: stackrox-central-services
-    app.kubernetes.io/version: 4.7.2
-    helm.sh/chart: stackrox-central-services-400.7.2
+    app.kubernetes.io/version: 4.8.0
+    helm.sh/chart: stackrox-central-services-400.8.0
   annotations:
     email: support@stackrox.com
     meta.helm.sh/release-name: stackrox-central-services
@@ -395,7 +422,7 @@ metadata:
     checkov.io/skip8: CKV_K8S_38=Security Tool
     checkov.io/skip9: CKV_K8S_40=OpenShift Injects Random UID
 spec:
-  replicas: 0
+  #replicas: 3
   minReadySeconds: 15
   selector:
     matchLabels:
@@ -412,8 +439,8 @@ spec:
         app.kubernetes.io/managed-by: Helm
         app.kubernetes.io/name: stackrox
         app.kubernetes.io/part-of: stackrox-central-services
-        app.kubernetes.io/version: 4.7.2
-        helm.sh/chart: stackrox-central-services-400.7.2
+        app.kubernetes.io/version: 4.8.0
+        helm.sh/chart: stackrox-central-services-400.8.0
       annotations:
         traffic.sidecar.istio.io/excludeInboundPorts: "8080,8443"
         email: support@stackrox.com
@@ -440,11 +467,6 @@ spec:
                   - key: node-role.kubernetes.io/control-plane
                     operator: DoesNotExist
               weight: 100
-            - preference:
-                matchExpressions:
-                  - key: node-role.kubernetes.io/control-plane
-                    operator: DoesNotExist
-              weight: 100
         podAntiAffinity:
           preferredDuringSchedulingIgnoredDuringExecution:
             - podAffinityTerm:
@@ -456,7 +478,7 @@ spec:
       containers:
         - name: scanner
 
-          image: "quay.io/stackrox-io/scanner:4.7.2@sha256:07bbdb588e896979e475f890653b31f23d14e6a4f9eac34f55abc7815848711a"
+          image: "quay.io/stackrox-io/scanner:4.8.0@sha256:82380937cce50b22bb2c0aedd1dcc3bdd7cb8d2d9f277b0202fc00ef2581b6e5"
           env:
             - name: ROX_MEMLIMIT
               valueFrom:
@@ -483,7 +505,7 @@ spec:
               memory: 1Gi
             requests:
               cpu: 10m
-              memory: 500Mi
+              memory: 256Mi
           command:
             - /entrypoint.sh
           ports:
@@ -569,6 +591,7 @@ spec:
               - key: ca-bundle.crt
                 path: tls-ca-bundle.pem
             optional: true
+      enableServiceLinks: false
 ---
 # Source: stackrox-central-services/templates/02-scanner-06-deployment.yaml
 apiVersion: apps/v1
@@ -583,8 +606,8 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: stackrox
     app.kubernetes.io/part-of: stackrox-central-services
-    app.kubernetes.io/version: 4.7.2
-    helm.sh/chart: stackrox-central-services-400.7.2
+    app.kubernetes.io/version: 4.8.0
+    helm.sh/chart: stackrox-central-services-400.8.0
   annotations:
     email: support@stackrox.com
     meta.helm.sh/release-name: stackrox-central-services
@@ -602,7 +625,7 @@ metadata:
     checkov.io/skip10: CKV_K8S_38=Security Tool
     checkov.io/skip11: CKV_K8S_40=OpenShift Injects Random UID
 spec:
-  replicas: 0
+  replicas: 1
   minReadySeconds: 15
   selector:
     matchLabels:
@@ -619,8 +642,8 @@ spec:
         app.kubernetes.io/managed-by: Helm
         app.kubernetes.io/name: stackrox
         app.kubernetes.io/part-of: stackrox-central-services
-        app.kubernetes.io/version: 4.7.2
-        helm.sh/chart: stackrox-central-services-400.7.2
+        app.kubernetes.io/version: 4.8.0
+        helm.sh/chart: stackrox-central-services-400.8.0
       annotations:
         traffic.sidecar.istio.io/excludeInboundPorts: "5432"
         email: support@stackrox.com
@@ -650,13 +673,6 @@ spec:
                 matchExpressions:
                   - key: node-role.kubernetes.io/compute
                     operator: Exists
-            # From v1.20 node-role.kubernetes.io/control-plane replaces node-role.kubernetes.io/control-plane (removed in
-            # v1.25). We apply both because our goal is not to run pods on control plane nodes for any version of k8s.
-            - weight: 100
-              preference:
-                matchExpressions:
-                  - key: node-role.kubernetes.io/control-plane
-                    operator: DoesNotExist
             - weight: 100
               preference:
                 matchExpressions:
@@ -664,7 +680,7 @@ spec:
                     operator: DoesNotExist
       initContainers:
         - name: init-db
-          image: "quay.io/stackrox-io/scanner-db:4.7.2@sha256:796b3421864aea819fea346eaac89c0b7d1dbb02ea9e265bc545f8a0715f5c05"
+          image: "quay.io/stackrox-io/scanner-db:4.8.0@sha256:a53bf59f19eef213d9af6ba9125a2d2a5f5ee9262c6f8e61c1758eaa434f7609"
           env:
             - name: POSTGRES_PASSWORD_FILE
               value: "/run/secrets/stackrox.io/secrets/password"
@@ -673,7 +689,7 @@ spec:
           resources:
             limits:
               cpu: 2000m
-              memory: 4Gi
+              memory: 3Gi
             requests:
               cpu: 10m
               memory: 200Mi
@@ -688,7 +704,7 @@ spec:
               readOnly: true
       containers:
         - name: db
-          image: "quay.io/stackrox-io/scanner-db:4.7.2@sha256:796b3421864aea819fea346eaac89c0b7d1dbb02ea9e265bc545f8a0715f5c05"
+          image: "quay.io/stackrox-io/scanner-db:4.8.0@sha256:a53bf59f19eef213d9af6ba9125a2d2a5f5ee9262c6f8e61c1758eaa434f7609"
           ports:
             - name: tcp-postgresql
               protocol: TCP
@@ -698,8 +714,8 @@ spec:
               cpu: 300m
               memory: 3Gi
             requests:
-              cpu: 100m
-              memory: 1536Mi
+              cpu: 10m
+              memory: 768Mi
           volumeMounts:
             - name: scanner-db-data
               mountPath: /var/lib/postgresql/data
@@ -732,3 +748,583 @@ spec:
         - name: scanner-db-password
           secret:
             secretName: scanner-db-password
+      enableServiceLinks: false
+---
+# Source: stackrox-central-services/templates/02-scanner-v4-07-db-deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: scanner-v4-db
+  namespace: stackrox
+  labels:
+    app: scanner-v4-db
+    app.kubernetes.io/component: scanner-v4
+    app.kubernetes.io/instance: stackrox-central-services
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: stackrox
+    app.kubernetes.io/part-of: stackrox-central-services
+    app.kubernetes.io/version: 4.8.0
+    helm.sh/chart: stackrox-central-services-400.8.0
+  annotations:
+    email: support@stackrox.com
+    meta.helm.sh/release-name: stackrox-central-services
+    meta.helm.sh/release-namespace: stackrox
+    owner: stackrox
+spec:
+  replicas: 1
+  minReadySeconds: 15
+  selector:
+    matchLabels:
+      app: scanner-v4-db
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      namespace: stackrox
+      labels:
+        app: scanner-v4-db
+        app.kubernetes.io/component: scanner-v4
+        app.kubernetes.io/instance: stackrox-central-services
+        app.kubernetes.io/managed-by: Helm
+        app.kubernetes.io/name: stackrox
+        app.kubernetes.io/part-of: stackrox-central-services
+        app.kubernetes.io/version: 4.8.0
+        helm.sh/chart: stackrox-central-services-400.8.0
+      annotations:
+        traffic.sidecar.istio.io/excludeInboundPorts: "5432"
+        email: support@stackrox.com
+        meta.helm.sh/release-name: stackrox-central-services
+        meta.helm.sh/release-namespace: stackrox
+        owner: stackrox
+        openshift.io/required-scc: nonroot-v2
+    spec:
+      affinity:
+        nodeAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - preference:
+                matchExpressions:
+                  - key: cloud.google.com/gke-preemptible
+                    operator: NotIn
+                    values:
+                      - "true"
+              weight: 100
+            - preference:
+                matchExpressions:
+                  - key: node-role.kubernetes.io/infra
+                    operator: Exists
+              weight: 50
+            - preference:
+                matchExpressions:
+                  - key: node-role.kubernetes.io/compute
+                    operator: Exists
+              weight: 25
+            - preference:
+                matchExpressions:
+                  - key: node-role.kubernetes.io/control-plane
+                    operator: DoesNotExist
+              weight: 100
+      serviceAccountName: scanner-v4
+      terminationGracePeriodSeconds: 120
+      initContainers:
+        - name: init-db
+          image: "quay.io/stackrox-io/scanner-v4-db:4.8.0@sha256:c844450f16d5cff16f940b353144b8c5af82a1ed6629e76fc8ba5b958f54ed61"
+          env:
+            - name: PGDATA
+              value: "/var/lib/postgresql/data/pgdata"
+            - name: POSTGRES_HOST_AUTH_METHOD
+              value: "scram-sha-256"
+            - name: POSTGRES_PASSWORD_FILE
+              value: "/run/secrets/stackrox.io/secrets/password"
+            - name: SCANNER_DB_INIT_BUNDLE_ENABLED
+              value: "true"
+          command:
+            - init-entrypoint.sh
+          volumeMounts:
+            - name: disk
+              mountPath: /var/lib/postgresql/data
+            - name: scanner-v4-db-password
+              mountPath: /run/secrets/stackrox.io/secrets
+              readOnly: true
+          resources:
+            limits:
+              cpu: 1000m
+              memory: 4Gi
+            requests:
+              cpu: 10m
+              memory: 2Gi
+      containers:
+        - name: db
+          image: "quay.io/stackrox-io/scanner-v4-db:4.8.0@sha256:c844450f16d5cff16f940b353144b8c5af82a1ed6629e76fc8ba5b958f54ed61"
+          env:
+            - name: PGDATA
+              value: "/var/lib/postgresql/data/pgdata"
+            - name: POSTGRES_HOST_AUTH_METHOD
+              value: "scram-sha-256"
+
+          ports:
+            - name: tcp-postgresql
+              containerPort: 5432
+              protocol: TCP
+          readinessProbe:
+            exec:
+              command:
+                - /bin/sh
+                - -c
+                - -e
+                - |
+                  exec pg_isready -U "postgres" -h 127.0.0.1 -p 5432
+            failureThreshold: 3
+            periodSeconds: 10
+            successThreshold: 1
+            timeoutSeconds: 1
+          resources:
+            limits:
+              cpu: 1000m
+              memory: 4Gi
+            requests:
+              cpu: 10m
+              memory: 2Gi
+          volumeMounts:
+            - name: disk
+              mountPath: /var/lib/postgresql/data
+            - name: config-volume
+              mountPath: /etc/stackrox.d/config/
+            - name: certs
+              mountPath: /run/secrets/stackrox.io/certs
+            - name: shared-memory
+              mountPath: /dev/shm
+      securityContext:
+        fsGroup: 70
+        runAsUser: 70
+        runAsNonRoot: true
+        runAsGroup: 70
+      volumes:
+        - name: disk
+          persistentVolumeClaim:
+            claimName: scanner-v4-db
+        - name: config-volume
+          configMap:
+            name: scanner-v4-db-config
+        - name: certs
+          secret:
+            secretName: scanner-v4-db-tls
+            defaultMode: 0640
+            items:
+              - key: cert.pem
+                path: server.crt
+              - key: key.pem
+                path: server.key
+              - key: ca.pem
+                path: root.crt
+        - name: shared-memory
+          emptyDir:
+            medium: Memory
+            sizeLimit: 750Mi
+        - name: scanner-v4-db-password
+          secret:
+            secretName: scanner-v4-db-password
+      enableServiceLinks: false
+---
+# Source: stackrox-central-services/templates/02-scanner-v4-07-indexer-deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: scanner-v4-indexer
+  namespace: stackrox
+  labels:
+    app: scanner-v4-indexer
+    app.kubernetes.io/component: scanner-v4
+    app.kubernetes.io/instance: stackrox-central-services
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: stackrox
+    app.kubernetes.io/part-of: stackrox-central-services
+    app.kubernetes.io/version: 4.8.0
+    helm.sh/chart: stackrox-central-services-400.8.0
+  annotations:
+    email: support@stackrox.com
+    meta.helm.sh/release-name: stackrox-central-services
+    meta.helm.sh/release-namespace: stackrox
+    owner: stackrox
+spec:
+  #replicas: 3
+  minReadySeconds: 15
+  selector:
+    matchLabels:
+      app: scanner-v4-indexer
+  strategy:
+    type: RollingUpdate
+  template:
+    metadata:
+      namespace: stackrox
+      labels:
+        app: scanner-v4-indexer
+        app.kubernetes.io/component: scanner-v4
+        app.kubernetes.io/instance: stackrox-central-services
+        app.kubernetes.io/managed-by: Helm
+        app.kubernetes.io/name: stackrox
+        app.kubernetes.io/part-of: stackrox-central-services
+        app.kubernetes.io/version: 4.8.0
+        helm.sh/chart: stackrox-central-services-400.8.0
+      annotations:
+        email: support@stackrox.com
+        meta.helm.sh/release-name: stackrox-central-services
+        meta.helm.sh/release-namespace: stackrox
+        openshift.io/required-scc: restricted-v2
+        owner: stackrox
+        traffic.sidecar.istio.io/excludeInboundPorts: "8443"
+    spec:
+      affinity:
+        nodeAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - preference:
+                matchExpressions:
+                  - key: node-role.kubernetes.io/infra
+                    operator: Exists
+              weight: 50
+            - preference:
+                matchExpressions:
+                  - key: node-role.kubernetes.io/compute
+                    operator: Exists
+              weight: 25
+            - preference:
+                matchExpressions:
+                  - key: node-role.kubernetes.io/control-plane
+                    operator: DoesNotExist
+              weight: 100
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - podAffinityTerm:
+                labelSelector:
+                  matchLabels:
+                    app: scanner-v4-indexer
+                topologyKey: kubernetes.io/hostname
+              weight: 100
+      containers:
+        - name: indexer
+          image: "quay.io/stackrox-io/scanner-v4:4.8.0@sha256:3214df16bbe6d955addfc8553d39fef5929d09a78a2e153d903e74e5c1824dde"
+          env:
+            - name: ROX_MEMLIMIT
+              valueFrom:
+                resourceFieldRef:
+                  resource: limits.memory
+            - name: GOMAXPROCS
+              valueFrom:
+                resourceFieldRef:
+                  resource: limits.cpu
+            - name: POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: POD_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+            - name: ROX_CENTRAL_ENDPOINT
+              value: "central.stackrox.svc:443"
+            - name: ROX_OPENSHIFT_API
+              value: "true"
+            - name: ROX_METRICS_PORT
+              value: ":9090"
+            - name: ROX_ENABLE_SECURE_METRICS
+              value: "true"
+            - name: ROX_SECURE_METRICS_PORT
+              value: ":9091"
+
+          resources:
+            limits:
+              cpu: 1000m
+              memory: 768Mi
+            requests:
+              cpu: 10m
+              memory: 384Mi
+          command:
+            - entrypoint.sh
+            - --conf=/etc/scanner/config.yaml
+          ports:
+            - name: grpc
+              containerPort: 8443
+
+            - containerPort: 9091
+              name: monitoring-tls
+          securityContext:
+            capabilities:
+              drop: ["NET_RAW"]
+            runAsNonRoot: true
+          readinessProbe:
+            httpGet:
+              scheme: HTTPS
+              path: /health/readiness
+              port: 9443
+            periodSeconds: 5
+            timeoutSeconds: 1
+          volumeMounts:
+            - name: additional-ca-volume
+              mountPath: /usr/local/share/ca-certificates/
+              readOnly: true
+            - name: etc-ssl-volume
+              mountPath: /etc/ssl
+            - name: etc-pki-volume
+              mountPath: /etc/pki/ca-trust
+            - name: certs
+              mountPath: /run/secrets/stackrox.io/certs/
+              readOnly: true
+            - name: config-volume
+              mountPath: /etc/scanner
+              readOnly: true
+            - name: proxy-config-volume
+              mountPath: /run/secrets/stackrox.io/proxy-config/
+              readOnly: true
+            - name: tmp-volume
+              mountPath: /tmp
+            - name: db-password
+              mountPath: /run/secrets/stackrox.io/secrets
+              readOnly: true
+            - name: monitoring-tls
+              mountPath: /run/secrets/stackrox.io/monitoring-tls
+              readOnly: true
+
+            - name: trusted-ca-volume
+              mountPath: /etc/pki/injected-ca-trust/
+              readOnly: true
+
+      securityContext:
+        runAsNonRoot: true
+      serviceAccountName: scanner-v4
+      volumes:
+        - name: additional-ca-volume
+          secret:
+            optional: true
+            secretName: additional-ca
+        - name: etc-ssl-volume
+          emptyDir: {}
+        - name: etc-pki-volume
+          emptyDir: {}
+        - name: certs
+          secret:
+            secretName: scanner-v4-indexer-tls
+        - name: config-volume
+          configMap:
+            name: scanner-v4-indexer-config
+        - name: proxy-config-volume
+          secret:
+            secretName: proxy-config
+            optional: true
+        - name: tmp-volume
+          emptyDir: {}
+        - name: db-password
+          secret:
+            secretName: scanner-v4-db-password
+        - name: monitoring-tls
+          secret:
+            secretName: scanner-v4-indexer-monitoring-tls
+
+        - name: trusted-ca-volume
+          configMap:
+            name: injected-cabundle-stackrox-central-services
+            items:
+              - key: ca-bundle.crt
+                path: tls-ca-bundle.pem
+            optional: true
+      enableServiceLinks: false
+---
+# Source: stackrox-central-services/templates/02-scanner-v4-07-matcher-deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: scanner-v4-matcher
+  namespace: stackrox
+  labels:
+    app: scanner-v4-matcher
+    app.kubernetes.io/component: scanner-v4
+    app.kubernetes.io/instance: stackrox-central-services
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: stackrox
+    app.kubernetes.io/part-of: stackrox-central-services
+    app.kubernetes.io/version: 4.8.0
+    helm.sh/chart: stackrox-central-services-400.8.0
+  annotations:
+    email: support@stackrox.com
+    meta.helm.sh/release-name: stackrox-central-services
+    meta.helm.sh/release-namespace: stackrox
+    owner: stackrox
+spec:
+  #replicas: 2
+  minReadySeconds: 15
+  selector:
+    matchLabels:
+      app: scanner-v4-matcher
+  strategy:
+    type: RollingUpdate
+  template:
+    metadata:
+      namespace: stackrox
+      labels:
+        app: scanner-v4-matcher
+        app.kubernetes.io/component: scanner-v4
+        app.kubernetes.io/instance: stackrox-central-services
+        app.kubernetes.io/managed-by: Helm
+        app.kubernetes.io/name: stackrox
+        app.kubernetes.io/part-of: stackrox-central-services
+        app.kubernetes.io/version: 4.8.0
+        helm.sh/chart: stackrox-central-services-400.8.0
+      annotations:
+        email: support@stackrox.com
+        meta.helm.sh/release-name: stackrox-central-services
+        meta.helm.sh/release-namespace: stackrox
+        openshift.io/required-scc: restricted-v2
+        owner: stackrox
+        traffic.sidecar.istio.io/excludeInboundPorts: "8443"
+    spec:
+      affinity:
+        nodeAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - preference:
+                matchExpressions:
+                  - key: node-role.kubernetes.io/infra
+                    operator: Exists
+              weight: 50
+            - preference:
+                matchExpressions:
+                  - key: node-role.kubernetes.io/compute
+                    operator: Exists
+              weight: 25
+            - preference:
+                matchExpressions:
+                  - key: node-role.kubernetes.io/control-plane
+                    operator: DoesNotExist
+              weight: 100
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - podAffinityTerm:
+                labelSelector:
+                  matchLabels:
+                    app: scanner-v4-matcher
+                topologyKey: kubernetes.io/hostname
+              weight: 100
+      containers:
+        - name: matcher
+          image: "quay.io/stackrox-io/scanner-v4:4.8.0@sha256:3214df16bbe6d955addfc8553d39fef5929d09a78a2e153d903e74e5c1824dde"
+          env:
+            - name: ROX_MEMLIMIT
+              valueFrom:
+                resourceFieldRef:
+                  resource: requests.memory
+            - name: GOMAXPROCS
+              valueFrom:
+                resourceFieldRef:
+                  resource: limits.cpu
+            - name: POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: POD_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+            - name: ROX_CENTRAL_ENDPOINT
+              value: "central.stackrox.svc:443"
+            - name: ROX_OPENSHIFT_API
+              value: "true"
+            - name: ROX_METRICS_PORT
+              value: ":9090"
+            - name: ROX_ENABLE_SECURE_METRICS
+              value: "true"
+            - name: ROX_SECURE_METRICS_PORT
+              value: ":9091"
+
+          resources:
+            limits:
+              cpu: 100m
+              memory: 768Mi
+            requests:
+              cpu: 10m
+              memory: 256Mi
+          command:
+            - entrypoint.sh
+            - --conf=/etc/scanner/config.yaml
+          ports:
+            - name: grpc
+              containerPort: 8443
+
+            - containerPort: 9091
+              name: monitoring-tls
+          securityContext:
+            capabilities:
+              drop: ["NET_RAW"]
+            runAsNonRoot: true
+          readinessProbe:
+            httpGet:
+              scheme: HTTPS
+              path: /health/readiness
+              port: 9443
+            periodSeconds: 5
+            timeoutSeconds: 1
+          volumeMounts:
+            - name: additional-ca-volume
+              mountPath: /usr/local/share/ca-certificates/
+              readOnly: true
+            - name: etc-ssl-volume
+              mountPath: /etc/ssl
+            - name: etc-pki-volume
+              mountPath: /etc/pki/ca-trust
+            - name: tls-volume
+              mountPath: /run/secrets/stackrox.io/certs/
+              readOnly: true
+            - name: config-volume
+              mountPath: /etc/scanner
+              readOnly: true
+            - name: proxy-config-volume
+              mountPath: /run/secrets/stackrox.io/proxy-config/
+              readOnly: true
+            - name: tmp-volume
+              mountPath: /tmp
+            - name: db-password
+              mountPath: /run/secrets/stackrox.io/secrets
+              readOnly: true
+            - name: monitoring-tls
+              mountPath: /run/secrets/stackrox.io/monitoring-tls
+              readOnly: true
+
+            - name: trusted-ca-volume
+              mountPath: /etc/pki/injected-ca-trust/
+              readOnly: true
+
+      securityContext:
+        runAsNonRoot: true
+      serviceAccountName: scanner-v4
+      volumes:
+        - name: additional-ca-volume
+          secret:
+            optional: true
+            secretName: additional-ca
+        - name: etc-ssl-volume
+          emptyDir: {}
+        - name: etc-pki-volume
+          emptyDir: {}
+        - name: tls-volume
+          secret:
+            secretName: scanner-v4-matcher-tls
+        - name: config-volume
+          configMap:
+            name: scanner-v4-matcher-config
+        - name: proxy-config-volume
+          secret:
+            secretName: proxy-config
+            optional: true
+        - name: tmp-volume
+          emptyDir: {}
+        - name: db-password
+          secret:
+            secretName: scanner-v4-db-password
+        - name: monitoring-tls
+          secret:
+            secretName: scanner-v4-matcher-monitoring-tls
+
+        - name: trusted-ca-volume
+          configMap:
+            name: injected-cabundle-stackrox-central-services
+            items:
+              - key: ca-bundle.crt
+                path: tls-ca-bundle.pem
+            optional: true
+      enableServiceLinks: false

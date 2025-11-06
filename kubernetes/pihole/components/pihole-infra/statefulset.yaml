@@ -42,7 +42,7 @@ spec:
         nameservers:
           - 10.101.11.1
       containers:
-        - image: docker.io/pihole/pihole:2025.06.2@sha256:706fa18daedc85b73684b57468b7e20ec213cfaf98be735aadee183825188ea0
+        - image: docker.io/pihole/pihole:2025.08.0@sha256:90a1412b3d3037d1c22131402bde19180d898255b584d685c84d943cf9c14821
           imagePullPolicy: IfNotPresent
           name: pihole-infra
           env:
@@ -142,7 +142,7 @@ spec:
             requests:
               cpu: 5m
               memory: 96Mi
-          image: docker.io/ekofr/pihole-exporter:v1.0.1@sha256:c33eec2a8308fa510608b93d4921bb62f75f6132f8792b24e63972835f624496
+          image: docker.io/ekofr/pihole-exporter:v1.2.0@sha256:242c53ef3c24b88fcbe8184390b456d05604bd50de5732ca3fd3eb24395585b3
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 9617
@@ -175,3 +175,4 @@ spec:
         - name: var-log
           emptyDir:
             sizeLimit: 25Gi
+      enableServiceLinks: false

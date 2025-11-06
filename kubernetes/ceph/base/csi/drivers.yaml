@@ -1,0 +1,227 @@
+apiVersion: csi.ceph.io/v1
+kind: Driver
+metadata:
+  name: rook-ceph.rbd.csi.ceph.com
+  namespace: rook-ceph
+  annotations:
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+spec:
+  liveness:
+    metricsPort: 9080
+  fsGroupPolicy: File
+  log: {}
+  deployCsiAddons: false
+  clusterName: rook-ceph
+  imageSet:
+    name: rook-csi-operator-image-set-configmap
+  cephFsClientType: kernel
+  controllerPlugin:
+    affinity:
+      nodeAffinity:
+        requiredDuringSchedulingIgnoredDuringExecution:
+          nodeSelectorTerms:
+            - matchExpressions:
+                - key: node-role.kubernetes.io/control-plane
+                  operator: Exists
+    annotations:
+      k8s.v1.cni.cncf.io/networks: '[{"name":"ceph-public","namespace":"rook-ceph"}]'
+    hostNetwork: false
+    imagePullPolicy: ""
+    priorityClassName: system-node-critical
+    replicas: 2
+    resources:
+      attacher:
+        limits:
+          memory: 256Mi
+          cpu: 50m
+        requests:
+          cpu: 5m
+          memory: 64Mi
+      liveness:
+        limits:
+          memory: 256Mi
+          cpu: 50m
+        requests:
+          cpu: 5m
+          memory: 128Mi
+      plugin:
+        limits:
+          memory: 1Gi
+          cpu: 50m
+        requests:
+          cpu: 5m
+          memory: 72Mi
+      provisioner:
+        limits:
+          memory: 256Mi
+          cpu: 50m
+        requests:
+          cpu: 5m
+          memory: 64Mi
+      resizer:
+        limits:
+          memory: 256Mi
+          cpu: 50m
+        requests:
+          cpu: 5m
+          memory: 64Mi
+      snapshotter:
+        limits:
+          memory: 256Mi
+          cpu: 50m
+        requests:
+          cpu: 5m
+          memory: 64Mi
+    tolerations:
+      - key: node-role.kubernetes.io/control-plane
+        operator: Exists
+  generateOMapInfo: false
+  enableMetadata: true
+  nodePlugin:
+    affinity:
+      nodeAffinity: {}
+    enableSeLinuxHostMount: false
+    imagePullPolicy: ""
+    kubeletDirPath: /var/lib/kubelet
+    priorityClassName: system-cluster-critical
+    resources:
+      liveness:
+        limits:
+          memory: 256Mi
+          cpu: 50m
+        requests:
+          cpu: 5m
+          memory: 128Mi
+      plugin:
+        limits:
+          memory: 1Gi
+          cpu: 50m
+        requests:
+          cpu: 5m
+          memory: 72Mi
+      registrar:
+        requests:
+          memory: 32Mi
+          cpu: 5m
+        limits:
+          memory: 256Mi
+          cpu: 50m
+    tolerations:
+      - key: node-role.kubernetes.io/control-plane
+        operator: Exists
+    updateStrategy:
+      type: RollingUpdate
+---
+apiVersion: csi.ceph.io/v1
+kind: Driver
+metadata:
+  name: rook-ceph.cephfs.csi.ceph.com
+  namespace: rook-ceph
+  annotations:
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+spec:
+  liveness:
+    metricsPort: 9081
+  fsGroupPolicy: File
+  log: {}
+  deployCsiAddons: false
+  clusterName: rook-ceph
+  imageSet:
+    name: rook-csi-operator-image-set-configmap
+  cephFsClientType: kernel
+  controllerPlugin:
+    affinity:
+      nodeAffinity:
+        requiredDuringSchedulingIgnoredDuringExecution:
+          nodeSelectorTerms:
+            - matchExpressions:
+                - key: node-role.kubernetes.io/control-plane
+                  operator: Exists
+    annotations:
+      k8s.v1.cni.cncf.io/networks: '[{"name":"ceph-public","namespace":"rook-ceph"}]'
+    hostNetwork: false
+    imagePullPolicy: ""
+    priorityClassName: system-node-critical
+    replicas: 2
+    resources:
+      attacher:
+        limits:
+          memory: 256Mi
+          cpu: 50m
+        requests:
+          cpu: 5m
+          memory: 64Mi
+      liveness:
+        limits:
+          memory: 256Mi
+          cpu: 50m
+        requests:
+          cpu: 5m
+          memory: 128Mi
+      plugin:
+        limits:
+          memory: 1Gi
+          cpu: 50m
+        requests:
+          cpu: 5m
+          memory: 72Mi
+      provisioner:
+        limits:
+          memory: 256Mi
+          cpu: 50m
+        requests:
+          cpu: 5m
+          memory: 64Mi
+      resizer:
+        limits:
+          memory: 256Mi
+          cpu: 50m
+        requests:
+          cpu: 5m
+          memory: 64Mi
+      snapshotter:
+        limits:
+          memory: 256Mi
+          cpu: 50m
+        requests:
+          cpu: 5m
+          memory: 64Mi
+    tolerations:
+      - key: node-role.kubernetes.io/control-plane
+        operator: Exists
+  generateOMapInfo: false
+  enableMetadata: true
+  nodePlugin:
+    affinity:
+      nodeAffinity: {}
+    enableSeLinuxHostMount: false
+    imagePullPolicy: ""
+    kubeletDirPath: /var/lib/kubelet
+    priorityClassName: system-cluster-critical
+    resources:
+      liveness:
+        limits:
+          memory: 256Mi
+          cpu: 50m
+        requests:
+          cpu: 5m
+          memory: 128Mi
+      plugin:
+        limits:
+          memory: 1Gi
+          cpu: 50m
+        requests:
+          cpu: 5m
+          memory: 72Mi
+      registrar:
+        requests:
+          memory: 32Mi
+          cpu: 5m
+        limits:
+          cpu: 50m
+          memory: 256Mi
+    tolerations:
+      - key: node-role.kubernetes.io/control-plane
+        operator: Exists
+    updateStrategy:
+      type: RollingUpdate

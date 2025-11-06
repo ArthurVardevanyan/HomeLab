@@ -1,0 +1,27 @@
+kind: KubeDescheduler
+apiVersion: operator.openshift.io/v1
+metadata:
+  name: cluster
+  namespace: openshift-kube-descheduler-operator
+  annotations:
+    annotations:
+    argocd.argoproj.io/sync-wave: "2"
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+spec:
+  profileCustomizations:
+    devEnableEvictionsInBackground: true
+    devLowNodeUtilizationThresholds: High
+    namespaces:
+      excluded:
+        - rook-ceph
+        - github-arc-runners
+        - analytics-for-spotify-ci
+        - finance-tracker-ci
+        - homelab
+  deschedulingIntervalSeconds: 7200
+  managementState: Managed
+  mode: Automatic
+  profiles:
+    # - CompactAndScale
+    - LongLifecycle
+    # - DevKubeVirtRelieveAndMigrate

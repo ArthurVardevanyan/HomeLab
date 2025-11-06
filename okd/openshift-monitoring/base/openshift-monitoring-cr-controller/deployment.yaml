@@ -1,4 +1,3 @@
----
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -33,7 +32,7 @@ spec:
       containers:
         - args:
             - --leader-elect
-          image: registry.arthurvardevanyan.com/homelab/openshift-monitoring-cr-controller@sha256:fce001c87a9963c49f803e24870b670c188a7e93691dd73af2d2a2d45dff2d8c
+          image: registry.arthurvardevanyan.com/homelab/openshift-monitoring-cr-controller@sha256:bafd548e2d965839efd10e894deeae212f0b5fb13e07f2a5bf0f26498aa14b74
           livenessProbe:
             httpGet:
               path: /healthz
@@ -66,3 +65,4 @@ spec:
       serviceAccountName: openshift-monitoring-cr-controller-manager
       terminationGracePeriodSeconds: 10
       automountServiceAccountToken: true
+      enableServiceLinks: false

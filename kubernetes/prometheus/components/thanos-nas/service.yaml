@@ -1,0 +1,35 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: thanos-store-nas-gateway
+  namespace: prometheus
+  labels:
+    app.kubernetes.io/instance: prometheus
+spec:
+  type: ClusterIP
+  clusterIP: None
+  ports:
+    - name: grpc
+      port: 10901
+      targetPort: grpc
+  selector:
+    thanos-store-api-nas: "true"
+---
+kind: Service
+apiVersion: v1
+metadata:
+  name: thanos-prometheus-nas-headless
+  namespace: prometheus
+  labels:
+    app.kubernetes.io/instance: prometheus
+spec:
+  clusterIP: None
+  publishNotReadyAddresses: true
+  type: ClusterIP
+  selector:
+    app: prometheus-nas
+  ports:
+    - name: grpc
+      protocol: TCP
+      port: 10901
+      targetPort: grpc

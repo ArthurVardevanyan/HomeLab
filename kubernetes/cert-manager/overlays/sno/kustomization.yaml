@@ -2,7 +2,7 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
   - ../../base
-  - ../../components/operator
+  - ../../components/yaml
   - ../../components/cloudflare
   - ../../components/network-policy/base
   - ../../components/network-policy/okd
@@ -16,11 +16,31 @@ patches:
         value: 1
     target:
       kind: Deployment
-      name: trust-manager
   - patch: |-
       apiVersion: policy/v1
       kind: PodDisruptionBudget
       metadata:
         name: trust-manager
+        namespace: cert-manager
+      $patch: delete
+  - patch: |-
+      apiVersion: policy/v1
+      kind: PodDisruptionBudget
+      metadata:
+        name: cert-manager-cainjector
+        namespace: cert-manager
+      $patch: delete
+  - patch: |-
+      apiVersion: policy/v1
+      kind: PodDisruptionBudget
+      metadata:
+        name: cert-manager
+        namespace: cert-manager
+      $patch: delete
+  - patch: |-
+      apiVersion: policy/v1
+      kind: PodDisruptionBudget
+      metadata:
+        name: cert-manager-webhook
         namespace: cert-manager
       $patch: delete

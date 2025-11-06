@@ -1,4 +1,3 @@
----
 # Source: longhorn/templates/deployment-driver.yaml
 apiVersion: apps/v1
 kind: Deployment
@@ -58,11 +57,12 @@ spec:
       initContainers:
         - name: wait-longhorn-manager
           image: docker.io/longhornio/longhorn-manager:v1.7.0@sha256:02a98fe2dce45d3bcd3a56955fa5f600f63abaf43debc2ef9a81b44ce47d5ec0
-          command:
-            [
+          command: [
               "sh",
               "-c",
-              'while [ $(curl -m 1 -s -o /dev/null -w "%{http_code}" http://longhorn-backend:9500/v1) != "200" ]; do echo waiting; sleep 2; done',
+              'while [ $(curl -m 1 -s -o /dev/null -w "%{http_code}"
+              http://longhorn-backend:9500/v1) != "200" ]; do echo waiting; sleep
+              2; done',
             ]
           resources:
             requests:
@@ -129,3 +129,4 @@ spec:
       priorityClassName: "longhorn-critical"
       serviceAccountName: longhorn-service-account
       automountServiceAccountToken: true
+      enableServiceLinks: false

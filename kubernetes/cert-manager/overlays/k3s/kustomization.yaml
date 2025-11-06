@@ -2,25 +2,7 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
   - ../../base
-  - ../../components/operator
+  - ../../components/yaml
   - ../../components/cloudflare
   - ../../components/network-policy/base
   - ../../components/network-policy/k3s
-patches:
-  - patch: |-
-      - op: replace
-        path: /spec/source
-        value: operatorhubio-catalog
-      - op: replace
-        path: /spec/sourceNamespace
-        value: olm
-    target:
-      kind: Subscription
-      name: cert-manager
-  - patch: |-
-      - op: add
-        path: /spec/template/spec/containers/0/securityContext/runAsUser
-        value: 65534
-    target:
-      kind: Job
-      name: installplan-approver-cert-manager

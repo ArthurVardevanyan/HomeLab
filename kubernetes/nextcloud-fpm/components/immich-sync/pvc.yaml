@@ -1,0 +1,43 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: nextcloud-immich
+  namespace: nextcloud-fpm
+  labels:
+    velero.io/exclude-from-backup: "true"
+  annotations:
+    argocd.argoproj.io/sync-wave: "4"
+spec:
+  storageClassName: nfs
+  volumeName: nextcloud-immich
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 512Gi
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: nextcloud-immich
+  labels:
+    type: local
+    velero.io/exclude-from-backup: "true"
+  annotations:
+    argocd.argoproj.io/sync-wave: "4"
+spec:
+  storageClassName: nfs
+  volumeMode: Filesystem
+  capacity:
+    storage: 512Gi
+  accessModes:
+    - ReadWriteMany
+  mountOptions:
+    - hard
+    - nfsvers=3 #4.1
+  nfs:
+    path: /var/nfs/shared/immich # /var/nfs/shared/immich *(rw,sync,no_subtree_check,crossmnt,no_root_squash,insecure)
+    server: 10.102.1.6
+  claimRef:
+    name: nextcloud-immich
+    namespace: nextcloud-fpm

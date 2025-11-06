@@ -2,7 +2,7 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
   - ../../base
-  - ../../components/operator
+  - ../../components/yaml
   - ../../components/cloudflare
     # - ../../components/network-policy/base
     # - ../../components/network-policy/okd
@@ -10,11 +10,28 @@ resources:
 patches:
   - patch: |-
       - op: replace
-        path: /spec/source
-        value: operatorhubio-catalog
-      - op: replace
-        path: /spec/sourceNamespace
-        value: olm
+        path: /spec/replicas
+        value: 1
     target:
-      kind: Subscription
-      name: cert-manager
+      kind: Deployment
+  - patch: |-
+      apiVersion: policy/v1
+      kind: PodDisruptionBudget
+      metadata:
+        name: cert-manager-cainjector
+        namespace: cert-manager
+      $patch: delete
+  - patch: |-
+      apiVersion: policy/v1
+      kind: PodDisruptionBudget
+      metadata:
+        name: cert-manager
+        namespace: cert-manager
+      $patch: delete
+  - patch: |-
+      apiVersion: policy/v1
+      kind: PodDisruptionBudget
+      metadata:
+        name: cert-manager-webhook
+        namespace: cert-manager
+      $patch: delete
