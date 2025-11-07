@@ -4,6 +4,15 @@
 kubectl kustomize kubernetes/quay/overlays/okd | argocd-vault-plugin generate - | kubectl apply -f -
 ```
 
+## ShutDown
+
+```bash
+  kubectl scale --replicas=0 -n quay deployment/quay-operator-tng
+  kubectl scale --replicas=0 -n quay deployment/quay-quay-app
+  kubectl scale --replicas=0 -n quay deployment/quay-clair-app
+  kubectl scale --replicas=0 -n quay deployment/quay-quay-mirror
+```
+
 ## REF
 
 - <https://access.redhat.com/documentation/en-us/red_hat_quay/3/html/deploy_red_hat_quay_on_openshift_with_the_quay_operator/operator-config-cli>
