@@ -14,19 +14,23 @@ resource "zitadel_application_oidc" "okd" {
 
   name = "okd"
   redirect_uris = [
+    "https://console-openshift-console.apps.okd.homelab.arthurvardevanyan.com/auth/callback",
     "https://oauth-openshift.apps.okd.homelab.arthurvardevanyan.com/oauth2callback/zitadel",
     "https://oauth-openshift.apps.okd.virt.arthurvardevanyan.com/oauth2callback/zitadel",
     "https://argocd.app.okd.homelab.arthurvardevanyan.com/auth/callback",
     "https://argocd-apps.app.okd.homelab.arthurvardevanyan.com/auth/callback",
+    "http://localhost:*"
   ]
-  response_types              = ["OIDC_RESPONSE_TYPE_CODE"]
-  grant_types                 = ["OIDC_GRANT_TYPE_AUTHORIZATION_CODE"]
-  post_logout_redirect_uris   = []
+  response_types = ["OIDC_RESPONSE_TYPE_CODE"]
+  grant_types    = ["OIDC_GRANT_TYPE_AUTHORIZATION_CODE"]
+  post_logout_redirect_uris = [
+    "https://argocd.app.okd.homelab.arthurvardevanyan.com/auth/callback" # Can't remove this for some reason
+  ]
   app_type                    = "OIDC_APP_TYPE_WEB"
   auth_method_type            = "OIDC_AUTH_METHOD_TYPE_BASIC"
   version                     = "OIDC_VERSION_1_0"
   clock_skew                  = "0s"
-  dev_mode                    = false
+  dev_mode                    = true # For http endpoint
   access_token_type           = "OIDC_TOKEN_TYPE_BEARER"
   access_token_role_assertion = false
   id_token_role_assertion     = false

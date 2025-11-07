@@ -4,3 +4,33 @@ metadata:
   name: cluster
 spec:
   serviceAccountIssuer: https://storage.googleapis.com/okd-homelab-wif-oidc
+  oauthMetadata:
+    name: ""
+  type: "OIDC"
+  oidcProviders:
+    - name: zitadel
+      claimMappings:
+        groups:
+          claim: roles
+        username:
+          claim: preferred_username
+          prefixPolicy: NoPrefix
+      issuer:
+        audiences:
+          - <path:secret/data/homelab/zitadel/okd#client_id>
+        issuerURL: "https://zitadel.arthurvardevanyan.com"
+      oidcClients:
+        - clientID: <path:secret/data/homelab/zitadel/okd#client_id>
+          componentName: console
+          componentNamespace: openshift-console
+          clientSecret:
+            name: zitadel-openid-client
+          extraScopes:
+            - email
+            - profile
+        - clientID: <path:secret/data/homelab/zitadel/okd#client_id>
+          componentName: cli
+          componentNamespace: openshift-console
+          extraScopes:
+            - email
+            - profile
