@@ -2,14 +2,10 @@
 # Containerfile for NVIDIA Driver (driver:570-5.14.0-536.el9.x86_64-scos4.17)
 
 # --- Global build-time args (override with --build-arg) ---
-ARG KERNEL_VERSION=6.12.0-142.el10.x86_64
-ARG DRIVER_VERSION=580.95.05
 ARG BUILD_ARCH=x86_64
 ARG TARGET_ARCH=x86_64
 ARG DRIVER_EPOCH=1
 ARG DRIVER_STREAM_TYPE=stable
-ARG BUILDER_USER="Your Name"
-ARG BUILDER_EMAIL="your@email.com"
 ARG BASE_URL="https://us.download.nvidia.com/tesla"
 
 # Stage 1: Build kernel RPMs (optional, if you already have them, skip this stage)
@@ -53,7 +49,6 @@ if [ -z "${kernel_source_commit}" ] || [ "${kernel_source_commit}" = "null" ]; t
 else
 	fallback_binary=false
 fi
-echo "Kernel source commit: ${kernel_source_commit}"
 echo "Kernel source commit: ${kernel_source_commit}"
 
 if [ "${fallback_binary}" = false ]; then
@@ -124,14 +119,15 @@ ARG BUILD_ARCH
 ARG TARGET_ARCH
 ARG DRIVER_EPOCH
 ARG DRIVER_STREAM_TYPE
-ARG BUILDER_USER
-ARG BUILDER_EMAIL
 ARG BASE_URL
 
 RUN useradd -u 1001 -m -s /bin/bash builder
 
 # Install build tooling required for cloning and building the NVIDIA kmod
-RUN dnf install -y git gcc make perl bc elfutils-libelf-devel openssl curl tar xz jq dnf-plugins-core ca-certificates kmod rsync && dnf clean all
+ARG DNF_FLAGS="--setopt=tsflags=nodocs --setopt=install_weak_deps=0 --setopt=fastestmirror=True"
+RUN dnf install -y $DNF_FLAGS git gcc make perl bc elfutils-libelf-devel openssl curl tar xz jq dnf-plugins-core ca-certificates kmod rsync \
+	&& dnf clean all \
+	&& rm -rf /var/cache/dnf /var/cache/yum
 
 # Copy kernel RPMs from previous stage
 COPY --from=kernel /root/rpmbuild/RPMS/x86_64/kernel-headers-${KERNEL_VERSION}.rpm /tmp/
@@ -139,7 +135,9 @@ COPY --from=kernel /root/rpmbuild/RPMS/x86_64/kernel-devel-${KERNEL_VERSION}.rpm
 COPY --from=kernel /root/rpmbuild/RPMS/x86_64/kernel-core-${KERNEL_VERSION}.rpm /tmp/
 COPY --from=kernel /root/rpmbuild/RPMS/x86_64/kernel-modules-core-${KERNEL_VERSION}.rpm /tmp/
 
-RUN dnf install -y /tmp/kernel-*.rpm && dnf clean all
+RUN dnf install -y $DNF_FLAGS /tmp/kernel-*.rpm \
+	&& dnf clean all \
+	&& rm -rf /var/cache/dnf /var/cache/yum
 
 WORKDIR /root
 
@@ -190,29 +188,34 @@ ENV DRIVER_VERSION=${DRIVER_VERSION} \
 	DRIVER_RUNFILE_DIR=/opt/nvidia/driver \
 	DRIVER_RUNFILE=NVIDIA-Linux-${TARGET_ARCH}-${DRIVER_VERSION}.run
 
-# Install minimal runtime tools and copy staged kernel modules/firmware
-RUN dnf install -y kmod findutils curl ca-certificates util-linux procps iproute lsof pciutils jq gzip xz binutils file make gcc && dnf clean all
+ARG RUNTIME_BUILD=1
+# Install minimal runtime tools and copy staged kernel modules/firmware. If RUNTIME_BUILD=0 skips heavy toolchain.
+ARG DNF_FLAGS="--setopt=tsflags=nodocs --setopt=install_weak_deps=0 --setopt=fastestmirror=True"
+RUN if [ "${RUNTIME_BUILD}" = "1" ]; then \
+	dnf install -y $DNF_FLAGS kmod findutils curl ca-certificates util-linux procps iproute lsof pciutils jq gzip xz binutils file make gcc ; \
+	else \
+	dnf install -y $DNF_FLAGS kmod curl ca-certificates jq gzip xz file ; \
+	fi \
+	&& dnf clean all \
+	&& rm -rf /var/cache/dnf /var/cache/yum
 COPY --from=builder /staging/ /
 # Provide the original NVIDIA runfile and nvidia-installer binary for tooling that expects them at runtime
 RUN mkdir -p /opt/nvidia/driver \
 	&& cp /staging/lib/modules/${KERNEL_VERSION}/source/.config /opt/nvidia/driver/ 2>/dev/null || true
 COPY --from=builder /root/NVIDIA-Linux-${TARGET_ARCH}-${DRIVER_VERSION}.run /opt/nvidia/driver/
 COPY --from=builder /root/nvidia-tmp/nvidia-installer /usr/local/bin/nvidia-installer
-RUN chmod +x /opt/nvidia/driver/NVIDIA-Linux-${TARGET_ARCH}-${DRIVER_VERSION}.run /usr/local/bin/nvidia-installer || true
-# Provide NVIDIA driver sources for runtime packaging/compilation logic
-RUN mkdir -p /usr/src/nvidia-${DRIVER_VERSION}
+RUN chmod +x /opt/nvidia/driver/NVIDIA-Linux-${TARGET_ARCH}-${DRIVER_VERSION}.run /usr/local/bin/nvidia-installer || true \
+	&& mkdir -p /usr/src/nvidia-${DRIVER_VERSION}
 COPY --from=builder /root/nvidia-tmp/kernel /usr/src/nvidia-${DRIVER_VERSION}/
 COPY --from=builder /root/nvidia-tmp/kernel-open /usr/src/nvidia-${DRIVER_VERSION}/
 COPY --from=builder /root/nvidia-tmp/mkprecompiled /usr/src/nvidia-${DRIVER_VERSION}/
 COPY --from=builder /root/nvidia-tmp/LICENSE /usr/src/nvidia-${DRIVER_VERSION}/
 COPY --from=builder /root/nvidia-tmp/.manifest /usr/src/nvidia-${DRIVER_VERSION}/
-RUN chmod +x /usr/src/nvidia-${DRIVER_VERSION}/mkprecompiled || true
-## Ensure expected kernel source directory exists even when only open modules are provided
-RUN if [ -d "/usr/src/nvidia-${DRIVER_VERSION}/kernel-open" ] && [ ! -d "/usr/src/nvidia-${DRIVER_VERSION}/kernel" ]; then \
+RUN chmod +x /usr/src/nvidia-${DRIVER_VERSION}/mkprecompiled || true \
+	&& if [ -d "/usr/src/nvidia-${DRIVER_VERSION}/kernel-open" ] && [ ! -d "/usr/src/nvidia-${DRIVER_VERSION}/kernel" ]; then \
 	ln -s kernel-open "/usr/src/nvidia-${DRIVER_VERSION}/kernel"; \
-	fi
-# Add kernel helper tools extract-vmlinux & unzboot expected by nvidia-driver script
-RUN curl -fsSL -o /usr/local/bin/extract-vmlinux https://raw.githubusercontent.com/torvalds/linux/master/scripts/extract-vmlinux \
+	fi \
+	&& curl -fsSL -o /usr/local/bin/extract-vmlinux https://raw.githubusercontent.com/torvalds/linux/master/scripts/extract-vmlinux \
 	&& chmod +x /usr/local/bin/extract-vmlinux \
 	&& cat > /usr/local/bin/unzboot <<'EOF'
 #!/bin/sh
@@ -236,17 +239,15 @@ RUN chmod +x /usr/local/bin/unzboot
 RUN depmod ${KERNEL_VERSION} || true
 
 # Fetch helper scripts used by NVIDIA driver containers
-RUN curl -fsSL -o /usr/local/bin/ocp_dtk_entrypoint https://raw.githubusercontent.com/NVIDIA/gpu-driver-container/refs/heads/main/rhel9/ocp_dtk_entrypoint && \
-	curl -fsSL -o /usr/local/bin/nvidia-driver https://raw.githubusercontent.com/NVIDIA/gpu-driver-container/refs/heads/main/rhel9/nvidia-driver && \
-	curl -fsSL -o /usr/local/bin/common.sh https://raw.githubusercontent.com/NVIDIA/gpu-driver-container/refs/heads/main/rhel9/common.sh && \
-	# Replace version-pinned gcc install with generic gcc to avoid missing package errors on Stream 10
-	sed -i 's/dnf install -q -y --releasever=\${DNF_RELEASEVER} "gcc-[^"]*"/dnf install -q -y --releasever=\${DNF_RELEASEVER} gcc \|\| true/' /usr/local/bin/nvidia-driver && \
-	# Override network-touching functions to be no-ops at runtime (air-gapped friendly)
-	printf '%s\n' '# --- overrides injected by image build ---' \
+RUN curl -fsSL -o /usr/local/bin/ocp_dtk_entrypoint https://raw.githubusercontent.com/NVIDIA/gpu-driver-container/refs/heads/main/rhel9/ocp_dtk_entrypoint \
+	&& curl -fsSL -o /usr/local/bin/nvidia-driver https://raw.githubusercontent.com/NVIDIA/gpu-driver-container/refs/heads/main/rhel9/nvidia-driver \
+	&& curl -fsSL -o /usr/local/bin/common.sh https://raw.githubusercontent.com/NVIDIA/gpu-driver-container/refs/heads/main/rhel9/common.sh \
+	&& sed -i 's/dnf install -q -y --releasever=\${DNF_RELEASEVER} "gcc-[^"]*"/dnf install -q -y --releasever=\${DNF_RELEASEVER} gcc \|\| true/' /usr/local/bin/nvidia-driver \
+	&& printf '%s\n' '# --- overrides injected by image build ---' \
 	'_update_package_cache() { echo "[override] Skipping package cache refresh" >&2; return 0; }' \
 	'_enable_rhocp_and_eus_repos() { echo "[override] Skipping RH OCP/EUS repo enable" >&2; return 0; }' \
-	>> /usr/local/bin/common.sh && \
-	chmod +x /usr/local/bin/ocp_dtk_entrypoint /usr/local/bin/nvidia-driver /usr/local/bin/common.sh
+	>> /usr/local/bin/common.sh \
+	&& chmod +x /usr/local/bin/ocp_dtk_entrypoint /usr/local/bin/nvidia-driver /usr/local/bin/common.sh
 ## Upstream script runs from /usr/local/bin and expects the runfile in CWD
 RUN cp -f /opt/nvidia/driver/${DRIVER_RUNFILE} /usr/local/bin/${DRIVER_RUNFILE} && chmod +x /usr/local/bin/${DRIVER_RUNFILE}
 
