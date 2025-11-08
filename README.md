@@ -14,6 +14,7 @@ HomeLab Server/Cluster, Virtual Sandbox Cluster, & Desktop Configuration
         - [Storage](#storage)
       - [Kubernetes Nodes](#kubernetes-nodes)
         - [Ceph Performance Tests](#ceph-performance-tests)
+        - [GPU](#gpu)
       - [OKD WIF](#okd-wif)
       - [Kubernetes Commands](#kubernetes-commands)
         - [Delete Pod Using Graceful Termination Eviction Request](#delete-pod-using-graceful-termination-eviction-request)
@@ -159,6 +160,7 @@ end
 | server-1   | N/A            | R7-5700G   | 16  | 128G | 2x4TB NVME, 2x1TB SSD, 2x.5TB SSD | 4x10Gbe (DAC) && 4x1GbE | N/A                               | OpenShift/OKD  |
 | server-2   | N/A            | R7-5700G   | 16  | 128G | 2x4TB NVME, 2x1TB SSD,2x.5TB SSD  | 4x10Gbe (DAC) && 4x1GbE | N/A                               | OpenShift/OKD  |
 | server-3   | N/A            | R7-5700G   | 16  | 128G | 2x4TB NVME, 2x1TB SSD,2x.5TB SSD  | 4x10Gbe (DAC) && 4x1GbE | N/A                               | OpenShift/OKD  |
+| gpu-1      | N/A            | R5-3600    | 12  | 16G  | 2x1TB NVME,                       | 1x2.5Gbe && 1x1GbE      | N/A                               | OpenShift/OKD  |
 | TrueNas    | unas-pro       | Arm Cortex | 4   | 8G   | N/A                               | 1x2.5Gbe && 1x1GbE      | 3x2TB RaidZ1 SSD                  | TrueNas        |
 | UNAS       | Hp ProDesk     | i5-6600    | 4   | 32G  | 120G SSD Boot Mirror              | 1x1Gbe && 1x10GbE       | 4x4TB Raid6 HDD / 3x2TB Raid5 SSD | UNAS           |
 | pfSense    | Hp t730        | RX-427BB   | 4   | 4G   | 16G SSD                           | 4x1GbE                  | N/A                               | Decommissioned |
@@ -212,6 +214,30 @@ end
 | rand-w  | block  |    4    |  256k   |   1402   |   2048   |   1617   |   423   |
 | rand-rw | cephfs |    4    |  256k   |   952    |   1418   |   1202   | 313/316 |
 | rand-rw | block  |    4    |  256k   |   876    |   1410   |   1190   | 310/312 |
+
+##### GPU
+
+```bash
++-----------------------------------------------------------------------------------------+
+| NVIDIA-SMI 580.95.05              Driver Version: 580.95.05      CUDA Version: 13.0     |
++-----------------------------------------+------------------------+----------------------+
+| GPU  Name                 Persistence-M | Bus-Id          Disp.A | Volatile Uncorr. ECC |
+| Fan  Temp   Perf          Pwr:Usage/Cap |           Memory-Usage | GPU-Util  Compute M. |
+|                                         |                        |               MIG M. |
+|=========================================+========================+======================|
+|   0  NVIDIA GeForce GTX 1080        Off |   00000000:2B:00.0 Off |                  N/A |
+| 27%   32C    P8             13W /  180W |       0MiB /   8192MiB |      0%      Default |
+|                                         |                        |                  N/A |
++-----------------------------------------+------------------------+----------------------+
+
++-----------------------------------------------------------------------------------------+
+| Processes:                                                                              |
+|  GPU   GI   CI              PID   Type   Process name                        GPU Memory |
+|        ID   ID                                                               Usage      |
+|=========================================================================================|
+|  No running processes found                                                             |
++-----------------------------------------------------------------------------------------+
+```
 
 #### OKD WIF
 
