@@ -1,0 +1,547 @@
+# Based on: https://github.com/Markus-feu/okd-nvidia-driver
+# Containerfile for NVIDIA Driver (driver:570-5.14.0-536.el9.x86_64-scos4.17)
+
+# Stage 1: Build kernel RPMs (optional, if you already have them, skip this stage)
+FROM quay.io/centos/centos:stream10 AS kernel
+ARG KERNEL_VERSION=6.12.0-142.el10.x86_64
+ENV TARGET_KERNEL_VERSION=${KERNEL_VERSION}
+RUN cat > /kernel.sh <<'EOF'
+#!/bin/bash
+
+set -e
+set -x
+
+dnf install -y jq dnf-plugins-core git curl tar xz rpm-build
+# CentOS Stream 10: enable CRB repo if available
+dnf config-manager --set-enabled crb || true
+
+mkdir -p ~/rpmbuild/{BUILD,RPMS,SOURCES,SPECS,SRPMS}
+cd ~/rpmbuild/SOURCES
+
+# Determine kernel version: prefer env KERNEL_VERSION if provided, else use uname -r
+if [ -n "${KERNEL_VERSION}" ]; then
+	KVer="${KERNEL_VERSION}"
+else
+	KVer="$(uname -r)"
+fi
+echo "Using kernel version: ${KVer}"
+
+
+# Fetch kernel source commit from GitLab (CentOS Stream 10). If not found, attempt branch head.
+set +e
+kernel_source_commit=$(curl -L "https://gitlab.com/api/v4/projects/24152864/repository/tags?search=${KVer%.x86_64}" 2>/dev/null | jq --raw-output -e '.[0].target')
+rc=$?
+set -e
+if [ $rc -ne 0 ] || [ -z "${kernel_source_commit}" ] || [ "${kernel_source_commit}" = "null" ]; then
+	echo "WARNING: Tag for kernel ${KVer} not found via tags API. Falling back to latest c10s branch commit." >&2
+	kernel_source_commit=$(curl -L "https://gitlab.com/api/v4/projects/24152864/repository/branches/c10s" 2>/dev/null | jq --raw-output -e '.commit.id') || true
+fi
+if [ -z "${kernel_source_commit}" ] || [ "${kernel_source_commit}" = "null" ]; then
+	echo "ERROR: Unable to determine kernel source commit for ${KVer}. Falling back to binary RPM retrieval." >&2
+	fallback_binary=true
+else
+	fallback_binary=false
+fi
+echo "Kernel source commit: ${kernel_source_commit}"
+echo "Kernel source commit: ${kernel_source_commit}"
+
+if [ "${fallback_binary}" = false ]; then
+	# Download and repack kernel source tarball
+	curl -L "http://gitlab.com/api/v4/projects/24152864/repository/archive.tar.gz?sha=${kernel_source_commit}" 2>/dev/null | tar xzf -
+	mv centos* "linux-${KVer%.x86_64}" || true
+	tar -cf - "linux-${KVer%.x86_64}/" | xz -0 -T0 - > "linux-${KVer%.x86_64}.tar.xz" || true
+else
+	echo "Attempting to download kernel binary RPMs for ${KVer}" >&2
+	dnf install -y dnf-plugins-core || true
+	mkdir -p ~/rpmbuild/RPMS/x86_64
+	pushd ~/rpmbuild/RPMS/x86_64 >/dev/null
+	dnf download --resolve --alldeps --arch=x86_64 kernel-core-${KVer} kernel-headers-${KVer} kernel-devel-${KVer} || {
+		echo "Failed to download specific kernel RPMs, listing available kernels" >&2
+		dnf list kernel-core || true
+	}
+	popd >/dev/null
+fi
+
+
+# Find kernel spec commit and fetch kernel.spec (CentOS Stream 10)
+found_spec=false
+for p in {1..5}; do
+	set +e
+	rpm_source_commit=$(curl -L "https://gitlab.com/api/v4/projects/23664863/repository/commits?ref_name=c10s&path%2Fkernel%2Fkernel.spec&per_page=100&page=${p}" 2>/dev/null | jq --raw-output -e ".[] | select(.title==\"kernel-${KVer%.x86_64}\") | .id")
+	rc=$?
+	set -e
+	if [ $rc -eq 0 ] && [ -n "${rpm_source_commit}" ] && [ "${rpm_source_commit}" != "null" ]; then
+		git init .
+		git remote add origin https://gitlab.com/redhat/centos-stream/rpms/kernel.git
+		git fetch origin "${rpm_source_commit}"
+		git checkout "${rpm_source_commit}"
+		mv kernel.spec ../SPECS/
+		found_spec=true
+		break
+	fi
+done
+if [ "${fallback_binary}" = true ]; then
+	echo "Skipping kernel.spec retrieval due to missing source commit; using downloaded binary RPMs only." >&2
+else
+	if [ "${found_spec}" != true ]; then
+		echo "WARNING: Specific kernel.spec commit for ${KVer} not found. Using latest c10s branch kernel.spec." >&2
+		git init .
+		git remote add origin https://gitlab.com/redhat/centos-stream/rpms/kernel.git
+		git fetch origin c10s
+		git checkout c10s
+		mv kernel.spec ../SPECS/
+	fi
+fi
+
+cd ~/rpmbuild
+if [ "${fallback_binary}" = false ]; then
+	dnf builddep -y SPECS/kernel.spec || echo "Build dependencies failed; continuing with available sources" >&2
+	rpmbuild -bb --with baseonly --without pae --without debug --without zfcpdump --without arm64_64k --without realtime --without realtime_arm64_64k --without cross_headers --without perf --without tools --without debuginfo --with kernel_abi_stablelists --without selftests --clean --target x86_64 SPECS/kernel.spec || echo "Kernel build failed; falling back to binary RPMs" >&2
+fi
+
+rm -rf ~/rpmbuild/BUILD ~/rpmbuild/BUILDROOT ~/rpmbuild/SOURCES
+dnf clean all
+EOF
+RUN chmod +x /kernel.sh && KERNEL_VERSION=${TARGET_KERNEL_VERSION} /kernel.sh
+
+# Stage 2: Build NVIDIA driver RPMs
+FROM quay.io/centos/centos:stream10 AS builder
+
+ARG KERNEL_VERSION=6.12.0-142.el10.x86_64
+ARG DRIVER_VERSION=580.95.05
+ARG BUILD_ARCH=x86_64
+ARG TARGET_ARCH=x86_64
+ARG DRIVER_EPOCH=1
+ARG DRIVER_STREAM_TYPE=stable
+ARG BUILDER_USER="Your Name"
+ARG BUILDER_EMAIL="your@email.com"
+ARG BASE_URL="https://us.download.nvidia.com/tesla"
+
+RUN useradd -u 1001 -m -s /bin/bash builder
+
+# Install build tooling required for cloning and building the NVIDIA kmod
+RUN dnf install -y git gcc make perl bc elfutils-libelf-devel openssl curl tar xz jq dnf-plugins-core ca-certificates kmod rsync && dnf clean all
+
+# Copy kernel RPMs from previous stage
+COPY --from=kernel /root/rpmbuild/RPMS/x86_64/kernel-headers-${KERNEL_VERSION}.rpm /tmp/
+COPY --from=kernel /root/rpmbuild/RPMS/x86_64/kernel-devel-${KERNEL_VERSION}.rpm /tmp/
+COPY --from=kernel /root/rpmbuild/RPMS/x86_64/kernel-core-${KERNEL_VERSION}.rpm /tmp/
+COPY --from=kernel /root/rpmbuild/RPMS/x86_64/kernel-modules-core-${KERNEL_VERSION}.rpm /tmp/
+
+RUN dnf install -y /tmp/kernel-*.rpm && dnf clean all
+
+WORKDIR /root
+
+# Download and build NVIDIA kernel modules directly
+RUN set -e; \
+	(curl -fSsLO ${BASE_URL}/${DRIVER_VERSION}/NVIDIA-Linux-${TARGET_ARCH}-${DRIVER_VERSION}.run \
+	|| curl -fSsLO https://download.nvidia.com/tesla/${DRIVER_VERSION}/NVIDIA-Linux-${TARGET_ARCH}-${DRIVER_VERSION}.run); \
+	sh ./NVIDIA-Linux-${TARGET_ARCH}-${DRIVER_VERSION}.run --extract-only --target /root/nvidia-tmp; \
+	/root/nvidia-tmp/nvidia-installer \
+	--silent --accept-license --no-questions \
+	--kernel-source-path /usr/src/kernels/${KERNEL_VERSION} \
+	--no-systemd \
+	--no-rpms \
+	--no-backup \
+	--no-precompiled-interface; \
+	mkdir -p /staging/lib/modules/${KERNEL_VERSION}; \
+	if [ -d "/lib/modules/${KERNEL_VERSION}" ]; then \
+	rsync -a /lib/modules/${KERNEL_VERSION}/ /staging/lib/modules/${KERNEL_VERSION}/ 2>/dev/null || cp -a /lib/modules/${KERNEL_VERSION}/. /staging/lib/modules/${KERNEL_VERSION}/; \
+	else \
+	echo "ERROR: Built modules dir /lib/modules/${KERNEL_VERSION} not found" >&2; ls -al /lib/modules || true; exit 1; \
+	fi; \
+	if [ -d /root/nvidia-tmp/firmware ]; then \
+	mkdir -p /staging/opt/lib/firmware/nvidia/${DRIVER_VERSION}; \
+	cp -f /root/nvidia-tmp/firmware/*.bin /staging/opt/lib/firmware/nvidia/${DRIVER_VERSION}/ || true; \
+	fi; \
+	depmod -b /staging ${KERNEL_VERSION} || true; \
+	ls -R /staging | sed -n '1,200p'
+
+# Stage 3: Final image
+FROM quay.io/centos/centos:stream10
+
+ARG KERNEL_VERSION=6.12.0-142.el10.x86_64
+ARG DRIVER_VERSION=580.95.05
+ARG BUILD_ARCH=x86_64
+ARG TARGET_ARCH=x86_64
+
+# Provide defaults for runtime scripts; can be overridden with -e at runtime
+ENV DRIVER_VERSION=${DRIVER_VERSION} \
+	KERNEL_VERSION=${KERNEL_VERSION} \
+	TARGETARCH=${TARGET_ARCH} \
+	DRIVER_TYPE=passthrough \
+	# Explicitly set RHEL / DNF release version detection that the upstream script tries to infer
+	RHEL_VERSION=10 \
+	DNF_RELEASEVER=10 \
+	# Provide a driver branch (avoids unbound variable errors in upstream script)
+	DRIVER_BRANCH=580 \
+	# Location and name for the runfile (copied in below)
+	DRIVER_RUNFILE_DIR=/opt/nvidia/driver \
+	DRIVER_RUNFILE=NVIDIA-Linux-${TARGET_ARCH}-${DRIVER_VERSION}.run
+
+# Install minimal runtime tools and copy staged kernel modules/firmware
+RUN dnf install -y kmod findutils curl ca-certificates util-linux procps iproute lsof pciutils jq gzip xz binutils file make gcc && dnf clean all
+COPY --from=builder /staging/ /
+# Provide the original NVIDIA runfile and nvidia-installer binary for tooling that expects them at runtime
+RUN mkdir -p /opt/nvidia/driver \
+	&& cp /staging/lib/modules/${KERNEL_VERSION}/source/.config /opt/nvidia/driver/ 2>/dev/null || true
+COPY --from=builder /root/NVIDIA-Linux-${TARGET_ARCH}-${DRIVER_VERSION}.run /opt/nvidia/driver/
+COPY --from=builder /root/nvidia-tmp/nvidia-installer /usr/local/bin/nvidia-installer
+RUN chmod +x /opt/nvidia/driver/NVIDIA-Linux-${TARGET_ARCH}-${DRIVER_VERSION}.run /usr/local/bin/nvidia-installer || true
+# Provide NVIDIA driver sources for runtime packaging/compilation logic
+RUN mkdir -p /usr/src/nvidia-${DRIVER_VERSION}
+COPY --from=builder /root/nvidia-tmp/kernel /usr/src/nvidia-${DRIVER_VERSION}/
+COPY --from=builder /root/nvidia-tmp/kernel-open /usr/src/nvidia-${DRIVER_VERSION}/
+COPY --from=builder /root/nvidia-tmp/mkprecompiled /usr/src/nvidia-${DRIVER_VERSION}/
+COPY --from=builder /root/nvidia-tmp/LICENSE /usr/src/nvidia-${DRIVER_VERSION}/
+COPY --from=builder /root/nvidia-tmp/.manifest /usr/src/nvidia-${DRIVER_VERSION}/
+RUN chmod +x /usr/src/nvidia-${DRIVER_VERSION}/mkprecompiled || true
+## Ensure expected kernel source directory exists even when only open modules are provided
+RUN if [ -d "/usr/src/nvidia-${DRIVER_VERSION}/kernel-open" ] && [ ! -d "/usr/src/nvidia-${DRIVER_VERSION}/kernel" ]; then \
+	ln -s kernel-open "/usr/src/nvidia-${DRIVER_VERSION}/kernel"; \
+	fi
+# Add kernel helper tools extract-vmlinux & unzboot expected by nvidia-driver script
+RUN curl -fsSL -o /usr/local/bin/extract-vmlinux https://raw.githubusercontent.com/torvalds/linux/master/scripts/extract-vmlinux \
+	&& chmod +x /usr/local/bin/extract-vmlinux \
+	&& cat > /usr/local/bin/unzboot <<'EOF'
+#!/bin/sh
+# Minimal unzboot: decompress a vmlinuz (gz/xz) to output file
+in="$1"; out="$2"
+if [ -z "$in" ] || [ -z "$out" ]; then
+	echo "Usage: unzboot <input-vmlinuz> <output>" >&2; exit 1;
+fi
+if gzip -t "$in" 2>/dev/null; then
+	gzip -dc "$in" > "$out"
+elif xz -t "$in" 2>/dev/null; then
+	xz -dc "$in" > "$out"
+else
+	gzip -dc "$in" > "$out" 2>/dev/null || xz -dc "$in" > "$out" 2>/dev/null || { echo "Unknown compression" >&2; exit 1; }
+fi
+exit 0
+EOF
+RUN chmod +x /usr/local/bin/unzboot
+
+# Generate module dependency files in the final image
+RUN depmod ${KERNEL_VERSION} || true
+
+# Fetch helper scripts used by NVIDIA driver containers
+RUN curl -fsSL -o /usr/local/bin/ocp_dtk_entrypoint https://raw.githubusercontent.com/NVIDIA/gpu-driver-container/refs/heads/main/rhel9/ocp_dtk_entrypoint && \
+	curl -fsSL -o /usr/local/bin/nvidia-driver https://raw.githubusercontent.com/NVIDIA/gpu-driver-container/refs/heads/main/rhel9/nvidia-driver && \
+	curl -fsSL -o /usr/local/bin/common.sh https://raw.githubusercontent.com/NVIDIA/gpu-driver-container/refs/heads/main/rhel9/common.sh && \
+	# Replace version-pinned gcc install with generic gcc to avoid missing package errors on Stream 10
+	sed -i 's/dnf install -q -y --releasever=\${DNF_RELEASEVER} "gcc-[^"]*"/dnf install -q -y --releasever=\${DNF_RELEASEVER} gcc \|\| true/' /usr/local/bin/nvidia-driver && \
+	chmod +x /usr/local/bin/ocp_dtk_entrypoint /usr/local/bin/nvidia-driver /usr/local/bin/common.sh
+## Upstream script runs from /usr/local/bin and expects the runfile in CWD
+RUN ln -sf /opt/nvidia/driver/${DRIVER_RUNFILE} /usr/local/bin/${DRIVER_RUNFILE}
+
+# Minimal userland extraction to satisfy health probe (nvidia-smi) without full driver install
+RUN set -e; \
+	mkdir -p /opt/nvidia/userland; \
+	sh /opt/nvidia/driver/${DRIVER_RUNFILE} --extract-only --target /opt/nvidia/userland/__ul || true; \
+	if [ -f /opt/nvidia/userland/__ul/nvidia-smi ]; then \
+	cp -f /opt/nvidia/userland/__ul/nvidia-smi /usr/local/bin/nvidia-smi && chmod +x /usr/local/bin/nvidia-smi; \
+	else \
+	for d in /opt/nvidia/userland/__ul/NVIDIA-Linux-*; do \
+	[ -f "$d/nvidia-smi" ] && cp -f "$d/nvidia-smi" /usr/local/bin/nvidia-smi && chmod +x /usr/local/bin/nvidia-smi && break; \
+	done; \
+	fi; \
+	# Also ensure nvidia-smi is available at /usr/bin for health probes and tooling that expect it there
+	if [ -x /usr/local/bin/nvidia-smi ]; then cp -f /usr/local/bin/nvidia-smi /usr/bin/nvidia-smi && chmod +x /usr/bin/nvidia-smi; fi; \
+	mkdir -p /usr/lib64; \
+	# Copy essential runtime libraries (ML, CUDA core, sandboxutils if present)
+	find /opt/nvidia/userland/__ul -maxdepth 5 -type f \( -name 'libnvidia-ml.so.*' -o -name 'libcuda.so.*' -o -name 'libnvidia-sandboxutils.so.*' -o -name 'libnvidia-compiler.so.*' \) -exec cp -f {} /usr/lib64/ \; || true; \
+	if ls /usr/lib64/libnvidia-ml.so.* >/dev/null 2>&1; then \
+	ML="$(ls /usr/lib64/libnvidia-ml.so.* | head -n1)"; \
+	ln -sf "$(basename "$ML")" /usr/lib64/libnvidia-ml.so.1; \
+	ln -sf "$(basename "$ML")" /usr/lib64/libnvidia-ml.so; \
+	fi; \
+	if ls /usr/lib64/libcuda.so.* >/dev/null 2>&1; then \
+	CUDA="$(ls /usr/lib64/libcuda.so.* | head -n1)"; \
+	ln -sf "$(basename "$CUDA")" /usr/lib64/libcuda.so.1; \
+	ln -sf "$(basename "$CUDA")" /usr/lib64/libcuda.so; \
+	fi; \
+	if ls /usr/lib64/libnvidia-sandboxutils.so.* >/dev/null 2>&1; then \
+	SBOX="$(ls /usr/lib64/libnvidia-sandboxutils.so.* | head -n1)"; \
+	ln -sf "$(basename "$SBOX")" /usr/lib64/libnvidia-sandboxutils.so.1; \
+	fi; \
+	rm -rf /opt/nvidia/userland/__ul || true
+
+# Wrap nvidia-installer to handle --kernel-module-only by placing .ko files under /lib/modules and running depmod
+RUN mv /usr/local/bin/nvidia-installer /usr/local/bin/nvidia-installer.real && \
+	cat > /usr/local/bin/nvidia-installer <<'EOF'
+#!/bin/sh
+set -e
+
+if printf '%s\n' "$@" | grep -q -- '--kernel-module-only'; then
+	KV="$(uname -r)"
+	DRV_VER="${DRIVER_VERSION}"
+	SRC_BASE="/usr/src/nvidia-${DRV_VER}"
+	SRC_DIR="$SRC_BASE/kernel"
+	[ -d "$SRC_DIR" ] || SRC_DIR="$SRC_BASE"
+
+	# Rebuild modules if they are not present (upstream may 'make clean' before this phase)
+	need_build=0
+	for m in nvidia.ko nvidia-modeset.ko nvidia-uvm.ko nvidia-drm.ko nvidia-peermem.ko; do
+		[ -f "$SRC_DIR/$m" ] || need_build=1
+	done
+	if [ "$need_build" -eq 1 ]; then
+		KDIR="/lib/modules/${KV}/build"
+		if [ -d "$KDIR" ]; then
+			(
+				cd "$SRC_DIR" 2>/dev/null || exit 0
+				# Try full module build first; fall back to minimal objects + link if needed
+				make -s -j "$(getconf _NPROCESSORS_ONLN 2>/dev/null || echo 4)" SYSSRC="$KDIR" modules >/dev/null 2>&1 \
+					|| {
+						make -s -j "$(getconf _NPROCESSORS_ONLN 2>/dev/null || echo 4)" SYSSRC="$KDIR" nv-linux.o nv-modeset-linux.o >/dev/null 2>&1 || true
+						[ -f ./nv-linux.o ] && [ -f ./nvidia/nv-kernel.o_binary ] && ld -d -r -o nvidia.ko ./nv-linux.o ./nvidia/nv-kernel.o_binary || true
+						[ -f ./nv-modeset-linux.o ] && [ -f ./nvidia-modeset/nv-modeset-kernel.o_binary ] && ld -d -r -o nvidia-modeset.ko ./nv-modeset-linux.o ./nvidia-modeset/nv-modeset-kernel.o_binary || true
+					}
+			)
+		fi
+	fi
+	# Install into all plausible roots so modprobe can find modules regardless of mount timing
+	for ROOT in /run/nvidia/driver /host /rootfs /; do
+		# Skip non-existent or unwritable roots, except "/" which always exists
+		[ "$ROOT" = "/" ] || [ -d "$ROOT" ] || continue
+		DEST="${ROOT}/lib/modules/${KV}/extra"
+		mkdir -p "$DEST" 2>/dev/null || true
+		# Copy any produced NVIDIA .ko modules (search in the tree to catch subdirs)
+		FOUND=0
+		for m in nvidia nvidia-modeset nvidia-uvm nvidia-drm nvidia-peermem; do
+			f="$(find "$SRC_BASE" -maxdepth 4 -type f -name "$m.ko" 2>/dev/null | head -n1)"
+			if [ -n "$f" ] && [ -f "$f" ]; then
+				cp -f "$f" "$DEST/$(basename "$f")" 2>/dev/null || true
+				FOUND=1
+			fi
+		done
+		depmod -b "$ROOT" "$KV" 2>/dev/null || true
+		if [ "$FOUND" -eq 1 ]; then
+			echo "Installed NVIDIA modules into $DEST and ran depmod -b $ROOT $KV" >&2
+		else
+			echo "WARNING: No NVIDIA .ko modules found to install into $DEST" >&2
+		fi
+	done
+	exit 0
+fi
+
+exec /usr/local/bin/nvidia-installer.real "$@"
+EOF
+RUN chmod +x /usr/local/bin/nvidia-installer
+
+# Wrap nvidia-driver so it always primes /usr/src with driver sources if missing
+RUN mv /usr/local/bin/nvidia-driver /usr/local/bin/nvidia-driver.orig && \
+	cat > /usr/local/bin/nvidia-driver <<'EOF'
+#!/bin/sh
+set -e
+
+# Ensure wrapper tools are preferred
+export PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:${PATH}"
+
+DRV_VER="${DRIVER_VERSION}"
+SRC_DIR="/usr/src/nvidia-${DRV_VER}"
+KERNEL_DIR="${SRC_DIR}/kernel"
+RUNFILE="${DRIVER_RUNFILE_DIR}/${DRIVER_RUNFILE}"
+
+# Ensure the runfile is available in the script directory for the upstream script's CWD assumptions
+SCRIPT_PATH="$(command -v nvidia-driver.orig || echo /usr/local/bin/nvidia-driver.orig)"
+SCRIPT_DIR="$(dirname -- "$SCRIPT_PATH")"
+if [ -f "$RUNFILE" ] && [ ! -e "$SCRIPT_DIR/${DRIVER_RUNFILE}" ]; then
+    ln -sf "$RUNFILE" "$SCRIPT_DIR/${DRIVER_RUNFILE}" 2>/dev/null || cp -a "$RUNFILE" "$SCRIPT_DIR/${DRIVER_RUNFILE}" || true
+fi
+
+# Sanitize DRIVER_BRANCH to numeric (avoids 'integer expression expected')
+case "${DRIVER_BRANCH}" in
+    ''|*[!0-9]*) DRIVER_BRANCH="${DRIVER_BRANCH##release-}" ;;
+esac
+export DRIVER_BRANCH
+
+# If /usr/src is a host mount, content from build stage may be hidden; ensure sources exist.
+if [ -n "${DRV_VER}" ] && [ ! -d "${KERNEL_DIR}" ]; then
+	if [ -f "${RUNFILE}" ]; then
+		mkdir -p "${SRC_DIR}"
+		TMP_EXTRACT="${SRC_DIR}/__extract"
+		# The NVIDIA runfile requires the target to not exist; remove it and do NOT pre-create
+		rm -rf "${TMP_EXTRACT}" || true
+		# Extract; some versions unpack directly, others into NVIDIA-Linux-*
+		sh "${RUNFILE}" --extract-only --target "${TMP_EXTRACT}" || true
+		# Case 1: unpacked directly under TMP_EXTRACT
+		[ -d "${TMP_EXTRACT}/kernel-open" ] && [ ! -d "${SRC_DIR}/kernel-open" ] && mv "${TMP_EXTRACT}/kernel-open" "${SRC_DIR}/" || true
+		[ -d "${TMP_EXTRACT}/kernel" ] && [ ! -d "${SRC_DIR}/kernel" ] && mv "${TMP_EXTRACT}/kernel" "${SRC_DIR}/" || true
+		[ -d "${TMP_EXTRACT}/mkprecompiled" ] && [ ! -d "${SRC_DIR}/mkprecompiled" ] && mv "${TMP_EXTRACT}/mkprecompiled" "${SRC_DIR}/" || true
+		# Case 2: unpacked inside NVIDIA-Linux-* directory
+		for d in "${TMP_EXTRACT}"/NVIDIA-Linux-*; do
+			[ -d "$d" ] || continue
+			[ -d "$d/kernel-open" ] && [ ! -d "${SRC_DIR}/kernel-open" ] && mv "$d/kernel-open" "${SRC_DIR}/" || true
+			[ -d "$d/kernel" ] && [ ! -d "${SRC_DIR}/kernel" ] && mv "$d/kernel" "${SRC_DIR}/" || true
+			[ -d "$d/mkprecompiled" ] && [ ! -d "${SRC_DIR}/mkprecompiled" ] && mv "$d/mkprecompiled" "${SRC_DIR}/" || true
+			[ -f "$d/mkprecompiled" ] && [ ! -f "${SRC_DIR}/mkprecompiled" ] && mv "$d/mkprecompiled" "${SRC_DIR}/" || true
+		done
+		# Ensure mkprecompiled is executable if present
+		[ -f "${SRC_DIR}/mkprecompiled" ] && chmod +x "${SRC_DIR}/mkprecompiled" || true
+		# Ensure expected /usr/src path exists
+		if [ -d "${SRC_DIR}/kernel-open" ] && [ ! -d "${SRC_DIR}/kernel" ]; then
+			ln -s kernel-open "${SRC_DIR}/kernel" || true
+		fi
+		# Last-resort: if files look like kernel tree lives at SRC_DIR root, alias kernel -> .
+		if [ ! -d "${SRC_DIR}/kernel" ] && [ -f "${SRC_DIR}/Makefile" ] && [ -d "${SRC_DIR}/nvidia" ]; then
+			mkdir -p "${SRC_DIR}/kernel" || true
+			for f in Kbuild Makefile Module.symvers modules.order nv_compiler.h dkms.conf header-presence-tests.mk count-lines.mk conftest.sh; do
+				[ -e "${SRC_DIR}/$f" ] && mv "${SRC_DIR}/$f" "${SRC_DIR}/kernel/" || true
+			done
+			for d in nvidia nvidia-drm nvidia-modeset nvidia-uvm nvidia-peermem common conftest; do
+				[ -d "${SRC_DIR}/$d" ] && mv "${SRC_DIR}/$d" "${SRC_DIR}/kernel/" || true
+			done
+		fi
+		rm -rf "${TMP_EXTRACT}" || true
+	fi
+fi
+
+exec /usr/local/bin/nvidia-driver.orig "$@"
+EOF
+RUN chmod +x /usr/local/bin/nvidia-driver
+
+# Add a tiny wrapper to ensure driver sources are present under /usr/src even when that path is a host mount
+RUN cat > /usr/local/bin/driver-entrypoint <<'EOF'
+#!/bin/sh
+set -e
+
+# Ensure wrapper tools are preferred
+export PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:${PATH}"
+
+DRV_VER="${DRIVER_VERSION}"
+SRC_DIR="/usr/src/nvidia-${DRV_VER}"
+KERNEL_DIR="${SRC_DIR}/kernel"
+RUNFILE="${DRIVER_RUNFILE_DIR}/${DRIVER_RUNFILE}"
+
+# Ensure the runfile is available in the script directory (defensive)
+SCRIPT_PATH="$(command -v nvidia-driver || echo /usr/local/bin/nvidia-driver)"
+SCRIPT_DIR="$(dirname -- "$SCRIPT_PATH")"
+if [ -f "$RUNFILE" ] && [ ! -e "$SCRIPT_DIR/${DRIVER_RUNFILE}" ]; then
+    ln -sf "$RUNFILE" "$SCRIPT_DIR/${DRIVER_RUNFILE}" 2>/dev/null || cp -a "$RUNFILE" "$SCRIPT_DIR/${DRIVER_RUNFILE}" || true
+fi
+
+# Sanitize DRIVER_BRANCH to numeric (avoids 'integer expression expected')
+case "${DRIVER_BRANCH}" in
+    ''|*[!0-9]*) DRIVER_BRANCH="${DRIVER_BRANCH##release-}" ;;
+esac
+export DRIVER_BRANCH
+
+# Ensure nvidia-smi is available at /usr/bin inside the container
+if [ ! -x /usr/bin/nvidia-smi ]; then
+	if [ -x /usr/local/bin/nvidia-smi ]; then
+		cp -f /usr/local/bin/nvidia-smi /usr/bin/nvidia-smi && chmod +x /usr/bin/nvidia-smi || true
+	elif [ -x /run/nvidia/driver/usr/bin/nvidia-smi ]; then
+		ln -sf /run/nvidia/driver/usr/bin/nvidia-smi /usr/bin/nvidia-smi || true
+	fi
+fi
+
+# Propagate critical NVIDIA userland libs/binaries to host-style roots if mounted
+for ROOT in /run/nvidia/driver /host /rootfs; do
+	[ -d "$ROOT" ] || continue
+	mkdir -p "$ROOT/usr/bin" "$ROOT/usr/lib64" 2>/dev/null || true
+	if [ -x /usr/bin/nvidia-smi ]; then cp -f /usr/bin/nvidia-smi "$ROOT/usr/bin/nvidia-smi" 2>/dev/null || true; fi
+	for pat in libnvidia-ml.so.* libcuda.so.* libnvidia-sandboxutils.so.* libnvidia-compiler.so.*; do
+		for f in /usr/lib64/$pat; do [ -f "$f" ] || continue; cp -f "$f" "$ROOT/usr/lib64/" 2>/dev/null || true; done
+	done
+	# Recreate symlinks inside host roots if base libs copied
+	if ls "$ROOT/usr/lib64/libcuda.so."* >/dev/null 2>&1; then cd "$ROOT/usr/lib64" && ln -sf $(ls libcuda.so.* | head -n1 | xargs basename) libcuda.so.1 && ln -sf libcuda.so.1 libcuda.so || true; fi
+	if ls "$ROOT/usr/lib64/libnvidia-ml.so."* >/dev/null 2>&1; then cd "$ROOT/usr/lib64" && ln -sf $(ls libnvidia-ml.so.* | head -n1 | xargs basename) libnvidia-ml.so.1 && ln -sf libnvidia-ml.so.1 libnvidia-ml.so || true; fi
+	if ls "$ROOT/usr/lib64/libnvidia-sandboxutils.so."* >/dev/null 2>&1; then cd "$ROOT/usr/lib64" && ln -sf $(ls libnvidia-sandboxutils.so.* | head -n1 | xargs basename) libnvidia-sandboxutils.so.1 || true; fi
+done
+
+# If the expected kernel source directory is missing (e.g., /usr/src is host-mounted),
+# extract the runfile here (handling nested layout) and create a compatibility symlink when only kernel-open exists.
+if [ -n "${DRV_VER}" ] && [ ! -d "${KERNEL_DIR}" ]; then
+	if [ -f "${RUNFILE}" ]; then
+		mkdir -p "${SRC_DIR}"
+		TMP_EXTRACT="${SRC_DIR}/__extract"
+		# The NVIDIA runfile requires the target to not exist; remove it and do NOT pre-create
+		rm -rf "${TMP_EXTRACT}" || true
+		sh "${RUNFILE}" --extract-only --target "${TMP_EXTRACT}" || true
+		# Move from direct extraction
+		[ -d "${TMP_EXTRACT}/kernel-open" ] && [ ! -d "${SRC_DIR}/kernel-open" ] && mv "${TMP_EXTRACT}/kernel-open" "${SRC_DIR}/" || true
+		[ -d "${TMP_EXTRACT}/kernel" ] && [ ! -d "${SRC_DIR}/kernel" ] && mv "${TMP_EXTRACT}/kernel" "${SRC_DIR}/" || true
+		[ -d "${TMP_EXTRACT}/mkprecompiled" ] && [ ! -d "${SRC_DIR}/mkprecompiled" ] && mv "${TMP_EXTRACT}/mkprecompiled" "${SRC_DIR}/" || true
+		# Move from nested NVIDIA-Linux-* extraction
+		for d in "${TMP_EXTRACT}"/NVIDIA-Linux-*; do
+			[ -d "$d" ] || continue
+			[ -d "$d/kernel-open" ] && [ ! -d "${SRC_DIR}/kernel-open" ] && mv "$d/kernel-open" "${SRC_DIR}/" || true
+			[ -d "$d/kernel" ] && [ ! -d "${SRC_DIR}/kernel" ] && mv "$d/kernel" "${SRC_DIR}/" || true
+			[ -d "$d/mkprecompiled" ] && [ ! -d "${SRC_DIR}/mkprecompiled" ] && mv "$d/mkprecompiled" "${SRC_DIR}/" || true
+			[ -f "$d/mkprecompiled" ] && [ ! -f "${SRC_DIR}/mkprecompiled" ] && mv "$d/mkprecompiled" "${SRC_DIR}/" || true
+		done
+		# Ensure mkprecompiled is executable if present
+		[ -f "${SRC_DIR}/mkprecompiled" ] && chmod +x "${SRC_DIR}/mkprecompiled" || true
+		# Ensure kernel dir exists (symlink to kernel-open if needed)
+		if [ -d "${SRC_DIR}/kernel-open" ] && [ ! -d "${SRC_DIR}/kernel" ]; then
+			ln -s kernel-open "${SRC_DIR}/kernel" || true
+		fi
+		# If kernel dir still missing but sources live at root, move into a real kernel dir
+		if [ ! -d "${SRC_DIR}/kernel" ] && [ -f "${SRC_DIR}/Makefile" ] && [ -d "${SRC_DIR}/nvidia" ]; then
+			mkdir -p "${SRC_DIR}/kernel" || true
+			for f in Kbuild Makefile Module.symvers modules.order nv_compiler.h dkms.conf header-presence-tests.mk count-lines.mk conftest.sh; do
+				[ -e "${SRC_DIR}/$f" ] && mv "${SRC_DIR}/$f" "${SRC_DIR}/kernel/" || true
+			done
+			for d in nvidia nvidia-drm nvidia-modeset nvidia-uvm nvidia-peermem common conftest; do
+				[ -d "${SRC_DIR}/$d" ] && mv "${SRC_DIR}/$d" "${SRC_DIR}/kernel/" || true
+			done
+		fi
+		# Last-resort: if files look like kernel tree lives at SRC_DIR root, alias kernel -> .
+		if [ ! -d "${SRC_DIR}/kernel" ] && [ -f "${SRC_DIR}/Makefile" ] && [ -d "${SRC_DIR}/nvidia" ]; then
+			ln -s . "${SRC_DIR}/kernel" || true
+		fi
+		rm -rf "${TMP_EXTRACT}" || true
+	fi
+fi
+
+exec nvidia-driver "$@"
+EOF
+RUN chmod +x /usr/local/bin/driver-entrypoint
+
+LABEL io.k8s.display-name="NVIDIA Driver Container"
+LABEL name="NVIDIA Driver Container"
+LABEL vendor="NVIDIA"
+LABEL version="${DRIVER_VERSION}"
+LABEL summary="Provision the NVIDIA driver through containers"
+LABEL description="See summary"
+
+ENTRYPOINT ["driver-entrypoint", "init"]
+
+# Provide a modprobe wrapper that falls back to /run/nvidia/driver as the root for module lookup
+RUN cat > /usr/local/sbin/modprobe <<'EOF'
+#!/bin/sh
+# Wrapper to try host-like rootfs under /run/nvidia/driver when default modprobe cannot find a module.
+set -e
+
+REAL_MODPROBE="/sbin/modprobe"
+[ -x "$REAL_MODPROBE" ] || REAL_MODPROBE="/usr/sbin/modprobe"
+
+# Try default first
+if "$REAL_MODPROBE" "$@" 2>/dev/null; then
+	exit 0
+fi
+
+# Fallback to /run/nvidia/driver if it has a matching lib/modules tree
+KV="$(uname -r)"
+ALT_ROOT="/run/nvidia/driver"
+if [ -d "$ALT_ROOT/lib/modules/$KV" ]; then
+	# Make sure depmod data exists
+	if command -v depmod >/dev/null 2>&1; then
+		depmod -b "$ALT_ROOT" "$KV" >/dev/null 2>&1 || true
+	fi
+	exec "$REAL_MODPROBE" -d "$ALT_ROOT" "$@"
+fi
+
+# As a last resort, return failure
+exit 1
+EOF
+RUN chmod +x /usr/local/sbin/modprobe
+
+# Provide a stub for nvidia-persistenced (required by upstream script when full userland isn't installed)
+RUN cat > /usr/local/bin/nvidia-persistenced <<'EOF'
+#!/bin/sh
+# Stub nvidia-persistenced: upstream scripts may attempt to launch it; we only need a successful exit.
+echo "[stub] nvidia-persistenced invoked; skipping actual daemon startup." >&2
+exit 0
+EOF
+RUN chmod +x /usr/local/bin/nvidia-persistenced

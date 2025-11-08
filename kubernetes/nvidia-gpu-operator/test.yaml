@@ -1,0 +1,31 @@
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: cuda-vectoradd
+  namespace: nvidia-gpu-operator
+spec:
+  selector:
+    matchLabels:
+      name: cuda-vectoradd
+  template:
+    metadata:
+      labels:
+        name: cuda-vectoradd
+    spec:
+      nodeSelector:
+        nvidia.com/gpu.present: "true"
+      containers:
+        - image: "nvcr.io/nvidia/k8s/cuda-sample:vectoradd-cuda11.7.1-ubuntu20.04"
+          imagePullPolicy: IfNotPresent
+          name: smoke-test-keep-alive
+          command:
+            - /bin/bash
+            - -c
+            - sleep infinity
+      initContainers:
+        - image: "nvcr.io/nvidia/k8s/cuda-sample:vectoradd-cuda11.7.1-ubuntu20.04"
+          imagePullPolicy: IfNotPresent
+          name: cuda-vectoradd-smoke-test
+          resources:
+            limits:
+              nvidia.com/gpu: 1

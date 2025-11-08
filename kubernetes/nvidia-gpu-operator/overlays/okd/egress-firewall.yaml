@@ -2,7 +2,7 @@ apiVersion: k8s.ovn.org/v1
 kind: EgressFirewall
 metadata:
   name: default
-  namespace: openshift-nfd
+  namespace: nvidia-gpu-operator
 spec:
   egress:
     # Control Plane
@@ -14,6 +14,12 @@ spec:
       ports:
         - protocol: TCP
           port: 6443
+    - type: Allow
+      to:
+        dnsName: mirrors.centos.org
+      ports:
+        - protocol: TCP
+          port: 443
     - type: Deny
       to:
         cidrSelector: 0.0.0.0/0
