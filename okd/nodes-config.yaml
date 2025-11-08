@@ -1,0 +1,26 @@
+hosts:
+  - hostname: gpu-1
+    rootDeviceHints:
+      deviceName: /dev/nvme0n1
+    interfaces:
+      - macAddress: 2c:f0:5d:83:73:a2
+        name: enp42s0
+    networkConfig:
+      interfaces:
+        - name: enp42s0
+          type: ethernet
+          state: up
+          mtu: 9000
+          mac-address: 2c:f0:5d:83:73:a2
+          ipv4:
+            enabled: true
+            address:
+              - ip: 10.101.10.104
+                prefix-length: 24
+            dhcp: false
+
+      dns-resolver:
+        config:
+          server:
+            - 10.101.11.4
+            - 10.101.11.5
