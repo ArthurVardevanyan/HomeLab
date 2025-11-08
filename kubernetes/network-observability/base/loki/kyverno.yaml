@@ -32,26 +32,26 @@ spec:
                       requests:
                         cpu: 25m
                         memory: 64Mi
-              volumeClaimTemplates:
-                - kind: PersistentVolumeClaim
-                  apiVersion: v1
-                  metadata:
-                    name: storage
-                    creationTimestamp: null
-                    labels:
-                      app.kubernetes.io/component: compactor
-                      app.kubernetes.io/created-by: lokistack-controller
-                      app.kubernetes.io/instance: loki
-                      app.kubernetes.io/managed-by: lokistack-controller
-                      app.kubernetes.io/name: lokistack
-                  spec:
-                    accessModes:
-                      - ReadWriteOnce
-                    resources:
-                      requests:
-                        storage: 3Gi
-                    storageClassName: rook-ceph-block-ci
-                    volumeMode: Filesystem
+            volumeClaimTemplates:
+              - kind: PersistentVolumeClaim
+                apiVersion: v1
+                metadata:
+                  name: storage
+                  creationTimestamp: null
+                  labels:
+                    app.kubernetes.io/component: compactor
+                    app.kubernetes.io/created-by: lokistack-controller
+                    app.kubernetes.io/instance: loki
+                    app.kubernetes.io/managed-by: lokistack-controller
+                    app.kubernetes.io/name: lokistack
+                spec:
+                  accessModes:
+                    - ReadWriteOnce
+                  resources:
+                    requests:
+                      storage: 3Gi
+                  storageClassName: rook-ceph-block-ci
+                  volumeMode: Filesystem
       name: loki-compactor
       skipBackgroundRequests: true
     - match:
