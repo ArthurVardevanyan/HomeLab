@@ -1,0 +1,28 @@
+apiVersion: k8s.ovn.org/v1
+kind: EgressFirewall
+metadata:
+  name: default
+  namespace: nvidia-gpu-operator
+spec:
+  egress:
+    # Control Plane
+    - type: Allow
+      to:
+        nodeSelector:
+          matchLabels:
+            node-role.kubernetes.io/control-plane: ""
+      ports:
+        - protocol: TCP
+          port: 6443
+    # List to Big to WhiteList via IP
+    # - type: Allow
+    #   to:
+    #     dnsName: mirrors.centos.org
+    #   ports:
+    #     - protocol: TCP
+    #       port: 443
+    #     - protocol: TCP
+    #       port: 80
+    # - type: Deny
+    #   to:
+    #     cidrSelector: 0.0.0.0/0

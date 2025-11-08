@@ -1,0 +1,93 @@
+apiVersion: kyverno.io/v1
+kind: Policy
+metadata:
+  name: add-resource-limits
+  namespace: nvidia-gpu-operator
+spec:
+  rules:
+    - name: add-cpu-memory-limits-validation
+      match:
+        resources:
+          kinds:
+            - DaemonSet
+      mutate:
+        patchStrategicMerge:
+          spec:
+            template:
+              spec:
+                initContainers:
+                  - (name): "*-validation"
+                    resources:
+                      limits:
+                        cpu: 50m
+                        memory: 64Mi
+                      requests:
+                        cpu: 10m
+                        memory: 32Mi
+    - name: add-cpu-memory-limits-driver-manager
+      match:
+        resources:
+          kinds:
+            - DaemonSet
+      mutate:
+        patchStrategicMerge:
+          spec:
+            template:
+              spec:
+                initContainers:
+                  - (name): "k8s-driver-manager"
+                    resources:
+                      limits:
+                        cpu: 50m
+                        memory: 64Mi
+                      requests:
+                        cpu: 10m
+                        memory: 32Mi
+    - name: add-cpu-memory-limits-status
+      match:
+        resources:
+          kinds:
+            - DaemonSet
+      mutate:
+        patchStrategicMerge:
+          spec:
+            template:
+              spec:
+                initContainers:
+                  - (name): "init-pod-nvidia-node-status-exporter"
+                    resources:
+                      limits:
+                        cpu: 50m
+                        memory: 64Mi
+                      requests:
+                        cpu: 10m
+                        memory: 32Mi
+    - name: add-cpu-memory-limits-mps
+      match:
+        resources:
+          kinds:
+            - DaemonSet
+      mutate:
+        patchStrategicMerge:
+          spec:
+            template:
+              spec:
+                containers:
+                  - (name): "mps-control-daemon-ctr	"
+                    resources:
+                      limits:
+                        cpu: 50m
+                        memory: 64Mi
+                      requests:
+                        cpu: 10m
+                        memory: 32Mi
+
+                initContainers:
+                  - (name): "mps-control-daemon-mounts"
+                    resources:
+                      limits:
+                        cpu: 50m
+                        memory: 64Mi
+                      requests:
+                        cpu: 10m
+                        memory: 32Mi

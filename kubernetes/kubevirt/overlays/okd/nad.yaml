@@ -101,3 +101,24 @@ spec:
     "range_end": "10.101.14.254"
     }
     }'
+---
+apiVersion: nmstate.io/v1
+kind: NodeNetworkConfigurationPolicy
+metadata:
+  name: live-migrate-gpu-1
+spec:
+  nodeSelector:
+    kubernetes.io/hostname: gpu-1
+  desiredState:
+    interfaces:
+      - name: bond4
+        description: VLAN using enp42s0
+        type: vlan
+        state: up
+        ipv4:
+          dhcp: false
+          enabled: false
+        vlan:
+          base-iface: enp42s0
+          id: 14
+        mtu: 9000

@@ -1,0 +1,37 @@
+kind: NodeFeatureDiscovery
+apiVersion: nfd.openshift.io/v1
+metadata:
+  name: nfd-instance
+  namespace: openshift-nfd
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+spec:
+  enableTaints: false
+  instance: ""
+  operand:
+    image: "registry.redhat.io/openshift4/ose-node-feature-discovery-rhel9:v4.15.0-202510211321.p2.g68c4ba0.assembly.stream.el9@sha256:1bcf749fb1415d8d99d1352d8a917085d96a6390b32cbb7e6d62489404dd2e75"
+    imagePullPolicy: IfNotPresent
+    servicePort: 12000
+  prunerOnDelete: false
+  topologyUpdater: false
+  workerConfig:
+    configData: |
+      core:
+        sleepInterval: 60s
+      sources:
+        pci:
+          deviceClassWhitelist:
+            - "0200"
+            - "03"
+            - "12"
+          deviceLabelFields:
+            - "vendor"
+      sources:
+         custom:
+           - name: "feature.node.kubernetes.io/runtime.kata"
+             matchOn:
+               - cpuId: ["SSE4", "VMX"]
+                 loadedKMod: ["kvm", "kvm_intel"]
+               - cpuId: ["SSE4", "SVM"]
+                 loadedKMod: ["kvm", "kvm_amd"]

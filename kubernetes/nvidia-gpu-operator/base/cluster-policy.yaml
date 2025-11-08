@@ -1,0 +1,139 @@
+apiVersion: nvidia.com/v1
+kind: ClusterPolicy
+metadata:
+  name: gpu-cluster-policy
+  annotations:
+    argocd.argoproj.io/sync-wave: "2"
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true #Prune=false
+spec:
+  migManager:
+    enabled: true
+    resources:
+      limits:
+        cpu: "50m"
+        memory: 64Mi
+      requests:
+        cpu: "10m"
+        memory: 32Mi
+  operator:
+    defaultRuntime: crio
+    initContainer:
+      image: cuda
+      repository: nvcr.io/nvidia
+      version: 13.0.0-base-ubi9
+    runtimeClass: nvidia
+    use_ocp_driver_toolkit: false
+  dcgm:
+    enabled: true
+    resources:
+      limits:
+        cpu: "100m"
+        memory: 384Mi
+      requests:
+        cpu: "10m"
+        memory: 196Mi
+  gfd:
+    resources:
+      limits:
+        cpu: "100m"
+        memory: 192Mi
+      requests:
+        cpu: "10m"
+        memory: 96Mi
+  dcgmExporter:
+    config:
+      name: ""
+    resources:
+      limits:
+        cpu: "50m"
+        memory: 64Mi
+      requests:
+        cpu: "10m"
+        memory: 32Mi
+  driver:
+    licensingConfig:
+      configMapName: ""
+      nlsEnabled: false
+    enabled: true
+    kernelModuleType: auto
+    certConfig:
+      name: ""
+    manager:
+      env:
+        - name: ENABLE_GPU_POD_EVICTION
+          value: "true"
+        - name: ENABLE_AUTO_DRAIN
+          value: "false"
+        - name: DRAIN_USE_FORCE
+          value: "false"
+        - name: DRAIN_POD_SELECTOR_LABEL
+          value: ""
+        - name: DRAIN_TIMEOUT_SECONDS
+          value: 0s
+        - name: DRAIN_DELETE_EMPTYDIR_DATA
+          value: "true"
+    repoConfig:
+      configMapName: ""
+    usePrecompiled: true # Test
+    imagePullPolicy: Always
+    repository: registry.arthurvardevanyan.com/homelab # nvcr.io/nvidia
+    version: 580.95.05
+    image: nvidia/driver
+    resources:
+      limits:
+        cpu: "3"
+        memory: 12Gi
+      requests:
+        cpu: "10m"
+        memory: 512Mi
+    virtualTopology:
+      config: ""
+  devicePlugin:
+    resources:
+      limits:
+        cpu: "50m"
+        memory: 64Mi
+      requests:
+        cpu: "10m"
+        memory: 32Mi
+  mig:
+    strategy: single
+  validator:
+    plugin:
+      env:
+        - name: WITH_WORKLOAD
+          value: "true"
+    resources:
+      limits:
+        cpu: "100m"
+        memory: 64Mi
+      requests:
+        cpu: "10m"
+        memory: 32Mi
+
+  nodeStatusExporter:
+    enabled: true
+    resources:
+      limits:
+        cpu: "50m"
+        memory: 64Mi
+      requests:
+        cpu: "10m"
+        memory: 32Mi
+  daemonsets:
+    tolerations:
+      - effect: NoSchedule
+        key: node-role.kubernetes.io/gpu
+    rollingUpdate:
+      maxUnavailable: "1"
+    updateStrategy: RollingUpdate
+  toolkit:
+    enabled: true
+    installDir: /usr/local/nvidia
+    resources:
+      limits:
+        cpu: "50m"
+        memory: 64Mi
+      requests:
+        cpu: "10m"
+        memory: 32Mi
