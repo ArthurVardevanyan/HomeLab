@@ -1,0 +1,26 @@
+apiVersion: kyverno.io/v1
+kind: Policy
+metadata:
+  name: add-resource-limits
+  namespace: nvidia-gpu-operator
+spec:
+  rules:
+    - name: add-cpu-memory-limits
+      match:
+        resources:
+          kinds:
+            - DaemonSet
+      mutate:
+        patchStrategicMerge:
+          spec:
+            template:
+              spec:
+                initContainers:
+                  - (name): "*-validation"
+                    resources:
+                      limits:
+                        cpu: 50m
+                        memory: 64Mi
+                      requests:
+                        cpu: 10m
+                        memory: 32Mi

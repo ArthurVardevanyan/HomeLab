@@ -18,7 +18,21 @@ spec:
     use_ocp_driver_toolkit: false
   dcgm:
     enabled: true
-  gfd: {}
+    resources:
+      limits:
+        cpu: "100m"
+        memory: 384Mi
+      requests:
+        cpu: "10m"
+        memory: 196Mi
+  gfd:
+    resources:
+      limits:
+        cpu: "100m"
+        memory: 192Mi
+      requests:
+        cpu: "10m"
+        memory: 96Mi
   dcgmExporter:
     config:
       name: ""
@@ -53,14 +67,21 @@ spec:
     image: nvidia/driver
     resources:
       limits:
-        cpu: "2"
-        memory: 3Gi
+        cpu: "3"
+        memory: 12Gi
       requests:
         cpu: "10m"
         memory: 512Mi
     virtualTopology:
       config: ""
-  devicePlugin: {}
+  devicePlugin:
+    resources:
+      limits:
+        cpu: "50m"
+        memory: 64Mi
+      requests:
+        cpu: "10m"
+        memory: 32Mi
   mig:
     strategy: single
   validator:
@@ -68,12 +89,37 @@ spec:
       env:
         - name: WITH_WORKLOAD
           value: "true"
+    resources:
+      limits:
+        cpu: "50m"
+        memory: 64Mi
+      requests:
+        cpu: "10m"
+        memory: 32Mi
+
   nodeStatusExporter:
     enabled: true
+    resources:
+      limits:
+        cpu: "50m"
+        memory: 64Mi
+      requests:
+        cpu: "10m"
+        memory: 32Mi
   daemonsets:
+    tolerations:
+      - effect: NoSchedule
+        key: node-role.kubernetes.io/gpu
     rollingUpdate:
       maxUnavailable: "1"
     updateStrategy: RollingUpdate
   toolkit:
     enabled: true
     installDir: /usr/local/nvidia
+    resources:
+      limits:
+        cpu: "50m"
+        memory: 64Mi
+      requests:
+        cpu: "10m"
+        memory: 32Mi

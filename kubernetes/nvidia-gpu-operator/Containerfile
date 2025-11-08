@@ -1,9 +1,20 @@
 # Based on: https://github.com/Markus-feu/okd-nvidia-driver
 # Containerfile for NVIDIA Driver (driver:570-5.14.0-536.el9.x86_64-scos4.17)
 
+# --- Global build-time args (override with --build-arg) ---
+ARG KERNEL_VERSION=6.12.0-142.el10.x86_64
+ARG DRIVER_VERSION=580.95.05
+ARG BUILD_ARCH=x86_64
+ARG TARGET_ARCH=x86_64
+ARG DRIVER_EPOCH=1
+ARG DRIVER_STREAM_TYPE=stable
+ARG BUILDER_USER="Your Name"
+ARG BUILDER_EMAIL="your@email.com"
+ARG BASE_URL="https://us.download.nvidia.com/tesla"
+
 # Stage 1: Build kernel RPMs (optional, if you already have them, skip this stage)
 FROM quay.io/centos/centos:stream10 AS kernel
-ARG KERNEL_VERSION=6.12.0-142.el10.x86_64
+ARG KERNEL_VERSION
 ENV TARGET_KERNEL_VERSION=${KERNEL_VERSION}
 RUN cat > /kernel.sh <<'EOF'
 #!/bin/bash
@@ -107,15 +118,15 @@ RUN chmod +x /kernel.sh && KERNEL_VERSION=${TARGET_KERNEL_VERSION} /kernel.sh
 # Stage 2: Build NVIDIA driver RPMs
 FROM quay.io/centos/centos:stream10 AS builder
 
-ARG KERNEL_VERSION=6.12.0-142.el10.x86_64
-ARG DRIVER_VERSION=580.95.05
-ARG BUILD_ARCH=x86_64
-ARG TARGET_ARCH=x86_64
-ARG DRIVER_EPOCH=1
-ARG DRIVER_STREAM_TYPE=stable
-ARG BUILDER_USER="Your Name"
-ARG BUILDER_EMAIL="your@email.com"
-ARG BASE_URL="https://us.download.nvidia.com/tesla"
+ARG KERNEL_VERSION
+ARG DRIVER_VERSION
+ARG BUILD_ARCH
+ARG TARGET_ARCH
+ARG DRIVER_EPOCH
+ARG DRIVER_STREAM_TYPE
+ARG BUILDER_USER
+ARG BUILDER_EMAIL
+ARG BASE_URL
 
 RUN useradd -u 1001 -m -s /bin/bash builder
 
@@ -160,10 +171,10 @@ RUN set -e; \
 # Stage 3: Final image
 FROM quay.io/centos/centos:stream10
 
-ARG KERNEL_VERSION=6.12.0-142.el10.x86_64
-ARG DRIVER_VERSION=580.95.05
-ARG BUILD_ARCH=x86_64
-ARG TARGET_ARCH=x86_64
+ARG KERNEL_VERSION
+ARG DRIVER_VERSION
+ARG BUILD_ARCH
+ARG TARGET_ARCH
 
 # Provide defaults for runtime scripts; can be overridden with -e at runtime
 ENV DRIVER_VERSION=${DRIVER_VERSION} \
@@ -230,9 +241,14 @@ RUN curl -fsSL -o /usr/local/bin/ocp_dtk_entrypoint https://raw.githubuserconten
 	curl -fsSL -o /usr/local/bin/common.sh https://raw.githubusercontent.com/NVIDIA/gpu-driver-container/refs/heads/main/rhel9/common.sh && \
 	# Replace version-pinned gcc install with generic gcc to avoid missing package errors on Stream 10
 	sed -i 's/dnf install -q -y --releasever=\${DNF_RELEASEVER} "gcc-[^"]*"/dnf install -q -y --releasever=\${DNF_RELEASEVER} gcc \|\| true/' /usr/local/bin/nvidia-driver && \
+	# Override network-touching functions to be no-ops at runtime (air-gapped friendly)
+	printf '%s\n' '# --- overrides injected by image build ---' \
+	'_update_package_cache() { echo "[override] Skipping package cache refresh" >&2; return 0; }' \
+	'_enable_rhocp_and_eus_repos() { echo "[override] Skipping RH OCP/EUS repo enable" >&2; return 0; }' \
+	>> /usr/local/bin/common.sh && \
 	chmod +x /usr/local/bin/ocp_dtk_entrypoint /usr/local/bin/nvidia-driver /usr/local/bin/common.sh
 ## Upstream script runs from /usr/local/bin and expects the runfile in CWD
-RUN ln -sf /opt/nvidia/driver/${DRIVER_RUNFILE} /usr/local/bin/${DRIVER_RUNFILE}
+RUN cp -f /opt/nvidia/driver/${DRIVER_RUNFILE} /usr/local/bin/${DRIVER_RUNFILE} && chmod +x /usr/local/bin/${DRIVER_RUNFILE}
 
 # Minimal userland extraction to satisfy health probe (nvidia-smi) without full driver install
 RUN set -e; \
@@ -355,6 +371,16 @@ case "${DRIVER_BRANCH}" in
 esac
 export DRIVER_BRANCH
 
+# Force RHEL version to 10 to avoid mis-detection
+export RHEL_VERSION=10
+export DNF_RELEASEVER=10
+
+# Ensure the runfile is available in the script working dir
+if [ -f "$RUNFILE" ] && [ ! -f "${SCRIPT_DIR}/${DRIVER_RUNFILE}" ]; then
+	cp -f "$RUNFILE" "${SCRIPT_DIR}/${DRIVER_RUNFILE}" 2>/dev/null || ln -sf "$RUNFILE" "${SCRIPT_DIR}/${DRIVER_RUNFILE}" || true
+	chmod +x "${SCRIPT_DIR}/${DRIVER_RUNFILE}" || true
+fi
+
 # If /usr/src is a host mount, content from build stage may be hidden; ensure sources exist.
 if [ -n "${DRV_VER}" ] && [ ! -d "${KERNEL_DIR}" ]; then
 	if [ -f "${RUNFILE}" ]; then
@@ -363,7 +389,8 @@ if [ -n "${DRV_VER}" ] && [ ! -d "${KERNEL_DIR}" ]; then
 		# The NVIDIA runfile requires the target to not exist; remove it and do NOT pre-create
 		rm -rf "${TMP_EXTRACT}" || true
 		# Extract; some versions unpack directly, others into NVIDIA-Linux-*
-		sh "${RUNFILE}" --extract-only --target "${TMP_EXTRACT}" || true
+		# Use absolute path to avoid CWD assumptions in upstream logic
+		sh "${RUNFILE}" --extract-only --target "${TMP_EXTRACT}" || sh "${SCRIPT_DIR}/${DRIVER_RUNFILE}" --extract-only --target "${TMP_EXTRACT}" || true
 		# Case 1: unpacked directly under TMP_EXTRACT
 		[ -d "${TMP_EXTRACT}/kernel-open" ] && [ ! -d "${SRC_DIR}/kernel-open" ] && mv "${TMP_EXTRACT}/kernel-open" "${SRC_DIR}/" || true
 		[ -d "${TMP_EXTRACT}/kernel" ] && [ ! -d "${SRC_DIR}/kernel" ] && mv "${TMP_EXTRACT}/kernel" "${SRC_DIR}/" || true
@@ -425,6 +452,16 @@ case "${DRIVER_BRANCH}" in
     ''|*[!0-9]*) DRIVER_BRANCH="${DRIVER_BRANCH##release-}" ;;
 esac
 export DRIVER_BRANCH
+
+# Force RHEL version to 10 (some upstream logic mis-detects from kernel string)
+export RHEL_VERSION=10
+export DNF_RELEASEVER=10
+
+# Ensure the NVIDIA runfile is available in CWD for upstream script assumptions
+if [ -f "$RUNFILE" ] && [ ! -f "/usr/local/bin/${DRIVER_RUNFILE}" ]; then
+	cp -f "$RUNFILE" "/usr/local/bin/${DRIVER_RUNFILE}" || true
+	chmod +x "/usr/local/bin/${DRIVER_RUNFILE}" || true
+fi
 
 # Ensure nvidia-smi is available at /usr/bin inside the container
 if [ ! -x /usr/bin/nvidia-smi ]; then
