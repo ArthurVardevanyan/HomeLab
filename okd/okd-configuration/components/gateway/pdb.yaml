@@ -1,0 +1,21 @@
+kind: PodDisruptionBudget
+apiVersion: policy/v1
+metadata:
+  name: gateway
+  namespace: openshift-ingress
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      gateway.networking.k8s.io/gateway-name: https-gateway
+---
+kind: PodDisruptionBudget
+apiVersion: policy/v1
+metadata:
+  name: gateway-class
+  namespace: openshift-ingress
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/instance: openshift-gateway-istiod

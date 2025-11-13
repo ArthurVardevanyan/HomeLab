@@ -1,0 +1,17 @@
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: bitwarden
+  namespace: bitwarden
+  annotations:
+    externaldns.k8s.io: pihole
+spec:
+  parentRefs:
+    - name: https-gateway
+      namespace: openshift-ingress
+  hostnames: ["bitwarden.arthurvardevanyan.com"]
+  rules:
+    - backendRefs:
+        - name: bitwarden
+          namespace: bitwarden
+          port: 80
