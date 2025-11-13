@@ -1,0 +1,15 @@
+apiVersion: externaldns.k8s.io/v1alpha1
+kind: DNSEndpoint
+metadata:
+  name: uptime-kuma
+  namespace: uptime-kuma
+  annotations:
+    externaldns.k8s.io: pihole
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+spec:
+  endpoints:
+    - dnsName: uptime.arthurvardevanyan.com
+      recordTTL: 60
+      recordType: CNAME
+      targets:
+        - microshift.arthurvardevanyan.com

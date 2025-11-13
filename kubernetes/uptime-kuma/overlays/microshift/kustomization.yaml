@@ -4,13 +4,16 @@ resources:
   - ../../base
 components:
   - ../../components/uptime-kuma
-  - ../../components/openshift
   - ../../components/ingress
 patches:
   - patch: |-
       - op: replace
         path: /spec/storageClassName
-        value: lvms-vg1-immediate
+        value: topolvm-provisioner
     target:
       kind: PersistentVolumeClaim
-      name: uptime-kuma
+  - patch: |-
+      - op: remove
+        path: /spec/ingressClassName
+    target:
+      kind: Ingress
