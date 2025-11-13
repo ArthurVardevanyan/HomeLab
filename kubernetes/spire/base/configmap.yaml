@@ -1,0 +1,269 @@
+---
+# Source: spire/charts/spiffe-oidc-discovery-provider/templates/configmap.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: spire-spiffe-oidc-discovery-provider
+  namespace: spire-server
+data:
+  oidc-discovery-provider.conf: |
+    {
+      "domains": [
+        "spire-spiffe-oidc-discovery-provider",
+        "spire-spiffe-oidc-discovery-provider.spire-server",
+        "spire-spiffe-oidc-discovery-provider.spire-server.svc.cluster.local",
+        "oidc-discovery.apps.okd.homelab.arthurvardevanyan.com"
+      ],
+      "health_checks": {
+        "bind_port": "8008",
+        "live_path": "/live",
+        "ready_path": "/ready"
+      },
+      "log_level": "info",
+      "serving_cert_file": {
+        "addr": ":8443",
+        "cert_file_path": "/certs/tls.crt",
+        "key_file_path": "/certs/tls.key"
+      },
+      "workload_api": {
+        "socket_path": "/spiffe-workload-api/spire-agent.sock",
+        "trust_domain": "apps.okd.homelab.arthurvardevanyan.com"
+      }
+    }
+  spiffe-helper.conf: |
+    agent_address = "/spiffe-workload-api/spire-agent.sock"
+    cert_dir = "/certs"
+    svid_file_name = "tls.crt"
+    svid_key_file_name = "tls.key"
+    svid_bundle_file_name = "ca.pem"
+---
+# Source: spire/charts/spire-agent/templates/configmap.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: "spire-agent"
+  namespace: "spire-system"
+data:
+  agent.conf: |
+    {
+      "agent": {
+        "data_dir": "/var/lib/spire",
+        "log_level": "info",
+        "retry_bootstrap": true,
+        "server_address": "spire-server.spire-server",
+        "server_port": "443",
+        "socket_path": "/tmp/spire-agent/public/spire-agent.sock",
+        "trust_bundle_path": "/run/spire/bundle/bundle.crt",
+        "trust_domain": "apps.okd.homelab.arthurvardevanyan.com"
+      },
+      "health_checks": {
+        "bind_address": "0.0.0.0",
+        "bind_port": "9982",
+        "listener_enabled": true,
+        "live_path": "/live",
+        "ready_path": "/ready"
+      },
+      "plugins": {
+        "KeyManager": [
+          {
+            "memory": {
+              "plugin_data": null
+            }
+          }
+        ],
+        "NodeAttestor": [
+          {
+            "k8s_psat": {
+              "plugin_data": {
+                "cluster": "okd"
+              }
+            }
+          }
+        ],
+        "WorkloadAttestor": [
+          {
+            "k8s": {
+              "plugin_data": {
+                "disable_container_selectors": false,
+                "node_name_env": "MY_NODE_NAME",
+                "skip_kubelet_verification": true,
+                "use_new_container_locator": true,
+                "verbose_container_locator_logs": false
+              }
+            }
+          }
+        ]
+      },
+      "telemetry": [
+        {
+          "Prometheus": [
+            {
+              "host": "0.0.0.0",
+              "port": 9988
+            }
+          ]
+        }
+      ]
+    }
+---
+# Source: spire/charts/spire-server/templates/bundle-configmap.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: spire-bundle
+  namespace: spire-system
+---
+# Source: spire/charts/spire-server/templates/configmap.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: spire-server
+  namespace: spire-server
+data:
+  server.conf: |
+    {
+      "health_checks": {
+        "bind_address": "0.0.0.0",
+        "bind_port": "8080",
+        "listener_enabled": true,
+        "live_path": "/live",
+        "ready_path": "/ready"
+      },
+      "plugins": {
+        "DataStore": [
+          {
+            "sql": {
+              "plugin_data": {
+                "connection_string": "/run/spire/data/datastore.sqlite3",
+                "database_type": "sqlite3",
+                "disable_migration": false,
+                "max_idle_conns": 2,
+                "max_open_conns": 100
+              }
+            }
+          }
+        ],
+        "KeyManager": [
+          {
+            "disk": {
+              "plugin_data": {
+                "keys_path": "/run/spire/data/keys.json"
+              }
+            }
+          }
+        ],
+        "NodeAttestor": [
+          {
+            "k8s_psat": {
+              "plugin_data": {
+                "clusters": [
+                  {
+                    "okd": {
+                      "allowed_node_label_keys": [],
+                      "allowed_pod_label_keys": [],
+                      "audience": [
+                        "spire-server"
+                      ],
+                      "service_account_allow_list": [
+                        "spire-system:spire-agent"
+                      ]
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        ],
+        "Notifier": [
+          {
+            "k8sbundle": {
+              "plugin_data": {
+                "config_map": "spire-bundle",
+                "namespace": "spire-system"
+              }
+            }
+          }
+        ]
+      },
+      "server": {
+        "audit_log_enabled": false,
+        "bind_address": "0.0.0.0",
+        "bind_port": "8081",
+        "ca_key_type": "rsa-2048",
+        "ca_subject": [
+          {
+            "common_name": "apps.okd.homelab.arthurvardevanyan.com",
+            "country": [
+              "US"
+            ],
+            "organization": [
+              "arthurvardevanyan.com"
+            ]
+          }
+        ],
+        "ca_ttl": "24h",
+        "data_dir": "/run/spire/data",
+        "default_jwt_svid_ttl": "1h",
+        "default_x509_svid_ttl": "4h",
+        "jwt_issuer": "https://oidc-discovery.apps.okd.homelab.arthurvardevanyan.com",
+        "log_level": "info",
+        "trust_domain": "apps.okd.homelab.arthurvardevanyan.com"
+      },
+      "telemetry": [
+        {
+          "Prometheus": [
+            {
+              "host": "0.0.0.0",
+              "port": 9988
+            }
+          ]
+        }
+      ]
+    }
+---
+# Source: spire/charts/spire-server/templates/controller-manager-configmap.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: spire-controller-manager
+  namespace: spire-server
+data:
+  controller-manager-config.yaml: |
+
+    apiVersion: spire.spiffe.io/v1alpha1
+    kind: ControllerManagerConfig
+    metadata:
+      name: spire-controller-manager
+      namespace: spire-server
+      labels:
+        helm.sh/chart: spire-server-0.1.0
+        app.kubernetes.io/name: server
+        app.kubernetes.io/instance: spire
+        app.kubernetes.io/version: "1.12.0"
+        app.kubernetes.io/managed-by: Helm
+    metrics:
+      bindAddress: 0.0.0.0:8082
+    health:
+      healthProbeBindAddress: 0.0.0.0:8083
+    leaderElection:
+      leaderElect: true
+      resourceName: bb21182e.spiffe.io
+      resourceNamespace: spire-server
+    validatingWebhookConfigurationName: spire-mgmt-spire-controller-manager-webhook
+    entryIDPrefix: okd
+    clusterName: okd
+    trustDomain: apps.okd.homelab.arthurvardevanyan.com
+    ignoreNamespaces:
+      - kube-system
+      - kube-public
+      - local-path-storage
+      - openshift-.*
+      - ibm-.*
+    spireServerSocketPath: "/tmp/spire-server/private/api.sock"
+    className: "spire-mgmt-spire"
+    watchClassless: false
+    parentIDTemplate: "spiffe://{{ .TrustDomain }}/spire/agent/k8s_psat/{{ .ClusterName }}/{{ .NodeMeta.UID }}"
+    reconcile:
+      clusterSPIFFEIDs: true
+      clusterStaticEntries: true
+      clusterFederatedTrustDomains: true
