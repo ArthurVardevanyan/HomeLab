@@ -34,6 +34,13 @@ spec:
           podSelector:
             matchLabels:
               ingresscontroller.operator.openshift.io/deployment-ingresscontroller: apps
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              name: openshift-ingress
+          podSelector:
+            matchLabels:
+              gateway.networking.k8s.io/gateway-name: https-gateway
 ---
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy

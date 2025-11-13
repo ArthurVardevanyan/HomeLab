@@ -1,16 +1,14 @@
 apiVersion: cert-manager.io/v1
 kind: Certificate
 metadata:
-  name: vault-cert
-  namespace: vault
-  labels:
-    app.kubernetes.io/instance: vault
+  name: arthurvardevanyan-cert
+  namespace: openshift-ingress
 spec:
-  secretName: vault-cert
+  secretName: arthurvardevanyan-cert
   duration: 2160h # 90d
   renewBefore: 1080h # 45d
   dnsNames:
-    - "vault.arthurvardevanyan.com"
+    - "*.arthurvardevanyan.com"
   issuerRef:
     kind: ClusterIssuer
     name: letsencrypt

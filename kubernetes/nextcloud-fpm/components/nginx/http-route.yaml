@@ -1,0 +1,18 @@
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: nextcloud
+  namespace: nextcloud-fpm
+  annotations:
+    argocd.argoproj.io/sync-wave: "3"
+    externaldns.k8s.io: pihole
+spec:
+  parentRefs:
+    - name: https-gateway
+      namespace: openshift-ingress
+  hostnames: ["files.arthurvardevanyan.com"]
+  rules:
+    - backendRefs:
+        - name: nginx
+          namespace: nextcloud-fpm
+          port: 8080
