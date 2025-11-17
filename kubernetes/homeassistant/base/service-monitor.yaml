@@ -1,0 +1,20 @@
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: homeassistant
+  namespace: homeassistant
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/instance: homeassistant
+  endpoints:
+    - bearerTokenSecret:
+        key: token
+        name: homeassistant-long-lived-creds
+      honorLabels: true
+      interval: 15s
+      path: /api/prometheus
+      port: https
+      scheme: https
+      tlsConfig:
+        serverName: "home.arthurvardevanyan.com"
