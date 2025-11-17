@@ -1,0 +1,42 @@
+apiVersion: operator.victoriametrics.com/v1beta1
+kind: VMCluster
+metadata:
+  name: homeassistant
+  namespace: homeassistant
+  annotations:
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+spec:
+  clusterVersion: "v1.128.0-cluster"
+  retentionPeriod: 100y
+  vminsert:
+    image:
+      repository: docker.io/victoriametrics/vminsert
+    replicaCount: 2
+  vmselect:
+    image:
+      repository: docker.io/victoriametrics/vmselect
+    replicaCount: 2
+    cacheMountPath: "/select-cache"
+    storage:
+      volumeClaimTemplate:
+        spec:
+          storageClassName: rook-ceph-block
+          accessModes:
+            - ReadWriteOnce
+          resources:
+            requests:
+              storage: 10Gi
+  vmstorage:
+    image:
+      repository: docker.io/victoriametrics/vmstorage
+    replicaCount: 2
+    storageDataPath: "/vm-data"
+    storage:
+      volumeClaimTemplate:
+        spec:
+          storageClassName: rook-ceph-block
+          accessModes:
+            - ReadWriteOnce
+          resources:
+            requests:
+              storage: 25Gi

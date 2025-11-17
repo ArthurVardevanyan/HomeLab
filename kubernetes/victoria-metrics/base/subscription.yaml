@@ -1,0 +1,35 @@
+apiVersion: operators.coreos.com/v1alpha1
+kind: Subscription
+metadata:
+  name: victoriametrics-operator
+  namespace: victoria-metrics
+spec:
+  channel: beta
+  installPlanApproval: Manual
+  name: victoriametrics-operator
+  source: operator-hub
+  sourceNamespace: openshift-marketplace
+  startingCSV: victoriametrics-operator.v0.65.0
+  config:
+    resources:
+      limits:
+        cpu: 50m
+        memory: 384Mi
+      requests:
+        cpu: 10m
+        memory: 128Mi
+    env:
+      - name: VM_DISABLESELFSERVICESCRAPECREATION
+        value: "true"
+      - name: VM_ENABLEDPROMETHEUSCONVERTER_PODMONITOR
+        value: "false"
+      - name: VM_ENABLEDPROMETHEUSCONVERTER_SERVICESCRAPE
+        value: "false"
+      - name: VM_ENABLEDPROMETHEUSCONVERTER_PROMETHEUSRULE
+        value: "false"
+      - name: VM_ENABLEDPROMETHEUSCONVERTER_PROBE
+        value: "false"
+      - name: VM_ENABLEDPROMETHEUSCONVERTER_ALERTMANAGERCONFIG
+        value: "false"
+      - name: VM_ENABLEDPROMETHEUSCONVERTER_SCRAPECONFIG
+        value: "false"
