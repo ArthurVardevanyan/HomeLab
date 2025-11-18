@@ -1,0 +1,18 @@
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: victoria-metrics
+  namespace: victoria-metrics
+spec:
+  namespaceSelector:
+    matchNames:
+      - victoria-metrics
+  selector:
+    matchLabels:
+      app.kubernetes.io/instance: default
+      app.kubernetes.io/managed-by: kustomize
+      app.kubernetes.io/name: victoria-metrics-operator
+      control-plane: vm-operator
+  endpoints:
+    - port: http
+      scheme: http

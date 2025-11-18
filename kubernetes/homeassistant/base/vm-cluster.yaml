@@ -19,6 +19,35 @@ spec:
       limits:
         cpu: "25m"
         memory: "256Mi"
+    securityContext:
+      runAsNonRoot: true
+      readOnlyRootFilesystem: true
+      allowPrivilegeEscalation: false
+      seccompProfile:
+        type: RuntimeDefault
+      capabilities:
+        drop:
+          - ALL
+    podDisruptionBudget:
+      minAvailable: 1
+      selectorLabels:
+        app.kubernetes.io/name: vminsert
+        app.kubernetes.io/instance: homeassistant
+    topologySpreadConstraints:
+      - maxSkew: 1
+        topologyKey: "topology.kubernetes.io/zone"
+        whenUnsatisfiable: DoNotSchedule
+        labelSelector:
+          matchLabels:
+            app.kubernetes.io/name: vminsert
+            app.kubernetes.io/instance: homeassistant
+      - maxSkew: 1
+        topologyKey: "kubernetes.io/hostname"
+        whenUnsatisfiable: DoNotSchedule
+        labelSelector:
+          matchLabels:
+            app.kubernetes.io/name: vminsert
+            app.kubernetes.io/instance: homeassistant
   vmselect:
     image:
       repository: docker.io/victoriametrics/vmselect
@@ -40,6 +69,35 @@ spec:
       limits:
         cpu: "100m"
         memory: "2Gi"
+    securityContext:
+      runAsNonRoot: true
+      readOnlyRootFilesystem: true
+      allowPrivilegeEscalation: false
+      seccompProfile:
+        type: RuntimeDefault
+      capabilities:
+        drop:
+          - ALL
+    podDisruptionBudget:
+      minAvailable: 1
+      selectorLabels:
+        app.kubernetes.io/name: vmselect
+        app.kubernetes.io/instance: homeassistant
+    topologySpreadConstraints:
+      - maxSkew: 1
+        topologyKey: "topology.kubernetes.io/zone"
+        whenUnsatisfiable: DoNotSchedule
+        labelSelector:
+          matchLabels:
+            app.kubernetes.io/name: vmselect
+            app.kubernetes.io/instance: homeassistant
+      - maxSkew: 1
+        topologyKey: "kubernetes.io/hostname"
+        whenUnsatisfiable: DoNotSchedule
+        labelSelector:
+          matchLabels:
+            app.kubernetes.io/name: vmselect
+            app.kubernetes.io/instance: homeassistant
   vmstorage:
     image:
       repository: docker.io/victoriametrics/vmstorage
@@ -60,4 +118,33 @@ spec:
         memory: "128Mi"
       limits:
         cpu: "50m"
-        memory: "512Mi"
+        memory: "1Gi"
+    securityContext:
+      runAsNonRoot: true
+      readOnlyRootFilesystem: true
+      allowPrivilegeEscalation: false
+      seccompProfile:
+        type: RuntimeDefault
+      capabilities:
+        drop:
+          - ALL
+    podDisruptionBudget:
+      minAvailable: 1
+      selectorLabels:
+        app.kubernetes.io/name: vmstorage
+        app.kubernetes.io/instance: homeassistant
+    topologySpreadConstraints:
+      - maxSkew: 1
+        topologyKey: "topology.kubernetes.io/zone"
+        whenUnsatisfiable: DoNotSchedule
+        labelSelector:
+          matchLabels:
+            app.kubernetes.io/name: vmstorage
+            app.kubernetes.io/instance: homeassistant
+      - maxSkew: 1
+        topologyKey: "kubernetes.io/hostname"
+        whenUnsatisfiable: DoNotSchedule
+        labelSelector:
+          matchLabels:
+            app.kubernetes.io/name: vmstorage
+            app.kubernetes.io/instance: homeassistant
