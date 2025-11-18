@@ -2,7 +2,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
   name: installplan-approvers
-  namespace: network-observability
+  namespace: openshift-netobserv-operator
   labels:
     app.kubernetes.io/instance: network-observability
 roleRef:
@@ -17,7 +17,7 @@ apiVersion: v1
 kind: ServiceAccount
 metadata:
   name: installplan-approver-job
-  namespace: network-observability
+  namespace: openshift-netobserv-operator
   labels:
     app.kubernetes.io/instance: network-observability
 ---
@@ -25,7 +25,7 @@ kind: Job
 apiVersion: batch/v1
 metadata:
   name: installplan-approver-network-observability
-  namespace: network-observability
+  namespace: openshift-netobserv-operator
   annotations:
     argocd.argoproj.io/hook: Sync
     argocd.argoproj.io/hook-delete-policy: HookSucceeded

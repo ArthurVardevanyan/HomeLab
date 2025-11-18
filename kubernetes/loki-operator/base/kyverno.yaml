@@ -1,0 +1,53 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: loki-operator-controller-manager-read-metrics-kyverno-ford-fix
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: loki-operator-metrics-reader
+subjects:
+  - kind: ServiceAccount
+    name: loki-operator-controller-manager-metrics-reader
+    namespace: loki-operator
+---
+apiVersion: kyverno.io/v1
+kind: Policy
+metadata:
+  name: loki
+  namespace: loki-operator
+  annotations:
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+    argocd.argoproj.io/sync-wave: "1"
+spec:
+  background: false
+  rules:
+    - match:
+        any:
+          - resources:
+              kinds:
+                - ServiceMonitor
+              names:
+                - loki-operator-metrics-monitor
+      mutate:
+        patchStrategicMerge:
+          spec:
+            endpoints:
+              - authorization:
+                  credentials:
+                    key: token
+                    name: loki-operator-controller-manager-metrics-token
+                  type: bearer
+                interval: 30s
+                path: /metrics
+                scheme: https
+                scrapeTimeout: 10s
+                targetPort: 8443
+                tlsConfig:
+                  ca:
+                    secret:
+                      key: service-ca.crt
+                      name: loki-operator-controller-manager-metrics-token
+                  serverName: loki-operator-controller-manager-metrics-service.loki-operator.svc
+      name: loki-sm
+      skipBackgroundRequests: true
