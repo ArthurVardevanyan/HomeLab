@@ -1,7 +1,7 @@
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: influxdb
+  name: victoria-metrics
   namespace: argocd
   annotations:
     argocd.argoproj.io/sync-wave: "1"
@@ -14,13 +14,12 @@ metadata:
     app.kubernetes.io/instance: argocd
 spec:
   destination:
-    namespace: influxdb
     server: https://kubernetes.default.svc
   project: default
   source:
-    path: kubernetes/influxdb/overlays/okd
+    path: kubernetes/victoria-metrics/overlays/okd
     repoURL: https://git.arthurvardevanyan.com/ArthurVardevanyan/HomeLab
     targetRevision: HEAD
   syncPolicy:
     syncOptions:
-      - CreateNamespace=true
+      - ServerSideApply=true

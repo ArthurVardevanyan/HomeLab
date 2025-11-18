@@ -1,0 +1,53 @@
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: vm-vminsert
+  namespace: homeassistant
+spec:
+  namespaceSelector:
+    matchNames:
+      - homeassistant
+  selector:
+    matchLabels:
+      app.kubernetes.io/instance: homeassistant
+      app.kubernetes.io/name: vminsert
+  endpoints:
+    - interval: 30s
+      path: /metrics
+      port: http
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: vm-vmselect
+  namespace: homeassistant
+spec:
+  namespaceSelector:
+    matchNames:
+      - homeassistant
+  selector:
+    matchLabels:
+      app.kubernetes.io/instance: homeassistant
+      app.kubernetes.io/name: vmselect
+  endpoints:
+    - interval: 30s
+      path: /metrics
+      port: http
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: vm-vmstorage
+  namespace: homeassistant
+spec:
+  namespaceSelector:
+    matchNames:
+      - homeassistant
+  selector:
+    matchLabels:
+      app.kubernetes.io/instance: homeassistant
+      app.kubernetes.io/name: vmstorage
+  endpoints:
+    - interval: 30s
+      path: /metrics
+      port: http
