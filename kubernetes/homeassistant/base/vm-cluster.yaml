@@ -6,12 +6,19 @@ metadata:
   annotations:
     argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
 spec:
-  clusterVersion: "v1.128.0-cluster"
+  clusterVersion: "v1.130.0-cluster"
   retentionPeriod: 100y
   vminsert:
     image:
       repository: docker.io/victoriametrics/vminsert
     replicaCount: 2
+    resources:
+      requests:
+        cpu: "10m"
+        memory: "32Mi"
+      limits:
+        cpu: "25m"
+        memory: "256Mi"
   vmselect:
     image:
       repository: docker.io/victoriametrics/vmselect
@@ -26,6 +33,13 @@ spec:
           resources:
             requests:
               storage: 10Gi
+    resources:
+      requests:
+        cpu: "10m"
+        memory: "32Mi"
+      limits:
+        cpu: "100m"
+        memory: "2Gi"
   vmstorage:
     image:
       repository: docker.io/victoriametrics/vmstorage
@@ -40,3 +54,10 @@ spec:
           resources:
             requests:
               storage: 25Gi
+    resources:
+      requests:
+        cpu: "10m"
+        memory: "128Mi"
+      limits:
+        cpu: "50m"
+        memory: "512Mi"
