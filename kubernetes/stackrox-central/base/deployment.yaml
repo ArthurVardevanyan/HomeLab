@@ -85,7 +85,7 @@ spec:
         runAsUser: 4000
       containers:
         - name: central
-          image: "quay.io/stackrox-io/main:4.8.0@sha256:b46f3af214cc748c61a044865e8c52ae318ec1f5fa6edede4eef66b14d38095d"
+          image: "quay.io/stackrox-io/main:4.8.5@sha256:eacf2d67a02fb9fe9cff23ab23341501d76216cc1f6142032ef4dc9435a5c0bf"
           command:
             - /stackrox/central-entrypoint.sh
           ports:
@@ -340,7 +340,7 @@ spec:
       serviceAccountName: config-controller
       containers:
         - name: manager
-          image: "quay.io/stackrox-io/main:4.8.0@sha256:b46f3af214cc748c61a044865e8c52ae318ec1f5fa6edede4eef66b14d38095d"
+          image: "quay.io/stackrox-io/main:4.8.5@sha256:eacf2d67a02fb9fe9cff23ab23341501d76216cc1f6142032ef4dc9435a5c0bf"
           command:
             - /stackrox/bin/config-controller
           args:
@@ -478,7 +478,7 @@ spec:
       containers:
         - name: scanner
 
-          image: "quay.io/stackrox-io/scanner:4.8.0@sha256:82380937cce50b22bb2c0aedd1dcc3bdd7cb8d2d9f277b0202fc00ef2581b6e5"
+          image: "quay.io/stackrox-io/scanner:4.8.5@sha256:f7038dc6b17564bc745637b5bfccf3819c103a30784a8f6aa8c8ecb11a67a664"
           env:
             - name: ROX_MEMLIMIT
               valueFrom:
@@ -680,7 +680,7 @@ spec:
                     operator: DoesNotExist
       initContainers:
         - name: init-db
-          image: "quay.io/stackrox-io/scanner-db:4.8.0@sha256:a53bf59f19eef213d9af6ba9125a2d2a5f5ee9262c6f8e61c1758eaa434f7609"
+          image: "quay.io/stackrox-io/scanner-db:4.8.5@sha256:0cbcc9f9c05fc6746971cb2719001ff178f7bb66e198b1d57e35bb82d5b45967"
           env:
             - name: POSTGRES_PASSWORD_FILE
               value: "/run/secrets/stackrox.io/secrets/password"
@@ -704,7 +704,7 @@ spec:
               readOnly: true
       containers:
         - name: db
-          image: "quay.io/stackrox-io/scanner-db:4.8.0@sha256:a53bf59f19eef213d9af6ba9125a2d2a5f5ee9262c6f8e61c1758eaa434f7609"
+          image: "quay.io/stackrox-io/scanner-db:4.8.5@sha256:0cbcc9f9c05fc6746971cb2719001ff178f7bb66e198b1d57e35bb82d5b45967"
           ports:
             - name: tcp-postgresql
               protocol: TCP
@@ -827,7 +827,7 @@ spec:
       terminationGracePeriodSeconds: 120
       initContainers:
         - name: init-db
-          image: "quay.io/stackrox-io/scanner-v4-db:4.8.0@sha256:c844450f16d5cff16f940b353144b8c5af82a1ed6629e76fc8ba5b958f54ed61"
+          image: "quay.io/stackrox-io/scanner-v4-db:4.8.5@sha256:a214b6f46c286ef3406fbe2818a7f3375f58241d73a9c61f5d166f397125f67e"
           env:
             - name: PGDATA
               value: "/var/lib/postgresql/data/pgdata"
@@ -854,7 +854,7 @@ spec:
               memory: 2Gi
       containers:
         - name: db
-          image: "quay.io/stackrox-io/scanner-v4-db:4.8.0@sha256:c844450f16d5cff16f940b353144b8c5af82a1ed6629e76fc8ba5b958f54ed61"
+          image: "quay.io/stackrox-io/scanner-v4-db:4.8.5@sha256:a214b6f46c286ef3406fbe2818a7f3375f58241d73a9c61f5d166f397125f67e"
           env:
             - name: PGDATA
               value: "/var/lib/postgresql/data/pgdata"
@@ -1001,7 +1001,7 @@ spec:
               weight: 100
       containers:
         - name: indexer
-          image: "quay.io/stackrox-io/scanner-v4:4.8.0@sha256:3214df16bbe6d955addfc8553d39fef5929d09a78a2e153d903e74e5c1824dde"
+          image: "quay.io/stackrox-io/scanner-v4:4.8.5@sha256:284ed84f33b4c0600aee37b4fa007d12f164c6880ddba71e15cb2a859c981830"
           env:
             - name: ROX_MEMLIMIT
               valueFrom:
@@ -1203,7 +1203,7 @@ spec:
               weight: 100
       containers:
         - name: matcher
-          image: "quay.io/stackrox-io/scanner-v4:4.8.0@sha256:3214df16bbe6d955addfc8553d39fef5929d09a78a2e153d903e74e5c1824dde"
+          image: "quay.io/stackrox-io/scanner-v4:4.8.5@sha256:284ed84f33b4c0600aee37b4fa007d12f164c6880ddba71e15cb2a859c981830"
           env:
             - name: ROX_MEMLIMIT
               valueFrom:
