@@ -139,7 +139,7 @@ spec:
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
-  name: allow-influxdb
+  name: allow-victoria-metrics
   namespace: grafana
   annotations:
     argocd.argoproj.io/sync-wave: "0"
@@ -153,9 +153,13 @@ spec:
     - to:
         - namespaceSelector:
             matchLabels:
-              kubernetes.io/metadata.name: influxdb
+              kubernetes.io/metadata.name: homeassistant
+          podSelector:
+            matchLabels:
+              app.kubernetes.io/instance: homeassistant
+              app.kubernetes.io/name: vmselect
       ports:
-        - port: 8086
+        - port: 8481
           protocol: TCP
 ---
 apiVersion: networking.k8s.io/v1
