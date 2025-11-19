@@ -1,0 +1,10 @@
+kind: PodDisruptionBudget
+apiVersion: policy/v1
+metadata:
+  name: thanos-store-gateway
+  namespace: prometheus
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: thanos-store-gateway

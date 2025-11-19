@@ -1,0 +1,10 @@
+kind: PodDisruptionBudget
+apiVersion: policy/v1
+metadata:
+  name: prometheus-server
+  namespace: prometheus
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: prometheus

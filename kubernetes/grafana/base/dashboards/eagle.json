@@ -21,21 +21,15 @@
       }
     ]
   },
-  "description": "Overview of all pod & node resource requests, limits and usages",
+  "description": "Overview of all pod & node resource requests, limits and usages WITH CLUSTER & DATASOURCE SELECTOR",
   "editable": true,
   "fiscalYearStartMonth": 0,
-  "gnetId": 9871,
   "graphTooltip": 0,
-  "id": 4,
+  "id": 234,
   "links": [],
-  "liveNow": false,
   "panels": [
     {
       "collapsed": false,
-      "datasource": {
-        "type": "prometheus",
-        "uid": "${datasource}"
-      },
       "gridPos": {
         "h": 1,
         "w": 24,
@@ -44,75 +38,147 @@
       },
       "id": 5,
       "panels": [],
-      "targets": [
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "${datasource}"
-          },
-          "refId": "A"
-        }
-      ],
       "title": "Overall",
       "type": "row"
     },
     {
-      "aliasColors": {
-        "Allocatable CPU Cores": "#629e51",
-        "Limits CPU Cores": "#bf1b00",
-        "Usage CPU Cores": "#5195ce"
-      },
-      "bars": false,
-      "dashLength": 10,
-      "dashes": false,
       "datasource": {
         "type": "prometheus",
-        "uid": "${datasource}"
+        "uid": "h_4Zm0OVz"
       },
       "description": "This represents the total [CPU resource requests](https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/#meaning-of-cpu) in the cluster.\nFor comparison the total [allocatable CPU cores](https://github.com/kubernetes/community/blob/master/contributors/design-proposals/node-allocatable.md) is also shown.",
-      "fill": 1,
-      "fillGradient": 0,
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "CPU Cores",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "barWidthFactor": 0.6,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 2,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": true,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "min": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": 0
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "short"
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Allocatable CPU Cores"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "#629e51",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Limits CPU Cores"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "#bf1b00",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Usage CPU Cores"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "#5195ce",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          }
+        ]
+      },
       "gridPos": {
         "h": 8,
         "w": 8,
         "x": 0,
         "y": 1
       },
-      "hiddenSeries": false,
       "id": 2,
-      "legend": {
-        "avg": false,
-        "current": false,
-        "max": false,
-        "min": false,
-        "show": true,
-        "total": false,
-        "values": false
-      },
-      "lines": true,
-      "linewidth": 2,
-      "links": [],
-      "nullPointMode": "connected",
       "options": {
-        "alertThreshold": true
+        "alertThreshold": true,
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "hideZeros": false,
+          "mode": "multi",
+          "sort": "none"
+        }
       },
-      "paceLength": 10,
-      "percentage": false,
-      "pluginVersion": "9.2.4",
-      "pointradius": 0.5,
-      "points": false,
-      "renderer": "flot",
-      "seriesOverrides": [],
-      "spaceLength": 10,
-      "stack": false,
-      "steppedLine": false,
+      "pluginVersion": "12.1.0",
       "targets": [
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "${datasource}"
+            "uid": "h_4Zm0OVz"
           },
-          "expr": "sum(eagle_node_resource_allocatable_cpu_cores{node=~\"$node_pool.*\", node=~\"$node.*\"})",
+          "expr": "sum(eagle_node_resource_allocatable_cpu_cores{nodegroup=~\"$node_group\", cluster=~\"$cluster\", node=~\"$node.*\"})",
           "format": "time_series",
           "intervalFactor": 1,
           "legendFormat": "Allocatable CPU Cores",
@@ -121,9 +187,9 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "${datasource}"
+            "uid": "h_4Zm0OVz"
           },
-          "expr": "sum(eagle_node_resource_requests_cpu_cores{node=~\"$node_pool.*\", node=~\"$node.*\"})",
+          "expr": "sum(eagle_node_resource_requests_cpu_cores{nodegroup=~\"$node_group\", cluster=~\"$cluster\", node=~\"$node.*\"})",
           "format": "time_series",
           "intervalFactor": 1,
           "legendFormat": "Requested CPU Cores",
@@ -132,9 +198,9 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "${datasource}"
+            "uid": "h_4Zm0OVz"
           },
-          "expr": "sum(eagle_node_resource_limits_cpu_cores{node=~\"$node_pool.*\", node=~\"$node.*\"})",
+          "expr": "sum(eagle_node_resource_limits_cpu_cores{nodegroup=~\"$node_group\", cluster=~\"$cluster\", node=~\"$node.*\"})",
           "format": "time_series",
           "intervalFactor": 1,
           "legendFormat": "Limits CPU Cores",
@@ -143,51 +209,22 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "${datasource}"
+            "uid": "h_4Zm0OVz"
           },
-          "expr": "sum(eagle_node_resource_usage_cpu_cores{node=~\"$node_pool.*\", node=~\"$node.*\"})",
+          "expr": "sum(eagle_node_resource_usage_cpu_cores{nodegroup=~\"$node_group\", cluster=~\"$cluster\", node=~\"$node.*\"})",
           "format": "time_series",
           "intervalFactor": 1,
           "legendFormat": "Usage CPU Cores",
           "refId": "D"
         }
       ],
-      "thresholds": [],
-      "timeRegions": [],
       "title": "CPU Cores",
-      "tooltip": {
-        "shared": true,
-        "sort": 0,
-        "value_type": "individual"
-      },
-      "type": "graph",
-      "xaxis": {
-        "mode": "time",
-        "show": true,
-        "values": []
-      },
-      "yaxes": [
-        {
-          "format": "short",
-          "label": "CPU Cores",
-          "logBase": 1,
-          "min": "0",
-          "show": true
-        },
-        {
-          "format": "short",
-          "logBase": 1,
-          "show": true
-        }
-      ],
-      "yaxis": {
-        "align": false
-      }
+      "type": "timeseries"
     },
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "${datasource}"
+        "uid": "h_4Zm0OVz"
       },
       "fieldConfig": {
         "defaults": {
@@ -213,7 +250,7 @@
             "steps": [
               {
                 "color": "#299c46",
-                "value": null
+                "value": 0
               },
               {
                 "color": "rgba(237, 129, 40, 0.89)",
@@ -236,9 +273,10 @@
         "y": 1
       },
       "id": 7,
-      "links": [],
       "maxDataPoints": 100,
       "options": {
+        "minVizHeight": 75,
+        "minVizWidth": 75,
         "orientation": "horizontal",
         "reduceOptions": {
           "calcs": ["mean"],
@@ -247,16 +285,17 @@
         },
         "showThresholdLabels": false,
         "showThresholdMarkers": true,
+        "sizing": "auto",
         "text": {}
       },
-      "pluginVersion": "9.2.4",
+      "pluginVersion": "12.1.0",
       "targets": [
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "${datasource}"
+            "uid": "h_4Zm0OVz"
           },
-          "expr": "sum(eagle_node_resource_usage_cpu_cores{node=~\"$node_pool.*\", node=~\"$node.*\"}) / sum(eagle_node_resource_allocatable_cpu_cores{node=~\"$node_pool.*\", node=~\"$node.*\"})",
+          "expr": "sum(eagle_node_resource_usage_cpu_cores{nodegroup=~\"$node_group\", cluster=~\"$cluster\", node=~\"$node.*\"}) / sum(eagle_node_resource_allocatable_cpu_cores{nodegroup=~\"$node_group\", cluster=~\"$cluster\", node=~\"$node.*\"})",
           "format": "time_series",
           "instant": true,
           "intervalFactor": 1,
@@ -269,7 +308,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "${datasource}"
+        "uid": "h_4Zm0OVz"
       },
       "fieldConfig": {
         "defaults": {
@@ -295,7 +334,7 @@
             "steps": [
               {
                 "color": "#299c46",
-                "value": null
+                "value": 0
               },
               {
                 "color": "rgba(237, 129, 40, 0.89)",
@@ -318,9 +357,10 @@
         "y": 1
       },
       "id": 8,
-      "links": [],
       "maxDataPoints": 100,
       "options": {
+        "minVizHeight": 75,
+        "minVizWidth": 75,
         "orientation": "horizontal",
         "reduceOptions": {
           "calcs": ["mean"],
@@ -329,22 +369,20 @@
         },
         "showThresholdLabels": false,
         "showThresholdMarkers": true,
+        "sizing": "auto",
         "text": {}
       },
-      "pluginVersion": "9.2.4",
+      "pluginVersion": "12.1.0",
       "targets": [
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "${datasource}"
+            "uid": "h_4Zm0OVz"
           },
-          "exemplar": true,
-          "expr": "sum(eagle_pod_container_resource_usage_memory_bytes{node=~\"$node_pool.*\", node=~\"$node.*\"}) / sum(eagle_node_resource_allocatable_memory_bytes{node=~\"$node_pool.*\", node=~\"$node.*\"})",
+          "expr": "sum(eagle_node_resource_usage_memory_bytes{nodegroup=~\"$node_group\", cluster=~\"$cluster\", node=~\"$node.*\"}) / sum(eagle_node_resource_allocatable_memory_bytes{nodegroup=~\"$node_group\", cluster=~\"$cluster\", node=~\"$node.*\"})",
           "format": "time_series",
           "instant": true,
-          "interval": "",
           "intervalFactor": 1,
-          "legendFormat": "",
           "refId": "A"
         }
       ],
@@ -352,64 +390,173 @@
       "type": "gauge"
     },
     {
-      "aliasColors": {
-        "Allocatable CPU Cores": "#629e51",
-        "Limit RAM": "#bf1b00",
-        "Limits CPU Cores": "#bf1b00",
-        "Usage CPU Cores": "#5195ce",
-        "Usage RAM": "#5195ce"
-      },
-      "bars": false,
-      "dashLength": 10,
-      "dashes": false,
       "datasource": {
         "type": "prometheus",
-        "uid": "${datasource}"
+        "uid": "h_4Zm0OVz"
       },
       "description": "This represents the total [memory resource requests](https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/#meaning-of-memory) in the cluster.\nFor comparison the total [allocatable memory](https://github.com/kubernetes/community/blob/master/contributors/design-proposals/node-allocatable.md) is also shown.",
-      "fill": 1,
-      "fillGradient": 0,
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "Memory",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "barWidthFactor": 0.6,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 2,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": true,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "min": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": 0
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "decbytes"
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Allocatable CPU Cores"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "#629e51",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Limit RAM"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "#bf1b00",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Limits CPU Cores"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "#bf1b00",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Usage CPU Cores"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "#5195ce",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Usage RAM"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "#5195ce",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          }
+        ]
+      },
       "gridPos": {
         "h": 8,
         "w": 8,
         "x": 16,
         "y": 1
       },
-      "hiddenSeries": false,
       "id": 3,
-      "legend": {
-        "avg": false,
-        "current": false,
-        "max": false,
-        "min": false,
-        "show": true,
-        "total": false,
-        "values": false
-      },
-      "lines": true,
-      "linewidth": 2,
-      "links": [],
-      "nullPointMode": "connected",
       "options": {
-        "alertThreshold": true
+        "alertThreshold": true,
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "hideZeros": false,
+          "mode": "multi",
+          "sort": "none"
+        }
       },
-      "paceLength": 10,
-      "percentage": false,
-      "pluginVersion": "9.2.4",
-      "pointradius": 0.5,
-      "points": false,
-      "renderer": "flot",
-      "seriesOverrides": [],
-      "spaceLength": 10,
-      "stack": false,
-      "steppedLine": false,
+      "pluginVersion": "12.1.0",
       "targets": [
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "${datasource}"
+            "uid": "h_4Zm0OVz"
           },
-          "expr": "sum(eagle_node_resource_allocatable_memory_bytes{node=~\"$node_pool.*\", node=~\"$node.*\"})",
+          "expr": "sum(eagle_node_resource_allocatable_memory_bytes{nodegroup=~\"$node_group\", cluster=~\"$cluster\", node=~\"$node.*\"})",
           "format": "time_series",
           "intervalFactor": 1,
           "legendFormat": "Allocatable RAM",
@@ -418,9 +565,9 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "${datasource}"
+            "uid": "h_4Zm0OVz"
           },
-          "expr": "sum(eagle_node_resource_requests_memory_bytes{node=~\"$node_pool.*\", node=~\"$node.*\"})",
+          "expr": "sum(eagle_node_resource_requests_memory_bytes{nodegroup=~\"$node_group\", cluster=~\"$cluster\", node=~\"$node.*\"})",
           "format": "time_series",
           "intervalFactor": 1,
           "legendFormat": "Requested RAM",
@@ -429,9 +576,9 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "${datasource}"
+            "uid": "h_4Zm0OVz"
           },
-          "expr": "sum(eagle_node_resource_limits_memory_bytes{node=~\"$node_pool.*\", node=~\"$node.*\"})",
+          "expr": "sum(eagle_node_resource_limits_memory_bytes{nodegroup=~\"$node_group\", cluster=~\"$cluster\", node=~\"$node.*\"})",
           "format": "time_series",
           "intervalFactor": 1,
           "legendFormat": "Limit RAM",
@@ -440,243 +587,325 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "${datasource}"
+            "uid": "h_4Zm0OVz"
           },
-          "exemplar": true,
-          "expr": "sum(eagle_pod_container_resource_usage_memory_bytes{node=~\"$node_pool.*\", node=~\"$node.*\"})",
+          "expr": "sum(eagle_node_resource_usage_memory_bytes{nodegroup=~\"$node_group\", cluster=~\"$cluster\", node=~\"$node.*\"})",
           "format": "time_series",
-          "interval": "",
           "intervalFactor": 1,
           "legendFormat": "Usage RAM",
           "refId": "D"
         }
       ],
-      "thresholds": [],
-      "timeRegions": [],
       "title": "Memory",
-      "tooltip": {
-        "shared": true,
-        "sort": 0,
-        "value_type": "individual"
-      },
-      "type": "graph",
-      "xaxis": {
-        "mode": "time",
-        "show": true,
-        "values": []
-      },
-      "yaxes": [
-        {
-          "$$hashKey": "object:1677",
-          "format": "decbytes",
-          "label": "Memory",
-          "logBase": 1,
-          "min": "0",
-          "show": true
-        },
-        {
-          "$$hashKey": "object:1678",
-          "format": "short",
-          "logBase": 1,
-          "show": true
-        }
-      ],
-      "yaxis": {
-        "align": false
-      }
+      "type": "timeseries"
     },
     {
-      "collapsed": false,
       "datasource": {
         "type": "prometheus",
-        "uid": "${datasource}"
+        "uid": "h_4Zm0OVz"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "custom": {
+            "align": "auto",
+            "cellOptions": {
+              "type": "auto"
+            },
+            "inspect": false
+          },
+          "decimals": 2,
+          "displayName": "",
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": 0
+              }
+            ]
+          },
+          "unit": "short"
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "node"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Node"
+              },
+              {
+                "id": "unit",
+                "value": "short"
+              },
+              {
+                "id": "decimals",
+                "value": 2
+              },
+              {
+                "id": "custom.align"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Value #A"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Requested Cores"
+              },
+              {
+                "id": "unit",
+                "value": "short"
+              },
+              {
+                "id": "decimals",
+                "value": 2
+              },
+              {
+                "id": "custom.align"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Value #B"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Limit Cores"
+              },
+              {
+                "id": "unit",
+                "value": "short"
+              },
+              {
+                "id": "decimals",
+                "value": 2
+              },
+              {
+                "id": "custom.align"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Value #C"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Allocatable Cores"
+              },
+              {
+                "id": "unit",
+                "value": "short"
+              },
+              {
+                "id": "decimals",
+                "value": 2
+              },
+              {
+                "id": "custom.align"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Value #D"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "CPU Reserved"
+              },
+              {
+                "id": "unit",
+                "value": "percentunit"
+              },
+              {
+                "id": "decimals",
+                "value": 2
+              },
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "mode": "gradient",
+                  "type": "color-background"
+                }
+              },
+              {
+                "id": "custom.align"
+              },
+              {
+                "id": "thresholds",
+                "value": {
+                  "mode": "absolute",
+                  "steps": [
+                    {
+                      "color": "rgba(50, 172, 45, 0.97)",
+                      "value": 0
+                    },
+                    {
+                      "color": "rgba(237, 129, 40, 0.89)",
+                      "value": 60
+                    },
+                    {
+                      "color": "rgba(245, 54, 54, 0.9)",
+                      "value": 80
+                    }
+                  ]
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Value #E"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "CPU Burstable"
+              },
+              {
+                "id": "unit",
+                "value": "percentunit"
+              },
+              {
+                "id": "decimals",
+                "value": 2
+              },
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "mode": "gradient",
+                  "type": "color-background"
+                }
+              },
+              {
+                "id": "custom.align"
+              },
+              {
+                "id": "thresholds",
+                "value": {
+                  "mode": "absolute",
+                  "steps": [
+                    {
+                      "color": "rgba(50, 172, 45, 0.97)",
+                      "value": 0
+                    },
+                    {
+                      "color": "rgba(237, 129, 40, 0.89)",
+                      "value": 1
+                    },
+                    {
+                      "color": "rgba(245, 54, 54, 0.9)",
+                      "value": 3
+                    }
+                  ]
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Value #F"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "CPU Usage"
+              },
+              {
+                "id": "unit",
+                "value": "percentunit"
+              },
+              {
+                "id": "decimals",
+                "value": 2
+              },
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "mode": "gradient",
+                  "type": "color-background"
+                }
+              },
+              {
+                "id": "custom.align"
+              },
+              {
+                "id": "thresholds",
+                "value": {
+                  "mode": "absolute",
+                  "steps": [
+                    {
+                      "color": "rgba(50, 172, 45, 0.97)",
+                      "value": 0
+                    },
+                    {
+                      "color": "rgba(237, 129, 40, 0.89)",
+                      "value": 60
+                    },
+                    {
+                      "color": "rgba(245, 54, 54, 0.9)",
+                      "value": 80
+                    }
+                  ]
+                }
+              }
+            ]
+          }
+        ]
       },
       "gridPos": {
-        "h": 1,
+        "h": 8,
         "w": 24,
         "x": 0,
         "y": 9
       },
-      "id": 10,
-      "panels": [],
-      "targets": [
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "${datasource}"
-          },
-          "refId": "A"
-        }
-      ],
-      "title": "CPU",
-      "type": "row"
-    },
-    {
-      "columns": [],
-      "datasource": {
-        "type": "prometheus",
-        "uid": "${datasource}"
-      },
-      "fontSize": "100%",
-      "gridPos": {
-        "h": 5,
-        "w": 24,
-        "x": 0,
-        "y": 10
-      },
       "id": 14,
-      "links": [],
-      "scroll": true,
-      "showHeader": true,
-      "sort": {
-        "col": 7,
-        "desc": true
+      "options": {
+        "cellHeight": "sm",
+        "footer": {
+          "countRows": false,
+          "fields": "",
+          "reducer": ["sum"],
+          "show": false
+        },
+        "showHeader": true,
+        "sortBy": [
+          {
+            "desc": true,
+            "displayName": "CPU Usage"
+          }
+        ]
       },
-      "styles": [
-        {
-          "alias": "Time",
-          "align": "auto",
-          "dateFormat": "YYYY-MM-DD HH:mm:ss",
-          "pattern": "Time",
-          "type": "hidden"
-        },
-        {
-          "alias": "Node",
-          "align": "auto",
-          "colors": [
-            "rgba(245, 54, 54, 0.9)",
-            "rgba(237, 129, 40, 0.89)",
-            "rgba(50, 172, 45, 0.97)"
-          ],
-          "dateFormat": "YYYY-MM-DD HH:mm:ss",
-          "decimals": 2,
-          "mappingType": 1,
-          "pattern": "node",
-          "thresholds": [],
-          "type": "number",
-          "unit": "short"
-        },
-        {
-          "alias": "Requested Cores",
-          "align": "auto",
-          "colors": [
-            "rgba(245, 54, 54, 0.9)",
-            "rgba(237, 129, 40, 0.89)",
-            "rgba(50, 172, 45, 0.97)"
-          ],
-          "dateFormat": "YYYY-MM-DD HH:mm:ss",
-          "decimals": 2,
-          "mappingType": 1,
-          "pattern": "Value #A",
-          "thresholds": [],
-          "type": "number",
-          "unit": "short"
-        },
-        {
-          "alias": "Limit Cores",
-          "align": "auto",
-          "colors": [
-            "rgba(245, 54, 54, 0.9)",
-            "rgba(237, 129, 40, 0.89)",
-            "rgba(50, 172, 45, 0.97)"
-          ],
-          "dateFormat": "YYYY-MM-DD HH:mm:ss",
-          "decimals": 2,
-          "mappingType": 1,
-          "pattern": "Value #B",
-          "thresholds": [],
-          "type": "number",
-          "unit": "short"
-        },
-        {
-          "alias": "Allocatable Cores",
-          "align": "auto",
-          "colors": [
-            "rgba(245, 54, 54, 0.9)",
-            "rgba(237, 129, 40, 0.89)",
-            "rgba(50, 172, 45, 0.97)"
-          ],
-          "dateFormat": "YYYY-MM-DD HH:mm:ss",
-          "decimals": 2,
-          "mappingType": 1,
-          "pattern": "Value #C",
-          "thresholds": [],
-          "type": "number",
-          "unit": "short"
-        },
-        {
-          "alias": "CPU Reserved",
-          "align": "auto",
-          "colorMode": "cell",
-          "colors": [
-            "rgba(50, 172, 45, 0.97)",
-            "rgba(237, 129, 40, 0.89)",
-            "rgba(245, 54, 54, 0.9)"
-          ],
-          "dateFormat": "YYYY-MM-DD HH:mm:ss",
-          "decimals": 2,
-          "mappingType": 1,
-          "pattern": "Value #D",
-          "thresholds": ["0.6", "0.8"],
-          "type": "number",
-          "unit": "percentunit"
-        },
-        {
-          "alias": "CPU Burstable",
-          "align": "auto",
-          "colorMode": "cell",
-          "colors": [
-            "rgba(50, 172, 45, 0.97)",
-            "rgba(237, 129, 40, 0.89)",
-            "rgba(245, 54, 54, 0.9)"
-          ],
-          "dateFormat": "YYYY-MM-DD HH:mm:ss",
-          "decimals": 2,
-          "mappingType": 1,
-          "pattern": "Value #E",
-          "thresholds": ["1.5", "3"],
-          "type": "number",
-          "unit": "percentunit"
-        },
-        {
-          "alias": "CPU Usage",
-          "align": "auto",
-          "colorMode": "cell",
-          "colors": [
-            "rgba(50, 172, 45, 0.97)",
-            "rgba(237, 129, 40, 0.89)",
-            "rgba(245, 54, 54, 0.9)"
-          ],
-          "dateFormat": "YYYY-MM-DD HH:mm:ss",
-          "decimals": 2,
-          "mappingType": 1,
-          "pattern": "Value #F",
-          "thresholds": ["0.4", "0.6"],
-          "type": "number",
-          "unit": "percentunit"
-        },
-        {
-          "alias": "",
-          "align": "auto",
-          "colors": [
-            "rgba(245, 54, 54, 0.9)",
-            "rgba(237, 129, 40, 0.89)",
-            "rgba(50, 172, 45, 0.97)"
-          ],
-          "decimals": 2,
-          "pattern": "/.*/",
-          "thresholds": [],
-          "type": "number",
-          "unit": "short"
-        }
-      ],
+      "pluginVersion": "12.1.0",
       "targets": [
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "${datasource}"
+            "uid": "h_4Zm0OVz"
           },
-          "expr": "sum(eagle_node_resource_requests_cpu_cores{node=~\"$node_pool.*\", node=~\"$node.*\"}) by (node)",
+          "expr": "sum(eagle_node_resource_requests_cpu_cores{nodegroup=~\"$node_group\", cluster=~\"$cluster\", node=~\"$node.*\"}) by (node)",
           "format": "table",
           "instant": true,
           "intervalFactor": 1,
@@ -686,9 +915,9 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "${datasource}"
+            "uid": "h_4Zm0OVz"
           },
-          "expr": "sum(eagle_node_resource_limits_cpu_cores{node=~\"$node_pool.*\", node=~\"$node.*\"}) by (node)",
+          "expr": "sum(eagle_node_resource_limits_cpu_cores{nodegroup=~\"$node_group\", cluster=~\"$cluster\", node=~\"$node.*\"}) by (node)",
           "format": "table",
           "instant": true,
           "intervalFactor": 1,
@@ -698,9 +927,9 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "${datasource}"
+            "uid": "h_4Zm0OVz"
           },
-          "expr": "sum(eagle_node_resource_allocatable_cpu_cores{node=~\"$node_pool.*\", node=~\"$node.*\"}) by (node)",
+          "expr": "sum(eagle_node_resource_allocatable_cpu_cores{nodegroup=~\"$node_group\", cluster=~\"$cluster\", node=~\"$node.*\"}) by (node)",
           "format": "table",
           "instant": true,
           "intervalFactor": 1,
@@ -710,9 +939,9 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "${datasource}"
+            "uid": "h_4Zm0OVz"
           },
-          "expr": "sum(eagle_node_resource_requests_cpu_cores{node=~\"$node_pool.*\", node=~\"$node.*\"} / eagle_node_resource_allocatable_cpu_cores{node=~\"$node_pool.*\", node=~\"$node.*\"}) by (node)",
+          "expr": "sum(eagle_node_resource_requests_cpu_cores{nodegroup=~\"$node_group\", cluster=~\"$cluster\", node=~\"$node.*\"} / eagle_node_resource_allocatable_cpu_cores{nodegroup=~\"$node_group\", cluster=~\"$cluster\", node=~\"$node.*\"}) by (node)",
           "format": "table",
           "instant": true,
           "intervalFactor": 1,
@@ -722,9 +951,9 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "${datasource}"
+            "uid": "h_4Zm0OVz"
           },
-          "expr": "sum(eagle_node_resource_limits_cpu_cores{node=~\"$node_pool.*\", node=~\"$node.*\"} / eagle_node_resource_allocatable_cpu_cores{node=~\"$node_pool.*\", node=~\"$node.*\"}) by (node)",
+          "expr": "sum(eagle_node_resource_limits_cpu_cores{nodegroup=~\"$node_group\", cluster=~\"$cluster\", node=~\"$node.*\"} / eagle_node_resource_allocatable_cpu_cores{nodegroup=~\"$node_group\", cluster=~\"$cluster\", node=~\"$node.*\"}) by (node)",
           "format": "table",
           "instant": true,
           "intervalFactor": 1,
@@ -733,9 +962,9 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "${datasource}"
+            "uid": "h_4Zm0OVz"
           },
-          "expr": "sum(eagle_node_resource_usage_cpu_cores{node=~\"$node_pool.*\", node=~\"$node.*\"} / eagle_node_resource_allocatable_cpu_cores{node=~\"$node_pool.*\", node=~\"$node.*\"}) by (node)",
+          "expr": "sum(eagle_node_resource_usage_cpu_cores{nodegroup=~\"$node_group\", cluster=~\"$cluster\", node=~\"$node.*\"} / eagle_node_resource_allocatable_cpu_cores{nodegroup=~\"$node_group\", cluster=~\"$cluster\", node=~\"$node.*\"}) by (node)",
           "format": "table",
           "instant": true,
           "intervalFactor": 1,
@@ -743,602 +972,479 @@
         }
       ],
       "title": "Node CPU",
-      "transform": "table",
-      "type": "table-old"
+      "transformations": [
+        {
+          "id": "merge",
+          "options": {
+            "reducers": []
+          }
+        },
+        {
+          "id": "filterFieldsByName",
+          "options": {
+            "include": {
+              "names": [
+                "node",
+                "Value #A",
+                "Value #B",
+                "Value #C",
+                "Value #D",
+                "Value #E",
+                "Value #F"
+              ]
+            }
+          }
+        }
+      ],
+      "type": "table"
     },
     {
-      "aliasColors": {
-        "Allocatable CPU Cores": "#629e51",
-        "Limits CPU Cores": "#bf1b00",
-        "Usage CPU Cores": "#5195ce"
-      },
-      "bars": false,
-      "dashLength": 10,
-      "dashes": false,
       "datasource": {
         "type": "prometheus",
-        "uid": "${datasource}"
+        "uid": "h_4Zm0OVz"
       },
-      "description": "This represents the total [CPU resource requests](https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/#meaning-of-cpu) in the cluster.\nFor comparison the total [allocatable CPU cores](https://github.com/kubernetes/community/blob/master/contributors/design-proposals/node-allocatable.md) is also shown.",
-      "fill": 1,
-      "fillGradient": 0,
+      "description": "",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "CPU Cores",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "barWidthFactor": 0.6,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 2,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": true,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "min": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": 0
+              },
+              {
+                "color": "#EAB839",
+                "value": 0
+              }
+            ]
+          },
+          "unit": "short"
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Usage CPU Cores"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "#5195ce",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          }
+        ]
+      },
       "gridPos": {
-        "h": 10,
+        "h": 8,
         "w": 12,
         "x": 0,
-        "y": 15
+        "y": 17
       },
-      "hiddenSeries": false,
-      "id": 25,
-      "interval": "5",
-      "legend": {
-        "avg": false,
-        "current": false,
-        "max": false,
-        "min": false,
-        "show": true,
-        "total": false,
-        "values": false
-      },
-      "lines": true,
-      "linewidth": 2,
-      "links": [],
-      "nullPointMode": "connected",
+      "id": 24,
       "options": {
-        "alertThreshold": true
+        "alertThreshold": true,
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "hideZeros": false,
+          "mode": "multi",
+          "sort": "none"
+        }
       },
-      "paceLength": 10,
-      "percentage": false,
-      "pluginVersion": "9.2.4",
-      "pointradius": 0.5,
-      "points": false,
-      "renderer": "flot",
-      "seriesOverrides": [],
-      "spaceLength": 10,
-      "stack": false,
-      "steppedLine": false,
+      "pluginVersion": "12.1.0",
       "targets": [
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "${datasource}"
+            "uid": "h_4Zm0OVz"
           },
-          "exemplar": true,
-          "expr": "sum (eagle_pod_container_resource_usage_cpu_cores{node=~\"$node_pool.*\", node=~\"$node.*\", namespace=~\"$namespace.*\"}) by (container)",
+          "editorMode": "code",
+          "expr": "sum (eagle_pod_container_resource_usage_cpu_cores{nodegroup=~\"$node_group\",node=~\"$node.*\",cluster=~\"$cluster\", namespace=~\"$namespace.*\"}) by (container)",
           "format": "time_series",
-          "interval": "",
           "intervalFactor": 1,
           "legendFormat": "{{container}}",
-          "refId": "D"
+          "range": true,
+          "refId": "A"
         }
       ],
-      "thresholds": [],
-      "timeRegions": [],
       "title": "CPU Usage",
-      "tooltip": {
-        "shared": true,
-        "sort": 0,
-        "value_type": "individual"
-      },
-      "type": "graph",
-      "xaxis": {
-        "mode": "time",
-        "show": true,
-        "values": []
-      },
-      "yaxes": [
-        {
-          "$$hashKey": "object:610",
-          "format": "short",
-          "label": "CPU Cores",
-          "logBase": 1,
-          "min": "0",
-          "show": true
-        },
-        {
-          "$$hashKey": "object:611",
-          "format": "short",
-          "logBase": 1,
-          "show": true
-        }
-      ],
-      "yaxis": {
-        "align": false
-      }
+      "type": "timeseries"
     },
     {
-      "aliasColors": {
-        "Allocatable CPU Cores": "#629e51",
-        "Limits CPU Cores": "#bf1b00",
-        "Usage CPU Cores": "#5195ce"
-      },
-      "bars": false,
-      "dashLength": 10,
-      "dashes": false,
       "datasource": {
         "type": "prometheus",
-        "uid": "${datasource}"
+        "uid": "h_4Zm0OVz"
       },
-      "description": "This represents the total [CPU resource requests](https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/#meaning-of-cpu) in the cluster.\nFor comparison the total [allocatable CPU cores](https://github.com/kubernetes/community/blob/master/contributors/design-proposals/node-allocatable.md) is also shown.",
-      "fill": 1,
-      "fillGradient": 0,
+      "description": "",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "Memory Usage",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "barWidthFactor": 0.6,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 2,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": true,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "min": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": 0
+              }
+            ]
+          },
+          "unit": "decbytes"
+        },
+        "overrides": []
+      },
       "gridPos": {
-        "h": 10,
+        "h": 8,
         "w": 12,
         "x": 12,
-        "y": 15
+        "y": 17
       },
-      "hiddenSeries": false,
-      "id": 27,
-      "interval": "5",
-      "legend": {
-        "avg": false,
-        "current": false,
-        "max": false,
-        "min": false,
-        "show": true,
-        "total": false,
-        "values": false
-      },
-      "lines": true,
-      "linewidth": 2,
-      "links": [],
-      "nullPointMode": "connected",
+      "id": 25,
       "options": {
-        "alertThreshold": true
+        "alertThreshold": true,
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "hideZeros": false,
+          "mode": "multi",
+          "sort": "none"
+        }
       },
-      "paceLength": 10,
-      "percentage": false,
-      "pluginVersion": "9.2.4",
-      "pointradius": 0.5,
-      "points": false,
-      "renderer": "flot",
-      "seriesOverrides": [],
-      "spaceLength": 10,
-      "stack": false,
-      "steppedLine": false,
+      "pluginVersion": "12.1.0",
       "targets": [
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "${datasource}"
+            "uid": "h_4Zm0OVz"
           },
-          "exemplar": true,
-          "expr": "sum (eagle_pod_container_resource_usage_memory_bytes{node=~\"$node_pool.*\", node=~\"$node.*\" , pod!~\"svclb.*\", namespace=~\"$namespace.*\"}) by ( container)",
+          "editorMode": "code",
+          "expr": "sum (eagle_pod_container_resource_usage_memory_bytes{nodegroup=~\"$node_group\",node=~\"$node.*\",cluster=~\"$cluster\", namespace=~\"$namespace.*\"}) by (container)",
           "format": "time_series",
-          "instant": false,
-          "interval": "",
           "intervalFactor": 1,
           "legendFormat": "{{container}}",
-          "refId": "D"
-        },
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "${datasource}"
-          },
-          "exemplar": true,
-          "expr": "",
-          "hide": false,
-          "interval": "",
-          "legendFormat": "",
+          "range": true,
           "refId": "A"
         }
       ],
-      "thresholds": [],
-      "timeRegions": [],
       "title": "Memory Usage",
-      "tooltip": {
-        "shared": true,
-        "sort": 0,
-        "value_type": "individual"
-      },
-      "type": "graph",
-      "xaxis": {
-        "mode": "time",
-        "show": true,
-        "values": []
-      },
-      "yaxes": [
-        {
-          "$$hashKey": "object:611",
-          "format": "decbytes",
-          "label": "Memory Usage",
-          "logBase": 1,
-          "min": "0",
-          "show": true
-        },
-        {
-          "$$hashKey": "object:612",
-          "format": "short",
-          "logBase": 1,
-          "show": true
-        }
-      ],
-      "yaxis": {
-        "align": false
-      }
-    },
-    {
-      "columns": [],
-      "datasource": {
-        "type": "prometheus",
-        "uid": "${datasource}"
-      },
-      "fontSize": "100%",
-      "gridPos": {
-        "h": 7,
-        "w": 24,
-        "x": 0,
-        "y": 25
-      },
-      "id": 16,
-      "links": [],
-      "scroll": true,
-      "showHeader": true,
-      "sort": {
-        "col": 4,
-        "desc": true
-      },
-      "styles": [
-        {
-          "alias": "Time",
-          "align": "auto",
-          "dateFormat": "YYYY-MM-DD HH:mm:ss",
-          "pattern": "Time",
-          "type": "hidden"
-        },
-        {
-          "alias": "Container",
-          "align": "auto",
-          "colors": [
-            "rgba(245, 54, 54, 0.9)",
-            "rgba(237, 129, 40, 0.89)",
-            "rgba(50, 172, 45, 0.97)"
-          ],
-          "dateFormat": "YYYY-MM-DD HH:mm:ss",
-          "decimals": 2,
-          "mappingType": 1,
-          "pattern": "container",
-          "thresholds": [],
-          "type": "number",
-          "unit": "short"
-        },
-        {
-          "alias": "Pod",
-          "align": "auto",
-          "colors": [
-            "rgba(245, 54, 54, 0.9)",
-            "rgba(237, 129, 40, 0.89)",
-            "rgba(50, 172, 45, 0.97)"
-          ],
-          "dateFormat": "YYYY-MM-DD HH:mm:ss",
-          "decimals": 2,
-          "mappingType": 1,
-          "pattern": "pod",
-          "thresholds": [],
-          "type": "number",
-          "unit": "short"
-        },
-        {
-          "alias": "Requested Cores",
-          "align": "auto",
-          "colors": [
-            "rgba(245, 54, 54, 0.9)",
-            "rgba(237, 129, 40, 0.89)",
-            "rgba(50, 172, 45, 0.97)"
-          ],
-          "dateFormat": "YYYY-MM-DD HH:mm:ss",
-          "decimals": 2,
-          "mappingType": 1,
-          "pattern": "Value #A",
-          "thresholds": [],
-          "type": "number",
-          "unit": "short"
-        },
-        {
-          "alias": "Limit Cores",
-          "align": "auto",
-          "colors": [
-            "rgba(245, 54, 54, 0.9)",
-            "rgba(237, 129, 40, 0.89)",
-            "rgba(50, 172, 45, 0.97)"
-          ],
-          "dateFormat": "YYYY-MM-DD HH:mm:ss",
-          "decimals": 2,
-          "mappingType": 1,
-          "pattern": "Value #B",
-          "thresholds": [],
-          "type": "number",
-          "unit": "short"
-        },
-        {
-          "alias": "Usage Cores",
-          "align": "auto",
-          "colors": [
-            "rgba(245, 54, 54, 0.9)",
-            "rgba(237, 129, 40, 0.89)",
-            "rgba(50, 172, 45, 0.97)"
-          ],
-          "dateFormat": "YYYY-MM-DD HH:mm:ss",
-          "decimals": 2,
-          "mappingType": 1,
-          "pattern": "Value #C",
-          "thresholds": [],
-          "type": "number",
-          "unit": "short"
-        },
-        {
-          "alias": "Namespace",
-          "align": "auto",
-          "colors": [
-            "rgba(245, 54, 54, 0.9)",
-            "rgba(237, 129, 40, 0.89)",
-            "rgba(50, 172, 45, 0.97)"
-          ],
-          "dateFormat": "YYYY-MM-DD HH:mm:ss",
-          "decimals": 2,
-          "mappingType": 1,
-          "pattern": "namespace",
-          "thresholds": [],
-          "type": "number",
-          "unit": "short"
-        },
-        {
-          "alias": "",
-          "align": "auto",
-          "colors": [
-            "rgba(245, 54, 54, 0.9)",
-            "rgba(237, 129, 40, 0.89)",
-            "rgba(50, 172, 45, 0.97)"
-          ],
-          "decimals": 2,
-          "pattern": "/.*/",
-          "thresholds": [],
-          "type": "number",
-          "unit": "short"
-        }
-      ],
-      "targets": [
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "${datasource}"
-          },
-          "exemplar": true,
-          "expr": "sum (eagle_pod_container_resource_requests_cpu_cores{node=~\"$node_pool.*\", node=~\"$node.*\", namespace=~\"$namespace.*\"}) by (pod, container, namespace)",
-          "format": "table",
-          "instant": true,
-          "interval": "",
-          "intervalFactor": 1,
-          "legendFormat": "",
-          "refId": "A"
-        },
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "${datasource}"
-          },
-          "exemplar": true,
-          "expr": "sum (eagle_pod_container_resource_limits_cpu_cores{node=~\"$node_pool.*\", node=~\"$node.*\", namespace=~\"$namespace.*\"}) by (pod, container, namespace)",
-          "format": "table",
-          "instant": true,
-          "interval": "",
-          "intervalFactor": 1,
-          "legendFormat": "",
-          "refId": "B"
-        },
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "${datasource}"
-          },
-          "exemplar": true,
-          "expr": "sum (eagle_pod_container_resource_usage_cpu_cores{node=~\"$node_pool.*\", node=~\"$node.*\", namespace=~\"$namespace.*\"}) by (pod, container, namespace)",
-          "format": "table",
-          "instant": true,
-          "interval": "",
-          "intervalFactor": 1,
-          "legendFormat": "",
-          "refId": "C"
-        }
-      ],
-      "title": "Container CPU",
-      "transform": "table",
-      "type": "table-old"
+      "type": "timeseries"
     },
     {
       "collapsed": false,
-      "datasource": {
-        "type": "prometheus",
-        "uid": "${datasource}"
-      },
       "gridPos": {
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 32
+        "y": 25
       },
-      "id": 12,
+      "id": 10,
       "panels": [],
-      "targets": [
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "${datasource}"
-          },
-          "refId": "A"
-        }
-      ],
-      "title": "Memory",
+      "title": "CPU",
       "type": "row"
     },
     {
-      "columns": [],
       "datasource": {
         "type": "prometheus",
-        "uid": "${datasource}"
+        "uid": "h_4Zm0OVz"
       },
-      "fontSize": "100%",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "custom": {
+            "align": "auto",
+            "cellOptions": {
+              "type": "auto"
+            },
+            "inspect": false
+          },
+          "decimals": 2,
+          "displayName": "",
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": 0
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "short"
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Time"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Time"
+              },
+              {
+                "id": "custom.align"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "container"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Container"
+              },
+              {
+                "id": "unit",
+                "value": "short"
+              },
+              {
+                "id": "decimals",
+                "value": 2
+              },
+              {
+                "id": "custom.align"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "pod"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Pod"
+              },
+              {
+                "id": "unit",
+                "value": "short"
+              },
+              {
+                "id": "decimals",
+                "value": 2
+              },
+              {
+                "id": "custom.align"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Value #A"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Requested Cores"
+              },
+              {
+                "id": "unit",
+                "value": "short"
+              },
+              {
+                "id": "decimals",
+                "value": 2
+              },
+              {
+                "id": "custom.align"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Value #B"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Limit Cores"
+              },
+              {
+                "id": "unit",
+                "value": "short"
+              },
+              {
+                "id": "decimals",
+                "value": 2
+              },
+              {
+                "id": "custom.align"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Value #C"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Usage Cores"
+              },
+              {
+                "id": "unit",
+                "value": "short"
+              },
+              {
+                "id": "decimals",
+                "value": 2
+              },
+              {
+                "id": "custom.align"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "namespace"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Namespace"
+              },
+              {
+                "id": "unit",
+                "value": "short"
+              },
+              {
+                "id": "decimals",
+                "value": 2
+              },
+              {
+                "id": "custom.align"
+              }
+            ]
+          }
+        ]
+      },
       "gridPos": {
-        "h": 5,
+        "h": 7,
         "w": 24,
         "x": 0,
-        "y": 33
+        "y": 26
       },
-      "id": 17,
-      "links": [],
-      "scroll": true,
-      "showHeader": true,
-      "sort": {
-        "col": 7,
-        "desc": true
+      "id": 16,
+      "options": {
+        "cellHeight": "sm",
+        "footer": {
+          "countRows": false,
+          "fields": "",
+          "reducer": ["sum"],
+          "show": false
+        },
+        "showHeader": true
       },
-      "styles": [
-        {
-          "alias": "Time",
-          "align": "auto",
-          "dateFormat": "YYYY-MM-DD HH:mm:ss",
-          "pattern": "Time",
-          "type": "hidden"
-        },
-        {
-          "alias": "Node",
-          "align": "auto",
-          "colors": [
-            "rgba(245, 54, 54, 0.9)",
-            "rgba(237, 129, 40, 0.89)",
-            "rgba(50, 172, 45, 0.97)"
-          ],
-          "dateFormat": "YYYY-MM-DD HH:mm:ss",
-          "decimals": 2,
-          "mappingType": 1,
-          "pattern": "node",
-          "thresholds": [],
-          "type": "number",
-          "unit": "short"
-        },
-        {
-          "alias": "Requested RAM",
-          "align": "auto",
-          "colors": [
-            "rgba(245, 54, 54, 0.9)",
-            "rgba(237, 129, 40, 0.89)",
-            "rgba(50, 172, 45, 0.97)"
-          ],
-          "dateFormat": "YYYY-MM-DD HH:mm:ss",
-          "decimals": 2,
-          "mappingType": 1,
-          "pattern": "Value #A",
-          "thresholds": [],
-          "type": "number",
-          "unit": "decbytes"
-        },
-        {
-          "alias": "Limit RAM",
-          "align": "auto",
-          "colors": [
-            "rgba(245, 54, 54, 0.9)",
-            "rgba(237, 129, 40, 0.89)",
-            "rgba(50, 172, 45, 0.97)"
-          ],
-          "dateFormat": "YYYY-MM-DD HH:mm:ss",
-          "decimals": 2,
-          "mappingType": 1,
-          "pattern": "Value #B",
-          "thresholds": [],
-          "type": "number",
-          "unit": "decbytes"
-        },
-        {
-          "alias": "Allocatable RAM",
-          "align": "auto",
-          "colors": [
-            "rgba(245, 54, 54, 0.9)",
-            "rgba(237, 129, 40, 0.89)",
-            "rgba(50, 172, 45, 0.97)"
-          ],
-          "dateFormat": "YYYY-MM-DD HH:mm:ss",
-          "decimals": 2,
-          "mappingType": 1,
-          "pattern": "Value #C",
-          "thresholds": [],
-          "type": "number",
-          "unit": "decbytes"
-        },
-        {
-          "alias": "RAM Reserved",
-          "align": "auto",
-          "colorMode": "cell",
-          "colors": [
-            "rgba(50, 172, 45, 0.97)",
-            "rgba(237, 129, 40, 0.89)",
-            "rgba(245, 54, 54, 0.9)"
-          ],
-          "dateFormat": "YYYY-MM-DD HH:mm:ss",
-          "decimals": 2,
-          "mappingType": 1,
-          "pattern": "Value #D",
-          "thresholds": ["0.6", "0.8"],
-          "type": "number",
-          "unit": "percentunit"
-        },
-        {
-          "alias": "RAM Burstable",
-          "align": "auto",
-          "colorMode": "cell",
-          "colors": [
-            "rgba(50, 172, 45, 0.97)",
-            "rgba(237, 129, 40, 0.89)",
-            "rgba(245, 54, 54, 0.9)"
-          ],
-          "dateFormat": "YYYY-MM-DD HH:mm:ss",
-          "decimals": 2,
-          "mappingType": 1,
-          "pattern": "Value #E",
-          "thresholds": ["1.5", "3"],
-          "type": "number",
-          "unit": "percentunit"
-        },
-        {
-          "alias": "RAM Usage",
-          "align": "auto",
-          "colorMode": "cell",
-          "colors": [
-            "rgba(50, 172, 45, 0.97)",
-            "rgba(237, 129, 40, 0.89)",
-            "rgba(245, 54, 54, 0.9)"
-          ],
-          "dateFormat": "YYYY-MM-DD HH:mm:ss",
-          "decimals": 2,
-          "mappingType": 1,
-          "pattern": "Value #F",
-          "thresholds": ["0.4", "0.6"],
-          "type": "number",
-          "unit": "percentunit"
-        },
-        {
-          "alias": "",
-          "align": "auto",
-          "colors": [
-            "rgba(245, 54, 54, 0.9)",
-            "rgba(237, 129, 40, 0.89)",
-            "rgba(50, 172, 45, 0.97)"
-          ],
-          "decimals": 2,
-          "pattern": "/.*/",
-          "thresholds": [],
-          "type": "number",
-          "unit": "short"
-        }
-      ],
+      "pluginVersion": "12.1.0",
       "targets": [
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "${datasource}"
+            "uid": "h_4Zm0OVz"
           },
-          "expr": "sum(eagle_node_resource_requests_memory_bytes{node=~\"$node_pool.*\", node=~\"$node.*\"}) by (node)",
+          "expr": "sum (eagle_pod_container_resource_requests_cpu_cores{nodegroup=~\"$node_group\", cluster=~\"$cluster\", node=~\"$node.*\", namespace=~\"$namespace\"}) by (pod, container, namespace)",
           "format": "table",
           "instant": true,
           "intervalFactor": 1,
@@ -1348,9 +1454,391 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "${datasource}"
+            "uid": "h_4Zm0OVz"
           },
-          "expr": "sum(eagle_node_resource_limits_memory_bytes{node=~\"$node_pool.*\", node=~\"$node.*\"}) by (node)",
+          "expr": "sum (eagle_pod_container_resource_limits_cpu_cores{nodegroup=~\"$node_group\", cluster=~\"$cluster\", node=~\"$node.*\", namespace=~\"$namespace\"}) by (pod, container, namespace)",
+          "format": "table",
+          "instant": true,
+          "intervalFactor": 1,
+          "refId": "B"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "h_4Zm0OVz"
+          },
+          "expr": "sum (eagle_pod_container_resource_usage_cpu_cores{nodegroup=~\"$node_group\", cluster=~\"$cluster\", node=~\"$node.*\", namespace=~\"$namespace\"}) by (pod, container, namespace)",
+          "format": "table",
+          "instant": true,
+          "intervalFactor": 1,
+          "refId": "C"
+        }
+      ],
+      "title": "Container CPU",
+      "transformations": [
+        {
+          "id": "merge",
+          "options": {
+            "reducers": []
+          }
+        },
+        {
+          "id": "filterFieldsByName",
+          "options": {
+            "include": {
+              "names": [
+                "container",
+                "namespace",
+                "pod",
+                "Value #A",
+                "Value #B",
+                "Value #C"
+              ]
+            }
+          }
+        }
+      ],
+      "type": "table"
+    },
+    {
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 33
+      },
+      "id": 12,
+      "panels": [],
+      "title": "Memory",
+      "type": "row"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "h_4Zm0OVz"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "custom": {
+            "align": "auto",
+            "cellOptions": {
+              "type": "auto"
+            },
+            "inspect": false
+          },
+          "decimals": 2,
+          "displayName": "",
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": 0
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "short"
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Time"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Time"
+              },
+              {
+                "id": "custom.align"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "node"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Node"
+              },
+              {
+                "id": "unit",
+                "value": "short"
+              },
+              {
+                "id": "decimals",
+                "value": 2
+              },
+              {
+                "id": "custom.align"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Value #A"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Requested RAM"
+              },
+              {
+                "id": "unit",
+                "value": "decbytes"
+              },
+              {
+                "id": "decimals",
+                "value": 2
+              },
+              {
+                "id": "custom.align"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Value #B"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Limit RAM"
+              },
+              {
+                "id": "unit",
+                "value": "decbytes"
+              },
+              {
+                "id": "decimals",
+                "value": 2
+              },
+              {
+                "id": "custom.align"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Value #C"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Allocatable RAM"
+              },
+              {
+                "id": "unit",
+                "value": "decbytes"
+              },
+              {
+                "id": "decimals",
+                "value": 2
+              },
+              {
+                "id": "custom.align"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Value #D"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "RAM Reserved"
+              },
+              {
+                "id": "unit",
+                "value": "percentunit"
+              },
+              {
+                "id": "decimals",
+                "value": 2
+              },
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "mode": "gradient",
+                  "type": "color-background"
+                }
+              },
+              {
+                "id": "custom.align"
+              },
+              {
+                "id": "thresholds",
+                "value": {
+                  "mode": "absolute",
+                  "steps": [
+                    {
+                      "color": "rgba(50, 172, 45, 0.97)",
+                      "value": 0
+                    }
+                  ]
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Value #E"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "RAM Burstable"
+              },
+              {
+                "id": "unit",
+                "value": "percentunit"
+              },
+              {
+                "id": "decimals",
+                "value": 2
+              },
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "mode": "gradient",
+                  "type": "color-background"
+                }
+              },
+              {
+                "id": "custom.align"
+              },
+              {
+                "id": "thresholds",
+                "value": {
+                  "mode": "absolute",
+                  "steps": [
+                    {
+                      "color": "rgba(50, 172, 45, 0.97)",
+                      "value": 0
+                    },
+                    {
+                      "color": "rgba(245, 54, 54, 0.9)",
+                      "value": 1
+                    }
+                  ]
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Value #F"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "RAM Usage"
+              },
+              {
+                "id": "unit",
+                "value": "percentunit"
+              },
+              {
+                "id": "decimals",
+                "value": 2
+              },
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "mode": "gradient",
+                  "type": "color-background"
+                }
+              },
+              {
+                "id": "custom.align"
+              },
+              {
+                "id": "thresholds",
+                "value": {
+                  "mode": "absolute",
+                  "steps": [
+                    {
+                      "color": "rgba(50, 172, 45, 0.97)",
+                      "value": 0
+                    },
+                    {
+                      "color": "rgba(237, 129, 40, 0.89)",
+                      "value": 0.6
+                    },
+                    {
+                      "color": "rgba(245, 54, 54, 0.9)",
+                      "value": 0.8
+                    }
+                  ]
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 24,
+        "x": 0,
+        "y": 34
+      },
+      "id": 17,
+      "options": {
+        "cellHeight": "sm",
+        "footer": {
+          "countRows": false,
+          "fields": "",
+          "reducer": ["sum"],
+          "show": false
+        },
+        "showHeader": true,
+        "sortBy": [
+          {
+            "desc": true,
+            "displayName": "RAM Usage"
+          }
+        ]
+      },
+      "pluginVersion": "12.1.0",
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "h_4Zm0OVz"
+          },
+          "expr": "sum(eagle_node_resource_requests_memory_bytes{nodegroup=~\"$node_group\", cluster=~\"$cluster\", node=~\"$node.*\"}) by (node)",
+          "format": "table",
+          "instant": true,
+          "intervalFactor": 1,
+          "legendFormat": "",
+          "refId": "A"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "h_4Zm0OVz"
+          },
+          "expr": "sum(eagle_node_resource_limits_memory_bytes{nodegroup=~\"$node_group\", cluster=~\"$cluster\", node=~\"$node.*\"}) by (node)",
           "format": "table",
           "instant": true,
           "intervalFactor": 1,
@@ -1360,9 +1848,9 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "${datasource}"
+            "uid": "h_4Zm0OVz"
           },
-          "expr": "sum(eagle_node_resource_allocatable_memory_bytes{node=~\"$node_pool.*\", node=~\"$node.*\"}) by (node)",
+          "expr": "sum(eagle_node_resource_allocatable_memory_bytes{nodegroup=~\"$node_group\", cluster=~\"$cluster\", node=~\"$node.*\"}) by (node)",
           "format": "table",
           "instant": true,
           "intervalFactor": 1,
@@ -1372,9 +1860,9 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "${datasource}"
+            "uid": "h_4Zm0OVz"
           },
-          "expr": "sum(eagle_node_resource_requests_memory_bytes{node=~\"$node_pool.*\", node=~\"$node.*\"} / eagle_node_resource_allocatable_memory_bytes{node=~\"$node_pool.*\", node=~\"$node.*\"}) by (node)",
+          "expr": "sum(eagle_node_resource_requests_memory_bytes{nodegroup=~\"$node_group\", cluster=~\"$cluster\", node=~\"$node.*\"} / eagle_node_resource_allocatable_memory_bytes{nodegroup=~\"$node_group\", cluster=~\"$cluster\", node=~\"$node.*\"}) by (node)",
           "format": "table",
           "instant": true,
           "intervalFactor": 1,
@@ -1384,9 +1872,9 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "${datasource}"
+            "uid": "h_4Zm0OVz"
           },
-          "expr": "sum(eagle_node_resource_limits_memory_bytes{node=~\"$node_pool.*\", node=~\"$node.*\"} / eagle_node_resource_allocatable_memory_bytes{node=~\"$node_pool.*\", node=~\"$node.*\"}) by (node)",
+          "expr": "sum(eagle_node_resource_limits_memory_bytes{nodegroup=~\"$node_group\", cluster=~\"$cluster\", node=~\"$node.*\"} / eagle_node_resource_allocatable_memory_bytes{nodegroup=~\"$node_group\", cluster=~\"$cluster\", node=~\"$node.*\"}) by (node)",
           "format": "table",
           "instant": true,
           "intervalFactor": 1,
@@ -1395,9 +1883,9 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "${datasource}"
+            "uid": "h_4Zm0OVz"
           },
-          "expr": "sum(eagle_node_resource_usage_memory_bytes{node=~\"$node_pool.*\", node=~\"$node.*\"} / eagle_node_resource_allocatable_memory_bytes{node=~\"$node_pool.*\", node=~\"$node.*\"}) by (node)",
+          "expr": "sum(eagle_node_resource_usage_memory_bytes{nodegroup=~\"$node_group\", cluster=~\"$cluster\", node=~\"$node.*\"} / eagle_node_resource_allocatable_memory_bytes{nodegroup=~\"$node_group\", cluster=~\"$cluster\", node=~\"$node.*\"}) by (node)",
           "format": "table",
           "instant": true,
           "intervalFactor": 1,
@@ -1405,160 +1893,250 @@
         }
       ],
       "title": "Node RAM",
-      "transform": "table",
-      "type": "table-old"
+      "transformations": [
+        {
+          "id": "merge",
+          "options": {
+            "reducers": []
+          }
+        },
+        {
+          "id": "filterFieldsByName",
+          "options": {
+            "include": {
+              "names": [
+                "node",
+                "Value #A",
+                "Value #B",
+                "Value #C",
+                "Value #D",
+                "Value #E",
+                "Value #F"
+              ]
+            }
+          }
+        }
+      ],
+      "type": "table"
     },
     {
-      "columns": [],
       "datasource": {
         "type": "prometheus",
-        "uid": "${datasource}"
+        "uid": "h_4Zm0OVz"
       },
-      "fontSize": "100%",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "custom": {
+            "align": "auto",
+            "cellOptions": {
+              "type": "auto"
+            },
+            "inspect": false
+          },
+          "decimals": 2,
+          "displayName": "",
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": 0
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "short"
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Time"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Time"
+              },
+              {
+                "id": "custom.align"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "container"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Container"
+              },
+              {
+                "id": "unit",
+                "value": "short"
+              },
+              {
+                "id": "decimals",
+                "value": 2
+              },
+              {
+                "id": "custom.align"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "pod"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Pod"
+              },
+              {
+                "id": "unit",
+                "value": "short"
+              },
+              {
+                "id": "decimals",
+                "value": 2
+              },
+              {
+                "id": "custom.align"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Value #A"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Requested RAM"
+              },
+              {
+                "id": "unit",
+                "value": "decbytes"
+              },
+              {
+                "id": "decimals",
+                "value": 2
+              },
+              {
+                "id": "custom.align"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Value #B"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Limit RAM"
+              },
+              {
+                "id": "unit",
+                "value": "decbytes"
+              },
+              {
+                "id": "decimals",
+                "value": 2
+              },
+              {
+                "id": "custom.align"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Value #C"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Usage RAM"
+              },
+              {
+                "id": "unit",
+                "value": "decbytes"
+              },
+              {
+                "id": "decimals",
+                "value": 2
+              },
+              {
+                "id": "custom.align"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "namespace"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Namespace"
+              },
+              {
+                "id": "unit",
+                "value": "short"
+              },
+              {
+                "id": "decimals",
+                "value": 2
+              },
+              {
+                "id": "custom.align"
+              }
+            ]
+          }
+        ]
+      },
       "gridPos": {
         "h": 7,
         "w": 24,
         "x": 0,
-        "y": 38
+        "y": 42
       },
       "id": 18,
-      "links": [],
-      "scroll": true,
-      "showHeader": true,
-      "sort": {
-        "col": 6,
-        "desc": true
+      "options": {
+        "cellHeight": "sm",
+        "footer": {
+          "countRows": false,
+          "fields": "",
+          "reducer": ["sum"],
+          "show": false
+        },
+        "showHeader": true
       },
-      "styles": [
-        {
-          "alias": "Time",
-          "align": "auto",
-          "dateFormat": "YYYY-MM-DD HH:mm:ss",
-          "pattern": "Time",
-          "type": "hidden"
-        },
-        {
-          "alias": "Container",
-          "align": "auto",
-          "colors": [
-            "rgba(245, 54, 54, 0.9)",
-            "rgba(237, 129, 40, 0.89)",
-            "rgba(50, 172, 45, 0.97)"
-          ],
-          "dateFormat": "YYYY-MM-DD HH:mm:ss",
-          "decimals": 2,
-          "mappingType": 1,
-          "pattern": "container",
-          "thresholds": [],
-          "type": "number",
-          "unit": "short"
-        },
-        {
-          "alias": "Pod",
-          "align": "auto",
-          "colors": [
-            "rgba(245, 54, 54, 0.9)",
-            "rgba(237, 129, 40, 0.89)",
-            "rgba(50, 172, 45, 0.97)"
-          ],
-          "dateFormat": "YYYY-MM-DD HH:mm:ss",
-          "decimals": 2,
-          "mappingType": 1,
-          "pattern": "pod",
-          "thresholds": [],
-          "type": "number",
-          "unit": "short"
-        },
-        {
-          "alias": "Requested RAM",
-          "align": "auto",
-          "colors": [
-            "rgba(245, 54, 54, 0.9)",
-            "rgba(237, 129, 40, 0.89)",
-            "rgba(50, 172, 45, 0.97)"
-          ],
-          "dateFormat": "YYYY-MM-DD HH:mm:ss",
-          "decimals": 2,
-          "mappingType": 1,
-          "pattern": "Value #A",
-          "thresholds": [],
-          "type": "number",
-          "unit": "decbytes"
-        },
-        {
-          "alias": "Limit RAM",
-          "align": "auto",
-          "colors": [
-            "rgba(245, 54, 54, 0.9)",
-            "rgba(237, 129, 40, 0.89)",
-            "rgba(50, 172, 45, 0.97)"
-          ],
-          "dateFormat": "YYYY-MM-DD HH:mm:ss",
-          "decimals": 2,
-          "mappingType": 1,
-          "pattern": "Value #B",
-          "thresholds": [],
-          "type": "number",
-          "unit": "decbytes"
-        },
-        {
-          "alias": "Usage RAM",
-          "align": "auto",
-          "colors": [
-            "rgba(245, 54, 54, 0.9)",
-            "rgba(237, 129, 40, 0.89)",
-            "rgba(50, 172, 45, 0.97)"
-          ],
-          "dateFormat": "YYYY-MM-DD HH:mm:ss",
-          "decimals": 2,
-          "mappingType": 1,
-          "pattern": "Value #C",
-          "thresholds": [],
-          "type": "number",
-          "unit": "decbytes"
-        },
-        {
-          "alias": "Namespace",
-          "align": "auto",
-          "colors": [
-            "rgba(245, 54, 54, 0.9)",
-            "rgba(237, 129, 40, 0.89)",
-            "rgba(50, 172, 45, 0.97)"
-          ],
-          "dateFormat": "YYYY-MM-DD HH:mm:ss",
-          "decimals": 2,
-          "mappingType": 1,
-          "pattern": "namespace",
-          "thresholds": [],
-          "type": "number",
-          "unit": "short"
-        },
-        {
-          "alias": "",
-          "align": "auto",
-          "colors": [
-            "rgba(245, 54, 54, 0.9)",
-            "rgba(237, 129, 40, 0.89)",
-            "rgba(50, 172, 45, 0.97)"
-          ],
-          "decimals": 2,
-          "pattern": "/.*/",
-          "thresholds": [],
-          "type": "number",
-          "unit": "short"
-        }
-      ],
+      "pluginVersion": "12.1.0",
       "targets": [
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "${datasource}"
+            "uid": "h_4Zm0OVz"
           },
-          "exemplar": true,
-          "expr": "sum (eagle_pod_container_resource_requests_memory_bytes{node=~\"$node_pool.*\", node=~\"$node.*\", namespace=~\"$namespace.*\"}) by (pod, container, namespace)",
+          "expr": "sum (eagle_pod_container_resource_requests_memory_bytes{nodegroup=~\"$node_group\", cluster=~\"$cluster\", node=~\"$node.*\", namespace=~\"$namespace\"}) by (pod, container, namespace)",
           "format": "table",
           "instant": true,
-          "interval": "",
           "intervalFactor": 1,
           "legendFormat": "",
           "refId": "A"
@@ -1566,59 +2144,291 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "${datasource}"
+            "uid": "h_4Zm0OVz"
           },
-          "exemplar": true,
-          "expr": "sum (eagle_pod_container_resource_limits_memory_bytes{node=~\"$node_pool.*\", node=~\"$node.*\", namespace=~\"$namespace.*\"}) by (pod, container, namespace)",
+          "expr": "sum (eagle_pod_container_resource_limits_memory_bytes{nodegroup=~\"$node_group\", cluster=~\"$cluster\", node=~\"$node.*\", namespace=~\"$namespace\"}) by (pod, container, namespace)",
           "format": "table",
           "instant": true,
-          "interval": "",
           "intervalFactor": 1,
-          "legendFormat": "",
           "refId": "B"
         },
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "${datasource}"
+            "uid": "h_4Zm0OVz"
           },
-          "exemplar": true,
-          "expr": "sum (eagle_pod_container_resource_usage_memory_bytes{node=~\"$node_pool.*\", node=~\"$node.*\", namespace=~\"$namespace.*\"}) by (pod, container, namespace)",
+          "expr": "sum (eagle_pod_container_resource_usage_memory_bytes{nodegroup=~\"$node_group\", cluster=~\"$cluster\", node=~\"$node.*\", namespace=~\"$namespace\"}) by (pod, container, namespace)",
           "format": "table",
           "instant": true,
-          "interval": "",
           "intervalFactor": 1,
-          "legendFormat": "",
           "refId": "C"
         }
       ],
       "title": "Container RAM",
-      "transform": "table",
-      "type": "table-old"
+      "transformations": [
+        {
+          "id": "merge",
+          "options": {
+            "reducers": []
+          }
+        },
+        {
+          "id": "filterFieldsByName",
+          "options": {
+            "include": {
+              "names": [
+                "container",
+                "namespace",
+                "pod",
+                "Value #A",
+                "Value #B",
+                "Value #C"
+              ]
+            }
+          }
+        }
+      ],
+      "type": "table"
+    },
+    {
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 49
+      },
+      "id": 20,
+      "panels": [],
+      "title": "Collectors",
+      "type": "row"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "h_4Zm0OVz"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "barWidthFactor": 0.6,
+            "drawStyle": "line",
+            "fillOpacity": 0,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "auto",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": 0
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 50
+      },
+      "id": 22,
+      "options": {
+        "alertThreshold": true,
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "hideZeros": false,
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "pluginVersion": "12.1.0",
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "h_4Zm0OVz"
+          },
+          "expr": "avg by (collector) (eagle_scrape_collector_duration_seconds)",
+          "format": "time_series",
+          "intervalFactor": 1,
+          "legendFormat": "{{ collector }}",
+          "refId": "A"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "h_4Zm0OVz"
+          },
+          "expr": "",
+          "format": "time_series",
+          "intervalFactor": 1,
+          "refId": "B"
+        }
+      ],
+      "title": "Scrape duration by collector",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "h_4Zm0OVz"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "barWidthFactor": 0.6,
+            "drawStyle": "line",
+            "fillOpacity": 0,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "auto",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": 0
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 50
+      },
+      "id": 23,
+      "options": {
+        "alertThreshold": true,
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "hideZeros": false,
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "pluginVersion": "12.1.0",
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "h_4Zm0OVz"
+          },
+          "expr": "avg by (collector) (eagle_scrape_collector_success)",
+          "format": "time_series",
+          "instant": false,
+          "intervalFactor": 1,
+          "legendFormat": "{{ collector }}",
+          "refId": "A"
+        }
+      ],
+      "title": "Scrape success by collector",
+      "type": "timeseries"
     }
   ],
+  "preload": false,
   "refresh": "30s",
-  "schemaVersion": 37,
-  "style": "dark",
+  "schemaVersion": 41,
   "tags": ["resources", "usage"],
   "templating": {
     "list": [
       {
         "current": {
-          "selected": true,
           "text": "Thanos",
-          "value": "Thanos"
+          "value": "h_4Zm0OVz"
         },
-        "hide": 0,
         "includeAll": false,
-        "multi": false,
+        "label": "datasource",
         "name": "datasource",
         "options": [],
         "query": "prometheus",
-        "queryValue": "",
         "refresh": 1,
         "regex": "",
-        "skipUrlSync": false,
         "type": "datasource"
       },
       {
@@ -1627,80 +2437,94 @@
           "text": "All",
           "value": "$__all"
         },
-        "hide": 0,
+        "datasource": {
+          "type": "prometheus",
+          "uid": "h_4Zm0OVz"
+        },
+        "definition": "label_values(eagle_node_resource_allocatable_cpu_cores, nodegroup)",
         "includeAll": true,
-        "label": "Node Pool",
-        "multi": false,
-        "name": "node_pool",
-        "options": [
-          {
-            "selected": true,
-            "text": "All",
-            "value": "$__all"
-          }
-        ],
-        "query": ",",
-        "queryValue": "",
-        "skipUrlSync": false,
-        "type": "custom"
+        "label": "Node Group Name",
+        "multi": true,
+        "name": "node_group",
+        "options": [],
+        "query": {
+          "query": "label_values(eagle_node_resource_allocatable_cpu_cores, nodegroup)",
+          "refId": "StandardVariableQuery"
+        },
+        "refresh": 1,
+        "regex": "",
+        "type": "query"
       },
       {
         "allValue": ".*",
         "current": {
-          "selected": false,
           "text": "All",
           "value": "$__all"
         },
         "datasource": {
           "type": "prometheus",
-          "uid": ""
+          "uid": "h_4Zm0OVz"
         },
-        "definition": "label_values(eagle_node_resource_allocatable_cpu_cores{node=~\"$node_pool.*\"}, node)",
-        "hide": 0,
+        "definition": "label_values(eagle_node_resource_allocatable_cpu_cores{nodegroup=~\"$node_group\", cluster=~\"$cluster\"}, node)",
         "includeAll": true,
         "label": "Node",
-        "multi": false,
         "name": "node",
         "options": [],
         "query": {
-          "query": "label_values(eagle_node_resource_allocatable_cpu_cores{node=~\"$node_pool.*\"}, node)",
-          "refId": "StandardVariableQuery"
+          "query": "label_values(eagle_node_resource_allocatable_cpu_cores{nodegroup=~\"$node_group\", cluster=~\"$cluster\"}, node)",
+          "refId": "Prometheus-node-Variable-Query"
         },
         "refresh": 1,
         "regex": "",
-        "skipUrlSync": false,
         "sort": 1,
-        "tagValuesQuery": "",
-        "tagsQuery": "",
-        "type": "query",
-        "useTags": false
+        "type": "query"
       },
       {
         "allValue": ".*",
         "current": {
-          "selected": false,
           "text": "All",
-          "value": "$__all"
+          "value": ["$__all"]
         },
         "datasource": {
           "type": "prometheus",
-          "uid": "${datasource}"
+          "uid": "h_4Zm0OVz"
         },
-        "definition": "label_values(eagle_pod_container_resource_usage_cpu_cores{node=~\"$namespace.*\"}, namespace)",
-        "hide": 0,
+        "definition": "label_values(eagle_pod_container_resource_requests_cpu_cores{nodegroup=~\"$node_group\", cluster=~\"$cluster\"}, namespace)",
         "includeAll": true,
         "label": "Namespace",
-        "multi": false,
+        "multi": true,
         "name": "namespace",
         "options": [],
         "query": {
-          "query": "label_values(eagle_pod_container_resource_usage_cpu_cores{node=~\"$namespace.*\"}, namespace)",
+          "query": "label_values(eagle_pod_container_resource_requests_cpu_cores{nodegroup=~\"$node_group\", cluster=~\"$cluster\"}, namespace)",
           "refId": "StandardVariableQuery"
         },
         "refresh": 1,
         "regex": "",
-        "skipUrlSync": false,
-        "sort": 0,
+        "type": "query"
+      },
+      {
+        "current": {
+          "text": "okd",
+          "value": "okd"
+        },
+        "datasource": {
+          "type": "prometheus",
+          "uid": "h_4Zm0OVz"
+        },
+        "definition": "label_values(eagle_node_resource_allocatable_cpu_cores,cluster)",
+        "description": "Choose cluster source for metrics",
+        "includeAll": false,
+        "label": "cluster",
+        "name": "cluster",
+        "options": [],
+        "query": {
+          "qryType": 1,
+          "query": "label_values(eagle_node_resource_allocatable_cpu_cores,cluster)",
+          "refId": "PrometheusVariableQueryEditor-VariableQuery"
+        },
+        "refresh": 1,
+        "regex": "",
         "type": "query"
       }
     ]
@@ -1711,7 +2535,6 @@
   },
   "timepicker": {
     "refresh_intervals": [
-      "5s",
       "10s",
       "30s",
       "1m",
@@ -1719,13 +2542,12 @@
       "15m",
       "30m",
       "1h",
-      "2h"
-    ],
-    "time_options": ["5m", "15m", "1h", "6h", "12h", "24h", "2d", "7d", "30d"]
+      "2h",
+      "1d"
+    ]
   },
   "timezone": "",
-  "title": "Kube Eagle (Kuberenetes)",
-  "uid": "cDBYcRInk",
-  "version": 4,
-  "weekStart": ""
+  "title": "Kube Eagle v2",
+  "uid": "_eioEq-if",
+  "version": 4
 }
