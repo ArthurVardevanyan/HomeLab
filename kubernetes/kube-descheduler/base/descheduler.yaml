@@ -10,18 +10,20 @@ metadata:
 spec:
   profileCustomizations:
     devEnableEvictionsInBackground: true
-    devLowNodeUtilizationThresholds: High
+    #devLowNodeUtilizationThresholds: High
+    devDeviationThresholds: AsymmetricLow
     namespaces:
       excluded:
-        - rook-ceph
+        # - rook-ceph
         - github-arc-runners
         - analytics-for-spotify-ci
         - finance-tracker-ci
         - homelab
-  deschedulingIntervalSeconds: 7200
+  deschedulingIntervalSeconds: 60 #7200
   managementState: Managed
   mode: Automatic
   profiles:
-    # - CompactAndScale
-    - LongLifecycle
-    # - DevKubeVirtRelieveAndMigrate
+    - KubeVirtRelieveAndMigrate
+  # evictionLimits:
+  #   node: 1
+  #   total: 3
