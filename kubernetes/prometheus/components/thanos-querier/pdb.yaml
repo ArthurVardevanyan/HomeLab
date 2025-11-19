@@ -1,0 +1,10 @@
+kind: PodDisruptionBudget
+apiVersion: policy/v1
+metadata:
+  name: thanos-querier
+  namespace: prometheus
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: thanos-querier
