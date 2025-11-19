@@ -17,23 +17,3 @@ spec:
         target:
           type: Utilization
           averageUtilization: 100
----
-kind: HorizontalPodAutoscaler
-apiVersion: autoscaling/v2
-metadata:
-  name: gateway-class
-  namespace: openshift-ingress
-spec:
-  scaleTargetRef:
-    kind: Deployment
-    name: istiod-openshift-gateway
-    apiVersion: apps/v1
-  minReplicas: 2
-  maxReplicas: 3
-  metrics:
-    - type: Resource
-      resource:
-        name: cpu
-        target:
-          type: Utilization
-          averageUtilization: 100

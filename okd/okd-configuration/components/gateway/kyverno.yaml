@@ -1,0 +1,22 @@
+apiVersion: kyverno.io/v1
+kind: Policy
+metadata:
+  name: istiod-openshift-gateway
+  namespace: openshift-ingress
+  annotations:
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+spec:
+  background: false
+  rules:
+    - name: istiod-openshift-gateway
+      match:
+        any:
+          - resources:
+              kinds:
+                - HorizontalPodAutoscaler
+              names:
+                - istiod-openshift-gateway
+      mutate:
+        patchStrategicMerge:
+          spec:
+            minReplicas: 2
