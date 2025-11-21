@@ -1,0 +1,43 @@
+hosts:
+  - hostname: worker-1
+    rootDeviceHints:
+      deviceName: /dev/nvme0n1
+    interfaces:
+      - macAddress: 58:47:CA:7A:74:FD
+        name: enp3s0
+      - macAddress: 58:47:CA:7A:74:FC
+        name: enp4s0
+    networkConfig:
+      interfaces:
+        - name: bond0
+          type: bond
+          state: up
+          mac-address: 58:47:CA:7A:74:FD
+          mtu: 9000
+          ipv4:
+            enabled: true
+            address:
+              - ip: 10.101.10.104
+                prefix-length: 24
+            dhcp: false
+          ipv6:
+            enabled: false
+          link-aggregation:
+            mode: active-backup
+            options:
+              miimon: "150"
+              primary: enp3s0
+            port:
+              - enp3s0
+              - enp4s0
+      dns-resolver:
+        config:
+          server:
+            - 10.101.11.4
+            - 10.101.11.5
+      routes:
+        config:
+          - destination: 0.0.0.0/0
+            next-hop-address: 10.101.10.1
+            next-hop-interface: bond0
+            table-id: 254
