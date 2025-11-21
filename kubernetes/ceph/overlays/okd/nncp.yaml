@@ -38,6 +38,117 @@ spec:
 apiVersion: nmstate.io/v1
 kind: NodeNetworkConfigurationPolicy
 metadata:
+  name: ceph-public-net-shim-worker-1
+spec:
+  nodeSelector:
+    kubernetes.io/hostname: worker-1
+  desiredState:
+    interfaces:
+      - name: bond3
+        description: VLAN using bond0
+        type: vlan
+        state: up
+        ipv4:
+          dhcp: false
+          enabled: false
+        vlan:
+          base-iface: bond0
+          id: 13
+        mtu: 9000
+      - name: ceph-pub-shim
+        description: Shim interface used to connect host to OpenShift Data Foundation public Multus network
+        type: mac-vlan
+        state: up
+        mac-vlan:
+          base-iface: bond3
+          mode: bridge
+          promiscuous: true
+        mtu: 9000
+        ipv4:
+          enabled: true
+          dhcp: true
+    routes:
+      config:
+        - destination: 10.101.13.0/24
+          next-hop-interface: ceph-pub-shim
+---
+apiVersion: nmstate.io/v1
+kind: NodeNetworkConfigurationPolicy
+metadata:
+  name: ceph-public-net-shim-worker-2
+spec:
+  nodeSelector:
+    kubernetes.io/hostname: worker-2
+  desiredState:
+    interfaces:
+      - name: bond3
+        description: VLAN using bond0
+        type: vlan
+        state: up
+        ipv4:
+          dhcp: false
+          enabled: false
+        vlan:
+          base-iface: bond0
+          id: 13
+        mtu: 9000
+      - name: ceph-pub-shim
+        description: Shim interface used to connect host to OpenShift Data Foundation public Multus network
+        type: mac-vlan
+        state: up
+        mac-vlan:
+          base-iface: bond3
+          mode: bridge
+          promiscuous: true
+        mtu: 9000
+        ipv4:
+          enabled: true
+          dhcp: true
+    routes:
+      config:
+        - destination: 10.101.13.0/24
+          next-hop-interface: ceph-pub-shim
+---
+apiVersion: nmstate.io/v1
+kind: NodeNetworkConfigurationPolicy
+metadata:
+  name: ceph-public-net-shim-worker-3
+spec:
+  nodeSelector:
+    kubernetes.io/hostname: worker-3
+  desiredState:
+    interfaces:
+      - name: bond3
+        description: VLAN using bond0
+        type: vlan
+        state: up
+        ipv4:
+          dhcp: false
+          enabled: false
+        vlan:
+          base-iface: bond0
+          id: 13
+        mtu: 9000
+      - name: ceph-pub-shim
+        description: Shim interface used to connect host to OpenShift Data Foundation public Multus network
+        type: mac-vlan
+        state: up
+        mac-vlan:
+          base-iface: bond3
+          mode: bridge
+          promiscuous: true
+        mtu: 9000
+        ipv4:
+          enabled: true
+          dhcp: true
+    routes:
+      config:
+        - destination: 10.101.13.0/24
+          next-hop-interface: ceph-pub-shim
+---
+apiVersion: nmstate.io/v1
+kind: NodeNetworkConfigurationPolicy
+metadata:
   name: ceph-public-net-shim-server-1
 spec:
   nodeSelector:

@@ -105,6 +105,69 @@ spec:
 apiVersion: nmstate.io/v1
 kind: NodeNetworkConfigurationPolicy
 metadata:
+  name: live-migrate-worker-1
+spec:
+  nodeSelector:
+    kubernetes.io/hostname: worker-1
+  desiredState:
+    interfaces:
+      - name: bond4
+        description: VLAN using bond0
+        type: vlan
+        state: up
+        ipv4:
+          dhcp: false
+          enabled: false
+        vlan:
+          base-iface: bond0
+          id: 14
+        mtu: 9000
+---
+apiVersion: nmstate.io/v1
+kind: NodeNetworkConfigurationPolicy
+metadata:
+  name: live-migrate-worker-2
+spec:
+  nodeSelector:
+    kubernetes.io/hostname: worker-2
+  desiredState:
+    interfaces:
+      - name: bond4
+        description: VLAN using bond0
+        type: vlan
+        state: up
+        ipv4:
+          dhcp: false
+          enabled: false
+        vlan:
+          base-iface: bond0
+          id: 14
+        mtu: 9000
+---
+apiVersion: nmstate.io/v1
+kind: NodeNetworkConfigurationPolicy
+metadata:
+  name: live-migrate-worker-3
+spec:
+  nodeSelector:
+    kubernetes.io/hostname: worker-3
+  desiredState:
+    interfaces:
+      - name: bond4
+        description: VLAN using bond0
+        type: vlan
+        state: up
+        ipv4:
+          dhcp: false
+          enabled: false
+        vlan:
+          base-iface: bond0
+          id: 14
+        mtu: 9000
+---
+apiVersion: nmstate.io/v1
+kind: NodeNetworkConfigurationPolicy
+metadata:
   name: live-migrate-gpu-1
 spec:
   nodeSelector:

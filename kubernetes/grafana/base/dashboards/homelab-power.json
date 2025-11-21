@@ -18,7 +18,7 @@
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 0,
-  "id": 231,
+  "id": 233,
   "links": [],
   "panels": [
     {
@@ -32,7 +32,7 @@
             "mode": "thresholds"
           },
           "mappings": [],
-          "max": 150,
+          "max": 200,
           "min": 0,
           "thresholds": {
             "mode": "absolute",
@@ -43,11 +43,11 @@
               },
               {
                 "color": "#EAB839",
-                "value": 120
+                "value": 150
               },
               {
                 "color": "red",
-                "value": 135
+                "value": 175
               }
             ]
           },
@@ -56,7 +56,7 @@
         "overrides": []
       },
       "gridPos": {
-        "h": 8,
+        "h": 6,
         "w": 6,
         "x": 0,
         "y": 0
@@ -110,7 +110,7 @@
             "mode": "thresholds"
           },
           "mappings": [],
-          "max": 350,
+          "max": 400,
           "min": 0,
           "thresholds": {
             "mode": "absolute",
@@ -121,11 +121,11 @@
               },
               {
                 "color": "#EAB839",
-                "value": 250
+                "value": 325
               },
               {
                 "color": "red",
-                "value": 300
+                "value": 350
               }
             ]
           },
@@ -134,7 +134,7 @@
         "overrides": []
       },
       "gridPos": {
-        "h": 8,
+        "h": 6,
         "w": 6,
         "x": 6,
         "y": 0
@@ -359,7 +359,7 @@
         "h": 6,
         "w": 3,
         "x": 0,
-        "y": 8
+        "y": 6
       },
       "id": 11,
       "options": {
@@ -438,7 +438,7 @@
         "h": 6,
         "w": 3,
         "x": 3,
-        "y": 8
+        "y": 6
       },
       "id": 12,
       "options": {
@@ -517,7 +517,7 @@
         "h": 6,
         "w": 3,
         "x": 6,
-        "y": 8
+        "y": 6
       },
       "id": 13,
       "options": {
@@ -569,7 +569,7 @@
           },
           "decimals": 1,
           "mappings": [],
-          "max": 25,
+          "max": 60,
           "min": 0,
           "thresholds": {
             "mode": "absolute",
@@ -580,11 +580,11 @@
               },
               {
                 "color": "#EAB839",
-                "value": 15
+                "value": 40
               },
               {
                 "color": "red",
-                "value": 20
+                "value": 50
               }
             ]
           },
@@ -596,9 +596,9 @@
         "h": 6,
         "w": 3,
         "x": 9,
-        "y": 8
+        "y": 6
       },
-      "id": 14,
+      "id": 18,
       "options": {
         "minVizHeight": 75,
         "minVizWidth": 75,
@@ -624,7 +624,7 @@
           },
           "disableTextWrap": false,
           "editorMode": "builder",
-          "expr": "W_value{entity_id=\"network_switch_current_consumption\"}",
+          "expr": "W_value{entity_id=\"unas_current_consumption\"}",
           "fullMetaSearch": false,
           "includeNullMetadata": true,
           "legendFormat": "__auto",
@@ -633,7 +633,7 @@
           "useBackend": false
         }
       ],
-      "title": "Network Switch",
+      "title": "UNAS",
       "type": "gauge"
     },
     {
@@ -717,7 +717,34 @@
           },
           "unit": "watt"
         },
-        "overrides": []
+        "overrides": [
+          {
+            "__systemRef": "hideSeriesFrom",
+            "matcher": {
+              "id": "byNames",
+              "options": {
+                "mode": "exclude",
+                "names": [
+                  "kvm_4_current_consumption",
+                  "kvm_5_current_consumption",
+                  "kvm_6_current_consumption"
+                ],
+                "prefix": "All except:",
+                "readOnly": true
+              }
+            },
+            "properties": [
+              {
+                "id": "custom.hideFrom",
+                "value": {
+                  "legend": false,
+                  "tooltip": false,
+                  "viz": true
+                }
+              }
+            ]
+          }
+        ]
       },
       "gridPos": {
         "h": 10,
@@ -772,6 +799,322 @@
           "color": {
             "mode": "thresholds"
           },
+          "decimals": 1,
+          "mappings": [],
+          "max": 16,
+          "min": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": 0
+              },
+              {
+                "color": "#EAB839",
+                "value": 8
+              },
+              {
+                "color": "red",
+                "value": 13
+              }
+            ]
+          },
+          "unit": "watt"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 6,
+        "w": 3,
+        "x": 0,
+        "y": 12
+      },
+      "id": 20,
+      "options": {
+        "minVizHeight": 75,
+        "minVizWidth": 75,
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": ["lastNotNull"],
+          "fields": "",
+          "values": false
+        },
+        "showThresholdLabels": false,
+        "showThresholdMarkers": true,
+        "sizing": "auto",
+        "text": {
+          "titleSize": 1
+        }
+      },
+      "pluginVersion": "12.1.0",
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "df4fpnvee4mbkd"
+          },
+          "disableTextWrap": false,
+          "editorMode": "builder",
+          "expr": "W_value{entity_id=\"aggregation_switch_top_current_consumption\"}",
+          "fullMetaSearch": false,
+          "includeNullMetadata": true,
+          "legendFormat": "__auto",
+          "range": true,
+          "refId": "A",
+          "useBackend": false
+        }
+      ],
+      "title": "Aggregation Switch Top",
+      "type": "gauge"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "df4fpnvee4mbkd"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "decimals": 1,
+          "mappings": [],
+          "max": 17,
+          "min": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": 0
+              },
+              {
+                "color": "#EAB839",
+                "value": 8
+              },
+              {
+                "color": "red",
+                "value": 13
+              }
+            ]
+          },
+          "unit": "watt"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 6,
+        "w": 3,
+        "x": 3,
+        "y": 12
+      },
+      "id": 25,
+      "options": {
+        "minVizHeight": 75,
+        "minVizWidth": 75,
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": ["lastNotNull"],
+          "fields": "",
+          "values": false
+        },
+        "showThresholdLabels": false,
+        "showThresholdMarkers": true,
+        "sizing": "auto",
+        "text": {
+          "titleSize": 1
+        }
+      },
+      "pluginVersion": "12.1.0",
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "df4fpnvee4mbkd"
+          },
+          "disableTextWrap": false,
+          "editorMode": "builder",
+          "expr": "W_value{entity_id=\"aggregation_switch_bottom_current_consumption\"}",
+          "fullMetaSearch": false,
+          "includeNullMetadata": true,
+          "legendFormat": "__auto",
+          "range": true,
+          "refId": "A",
+          "useBackend": false
+        }
+      ],
+      "title": "Aggregation Switch Bottom",
+      "type": "gauge"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "df4fpnvee4mbkd"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "decimals": 1,
+          "mappings": [],
+          "max": 25,
+          "min": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": 0
+              },
+              {
+                "color": "#EAB839",
+                "value": 15
+              },
+              {
+                "color": "red",
+                "value": 20
+              }
+            ]
+          },
+          "unit": "watt"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 6,
+        "w": 3,
+        "x": 6,
+        "y": 12
+      },
+      "id": 14,
+      "options": {
+        "minVizHeight": 75,
+        "minVizWidth": 75,
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": ["lastNotNull"],
+          "fields": "",
+          "values": false
+        },
+        "showThresholdLabels": false,
+        "showThresholdMarkers": true,
+        "sizing": "auto",
+        "text": {
+          "titleSize": 1
+        }
+      },
+      "pluginVersion": "12.1.0",
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "df4fpnvee4mbkd"
+          },
+          "disableTextWrap": false,
+          "editorMode": "builder",
+          "expr": "W_value{entity_id=\"network_switch_current_consumption\"}",
+          "fullMetaSearch": false,
+          "includeNullMetadata": true,
+          "legendFormat": "__auto",
+          "range": true,
+          "refId": "A",
+          "useBackend": false
+        }
+      ],
+      "title": "Network Switch",
+      "type": "gauge"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "df4fpnvee4mbkd"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "decimals": 1,
+          "mappings": [],
+          "max": 33,
+          "min": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": 0
+              },
+              {
+                "color": "#EAB839",
+                "value": 25
+              },
+              {
+                "color": "red",
+                "value": 30
+              }
+            ]
+          },
+          "unit": "watt"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 6,
+        "w": 3,
+        "x": 9,
+        "y": 12
+      },
+      "id": 26,
+      "options": {
+        "minVizHeight": 75,
+        "minVizWidth": 75,
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": ["lastNotNull"],
+          "fields": "",
+          "values": false
+        },
+        "showThresholdLabels": false,
+        "showThresholdMarkers": true,
+        "sizing": "auto",
+        "text": {
+          "titleSize": 1
+        }
+      },
+      "pluginVersion": "12.1.0",
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "df4fpnvee4mbkd"
+          },
+          "disableTextWrap": false,
+          "editorMode": "builder",
+          "expr": "W_value{entity_id=\"network_switch_2_current_consumption\"}",
+          "fullMetaSearch": false,
+          "includeNullMetadata": true,
+          "legendFormat": "__auto",
+          "range": true,
+          "refId": "A",
+          "useBackend": false
+        }
+      ],
+      "title": "Network Switch 2.5",
+      "type": "gauge"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "df4fpnvee4mbkd"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
           "decimals": 2,
           "mappings": [],
           "max": 97,
@@ -801,7 +1144,7 @@
         "h": 6,
         "w": 3,
         "x": 0,
-        "y": 14
+        "y": 18
       },
       "id": 21,
       "options": {
@@ -880,7 +1223,7 @@
         "h": 6,
         "w": 3,
         "x": 3,
-        "y": 14
+        "y": 18
       },
       "id": 24,
       "options": {
@@ -959,7 +1302,7 @@
         "h": 6,
         "w": 3,
         "x": 6,
-        "y": 14
+        "y": 18
       },
       "id": 23,
       "options": {
@@ -1011,7 +1354,7 @@
           },
           "decimals": 1,
           "mappings": [],
-          "max": 75,
+          "max": 348,
           "min": 0,
           "thresholds": {
             "mode": "absolute",
@@ -1022,11 +1365,11 @@
               },
               {
                 "color": "#EAB839",
-                "value": 50
+                "value": 75
               },
               {
                 "color": "red",
-                "value": 60
+                "value": 220
               }
             ]
           },
@@ -1038,7 +1381,7 @@
         "h": 6,
         "w": 3,
         "x": 9,
-        "y": 14
+        "y": 18
       },
       "id": 15,
       "options": {
@@ -1066,7 +1409,7 @@
           },
           "disableTextWrap": false,
           "editorMode": "builder",
-          "expr": "W_value{entity_id=\"udm_current_consumption\"}",
+          "expr": "W_value{entity_id=\"3dp_current_consumption\"}",
           "fullMetaSearch": false,
           "includeNullMetadata": true,
           "legendFormat": "__auto",
@@ -1075,7 +1418,7 @@
           "useBackend": false
         }
       ],
-      "title": "UDM",
+      "title": "3DP",
       "type": "gauge"
     },
     {
@@ -1248,9 +1591,9 @@
           "color": {
             "mode": "thresholds"
           },
-          "decimals": 1,
+          "decimals": 2,
           "mappings": [],
-          "max": 16,
+          "max": 72,
           "min": 0,
           "thresholds": {
             "mode": "absolute",
@@ -1261,11 +1604,11 @@
               },
               {
                 "color": "#EAB839",
-                "value": 8
+                "value": 50
               },
               {
                 "color": "red",
-                "value": 13
+                "value": 65
               }
             ]
           },
@@ -1277,9 +1620,9 @@
         "h": 6,
         "w": 3,
         "x": 0,
-        "y": 20
+        "y": 24
       },
-      "id": 20,
+      "id": 27,
       "options": {
         "minVizHeight": 75,
         "minVizWidth": 75,
@@ -1305,7 +1648,7 @@
           },
           "disableTextWrap": false,
           "editorMode": "builder",
-          "expr": "W_value{entity_id=\"aggregation_switch_top_current_consumption\"}",
+          "expr": "W_value{entity_id=\"kvm_4_current_consumption\"}",
           "fullMetaSearch": false,
           "includeNullMetadata": true,
           "legendFormat": "__auto",
@@ -1314,7 +1657,7 @@
           "useBackend": false
         }
       ],
-      "title": "Aggregation Switch Top",
+      "title": "Worker-1",
       "type": "gauge"
     },
     {
@@ -1327,9 +1670,9 @@
           "color": {
             "mode": "thresholds"
           },
-          "decimals": 1,
+          "decimals": 2,
           "mappings": [],
-          "max": 17,
+          "max": 75,
           "min": 0,
           "thresholds": {
             "mode": "absolute",
@@ -1340,11 +1683,11 @@
               },
               {
                 "color": "#EAB839",
-                "value": 8
+                "value": 50
               },
               {
                 "color": "red",
-                "value": 13
+                "value": 65.0003
               }
             ]
           },
@@ -1356,9 +1699,9 @@
         "h": 6,
         "w": 3,
         "x": 3,
-        "y": 20
+        "y": 24
       },
-      "id": 25,
+      "id": 28,
       "options": {
         "minVizHeight": 75,
         "minVizWidth": 75,
@@ -1384,7 +1727,7 @@
           },
           "disableTextWrap": false,
           "editorMode": "builder",
-          "expr": "W_value{entity_id=\"aggregation_switch_bottom_current_consumption\"}",
+          "expr": "W_value{entity_id=\"kvm_5_current_consumption\"}",
           "fullMetaSearch": false,
           "includeNullMetadata": true,
           "legendFormat": "__auto",
@@ -1393,7 +1736,7 @@
           "useBackend": false
         }
       ],
-      "title": "Aggregation Switch Bottom",
+      "title": "Worker-2",
       "type": "gauge"
     },
     {
@@ -1406,9 +1749,9 @@
           "color": {
             "mode": "thresholds"
           },
-          "decimals": 1,
+          "decimals": 2,
           "mappings": [],
-          "max": 60,
+          "max": 75,
           "min": 0,
           "thresholds": {
             "mode": "absolute",
@@ -1419,11 +1762,11 @@
               },
               {
                 "color": "#EAB839",
-                "value": 40
+                "value": 50
               },
               {
                 "color": "red",
-                "value": 50
+                "value": 65
               }
             ]
           },
@@ -1435,9 +1778,9 @@
         "h": 6,
         "w": 3,
         "x": 6,
-        "y": 20
+        "y": 24
       },
-      "id": 18,
+      "id": 29,
       "options": {
         "minVizHeight": 75,
         "minVizWidth": 75,
@@ -1463,7 +1806,7 @@
           },
           "disableTextWrap": false,
           "editorMode": "builder",
-          "expr": "W_value{entity_id=\"unas_current_consumption\"}",
+          "expr": "W_value{entity_id=\"kvm_6_current_consumption\"}",
           "fullMetaSearch": false,
           "includeNullMetadata": true,
           "legendFormat": "__auto",
@@ -1472,7 +1815,7 @@
           "useBackend": false
         }
       ],
-      "title": "UNAS",
+      "title": "Worker-3",
       "type": "gauge"
     },
     {
@@ -1514,7 +1857,7 @@
         "h": 6,
         "w": 3,
         "x": 9,
-        "y": 20
+        "y": 24
       },
       "id": 16,
       "options": {
@@ -1569,5 +1912,5 @@
   "timezone": "browser",
   "title": "HomeLab Power",
   "uid": "0009e41e-f1e9-44b2-b167-f697b60a8edc",
-  "version": 4
+  "version": 7
 }

@@ -160,6 +160,9 @@ end
 | server-1   | N/A            | R7-5700G   | 16  | 128G | 2x4TB NVME, 2x1TB SSD, 2x.5TB SSD | 4x10Gbe (DAC) && 4x1GbE | N/A                               | OpenShift/OKD  |
 | server-2   | N/A            | R7-5700G   | 16  | 128G | 2x4TB NVME, 2x1TB SSD,2x.5TB SSD  | 4x10Gbe (DAC) && 4x1GbE | N/A                               | OpenShift/OKD  |
 | server-3   | N/A            | R7-5700G   | 16  | 128G | 2x4TB NVME, 2x1TB SSD,2x.5TB SSD  | 4x10Gbe (DAC) && 4x1GbE | N/A                               | OpenShift/OKD  |
+| worker-1   | MS-A1-A5870    | R7-8700G   | 16  | 32G  | 1x1TB NVME                        | 2x2.5GbE                | N/A                               | OpenShift/OKD  |
+| worker-2   | MS-A1-A5870    | R7-8700G   | 16  | 32G  | 1x1TB NVME                        | 2x2.5GbE                | N/A                               | OpenShift/OKD  |
+| worker-3   | MS-A1-A5870    | R7-8700G   | 16  | 32G  | 1x1TB NVME                        | 2x2.5GbE                | N/A                               | OpenShift/OKD  |
 | gpu-1      | N/A            | R5-3600    | 12  | 16G  | 2x1TB NVME,                       | 1x2.5Gbe && 1x1GbE      | N/A                               | OpenShift/OKD  |
 | TrueNas    | unas-pro       | Arm Cortex | 4   | 8G   | N/A                               | 1x2.5Gbe && 1x1GbE      | 3x2TB RaidZ1 SSD                  | TrueNas        |
 | UNAS       | Hp ProDesk     | i5-6600    | 4   | 32G  | 120G SSD Boot Mirror              | 1x1Gbe && 1x10GbE       | 4x4TB Raid6 HDD / 3x2TB Raid5 SSD | UNAS           |
@@ -167,11 +170,14 @@ end
 | Bare Metal | Hp t620        | GX-415GA   | 4   | 6G   | 16G SSD & 16G USB                 | 1x1GbE                  | N/A                               | Decommissioned |
 | Spare      | Hp p7-1226s    | i3-2130    | 4   | 8G   | 240G SSD                          |                         | N/A                               | Decommissioned |
 
-| Machine  | PPT | CPU Curve | GFX Curve | CPU Frequency | vMem | Memory Freq |
-| -------- | --- | --------- | --------- | ------------- | ---- | ----------- |
-| server-1 | 35W | -30       | -30       | -1000         | 1.30 | 3200        |
-| server-2 | 35W | -30       | -30       | -1000         | 1.30 | 3200        |
-| server-3 | 35W | -30       | -30       | -1000         | 1.30 | 3200        |
+| Machine  | PPT | CPU Curve | GFX Curve | CPU Frequency | vMem | Memory Freq | Boost    |
+| -------- | --- | --------- | --------- | ------------- | ---- | ----------- | -------- |
+| server-1 | 35W | -30       | -30       | -1000         | 1.30 | 3200        |          |
+| server-2 | 35W | -30       | -30       | -1000         | 1.30 | 3200        |          |
+| server-3 | 35W | -30       | -30       | -1000         | 1.30 | 3200        |          |
+| worker-1 | 35W |           |           |               |      | 3200        | Disabled |
+| worker-2 | 35W |           |           |               |      | 5200        | Disabled |
+| worker-3 | 35W |           |           |               |      | 5200        | Disabled |
 
 ##### Storage
 

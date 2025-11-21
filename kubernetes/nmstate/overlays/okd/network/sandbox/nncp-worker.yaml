@@ -1,0 +1,179 @@
+apiVersion: nmstate.io/v1
+kind: NodeNetworkConfigurationPolicy
+metadata:
+  name: bond4-nad-vlan310-worker
+  annotations:
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+spec:
+  nodeSelector:
+    beta.kubernetes.io/instance-type: MS-A1-A5870
+  desiredState:
+    interfaces:
+      - name: bond4.310
+        description: VLAN using bond4
+        type: vlan
+        state: up
+        ipv4:
+          dhcp: false
+          enabled: false
+        vlan:
+          base-iface: bond0
+          id: 310
+        mtu: 9000
+      - name: br4.310
+        description: Linux bridge with bond4.310 as a port
+        type: linux-bridge
+        state: up
+        ipv4:
+          enabled: false
+        mtu: 9000
+        bridge:
+          options:
+            stp:
+              enabled: false
+          port:
+            - name: bond4.310
+---
+apiVersion: nmstate.io/v1
+kind: NodeNetworkConfigurationPolicy
+metadata:
+  name: bond4-nad-vlan311-worker
+  annotations:
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+spec:
+  nodeSelector:
+    beta.kubernetes.io/instance-type: MS-A1-A5870
+  desiredState:
+    interfaces:
+      - name: bond4.311
+        description: VLAN using bond4
+        type: vlan
+        state: up
+        ipv4:
+          dhcp: false
+          enabled: false
+        vlan:
+          base-iface: bond0
+          id: 311
+        mtu: 9000
+      - name: br4.311
+        description: Linux bridge with bond4.311 as a port
+        type: linux-bridge
+        state: up
+        ipv4:
+          enabled: false
+        mtu: 9000
+        bridge:
+          options:
+            stp:
+              enabled: false
+          port:
+            - name: bond4.311
+---
+apiVersion: nmstate.io/v1
+kind: NodeNetworkConfigurationPolicy
+metadata:
+  name: bond4-nad-vlan312-worker
+  annotations:
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+spec:
+  nodeSelector:
+    beta.kubernetes.io/instance-type: MS-A1-A5870
+  desiredState:
+    interfaces:
+      - name: bond4.312
+        description: VLAN using bond4
+        type: vlan
+        state: up
+        ipv4:
+          dhcp: false
+          enabled: false
+        vlan:
+          base-iface: bond0
+          id: 312
+        mtu: 9000
+      - name: br4.312
+        description: Linux bridge with bond4.312 as a port
+        type: linux-bridge
+        state: up
+        ipv4:
+          enabled: false
+        mtu: 9000
+        bridge:
+          options:
+            stp:
+              enabled: false
+          port:
+            - name: bond4.312
+---
+apiVersion: nmstate.io/v1
+kind: NodeNetworkConfigurationPolicy
+metadata:
+  name: bond4-nad-vlan313-worker
+  annotations:
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+spec:
+  nodeSelector:
+    beta.kubernetes.io/instance-type: MS-A1-A5870
+  desiredState:
+    interfaces:
+      - name: bond4.313
+        description: VLAN using bond4
+        type: vlan
+        state: up
+        ipv4:
+          dhcp: false
+          enabled: false
+        vlan:
+          base-iface: bond0
+          id: 313
+        mtu: 9000
+      - name: br4.313
+        description: Linux bridge with bond4.313 as a port
+        type: linux-bridge
+        state: up
+        ipv4:
+          enabled: false
+        mtu: 9000
+        bridge:
+          options:
+            stp:
+              enabled: false
+          port:
+            - name: bond4.313
+---
+apiVersion: nmstate.io/v1
+kind: NodeNetworkConfigurationPolicy
+metadata:
+  name: bond4-nad-vlan314-worker
+  annotations:
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+spec:
+  nodeSelector:
+    beta.kubernetes.io/instance-type: MS-A1-A5870
+  desiredState:
+    interfaces:
+      - name: bond4.314
+        description: VLAN using bond4
+        type: vlan
+        state: up
+        ipv4:
+          dhcp: false
+          enabled: false
+        vlan:
+          base-iface: bond0
+          id: 314
+        mtu: 9000
+      - name: br4.314
+        description: Linux bridge with bond4.314 as a port
+        type: linux-bridge
+        state: up
+        ipv4:
+          enabled: false
+        mtu: 9000
+        bridge:
+          options:
+            stp:
+              enabled: false
+          port:
+            - name: bond4.314

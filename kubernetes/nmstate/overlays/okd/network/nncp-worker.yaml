@@ -1,0 +1,131 @@
+apiVersion: nmstate.io/v1
+kind: NodeNetworkConfigurationPolicy
+metadata:
+  name: bond4-nad-vlan3-worker
+  annotations:
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+spec:
+  nodeSelector:
+    beta.kubernetes.io/instance-type: MS-A1-A5870
+  desiredState:
+    interfaces:
+      - name: bond4.3
+        description: VLAN using bond4
+        type: vlan
+        state: up
+        ipv4:
+          dhcp: false
+          enabled: false
+        vlan:
+          base-iface: bond0
+          id: 3
+        mtu: 9000
+      - name: br4.3
+        description: OVS bridge with bond4.3 as a port
+        type: ovs-bridge
+        state: up
+        ipv4:
+          dhcp: true
+          enabled: true
+        bridge:
+          allow-extra-patch-ports: true
+          options:
+            stp:
+              enabled: false
+            mcast-snooping-enable: true
+          port:
+            - name: bond4.3
+        mtu: 9000
+    ovn:
+      bridge-mappings:
+        - localnet: br4.3
+          bridge: br4.3
+          state: present
+---
+apiVersion: nmstate.io/v1
+kind: NodeNetworkConfigurationPolicy
+metadata:
+  name: bond4-nad-vlan11-worker
+  annotations:
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+spec:
+  nodeSelector:
+    beta.kubernetes.io/instance-type: MS-A1-A5870
+  desiredState:
+    interfaces:
+      - name: bond4.11
+        description: VLAN using bond4
+        type: vlan
+        state: up
+        ipv4:
+          dhcp: false
+          enabled: false
+        vlan:
+          base-iface: bond0
+          id: 11
+        mtu: 9000
+      - name: br4.11
+        description: OVS bridge with bond4.11 as a port
+        type: ovs-bridge
+        state: up
+        ipv4:
+          dhcp: true
+          enabled: true
+        bridge:
+          allow-extra-patch-ports: true
+          options:
+            stp:
+              enabled: false
+            mcast-snooping-enable: true
+          port:
+            - name: bond4.11
+        mtu: 9000
+    ovn:
+      bridge-mappings:
+        - localnet: br4.11
+          bridge: br4.11
+          state: present
+---
+apiVersion: nmstate.io/v1
+kind: NodeNetworkConfigurationPolicy
+metadata:
+  name: bond4-nad-vlan111-worker
+  annotations:
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+spec:
+  nodeSelector:
+    beta.kubernetes.io/instance-type: MS-A1-A5870
+  desiredState:
+    interfaces:
+      - name: bond4.111
+        description: VLAN using bond4
+        type: vlan
+        state: up
+        ipv4:
+          dhcp: false
+          enabled: false
+        vlan:
+          base-iface: bond0
+          id: 111
+        mtu: 9000
+      - name: br4.111
+        description: OVS bridge with bond4.111 as a port
+        type: ovs-bridge
+        state: up
+        ipv4:
+          dhcp: true
+          enabled: true
+        bridge:
+          allow-extra-patch-ports: true
+          options:
+            stp:
+              enabled: false
+            mcast-snooping-enable: true
+          port:
+            - name: bond4.111
+        mtu: 9000
+    ovn:
+      bridge-mappings:
+        - localnet: br4.111
+          bridge: br4.111
+          state: present
