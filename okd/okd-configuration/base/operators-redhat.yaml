@@ -1,54 +1,52 @@
-# ---
-# apiVersion: operators.coreos.com/v1alpha1
-# kind: CatalogSource
-# metadata:
-#   annotations:
-#     openshift.io/required-scc: restricted-v2
-#     operatorframework.io/managed-by: marketplace-operator
-#     target.workload.openshift.io/management: '{"effect": "PreferredDuringScheduling"}'
-#   name: certified-operators-4.20
-#   namespace: openshift-marketplace
-# spec:
-#   displayName: Certified Operators
-#   grpcPodConfig:
-#     extractContent:
-#       cacheDir: /tmp/cache
-#       catalogDir: /configs
-#     memoryTarget: 40Mi
-#     nodeSelector:
-#       kubernetes.io/os: linux
-#       node-role.kubernetes.io/master: ""
-#     priorityClassName: system-cluster-critical
-#     securityContextConfig: restricted
-#     tolerations:
-#       - effect: NoSchedule
-#         key: node-role.kubernetes.io/master
-#         operator: Exists
-#       - effect: NoExecute
-#         key: node.kubernetes.io/unreachable
-#         operator: Exists
-#         tolerationSeconds: 120
-#       - effect: NoExecute
-#         key: node.kubernetes.io/not-ready
-#         operator: Exists
-#         tolerationSeconds: 120
-#   icon:
-#     base64data: ""
-#     mediatype: ""
-#   image: registry.redhat.io/redhat/certified-operator-index:v4.20
-#   priority: -200
-#   publisher: Red Hat
-#   sourceType: grpc
-#   updateStrategy:
-#     registryPoll:
-#       interval: 10m
-# ---
+---
 apiVersion: operators.coreos.com/v1alpha1
 kind: CatalogSource
 metadata:
   annotations:
     openshift.io/required-scc: restricted-v2
-    operatorframework.io/managed-by: marketplace-operator
+    target.workload.openshift.io/management: '{"effect": "PreferredDuringScheduling"}'
+  name: certified-operators-4.20
+  namespace: openshift-marketplace
+spec:
+  displayName: Certified Operators
+  grpcPodConfig:
+    extractContent:
+      cacheDir: /tmp/cache
+      catalogDir: /configs
+    memoryTarget: 40Mi
+    nodeSelector:
+      kubernetes.io/os: linux
+      node-role.kubernetes.io/master: ""
+    priorityClassName: system-cluster-critical
+    securityContextConfig: restricted
+    tolerations:
+      - effect: NoSchedule
+        key: node-role.kubernetes.io/master
+        operator: Exists
+      - effect: NoExecute
+        key: node.kubernetes.io/unreachable
+        operator: Exists
+        tolerationSeconds: 120
+      - effect: NoExecute
+        key: node.kubernetes.io/not-ready
+        operator: Exists
+        tolerationSeconds: 120
+  icon:
+    base64data: ""
+    mediatype: ""
+  image: registry.redhat.io/redhat/certified-operator-index:v4.20
+  priority: -200
+  publisher: Red Hat
+  sourceType: grpc
+  updateStrategy:
+    registryPoll:
+      interval: 10m
+---
+apiVersion: operators.coreos.com/v1alpha1
+kind: CatalogSource
+metadata:
+  annotations:
+    openshift.io/required-scc: restricted-v2
     target.workload.openshift.io/management: '{"effect": "PreferredDuringScheduling"}'
   name: community-operators-4.20
   namespace: openshift-marketplace
@@ -92,7 +90,6 @@ spec:
 # metadata:
 #   annotations:
 #     openshift.io/required-scc: restricted-v2
-#     operatorframework.io/managed-by: marketplace-operator
 #     target.workload.openshift.io/management: '{"effect": "PreferredDuringScheduling"}'
 #   name: redhat-marketplace-4.20
 #   namespace: openshift-marketplace
@@ -136,7 +133,6 @@ kind: CatalogSource
 metadata:
   annotations:
     openshift.io/required-scc: restricted-v2
-    operatorframework.io/managed-by: marketplace-operator
     target.workload.openshift.io/management: '{"effect": "PreferredDuringScheduling"}'
   name: redhat-operators-4.20
   namespace: openshift-marketplace
