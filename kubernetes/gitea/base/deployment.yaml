@@ -30,7 +30,10 @@ spec:
         app.kubernetes.io/name: gitea
         app.kubernetes.io/instance: gitea
         app.kubernetes.io/managed-by: Helm
+      annotations:
+        io.kubernetes.cri-o.TrySkipVolumeSELinuxLabel: "true"
     spec:
+      runtimeClassName: selinux
       securityContext:
         seccompProfile:
           type: RuntimeDefault

@@ -21,8 +21,10 @@ spec:
         db: nextcloud-pg
         storage: ceph-s3
       annotations:
+        io.kubernetes.cri-o.TrySkipVolumeSELinuxLabel: "true"
         enable.version-checker.io/nextcloud: "true"
     spec:
+      runtimeClassName: selinux
       topologySpreadConstraints:
         - maxSkew: 1
           topologyKey: topology.kubernetes.io/zone
