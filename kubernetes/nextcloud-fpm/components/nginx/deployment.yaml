@@ -16,7 +16,10 @@ spec:
     metadata:
       labels:
         app: nginx
+      annotations:
+        io.kubernetes.cri-o.TrySkipVolumeSELinuxLabel: "true"
     spec:
+      runtimeClassName: selinux
       securityContext:
         runAsNonRoot: true
         fsGroupChangePolicy: OnRootMismatch

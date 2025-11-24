@@ -19,7 +19,10 @@ spec:
             app: nextcloud-cron
             db: nextcloud-pg
             storage: ceph-s3
+          annotations:
+            io.kubernetes.cri-o.TrySkipVolumeSELinuxLabel: "true"
         spec:
+          runtimeClassName: selinux
           serviceAccountName: nextcloud
           securityContext:
             runAsNonRoot: true

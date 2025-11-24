@@ -184,7 +184,10 @@ spec:
       labels:
         app.kubernetes.io/name: server
         app.kubernetes.io/instance: immich
+      annotations:
+        io.kubernetes.cri-o.TrySkipVolumeSELinuxLabel: "true"
     spec:
+      runtimeClassName: selinux
       securityContext:
         runAsNonRoot: true
         fsGroupChangePolicy: OnRootMismatch
