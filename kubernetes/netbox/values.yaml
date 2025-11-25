@@ -321,12 +321,29 @@ storageBackend: ""
 #   AWS_STORAGE_BUCKET_NAME: 'netbox'
 #   AWS_S3_ENDPOINT_URL: 'endpoint URL of S3 provider'
 #   AWS_S3_REGION_NAME: 'eu-west-1'
-storageConfig:
-  AWS_ACCESS_KEY_ID: ""
-  AWS_SECRET_ACCESS_KEY: ""
-  AWS_STORAGE_BUCKET_NAME: ""
-  AWS_S3_ENDPOINT_URL: "rook-ceph-rgw-rook-ceph-obj.rook-ceph.svc"
-  AWS_S3_REGION_NAME: "eu-west-1"
+# AWS_ACCESS_KEY_ID: ""
+# AWS_SECRET_ACCESS_KEY: ""
+# AWS_STORAGE_BUCKET_NAME: ""
+# AWS_S3_ENDPOINT_URL: "rook-ceph-rgw-rook-ceph-obj.rook-ceph.svc"
+# AWS_S3_REGION_NAME: "eu-west-1"
+
+storages:
+  default:
+    BACKEND: "storages.backends.s3.S3Storage"
+    OPTIONS:
+      endpoint_url: "rook-ceph-rgw-rook-ceph-obj.rook-ceph.svc:8080"
+      bucket_name: "netbox-"
+      access_key: ""
+      secret_key: ""
+      location: "media/"
+  scripts:
+    BACKEND: "storages.backends.s3.S3Storage"
+    OPTIONS:
+      endpoint_url: "rook-ceph-rgw-rook-ceph-obj.rook-ceph.svc:8080"
+      bucket_name: "netbox-"
+      access_key: ""
+      secret_key: ""
+      location: "static/"
 
 # Determine how many objects to display per page within a list. (Default: 50)
 paginateCount: 50
