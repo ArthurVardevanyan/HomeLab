@@ -8,7 +8,7 @@ metadata:
   name: certified-operators-4.20
   namespace: openshift-marketplace
 spec:
-  displayName: Certified Operators
+  displayName: Certified Operators 4.20
   grpcPodConfig:
     extractContent:
       cacheDir: /tmp/cache
@@ -51,7 +51,7 @@ metadata:
   name: community-operators-4.20
   namespace: openshift-marketplace
 spec:
-  displayName: Community Operators
+  displayName: Community Operators 4.20
   grpcPodConfig:
     extractContent:
       cacheDir: /tmp/cache
@@ -94,7 +94,7 @@ spec:
 #   name: redhat-marketplace-4.20
 #   namespace: openshift-marketplace
 # spec:
-#   displayName: Red Hat Marketplace
+#   displayName: Red Hat Marketplace 4.20
 #   grpcPodConfig:
 #     extractContent:
 #       cacheDir: /tmp/cache
@@ -137,7 +137,7 @@ metadata:
   name: redhat-operators-4.20
   namespace: openshift-marketplace
 spec:
-  displayName: Red Hat Operators
+  displayName: Red Hat Operators 4.20
   grpcPodConfig:
     extractContent:
       cacheDir: /tmp/cache
@@ -164,6 +164,49 @@ spec:
     base64data: ""
     mediatype: ""
   image: registry.redhat.io/redhat/redhat-operator-index:v4.20
+  priority: -100
+  publisher: Red Hat
+  sourceType: grpc
+  updateStrategy:
+    registryPoll:
+      interval: 10m
+---
+apiVersion: operators.coreos.com/v1alpha1
+kind: CatalogSource
+metadata:
+  annotations:
+    openshift.io/required-scc: restricted-v2
+    target.workload.openshift.io/management: '{"effect": "PreferredDuringScheduling"}'
+  name: redhat-operators-4.19
+  namespace: openshift-marketplace
+spec:
+  displayName: Red Hat Operators 4.19
+  grpcPodConfig:
+    extractContent:
+      cacheDir: /tmp/cache
+      catalogDir: /configs
+    memoryTarget: 30Mi
+    nodeSelector:
+      kubernetes.io/os: linux
+      node-role.kubernetes.io/master: ""
+    priorityClassName: system-cluster-critical
+    securityContextConfig: restricted
+    tolerations:
+      - effect: NoSchedule
+        key: node-role.kubernetes.io/master
+        operator: Exists
+      - effect: NoExecute
+        key: node.kubernetes.io/unreachable
+        operator: Exists
+        tolerationSeconds: 120
+      - effect: NoExecute
+        key: node.kubernetes.io/not-ready
+        operator: Exists
+        tolerationSeconds: 120
+  icon:
+    base64data: ""
+    mediatype: ""
+  image: registry.redhat.io/redhat/redhat-operator-index:v4.19
   priority: -100
   publisher: Red Hat
   sourceType: grpc
