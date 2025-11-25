@@ -14,3 +14,20 @@ spec:
         cpu: 25m
         memory: 25Mi
         ephemeral-storage: 128Mi
+---
+apiVersion: v1
+kind: LimitRange
+metadata:
+  name: default
+  namespace: openshift-power-monitoring
+spec:
+  limits:
+    - type: Container
+      default:
+        cpu: 50m
+        memory: 96Mi
+        ephemeral-storage: 256Mi
+      defaultRequest:
+        cpu: 15m
+        memory: 48Mi
+        ephemeral-storage: 128Mi
