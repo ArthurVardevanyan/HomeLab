@@ -14,7 +14,7 @@ resource "zitadel_application_oidc" "netbox" {
 
   name = "netbox"
   redirect_uris = [
-    "https://netbox.apps.okd.homelab.arthurvardevanyan.com/oauth/complete/oidc/",
+    "https://netbox.app.okd.homelab.arthurvardevanyan.com/oauth/complete/oidc/",
   ]
   response_types              = ["OIDC_RESPONSE_TYPE_CODE"]
   grant_types                 = ["OIDC_GRANT_TYPE_AUTHORIZATION_CODE"]
