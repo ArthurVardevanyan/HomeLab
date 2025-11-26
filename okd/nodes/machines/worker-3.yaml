@@ -1,0 +1,28 @@
+apiVersion: machine.openshift.io/v1beta1
+kind: Machine
+metadata:
+  name: okd-4ww5p-worker-3
+  namespace: openshift-machine-api
+  labels:
+    machine.openshift.io/cluster-api-cluster: okd-4ww5p
+    machine.openshift.io/cluster-api-machine-role: worker
+    machine.openshift.io/cluster-api-machine-type: worker
+    node-role.kubernetes.io/worker: ""
+spec:
+  providerID: baremetalhost:///openshift-machine-api/worker-3/425cc487-5646-4e60-94af-d70c87a54ee0
+  providerSpec:
+    value:
+      apiVersion: baremetal.cluster.k8s.io/v1alpha1
+      customDeploy:
+        method: install_coreos
+      hostSelector:
+        matchLabels:
+          kubernetes.io/hostname: worker-3
+      image:
+        checksum: ""
+        url: ""
+      kind: BareMetalMachineProviderSpec
+      metadata:
+        creationTimestamp: null
+      userData:
+        name: master-user-data-managed

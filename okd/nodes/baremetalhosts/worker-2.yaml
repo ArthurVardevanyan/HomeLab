@@ -1,0 +1,22 @@
+apiVersion: metal3.io/v1alpha1
+kind: BareMetalHost
+metadata:
+  name: workers-2
+  namespace: openshift-machine-api
+spec:
+  online: true
+  bootMACAddress: 58:47:CA:7C:4C:BF
+  bmc:
+    address: ""
+    credentialsName: ""
+  automatedCleaningMode: metadata
+  bootMode: UEFI
+  externallyProvisioned: true
+  userData:
+    name: worker-user-data
+    namespace: openshift-machine-api
+  consumerRef:
+    apiVersion: machine.openshift.io/v1beta1
+    kind: Machine
+    name: okd-4ww5p-worker-2
+    namespace: openshift-machine-api
