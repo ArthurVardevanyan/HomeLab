@@ -1,3 +1,4 @@
+---
 # Source: stackrox-central-services/templates/01-central-13-deployment.yaml
 apiVersion: apps/v1
 kind: Deployment
@@ -10,8 +11,8 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: stackrox
     app.kubernetes.io/part-of: stackrox-central-services
-    app.kubernetes.io/version: 4.8.0
-    helm.sh/chart: stackrox-central-services-400.8.0
+    app.kubernetes.io/version: 4.9.1
+    helm.sh/chart: stackrox-central-services-400.9.1
     app: central
   annotations:
     email: support@stackrox.com
@@ -44,8 +45,8 @@ spec:
         app.kubernetes.io/managed-by: Helm
         app.kubernetes.io/name: stackrox
         app.kubernetes.io/part-of: stackrox-central-services
-        app.kubernetes.io/version: 4.8.0
-        helm.sh/chart: stackrox-central-services-400.8.0
+        app.kubernetes.io/version: 4.9.1
+        helm.sh/chart: stackrox-central-services-400.9.1
       annotations:
         traffic.sidecar.istio.io/excludeInboundPorts: "8443"
         email: support@stackrox.com
@@ -85,7 +86,7 @@ spec:
         runAsUser: 4000
       containers:
         - name: central
-          image: "quay.io/stackrox-io/main:4.8.5@sha256:eacf2d67a02fb9fe9cff23ab23341501d76216cc1f6142032ef4dc9435a5c0bf"
+          image: "quay.io/stackrox-io/main:4.9.1sha256:e042fb64ffe0a030baf0b8691a6aaa62d3e2b624bdced73ccdc6b4db7f69f7b5"
           command:
             - /stackrox/central-entrypoint.sh
           ports:
@@ -126,6 +127,8 @@ spec:
               valueFrom:
                 fieldRef:
                   fieldPath: metadata.name
+            - name: GRPC_ENFORCE_ALPN_ENABLED
+              value: "false"
             - name: ROX_TELEMETRY_ENDPOINT
               value: "https://console.redhat.com/connections/api"
             - name: ROX_TELEMETRY_API_WHITELIST
@@ -279,8 +282,8 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: stackrox
     app.kubernetes.io/part-of: stackrox-central-services
-    app.kubernetes.io/version: 4.8.0
-    helm.sh/chart: stackrox-central-services-400.8.0
+    app.kubernetes.io/version: 4.9.1
+    helm.sh/chart: stackrox-central-services-400.9.1
   annotations:
     email: support@stackrox.com
     meta.helm.sh/release-name: stackrox-central-services
@@ -304,8 +307,8 @@ spec:
         app.kubernetes.io/managed-by: Helm
         app.kubernetes.io/name: stackrox
         app.kubernetes.io/part-of: stackrox-central-services
-        app.kubernetes.io/version: 4.8.0
-        helm.sh/chart: stackrox-central-services-400.8.0
+        app.kubernetes.io/version: 4.9.1
+        helm.sh/chart: stackrox-central-services-400.9.1
       annotations:
         email: support@stackrox.com
         meta.helm.sh/release-name: stackrox-central-services
@@ -340,7 +343,7 @@ spec:
       serviceAccountName: config-controller
       containers:
         - name: manager
-          image: "quay.io/stackrox-io/main:4.8.5@sha256:eacf2d67a02fb9fe9cff23ab23341501d76216cc1f6142032ef4dc9435a5c0bf"
+          image: "quay.io/stackrox-io/main:4.9.1@sha256:e042fb64ffe0a030baf0b8691a6aaa62d3e2b624bdced73ccdc6b4db7f69f7b5"
           command:
             - /stackrox/bin/config-controller
           args:
@@ -405,8 +408,8 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: stackrox
     app.kubernetes.io/part-of: stackrox-central-services
-    app.kubernetes.io/version: 4.8.0
-    helm.sh/chart: stackrox-central-services-400.8.0
+    app.kubernetes.io/version: 4.9.1
+    helm.sh/chart: stackrox-central-services-400.9.1
   annotations:
     email: support@stackrox.com
     meta.helm.sh/release-name: stackrox-central-services
@@ -422,7 +425,7 @@ metadata:
     checkov.io/skip8: CKV_K8S_38=Security Tool
     checkov.io/skip9: CKV_K8S_40=OpenShift Injects Random UID
 spec:
-  #replicas: 3
+  # replicas: 3
   minReadySeconds: 15
   selector:
     matchLabels:
@@ -439,8 +442,8 @@ spec:
         app.kubernetes.io/managed-by: Helm
         app.kubernetes.io/name: stackrox
         app.kubernetes.io/part-of: stackrox-central-services
-        app.kubernetes.io/version: 4.8.0
-        helm.sh/chart: stackrox-central-services-400.8.0
+        app.kubernetes.io/version: 4.9.1
+        helm.sh/chart: stackrox-central-services-400.9.1
       annotations:
         traffic.sidecar.istio.io/excludeInboundPorts: "8080,8443"
         email: support@stackrox.com
@@ -478,7 +481,7 @@ spec:
       containers:
         - name: scanner
 
-          image: "quay.io/stackrox-io/scanner:4.8.5@sha256:f7038dc6b17564bc745637b5bfccf3819c103a30784a8f6aa8c8ecb11a67a664"
+          image: "quay.io/stackrox-io/scanner:4.9.1@sha256:2a2e1b9a8f8bc4db9249c7fdecdd70497e73a4b806c79db5cae57681d6fec4bc"
           env:
             - name: ROX_MEMLIMIT
               valueFrom:
@@ -606,8 +609,8 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: stackrox
     app.kubernetes.io/part-of: stackrox-central-services
-    app.kubernetes.io/version: 4.8.0
-    helm.sh/chart: stackrox-central-services-400.8.0
+    app.kubernetes.io/version: 4.9.1
+    helm.sh/chart: stackrox-central-services-400.9.1
   annotations:
     email: support@stackrox.com
     meta.helm.sh/release-name: stackrox-central-services
@@ -642,8 +645,8 @@ spec:
         app.kubernetes.io/managed-by: Helm
         app.kubernetes.io/name: stackrox
         app.kubernetes.io/part-of: stackrox-central-services
-        app.kubernetes.io/version: 4.8.0
-        helm.sh/chart: stackrox-central-services-400.8.0
+        app.kubernetes.io/version: 4.9.1
+        helm.sh/chart: stackrox-central-services-400.9.1
       annotations:
         traffic.sidecar.istio.io/excludeInboundPorts: "5432"
         email: support@stackrox.com
@@ -680,7 +683,7 @@ spec:
                     operator: DoesNotExist
       initContainers:
         - name: init-db
-          image: "quay.io/stackrox-io/scanner-db:4.8.5@sha256:0cbcc9f9c05fc6746971cb2719001ff178f7bb66e198b1d57e35bb82d5b45967"
+          image: "quay.io/stackrox-io/scanner-db:4.9.1@sha256:00d87b4bd33774834595adc6c19affe4fd61344d4cbab9222a45842cedd86ed9"
           env:
             - name: POSTGRES_PASSWORD_FILE
               value: "/run/secrets/stackrox.io/secrets/password"
@@ -704,7 +707,7 @@ spec:
               readOnly: true
       containers:
         - name: db
-          image: "quay.io/stackrox-io/scanner-db:4.8.5@sha256:0cbcc9f9c05fc6746971cb2719001ff178f7bb66e198b1d57e35bb82d5b45967"
+          image: "quay.io/stackrox-io/scanner-db:4.9.1@sha256:00d87b4bd33774834595adc6c19affe4fd61344d4cbab9222a45842cedd86ed9"
           ports:
             - name: tcp-postgresql
               protocol: TCP
@@ -763,8 +766,8 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: stackrox
     app.kubernetes.io/part-of: stackrox-central-services
-    app.kubernetes.io/version: 4.8.0
-    helm.sh/chart: stackrox-central-services-400.8.0
+    app.kubernetes.io/version: 4.9.1
+    helm.sh/chart: stackrox-central-services-400.9.1
   annotations:
     email: support@stackrox.com
     meta.helm.sh/release-name: stackrox-central-services
@@ -788,8 +791,8 @@ spec:
         app.kubernetes.io/managed-by: Helm
         app.kubernetes.io/name: stackrox
         app.kubernetes.io/part-of: stackrox-central-services
-        app.kubernetes.io/version: 4.8.0
-        helm.sh/chart: stackrox-central-services-400.8.0
+        app.kubernetes.io/version: 4.9.1
+        helm.sh/chart: stackrox-central-services-400.9.1
       annotations:
         traffic.sidecar.istio.io/excludeInboundPorts: "5432"
         email: support@stackrox.com
@@ -827,7 +830,7 @@ spec:
       terminationGracePeriodSeconds: 120
       initContainers:
         - name: init-db
-          image: "quay.io/stackrox-io/scanner-v4-db:4.8.5@sha256:a214b6f46c286ef3406fbe2818a7f3375f58241d73a9c61f5d166f397125f67e"
+          image: "quay.io/stackrox-io/scanner-v4-db:4.9.1@sha256:6ccd6e64082d07b0646942113f9d1dd0e47c0365d879620b3b611712e8b91a8f"
           env:
             - name: PGDATA
               value: "/var/lib/postgresql/data/pgdata"
@@ -854,7 +857,7 @@ spec:
               memory: 2Gi
       containers:
         - name: db
-          image: "quay.io/stackrox-io/scanner-v4-db:4.8.5@sha256:a214b6f46c286ef3406fbe2818a7f3375f58241d73a9c61f5d166f397125f67e"
+          image: "quay.io/stackrox-io/scanner-v4-db:4.9.1@sha256:6ccd6e64082d07b0646942113f9d1dd0e47c0365d879620b3b611712e8b91a8f"
           env:
             - name: PGDATA
               value: "/var/lib/postgresql/data/pgdata"
@@ -938,15 +941,15 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: stackrox
     app.kubernetes.io/part-of: stackrox-central-services
-    app.kubernetes.io/version: 4.8.0
-    helm.sh/chart: stackrox-central-services-400.8.0
+    app.kubernetes.io/version: 4.9.1
+    helm.sh/chart: stackrox-central-services-400.9.1
   annotations:
     email: support@stackrox.com
     meta.helm.sh/release-name: stackrox-central-services
     meta.helm.sh/release-namespace: stackrox
     owner: stackrox
 spec:
-  #replicas: 3
+  # replicas: 3
   minReadySeconds: 15
   selector:
     matchLabels:
@@ -963,8 +966,8 @@ spec:
         app.kubernetes.io/managed-by: Helm
         app.kubernetes.io/name: stackrox
         app.kubernetes.io/part-of: stackrox-central-services
-        app.kubernetes.io/version: 4.8.0
-        helm.sh/chart: stackrox-central-services-400.8.0
+        app.kubernetes.io/version: 4.9.1
+        helm.sh/chart: stackrox-central-services-400.9.1
       annotations:
         email: support@stackrox.com
         meta.helm.sh/release-name: stackrox-central-services
@@ -1001,7 +1004,7 @@ spec:
               weight: 100
       containers:
         - name: indexer
-          image: "quay.io/stackrox-io/scanner-v4:4.8.5@sha256:284ed84f33b4c0600aee37b4fa007d12f164c6880ddba71e15cb2a859c981830"
+          image: "quay.io/stackrox-io/scanner-v4:4.9.1sha256:da198a150e1eb3b1cbff1ce83fe6a4e575f1d4031b269a281fcd091b28c52522"
           env:
             - name: ROX_MEMLIMIT
               valueFrom:
@@ -1140,15 +1143,15 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: stackrox
     app.kubernetes.io/part-of: stackrox-central-services
-    app.kubernetes.io/version: 4.8.0
-    helm.sh/chart: stackrox-central-services-400.8.0
+    app.kubernetes.io/version: 4.9.1
+    helm.sh/chart: stackrox-central-services-400.9.1
   annotations:
     email: support@stackrox.com
     meta.helm.sh/release-name: stackrox-central-services
     meta.helm.sh/release-namespace: stackrox
     owner: stackrox
 spec:
-  #replicas: 2
+  # replicas: 2
   minReadySeconds: 15
   selector:
     matchLabels:
@@ -1165,8 +1168,8 @@ spec:
         app.kubernetes.io/managed-by: Helm
         app.kubernetes.io/name: stackrox
         app.kubernetes.io/part-of: stackrox-central-services
-        app.kubernetes.io/version: 4.8.0
-        helm.sh/chart: stackrox-central-services-400.8.0
+        app.kubernetes.io/version: 4.9.1
+        helm.sh/chart: stackrox-central-services-400.9.1
       annotations:
         email: support@stackrox.com
         meta.helm.sh/release-name: stackrox-central-services
@@ -1203,7 +1206,7 @@ spec:
               weight: 100
       containers:
         - name: matcher
-          image: "quay.io/stackrox-io/scanner-v4:4.8.5@sha256:284ed84f33b4c0600aee37b4fa007d12f164c6880ddba71e15cb2a859c981830"
+          image: "quay.io/stackrox-io/scanner-v4:4.9.1@sha256:da198a150e1eb3b1cbff1ce83fe6a4e575f1d4031b269a281fcd091b28c52522"
           env:
             - name: ROX_MEMLIMIT
               valueFrom:
