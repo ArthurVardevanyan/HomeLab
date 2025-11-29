@@ -1,6 +1,6 @@
 ---
 # Source: stackrox-central-services/templates/02-scanner-08-hpa.yaml
-apiVersion: autoscaling/v1
+apiVersion: autoscaling/v2
 kind: HorizontalPodAutoscaler
 metadata:
   name: scanner
@@ -25,10 +25,16 @@ spec:
     apiVersion: apps/v1
     kind: Deployment
     name: scanner
-  targetCPUUtilizationPercentage: 3000 #150
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 3000 #150
 ---
 # Source: stackrox-central-services/templates/02-scanner-v4-09-indexer-hpa.yaml
-apiVersion: autoscaling/v1
+apiVersion: autoscaling/v2
 kind: HorizontalPodAutoscaler
 metadata:
   name: scanner-v4-indexer
@@ -53,10 +59,16 @@ spec:
     apiVersion: apps/v1
     kind: Deployment
     name: scanner-v4-indexer
-  targetCPUUtilizationPercentage: 150
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 150
 ---
 # Source: stackrox-central-services/templates/02-scanner-v4-09-matcher-hpa.yaml
-apiVersion: autoscaling/v1
+apiVersion: autoscaling/v2
 kind: HorizontalPodAutoscaler
 metadata:
   name: scanner-v4-matcher
@@ -81,4 +93,10 @@ spec:
     apiVersion: apps/v1
     kind: Deployment
     name: scanner-v4-matcher
-  targetCPUUtilizationPercentage: 3000 #150
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 3000 #150
