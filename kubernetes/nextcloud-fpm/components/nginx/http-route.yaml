@@ -8,11 +8,20 @@ metadata:
     externaldns.k8s.io: pihole
 spec:
   parentRefs:
-    - name: https-gateway
+    - group: gateway.networking.k8s.io
+      kind: Gateway
+      name: https-gateway
       namespace: openshift-ingress
   hostnames: ["files.arthurvardevanyan.com"]
   rules:
     - backendRefs:
-        - name: nginx
+        - group: ""
+          kind: Service
+          name: nginx
           namespace: nextcloud-fpm
           port: 8080
+          weight: 1
+      matches:
+        - path:
+            type: PathPrefix
+            value: /
