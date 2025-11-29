@@ -7,11 +7,20 @@ metadata:
     externaldns.k8s.io: pihole
 spec:
   parentRefs:
-    - name: https-gateway
+    - group: gateway.networking.k8s.io
+      kind: Gateway
+      name: https-gateway
       namespace: openshift-ingress
   hostnames: ["bitwarden.arthurvardevanyan.com"]
   rules:
     - backendRefs:
-        - name: bitwarden
+        - group: ""
+          kind: Service
+          name: bitwarden
           namespace: bitwarden
           port: 80
+          weight: 1
+      matches:
+        - path:
+            type: PathPrefix
+            value: /
