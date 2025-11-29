@@ -1,3 +1,4 @@
+---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -12,6 +13,9 @@ spec:
       name: kubernetes-nmstate-operator
   template:
     metadata:
+      annotations:
+        target.workload.openshift.io/management: |
+          {"effect": "PreferredDuringScheduling"}
       labels:
         app: kubernetes-nmstate-operator
         name: kubernetes-nmstate-operator
@@ -21,7 +25,7 @@ spec:
         - key: node-role.kubernetes.io/control-plane
           operator: Exists
           effect: NoSchedule
-        - key: node-role.kubernetes.io/control-plane
+        - key: node-role.kubernetes.io/master
           operator: Exists
           effect: NoSchedule
       affinity:
@@ -35,7 +39,7 @@ spec:
             - weight: 1
               preference:
                 matchExpressions:
-                  - key: node-role.kubernetes.io/control-plane
+                  - key: node-role.kubernetes.io/master
                     operator: Exists
       priorityClassName: system-cluster-critical
       securityContext:
@@ -47,7 +51,7 @@ spec:
           args:
             - --zap-time-encoding=iso8601
           # Replace this with the built image name
-          image: quay.io/nmstate/kubernetes-nmstate-operator:v0.84.0@sha256:871e34a8dcf2a7c5e348bddf0a3b829f91006823086db8875a6045ff05bc61ff
+          image: quay.io/nmstate/kubernetes-nmstate-operator:v0.85.1@sha256:55b8221fa302886b0f2a1c7d9a8198e91fc64f38a216f63c1a42e105b142cecc
           imagePullPolicy: IfNotPresent
           command:
             - manager
@@ -60,6 +64,27 @@ spec:
             capabilities:
               drop:
                 - ALL
+          readinessProbe:
+            httpGet:
+              path: /readyz
+              port: healthprobe
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            timeoutSeconds: 1
+            successThreshold: 1
+            failureThreshold: 3
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: healthprobe
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            timeoutSeconds: 1
+            successThreshold: 1
+            failureThreshold: 3
+          ports:
+            - containerPort: 8081
+              name: healthprobe
           resources:
             limits:
               cpu: 150m
@@ -79,12 +104,15 @@ spec:
             - name: RUN_OPERATOR
               value: ""
             - name: RELATED_IMAGE_HANDLER_IMAGE
-              value: quay.io/nmstate/kubernetes-nmstate-handler:v0.83.0@sha256:ccb9f7575965d58133468a6fa64b6421fea5718c2009fd295904bcb6ec4aaa83
+              value: quay.io/nmstate/kubernetes-nmstate-handler:v0.85.1@sha256:14afd441f4a148479aeb05f6e27e5946f2da0f77c87fa380e92cd37365ee29c5
             - name: HANDLER_IMAGE_PULL_POLICY
               value: IfNotPresent
             - name: HANDLER_NAMESPACE
               value: nmstate
-            # Doesn't Work?
+            - name: MONITORING_NAMESPACE
+              value: monitoring
+            - name: OPERATOR_NAMESPACE
+              value: nmstate
             - name: KUBE_RBAC_PROXY_IMAGE
-              value: quay.io/brancz/kube-rbac-proxy:v0.18.2@sha256:7de54b6dedc8006ffd447267b826eb417a648c00f2b735b6d313395411803719
+              value: quay.io/openshift/origin-kube-rbac-proxy:4.20.0@sha256:6d4056bf69022cd09ecf845fb46c1743ad4aaa394b935285d1c5af5dac681f10
       enableServiceLinks: false
