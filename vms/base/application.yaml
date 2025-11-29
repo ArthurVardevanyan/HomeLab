@@ -17,7 +17,10 @@ spec:
   source:
     path: vms/overlays/okd
     repoURL: https://git.arthurvardevanyan.com/ArthurVardevanyan/HomeLab
-    targetRevision: HEAD
+    targetRevision: argocd-server-side
+  syncPolicy:
+    syncOptions:
+      - ServerSideApply=true
 ---
 apiVersion: argoproj.io/v1alpha1
 kind: Application
@@ -38,4 +41,7 @@ spec:
   source:
     path: vms/overlays/okd-velero
     repoURL: https://git.arthurvardevanyan.com/ArthurVardevanyan/HomeLab
-    targetRevision: HEAD
+    targetRevision: argocd-server-side
+  syncPolicy:
+    syncOptions:
+      - ServerSideApply=true
