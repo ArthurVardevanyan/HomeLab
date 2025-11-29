@@ -29,6 +29,18 @@ rules:
       ]
   - nonResourceURLs: ["*"]
     verbs: ["*"]
+  - apiGroups:
+      - authentication.k8s.io
+    resources:
+      - tokenreviews
+    verbs:
+      - create
+  - apiGroups:
+      - authorization.k8s.io
+    resources:
+      - subjectaccessreviews
+    verbs:
+      - create
 ---
 # Source: olm/templates/0000_50_olm_09-aggregated.clusterrole.yaml
 kind: ClusterRole

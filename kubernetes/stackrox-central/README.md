@@ -12,7 +12,7 @@ helm template -n stackrox --include-crds --create-namespace stackrox-central-ser
  --set central.db.external=true --set central.db.password.value="<path:secret/data/homelab/stackrox/db#password>" \
  --set central.persistence.none=true \
  --set central.db.source.connectionString="host=stackrox-primary.postgres.svc port=5432 dbname=stackrox user=stackrox" \
-   >central.yaml
+   >/tmp/central.yaml
 
 kubectl -n stackrox exec deploy/central -- roxctl --insecure-skip-tls-verify \
  --password "${ADMIN_PASSWORD}" \

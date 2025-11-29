@@ -1,6 +1,7 @@
 # Tekton
 
 ```bash
+wget -o /tmp/dump.yaml https://github.com/tektoncd/operator/releases/download/v0.77.0/openshift-release.yaml
 kubectl kustomize kubernetes/tekton/overlays/operator | argocd-vault-plugin generate - | kubectl apply -f -
 ```
 

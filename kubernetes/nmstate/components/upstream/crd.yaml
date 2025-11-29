@@ -14,7 +14,16 @@ spec:
     singular: nmstate
   scope: Cluster
   versions:
-    - name: v1
+    - additionalPrinterColumns:
+        - description: Status
+          jsonPath: .status.conditions[?(@.status=="True")].type
+          name: Status
+          type: string
+        - description: Reason
+          jsonPath: .status.conditions[?(@.status=="True")].reason
+          name: Reason
+          type: string
+      name: v1
       schema:
         openAPIV3Schema:
           description: NMState is the Schema for the nmstates API
@@ -2002,6 +2011,28 @@ spec:
                         type: string
                     type: object
                   type: array
+                logLevel:
+                  default: info
+                  description: |-
+                    LogLevel defines the log level for nmstate operations.
+                    Valid values are "info" (default, minimal output) and "debug" (verbose output for debugging).
+                  enum:
+                    - info
+                    - debug
+                  type: string
+                metricsConfiguration:
+                  default: {}
+                  description: |-
+                    MetricsConfiguration is an optional configuration for metrics server.
+                    If MetricsConfiguration is specified, the handler will use the config defined here instead of its default values.
+                  properties:
+                    bindAddress:
+                      default: :8089
+                      description: |-
+                        BindAddress is the TCP address that the controller should bind to
+                        for serving metrics. It can be set to "0" to disable the metrics serving.
+                      type: string
+                  type: object
                 nodeSelector:
                   additionalProperties:
                     type: string
@@ -2123,7 +2154,19 @@ spec:
           type: object
       served: true
       storage: true
-    - deprecated: true
+      subresources:
+        status: {}
+    - additionalPrinterColumns:
+        - description: Status
+          jsonPath: .status.conditions[?(@.status=="True")].type
+          name: Status
+          type: string
+        - description: Reason
+          jsonPath: .status.conditions[?(@.status=="True")].reason
+          name: Reason
+          type: string
+      deprecated: true
+      deprecationWarning: nmstate/v1beta1 deprecated, use nmstate/v1 instead
       name: v1beta1
       schema:
         openAPIV3Schema:
@@ -4112,6 +4155,27 @@ spec:
                         type: string
                     type: object
                   type: array
+                logLevel:
+                  default: info
+                  description: |-
+                    LogLevel defines the log level for nmstate operations.
+                    Valid values are "info" (default, minimal output) and "debug" (verbose output for debugging).
+                  enum:
+                    - info
+                    - debug
+                  type: string
+                metricsConfiguration:
+                  description: |-
+                    MetricsConfiguration is an optional configuration for metrics server.
+                    If MetricsConfiguration is specified, the handler will use the config defined here instead of its default values.
+                  properties:
+                    bindAddress:
+                      default: :8089
+                      description: |-
+                        BindAddress is the TCP address that the controller should bind to
+                        for serving metrics. It can be set to "0" to disable the metrics serving.
+                      type: string
+                  type: object
                 nodeSelector:
                   additionalProperties:
                     type: string
@@ -4233,8 +4297,8 @@ spec:
           type: object
       served: true
       storage: false
----
-
+      subresources:
+        status: {}
 ---
 apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
@@ -4360,6 +4424,10 @@ spec:
                     condition status belongs to the same policy version
                   format: int64
                   type: integer
+                retryCount:
+                  additionalProperties:
+                    type: integer
+                  type: object
               type: object
           type: object
           x-kubernetes-preserve-unknown-fields: true
@@ -4367,8 +4435,6 @@ spec:
       storage: true
       subresources:
         status: {}
----
-
 ---
 apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
@@ -4491,6 +4557,13 @@ spec:
                     UnavailableNodeCount represents the total number of potentially unavailable nodes that are
                     processing a NodeNetworkConfigurationPolicy
                   type: integer
+                unavailableNodeCountMap:
+                  additionalProperties:
+                    type: integer
+                  description: |-
+                    UnavailableNodeCountMap represents the total number of potentially unavailable nodes that are
+                    processing a NodeNetworkConfigurationPolicy per Generation (Map Key)
+                  type: object
               type: object
           type: object
       served: true
@@ -4602,14 +4675,19 @@ spec:
                     UnavailableNodeCount represents the total number of potentially unavailable nodes that are
                     processing a NodeNetworkConfigurationPolicy
                   type: integer
+                unavailableNodeCountMap:
+                  additionalProperties:
+                    type: integer
+                  description: |-
+                    UnavailableNodeCountMap represents the total number of potentially unavailable nodes that are
+                    processing a NodeNetworkConfigurationPolicy per Generation (Map Key)
+                  type: object
               type: object
           type: object
       served: true
       storage: false
       subresources:
         status: {}
----
-
 ---
 apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition

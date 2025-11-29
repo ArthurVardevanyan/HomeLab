@@ -10,7 +10,7 @@ metadata:
     app.kubernetes.io/name: cainjector
     app.kubernetes.io/instance: cert-manager
     app.kubernetes.io/component: "cainjector"
-    app.kubernetes.io/version: "v1.18.2"
+    app.kubernetes.io/version: "v1.19.1"
 spec:
   replicas: 2
   selector:
@@ -25,7 +25,7 @@ spec:
         app.kubernetes.io/name: cainjector
         app.kubernetes.io/instance: cert-manager
         app.kubernetes.io/component: "cainjector"
-        app.kubernetes.io/version: "v1.18.2"
+        app.kubernetes.io/version: "v1.19.1"
       annotations:
         prometheus.io/path: "/metrics"
         prometheus.io/scrape: "true"
@@ -37,12 +37,9 @@ spec:
         runAsNonRoot: true
         seccompProfile:
           type: RuntimeDefault
-      tolerations:
-        - key: node-role.kubernetes.io/master
-          effect: NoSchedule
       containers:
         - name: cert-manager-cainjector
-          image: "quay.io/jetstack/cert-manager-cainjector:v1.18.2@sha256:af59e01ad9756a1034fbf948330e75702e5d79b3577f323f6a9947707ba262fc"
+          image: "quay.io/jetstack/cert-manager-cainjector:v1.19.1@sha256:c7898aece8fb08102fca0b37683e37cb94e0a77c0d15b8e3c9128f6c04c868e0"
           imagePullPolicy: IfNotPresent
           args:
             - --v=2
@@ -85,7 +82,7 @@ metadata:
     app.kubernetes.io/name: cert-manager
     app.kubernetes.io/instance: cert-manager
     app.kubernetes.io/component: "controller"
-    app.kubernetes.io/version: "v1.18.2"
+    app.kubernetes.io/version: "v1.19.1"
 spec:
   replicas: 2
   selector:
@@ -100,14 +97,12 @@ spec:
         app.kubernetes.io/name: cert-manager
         app.kubernetes.io/instance: cert-manager
         app.kubernetes.io/component: "controller"
-        app.kubernetes.io/version: "v1.18.2"
+        app.kubernetes.io/version: "v1.19.1"
       annotations:
         prometheus.io/path: "/metrics"
         prometheus.io/scrape: "true"
         prometheus.io/port: "9402"
     spec:
-      tolerations:
-        - key: node-role.kubernetes.io/master
       serviceAccountName: cert-manager
       enableServiceLinks: false
       securityContext:
@@ -116,13 +111,13 @@ spec:
           type: RuntimeDefault
       containers:
         - name: cert-manager-controller
-          image: "quay.io/jetstack/cert-manager-controller:v1.18.2@sha256:81316365dc0b713eddddfbf9b8907b2939676e6c0e12beec0f9625f202a36d16"
+          image: "quay.io/jetstack/cert-manager-controller:v1.19.1@sha256:cd49e769e18ada1fd7b9a9bacc87c90db24c65cbfd4bf71694dda7ed40e91187"
           imagePullPolicy: IfNotPresent
           args:
             - --v=2
             - --cluster-resource-namespace=$(POD_NAMESPACE)
             - --leader-election-namespace=kube-system
-            - --acme-http01-solver-image=quay.io/jetstack/cert-manager-acmesolver:v1.18.2@sha256:1c81a771e3e3a210466aa25f5fc05ce5c286e0eb90d96563cc0275aaa50788c2
+            - --acme-http01-solver-image=quay.io/jetstack/cert-manager-acmesolver:v1.19.1@sha256:35ed1103cb49a3e1fc2438de84f304e3fbdeb53e0366f6b1bc2ec9b2e57462db
             - --max-concurrent-challenges=60
           ports:
             - containerPort: 9402
@@ -176,7 +171,7 @@ metadata:
     app.kubernetes.io/name: webhook
     app.kubernetes.io/instance: cert-manager
     app.kubernetes.io/component: "webhook"
-    app.kubernetes.io/version: "v1.18.2"
+    app.kubernetes.io/version: "v1.19.1"
 spec:
   replicas: 2
   selector:
@@ -191,7 +186,7 @@ spec:
         app.kubernetes.io/name: webhook
         app.kubernetes.io/instance: cert-manager
         app.kubernetes.io/component: "webhook"
-        app.kubernetes.io/version: "v1.18.2"
+        app.kubernetes.io/version: "v1.19.1"
       annotations:
         prometheus.io/path: "/metrics"
         prometheus.io/scrape: "true"
@@ -207,7 +202,7 @@ spec:
           type: RuntimeDefault
       containers:
         - name: cert-manager-webhook
-          image: "quay.io/jetstack/cert-manager-webhook:v1.18.2@sha256:9431f0d8b5103b06cc6138564f471ac02c6b2638c2fa399d81e28a01d817ae73"
+          image: "quay.io/jetstack/cert-manager-webhook:v1.19.1@sha256:f5bfe77541e38978aec53cc6eb924d190e1fe923c98b2582e6ccf5edf6c02cce"
           imagePullPolicy: IfNotPresent
           args:
             - --v=2
@@ -217,7 +212,6 @@ spec:
             - --dynamic-serving-dns-names=cert-manager-webhook
             - --dynamic-serving-dns-names=cert-manager-webhook.$(POD_NAMESPACE)
             - --dynamic-serving-dns-names=cert-manager-webhook.$(POD_NAMESPACE).svc
-
           ports:
             - name: https
               protocol: TCP
@@ -256,11 +250,6 @@ spec:
             capabilities:
               drop:
                 - ALL
-          env:
-            - name: POD_NAMESPACE
-              valueFrom:
-                fieldRef:
-                  fieldPath: metadata.namespace
           resources:
             limits:
               cpu: 20m
@@ -268,5 +257,10 @@ spec:
             requests:
               cpu: 10m
               memory: 96Mi
+          env:
+            - name: POD_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
       nodeSelector:
         kubernetes.io/os: "linux"
