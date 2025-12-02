@@ -7,7 +7,7 @@ metadata:
     app.kubernetes.io/component: admission-controller
     app.kubernetes.io/instance: kyverno
     app.kubernetes.io/part-of: kyverno
-    app.kubernetes.io/version: v1.15.1
+    app.kubernetes.io/version: v1.16.0
   annotations:
     checkov.io/skip1: CKV_K8S_38=Operators Require Use of Service Account Tokens
     checkov.io/skip2: CKV_K8S_40=OpenShift Injects Random UID
@@ -30,7 +30,7 @@ spec:
         app.kubernetes.io/component: admission-controller
         app.kubernetes.io/instance: kyverno
         app.kubernetes.io/part-of: kyverno
-        app.kubernetes.io/version: v1.15.1
+        app.kubernetes.io/version: v1.16.0
     spec:
       securityContext:
         seccompProfile:
@@ -62,7 +62,7 @@ spec:
       automountServiceAccountToken: true
       initContainers:
         - name: kyverno-pre
-          image: "reg.kyverno.io/kyverno/kyvernopre:v1.15.1@sha256:f40e2ab2b7d639edf737d5c2d9661dd61003ce5dc24ed1e5ea41ccc4b74e919b"
+          image: "reg.kyverno.io/kyverno/kyvernopre:v1.16.0@sha256:65265d5012b9630bd4387d5eef1d58fa30c0cfad7ace485969e8da8d465bc128"
           imagePullPolicy: IfNotPresent
           args:
             - --loggingFormat=text
@@ -108,7 +108,7 @@ spec:
               value: kyverno-svc
       containers:
         - name: kyverno
-          image: "reg.kyverno.io/kyverno/kyverno:v1.15.1@sha256:693974a9eef2b79d9b25a10350b79866a63a154ac7e67bf5044a4e8424e3e706"
+          image: "reg.kyverno.io/kyverno/kyverno:v1.16.0@sha256:2fad29572e08010884f0f89792af2c734fdf401c850dbeb1b610822980d9afdf"
           imagePullPolicy: IfNotPresent
           args:
             - --caSecretName=kyverno-svc.kyverno.svc.kyverno-tls-ca

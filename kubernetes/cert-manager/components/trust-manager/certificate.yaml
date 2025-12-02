@@ -9,14 +9,18 @@ metadata:
     argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
   labels:
     app.kubernetes.io/name: trust-manager
-    helm.sh/chart: trust-manager-v0.12.0
+    helm.sh/chart: trust-manager-v0.20.2
     app.kubernetes.io/instance: trust-manager
-    app.kubernetes.io/version: "v0.12.0"
+    app.kubernetes.io/version: "v0.20.2"
     app.kubernetes.io/managed-by: Helm
 spec:
   commonName: "trust-manager.cert-manager.svc"
   duration: 2160h # 90d
   renewBefore: 1080h # 45d
+  privateKey:
+    rotationPolicy: Always
+    algorithm: ECDSA
+    size: 384
   dnsNames:
     - "trust-manager.cert-manager.svc"
   secretName: trust-manager-tls

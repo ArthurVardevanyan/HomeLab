@@ -1,3 +1,4 @@
+---
 # Source: stackrox-secured-cluster-services/templates/collector.yaml
 apiVersion: apps/v1
 kind: DaemonSet
@@ -8,8 +9,8 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: stackrox
     app.kubernetes.io/part-of: stackrox-secured-cluster-services
-    app.kubernetes.io/version: 4.8.0
-    helm.sh/chart: stackrox-secured-cluster-services-400.8.0
+    app.kubernetes.io/version: 4.9.1
+    helm.sh/chart: stackrox-secured-cluster-services-400.9.1
     service: collector
     app: collector
     auto-upgrade.stackrox.io/component: "sensor"
@@ -49,8 +50,8 @@ spec:
         app.kubernetes.io/managed-by: Helm
         app.kubernetes.io/name: stackrox
         app.kubernetes.io/part-of: stackrox-secured-cluster-services
-        app.kubernetes.io/version: 4.8.0
-        helm.sh/chart: stackrox-secured-cluster-services-400.8.0
+        app.kubernetes.io/version: 4.9.1
+        helm.sh/chart: stackrox-secured-cluster-services-400.9.1
       annotations:
         email: support@stackrox.com
         meta.helm.sh/release-name: stackrox-secured-cluster-services
@@ -63,7 +64,7 @@ spec:
       serviceAccountName: collector
       initContainers:
         - name: init-tls-certs
-          image: "quay.io/stackrox-io/main:4.8.5@sha256:eacf2d67a02fb9fe9cff23ab23341501d76216cc1f6142032ef4dc9435a5c0bf"
+          image: "quay.io/stackrox-io/main:4.9.1@sha256:e042fb64ffe0a030baf0b8691a6aaa62d3e2b624bdced73ccdc6b4db7f69f7b5"
           command:
             - /stackrox/bin/init-tls-certs
           args:
@@ -91,7 +92,7 @@ spec:
               mountPath: /run/secrets/stackrox.io/certs/
       containers:
         - name: collector
-          image: "quay.io/stackrox-io/collector:4.8.5@sha256:7582b4c8b9f46e4eb7d418153497d1fa1a90ac93df9f16a89cd78addce3a2aff"
+          image: "quay.io/stackrox-io/collector:4.9.1"
           imagePullPolicy: IfNotPresent
           env:
             - name: COLLECTOR_CONFIG
@@ -145,16 +146,19 @@ spec:
               readOnly: true
             - mountPath: /var/profiles
               name: collector-profiles
+
         - command:
             - stackrox/compliance
           env:
             - name: ROX_MEMLIMIT
               valueFrom:
                 resourceFieldRef:
+                  divisor: "0"
                   resource: limits.memory
             - name: GOMAXPROCS
               valueFrom:
                 resourceFieldRef:
+                  divisor: "0"
                   resource: limits.cpu
             - name: POD_NAME
               valueFrom:
@@ -180,7 +184,7 @@ spec:
             - name: ROX_NODE_SCANNING_ENDPOINT
               value: "127.0.0.1:8444"
 
-          image: "quay.io/stackrox-io/main:4.8.5@sha256:eacf2d67a02fb9fe9cff23ab23341501d76216cc1f6142032ef4dc9435a5c0bf"
+          image: "quay.io/stackrox-io/main:4.9.1@sha256:e042fb64ffe0a030baf0b8691a6aaa62d3e2b624bdced73ccdc6b4db7f69f7b5"
           imagePullPolicy: IfNotPresent
           name: compliance
           resources:
@@ -215,7 +219,7 @@ spec:
             - mountPath: /tmp
               name: index-volume
         - name: node-inventory
-          image: "quay.io/stackrox-io/scanner-slim:4.8.5@sha256:9143f3c9c68fc428b9175f7abcbf9b77ae2d3155d996c9232e6c0c0ba5ac2377"
+          image: "quay.io/stackrox-io/scanner-slim:4.9.1@sha256:1dc3585a2a6ff8b061a422411409fc82d20b06da0c75c6209630d16f40eb445c"
           imagePullPolicy: IfNotPresent
           command: ["/scanner", "--nodeinventory", "--config=", ""]
           ports:

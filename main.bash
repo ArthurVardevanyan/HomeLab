@@ -1443,6 +1443,10 @@ install_addons_okd_virt() {
 
   kubectl config set-cluster okd --insecure-skip-tls-verify=true
 
+  kubectl label node sandbox-1 topology.kubernetes.io/zone=1 --overwrite
+  kubectl label node sandbox-2 topology.kubernetes.io/zone=2 --overwrite
+  kubectl label node sandbox-3 topology.kubernetes.io/zone=3 --overwrite
+
   echo -e "\n${BLUE}Pull Secret:${NC}"
   argocd-vault-plugin generate "${HOMELAB}"/okd/okd-configuration/base/pull-secret.yaml | kubectl apply -f -
   sleep 30s

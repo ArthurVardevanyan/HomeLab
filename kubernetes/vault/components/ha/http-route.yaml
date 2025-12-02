@@ -7,11 +7,20 @@ metadata:
     externaldns.k8s.io: pihole
 spec:
   parentRefs:
-    - name: https-gateway
+    - group: gateway.networking.k8s.io
+      kind: Gateway
+      name: https-gateway
       namespace: openshift-ingress
   hostnames: ["vault.arthurvardevanyan.com"]
   rules:
     - backendRefs:
-        - name: vault-active
+        - group: ""
+          kind: Service
+          name: vault-active
           namespace: vault
           port: 8200
+          weight: 1
+      matches:
+        - path:
+            type: PathPrefix
+            value: /

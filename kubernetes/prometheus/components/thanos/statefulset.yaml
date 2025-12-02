@@ -43,7 +43,7 @@ spec:
         runAsNonRoot: true
       containers:
         - name: thanos-store-gateway
-          image: quay.io/thanos/thanos:v0.39.2@sha256:1d022ef4b8eff056a0e3b7822f953d931c5704d068413f2d7ce5266aa96c9e80
+          image: quay.io/thanos/thanos:v0.40.1@sha256:aae7b2b030ed00d88abd8c5a357d08b46f22151ca0d50d9c796223fa332389c8
           securityContext:
             runAsNonRoot: true
             allowPrivilegeEscalation: false
@@ -94,7 +94,9 @@ spec:
             secretName: ceph
       enableServiceLinks: false
   volumeClaimTemplates:
-    - metadata:
+    - apiVersion: v1
+      kind: PersistentVolumeClaim
+      metadata:
         name: data
       spec:
         accessModes:

@@ -1,3 +1,4 @@
+---
 # Source: gha-runner-scale-set-controller/templates/deployment.yaml
 apiVersion: apps/v1
 kind: Deployment
@@ -5,11 +6,11 @@ metadata:
   name: arc-gha-rs-controller
   namespace: github-arc-systems
   labels:
-    helm.sh/chart: gha-rs-controller-0.12.1
+    helm.sh/chart: gha-rs-controller-0.13.0
     app.kubernetes.io/name: gha-rs-controller
     app.kubernetes.io/namespace: github-arc-systems
     app.kubernetes.io/instance: arc
-    app.kubernetes.io/version: "0.12.1"
+    app.kubernetes.io/version: "0.13.0"
     app.kubernetes.io/part-of: gha-rs-controller
     app.kubernetes.io/managed-by: Helm
     actions.github.com/controller-service-account-namespace: github-arc-systems
@@ -28,7 +29,7 @@ spec:
       labels:
         app.kubernetes.io/part-of: gha-rs-controller
         app.kubernetes.io/component: controller-manager
-        app.kubernetes.io/version: 0.12.1
+        app.kubernetes.io/version: 0.13.0
         app.kubernetes.io/name: gha-rs-controller
         app.kubernetes.io/namespace: github-arc-systems
         app.kubernetes.io/instance: arc
@@ -36,7 +37,7 @@ spec:
       serviceAccountName: arc-gha-rs-controller
       containers:
         - name: manager
-          image: "ghcr.io/actions/gha-runner-scale-set-controller:0.12.1@sha256:04dbe72e94953f5f17a20bb007a29b0b35113506d5ad7efe15a1670991085166"
+          image: "ghcr.io/actions/gha-runner-scale-set-controller:0.13.0@sha256:4b98af135cd2768098fd8723ba3af4d1d7c9b4b1c3951b3649aa7a33fd4f4964"
           resources:
             limits:
               cpu: 50m
@@ -58,7 +59,7 @@ spec:
             - "/manager"
           env:
             - name: CONTROLLER_MANAGER_CONTAINER_IMAGE
-              value: "ghcr.io/actions/gha-runner-scale-set-controller:0.12.1@sha256:04dbe72e94953f5f17a20bb007a29b0b35113506d5ad7efe15a1670991085166"
+              value: "ghcr.io/actions/gha-runner-scale-set-controller:0.13.0@sha256:4b98af135cd2768098fd8723ba3af4d1d7c9b4b1c3951b3649aa7a33fd4f4964"
             - name: CONTROLLER_MANAGER_POD_NAMESPACE
               valueFrom:
                 fieldRef:

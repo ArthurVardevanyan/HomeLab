@@ -8,11 +8,12 @@ resources:
   - ./console-banner.yaml
 components:
   - ../../components/psi-metrics
-  - ../../components/scc
   - ../../components/certificates
+  - ../../components/scc
   - ../../components/auth
   - ../../components/ntp
   - ../../components/image-mirror
+  - ../../components/gateway
 patches:
   - patch: |-
       - op: replace
@@ -43,3 +44,10 @@ patches:
     target:
       kind: MachineConfig
       name: 71-mount-storage-worker
+  - patch: |-
+      - op: replace
+        path: /spec/serviceAccountIssuer
+        value: https://storage.googleapis.com/virt-homelab-wif-oidc
+    target:
+      kind: Authentication
+      name: cluster

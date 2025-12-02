@@ -1,4 +1,4 @@
-apiVersion: tekton.dev/v1beta1
+apiVersion: tekton.dev/v1
 kind: Task
 metadata:
   name: buildah
@@ -71,7 +71,7 @@ spec:
       description: Image repository where the built image would be pushed to
   steps:
     - name: build-and-push
-      resources:
+      computeResources:
         requests:
           memory: 500Mi
           ephemeral-storage: 5Gi

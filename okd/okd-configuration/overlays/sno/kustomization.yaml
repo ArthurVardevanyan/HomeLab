@@ -2,7 +2,6 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
   - ../../base
-  - ./wif.yaml
   - ./ingress-controller.yaml
   - ./dns.yaml
 components:
@@ -32,3 +31,10 @@ patches:
     target:
       kind: Certificate
       name: ingress-certificate
+  - patch: |-
+      - op: replace
+        path: /spec/serviceAccountIssuer
+        value: https://storage.googleapis.com/sno-homelab-wif-oidc
+    target:
+      kind: Authentication
+      name: cluster

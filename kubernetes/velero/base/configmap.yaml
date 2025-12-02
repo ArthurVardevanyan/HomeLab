@@ -1,0 +1,23 @@
+---
+# Source: velero/templates/repo-maintenance-configmap.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: velero-repo-maintenance
+  namespace: velero
+  labels:
+    app.kubernetes.io/name: velero
+    app.kubernetes.io/instance: velero
+    app.kubernetes.io/managed-by: Helm
+    helm.sh/chart: velero-11.2.0
+data:
+  global: |
+    {
+      "keepLatestMaintenanceJobs": 3,
+      "podResources": {
+        "cpuRequest": "5m",
+        "cpuLimit": "100m",
+        "memoryRequest": "128Mi",
+        "memoryLimit": "1Gi"
+      }
+    }

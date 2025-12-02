@@ -7,11 +7,20 @@ metadata:
     externaldns.k8s.io: pihole
 spec:
   parentRefs:
-    - name: https-gateway
+    - group: gateway.networking.k8s.io
+      kind: Gateway
+      name: https-gateway
       namespace: openshift-ingress
   hostnames: ["photos.arthurvardevanyan.com"]
   rules:
     - backendRefs:
-        - name: immich-server
+        - group: ""
+          kind: Service
+          name: immich-server
           namespace: immich
           port: 2283
+          weight: 1
+      matches:
+        - path:
+            type: PathPrefix
+            value: /

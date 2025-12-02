@@ -32,26 +32,26 @@ spec:
                       requests:
                         cpu: 25m
                         memory: 64Mi
-              volumeClaimTemplates:
-                - kind: PersistentVolumeClaim
-                  apiVersion: v1
-                  metadata:
-                    name: storage
-                    creationTimestamp: null
-                    labels:
-                      app.kubernetes.io/component: compactor
-                      app.kubernetes.io/created-by: lokistack-controller
-                      app.kubernetes.io/instance: logging-loki
-                      app.kubernetes.io/managed-by: lokistack-controller
-                      app.kubernetes.io/name: lokistack
-                  spec:
-                    accessModes:
-                      - ReadWriteOnce
-                    resources:
-                      requests:
-                        storage: 1Gi
-                    storageClassName: rook-ceph-block-ci
-                    volumeMode: Filesystem
+            volumeClaimTemplates:
+              - kind: PersistentVolumeClaim
+                apiVersion: v1
+                metadata:
+                  name: storage
+                  creationTimestamp: null
+                  labels:
+                    app.kubernetes.io/component: compactor
+                    app.kubernetes.io/created-by: lokistack-controller
+                    app.kubernetes.io/instance: logging-loki
+                    app.kubernetes.io/managed-by: lokistack-controller
+                    app.kubernetes.io/name: lokistack
+                spec:
+                  accessModes:
+                    - ReadWriteOnce
+                  resources:
+                    requests:
+                      storage: 1Gi
+                  storageClassName: rook-ceph-block-ci
+                  volumeMode: Filesystem
       name: loki-compactor
       skipBackgroundRequests: true
     - match:
@@ -139,7 +139,7 @@ spec:
                     - ReadWriteOnce
                   resources:
                     requests:
-                      storage: 1Gi
+                      storage: 3Gi
                   storageClassName: rook-ceph-block-ci
                   volumeMode: Filesystem
               - kind: PersistentVolumeClaim
@@ -275,6 +275,7 @@ spec:
 #   background: false
 #   rules:
 #     - name: replace-ebpf-agent-image
+#      skipBackgroundRequests: true
 #       match:
 #         any:
 #           - resources:
@@ -286,3 +287,53 @@ spec:
 #             containers:
 #               - (image): "quay.io/netobserv/netobserv-ebpf-agent:v0.3.2"
 #                 image: "quay.io/netobserv/netobserv-ebpf-agent:main"
+---
+apiVersion: kyverno.io/v1
+kind: Policy
+metadata:
+  name: add-resource-limits
+  namespace: openshift-logging
+spec:
+  rules:
+    - name: add-cpu-memory-limits
+      skipBackgroundRequests: true
+      match:
+        resources:
+          kinds:
+            - Deployment
+            - StatefulSet
+      mutate:
+        patchStrategicMerge:
+          spec:
+            template:
+              spec:
+                initContainers:
+                  - (name): "*"
+                    resources:
+                      limits:
+                        cpu: 100m
+                        memory: 32Mi
+                      requests:
+                        cpu: 5m
+                        memory: 16Mi
+    - name: add-cpu-memory-limits-opa
+      skipBackgroundRequests: true
+      match:
+        resources:
+          kinds:
+            - Deployment
+            - StatefulSet
+      mutate:
+        patchStrategicMerge:
+          spec:
+            template:
+              spec:
+                containers:
+                  - (name): opa
+                    resources:
+                      limits:
+                        cpu: 150m
+                        memory: 128Mi
+                      requests:
+                        cpu: 15m
+                        memory: 32Mi

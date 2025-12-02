@@ -1,0 +1,54 @@
+apiVersion: actions.github.com/v1alpha1
+kind: AutoscalingRunnerSet
+metadata:
+  name: arthurvardevanyan-arc-runner-set
+  namespace: github-arc-runners
+  labels:
+    app.kubernetes.io/component: "autoscaling-runner-set"
+    helm.sh/chart: gha-rs-0.13.0
+    app.kubernetes.io/name: arthurvardevanyan-arc-runner-set
+    app.kubernetes.io/instance: arthurvardevanyan-arc-runner-set
+    app.kubernetes.io/version: "0.13.0"
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/part-of: gha-rs
+    actions.github.com/scale-set-name: arthurvardevanyan-arc-runner-set
+    actions.github.com/scale-set-namespace: github-arc-runners
+  annotations:
+    actions.github.com/cleanup-github-secret-name: arc-runner-set-gha-rs-github-secret
+    actions.github.com/cleanup-manager-role-binding: arc-runner-set-gha-rs-manager
+    actions.github.com/cleanup-manager-role-name: arc-runner-set-gha-rs-manager
+    actions.github.com/cleanup-no-permission-service-account-name: arc-runner-set-gha-rs-no-permission
+spec:
+  githubConfigUrl: https://github.com/ArthurVardevanyan/ArthurVardevanyan-com
+  githubConfigSecret: arc-runner-set-gha-rs-github-secret
+
+  template:
+    spec:
+      restartPolicy: Never
+      serviceAccountName: arc-runner-set-gha-rs-no-permission
+      containers:
+        - name: runner
+          securityContext:
+            runAsUser: 1001
+            runAsGroup: 123
+            runAsNonRoot: true
+            privileged: false
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: false
+            seccompProfile:
+              type: RuntimeDefault
+            capabilities:
+              drop:
+                - ALL
+          resources:
+            limits:
+              cpu: "6"
+              memory: "6Gi"
+              ephemeral-storage: "10Gi"
+            requests:
+              cpu: "500m"
+              memory: "512Mi"
+              ephemeral-storage: "5Gi"
+          command:
+            - /home/runner/run.sh
+          image: ghcr.io/actions/actions-runner:2.330.0@sha256:ee54ad8776606f29434f159196529b7b9c83c0cb9195c1ff5a7817e7e570dcfe

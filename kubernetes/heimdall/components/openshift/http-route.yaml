@@ -7,11 +7,20 @@ metadata:
     externaldns.k8s.io: pihole
 spec:
   parentRefs:
-    - name: https-gateway
+    - group: gateway.networking.k8s.io
+      kind: Gateway
+      name: https-gateway
       namespace: openshift-ingress
   hostnames: ["heimdall.arthurvardevanyan.com"]
   rules:
     - backendRefs:
-        - name: heimdall
+        - group: ""
+          kind: Service
+          name: heimdall
           namespace: heimdall
           port: 80
+          weight: 1
+      matches:
+        - path:
+            type: PathPrefix
+            value: /

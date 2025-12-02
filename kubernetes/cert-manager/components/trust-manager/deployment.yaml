@@ -1,3 +1,4 @@
+---
 # Source: trust-manager/templates/deployment.yaml
 apiVersion: apps/v1
 kind: Deployment
@@ -6,12 +7,13 @@ metadata:
   namespace: cert-manager
   labels:
     app.kubernetes.io/name: trust-manager
-    helm.sh/chart: trust-manager-v0.12.0
+    helm.sh/chart: trust-manager-v0.20.2
     app.kubernetes.io/instance: trust-manager
-    app.kubernetes.io/version: "v0.12.0"
+    app.kubernetes.io/version: "v0.20.2"
     app.kubernetes.io/managed-by: Helm
 spec:
   replicas: 2
+  revisionHistoryLimit: 10
   selector:
     matchLabels:
       app: trust-manager
@@ -20,12 +22,13 @@ spec:
       labels:
         app: trust-manager
         app.kubernetes.io/name: trust-manager
-        helm.sh/chart: trust-manager-v0.12.0
+        helm.sh/chart: trust-manager-v0.20.2
         app.kubernetes.io/instance: trust-manager
-        app.kubernetes.io/version: "v0.12.0"
+        app.kubernetes.io/version: "v0.20.2"
         app.kubernetes.io/managed-by: Helm
     spec:
       serviceAccountName: trust-manager
+      automountServiceAccountToken: true
       initContainers:
         - name: cert-manager-package-debian
           image: "quay.io/jetstack/cert-manager-package-debian:20210119.0@sha256:116133f68938ef568aca17a0c691d5b1ef73a9a207029c9a068cf4230053fed5"
@@ -56,11 +59,13 @@ spec:
               memory: 72Mi
       containers:
         - name: trust-manager
-          image: "quay.io/jetstack/trust-manager:v0.19.0@sha256:cba0182863f217b43d05639a231d7a248a98fe4bbb8a318467703856de112afc"
+          image: "quay.io/jetstack/trust-manager:v0.20.2@sha256:c446258c1ac5bcd0558802dd8db2ef490d6ecdaff4b9c9aa7e45ac73f35b20e5"
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 6443
+              name: webhook # for the PodMonitor port field
             - containerPort: 9402
+              name: metrics # for the PodMonitor port field
           readinessProbe:
             httpGet:
               port: 6060
@@ -73,6 +78,7 @@ spec:
             - "--metrics-port=9402"
             - "--readiness-probe-port=6060"
             - "--readiness-probe-path=/readyz"
+            - "--leader-elect=true"
             - "--leader-election-lease-duration=15s"
             - "--leader-election-renew-deadline=10s"
               # trust

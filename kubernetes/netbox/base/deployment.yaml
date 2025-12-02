@@ -12,7 +12,7 @@ metadata:
     helm.sh/chart: netbox-5.0.0-beta9
     app.kubernetes.io/component: netbox
 spec:
-  replicas: 0
+  replicas: 2
   selector:
     matchLabels:
       app.kubernetes.io/name: netbox
@@ -80,9 +80,11 @@ spec:
             runAsNonRoot: true
             seccompProfile:
               type: RuntimeDefault
-          image: "ghcr.io/netbox-community/netbox:v4.0.0@sha256:619f123f65cb747dd5acac56283506ca9a82107bac27475fa7176e432e403877"
+          image: "ghcr.io/netbox-community/netbox:v4.4.6@sha256:150fb9808d633712a75ad57ba364fa38caab3a88d123c470967fd3b9b2f32d9c"
           imagePullPolicy: IfNotPresent
           env:
+            # - name: DB_WAIT_DEBUG
+            #   value: "1"
             - name: SUPERUSER_NAME
               value: "admin"
             - name: SUPERUSER_EMAIL
@@ -93,14 +95,36 @@ spec:
             - name: http
               containerPort: 8080
               protocol: TCP
+            - name: nginx-status
+              containerPort: 8081
+              protocol: TCP
+          livenessProbe:
+            failureThreshold: 3
+            initialDelaySeconds: 0
+            periodSeconds: 10
+            successThreshold: 1
+            timeoutSeconds: 2
+            httpGet:
+              path: /status/applications/netbox/processes/running
+              port: nginx-status
           readinessProbe:
+            failureThreshold: 3
+            initialDelaySeconds: 0
+            periodSeconds: 10
+            successThreshold: 1
+            timeoutSeconds: 2
             httpGet:
               path: /login/
               port: http
-            initialDelaySeconds: 0
-            timeoutSeconds: 1
-            successThreshold: 1
+          startupProbe:
+            failureThreshold: 10
+            initialDelaySeconds: 5
             periodSeconds: 10
+            successThreshold: 1
+            timeoutSeconds: 2
+            httpGet:
+              path: /login/
+              port: http
           volumeMounts:
             - name: config
               mountPath: /etc/netbox/config/configuration.py
@@ -131,11 +155,11 @@ spec:
             limits:
               cpu: 1
               ephemeral-storage: 1024Mi
-              memory: 1Gi
+              memory: 2Gi
             requests:
               cpu: 5m
               ephemeral-storage: 50Mi
-              memory: 512Mi
+              memory: 768Mi
       volumes:
         - name: config
           secret:
@@ -195,7 +219,7 @@ metadata:
     helm.sh/chart: netbox-5.0.0-beta9
     app.kubernetes.io/component: worker
 spec:
-  replicas: 0
+  replicas: 2
   selector:
     matchLabels:
       app.kubernetes.io/name: netbox
@@ -237,7 +261,7 @@ spec:
             runAsNonRoot: true
             seccompProfile:
               type: RuntimeDefault
-          image: "ghcr.io/netbox-community/netbox:v4.0.0@sha256:619f123f65cb747dd5acac56283506ca9a82107bac27475fa7176e432e403877"
+          image: "ghcr.io/netbox-community/netbox:v4.4.6@sha256:150fb9808d633712a75ad57ba364fa38caab3a88d123c470967fd3b9b2f32d9c"
           command:
             - /opt/netbox/venv/bin/python
             - /opt/netbox/netbox/manage.py

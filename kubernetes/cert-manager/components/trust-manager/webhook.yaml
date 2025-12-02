@@ -7,26 +7,24 @@ metadata:
   labels:
     app: trust-manager
     app.kubernetes.io/name: trust-manager
-    helm.sh/chart: trust-manager-v0.12.0
+    helm.sh/chart: trust-manager-v0.20.2
     app.kubernetes.io/instance: trust-manager
-    app.kubernetes.io/version: "v0.12.0"
+    app.kubernetes.io/version: "v0.20.2"
     app.kubernetes.io/managed-by: Helm
-
   annotations:
     cert-manager.io/inject-ca-from: "cert-manager/trust-manager"
-
 webhooks:
   - name: trust.cert-manager.io
     rules:
       - apiGroups:
           - "trust.cert-manager.io"
         apiVersions:
-          - "*"
+          - v1alpha1
         operations:
           - CREATE
           - UPDATE
         resources:
-          - "*/*"
+          - bundles
     admissionReviewVersions: ["v1"]
     timeoutSeconds: 5
     failurePolicy: Fail

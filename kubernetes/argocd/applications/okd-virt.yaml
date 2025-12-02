@@ -1,7 +1,7 @@
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: phpmyadmin
+  name: okd-virt
   namespace: argocd
   annotations:
     argocd.argoproj.io/sync-wave: "1"
@@ -14,13 +14,13 @@ metadata:
     app.kubernetes.io/instance: argocd
 spec:
   destination:
-    namespace: phpmyadmin
     server: https://kubernetes.default.svc
   project: default
   source:
-    path: kubernetes/phpmyadmin/overlays/okd
+    path: sandbox/kubevirt/okd
     repoURL: https://git.arthurvardevanyan.com/ArthurVardevanyan/HomeLab
     targetRevision: HEAD
   syncPolicy:
     syncOptions:
       - CreateNamespace=true
+      - ServerSideApply=true

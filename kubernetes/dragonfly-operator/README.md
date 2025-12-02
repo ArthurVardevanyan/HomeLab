@@ -1,4 +1,4 @@
-# CockroachDB
+# Dragonfly Operator
 
 ```bash
 kubectl kustomize kubernetes/dragonfly-operator/overlays/okd | kubectl apply -f -

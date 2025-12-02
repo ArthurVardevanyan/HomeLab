@@ -1,0 +1,46 @@
+---
+# Source: trust-manager/templates/metrics-service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: trust-manager-metrics
+  namespace: cert-manager
+  labels:
+    app: trust-manager
+    app.kubernetes.io/name: trust-manager
+    helm.sh/chart: trust-manager-v0.20.2
+    app.kubernetes.io/instance: trust-manager
+    app.kubernetes.io/version: "v0.20.2"
+    app.kubernetes.io/managed-by: Helm
+spec:
+  type: ClusterIP
+  ports:
+    - port: 9402
+      targetPort: 9402
+      protocol: TCP
+      name: metrics
+  selector:
+    app: trust-manager
+---
+# Source: trust-manager/templates/webhook.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: trust-manager
+  namespace: cert-manager
+  labels:
+    app: trust-manager
+    app.kubernetes.io/name: trust-manager
+    helm.sh/chart: trust-manager-v0.20.2
+    app.kubernetes.io/instance: trust-manager
+    app.kubernetes.io/version: "v0.20.2"
+    app.kubernetes.io/managed-by: Helm
+spec:
+  type: ClusterIP
+  ports:
+    - port: 443
+      targetPort: 6443
+      protocol: TCP
+      name: webhook
+  selector:
+    app: trust-manager

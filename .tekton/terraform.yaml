@@ -1,21 +1,23 @@
 ---
-apiVersion: tekton.dev/v1beta1
+apiVersion: tekton.dev/v1
 kind: PipelineRun
 metadata:
-  name: terraform-plan
+  name: terraform
   annotations:
-    pipelinesascode.tekton.dev/max-keep-runs: "1"
+    pipelinesascode.tekton.dev/max-keep-runs: "2"
     pipelinesascode.tekton.dev/on-cel-expression: |
-      event == "pull_request" && target_branch == "main" && "terraform/***".pathChanged()
+      (event == "push" || event == "pull_request") && (target_branch == "refs/heads/production" || target_branch == "main") && "terraform/***".pathChanged()
     pipelinesascode.tekton.dev/target-namespace: "homelab"
-    pipelinesascode.tekton.dev/task: "[tekton/base/terraform-task.yaml]"
     pipelinesascode.tekton.dev/task-1: "https://raw.githubusercontent.com/ArthurVardevanyan/HomeLab/main/tekton/tasks/git-clone/0.9.1/git-clone.yaml"
+    pipelinesascode.tekton.dev/task-2: "https://raw.githubusercontent.com/ArthurVardevanyan/HomeLab/main/tekton/tasks/terraform/0.1.0/terraform.yaml"
 spec:
   params:
     - name: git-commit
       value: "{{ revision }}"
     - name: git-url
       value: "{{ repo_url }}"
+    - name: event
+      value: "{{ event_type }}"
 
   pipelineSpec:
     params:
@@ -24,6 +26,8 @@ spec:
       - name: git-url
         type: string
         description: Repository URL to clone from.
+      - name: event
+        type: string
 
     workspaces:
       - name: data
@@ -45,9 +49,16 @@ spec:
           - name: basic-auth
             workspace: git_auth_secret
 
-      - name: terraform
+      - name: terraform-plan
         runAfter:
           - git-clone
+        when:
+          - input: "$(params.event)"
+            operator: in
+            values: ["pull_request", "push"]
+        params:
+          - name: zitadel
+            value: "true"
         taskRef:
           name: terraform
           kind: Task
@@ -55,7 +66,27 @@ spec:
           - name: data
             workspace: data
 
-  serviceAccountName: pipeline
+      - name: terraform-apply
+        runAfter:
+          - terraform-plan
+        when:
+          - input: "$(params.event)"
+            operator: in
+            values: ["push"]
+        params:
+          - name: terraform_action
+            value: apply
+          - name: zitadel
+            value: "true"
+        taskRef:
+          name: terraform
+          kind: Task
+        workspaces:
+          - name: data
+            workspace: data
+
+  taskRunTemplate:
+    serviceAccountName: pipeline
   workspaces:
     - name: data
       volumeClaimTemplate:

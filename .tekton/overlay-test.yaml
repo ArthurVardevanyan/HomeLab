@@ -1,12 +1,12 @@
 ---
-apiVersion: tekton.dev/v1beta1
+apiVersion: tekton.dev/v1
 kind: PipelineRun
 metadata:
   name: overlay-test
   annotations:
     pipelinesascode.tekton.dev/max-keep-runs: "1"
     pipelinesascode.tekton.dev/on-cel-expression: |
-      event == "pull_request" && target_branch == "main" && ("kubernetes/***".pathChanged() || "okd/***".pathChanged() || "tekton/***".pathChanged())
+      event == "pull_request" && target_branch == "main" && ("kubernetes/***".pathChanged() || "okd/***".pathChanged()  || "okd/***".pathChanged() || ".tekton/***".pathChanged())
     pipelinesascode.tekton.dev/target-namespace: "homelab"
     pipelinesascode.tekton.dev/task: "[tekton/base/overlay-test.yaml]"
     pipelinesascode.tekton.dev/task-1: "https://raw.githubusercontent.com/ArthurVardevanyan/HomeLab/main/tekton/tasks/git-clone/0.9.1/git-clone.yaml"
@@ -88,7 +88,8 @@ spec:
           - name: basic-auth
             workspace: git_auth_secret
 
-  serviceAccountName: pipeline
+  taskRunTemplate:
+    serviceAccountName: pipeline
   workspaces:
     - name: data
       volumeClaimTemplate:

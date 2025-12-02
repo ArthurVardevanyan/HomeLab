@@ -1,15 +1,15 @@
----
 # Source: trust-manager/templates/serviceaccount.yaml
 apiVersion: v1
 kind: ServiceAccount
+automountServiceAccountToken: true
 metadata:
   name: trust-manager
   namespace: cert-manager
   labels:
     app.kubernetes.io/name: trust-manager
-    helm.sh/chart: trust-manager-v0.12.0
+    helm.sh/chart: trust-manager-v0.20.2
     app.kubernetes.io/instance: trust-manager
-    app.kubernetes.io/version: "v0.12.0"
+    app.kubernetes.io/version: "v0.20.2"
     app.kubernetes.io/managed-by: Helm
 ---
 # Source: trust-manager/templates/clusterrole.yaml
@@ -18,9 +18,9 @@ apiVersion: rbac.authorization.k8s.io/v1
 metadata:
   labels:
     app.kubernetes.io/name: trust-manager
-    helm.sh/chart: trust-manager-v0.12.0
+    helm.sh/chart: trust-manager-v0.20.2
     app.kubernetes.io/instance: trust-manager
-    app.kubernetes.io/version: "v0.12.0"
+    app.kubernetes.io/version: "v0.20.2"
     app.kubernetes.io/managed-by: Helm
   name: trust-manager
 rules:
@@ -28,8 +28,7 @@ rules:
       - "trust.cert-manager.io"
     resources:
       - "bundles"
-    # We also need patch here so we can perform migrations from old CSA to SSA.
-    verbs: ["get", "list", "watch", "patch"]
+    verbs: ["get", "list", "watch"]
 
   # Permissions to update finalizers are required for trust-manager to work correctly
   # on OpenShift, even though we don't directly use finalizers at the time of writing
@@ -48,13 +47,13 @@ rules:
   - apiGroups:
       - ""
     resources:
-      - "configmaps"
-    verbs: ["get", "list", "create", "patch", "watch", "delete"]
+      - "namespaces"
+    verbs: ["get", "list", "watch"]
   - apiGroups:
       - ""
     resources:
-      - "namespaces"
-    verbs: ["get", "list", "watch"]
+      - "configmaps"
+    verbs: ["get", "list", "create", "patch", "watch", "delete"]
 
   - apiGroups:
       - ""
@@ -73,9 +72,9 @@ apiVersion: rbac.authorization.k8s.io/v1
 metadata:
   labels:
     app.kubernetes.io/name: trust-manager
-    helm.sh/chart: trust-manager-v0.12.0
+    helm.sh/chart: trust-manager-v0.20.2
     app.kubernetes.io/instance: trust-manager
-    app.kubernetes.io/version: "v0.12.0"
+    app.kubernetes.io/version: "v0.20.2"
     app.kubernetes.io/managed-by: Helm
   name: trust-manager
 roleRef:
@@ -95,9 +94,9 @@ metadata:
   namespace: cert-manager
   labels:
     app.kubernetes.io/name: trust-manager
-    helm.sh/chart: trust-manager-v0.12.0
+    helm.sh/chart: trust-manager-v0.20.2
     app.kubernetes.io/instance: trust-manager
-    app.kubernetes.io/version: "v0.12.0"
+    app.kubernetes.io/version: "v0.20.2"
     app.kubernetes.io/managed-by: Helm
 rules:
   - apiGroups:
@@ -117,9 +116,9 @@ metadata:
   namespace: cert-manager
   labels:
     app.kubernetes.io/name: trust-manager
-    helm.sh/chart: trust-manager-v0.12.0
+    helm.sh/chart: trust-manager-v0.20.2
     app.kubernetes.io/instance: trust-manager
-    app.kubernetes.io/version: "v0.12.0"
+    app.kubernetes.io/version: "v0.20.2"
     app.kubernetes.io/managed-by: Helm
 rules:
   - apiGroups:
@@ -141,9 +140,9 @@ metadata:
   namespace: cert-manager
   labels:
     app.kubernetes.io/name: trust-manager
-    helm.sh/chart: trust-manager-v0.12.0
+    helm.sh/chart: trust-manager-v0.20.2
     app.kubernetes.io/instance: trust-manager
-    app.kubernetes.io/version: "v0.12.0"
+    app.kubernetes.io/version: "v0.20.2"
     app.kubernetes.io/managed-by: Helm
 roleRef:
   apiGroup: rbac.authorization.k8s.io
@@ -162,9 +161,9 @@ metadata:
   namespace: cert-manager
   labels:
     app.kubernetes.io/name: trust-manager
-    helm.sh/chart: trust-manager-v0.12.0
+    helm.sh/chart: trust-manager-v0.20.2
     app.kubernetes.io/instance: trust-manager
-    app.kubernetes.io/version: "v0.12.0"
+    app.kubernetes.io/version: "v0.20.2"
     app.kubernetes.io/managed-by: Helm
 roleRef:
   apiGroup: rbac.authorization.k8s.io
@@ -174,49 +173,3 @@ subjects:
   - kind: ServiceAccount
     name: trust-manager
     namespace: cert-manager
----
-# Source: trust-manager/templates/metrics-service.yaml
-apiVersion: v1
-kind: Service
-metadata:
-  name: trust-manager-metrics
-  namespace: cert-manager
-  labels:
-    app: trust-manager
-    app.kubernetes.io/name: trust-manager
-    helm.sh/chart: trust-manager-v0.12.0
-    app.kubernetes.io/instance: trust-manager
-    app.kubernetes.io/version: "v0.12.0"
-    app.kubernetes.io/managed-by: Helm
-spec:
-  type: ClusterIP
-  ports:
-    - port: 9402
-      targetPort: 9402
-      protocol: TCP
-      name: metrics
-  selector:
-    app: trust-manager
----
-# Source: trust-manager/templates/webhook.yaml
-apiVersion: v1
-kind: Service
-metadata:
-  name: trust-manager
-  namespace: cert-manager
-  labels:
-    app: trust-manager
-    app.kubernetes.io/name: trust-manager
-    helm.sh/chart: trust-manager-v0.12.0
-    app.kubernetes.io/instance: trust-manager
-    app.kubernetes.io/version: "v0.12.0"
-    app.kubernetes.io/managed-by: Helm
-spec:
-  type: ClusterIP
-  ports:
-    - port: 443
-      targetPort: 6443
-      protocol: TCP
-      name: webhook
-  selector:
-    app: trust-manager

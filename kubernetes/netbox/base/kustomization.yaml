@@ -1,26 +1,24 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
-kind:
-  Kustomization
-  # - ./pdb.yaml
-  # - ./ingress.yaml
-  # - ./dragonfly/dragonfly.yaml
-  # - ./postgres/postgres.yaml
+kind: Kustomization
 resources:
   - ./limit-range.yaml
   - ./namespace.yaml
   - ./secret.yaml
+  - ./pdb.yaml
+  - ./ingress.yaml
   - ./deployment.yaml
   - ./network-policy.yaml
   - ./resource-quota.yaml
   - ./service-account.yaml
   - ./service.yaml
+  - ./dragonfly/dragonfly.yaml
   - ./dragonfly/network-policy.yaml
-  - ./postgres/network-policy.yaml
-  - ./postgres/secret.yaml
   - ./object-bucket-claim.yaml
   - ./velero.yaml
   - ./cronjob.yaml
-    # - ./oauth-client.yaml
+  - ./probe.yaml
+components:
+  - ./postgres
 generatorOptions:
   labels:
     app.kubernetes.io/instance: netbox

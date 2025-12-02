@@ -16,7 +16,7 @@ spec:
   failedJobsHistoryLimit:
   schedule: "0 0 * * *"
   successfulJobsHistoryLimit:
-  suspend: true
+  suspend: false
   jobTemplate:
     metadata:
       labels:
@@ -51,7 +51,7 @@ spec:
                 runAsNonRoot: true
                 seccompProfile:
                   type: RuntimeDefault
-              image: "ghcr.io/netbox-community/netbox:v4.0.0@sha256:619f123f65cb747dd5acac56283506ca9a82107bac27475fa7176e432e403877"
+              image: "ghcr.io/netbox-community/netbox:v4.4.6@sha256:150fb9808d633712a75ad57ba364fa38caab3a88d123c470967fd3b9b2f32d9c"
               resources:
                 limits:
                   cpu: 100m
@@ -85,7 +85,7 @@ spec:
           volumes:
             - name: config
               secret:
-                secretName: netbox
+                secretName: netbox-config
             - name: secrets
               projected:
                 sources:
@@ -117,4 +117,5 @@ spec:
                 medium: Memory
             - name: media
               emptyDir: {}
+          enableServiceLinks: false
           restartPolicy: OnFailure

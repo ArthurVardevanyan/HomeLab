@@ -25,7 +25,7 @@ helm template velero --include-crds vmware-tanzu/velero \
 --set deployNodeAgent=true \
 --set uploaderType=kopia \
 --set features="EnableCSI," \
---set upgradeCRDs=false > dump.yaml
+--set upgradeCRDs=false > /tmp/dump.yaml
 ```
 
 ## Ref

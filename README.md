@@ -146,9 +146,9 @@ end
 
 <https://www.okd.io/>
 
-| Kubernetes Channel | OKD Version | OKD Channel   | OKD OS                   | Storage Layer |
-| ------------------ | ----------- | ------------- | ------------------------ | ------------- |
-| v1.33.\*           | 4.19-\*     | stable-scos-4 | CentOS Stream CoreOS 9.0 | CEPH          |
+| Kubernetes Channel | OKD Version | OKD Channel   | OKD OS                    | Storage Layer |
+| ------------------ | ----------- | ------------- | ------------------------- | ------------- |
+| v1.34.\*           | 4.21-\*     | stable-scos-4 | CentOS Stream CoreOS 10.0 | CEPH          |
 
 #### Machines
 

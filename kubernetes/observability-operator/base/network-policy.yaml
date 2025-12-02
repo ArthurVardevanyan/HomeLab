@@ -105,9 +105,15 @@ spec:
         - namespaceSelector:
             matchLabels:
               policy-group.network.openshift.io/host-network: ""
-      ports:
-        - protocol: TCP
-          port: 9443
+        - podSelector:
+            matchLabels:
+              app: kube-apiserver-operator
+          namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: openshift-kube-apiserver-operator
+      # ports:
+      #   - protocol: TCP
+      #     port: 9443
 ---
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy

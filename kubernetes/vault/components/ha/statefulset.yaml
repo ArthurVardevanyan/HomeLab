@@ -70,7 +70,7 @@ spec:
           emptyDir: {}
       containers:
         - name: vault
-          image: docker.io/hashicorp/vault:1.20.3@sha256:1262354cd28697b7982ea3b9b6f159a996bdaad0b5270765e31b67797ce15bea
+          image: docker.io/hashicorp/vault:1.21.1@sha256:f4e2687b72858a9e2160c344c9fa1ef74c07f21a89a8c00534ab64d3f187b927
           imagePullPolicy: IfNotPresent
           command:
             - "/bin/sh"
@@ -181,9 +181,10 @@ spec:
 
       enableServiceLinks: false
   volumeClaimTemplates:
-    - metadata:
+    - apiVersion: v1
+      kind: PersistentVolumeClaim
+      metadata:
         name: data
-
       spec:
         accessModes:
           - ReadWriteOnce
