@@ -2,8 +2,6 @@ terraform {
   backend "gcs" {}
 }
 
-# KICK=1
-
 # data "vault_generic_secret" "truenas" {
 #   path = "secret/truenas/api"
 # }
