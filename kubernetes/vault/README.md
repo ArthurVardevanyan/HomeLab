@@ -44,19 +44,19 @@ kubernetes_host="https://kubernetes.default.svc:443"
 # Pod With Service Account Token Mounted
 kubectl cp -n vault vault-0:/var/run/secrets/kubernetes.io/serviceaccount/..data/ca.crt /tmp/ca.crt
 
-vault write auth/kubernetes/config \
+vault write auth/arthurvardevanyan-ci/config \
    token_reviewer_jwt="${token_reviewer_jwt}" \
    kubernetes_host=${kubernetes_host} \
    kubernetes_ca_cert=@/tmp/ca.crt \
    disable_local_ca_jwt=true
 
-vault write auth/kubernetes/role/argocd \
-    bound_service_account_names=argocd-repo-server \
-    bound_service_account_namespaces=argocd \
-    policies=argocd \
+vault write auth/kubernetes/role/arthurvardevanyan-ci \
+    bound_service_account_names=pipeline \
+    bound_service_account_namespaces=arthurvardevanyan-ci \
+    policies=arthurvardevanyan-ci \
     ttl=1h
 
-vault policy write argocd - <<EOF
+vault policy write arthurvardevanyan-ci - <<EOF
 path "secret/*" {
     capabilities = ["create", "read", "update", "delete", "list"]
 }
