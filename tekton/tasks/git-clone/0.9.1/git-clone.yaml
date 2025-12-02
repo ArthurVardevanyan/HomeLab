@@ -1,4 +1,4 @@
-apiVersion: tekton.dev/v1beta1
+apiVersion: tekton.dev/v1
 kind: Task
 metadata:
   name: git-clone
@@ -121,7 +121,7 @@ spec:
   steps:
     - name: clone
       image: "$(params.gitInitImage)"
-      resources:
+      computeResources:
         requests:
           memory: 64Mi
           cpu: 100m

@@ -1,4 +1,4 @@
-apiVersion: tekton.dev/v1beta1
+apiVersion: tekton.dev/v1
 kind: Task
 metadata:
   name: k8s-deploy
@@ -35,7 +35,7 @@ spec:
           value: $(params.vault-path)
         - name: WORKSPACE_DATA_PATH
           value: $(workspaces.data.path)
-      resources:
+      computeResources:
         requests:
           memory: 256Mi
           cpu: 100m

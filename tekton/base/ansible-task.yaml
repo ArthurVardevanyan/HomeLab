@@ -1,4 +1,4 @@
-apiVersion: tekton.dev/v1beta1
+apiVersion: tekton.dev/v1
 kind: Task
 metadata:
   name: ansible
@@ -25,7 +25,7 @@ spec:
   steps:
     - name: ansible
       image: "$(params.image)"
-      resources:
+      computeResources:
         limits:
           cpu: 750m
           memory: 256Mi

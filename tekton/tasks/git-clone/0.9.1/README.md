@@ -35,7 +35,7 @@ to either configure the permissions manually or set the `fsGroup` field under
 An example PipelineRun will look like:
 
 ```yaml
-apiVersion: tekton.dev/v1beta1
+apiVersion: tekton.dev/v1
 kind: PipelineRun
 metadata:
   generateName: git-clone-
@@ -51,7 +51,7 @@ spec:
 An example TaskRun will look like:
 
 ```yaml
-apiVersion: tekton.dev/v1beta1
+apiVersion: tekton.dev/v1
 kind: TaskRun
 metadata:
   name: taskrun

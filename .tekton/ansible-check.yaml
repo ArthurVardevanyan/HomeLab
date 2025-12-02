@@ -1,5 +1,5 @@
 ---
-apiVersion: tekton.dev/v1beta1
+apiVersion: tekton.dev/v1
 kind: PipelineRun
 metadata:
   name: ansible-check
@@ -62,7 +62,8 @@ spec:
           - name: data
             workspace: data
 
-  serviceAccountName: pipeline
+  taskRunTemplate:
+    serviceAccountName: pipeline
   workspaces:
     - name: data
       volumeClaimTemplate:
