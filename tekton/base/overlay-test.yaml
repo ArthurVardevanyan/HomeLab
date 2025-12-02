@@ -83,7 +83,7 @@ spec:
 
         gh auth login --with-token <"/${WORKSPACE_BASIC_AUTH_PATH}/git-provider-token"
 
-        WHATS_CHANGED=$(gh pr diff --repo "${GIT_URL}" "${GIT_PR_NUMBER}"  --name-only)
+        WHATS_CHANGED=$(gh pr diff --repo "${GIT_URL}" "${GIT_PR_NUMBER}"  --name-only | grep -v "^terraform/")
 
         for FILE_PATH in ${WHATS_CHANGED}; do
           echo "${FILE_PATH}" | cut -d'/' -f1,2 >>/tmp/files_changed.log
@@ -98,13 +98,13 @@ spec:
           echo "/${TEST_DIR:-tmp}/${FILE_PATH//\//_}"
           cp "${WORKSPACE_DATA_PATH}/${FILE_PATH}" "/${TEST_DIR:-tmp}/${FILE_PATH//\//_}" 2>/dev/null || :
         done
-        if grep -q "\.md$" "${WHATS_CHANGED}"; then
+        if echo "${WHATS_CHANGED}" | grep -q "\.md$"; then
           markdownlint --disable MD013 -- /${TEST_DIR:-tmp}/*.md
         fi
         prettier /${TEST_DIR:-tmp}/* --check --no-error-on-unmatched-pattern --ignore-unknown
 
         export FOLDER_LIST
-        FOLDER_LIST=$(sort -u /tmp/files_changed.log | grep -E "kubernetes/|okd/")
+        FOLDER_LIST=$(sort -u /tmp/files_changed.log | grep -E "kubernetes/|okd/|\.tekton/|tekton/")
         echo "${FOLDER_LIST}"
 
         DIR="/tmp/yaml"
@@ -113,14 +113,36 @@ spec:
         echo "Build Yaml's"
 
         for FOLDER in ${FOLDER_LIST}; do
-              if test -d ${FOLDER}; then
-                for OVERLAY in ./${FOLDER}/overlays/*; do
-                  if [[ ${OVERLAY} != *"k3s"* ]];then
-                    echo "${OVERLAY}"
-                    OUTPUT=$(echo "${OVERLAY}" | sed 's/\.//g' | sed 's/\//_/g')
-                    kubectl kustomize "${OVERLAY}" | argocd-vault-plugin generate - >"${DIR}/${OUTPUT}.yaml"
-                  fi
-                done
+              if [[ "${FOLDER}" == .tekton* ]]; then
+                if test -f "${FOLDER}"; then
+                  echo "${FOLDER}"
+                  OUTPUT=$(echo "${FOLDER}" | sed 's/\.//g' | sed 's/\//_/g')
+                  cp "${FOLDER}" "${DIR}/${OUTPUT}.yaml"
+                fi
+              elif [[ "${FOLDER}" == "tekton/overlays" ]]; then
+                 for OVERLAY in ./${FOLDER}/*; do
+                    if [[ -f "${OVERLAY}/kustomization.yaml" ]]; then
+                      echo "${OVERLAY}"
+                      OUTPUT=$(echo "${OVERLAY}" | sed 's/\.//g' | sed 's/\//_/g')
+                      kubectl kustomize "${OVERLAY}" | argocd-vault-plugin generate - >"${DIR}/${OUTPUT}.yaml"
+                    fi
+                 done
+              elif [[ "${FOLDER}" == "tekton/tasks" ]] || [[ "${FOLDER}" == "tekton/base" ]]; then
+                 find "${FOLDER}" -name "*.yaml" | while read -r f; do
+                    echo "${f}"
+                    OUTPUT=$(echo "${f}" | sed 's/\.//g' | sed 's/\//_/g')
+                    cp "${f}" "${DIR}/${OUTPUT}.yaml"
+                 done
+              elif test -d ${FOLDER}; then
+                if compgen -G "./${FOLDER}/overlays/*" > /dev/null; then
+                  for OVERLAY in ./${FOLDER}/overlays/*; do
+                    if [[ ${OVERLAY} != *"k3s"* ]];then
+                      echo "${OVERLAY}"
+                      OUTPUT=$(echo "${OVERLAY}" | sed 's/\.//g' | sed 's/\//_/g')
+                      kubectl kustomize "${OVERLAY}" | argocd-vault-plugin generate - >"${DIR}/${OUTPUT}.yaml"
+                    fi
+                  done
+                fi
               fi
         done
 
