@@ -37,6 +37,9 @@ spec:
     - name: terraform_state_prefix
       type: string
       default: "terraform/state"
+    - name: terraform_vars
+      type: string
+      default: ""
     - name: zitadel
       type: string
       default: "false"
@@ -94,6 +97,8 @@ spec:
           value: $(params.gcp_project_prefix)
         - name: TERRAFORM_STATE_PREFIX
           value: $(params.terraform_state_prefix)
+        - name: TERRAFORM_VARS
+          value: $(params.terraform_vars)
         - name: ZITADEL
           value: $(params.zitadel)
         - name: GOOGLE_APPLICATION_CREDENTIALS
@@ -145,10 +150,10 @@ spec:
         tofu init -no-color -backend-config=backend.conf
         if [[ "${TERRAFORM_ACTION}" = "plan" ]]; then
           echo "Running Tofu Plan"
-          tofu plan -no-color
+          tofu plan -no-color ${TERRAFORM_VARS}
         elif [[ "${TERRAFORM_ACTION}" = "apply" ]]; then
           echo "Running Tofu Apply"
-          tofu apply -no-color -auto-approve
+          tofu apply -no-color -auto-approve ${TERRAFORM_VARS}
         fi
 
   volumes:
