@@ -1,4 +1,4 @@
-apiVersion: tekton.dev/v1beta1
+apiVersion: tekton.dev/v1
 kind: Task
 metadata:
   name: k8s-deploy
@@ -21,19 +21,15 @@ spec:
       type: string
     - name: cluster-api
       type: string
-      optional: true
       default: ""
     - name: target-namespace
       type: string
-      optional: true
       default: ""
     - name: target-service-account
       type: string
-      optional: true
       default: ""
     - name: token-exchange-endpoint
       type: string
-      optional: true
       default: ""
 
   workspaces:
@@ -65,7 +61,7 @@ spec:
           value: $(params.token-exchange-endpoint)
         - name: WORKSPACE_DATA_PATH
           value: $(workspaces.data.path)
-      resources:
+      computeResources:
         requests:
           memory: 256Mi
           cpu: 100m

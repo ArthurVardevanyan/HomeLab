@@ -53,7 +53,7 @@ This TaskRun runs the Task to fetch a Git repo, and build and push a container
 image using Buildah.
 
 ```yaml
-apiVersion: tekton.dev/v1beta1
+apiVersion: tekton.dev/v1
 kind: TaskRun
 metadata:
   name: buildah-build-my-repo

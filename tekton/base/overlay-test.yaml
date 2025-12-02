@@ -1,4 +1,4 @@
-apiVersion: tekton.dev/v1beta1
+apiVersion: tekton.dev/v1
 kind: Task
 metadata:
   name: overlay-test
@@ -28,7 +28,7 @@ spec:
   steps:
     - name: overlay-test
       image: "$(params.image)"
-      resources:
+      computeResources:
         limits:
           cpu: "4"
           memory: 5Gi
@@ -127,7 +127,7 @@ spec:
                       kubectl kustomize "${OVERLAY}" | argocd-vault-plugin generate - >"${DIR}/${OUTPUT}.yaml"
                     fi
                  done
-              elif [[ "${FOLDER}" == "tekton/tasks" ]] || [[ "${FOLDER}" == "tekton/base" ]]; then
+              elif [[ "${FOLDER}" == "tekton/tasks" ]]; then
                  find "${FOLDER}" -name "*.yaml" | while read -r f; do
                     echo "${f}"
                     OUTPUT=$(echo "${f}" | sed 's/\.//g' | sed 's/\//_/g')

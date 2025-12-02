@@ -1,5 +1,5 @@
 ---
-apiVersion: tekton.dev/v1beta1
+apiVersion: tekton.dev/v1
 kind: PipelineRun
 metadata:
   name: overlay-test
@@ -88,7 +88,8 @@ spec:
           - name: basic-auth
             workspace: git_auth_secret
 
-  serviceAccountName: pipeline
+  taskRunTemplate:
+    serviceAccountName: pipeline
   workspaces:
     - name: data
       volumeClaimTemplate:
