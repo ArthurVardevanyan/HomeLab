@@ -101,7 +101,9 @@ spec:
         if echo "${WHATS_CHANGED}" | grep -q "\.md$"; then
           markdownlint --disable MD013 -- /${TEST_DIR:-tmp}/*.md
         fi
-        prettier /${TEST_DIR:-tmp}/* --check --no-error-on-unmatched-pattern --ignore-unknown
+        if compgen -G "/${TEST_DIR:-tmp}/*" > /dev/null; then
+          prettier /${TEST_DIR:-tmp}/* --check --no-error-on-unmatched-pattern --ignore-unknown
+        fi
 
         export FOLDER_LIST
         FOLDER_LIST=$(sort -u /tmp/files_changed.log | grep -E "kubernetes/|okd/|\.tekton/|tekton/")
