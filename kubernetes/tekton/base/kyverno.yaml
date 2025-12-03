@@ -1,0 +1,23 @@
+apiVersion: kyverno.io/v1
+kind: Policy
+metadata:
+  name: tekton-pipelines-webhook
+  namespace: openshift-pipelines
+  annotations:
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+spec:
+  background: false
+  rules:
+    - name: tekton-pipelines-webhook
+      skipBackgroundRequests: true
+      match:
+        any:
+          - resources:
+              kinds:
+                - HorizontalPodAutoscaler
+              names:
+                - tekton-pipelines-webhook
+      mutate:
+        patchStrategicMerge:
+          spec:
+            minReplicas: 2
