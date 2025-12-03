@@ -40,6 +40,9 @@ spec:
     - name: terraform_vars
       type: string
       default: ""
+    - name: terraform_output_json
+      type: string
+      default: "false"
     - name: zitadel
       type: string
       default: "false"
@@ -49,6 +52,10 @@ spec:
 
   workspaces:
     - name: data
+
+  results:
+    - name: terraform_json
+      description: The JSON output of the terraform command
 
   steps:
     - name: terraform
@@ -99,6 +106,8 @@ spec:
           value: $(params.terraform_state_prefix)
         - name: TERRAFORM_VARS
           value: $(params.terraform_vars)
+        - name: TERRAFORM_OUTPUT_JSON
+          value: $(params.terraform_output_json)
         - name: ZITADEL
           value: $(params.zitadel)
         - name: GOOGLE_APPLICATION_CREDENTIALS
@@ -150,10 +159,19 @@ spec:
         tofu init -no-color -backend-config=backend.conf
         if [[ "${TERRAFORM_ACTION}" = "plan" ]]; then
           echo "Running Tofu Plan"
-          tofu plan -no-color ${TERRAFORM_VARS}
+          if [[ "${TERRAFORM_OUTPUT_JSON}" == "true" ]]; then
+             tofu plan -no-color -out=tfplan ${TERRAFORM_VARS}
+             tofu show -json tfplan > $(results.terraform_json.path)
+          else
+             tofu plan -no-color ${TERRAFORM_VARS}
+          fi
         elif [[ "${TERRAFORM_ACTION}" = "apply" ]]; then
           echo "Running Tofu Apply"
-          tofu apply -no-color -auto-approve ${TERRAFORM_VARS}
+          if [[ "${TERRAFORM_OUTPUT_JSON}" == "true" ]]; then
+             tofu apply -no-color -auto-approve -json ${TERRAFORM_VARS} > $(results.terraform_json.path)
+          else
+             tofu apply -no-color -auto-approve ${TERRAFORM_VARS}
+          fi
         fi
 
   volumes:
