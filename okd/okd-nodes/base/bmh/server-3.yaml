@@ -1,31 +1,25 @@
 apiVersion: metal3.io/v1alpha1
 kind: BareMetalHost
 metadata:
-  name: worker-1
+  labels:
+    installer.openshift.io/role: control-plane
+  name: server-3
   namespace: openshift-machine-api
 spec:
   bmc:
-    address: redfish-virtualmedia+http://bmc-shim.bmc-shim.svc.cluster.local:8080/redfish/v1/Systems/4
-    credentialsName: "worker-1-bmc-secret"
-  bootMACAddress: 58:47:CA:7A:74:FD
-  automatedCleaningMode: metadata
+    address: redfish-virtualmedia+http://bmc-shim.bmc-shim.svc.cluster.local:8080/redfish/v1/Systems/3
+    credentialsName: "server-3-bmc-secret"
+  bootMACAddress: 98:b7:85:21:ed:e7
   bootMode: UEFI
   externallyProvisioned: true
-  # userData:
-  #   name: worker-user-data
-  #   namespace: openshift-machine-api
-# Manually Patched Status for Discovery
-# status:
-#   hardware:
-#     nics:
-#       - ip: 10.101.10.104
-#         mac: 58:47:CA:7A:74:FD
-#         name: primary
+  userData:
+    name: master-user-data-managed
+    namespace: openshift-machine-api
 ---
 apiVersion: external-secrets.io/v1
 kind: ExternalSecret
 metadata:
-  name: worker-1-bmc-secret
+  name: server-3-bmc-secret
   namespace: openshift-machine-api
   annotations:
     argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
@@ -35,7 +29,7 @@ spec:
     name: vault
     kind: ClusterSecretStore
   target:
-    name: worker-1-bmc-secret
+    name: server-3-bmc-secret
   data:
     - secretKey: username
       remoteRef: # checkov:skip=CKV_SECRET_6 PlaceHolder Values

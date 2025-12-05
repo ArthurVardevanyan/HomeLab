@@ -4,10 +4,10 @@ metadata:
   name: worker-3
   namespace: openshift-machine-api
 spec:
-  bootMACAddress: 58:47:CA:7A:76:2B
   bmc:
-    address: ""
-    credentialsName: ""
+    address: redfish-virtualmedia+http://bmc-shim.bmc-shim.svc.cluster.local:8080/redfish/v1/Systems/6
+    credentialsName: "worker-3-bmc-secret"
+  bootMACAddress: 58:47:CA:7A:76:2B
   automatedCleaningMode: metadata
   bootMode: UEFI
   externallyProvisioned: true
@@ -21,3 +21,33 @@ spec:
 #       - ip: 10.101.10.106
 #         mac: 58:47:CA:7A:76:2B
 #         name: primary
+---
+apiVersion: external-secrets.io/v1
+kind: ExternalSecret
+metadata:
+  name: worker-3-bmc-secret
+  namespace: openshift-machine-api
+  annotations:
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+spec:
+  refreshInterval: "1h"
+  secretStoreRef:
+    name: vault
+    kind: ClusterSecretStore
+  target:
+    name: worker-3-bmc-secret
+  data:
+    - secretKey: username
+      remoteRef: # checkov:skip=CKV_SECRET_6 PlaceHolder Values
+        conversionStrategy: Default
+        decodingStrategy: None
+        key: homelab/bmc
+        property: username
+        metadataPolicy: None
+    - secretKey: password
+      remoteRef: # checkov:skip=CKV_SECRET_6 PlaceHolder Values
+        conversionStrategy: Default
+        decodingStrategy: None
+        key: homelab/bmc
+        property: password
+        metadataPolicy: None
