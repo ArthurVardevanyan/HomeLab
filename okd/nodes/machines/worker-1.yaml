@@ -3,13 +3,16 @@ kind: Machine
 metadata:
   name: okd-4ww5p-worker-1
   namespace: openshift-machine-api
+  annotations:
+    machine.openshift.io/instance-state: unmanaged
+    metal3.io/BareMetalHost: openshift-machine-api/worker-1
   labels:
     machine.openshift.io/cluster-api-cluster: okd-4ww5p
     machine.openshift.io/cluster-api-machine-role: worker
     machine.openshift.io/cluster-api-machine-type: worker
     node-role.kubernetes.io/worker: ""
 spec:
-  providerID: baremetalhost:///openshift-machine-api/worker-1/WORKERS-4-UUID
+  # providerID: baremetalhost:///openshift-machine-api/worker-1/e79fda58-fa79-4e08-a67a-1759a44cc06d
   providerSpec:
     value:
       apiVersion: baremetal.cluster.k8s.io/v1alpha1
@@ -25,4 +28,4 @@ spec:
       metadata:
         creationTimestamp: null
       userData:
-        name: master-user-data-managed
+        name: worker-user-data-managed
