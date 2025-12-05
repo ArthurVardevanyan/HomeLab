@@ -1,0 +1,45 @@
+apiVersion: machine.openshift.io/v1beta1
+kind: MachineSet
+metadata:
+  name: okd-4ww5p-worker-1
+  namespace: openshift-machine-api
+  labels:
+    machine.openshift.io/cluster-api-cluster: okd-4ww5p
+    machine.openshift.io/cluster-api-machine-role: worker
+    machine.openshift.io/cluster-api-machine-type: worker
+spec:
+  selector:
+    matchLabels:
+      machine.openshift.io/cluster-api-cluster: okd-4ww5p
+      machine.openshift.io/cluster-api-machineset: okd-4ww5p-worker-1
+  template:
+    metadata:
+      annotations:
+        metal3.io/BareMetalHost: openshift-machine-api/worker-1
+      labels:
+        machine.openshift.io/cluster-api-cluster: okd-4ww5p
+        machine.openshift.io/cluster-api-machineset: okd-4ww5p-worker-1
+        machine.openshift.io/cluster-api-machine-role: worker
+        machine.openshift.io/cluster-api-machine-type: worker
+        node-role.kubernetes.io/worker: ""
+    spec:
+      metadata:
+        labels:
+          beta.kubernetes.io/instance-type: MS-A1-A5870
+          topology.kubernetes.io/zone: "1"
+      providerSpec:
+        value:
+          apiVersion: baremetal.cluster.k8s.io/v1alpha1
+          customDeploy:
+            method: install_coreos
+          hostSelector:
+            matchLabels:
+              kubernetes.io/hostname: worker-1
+          image:
+            checksum: ""
+            url: ""
+          kind: BareMetalMachineProviderSpec
+          metadata:
+            creationTimestamp: null
+          userData:
+            name: worker-user-data-managed

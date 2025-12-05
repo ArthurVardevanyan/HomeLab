@@ -1001,6 +1001,19 @@ delete_okd_bm() {
   # ${OKD}/openshift-client-linux* \
 }
 
+okd_bm_worker_shutdown() {
+  kubectl patch machineset okd-4ww5p-worker-1 -n openshift-machine-api --type='merge' -p '{"spec": {"replicas": 0}}'
+  kubectl patch machineset okd-4ww5p-worker-2 -n openshift-machine-api --type='merge' -p '{"spec": {"replicas": 0}}'
+  kubectl patch machineset okd-4ww5p-worker-3 -n openshift-machine-api --type='merge' -p '{"spec": {"replicas": 0}}'
+}
+
+okd_bm_worker_startup() {
+  kubectl patch machineset okd-4ww5p-worker-1 -n openshift-machine-api --type='merge' -p '{"spec": {"replicas": 0}}'
+  kubectl patch machineset okd-4ww5p-worker-2 -n openshift-machine-api --type='merge' -p '{"spec": {"replicas": 0}}'
+  kubectl patch machineset okd-4ww5p-worker-3 -n openshift-machine-api --type='merge' -p '{"spec": {"replicas": 0}}'
+}
+
+
 install_okd_prep() {
 
   sudo mount -o remount,size=8G,noatime /tmp

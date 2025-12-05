@@ -1,0 +1,34 @@
+apiVersion: machine.openshift.io/v1beta1
+kind: Machine
+metadata:
+  annotations:
+    metal3.io/BareMetalHost: openshift-machine-api/server-2
+  labels:
+    machine.openshift.io/cluster-api-cluster: okd-4ww5p
+    machine.openshift.io/cluster-api-machine-role: master
+    machine.openshift.io/cluster-api-machine-type: master
+  name: okd-4ww5p-master-1
+  namespace: openshift-machine-api
+spec:
+  lifecycleHooks:
+    preDrain:
+      - name: EtcdQuorumOperator
+        owner: clusteroperator/etcd
+  metadata:
+    labels:
+      beta.kubernetes.io/instance-type: R7-5700G
+      topology.kubernetes.io/zone: "2"
+  providerSpec:
+    value:
+      apiVersion: baremetal.cluster.k8s.io/v1alpha1
+      customDeploy:
+        method: install_coreos
+      hostSelector: {}
+      image:
+        checksum: ""
+        url: ""
+      kind: BareMetalMachineProviderSpec
+      metadata:
+        creationTimestamp: null
+      userData:
+        name: master-user-data-managed

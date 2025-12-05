@@ -22,3 +22,15 @@ spec:
     targetRevision: HEAD
     plugin:
       name: argocd-vault-plugin-kustomize
+  syncPolicy:
+    syncOptions:
+      - ServerSideApply=true
+  ignoreDifferences:
+    - group: machine.openshift.io
+      kind: MachineSet
+      jsonPointers:
+        - /spec/replicas
+    - group: baremetal.cluster.k8s.io
+      kind: BareMetalHost
+      jsonPointers:
+        - /spec/online
