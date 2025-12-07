@@ -1,5 +1,7 @@
 # HomeLab Infrastructure
 
+For a detailed history of the project's evolution, see [CHANGELOG.md](CHANGELOG.md).
+
 - [HomeLab Infrastructure](#homelab-infrastructure)
   - [Overview](#overview)
   - [🏗️ Architecture Overview](#️-architecture-overview)
