@@ -1,5 +1,14 @@
 # Ansible
 
+## Remote VsCode
+
+```bash
+ ansible-playbook -i ansible/inventory --ask-become-pass ansible/vscode-server.yaml --ask-pass \
+  -e 'ansible_python_interpreter=/usr/bin/python3'
+```
+
+## Ref
+
 - <https://github.com/k3s-io/k3s-ansible>
 - <https://webworxshop.com/automating-my-infrastructure-with-ansible-and-gitlab-ci-part-1-getting-started/?pk_campaign=reddit-homelab>
 - <https://stackoverflow.com/questions/63266075/how-to-run-ansible-playbook-from-gitlab-ci>
