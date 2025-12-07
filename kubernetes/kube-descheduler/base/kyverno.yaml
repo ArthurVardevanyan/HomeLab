@@ -1,0 +1,55 @@
+apiVersion: kyverno.io/v1
+kind: Policy
+metadata:
+  name: add-resource-limits
+  namespace: openshift-kube-descheduler-operator
+  annotations:
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+spec:
+  rules:
+    - name: add-resources-descheduler
+      skipBackgroundRequests: true
+      match:
+        resources:
+          kinds:
+            - Deployment
+          selector:
+            matchLabels:
+              app: descheduler
+      mutate:
+        patchStrategicMerge:
+          spec:
+            template:
+              spec:
+                containers:
+                  - (name): openshift-descheduler
+                    resources:
+                      limits:
+                        cpu: 50m
+                        memory: 256Mi
+                      requests:
+                        cpu: 10m
+                        memory: 128Mi
+    - name: add-resources-softtainter
+      skipBackgroundRequests: true
+      match:
+        resources:
+          kinds:
+            - Deployment
+          selector:
+            matchLabels:
+              app: softtainer
+      mutate:
+        patchStrategicMerge:
+          spec:
+            template:
+              spec:
+                containers:
+                  - (name): openshift-softtainer
+                    resources:
+                      limits:
+                        cpu: 50m
+                        memory: 64Mi
+                      requests:
+                        cpu: 10m
+                        memory: 32Mi
