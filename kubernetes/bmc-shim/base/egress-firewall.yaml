@@ -1,0 +1,13 @@
+apiVersion: k8s.ovn.org/v1
+kind: EgressFirewall
+metadata:
+  name: default
+  namespace: bmc-shim
+spec:
+  egress:
+    - type: Allow
+      to:
+        dnsName: home.arthurvardevanyan.com
+    - type: Deny
+      to:
+        cidrSelector: 0.0.0.0/0
