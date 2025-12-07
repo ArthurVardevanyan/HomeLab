@@ -1,0 +1,104 @@
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: deny-all
+  namespace: bmc-shim
+spec:
+  policyTypes:
+    - Ingress
+    - Egress
+  podSelector: {}
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-dns-traffic
+  namespace: bmc-shim
+spec:
+  policyTypes:
+    - Egress
+  podSelector:
+    matchLabels:
+      app: bmc-shim
+  egress:
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: openshift-dns
+          podSelector:
+            matchLabels:
+              dns.operator.openshift.io/daemonset-dns: default
+      ports:
+        - port: 5353
+          protocol: UDP
+        - port: 5353
+          protocol: TCP
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-to-openshift-ingress
+  namespace: bmc-shim
+spec:
+  policyTypes:
+    - Egress
+  podSelector:
+    matchLabels:
+      app: bmc-shim
+  egress:
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              network.openshift.io/policy-group: ingress
+      ports:
+        - protocol: TCP
+          port: 443 # Passthrough/ReEncrypt Termination
+        - protocol: TCP
+          port: 80 # Edge Termination
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-from-openshift-machine-api
+  namespace: bmc-shim
+spec:
+  policyTypes:
+    - Ingress
+  podSelector:
+    matchLabels:
+      app: bmc-shim
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              policy-group.network.openshift.io/host-network: ""
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: openshift-machine-api
+          podSelector:
+            matchLabels:
+              k8s-app: metal3
+      ports:
+        - protocol: TCP
+          port: 8080
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-egress-ingress
+  namespace: bmc-shim
+spec:
+  policyTypes:
+    - Egress
+  podSelector:
+    matchLabels:
+      app: bmc-shim
+  egress:
+    - to:
+        - ipBlock:
+            cidr: 10.101.10.7/32 # OKD APP WildCard
+      ports:
+        - protocol: TCP
+          port: 443 # Passthrough/ReEncrypt Termination
+        - protocol: TCP
+          port: 80 # Edge Termination

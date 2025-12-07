@@ -1,0 +1,106 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: bmc-shim
+  annotations:
+    checkov.io/skip1: CKV_K8S_40=OpenShift Injects Random UID
+    checkov.io/skip2: CKV_K8S_38=Operator Requires use of Tokens
+  name: bmc-shim
+  namespace: bmc-shim
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: bmc-shim
+  template:
+    metadata:
+      labels:
+        app: bmc-shim
+    spec:
+      nodeSelector:
+        node-role.kubernetes.io/control-plane: ""
+      securityContext:
+        seccompProfile:
+          type: RuntimeDefault
+      topologySpreadConstraints:
+        - maxSkew: 1
+          topologyKey: topology.kubernetes.io/zone
+          whenUnsatisfiable: ScheduleAnyway
+          labelSelector:
+            matchLabels:
+              app: bmc-shim
+        - maxSkew: 1
+          topologyKey: kubernetes.io/hostname
+          whenUnsatisfiable: DoNotSchedule
+          labelSelector:
+            matchLabels:
+              app: bmc-shim
+      containers:
+        - image: "registry.arthurvardevanyan.com/homelab/bmc-shim:20251207-0207@sha256:e424a312c3756d18f55f780db02d2df93c2f64d3e9ad92f3f07bc173beba70a6"
+          name: bmc-shim
+          envFrom:
+            - secretRef:
+                name: bmc-shim-credentials
+          args:
+            - --listen
+            - :8080
+            - --backend
+            - homeassistant
+            - --ha-url
+            - https://home.arthurvardevanyan.com
+            - --ha-token
+            - $(BMC_SHIM_HA_TOKEN)
+            - --systems
+            - "1=switch.power_strip_zone_1_kvm_1,2=switch.power_strip_zone_2_kvm_2,3=switch.power_strip_zone_3_kvm_3,4=switch.power_strip_zone_1_kvm_4,5=switch.power_strip_zone_2_kvm_5,6=switch.power_strip_zone_3_kvm_6"
+          ports:
+            - containerPort: 8080
+              name: http
+              protocol: TCP
+          livenessProbe:
+            httpGet:
+              path: /livez
+              port: 8080
+            initialDelaySeconds: 1
+            timeoutSeconds: 1
+            periodSeconds: 30
+            successThreshold: 1
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /readyz
+              port: 8080
+            initialDelaySeconds: 1
+            timeoutSeconds: 5
+            periodSeconds: 30
+            successThreshold: 1
+            failureThreshold: 3
+          startupProbe:
+            httpGet:
+              path: /startupz
+              port: 8080
+            initialDelaySeconds: 2
+            timeoutSeconds: 5
+            periodSeconds: 1
+            successThreshold: 1
+            failureThreshold: 3
+          resources:
+            limits:
+              cpu: 10m
+              memory: 32Mi
+            requests:
+              cpu: 5m
+              memory: 16Mi
+          securityContext:
+            runAsNonRoot: true
+            readOnlyRootFilesystem: true
+            allowPrivilegeEscalation: false
+            seccompProfile:
+              type: RuntimeDefault
+            capabilities:
+              drop:
+                - ALL
+      serviceAccountName: bmc-shim
+      terminationGracePeriodSeconds: 10
+      automountServiceAccountToken: true
+      enableServiceLinks: false
