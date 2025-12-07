@@ -1,71 +1,116 @@
 <!-- markdownlint-disable MD024 MD007 -->
 
-# Project History Analysis
+# Changelog
 
 ## Overview
 
 This document analyzes the git history of the HomeLab project, grouping changes into distinct historic eras based on technology shifts and major milestones.
 
-## Summary of Evolution
+## Summary
 
-| Era                 | Timeframe  | Orchestration    | Management               | CI/CD & Source Control | Storage           | Observability              | Networking                    | Security & Identity |
-| :------------------ | :--------- | :--------------- | :----------------------- | :--------------------- | :---------------- | :------------------------- | :---------------------------- | :------------------ |
-| **Docker**          | Mid 2021   | Docker Compose   | Shell Scripts, Portainer | GitLab                 | Local Bind Mounts | Spotify Analytics          | MacVLAN (L2), ISP Router      | -                   |
-| **K3s**             | Late 2021  | K3s              | Ansible (IaC)            | GitLab CI              | Longhorn (Block)  | Prometheus, Grafana        | Traefik, Flannel              | Vault, Bitwarden    |
-| **OKD**             | Early 2022 | OKD (OpenShift)  | ArgoCD (GitOps)          | Tekton, Gitea, Quay    | MinIO, ODF (Rook) | -                          | SDN, Routes, MetalLB, pfSense | -                   |
-| **Security**        | Late 2022  | OKD              | ArgoCD                   | Tekton, Gitea          | Ceph / ODF        | Stackrox, Smoke Tests      | SDN, Routes, pfSense          | Clair               |
-| **Identity**        | Early 2023 | OKD              | ArgoCD                   | Tekton, Gitea          | Ceph / ODF        | Network Observability      | SDN, Routes, pfSense          | Zitadel (OIDC)      |
-| **DevExp**          | Late 2023  | OKD              | ArgoCD                   | Tekton, Gitea          | Ceph / ODF        | -                          | SDN, Routes, pfSense          | Kyverno             |
-| **Network/Storage** | Early 2024 | OKD              | ArgoCD                   | Tekton, Gitea          | Ceph / ODF        | -                          | Kube-VIP, UniFi               | External Secrets    |
-| **Virt**            | Late 2024  | OKD / MicroShift | AWX, Netbox              | Tekton, Gitea          | Ceph, LVM         | Loki, Logging              | Cloudflare DDNS               | -                   |
-| **Bare Metal**      | Early 2025 | OKD IPI / SNO    | Agent Installer          | Tekton, Gitea          | Ceph, LVM         | Power Monitoring           | OVN-K8s                       | KFCA                |
-| **Accel**           | Late 2025  | OKD IPI          | Agent Installer          | Tekton, Gitea          | Ceph, LVM         | VictoriaMetrics, Dragonfly | Gateway API, Service Mesh     | NetworkPolicy       |
+| Era                 | Timeframe  | Orchestration      | Management               | CI/CD & Source Control | Storage           | Observability              | Networking                    | Security & Identity |
+| :------------------ | :--------- | :----------------- | :----------------------- | :--------------------- | :---------------- | :------------------------- | :---------------------------- | :------------------ |
+| **Windows Server**  | Early 2016 | -                  | RDP, GUI                 | -                      | NTFS              | -                          | -                             | Active Directory    |
+| **Vmware/Windows**  | Late 2016  | VMware Workstation | GUI                      | -                      | Local vmdk        | -                          | Bridged/NAT                   | -                   |
+| **Vmware/Linux**    | 2017-2018  | Systemd/Manual     | Shell, Webmin            | -                      | FreeNAS           | -                          | pfSense                       | -                   |
+| **Storage**         | 2019       | VMs                | Shell                    | -                      | FreeNAS           | -                          | pfSense (VM)                  | -                   |
+| **VFIO**            | 2020       | KVM / VMware       | Shell                    | -                      | TrueNAS Core      | -                          |                               | -                   |
+| **Docker**          | Early 2021 | Docker Compose     | Shell Scripts, Portainer | GitLab                 | Local Bind Mounts | -                          | MacVLAN (L2), ISP Router      | -                   |
+| **K3s**             | Late 2021  | K3s                | Ansible (IaC)            | GitLab CI              | Longhorn (Block)  | Prometheus, Grafana        | Traefik, Flannel              | Vault, Bitwarden    |
+| **OKD**             | Early 2022 | OKD (OpenShift)    | ArgoCD (GitOps)          | Tekton, Gitea, Quay    | MinIO, ODF (Rook) | -                          | SDN, Routes, MetalLB, pfSense | -                   |
+| **Security**        | Late 2022  | OKD                | ArgoCD                   | Tekton, Gitea          | Ceph / ODF        | Stackrox, Smoke Tests      | SDN, Routes, pfSense          | Clair               |
+| **Identity**        | Early 2023 | OKD                | ArgoCD                   | Tekton, Gitea          | Ceph / ODF        | Network Observability      | SDN, Routes, pfSense          | Zitadel (OIDC)      |
+| **DevExp**          | Late 2023  | OKD                | ArgoCD                   | Tekton, Gitea          | Ceph / ODF        | -                          | SDN, Routes, pfSense          | Kyverno             |
+| **Network/Storage** | Early 2024 | OKD                | ArgoCD                   | Tekton, Gitea          | Ceph / ODF        | -                          | Kube-VIP, UniFi               | External Secrets    |
+| **Virt**            | Late 2024  | OKD / MicroShift   | AWX, Netbox              | Tekton, Gitea          | Ceph, LVM         | Loki, Logging              | Cloudflare DDNS               | -                   |
+| **Bare Metal**      | Early 2025 | OKD IPI / SNO      | Agent Installer          | Tekton, Gitea          | Ceph, LVM         | Power Monitoring           | OVN-K8s                       | KFCA                |
+| **Accel**           | Late 2025  | OKD IPI            | Agent Installer          | Tekton, Gitea          | Ceph, LVM         | VictoriaMetrics, Dragonfly | Gateway API, Service Mesh     | NetworkPolicy       |
 
-- [Project History Analysis](#project-history-analysis)
+- [Changelog](#changelog)
   - [Overview](#overview)
-  - [Summary of Evolution](#summary-of-evolution)
-  - [0. Pre-History (Pre June 2021)](#0-pre-history-pre-june-2021)
-  - [1. The Docker Era (June 2021 - August 2021)](#1-the-docker-era-june-2021---august-2021)
+  - [Summary](#summary)
+  - [1. Windows Server (Early 2016)](#1-windows-server-early-2016)
+  - [2. VMware Workstation (Late 2016)](#2-vmware-workstation-late-2016)
+  - [3. The Rise of Self-Hosting (2017 - 2018)](#3-the-rise-of-self-hosting-2017---2018)
+  - [4. Advanced Storage \& Networking (2019)](#4-advanced-storage--networking-2019)
+  - [5. Hardware \& Passthrough (2020)](#5-hardware--passthrough-2020)
+  - [6. The Docker Era (Early 2021 - August 2021)](#6-the-docker-era-early-2021---august-2021)
     - [Key Characteristics](#key-characteristics)
     - [Major Milestones](#major-milestones)
-  - [2. Kubernetes Migration (August 2021 - December 2021)](#2-kubernetes-migration-august-2021---december-2021)
+  - [7. Kubernetes Migration (August 2021 - December 2021)](#7-kubernetes-migration-august-2021---december-2021)
     - [Key Characteristics](#key-characteristics-1)
     - [Major Milestones](#major-milestones-1)
-  - [3. The OKD Migration (Early 2022)](#3-the-okd-migration-early-2022)
+  - [8. The OKD Migration (Early 2022)](#8-the-okd-migration-early-2022)
     - [Key Characteristics](#key-characteristics-2)
     - [Major Milestones](#major-milestones-2)
-  - [4. Security \& Stability (Late 2022)](#4-security--stability-late-2022)
+  - [9. Security \& Stability (Late 2022)](#9-security--stability-late-2022)
     - [Key Characteristics](#key-characteristics-3)
     - [Major Milestones](#major-milestones-3)
-  - [5. Identity \& Observability (Early 2023)](#5-identity--observability-early-2023)
+  - [10. Identity \& Observability (Early 2023)](#10-identity--observability-early-2023)
     - [Key Characteristics](#key-characteristics-4)
     - [Major Milestones](#major-milestones-4)
-  - [6. Developer Experience \& Serverless (Late 2023)](#6-developer-experience--serverless-late-2023)
+  - [11. Developer Experience \& Serverless (Late 2023)](#11-developer-experience--serverless-late-2023)
     - [Key Characteristics](#key-characteristics-5)
     - [Major Milestones](#major-milestones-5)
-  - [7. Hybrid Networking \& Storage (Early 2024)](#7-hybrid-networking--storage-early-2024)
+  - [12. Hybrid Networking \& Storage (Early 2024)](#12-hybrid-networking--storage-early-2024)
     - [Key Characteristics](#key-characteristics-6)
     - [Major Milestones](#major-milestones-6)
-  - [8. Virtualization \& Edge (Late 2024)](#8-virtualization--edge-late-2024)
+  - [13. Virtualization \& Edge (Late 2024)](#13-virtualization--edge-late-2024)
     - [Key Characteristics](#key-characteristics-7)
     - [Major Milestones](#major-milestones-7)
-  - [9. The Bare Metal Rebuild (Early 2025)](#9-the-bare-metal-rebuild-early-2025)
+  - [14. The Bare Metal Rebuild (Early 2025)](#14-the-bare-metal-rebuild-early-2025)
     - [Key Characteristics](#key-characteristics-8)
     - [Major Milestones](#major-milestones-8)
-  - [10. Hardware Acceleration \& Observability 2.0 (Late 2025)](#10-hardware-acceleration--observability-20-late-2025)
+  - [15. Hardware Acceleration \& Observability 2.0 (Late 2025)](#15-hardware-acceleration--observability-20-late-2025)
     - [Key Characteristics](#key-characteristics-9)
     - [Major Milestones](#major-milestones-9)
 
-## 0. Pre-History (Pre June 2021)
+## 1. Windows Server (Early 2016)
 
-- **TODO**: Document the history prior to the initial commit in June 2021.
+- **Focus:** Enterprise Windows environment simulation.
+- **OS:** Windows Server 2012 R2.
+- **Key Tech:** Active Directory Domain Services, IIS, DNS, DHCP.
+- **Hardware:** Initial dedicated server hardware acquisition.
 
-## 1. The Docker Era (June 2021 - August 2021)
+## 2. VMware Workstation (Late 2016)
 
-The project began as a standard Docker-based HomeLab environment, utilizing Docker Compose for orchestration and shell scripts for management.
+- **Focus:** Desktop Virtualization and Linux exploration.
+- **Platform:** VMware Workstation Pro 12 running on Windows.
+- **Experiments:** Early Linux adoption (Ubuntu, Kali, Mint) running as VMs. **OpenVPN** (August 2016) running in a custom VM.
+- **Key Tech:** XRDP for remote access, Virtual Network Editor.
+
+## 3. The Rise of Self-Hosting (2017 - 2018)
+
+- **Infrastructure:** Introduction of **FreeNAS** for storage and **pfSense** for routing (August 2017). **OpenVPN** on pfSense (February 2017).
+- **Workloads:** **Nextcloud** (v11) inception, Bind9 DNS.
+- **OS:** Shift towards Ubuntu Server 16.04 as the primary host.
+- **Desktop:** Deep dive into Ubuntu Desktop and ZFS on Linux.
+- **Apps:** Nextcloud, Spotify on Linux, and Minecraft Servers.
+
+## 4. Advanced Storage & Networking (2019)
+
+- **Storage:** Heavy focus on **FreeNAS** tuning (ZFS RAID levels, SSD Caching, Scrubs).
+- **Networking:** Virtualizing **pfSense**, VLAN segmentation
+- **Key Tech:** iSCSI for VM storage, NFS for file sharing.
+- **Experiments:** Active Directory on Linux (Samba 4).
+
+## 5. Hardware & Passthrough (2020)
+
+- **Hardware:** Raspberry Pi 4 for OctoPrint.
+- **OS:** Distro hopping (Pop!\_OS, Manjaro, Fedora).
+- **Migrations:** P2V (Physical to Virtual) migrations of legacy Windows machines.
+- **Networking:** **WireGuard** (April 2020) exploration.
+
+## 6. The Docker Era (Early 2021 - August 2021)
+
+The project began as a standard Docker-based HomeLab environment, utilizing Docker Compose for orchestration and shell scripts for management. This era marked the pivot from heavy VMs to lightweight containers and the inception of the **Git** repository, bringing version control to the infrastructure.
 
 ### Key Characteristics
 
+- **The Pivot:** Realization of the overhead of pure VMs vs Containers.
+- **Preparation:** Researching Docker, Podman, and container networking.
+- **OS:** Ubuntu 21.04 and Pop!\_OS as container hosts.
+- **Transition:** Migrating Nextcloud and Plex from heavy VMs to lightweight containers.
 - **Orchestration:** Docker Compose.
 - **Networking:** Heavy use of `macvlan` for assigning physical IPs to containers. **Default ISP Router** used for gateway.
 - **Management:** Manual shell scripts (`main.bash`), **Cockpit** (June 2021), and Portainer (added July 2021).
@@ -73,13 +118,14 @@ The project began as a standard Docker-based HomeLab environment, utilizing Dock
 
 ### Major Milestones
 
+- **Early 2021**: Researching Docker, Podman, and container networking.
 - **June 15, 2021**: Initial Commit establishing the Docker environment.
 - **June 18, 2021**: Implementation of `macvlan` network routes, moving away from simple bridge networking.
 - **June 25, 2021**: **Cockpit** configuration for server management.
 - **July 31, 2021**: Introduction of **Portainer** for UI-based container management.
 - **Workloads:** Nextcloud, MariaDB, HomeAssistant, Spotify Analytics, Pi-Hole, **GitLab** (Code Hosting).
 
-## 2. Kubernetes Migration (August 2021 - December 2021)
+## 7. Kubernetes Migration (August 2021 - December 2021)
 
 A major architectural shift towards container orchestration using Kubernetes, specifically K3s. This era marked the beginning of "Infrastructure as Code" with Ansible.
 
@@ -100,13 +146,13 @@ A major architectural shift towards container orchestration using Kubernetes, sp
 - **Late 2021**: Introduction of **Kubernetes Dashboard**, **Metrics Server**, and **Kube Eagle** for cluster visibility.
 - **Workloads**: Prometheus/Grafana stack, Heimdall Dashboard, Bitwarden, Uptime Kuma, Cert-Manager, Hashicorp Vault.
 
-## 3. The OKD Migration (Early 2022)
+## 8. The OKD Migration (Early 2022)
 
 Adoption of OKD (OpenShift Kubernetes Distribution) marked a move towards enterprise-grade Kubernetes and GitOps practices.
 
 ### Key Characteristics
 
-- **Platform:** OKD (OpenShift) replacing K3s.
+- **Platform:** OKD 4.9 (OpenShift) replacing K3s.
 - **Networking:** Transition to **pfSense** (Feb 2022) for advanced routing and VLAN management.
 - **GitOps:** **ArgoCD** became the single source of truth for all application deployments.
 - **CI/CD:** **Tekton** pipelines for building images and **Quay** (May 2022) for container registry.
@@ -116,14 +162,14 @@ Adoption of OKD (OpenShift Kubernetes Distribution) marked a move towards enterp
 ### Major Milestones
 
 - **January 16, 2022**: Upgrade of K3s to **High Availability (HA)** mode.
-- **February 6, 2022**: **pfSense** inception, replacing the default ISP router.
+- **February 6, 2022**: **pfSense** physical inception, replacing the default ISP router.
 - **March 27, 2022**: Automated Sandbox OKD Installation.
 - **March 28, 2022**: Inception of **ArgoCD**, establishing the GitOps workflow.
 - **May 21, 2022**: **Gitea** inception, replacing GitLab.
 - **May 21, 2022**: **Tekton** pipelines implemented.
 - **May 22, 2022**: **MinIO**, **Quay**, and **Postgres** inception.
 
-## 4. Security & Stability (Late 2022)
+## 9. Security & Stability (Late 2022)
 
 Focus on hardening the cluster security posture and ensuring reliability through automated testing.
 
@@ -139,7 +185,7 @@ Focus on hardening the cluster security posture and ensuring reliability through
 - **November 3, 2022**: **TrueNAS** inception serving as an S3 backup target.
 - **November 25, 2022**: **Smoke Tests** implementation for cluster validation.
 
-## 5. Identity & Observability (Early 2023)
+## 10. Identity & Observability (Early 2023)
 
 Centralizing identity management and enhancing network visibility.
 
@@ -155,7 +201,7 @@ Centralizing identity management and enhancing network visibility.
 - **April 27, 2023**: **Keep Alive** service for connection persistence.
 - **May 1, 2023**: **Zitadel** inception, replacing Keycloak.
 
-## 6. Developer Experience & Serverless (Late 2023)
+## 11. Developer Experience & Serverless (Late 2023)
 
 Enhancing the platform for developers with cloud-native environments and serverless capabilities.
 
@@ -171,7 +217,7 @@ Enhancing the platform for developers with cloud-native environments and serverl
 - **October 30, 2023**: **Kyverno** and **Image Puller** inception.
 - **November 21, 2023**: **Knative** Serverless inception.
 
-## 7. Hybrid Networking & Storage (Early 2024)
+## 12. Hybrid Networking & Storage (Early 2024)
 
 Expansion into advanced networking hardware and enterprise-grade storage solutions.
 
@@ -190,7 +236,7 @@ Expansion into advanced networking hardware and enterprise-grade storage solutio
 - **April 5, 2024**: Strategic shift to **Ceph**.
 - **May 27, 2024**: **Velero** inception for disaster recovery.
 
-## 8. Virtualization & Edge (Late 2024)
+## 13. Virtualization & Edge (Late 2024)
 
 The project expanded into Edge computing and Virtualization, effectively becoming a unified platform.
 
@@ -200,6 +246,7 @@ The project expanded into Edge computing and Virtualization, effectively becomin
 - **Edge:** **MicroShift** (Sept 2024) for resource-constrained environments.
 - **Automation:** **AWX** (Oct 2024) for Ansible management and **Netbox** (Dec 2024) for IPAM.
 - **Logging:** **OpenShift Logging** (Dec 2024) stack.
+- **Networking:** **UniFi WireGuard** (Dec 2024) implementation on UDM Pro.
 
 ### Major Milestones
 
@@ -210,9 +257,10 @@ The project expanded into Edge computing and Virtualization, effectively becomin
 - **September 11, 2024**: **External DNS** and **OLM** (Operator Lifecycle Manager) enhancements.
 - **October 10, 2024**: **AWX** inception.
 - **Late 2024**: **Blackbox Exporter**, **Observability Operator**, and **NTP** standardization.
+- **December 2024**: **UniFi WireGuard** implementation.
 - **December 13, 2024**: **Netbox** inception.
 
-## 9. The Bare Metal Rebuild (Early 2025)
+## 14. The Bare Metal Rebuild (Early 2025)
 
 A major rebuild focusing on bare-metal performance, starting with a transitional SNO deployment.
 
@@ -231,7 +279,7 @@ A major rebuild focusing on bare-metal performance, starting with a transitional
 - **April 5, 2025**: **Automated Nested OKD/OpenShift** support in KubeVirt.
 - **April 16, 2025**: **KFCA** (Kubernetes Full Cluster Audit).
 
-## 10. Hardware Acceleration & Observability 2.0 (Late 2025)
+## 15. Hardware Acceleration & Observability 2.0 (Late 2025)
 
 Focus on GPU integration, advanced networking, and next-gen observability.
 
@@ -247,8 +295,8 @@ Focus on GPU integration, advanced networking, and next-gen observability.
 
 - **July 22, 2025**: **Immich** inception.
 - **August 9, 2025**: **Kube Descheduler** for workload optimization.
-- **August 30, 2025**: **UNAS** inception (Intel i5, 32GB RAM, 10GbE) for heavy storage workloads.
-- **October 3, 2025**: **Nextcloud Architecture Rebuild** - Migration to FPM/S3 architecture (#262).
+- **August 30, 2025**: **UNAS** inception for storage workloads.
+- **October 3, 2025**: **Nextcloud Architecture Rebuild** - Migration to FPM/S3 architecture.
 - **November 8, 2025**: **GPU Integration** (#281) and **Node Feature Discovery**.
 - **November 15, 2025**: **OpenShift Service Mesh**.
 - **November 18, 2025**: Adoption of **VictoriaMetrics**.
