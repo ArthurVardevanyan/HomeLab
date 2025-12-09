@@ -1,0 +1,19 @@
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: microshift-ntp
+  namespace: ntp
+  labels:
+    app: microshift
+spec:
+  selector:
+    matchLabels:
+      app: microshift-ntp
+  namespaceSelector:
+    matchNames:
+      - ntp
+  endpoints:
+    - port: metrics
+      interval: 30s
+      scrapeTimeout: 30s
+      honorLabels: true

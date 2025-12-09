@@ -7,7 +7,7 @@ metadata:
     app: ntp-rootless
     app.kubernetes.io/instance: ntp
 spec:
-  replicas: 1
+  replicas: 1 # 2
   strategy:
     type: RollingUpdate
   revisionHistoryLimit: 0
@@ -52,13 +52,16 @@ spec:
           - name: ndots
             value: "1"
       containers:
-        - image: registry.arthurvardevanyan.com/homelab/ntp:rootless@sha256:93f332834cf8f52d8addaca2439a127e10b080ce3a290d144f1bb0b22c37d82d
+        - image: registry.arthurvardevanyan.com/homelab/ntp:rootless@sha256:062c78df420246832b034dfa3ad178a818db599af07186c28e59e9bc4ff2730f
           imagePullPolicy: IfNotPresent
           name: ntp-rootless
           ports:
             - containerPort: 123 #12345
               name: ntp
               protocol: UDP
+            - containerPort: 9433
+              name: metrics
+              protocol: TCP
           securityContext:
             privileged: false
             runAsNonRoot: true
@@ -93,6 +96,10 @@ spec:
               value: America/Detroit
             # - name: LOG_LEVEL
             #   value: "3"
+            - name: ENABLE_METRICS
+              value: "true"
+            - name: METRICS_PORT
+              value: "9433"
           volumeMounts:
             - name: ntp-config
               mountPath: /etc/chrony/

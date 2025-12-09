@@ -1,0 +1,18 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: ntp-rules
+  namespace: ntp
+  labels:
+    release: prometheus
+spec:
+  groups:
+    - name: Chrony
+      rules:
+        - record: instance:chrony_clock_error_seconds:abs
+          expr: >
+            abs(chrony_tracking_last_offset_seconds)
+            +
+            chrony_tracking_root_dispersion_seconds
+            +
+            (0.5 * chrony_tracking_root_delay_seconds)
