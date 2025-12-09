@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: ntp-microshift
+  namespace: ntp
+  labels:
+    app: ntp-microshift
+spec:
+  externalName: 10.101.11.4
+  ports:
+    - name: metrics
+      port: 9433
+      protocol: TCP
+      targetPort: 9433
+  type: ExternalName
