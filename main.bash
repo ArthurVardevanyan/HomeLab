@@ -1008,9 +1008,9 @@ okd_bm_worker_shutdown() {
 }
 
 okd_bm_worker_startup() {
-  kubectl patch machineset okd-4ww5p-worker-1 -n openshift-machine-api --type='merge' -p '{"spec": {"replicas": 0}}'
-  kubectl patch machineset okd-4ww5p-worker-2 -n openshift-machine-api --type='merge' -p '{"spec": {"replicas": 0}}'
-  kubectl patch machineset okd-4ww5p-worker-3 -n openshift-machine-api --type='merge' -p '{"spec": {"replicas": 0}}'
+  kubectl patch machineset okd-4ww5p-worker-1 -n openshift-machine-api --type='merge' -p '{"spec": {"replicas": 1}}'
+  kubectl patch machineset okd-4ww5p-worker-2 -n openshift-machine-api --type='merge' -p '{"spec": {"replicas": 1}}'
+  kubectl patch machineset okd-4ww5p-worker-3 -n openshift-machine-api --type='merge' -p '{"spec": {"replicas": 1}}'
 }
 
 
