@@ -2,20 +2,20 @@ terraform {
   required_providers {
     google = {
       source  = "hashicorp/google"
-      version = "5.1.0"
+      version = "5.45.2"
     }
     vault = {
       source  = "hashicorp/vault"
-      version = "3.21.0"
+      version = "3.25.0"
     }
     zitadel = {
       source  = "zitadel/zitadel"
-      version = "1.2.0"
+      version = "1.3.0"
 
     }
     http = {
       source  = "hashicorp/http"
-      version = "3.4.3"
+      version = "3.5.0"
     }
     # truenas = {
     #   source  = "dariusbakunas/truenas"
