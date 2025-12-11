@@ -1,7 +1,11 @@
+# renovate: datasource=docker depName=quay.io/projectquay/clair-action
 FROM quay.io/projectquay/clair-action:v0.0.12@sha256:adfc28d51f08b82978aa6dc41b166b05a2a728fa9643c3a1b73b2032f18e7c30 AS clair
 
+# renovate: datasource=docker depName=node
 FROM node:25.1.1-trixie@sha256:ccfd9da46058b24d485214e14b8d38761665553cc47fb943155e2685b4fb5914 AS node-tools
+# renovate: datasource=npm depName=markdownlint-cli
 ENV MARKDOWNLINT_CLI_VERSION=0.47.0
+# renovate: datasource=npm depName=prettier
 ENV PRETTIER_CLI_VERSION=3.7.4
 RUN npm install -g \
   markdownlint-cli@${MARKDOWNLINT_CLI_VERSION} \
@@ -10,15 +14,25 @@ RUN npm install -g \
 FROM quay.io/centos/centos:stream10-minimal
 
 ENV \
+  # renovate: datasource=github-releases depName=argoproj-labs/argocd-vault-plugin
   ARGOCD_VAULT_VERSION=1.18.1 \
+  # renovate: datasource=github-releases depName=okd-project/okd
   OKD_VERSION=4.21.0-okd-scos.ec.13\
+  # renovate: datasource=github-releases depName=opentofu/opentofu
   OPENTOFU_VERSION=1.11.1 \
+  # renovate: datasource=github-releases depName=hashicorp/vault
   VAULT_VERSION=1.21.1 \
+  # renovate: datasource=github-releases depName=ko-build/ko
   KO_VERSION=0.18.0 \
+  # renovate: datasource=github-releases depName=cli/cli
   GH_VERSION=2.83.2 \
+  # renovate: datasource=github-releases depName=yannh/kubeconform
   KUBECONFORM_VERSION=0.7.0 \
+  # renovate: datasource=pypi depName=ansible
   ANSIBLE_VERSION=13.1.0 \
+  # renovate: datasource=github-releases depName=google-cloud-sdk/google-cloud-sdk
   GCLOUD_VERSION=549.0.0 \
+  # renovate: datasource=golang-version depName=go
   GO_VERSION=1.25.5 \
   LANG=en_US.UTF-8 \
   LC_ALL=en_US.UTF-8 \
