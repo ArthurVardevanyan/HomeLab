@@ -1,0 +1,15 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - ./namespace.yaml
+  - ./cronjob.yaml
+  - ./secret.yaml
+  - ./pvc.yaml
+  - ./network-policy.yaml
+generatorOptions:
+  disableNameSuffixHash: true
+configMapGenerator:
+  - files:
+      - config.json
+    name: renovate-config
+    namespace: renovate
