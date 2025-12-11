@@ -1,0 +1,79 @@
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: renovate-bot
+  namespace: renovate
+spec:
+  schedule: "2 0 * * *"
+  concurrencyPolicy: Forbid
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          securityContext:
+            runAsUser: 12021
+            fsGroup: 12021
+          enableServiceLinks: false
+          restartPolicy: Never
+          dnsPolicy: ClusterFirst
+          schedulerName: default-scheduler
+          terminationGracePeriodSeconds: 300
+          automountServiceAccountToken: false
+          serviceAccountName: renovate
+          containers:
+            # renovate: datasource=docker depName=docker.io/renovate/renovate
+            - image: docker.io/renovate/renovate:42.46.0-full@sha256:d3adb6676f6f02cdbf58eb9ae71aa38cd44027bcd32fd2557f200485a4d3c93a
+              name: renovate-bot
+              resources:
+                limits:
+                  cpu: 250m
+                  memory: 1Gi
+                requests:
+                  cpu: 10m
+                  memory: 512Mi
+              securityContext:
+                runAsNonRoot: true
+                readOnlyRootFilesystem: true
+                allowPrivilegeEscalation: false
+                seccompProfile:
+                  type: RuntimeDefault
+                capabilities:
+                  drop:
+                    - ALL
+              env:
+                - name: RENOVATE_AUTODISCOVER
+                  value: "false"
+                - name: RENOVATE_BASE_DIR
+                  value: "/tmp/renovate/"
+                - name: RENOVATE_CONFIG_FILE
+                  value: "/opt/renovate/config.json"
+                - name: RENOVATE_CONFIG_VALIDATION_ERROR
+                  value: "true"
+                - name: LOG_LEVEL
+                  value: debug
+              envFrom:
+                - secretRef:
+                    name: renovate-env
+              volumeMounts:
+                - name: config-volume
+                  mountPath: /opt/renovate/
+                - name: work-volume
+                  mountPath: /tmp/renovate/
+                - name: tmp
+                  mountPath: /tmp/
+                - name: home
+                  mountPath: /home/ubuntu/
+          volumes:
+            - name: config-volume
+              configMap:
+                name: renovate-config
+            - name: work-volume
+              persistentVolumeClaim:
+                claimName: cache
+            - name: tmp
+              emptyDir:
+                sizeLimit: "512Mi"
+            - name: home
+              emptyDir:
+                sizeLimit: "512Mi"
