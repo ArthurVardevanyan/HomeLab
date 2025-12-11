@@ -1,0 +1,63 @@
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: renovate-bot
+  namespace: renovate
+spec:
+  schedule: "2 0 * * *"
+  concurrencyPolicy: Forbid
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          enableServiceLinks: false
+          restartPolicy: Never
+          dnsPolicy: ClusterFirst
+          schedulerName: default-scheduler
+          terminationGracePeriodSeconds: 300
+          automountServiceAccountToken: false
+          containers:
+            # renovate: datasource=docker depName=docker.io/renovate/renovate
+            - image: docker.io/renovate/renovate:42.39.2@sha256:da079ea139fc66e1897a54bf501ac88b12339125a94d1d5745dcca05b9982f72
+              name: renovate-bot
+              resources:
+                limits:
+                  cpu: 100m
+                  memory: 1Gi
+                requests:
+                  cpu: 10m
+                  memory: 512Mi
+              securityContext:
+                runAsNonRoot: true
+                readOnlyRootFilesystem: true
+                allowPrivilegeEscalation: false
+                seccompProfile:
+                  type: RuntimeDefault
+                capabilities:
+                  drop:
+                    - ALL
+              env:
+                - name: RENOVATE_AUTODISCOVER
+                  value: "false"
+                - name: RENOVATE_BASE_DIR
+                  value: "/tmp/renovate/"
+                - name: RENOVATE_CONFIG_FILE
+                  value: "/opt/renovate/config.json"
+                - name: LOG_LEVEL
+                  value: debug
+              envFrom:
+                - secretRef:
+                    name: renovate-env
+              volumeMounts:
+                - name: config-volume
+                  mountPath: /opt/renovate/
+                - name: work-volume
+                  mountPath: /tmp/renovate/
+          volumes:
+            - name: config-volume
+              configMap:
+                name: renovate-config
+            - name: work-volume
+              persistentVolumeClaim:
+                claimName: cache

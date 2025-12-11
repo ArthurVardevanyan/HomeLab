@@ -1,0 +1,710 @@
+apiVersion: k8s.ovn.org/v1
+kind: EgressFirewall
+metadata:
+  name: default
+  namespace: renovate
+spec:
+  egress:
+    - type: Allow
+      to:
+        dnsName: registry.arthurvardevanyan.com.
+    # https://www.cloudflare.com/ips/
+    # Cloudflare IP Ranges
+    - type: Allow
+      to:
+        dnsName: production.cloudflare.docker.com
+    - type: Allow
+      to:
+        cidrSelector: 104.16.0.0/13
+    - type: Allow
+      to:
+        cidrSelector: 104.24.0.0/14
+    - type: Allow
+      to:
+        cidrSelector: 172.64.0.0/13
+    # Amazon IP Range
+    # https://ip-ranges.amazonaws.com/ip-ranges.json
+    - type: Allow
+      to:
+        cidrSelector: 52.44.0.0/15
+    - type: Allow
+      to:
+        cidrSelector: 54.236.0.0/15
+    # Google Range
+    # https://support.google.com/a/answer/10026322?hl=en
+    # https://www.gstatic.com/ipranges/goog.json
+    - type: Allow
+      to:
+        cidrSelector: 34.64.0.0/10
+    - type: Allow
+      to:
+        cidrSelector: 216.239.38.21/32
+    - type: Allow
+      to:
+        cidrSelector: 216.239.36.21/32
+    - type: Allow
+      to:
+        cidrSelector: 216.239.34.21/32
+    - type: Allow
+      to:
+        cidrSelector: 216.239.32.21/32
+    - type: Allow
+      to:
+        cidrSelector: 192.178.0.0/15
+    - type: Allow
+      to:
+        cidrSelector: 142.250.0.0/15
+    - type: Allow
+      to:
+        cidrSelector: 172.217.0.0/16
+    # Akamai
+    - type: Allow
+      to:
+        cidrSelector: 172.105.78.0/24
+    - type: Allow
+      to:
+        cidrSelector: 172.105.78.12/32
+    - type: Allow
+      to:
+        cidrSelector: 23.221.236.0/24
+    - type: Allow
+      to:
+        dnsName: registry.arthurvardevanyan.com
+    - type: Allow
+      to:
+        dnsName: apps.okd.homelab.arthurvardevanyan.com
+    - type: Allow
+      to:
+        dnsName: app.okd.homelab.arthurvardevanyan.com
+    - type: Allow
+      to:
+        cidrSelector: 10.101.10.5/32
+    - type: Allow
+      to:
+        dnsName: zitadel.arthurvardevanyan.com
+    - type: Allow
+      to:
+        dnsName: cgr.dev
+    - type: Allow
+      to:
+        dnsName: docker.dragonflydb.io
+    - type: Allow
+      to:
+        dnsName: docker.io
+    - type: Allow
+      to:
+        dnsName: registry-1.docker.io
+    - type: Allow
+      to:
+        cidrSelector: 162.158.0.0/15
+    - type: Allow
+      to:
+        dnsName: ghcr.io
+    - type: Allow
+      to:
+        dnsName: gcr.io
+    - type: Allow
+      to:
+        dnsName: quay.io
+    - type: Allow
+      to:
+        dnsName: cdn.quay.io
+    - type: Allow
+      to:
+        dnsName: cdn01.quay.io
+    - type: Allow
+      to:
+        dnsName: cdn02.quay.io
+    - type: Allow
+      to:
+        dnsName: cdn03.quay.io
+    - type: Allow
+      to:
+        dnsName: cdn04.quay.io
+    - type: Allow
+      to:
+        dnsName: cdn05.quay.io
+    - type: Allow
+      to:
+        dnsName: cdn06.quay.io
+    - type: Allow
+      to:
+        dnsName: registry.access.redhat.com
+    - type: Allow
+      to:
+        dnsName: access.redhat.com
+    - type: Allow
+      to:
+        dnsName: registry.developers.crunchydata.com
+    - type: Allow
+      to:
+        dnsName: registry.redhat.io
+    - type: Allow
+      to:
+        dnsName: registry.connect.redhat.com
+    - type: Allow
+      to:
+        dnsName: cdn-ubi.redhat.com
+    - type: Allow
+      to:
+        dnsName: sso.redhat.com
+    - type: Allow
+      to:
+        dnsName: security.access.redhat.com
+      # https://github.com/quay/quay-docs/blob/master/modules/clair-updater-urls.adoc
+    - type: Allow
+      to:
+        dnsName: secdb.alpinelinux.org
+    - type: Allow
+      to:
+        dnsName: deu1-dev1.alpinelinux.org
+    - type: Allow
+      to:
+        dnsName: repo.us-west-2.amazonaws.com
+    - type: Allow
+      to:
+        dnsName: cdn.amazonlinux.com
+    - type: Allow
+      to:
+        dnsName: cdn.amazonlinux.com
+    - type: Allow
+      to:
+        dnsName: deb.debian.org
+    - type: Allow
+      to:
+        dnsName: security-tracker.debian.org
+    - type: Allow
+      to:
+        dnsName: nvd.nist.gov
+    - type: Allow
+      to:
+        dnsName: linux.oracle.com
+    - type: Allow
+      to:
+        dnsName: packages.vmware.com
+    - type: Allow
+      to:
+        dnsName: support.novell.com
+    - type: Allow
+      to:
+        dnsName: security-metadata.canonical.com
+    - type: Allow
+      to:
+        dnsName: api.launchpad.net
+    - type: Allow
+      to:
+        dnsName: osv-vulnerabilities.storage.googleapis.com
+    # Golang
+    # https://support.google.com/a/answer/10026322?hl=en
+    # https://www.gstatic.com/ipranges/goog.json
+    - type: Allow
+      to:
+        dnsName: pkg.go.dev
+    - type: Allow
+      to:
+        cidrSelector: 34.128.0.0/10
+    # GitHub Apis
+    # https://api.github.com/meta
+    - type: Allow
+      to:
+        dnsName: github.com
+    - type: Allow
+      to:
+        dnsName: api.github.com
+    - type: Allow
+      to:
+        dnsName: pkg-containers.githubusercontent.com
+    - type: Allow
+      to:
+        cidrSelector: "185.199.108.0/22"
+    # registry.k8s.io / GitHub
+    - type: Allow
+      to:
+        dnsName: registry.k8s.io
+    - type: Allow
+      to:
+        cidrSelector: 34.96.108.209/32
+    - type: Allow
+      to:
+        cidrSelector: 52.219.103.0/24
+    - type: Allow
+      to:
+        cidrSelector: 3.5.128.0/2
+      # https://api.github.com/meta
+    - type: Allow
+      to:
+        cidrSelector: 140.82.114.0/24
+    # Quay CIDR List
+    # https://access.redhat.com/articles/1525183
+    - type: Allow
+      to:
+        cidrSelector: 104.67.28.83/32
+    - type: Allow
+      to:
+        cidrSelector: 104.68.188.83/32
+    - type: Allow
+      to:
+        cidrSelector: 104.76.92.83/32
+    - type: Allow
+      to:
+        cidrSelector: 104.78.76.83/32
+    - type: Allow
+      to:
+        cidrSelector: 104.81.246.83/32
+    - type: Allow
+      to:
+        cidrSelector: 104.82.76.83/32
+    - type: Allow
+      to:
+        cidrSelector: 104.83.76.83/32
+    - type: Allow
+      to:
+        cidrSelector: 104.83.82.83/32
+    - type: Allow
+      to:
+        cidrSelector: 104.83.92.83/32
+    - type: Allow
+      to:
+        cidrSelector: 104.91.156.90/32
+    - type: Allow
+      to:
+        cidrSelector: 104.94.102.83/32
+    - type: Allow
+      to:
+        cidrSelector: 104.98.240.125/32
+    - type: Allow
+      to:
+        cidrSelector: 114.108.188.251/32
+    - type: Allow
+      to:
+        cidrSelector: 173.222.100.251/32
+    - type: Allow
+      to:
+        cidrSelector: 173.222.116.251/32
+    - type: Allow
+      to:
+        cidrSelector: 173.222.140.251/32
+    - type: Allow
+      to:
+        cidrSelector: 173.222.144.251/32
+    - type: Allow
+      to:
+        cidrSelector: 173.222.152.251/32
+    - type: Allow
+      to:
+        cidrSelector: 173.222.164.251/32
+    - type: Allow
+      to:
+        cidrSelector: 173.222.188.251/32
+    - type: Allow
+      to:
+        cidrSelector: 173.222.192.251/32
+    - type: Allow
+      to:
+        cidrSelector: 173.222.204.251/32
+    - type: Allow
+      to:
+        cidrSelector: 173.222.212.251/32
+    - type: Allow
+      to:
+        cidrSelector: 173.222.216.251/32
+    - type: Allow
+      to:
+        cidrSelector: 173.222.224.251/32
+    - type: Allow
+      to:
+        cidrSelector: 173.222.244.251/32
+    - type: Allow
+      to:
+        cidrSelector: 173.223.140.251/32
+    - type: Allow
+      to:
+        cidrSelector: 173.223.152.251/32
+    - type: Allow
+      to:
+        cidrSelector: 173.223.172.251/32
+    - type: Allow
+      to:
+        cidrSelector: 173.223.228.251/32
+    - type: Allow
+      to:
+        cidrSelector: 173.223.36.251/32
+    - type: Allow
+      to:
+        cidrSelector: 173.223.48.251/32
+    - type: Allow
+      to:
+        cidrSelector: 173.223.92.83/32
+    - type: Allow
+      to:
+        cidrSelector: 182.51.200.251/32
+    - type: Allow
+      to:
+        cidrSelector: 184.26.176.251/32
+    - type: Allow
+      to:
+        cidrSelector: 184.26.180.251/32
+    - type: Allow
+      to:
+        cidrSelector: 184.27.248.251/32
+    - type: Allow
+      to:
+        cidrSelector: 184.27.40.251/32
+    - type: Allow
+      to:
+        cidrSelector: 184.50.16.251/32
+    - type: Allow
+      to:
+        cidrSelector: 184.51.24.251/32
+    - type: Allow
+      to:
+        cidrSelector: 184.51.36.251/32
+    - type: Allow
+      to:
+        cidrSelector: 184.51.68.251/32
+    - type: Allow
+      to:
+        cidrSelector: 184.84.184.251/32
+    - type: Allow
+      to:
+        cidrSelector: 184.84.188.251/32
+    - type: Allow
+      to:
+        cidrSelector: 184.84.192.251/32
+    - type: Allow
+      to:
+        cidrSelector: 184.84.196.251/32
+    - type: Allow
+      to:
+        cidrSelector: 184.84.200.251/32
+    - type: Allow
+      to:
+        cidrSelector: 184.85.176.9/32
+    - type: Allow
+      to:
+        cidrSelector: 184.86.236.251/32
+    - type: Allow
+      to:
+        cidrSelector: 2.16.128.83/32
+    - type: Allow
+      to:
+        cidrSelector: 2.16.212.251/32
+    - type: Allow
+      to:
+        cidrSelector: 2.16.30.83/32
+    - type: Allow
+      to:
+        cidrSelector: 2.17.124.251/32
+    - type: Allow
+      to:
+        cidrSelector: 2.18.220.251/32
+    - type: Allow
+      to:
+        cidrSelector: 2.20.12.251/32
+    - type: Allow
+      to:
+        cidrSelector: 2.21.145.130/32
+    - type: Allow
+      to:
+        cidrSelector: 2.22.0.251/32
+    - type: Allow
+      to:
+        cidrSelector: 2.22.12.251/32
+    - type: Allow
+      to:
+        cidrSelector: 2.22.220.83/32
+    - type: Allow
+      to:
+        cidrSelector: 209.132.183.107/32
+    - type: Allow
+      to:
+        cidrSelector: 209.132.183.108/32
+    - type: Allow
+      to:
+        cidrSelector: 23.0.172.83/32
+    - type: Allow
+      to:
+        cidrSelector: 23.0.230.83/32
+    - type: Allow
+      to:
+        cidrSelector: 23.0.236.83/32
+    - type: Allow
+      to:
+        cidrSelector: 23.1.188.83/32
+    - type: Allow
+      to:
+        cidrSelector: 23.1.44.251/32
+    - type: Allow
+      to:
+        cidrSelector: 23.1.8.251/32
+    - type: Allow
+      to:
+        cidrSelector: 23.10.12.83/32
+    - type: Allow
+      to:
+        cidrSelector: 23.10.60.83/32
+    - type: Allow
+      to:
+        cidrSelector: 23.12.236.83/32
+    - type: Allow
+      to:
+        cidrSelector: 23.13.176.251/32
+    - type: Allow
+      to:
+        cidrSelector: 23.13.44.83/32
+    - type: Allow
+      to:
+        cidrSelector: 23.14.44.83/32
+    - type: Allow
+      to:
+        cidrSelector: 23.15.132.83/32
+    - type: Allow
+      to:
+        cidrSelector: 23.15.204.251/32
+    - type: Allow
+      to:
+        cidrSelector: 23.15.248.251/32
+    - type: Allow
+      to:
+        cidrSelector: 23.194.220.83/32
+    - type: Allow
+      to:
+        cidrSelector: 23.194.236.91/32
+    - type: Allow
+      to:
+        cidrSelector: 23.197.60.83/32
+    - type: Allow
+      to:
+        cidrSelector: 23.198.104.83/32
+    - type: Allow
+      to:
+        cidrSelector: 23.198.106.83/32
+    - type: Allow
+      to:
+        cidrSelector: 23.204.100.83/32
+    - type: Allow
+      to:
+        cidrSelector: 23.206.76.83/32
+    - type: Allow
+      to:
+        cidrSelector: 23.207.148.112/32
+    - type: Allow
+      to:
+        cidrSelector: 23.212.102.83/32
+    - type: Allow
+      to:
+        cidrSelector: 23.215.140.83/32
+    - type: Allow
+      to:
+        cidrSelector: 23.221.20.83/32
+    - type: Allow
+      to:
+        cidrSelector: 23.222.172.83/32
+    - type: Allow
+      to:
+        cidrSelector: 23.223.76.83/32
+    - type: Allow
+      to:
+        cidrSelector: 23.3.140.251/32
+    - type: Allow
+      to:
+        cidrSelector: 23.3.247.117/32
+    - type: Allow
+      to:
+        cidrSelector: 23.32.12.83/32
+    - type: Allow
+      to:
+        cidrSelector: 23.38.116.83/32
+    - type: Allow
+      to:
+        cidrSelector: 23.40.12.83/32
+    - type: Allow
+      to:
+        cidrSelector: 23.42.76.83/32
+    - type: Allow
+      to:
+        cidrSelector: 23.45.224.251/32
+    - type: Allow
+      to:
+        cidrSelector: 23.46.2.83/32
+    - type: Allow
+      to:
+        cidrSelector: 23.48.80.251/32
+    - type: Allow
+      to:
+        cidrSelector: 23.49.52.251/32
+    - type: Allow
+      to:
+        cidrSelector: 23.5.124.83/32
+    - type: Allow
+      to:
+        cidrSelector: 23.50.99.181/32
+    - type: Allow
+      to:
+        cidrSelector: 23.51.12.83/32
+    - type: Allow
+      to:
+        cidrSelector: 23.51.156.83/32
+    - type: Allow
+      to:
+        cidrSelector: 23.52.60.20/32
+    - type: Allow
+      to:
+        cidrSelector: 23.54.12.83/32
+    - type: Allow
+      to:
+        cidrSelector: 23.57.112.251/32
+    - type: Allow
+      to:
+        cidrSelector: 23.57.124.251/32
+    - type: Allow
+      to:
+        cidrSelector: 23.58.0.251/32
+    - type: Allow
+      to:
+        cidrSelector: 23.58.148.251/32
+    - type: Allow
+      to:
+        cidrSelector: 23.58.8.251/32
+    - type: Allow
+      to:
+        cidrSelector: 23.58.90.83/32
+    - type: Allow
+      to:
+        cidrSelector: 23.59.92.251/32
+    - type: Allow
+      to:
+        cidrSelector: 23.60.144.251/32
+    - type: Allow
+      to:
+        cidrSelector: 23.61.124.251/32
+    - type: Allow
+      to:
+        cidrSelector: 23.63.144.251/32
+    - type: Allow
+      to:
+        cidrSelector: 23.63.150.83/32
+    - type: Allow
+      to:
+        cidrSelector: 23.63.16.251/32
+    - type: Allow
+      to:
+        cidrSelector: 23.64.142.83/32
+    - type: Allow
+      to:
+        cidrSelector: 23.64.4.251/32
+    - type: Allow
+      to:
+        cidrSelector: 23.64.56.251/32
+    - type: Allow
+      to:
+        cidrSelector: 23.65.16.251/32
+    - type: Allow
+      to:
+        cidrSelector: 23.65.200.83/32
+    - type: Allow
+      to:
+        cidrSelector: 23.65.216.83/32
+    - type: Allow
+      to:
+        cidrSelector: 23.66.152.83/32
+    - type: Allow
+      to:
+        cidrSelector: 23.66.40.83/32
+    - type: Allow
+      to:
+        cidrSelector: 23.75.218.83/32
+    - type: Allow
+      to:
+        cidrSelector: 59.151.136.251/32
+    - type: Allow
+      to:
+        cidrSelector: 72.246.48.83/32
+    - type: Allow
+      to:
+        cidrSelector: 72.247.112.251/32
+    - type: Allow
+      to:
+        cidrSelector: 72.247.116.251/32
+    - type: Allow
+      to:
+        cidrSelector: 88.221.236.251/32
+    - type: Allow
+      to:
+        cidrSelector: 88.221.44.251/32
+    - type: Allow
+      to:
+        cidrSelector: 88.221.56.251/32
+    - type: Allow
+      to:
+        cidrSelector: 95.100.244.251/32
+    - type: Allow
+      to:
+        cidrSelector: 95.101.100.251/32
+    - type: Allow
+      to:
+        cidrSelector: 95.101.104.251/32
+    - type: Allow
+      to:
+        cidrSelector: 95.101.152.251/32
+    - type: Allow
+      to:
+        cidrSelector: 95.101.156.251/32
+    - type: Allow
+      to:
+        cidrSelector: 95.101.160.251/32
+    - type: Allow
+      to:
+        cidrSelector: 95.101.164.251/32
+    - type: Allow
+      to:
+        cidrSelector: 95.101.188.251/32
+    - type: Allow
+      to:
+        cidrSelector: 95.101.4.251/32
+    - type: Allow
+      to:
+        cidrSelector: 95.101.44.251/32
+    - type: Allow
+      to:
+        cidrSelector: 95.101.48.251/32
+    - type: Allow
+      to:
+        cidrSelector: 95.101.56.251/32
+    - type: Allow
+      to:
+        cidrSelector: 95.101.60.251/32
+    - type: Allow
+      to:
+        cidrSelector: 95.101.64.251/32
+    - type: Allow
+      to:
+        cidrSelector: 95.101.84.251/32
+    - type: Allow
+      to:
+        cidrSelector: 95.101.92.251/32
+    - type: Allow
+      to:
+        cidrSelector: 95.101.96.251/32
+    - type: Allow
+      to:
+        cidrSelector: 96.17.0.251/32
+    - type: Allow
+      to:
+        cidrSelector: 96.6.32.251/32
+    - type: Allow
+      to:
+        cidrSelector: 96.6.36.251/32
+    # Custom Quay
+    - type: Allow
+      to:
+        cidrSelector: 23.220.246.0/24 #23.220.246.45/32
+    - type: Allow
+      to:
+        cidrSelector: 23.32.45.0/24 #23.32.45.21/32
+    - type: Allow
+      to:
+        cidrSelector: 23.33.85.0/24 # 23.33.85.231/32
+    - type: Deny
+      to:
+        cidrSelector: 0.0.0.0/0
