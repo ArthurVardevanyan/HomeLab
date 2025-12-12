@@ -38,6 +38,8 @@ spec:
         - args:
             - manager
           env:
+            - name: GODEBUG
+              value: "http2client=0"
             - name: vip_arp
               value: "true"
             - name: port
@@ -66,6 +68,8 @@ spec:
               value: "true"
             - name: lb_class_only
               value: "true"
+            - name: vip_interface
+              value: "br-ex"
           image: ghcr.io/kube-vip/kube-vip:v1.0.2@sha256:ee3702abc2daeb93399c22b14aa61aa233013f2a610e64ff3864033ebb3fedbc
           imagePullPolicy: IfNotPresent
           name: kube-vip
