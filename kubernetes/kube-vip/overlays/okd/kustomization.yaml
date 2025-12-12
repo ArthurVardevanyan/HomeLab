@@ -4,3 +4,13 @@ resources:
   - ../../base
 components:
   - ../../components/openshift
+patches:
+  - patch: |-
+      - op: add
+        path: /spec/template/spec/containers/0/env/-
+        value: { "name": "egress_podcidr", "value": "10.101.32.0/19" }
+      - op: add
+        path: /spec/template/spec/containers/0/env/-
+        value: { "name": "egress_servicecidr", "value": "10.101.16.0/22" }
+    target:
+      kind: DaemonSet

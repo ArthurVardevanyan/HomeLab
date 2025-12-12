@@ -19,3 +19,12 @@ patches:
     target:
       kind: Deployment
       name: kube-vip-cloud-provider
+  - patch: |-
+      - op: add
+        path: /spec/template/spec/containers/0/env/-
+        value: { "name": "egress_podcidr", "value": "10.42.0.0/16" }
+      - op: add
+        path: /spec/template/spec/containers/0/env/-
+        value: { "name": "egress_servicecidr", "value": "10.43.0.0/16" }
+    target:
+      kind: DaemonSet

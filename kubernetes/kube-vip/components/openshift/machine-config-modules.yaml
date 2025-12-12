@@ -1,0 +1,35 @@
+apiVersion: machineconfiguration.openshift.io/v1
+kind: MachineConfig
+metadata:
+  labels:
+    machineconfiguration.openshift.io/role: master
+  name: 72-kube-vip-modules-master
+spec:
+  config:
+    ignition:
+      version: 3.2.0
+    storage:
+      files:
+        - contents:
+            source: data:text/plain;charset=utf-8;base64,aXB0YWJsZV9maWx0ZXIKaXB0YWJsZV9uYXQKaXB0YWJsZV9tYW5nbGUK
+          mode: 420
+          overwrite: true
+          path: /etc/modules-load.d/kube-vip.conf
+---
+apiVersion: machineconfiguration.openshift.io/v1
+kind: MachineConfig
+metadata:
+  labels:
+    machineconfiguration.openshift.io/role: worker
+  name: 72-kube-vip-modules-worker
+spec:
+  config:
+    ignition:
+      version: 3.2.0
+    storage:
+      files:
+        - contents:
+            source: data:text/plain;charset=utf-8;base64,aXB0YWJsZV9maWx0ZXIKaXB0YWJsZV9uYXQKaXB0YWJsZV9tYW5nbGUK
+          mode: 420
+          overwrite: true
+          path: /etc/modules-load.d/kube-vip.conf

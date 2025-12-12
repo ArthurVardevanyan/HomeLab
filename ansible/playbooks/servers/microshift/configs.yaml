@@ -15,6 +15,20 @@
       copy:
         src: "../../../../machineConfigs/servers/microshift/boot/cmdline.txt"
         dest: "/boot/cmdline.txt"
+    - name: Load iptables modules
+      command: modprobe {{ item }}
+      loop:
+        - iptable_filter
+        - iptable_nat
+        - iptable_mangle
+      ignore_errors: yes
+    - name: Persist iptables modules
+      copy:
+        dest: /etc/modules-load.d/kube-vip.conf
+        content: |
+          iptable_filter
+          iptable_nat
+          iptable_mangle
     - name: create partition
       parted:
         device: /dev/nvme0n1
