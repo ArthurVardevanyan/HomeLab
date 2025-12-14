@@ -29,6 +29,13 @@ patches:
       name: sensor
   - patch: |-
       - op: replace
+        path: /spec/replicas
+        value: 1
+    target:
+      kind: Deployment
+      name: admission-control
+  - patch: |-
+      - op: replace
         path: /spec/data/0/remoteRef/key
         value: /homelab/stackrox/microshift
     target:
