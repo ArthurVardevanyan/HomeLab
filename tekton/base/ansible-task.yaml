@@ -1,3 +1,4 @@
+---
 apiVersion: tekton.dev/v1
 kind: Task
 metadata:
@@ -34,7 +35,7 @@ spec:
           memory: 128Mi
       securityContext:
         runAsNonRoot: true
-        #runAsUser: 65532
+        # runAsUser: 65532
         privileged: false
         readOnlyRootFilesystem: true
         allowPrivilegeEscalation: false
@@ -78,7 +79,6 @@ spec:
         export SSH_PRIVATE_KEY="$(vault kv get -field=private_key secret/gitlab/ssh)"
         export SUDO="$(vault kv get -field=sudo secret/gitlab/ssh)"
         export PULL_SECRET="$(vault kv get -field=auth secret/docker)"
-
 
         export DISCORD="$(vault kv get -field=webhook secret/gitlab/discord)"
         sed -i "s,REPLACE_ME,${DISCORD},g" ${WORKSPACE_DATA_PATH}/machineConfigs/servers/server/home/arthur/discord/discord_bot.sh

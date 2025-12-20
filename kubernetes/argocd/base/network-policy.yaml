@@ -1,3 +1,4 @@
+---
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
@@ -214,9 +215,9 @@ spec:
   egress:
     - to:
         - ipBlock:
-            cidr: 10.101.10.5/32 # OKD WildCard
+            cidr: 10.101.10.5/32  # OKD WildCard
         - ipBlock:
-            cidr: 10.101.10.7/32 # OKD APP WildCard
+            cidr: 10.101.10.7/32  # OKD APP WildCard
 
 ---
 apiVersion: networking.k8s.io/v1
@@ -235,11 +236,11 @@ spec:
   egress:
     - to:
         - ipBlock:
-            cidr: 10.101.10.5/32 # OKD WildCard
+            cidr: 10.101.10.5/32  # OKD WildCard
         - ipBlock:
-            cidr: 10.101.10.7/32 # OKD APP WildCard
+            cidr: 10.101.10.7/32  # OKD APP WildCard
         - ipBlock:
-            cidr: 10.0.0.5/32 # K3S
+            cidr: 10.0.0.5/32  # K3S
 ---
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
@@ -257,7 +258,7 @@ spec:
   egress:
     - to:
         - ipBlock:
-            cidr: 10.101.1.7/32 # Microshift
+            cidr: 10.101.1.7/32  # Microshift
 ---
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
@@ -279,9 +280,9 @@ spec:
               network.openshift.io/policy-group: ingress
       ports:
         - protocol: TCP
-          port: 443 # Passthrough/ReEncrypt Termination
+          port: 443  # Passthrough/ReEncrypt Termination
         - protocol: TCP
-          port: 80 # Edge Termination
+          port: 80  # Edge Termination
 # ---
 # apiVersion: networking.k8s.io/v1
 # kind: NetworkPolicy

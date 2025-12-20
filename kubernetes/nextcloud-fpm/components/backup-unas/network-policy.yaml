@@ -1,3 +1,4 @@
+---
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
@@ -14,7 +15,7 @@ spec:
   egress:
     - to:
         - ipBlock:
-            cidr: 10.102.1.6/32 # unas.arthurvardevanyan.com.
+            cidr: 10.102.1.6/32  # unas.arthurvardevanyan.com.
       ports:
         - protocol: TCP
           port: 445
@@ -42,6 +43,6 @@ spec:
               network.openshift.io/policy-group: ingress
       ports:
         - protocol: TCP
-          port: 443 # Passthrough/ReEncrypt Termination
+          port: 443  # Passthrough/ReEncrypt Termination
         - protocol: TCP
-          port: 80 # Edge Termination
+          port: 80  # Edge Termination

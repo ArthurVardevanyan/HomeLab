@@ -1,3 +1,4 @@
+---
 kind: StatefulSet
 apiVersion: apps/v1
 metadata:
@@ -37,7 +38,7 @@ spec:
           - name: net.ipv4.ip_unprivileged_port_start
             value: "0"
         runAsNonRoot: true
-      dnsPolicy: ClusterFirst # None
+      dnsPolicy: ClusterFirst  # None
       dnsConfig:
         nameservers:
           - 10.101.11.1
@@ -73,7 +74,7 @@ spec:
                 - ALL
           readinessProbe:
             exec:
-              command: ["dig", "@127.0.0.1"] #, "cloudflare.com"]
+              command: ["dig", "@127.0.0.1"]  # , "cloudflare.com"]
             initialDelaySeconds: 15
             timeoutSeconds: 20
             periodSeconds: 30

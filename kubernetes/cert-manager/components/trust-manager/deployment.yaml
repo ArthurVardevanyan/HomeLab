@@ -63,9 +63,9 @@ spec:
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 6443
-              name: webhook # for the PodMonitor port field
+              name: webhook  # for the PodMonitor port field
             - containerPort: 9402
-              name: metrics # for the PodMonitor port field
+              name: metrics  # for the PodMonitor port field
           readinessProbe:
             httpGet:
               port: 6060
@@ -81,9 +81,9 @@ spec:
             - "--leader-elect=true"
             - "--leader-election-lease-duration=15s"
             - "--leader-election-renew-deadline=10s"
-              # trust
+            # trust
             - "--trust-namespace=cert-manager"
-              # webhook
+            # webhook
             - "--webhook-host=0.0.0.0"
             - "--webhook-port=6443"
             - "--webhook-certificate-dir=/tls"

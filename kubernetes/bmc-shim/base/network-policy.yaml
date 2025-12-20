@@ -1,3 +1,4 @@
+---
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
@@ -52,9 +53,9 @@ spec:
               network.openshift.io/policy-group: ingress
       ports:
         - protocol: TCP
-          port: 443 # Passthrough/ReEncrypt Termination
+          port: 443  # Passthrough/ReEncrypt Termination
         - protocol: TCP
-          port: 80 # Edge Termination
+          port: 80  # Edge Termination
 ---
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
@@ -96,9 +97,9 @@ spec:
   egress:
     - to:
         - ipBlock:
-            cidr: 10.101.10.7/32 # OKD APP WildCard
+            cidr: 10.101.10.7/32  # OKD APP WildCard
       ports:
         - protocol: TCP
-          port: 443 # Passthrough/ReEncrypt Termination
+          port: 443  # Passthrough/ReEncrypt Termination
         - protocol: TCP
-          port: 80 # Edge Termination
+          port: 80  # Edge Termination
