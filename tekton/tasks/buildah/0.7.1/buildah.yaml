@@ -32,7 +32,7 @@ spec:
       default: quay.io/buildah/stable:v1.38.0
     - name: STORAGE_DRIVER
       description: Set buildah storage driver
-      default: vfs  # overlay
+      default: vfs # overlay
     - name: DOCKERFILE
       description: Path to the Dockerfile to build.
       default: ./Dockerfile
@@ -51,7 +51,7 @@ spec:
     - name: PUSH_EXTRA_ARGS
       description: Extra parameters passed for the push command when pushing images.
       type: string
-      default: ""  # --compression-format zstd:chunked"
+      default: "" # --compression-format zstd:chunked"
     - name: SKIP_PUSH
       description: Skip pushing the built image
       default: "false"
@@ -118,11 +118,11 @@ spec:
           mountPath: /var/run
         - name: cache
           mountPath: /var/cache
-        - name: networks  # TODO Circle Back to This.
+        - name: networks # TODO Circle Back to This.
           mountPath: /etc/containers/networks
       securityContext:
         # runAsNonRoot: true
-        runAsUser: 0  #1000 # 65532
+        runAsUser: 0 #1000 # 65532
         privileged: false
         readOnlyRootFilesystem: true
         allowPrivilegeEscalation: false
@@ -179,6 +179,6 @@ spec:
     - name: cache
       emptyDir:
         sizeLimit: 1Mi
-    - name: networks  # TODO Circle Back to This.
+    - name: networks # TODO Circle Back to This.
       emptyDir:
         sizeLimit: 1Mi

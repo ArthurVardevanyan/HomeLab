@@ -37,7 +37,7 @@ spec:
           - name: net.ipv4.ip_unprivileged_port_start
             value: "0"
         runAsNonRoot: true
-      dnsPolicy: ClusterFirst  # None
+      dnsPolicy: ClusterFirst # None
       dnsConfig:
         nameservers:
           - 10.102.3.1
@@ -56,7 +56,7 @@ spec:
             - name: FTLCONF_dns_cache_size
               value: "10000"
             - name: FTLCONF_dns_upstreams
-              value: "10.101.11.4;10.101.11.5"  # "10.101.11.5"
+              value: "10.101.11.4;10.101.11.5" # "10.101.11.5"
             - name: FTLCONF_misc_etc_dnsmasq_d
               value: "true"
           securityContext:
@@ -73,7 +73,7 @@ spec:
                 - ALL
           readinessProbe:
             exec:
-              command: ["dig", "@127.0.0.1"]  # , "cloudflare.com"]
+              command: ["dig", "@127.0.0.1"] # , "cloudflare.com"]
             initialDelaySeconds: 15
             timeoutSeconds: 20
             periodSeconds: 30

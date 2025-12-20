@@ -6,7 +6,7 @@ metadata:
   namespace: awx
 ---
 apiVersion: rbac.authorization.k8s.io/v1
-kind: ClusterRole  # TODO Why is it cluster scoping the Operator
+kind: ClusterRole # TODO Why is it cluster scoping the Operator
 metadata:
   name: awx-operator-awx-manager-role
   namespace: awx
@@ -237,13 +237,13 @@ rules:
       - "watch"
 ---
 apiVersion: rbac.authorization.k8s.io/v1
-kind: ClusterRoleBinding  # TODO Why is it cluster scoping the Operator
+kind: ClusterRoleBinding # TODO Why is it cluster scoping the Operator
 metadata:
   name: awx-operator-awx-manager-rolebinding
   namespace: awx
 roleRef:
   apiGroup: rbac.authorization.k8s.io
-  kind: ClusterRole  # TODO Why is it cluster scoping the Operator
+  kind: ClusterRole # TODO Why is it cluster scoping the Operator
   name: awx-operator-awx-manager-role
 subjects:
   - kind: ServiceAccount

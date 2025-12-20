@@ -100,12 +100,11 @@ spec:
         - name: init-max-children
           # https://github.com/nextcloud/helm/pull/752
           image: docker.io/nextcloud:32.0.2-fpm
-          command: [
-            "sh",
-            "-c",
-            "echo 'pm = dynamic\npm.max_children = 25\npm.start_servers
-              = 5\npm.min_spare_servers = 5\npm.max_spare_servers = 10' > /usr/local/etc/php-fpm.d/www.conf",
-          ]
+          command:
+            - "sh"
+            - "-c"
+            - "echo 'pm = dynamic\\npm.max_children = 25\\npm.start_servers
+              = 5\\npm.min_spare_servers = 5\\npm.max_spare_servers = 10' > /usr/local/etc/php-fpm.d/www.conf"
           resources:
             limits:
               cpu: 50m
@@ -234,7 +233,7 @@ spec:
             - name: tmp
               mountPath: /tmp
             - name: php-conf
-              mountPath: "/usr/local/etc/php/conf.d/redis-session.ini"  # fix permission denied error
+              mountPath: "/usr/local/etc/php/conf.d/redis-session.ini" # fix permission denied error
               subPath: redis-session.ini
             - name: www-conf
               mountPath: "/usr/local/etc/php-fpm.d/www.conf"

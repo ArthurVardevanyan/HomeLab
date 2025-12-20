@@ -8,7 +8,7 @@ metadata:
     app: ntp-rootless
     app.kubernetes.io/instance: ntp
 spec:
-  replicas: 1  # 2
+  replicas: 1 # 2
   strategy:
     type: RollingUpdate
   revisionHistoryLimit: 0
@@ -58,7 +58,7 @@ spec:
           imagePullPolicy: IfNotPresent
           name: ntp-rootless
           ports:
-            - containerPort: 123  # 12345
+            - containerPort: 123 # 12345
               name: ntp
               protocol: UDP
             - containerPort: 9433
@@ -89,7 +89,7 @@ spec:
             - name: SKIP_CHOWN
               value: "true"
             - name: PORT
-              value: "123"  # 12345
+              value: "123" # 12345
             - name: CMDPORT
               value: "10323"
             - name: ENABLE_NTS
@@ -112,7 +112,7 @@ spec:
             - name: ntp-var-run
               mountPath: /var/run/chrony
           livenessProbe:
-            exec:  # /usr/bin/chronyc -h 127.0.0.1 -p 10323 sources
+            exec: # /usr/bin/chronyc -h 127.0.0.1 -p 10323 sources
               command:
                 - /usr/bin/chronyc
                 - -h
@@ -126,7 +126,7 @@ spec:
             successThreshold: 1
             failureThreshold: 5
           readinessProbe:
-            exec:  # /usr/bin/chronyc -h 127.0.0.1 -p 10323 sources
+            exec: # /usr/bin/chronyc -h 127.0.0.1 -p 10323 sources
               command:
                 - /usr/bin/chronyc
                 - -h
