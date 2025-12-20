@@ -50,6 +50,7 @@ spec:
       containers:
         - name: prometheus
           imagePullPolicy: IfNotPresent
+          # renovate: datasource=docker depName=docker.io/prom/prometheus
           image: docker.io/prom/prometheus:v3.7.3@sha256:49214755b6153f90a597adcbff0252cc61069f8ab69ce8411285cd4a560e8038
           securityContext:
             # runAsGroup: 65534
@@ -101,6 +102,7 @@ spec:
               mountPath: /prometheus_data/
         # https://hackernoon.com/kubernetes-monitoring-with-prometheus-and-thanos-z91w3uc2
         - name: thanos-nas
+          # renovate: datasource=docker depName=quay.io/thanos/thanos
           image: quay.io/thanos/thanos:v0.40.1@sha256:aae7b2b030ed00d88abd8c5a357d08b46f22151ca0d50d9c796223fa332389c8
           securityContext:
             runAsNonRoot: true

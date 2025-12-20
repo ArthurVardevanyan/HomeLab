@@ -769,10 +769,6 @@ install_addons() {
   sed -i "s/<URL>/${URL}/g" /tmp/kubernetes/prometheus/prometheus-traefik.yaml
   kubectl apply -f /tmp/kubernetes/prometheus
 
-  echo -e "\n${BLUE}Image Version Checker:${NC}"
-  kubectl apply -f /tmp/kubernetes/version-checker/version-checker-namespace.yaml
-  kubectl apply -f /tmp/kubernetes/version-checker
-
   echo -e "\n${BLUE}Grafana:${NC}"
   kubectl apply -f /tmp/kubernetes/grafana/grafana-namespace.yaml
   sed -i "s/<URL>/${URL}/g" /tmp/kubernetes/grafana/grafana-traefik.yaml

@@ -24,7 +24,35 @@
       "customType": "regex",
       "fileMatch": ["\\.yaml$"],
       "matchStrings": [
-        "#\\s*renovate:\\s*datasource=(?<datasource>.*?) depName=(?<depName>.*?)(?: versioning=(?<versioning>.*?))?\\s+(?:-\\s+)?\\w+:\\s+(?:[^@\\s]*:)?(?<currentValue>[^@\\s]+)(?:@(?<currentDigest>\\S+))?"
+        "#\\s*renovate:\\s*datasource=(?<datasource>.*?) depName=(?<depName>.*?)(?: versioning=(?<versioning>.*?))?\\s+(?:-\\s+)?\\w+:\\s+[\"']?(?:[^@\\s]*:)?(?<currentValue>[^@\\s\"']+?)(?<suffix>-cluster)?(?:@(?<currentDigest>sha256:[a-f0-9]+))?[\"']?"
+      ]
+    },
+    {
+      "customType": "regex",
+      "fileMatch": ["vm-cluster\\.yaml$"],
+      "matchStrings": [
+        "#\\s*renovate:\\s*datasource=(?<datasource>.*?) depName=(?<depName>.*?)(?: versioning=(?<versioning>.*?))?\\s+clusterVersion:\\s+\"(?<currentValue>.*)-cluster\""
+      ]
+    },
+    {
+      "customType": "regex",
+      "fileMatch": ["\\.yaml$"],
+      "matchStrings": [
+        "#\\s*renovate:\\s*datasource=(?<datasource>.*?) depName=(?<depName>.*?)(?: versioning=(?<versioning>.*?))?\\s+(?:-\\s+)?\\w+:\\s+(?<currentDigest>sha256:[a-f0-9]+)\\s*#\\s*(?<currentValue>\\S+)"
+      ]
+    },
+    {
+      "customType": "regex",
+      "fileMatch": ["ansible/.*\\.yaml$"],
+      "matchStrings": [
+        "#\\s*renovate:\\s*datasource=(?<datasource>.*?) depName=(?<depName>.*?)(?: versioning=(?<versioning>.*?))?\\s+url:\\s+\\S+?/(?<currentValue>[vV]?\\d+\\.\\d+\\.\\d+[^/]*)/"
+      ]
+    },
+    {
+      "customType": "regex",
+      "fileMatch": ["\\.pre-commit-config\\.yaml$"],
+      "matchStrings": [
+        "#\\s*renovate:\\s*datasource=(?<datasource>.*?) depName=(?<depName>.*?)(?: versioning=(?<versioning>.*?))?\\s+rev:\\s+(?<currentDigest>[a-f0-9]+)\\s*#\\s*(?<currentValue>\\S+)"
       ]
     }
   ]
