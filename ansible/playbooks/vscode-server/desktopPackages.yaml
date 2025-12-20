@@ -62,11 +62,13 @@
           - ntpdate
     - name: Download YQ
       get_url:
-        url: https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64
+        # renovate: datasource=github-releases depName=mikefarah/yq
+        url: https://github.com/mikefarah/yq/releases/download/v4.44.2/yq_linux_amd64
         dest: /usr/local/bin/yq
         mode: a+x
     - name: Download ArgoCD Vault Plugin
       get_url:
+        # renovate: datasource=github-releases depName=argoproj-labs/argocd-vault-plugin
         url: https://github.com/argoproj-labs/argocd-vault-plugin/releases/download/v1.17.0/argocd-vault-plugin_1.17.0_linux_amd64
         dest: /usr/local/bin/argocd-vault-plugin
         mode: a+x
@@ -77,6 +79,7 @@
         mode: a+x
     - name: Download golang
       get_url:
+        # renovate: datasource=golang-version depName=golang
         url: https://go.dev/dl/go1.22.4.linux-amd64.tar.gz
         dest: /tmp/go.linux-amd64.tar.gz
       check_mode: false
