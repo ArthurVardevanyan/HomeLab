@@ -291,5 +291,7 @@ alias l='ls -CF'
 
 alias kubectl=kubecolor
 alias k=kubecolor
+
+# shellcheck disable=SC1090
 source <(kubectl completion zsh)
 compdef kubecolor=kubectl

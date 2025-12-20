@@ -1,92 +1,132 @@
-- hosts: lenovo
-  gather_facts: no
+---
+- name: Install Laptop Packages
+  hosts: lenovo
+  gather_facts: false
   become: true
   user: arthur
   tasks:
-    - name: Upgrade all apt packages
-      apt:
-        update_cache: True
+    - name: Upgrade all packages
+      ansible.builtin.apt:
+        update_cache: true
         cache_valid_time: 3600
         upgrade: dist
-        autoremove: yes
-    - name: install core packages
-      apt:
-        state: latest
+        autoremove: true
+    - name: Install core packages
+      ansible.builtin.apt:
+        state: present
         name:
-          - openssh-server
-          - speedtest-cli
-          - gnome-screenshot
-          - gnome-tweaks
-          - thunderbird
-          - sshpass
-          - htop
-          - nvtop
-          - pv
-          - jq
-          - rsync
-          - gparted
-          - smartmontools
-          - caffeine
-          #- p7zip-full
-          #- remmina
-    - name: install development tools
-      apt:
-        state: latest
+          # renovate: datasource=repology depName=ubuntu_25_10/openssh
+          - openssh-server-1:9.6p1-3ubuntu13
+          # renovate: datasource=repology depName=ubuntu_25_10/speedtest-cli
+          - speedtest-cli-2.1.3-2
+          # renovate: datasource=repology depName=ubuntu_25_10/gnome-screenshot
+          - gnome-screenshot-41.0-3build2
+          # renovate: datasource=repology depName=ubuntu_25_10/gnome-tweaks
+          - gnome-tweaks-46.0-1
+          # renovate: datasource=repology depName=ubuntu_25_10/thunderbird
+          - thunderbird-1:115.12.0-1ubuntu1
+          # renovate: datasource=repology depName=ubuntu_25_10/sshpass
+          - sshpass-1.10-1
+          # renovate: datasource=repology depName=ubuntu_25_10/htop
+          - htop-3.3.0-4build1
+          # renovate: datasource=repology depName=ubuntu_25_10/nvtop
+          - nvtop-3.0.1-1build1
+          # renovate: datasource=repology depName=ubuntu_25_10/pv
+          - pv-1.8.5-1
+          # renovate: datasource=repology depName=ubuntu_25_10/jq
+          - jq-1.7.1-3build1
+          # renovate: datasource=repology depName=ubuntu_25_10/rsync
+          - rsync-3.2.7-1ubuntu1
+          # renovate: datasource=repology depName=ubuntu_25_10/gparted
+          - gparted-1.5.0-1build2
+          # renovate: datasource=repology depName=ubuntu_25_10/smartmontools
+          - smartmontools-7.4-2
+          # renovate: datasource=repology depName=ubuntu_25_10/caffeine
+          - caffeine-2.9.13-1
+          # - p7zip-full
+          # - remmina
+    - name: Install development tools
+      ansible.builtin.apt:
+        state: present
         name:
-          - gnupg
-          - git
-          - gh
-          - ansible
-          - make
-          - gcc
-          - g++
-          - python3-pip
-          - cockpit
-          - gdb
-          - adb
-          - podman
-          - buildah
-          - skopeo
-          - npm
-          - tree
-          - adb
-          - podman
-          - buildah
-          - skopeo
-          - bat
-          - opentofu
-          #- arduino
-          #- apache2
-          #- php
-          #- mariadb-server
-          #- libmariadb-dev
+          # renovate: datasource=repology depName=ubuntu_25_10/gnupg
+          - gnupg-2.4.4-2ubuntu17
+          # renovate: datasource=repology depName=ubuntu_25_10/git
+          - git-1:2.43.0-1ubuntu7.1
+          # renovate: datasource=repology depName=ubuntu_25_10/gh
+          - gh-2.45.0-1
+          # renovate: datasource=repology depName=ubuntu_25_10/ansible
+          - ansible-9.2.0-1
+          # renovate: datasource=repology depName=ubuntu_25_10/make
+          - make-4.3-4.1build1
+          # renovate: datasource=repology depName=ubuntu_25_10/gcc
+          - gcc-4:13.2.0-7ubuntu1
+          # renovate: datasource=repology depName=ubuntu_25_10/gcc
+          - g++-4:13.2.0-7ubuntu1
+          # renovate: datasource=repology depName=ubuntu_25_10/python3-pip
+          - python3-pip-24.0+dfsg-1ubuntu1
+          # renovate: datasource=repology depName=ubuntu_25_10/cockpit
+          - cockpit-313-1
+          # renovate: datasource=repology depName=ubuntu_25_10/gdb
+          - gdb-15.0.50.20240403-0ubuntu1
+          # renovate: datasource=repology depName=ubuntu_25_10/android-tools
+          - adb-1:34.0.4-1ubuntu1
+          # renovate: datasource=repology depName=ubuntu_25_10/podman
+          - podman-4.9.3+ds1-1ubuntu0.1
+          # renovate: datasource=repology depName=ubuntu_25_10/buildah
+          - buildah-1.34.1+ds1-1ubuntu0.1
+          # renovate: datasource=repology depName=ubuntu_25_10/skopeo
+          - skopeo-1.14.2+ds1-1ubuntu0.1
+          # renovate: datasource=repology depName=ubuntu_25_10/npm
+          - npm-9.2.0~ds1-1
+          # renovate: datasource=repology depName=ubuntu_25_10/tree
+          - tree-2.1.1-2
+          # renovate: datasource=repology depName=ubuntu_25_10/bat
+          - bat-0.24.0-1build1
+          # renovate: datasource=repology depName=ubuntu_25_10/opentofu
+          - opentofu-1.7.2
+          # - arduino
+          # - apache2
+          # - php
+          # - mariadb-server
+          # - libmariadb-dev
     - name: Download YQ
-      get_url:
+      ansible.builtin.get_url:
         # renovate: datasource=github-releases depName=mikefarah/yq
         url: https://github.com/mikefarah/yq/releases/download/v4.44.2/yq_linux_arm64
         dest: /usr/local/bin/yq
-        mode: a+x
+        mode: "0755"
 
-    - name: install additional packages
-      apt:
-        state: latest
+    - name: Install additional packages
+      ansible.builtin.apt:
+        state: present
         name:
-          - vlc
-          - gimp
-          - obs-studio
-          - openscad
-          - handbrake
-          - ffmpeg
-          - blender
+          # renovate: datasource=repology depName=ubuntu_24_04/vlc
+          - vlc-3.0.20-1build6
+          # renovate: datasource=repology depName=ubuntu_24_04/gimp
+          - gimp-2.10.36-3build3
+          # renovate: datasource=repology depName=ubuntu_24_04/obs-studio
+          - obs-studio-30.0.2+dfsg-1build3
+          # renovate: datasource=repology depName=ubuntu_24_04/openscad
+          - openscad-2021.01-6
+          # renovate: datasource=repology depName=ubuntu_24_04/handbrake
+          - handbrake-1.7.3+ds1-1build4
+          # renovate: datasource=repology depName=ubuntu_24_04/ffmpeg
+          - ffmpeg-7:6.1.1-3ubuntu5
+          # renovate: datasource=repology depName=ubuntu_24_04/blender
+          - blender-4.0.2+dfsg-1ubuntu8
 
-    - name: install pipx
-      apt:
-        state: latest
+    - name: Install pipx
+      ansible.builtin.apt:
+        state: present
         name:
-          - pipx
+          # renovate: datasource=repology depName=ubuntu_24_04/pipx
+          - pipx-1.4.3-1
     - name: Install JC
       community.general.pipx:
         name: JC
+        state: present
     - name: Install pre-commit
       community.general.pipx:
         name: pre-commit
+        state: present

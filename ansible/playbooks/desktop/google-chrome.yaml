@@ -1,5 +1,7 @@
-- hosts: ryzen
-  gather_facts: no
+---
+- name: Install Google Chrome
+  hosts: ryzen
+  gather_facts: false
   become: true
   user: arthur
   tasks:
@@ -9,8 +11,10 @@
         description: Google Chrome YUM repo
         baseurl: https://dl.google.com/linux/chrome/rpm/stable/x86_64
         gpgkey: https://dl.google.com/linux/linux_signing_key.pub
-    - name: install google-chrome
-      yum:
-        state: latest
+        mode: "0644"
+    - name: Install Google Chrome
+      ansible.builtin.dnf:
+        state: present
         name:
-          - google-chrome-stable
+          # renovate: datasource=repology depName=fedora_43/google-chrome-stable
+          - google-chrome-stable-126.0.6478.126-1

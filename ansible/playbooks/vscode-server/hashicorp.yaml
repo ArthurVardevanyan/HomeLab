@@ -1,5 +1,7 @@
-- hosts: vscode-server
-  gather_facts: no
+---
+- name: Install Hashicorp tools
+  hosts: vscode-server
+  gather_facts: false
   become: true
   user: arthur
   tasks:
@@ -7,11 +9,11 @@
       ansible.builtin.yum_repository:
         name: hashicorp.repo
         description: hashicorp.repo
-        baseurl: https://rpm.releases.hashicorp.com/fedora/40/x86_64/stable
+        baseurl: https://rpm.releases.hashicorp.com/fedora/43/x86_64/stable
         gpgcheck: false
     - name: Install Terraform & Vault
-      yum:
-        state: latest
+      ansible.builtin.dnf:
+        state: present
         name:
           - terraform
           - vault

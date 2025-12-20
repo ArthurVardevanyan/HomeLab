@@ -1,18 +1,23 @@
-- hosts: ryzen
-  gather_facts: no
+---
+- name: Sandbox OKD Configuration
+  hosts: ryzen
+  gather_facts: false
   become: true
   user: arthur
   tasks:
     - name: Create Haproxy Folder
-      file:
+      ansible.builtin.file:
         path: /etc/haproxy
         state: directory
+        mode: "0755"
     - name: Copy HaProxy Configs
-      copy:
+      ansible.builtin.copy:
         src: "../../../machineConfigs/sandbox/etc/haproxy/haproxy.cfg"
         dest: "/etc/haproxy/haproxy.cfg"
-    - name: install haproxy
-      yum:
-        state: latest
+        mode: "0644"
+    - name: Install haproxy
+      ansible.builtin.dnf:
+        state: present
         name:
-          - haproxy
+          # renovate: datasource=repology depName=fedora_43/haproxy
+          - haproxy-2.9.9-1.fc40

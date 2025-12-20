@@ -1,35 +1,43 @@
-- hosts: microshift
-  gather_facts: no
+---
+- name: Install and configure Microshift
+  hosts: microshift
+  gather_facts: false
   become: true
   user: arthur
   tasks:
-    - name: cGroupsV2
-      copy:
+    - name: CGroupsV2
+      ansible.builtin.copy:
         src: "../../../../machineConfigs/servers/microshift/boot/cmdline.txt"
         dest: "/boot/cmdline.txt"
+        mode: "0644"
 
-    - name: install centos && okd packages
-      yum:
-        state: latest
+    - name: Install CentOS && OKD packages
+      ansible.builtin.dnf:
+        state: present
         name:
-          - centos-release-openstack-zed
-          - centos-release-okd-4.16
+          # renovate: datasource=repology depName=centos_stream_10/centos-release-openstack-zed
+          - centos-release-openstack-zed-1-1.el10
+          # renovate: datasource=repology depName=centos_stream_10/centos-release-okd-4.16
+          - centos-release-okd-4.16-1-1.el10
 
     - name: Remove CentOS-OpenStack-zed.repo
       ansible.builtin.file:
         path: /etc/yum.repos.d/CentOS-OpenStack-zed.repo
         state: absent
 
-    - name: install crio packages
-      yum:
-        state: latest
+    - name: Install CRI-O packages
+      ansible.builtin.dnf:
+        state: present
         name:
-          - cri-o
-          - cri-tools
-          - containernetworking-plugins
+          # renovate: datasource=repology depName=centos_stream_10/cri-o
+          - cri-o-1.28.0
+          # renovate: datasource=repology depName=centos_stream_10/cri-tools
+          - cri-tools-1.28.0
+          # renovate: datasource=repology depName=centos_stream_10/containernetworking-plugins
+          - containernetworking-plugins-1.3.0
 
     - name: Copy Pull Secret
-      copy:
+      ansible.builtin.copy:
         src: "/tmp/pull_secret.json"
         dest: "/etc/crio/openshift-pull-secret"
         mode: "0600"
@@ -37,108 +45,100 @@
         group: root
 
     - name: Make sure cri-o service unit is running
-      ansible.builtin.systemd_service:
+      ansible.builtin.systemd:
         state: started
         enabled: true
         name: crio
 
-    # - name: Enable project redhat-et/microshiftt-testing
-    #   community.general.copr:
-    #     host: copr.fedorainfracloud.org
-    #     state: enabled
-    #     name: redhat-et/microshift-testing
-    #     chroot: centos-stream-9-aarch64
-
     - name: MicroShift Dir
-      file:
+      ansible.builtin.file:
         path: "/etc/microshift"
         state: directory
+        mode: "0755"
+
     - name: MicroShift Config Dir
-      file:
+      ansible.builtin.file:
         path: "/etc/microshift/config.d/"
         state: directory
+        mode: "0755"
 
     - name: MicroShift HostName
-      copy:
+      ansible.builtin.copy:
         src: "../../../../machineConfigs/servers/microshift/etc/microshift/config.d/10-subjectAltNames.yaml"
         dest: "/etc/microshift/config.d/10-subjectAltNames.yaml"
+        mode: "0644"
+
     - name: MicroShift Gateway
-      copy:
+      ansible.builtin.copy:
         src: "../../../../machineConfigs/servers/microshift/etc/microshift/ovn.yaml"
         dest: "/etc/microshift/ovn.yaml"
+        mode: "0644"
 
     - name: Enable project redhat-et/microshift-testing
       ansible.builtin.yum_repository:
         name: redhat-et
         description: redhat-et/microshift-testing
-        baseurl: https://download.copr.fedorainfracloud.org/results/@redhat-et/microshift-testing/centos-stream-9-aarch64
+        baseurl: https://download.copr.fedorainfracloud.org/results/@redhat-et/microshift-testing/centos-stream-10-aarch64
         gpgkey: https://download.copr.fedorainfracloud.org/results/@redhat-et/microshift-testing/pubkey.gpg
+        mode: "0644"
 
-    - name: install microshift packages
-      yum:
-        state: latest
+    - name: Install Microshift packages
+      ansible.builtin.dnf:
+        state: present
         name:
-          - microshift
+          # renovate: datasource=repology depName=centos_stream_10/microshift
+          - microshift-4.16.0-202406111433.p0.g8966666.assembly.4.16.0.el10
+          # renovate: datasource=repology depName=centos_stream_10/microshift-networking
+          - microshift-networking-4.16.0-202406111433.p0.g8966666.assembly.4.16.0.el10
+          # renovate: datasource=repology depName=centos_stream_10/microshift-greenboot
+          - microshift-greenboot-4.16.0-202406111433.p0.g8966666.assembly.4.16.0.el10
+          # renovate: datasource=repology depName=centos_stream_10/microshift-selinux
+          - microshift-selinux-4.16.0-202406111433.p0.g8966666.assembly.4.16.0.el10
 
-    - name: firewalld pod network
-      firewalld:
+    - name: Firewalld pod network
+      ansible.posix.firewalld:
         zone: trusted
         source: 10.42.0.0/16
         permanent: true
         state: enabled
-    - name: firewalld port 80
-      firewalld:
+
+    - name: Firewalld port 80
+      ansible.posix.firewalld:
         zone: public
         port: 80/tcp
         permanent: true
         state: enabled
-    - name: firewalld port 443
-      firewalld:
+
+    - name: Firewalld port 443
+      ansible.posix.firewalld:
         zone: public
         port: 443/tcp
         permanent: true
         state: enabled
-    - name: firewalld port 5353
-      firewalld:
+
+    - name: Firewalld port 5353
+      ansible.posix.firewalld:
         zone: public
         port: 5353/udp
         permanent: true
         state: enabled
-    - name: firewalld port 6443
-      firewalld:
+
+    - name: Firewalld port 6443
+      ansible.posix.firewalld:
         zone: public
         port: 6443/tcp
         permanent: true
         state: enabled
-    - name: firewalld nodeports
-      firewalld:
+
+    - name: Firewalld nodeports
+      ansible.posix.firewalld:
         zone: public
         port: 30000-32767/tcp
         permanent: true
         state: enabled
 
-    #######################################################################################################
-    ### After 4.12 Comes Online, we need to uninstall it, then we can install our 4.17 Compiled version ###
-    ### https://raw.githubusercontent.com/thinkahead/microshift/main/hack/cleanup.sh                    ###
-    #######################################################################################################
-
-    # - name: Get Compiled MicroShift
-    #   copy:
-    #     src: "/tmp/microshift"
-    #     dest: "/usr/bin/microshift"
-    #     mode: "0755"
-    # - name: Get Compiled MicroShift ETCD
-    #   copy:
-    #     src: "/tmp/microshift-etcd"
-    #     dest: "/usr/bin/microshift-etcd"
-    #     mode: "0755"
-
-    #######################################################################################################
-    #######################################################################################################
-    #######################################################################################################
-
     - name: Make sure microshift service unit is running
-      ansible.builtin.systemd_service:
+      ansible.builtin.systemd:
         state: started
         enabled: true
         name: microshift
@@ -147,17 +147,17 @@
       ansible.builtin.file:
         path: /home/arthur/.kube/
         state: directory
-        mode: "0777"
+        mode: "0755"
         owner: arthur
         group: arthur
 
-    - name: kubeconfig
-      retries: 3
-      delay: 3
-      copy:
+    - name: Kubeconfig
+      ansible.builtin.copy:
         src: "/var/lib/microshift/resources/kubeadmin/kubeconfig"
         dest: "/home/arthur/.kube/config"
-        mode: "0777"
+        mode: "0600"
         remote_src: true
         owner: arthur
         group: arthur
+      retries: 3
+      delay: 3

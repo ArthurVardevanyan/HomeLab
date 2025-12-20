@@ -1,39 +1,49 @@
-- hosts: lenovo
-  gather_facts: no
+---
+- name: Install ZSH
+  hosts: lenovo
+  gather_facts: false
   user: arthur
   tasks:
     - name: Install ZSH Packages
       become: true
-      apt:
-        state: latest
+      ansible.builtin.apt:
+        state: present
         name:
-          - zsh
-          - zsh-autosuggestions
-          - zsh-syntax-highlighting
-          - autojump
+          # renovate: datasource=repology depName=ubuntu_25_10/zsh
+          - zsh-5.9-6ubuntu2
+          # renovate: datasource=repology depName=ubuntu_25_10/zsh-autosuggestions
+          - zsh-autosuggestions-0.7.0-1
+          # renovate: datasource=repology depName=ubuntu_25_10/zsh-syntax-highlighting
+          - zsh-syntax-highlighting-0.8.0~alpha3-1
+          # renovate: datasource=repology depName=ubuntu_25_10/autojump
+          - autojump-22.5.3-11
 
-    - name: Cloning  oh-my-zsh
-      git:
+    - name: Cloning oh-my-zsh
+      ansible.builtin.git:
         repo: https://github.com/ohmyzsh/ohmyzsh.git
         dest: /home/arthur/.oh-my-zsh
+        version: master
 
-    - name: Cloning  zsh-kubectl-prompt
-      git:
+    - name: Cloning zsh-kubectl-prompt
+      ansible.builtin.git:
         repo: https://github.com/superbrothers/zsh-kubectl-prompt.git
         dest: /home/arthur/.oh-my-zsh/custom/plugins/zsh-kubectl-prompt
+        version: master
 
     - name: Creating new zsh theme
-      copy:
+      ansible.builtin.copy:
         src: "../../../machineConfigs/desktop/home/arthur/.oh-my-zsh/themes/kubectl.zsh-theme"
         dest: "/home/arthur/.oh-my-zsh/themes/custom.zsh-theme"
+        mode: "0644"
 
     - name: Creating new ~/.zshrc
-      copy:
+      ansible.builtin.copy:
         src: "../../../machineConfigs/desktop/home/arthur/.zshrc"
         dest: "/home/arthur/.zshrc"
+        mode: "0644"
 
-    - name: change user shell to zsh
-      become: yes
-      user:
+    - name: Change user shell to zsh
+      become: true
+      ansible.builtin.user:
         name: "arthur"
         shell: /bin/zsh

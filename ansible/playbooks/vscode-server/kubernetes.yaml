@@ -1,117 +1,128 @@
-- hosts: vscode-server
-  gather_facts: no
+---
+- name: Install Kubernetes tools
+  hosts: vscode-server
+  gather_facts: false
   become: true
   user: arthur
   tasks:
     - name: Install kubectl
-      yum:
-        state: latest
+      ansible.builtin.dnf:
+        state: present
         name:
-          - kubernetes-client
+          # renovate: datasource=repology depName=fedora_43/kubernetes
+          - kubernetes-client-1.30.0-1.fc43
     - name: Download Kubectl Neat
-      get_url:
+      ansible.builtin.get_url:
         # renovate: datasource=github-releases depName=itaysk/kubectl-neat
         url: https://github.com/itaysk/kubectl-neat/releases/download/v2.0.3/kubectl-neat_linux_amd64.tar.gz
         dest: /tmp/kubectl-neat_linux_amd64.tar.gz
+        mode: "0644"
       check_mode: false
 
     - name: Kubectl Neat
-      file:
+      ansible.builtin.file:
         path: /tmp/kubectl-neat_linux_amd64
         state: directory
+        mode: "0755"
       check_mode: false
 
     - name: Extract Kubectl Neat
-      unarchive:
+      ansible.builtin.unarchive:
         src: /tmp/kubectl-neat_linux_amd64.tar.gz
         dest: /tmp/kubectl-neat_linux_amd64
-        remote_src: yes
+        remote_src: true
       check_mode: false
 
     - name: Copy Kubectl Neat Binary To Bin
-      copy:
+      ansible.builtin.copy:
         src: /tmp/kubectl-neat_linux_amd64/kubectl-neat
         dest: /usr/local/bin/kubectl-neat
-        mode: a+x
-        remote_src: yes
+        mode: "0755"
+        remote_src: true
 
     - name: Download KO
-      get_url:
+      ansible.builtin.get_url:
         # renovate: datasource=github-releases depName=ko-build/ko
         url: https://github.com/ko-build/ko/releases/download/v0.18.0/ko_0.18.0_Linux_x86_64.tar.gz
         dest: /tmp/ko_Linux_x86_64.tar.gz
+        mode: "0644"
       check_mode: false
 
     - name: KO Dir
-      file:
+      ansible.builtin.file:
         path: /tmp/ko_Linux_x86_64
         state: directory
+        mode: "0755"
       check_mode: false
 
     - name: Extract KO
-      unarchive:
+      ansible.builtin.unarchive:
         src: /tmp/ko_Linux_x86_64.tar.gz
         dest: /tmp/ko_Linux_x86_64
-        remote_src: yes
+        remote_src: true
       check_mode: false
 
     - name: Copy KO Binary To Bin
-      copy:
+      ansible.builtin.copy:
         src: /tmp/ko_Linux_x86_64/ko
         dest: /usr/local/bin/ko
-        mode: a+x
-        remote_src: yes
+        mode: "0755"
+        remote_src: true
 
     - name: Download Kubeconform
-      get_url:
+      ansible.builtin.get_url:
         # renovate: datasource=github-releases depName=yannh/kubeconform
         url: https://github.com/yannh/kubeconform/releases/download/v0.6.7/kubeconform-linux-amd64.tar.gz
         dest: /tmp/kubeconform-linux-amd64.tar.gz
+        mode: "0644"
       check_mode: false
 
     - name: Kubeconform Dir
-      file:
+      ansible.builtin.file:
         path: /tmp/kubeconform-linux-amd64
         state: directory
+        mode: "0755"
       check_mode: false
 
     - name: Extract Kubeconform
-      unarchive:
+      ansible.builtin.unarchive:
         src: /tmp/kubeconform-linux-amd64.tar.gz
         dest: /tmp/kubeconform-linux-amd64
-        remote_src: yes
+        remote_src: true
       check_mode: false
 
     - name: Copy Kubeconform Binary To Bin
-      copy:
+      ansible.builtin.copy:
         src: /tmp/kubeconform-linux-amd64/kubeconform
         dest: /usr/local/bin/kubeconform
-        mode: a+x
-        remote_src: yes
+        mode: "0755"
+        remote_src: true
 
     - name: Download Kubecolor
-      get_url:
+      ansible.builtin.get_url:
         # renovate: datasource=github-releases depName=kubecolor/kubecolor
         url: https://github.com/kubecolor/kubecolor/releases/download/v0.4.0/kubecolor_0.4.0_linux_amd64.tar.gz
         dest: /tmp/kubecolor.tar.gz
+        mode: "0644"
       check_mode: false
 
     - name: Kubecolor Dir
-      file:
+      ansible.builtin.file:
         path: /tmp/kubecolor
         state: directory
+        mode: "0755"
       check_mode: false
 
     - name: Extract Kubecolor
-      unarchive:
+      ansible.builtin.unarchive:
         src: /tmp/kubecolor.tar.gz
         dest: /tmp/kubecolor
-        remote_src: yes
+        remote_src: true
       check_mode: false
 
     - name: Copy Kubecolor Binary To Bin
-      copy:
+      ansible.builtin.copy:
         src: /tmp/kubecolor/kubecolor
         dest: /usr/local/bin/kubecolor
-        mode: a+x
-        remote_src: yes
+        mode: "0755"
+        remote_src: true

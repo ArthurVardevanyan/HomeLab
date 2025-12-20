@@ -1,100 +1,120 @@
-- hosts: servers
-  gather_facts: no
+---
+- name: Install Kubernetes packages on servers
+  hosts: servers
+  gather_facts: false
   become: true
   user: arthur
   tasks:
     - name: Add kubectl Key
-      apt_key:
+      ansible.builtin.apt_key:
         url: https://packages.cloud.google.com/apt/doc/apt-key.gpg
         keyring: /usr/share/keyrings/kubernetes-archive-keyring.gpg
         state: present
+
     - name: Add kubectl Repo
-      apt_repository:
+      ansible.builtin.apt_repository:
         repo: deb [signed-by=/usr/share/keyrings/kubernetes-archive-keyring.gpg] https://apt.kubernetes.io/ kubernetes-xenial main
         state: present
-        update_cache: True
+        update_cache: true
         filename: kubernetes
+
     - name: Upgrade all apt packages
-      apt:
-        update_cache: True
+      ansible.builtin.apt:
+        update_cache: true
         cache_valid_time: 3600
         upgrade: dist
-        autoremove: yes
-    - name: install k8s packages
-      apt:
-        state: latest
-        name:
-          - apt-transport-https
-          - ca-certificates
-          - curl
-          - gnupg2
-          - containerd
-    - name: install k8s packages
-      apt:
+        autoremove: true
+
+    - name: Install base k8s packages
+      ansible.builtin.apt:
         state: present
         name:
+          # renovate: datasource=repology depName=debian_12/apt
+          - apt-transport-https=2.6.1
+          # renovate: datasource=repology depName=debian_12/ca-certificates
+          - ca-certificates=20230311
+          # renovate: datasource=repology depName=debian_12/curl
+          - curl=7.88.1-10+deb12u7
+          # renovate: datasource=repology depName=debian_12/gnupg2
+          - gnupg2=2.2.40-1.1
+          # renovate: datasource=repology depName=debian_12/containerd
+          - containerd=1.6.20-1
+
+    - name: Install specific k8s versions
+      ansible.builtin.apt:
+        state: present
+        name:
+          # renovate: datasource=repology depName=debian_12/kubernetes
           - kubelet=1.24.6-00
+          # renovate: datasource=repology depName=debian_12/kubernetes
           - kubeadm=1.24.6-00
+          # renovate: datasource=repology depName=debian_12/kubernetes
           - kubectl=1.24.6-00
 
     - name: Hold kubelet
-      dpkg_selections:
+      ansible.builtin.dpkg_selections:
         name: kubelet
         selection: hold
 
     - name: Hold kubeadm
-      dpkg_selections:
+      ansible.builtin.dpkg_selections:
         name: kubeadm
         selection: hold
 
     - name: Hold kubectl
-      dpkg_selections:
+      ansible.builtin.dpkg_selections:
         name: kubectl
         selection: hold
 
-    - name: containerd.conf
-      copy:
+    - name: Copy containerd.conf
+      ansible.builtin.copy:
         src: "../../../../machineConfigs/servers/k8s/etc/modules-load.d/containerd.conf"
         dest: "/etc/modules-load.d/containerd.conf"
+        mode: "0644"
 
-    - name: 20-bridge-nf.conf
-      copy:
+    - name: Copy 20-bridge-nf.conf
+      ansible.builtin.copy:
         src: "../../../../machineConfigs/servers/k8s/etc/sysctl.d/20-bridge-nf.conf"
         dest: "/etc/sysctl.d/20-bridge-nf.conf"
+        mode: "0644"
 
-    - name: 99-kubernetes-cri.conf
-      copy:
+    - name: Copy 99-kubernetes-cri.conf
+      ansible.builtin.copy:
         src: "../../../../machineConfigs/servers/k8s/etc/sysctl.d/99-kubernetes-cri.conf"
         dest: "/etc/sysctl.d/99-kubernetes-cri.conf"
+        mode: "0644"
 
     - name: Creates containerd directory
-      file:
+      ansible.builtin.file:
         path: /etc/containerd
         state: directory
+        mode: "0755"
 
-    - name: config.toml
-      copy:
+    - name: Copy config.toml
+      ansible.builtin.copy:
         src: "../../../../machineConfigs/servers/k8s/etc/containerd/config.toml"
         dest: "/etc/containerd/config.toml"
-      register: containerd
-
-    - name: containerd
-      service:
-        name: containerd
-        state: restarted
-      when: containerd.changed
+        mode: "0644"
+      notify: Restart containerd
 
     - name: Enable modprobe br_netfilter
-      modprobe:
+      community.general.modprobe:
         name: br_netfilter
         state: present
 
     - name: Enable modprobe overlay
-      modprobe:
+      community.general.modprobe:
         name: overlay
         state: present
 
-    - name: kubeadm-config.yaml
-      copy:
+    - name: Copy kubeadm-config.yaml
+      ansible.builtin.copy:
         src: "../../../../k8s/kubeadm.yaml"
         dest: "/mnt/kubeadm.yaml"
+        mode: "0644"
+
+  handlers:
+    - name: Restart containerd
+      ansible.builtin.service:
+        name: containerd
+        state: restarted

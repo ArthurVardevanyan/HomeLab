@@ -1,46 +1,68 @@
-- hosts: servers-common
-  gather_facts: no
+---
+- name: Setup Discord Bot services on common servers
+  hosts: servers-common
+  gather_facts: false
   become: true
   user: arthur
   tasks:
     - name: Create Discord Bot Boot Service
-      copy:
+      ansible.builtin.copy:
         src: "../../../../../machineConfigs/servers/server/etc/systemd/system/discordBoot.service"
         dest: "/etc/systemd/system/discordBoot.service"
-      register: discordBoot_conf
-    - name: Enable Service
-      command: systemctl enable discordBoot.service
-      when: discordBoot_conf.changed
+        mode: "0644"
+      notify: Enable Discord Boot Service
 
     - name: Create Discord Bot Reboot Service
-      copy:
+      ansible.builtin.copy:
         src: "../../../../../machineConfigs/servers/server/etc/systemd/system/discordReboot.service"
         dest: "/etc/systemd/system/discordReboot.service"
-      register: discordReboot_conf
-    - name: Enable Service
-      command: systemctl enable discordReboot.service
-      when: discordReboot_conf.changed
+        mode: "0644"
+      notify: Enable Discord Reboot Service
 
     - name: Create Discord Bot Shutdown Service
-      copy:
+      ansible.builtin.copy:
         src: "../../../../../machineConfigs/servers/server/etc/systemd/system/discordShutdown.service"
         dest: "/etc/systemd/system/discordShutdown.service"
-      register: discordShutdown_conf
-    - name: Enable Service
-      command: systemctl enable discordShutdown.service
-      when: discordShutdown_conf.changed
+        mode: "0644"
+      notify: Enable Discord Shutdown Service
 
     - name: Creates Discord Directory
-      file:
+      ansible.builtin.file:
         path: /home/arthur/discord
         state: directory
+        mode: "0755"
+        owner: arthur
+        group: arthur
 
     - name: Git Clone discord.sh
-      git:
+      ansible.builtin.git:
         repo: "https://github.com/fieu/discord.sh"
         dest: /home/arthur/discord/discord.sh
+        version: master
 
     - name: Create Discord Bot Script
-      copy:
+      ansible.builtin.copy:
         src: "../../../../../machineConfigs/servers/server/home/arthur/discord/discord_bot.sh"
         dest: "/home/arthur/discord/discord_bot.sh"
+        mode: "0755"
+        owner: arthur
+        group: arthur
+
+  handlers:
+    - name: Enable Discord Boot Service
+      ansible.builtin.systemd_service:
+        name: discordBoot.service
+        enabled: true
+        daemon_reload: true
+
+    - name: Enable Discord Reboot Service
+      ansible.builtin.systemd_service:
+        name: discordReboot.service
+        enabled: true
+        daemon_reload: true
+
+    - name: Enable Discord Shutdown Service
+      ansible.builtin.systemd_service:
+        name: discordShutdown.service
+        enabled: true
+        daemon_reload: true

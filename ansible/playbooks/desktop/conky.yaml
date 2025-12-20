@@ -1,16 +1,21 @@
-- hosts: ryzen
-  gather_facts: no
+---
+- name: Install and configure Conky
+  hosts: ryzen
+  gather_facts: false
   user: arthur
   tasks:
     - name: Install Conky
       become: true
-      yum:
-        state: latest
+      ansible.builtin.dnf:
+        state: present
         name:
-          - conky
-          - lm_sensors
+          # renovate: datasource=repology depName=fedora_43/conky
+          - conky-1.19.2-3.fc40
+          # renovate: datasource=repology depName=fedora_43/lm_sensors
+          - lm_sensors-3.6.0-17.fc40
 
     - name: Copy Conky Config
-      copy:
+      ansible.builtin.copy:
         src: "../../../machineConfigs/desktop/home/arthur/.conkyrc"
         dest: "/home/arthur/"
+        mode: "0644"

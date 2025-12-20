@@ -1,65 +1,107 @@
-- hosts: k3s
-  gather_facts: no
+---
+- name: Install server packages on K3s nodes
+  hosts: k3s
+  gather_facts: false
   become: true
   user: arthur
   ignore_unreachable: true
   tasks:
-    - apt_repository:
+    - name: Add Debian main repository
+      ansible.builtin.apt_repository:
         repo: deb http://deb.debian.org/debian/ bookworm main contrib non-free
         state: present
-    - apt_repository:
+
+    - name: Add Debian main source repository
+      ansible.builtin.apt_repository:
         repo: deb-src http://deb.debian.org/debian/ bookworm main contrib non-free
         state: present
-    - apt_repository:
+
+    - name: Add Debian security repository
+      ansible.builtin.apt_repository:
         repo: deb http://security.debian.org/debian-security bookworm-security main contrib non-free
         state: present
-    - apt_repository:
+
+    - name: Add Debian security source repository
+      ansible.builtin.apt_repository:
         repo: deb-src http://security.debian.org/debian-security bookworm-security main contrib non-free
         state: present
-    - apt_repository:
+
+    - name: Add Debian updates repository
+      ansible.builtin.apt_repository:
         repo: deb http://deb.debian.org/debian/ bookworm-updates main contrib non-free
         state: present
-    - apt_repository:
+
+    - name: Add Debian updates source repository
+      ansible.builtin.apt_repository:
         repo: deb-src http://deb.debian.org/debian/ bookworm-updates main contrib non-free
         state: present
+
     - name: Upgrade all apt packages
-      apt:
-        update_cache: True
+      ansible.builtin.apt:
+        update_cache: true
         cache_valid_time: 3600
         upgrade: dist
-        autoremove: yes
-    - name: install packages
-      apt:
-        state: latest
+        autoremove: true
+
+    - name: Install packages
+      ansible.builtin.apt:
+        state: present
         name:
-          - ntp
-          - htop
-          - sysstat
-          - git
-          - speedtest-cli
-          - wget
-          - apt-transport-https
-          - ca-certificates
-          - curl
-          - gnupg2
-          - software-properties-common
-          - pv
-          - jq
-          - rsync
-          - open-iscsi
-          - nfs-common
-          - smartmontools
-          - tree
-          - nvme-cli
-          - prometheus-node-exporter
-          - ethtool
-          - python3-pip
+          # renovate: datasource=repology depName=debian_12/ntp
+          - ntp=1:4.2.8p15+dfsg-2
+          # renovate: datasource=repology depName=debian_12/htop
+          - htop=3.2.2-2
+          # renovate: datasource=repology depName=debian_12/sysstat
+          - sysstat=12.6.1-1
+          # renovate: datasource=repology depName=debian_12/git
+          - git=1:2.39.5-0+deb12u1
+          # renovate: datasource=repology depName=debian_12/speedtest-cli
+          - speedtest-cli=2.1.3-5
+          # renovate: datasource=repology depName=debian_12/wget
+          - wget=1.21.3-1+b2
+          # renovate: datasource=repology depName=debian_12/apt
+          - apt-transport-https=2.6.1
+          # renovate: datasource=repology depName=debian_12/ca-certificates
+          - ca-certificates=20230311
+          # renovate: datasource=repology depName=debian_12/curl
+          - curl=7.88.1-10+deb12u7
+          # renovate: datasource=repology depName=debian_12/gnupg2
+          - gnupg2=2.2.40-1.1
+          # renovate: datasource=repology depName=debian_12/software-properties-common
+          - software-properties-common=0.99.30-4
+          # renovate: datasource=repology depName=debian_12/pv
+          - pv=1.6.20-1
+          # renovate: datasource=repology depName=debian_12/jq
+          - jq=1.6-2.1
+          # renovate: datasource=repology depName=debian_12/rsync
+          - rsync=3.2.7-1
+          # renovate: datasource=repology depName=debian_12/open-iscsi
+          - open-iscsi=2.1.8-1
+          # renovate: datasource=repology depName=debian_12/nfs-utils
+          - nfs-common=1:2.6.2-4
+          # renovate: datasource=repology depName=debian_12/smartmontools
+          - smartmontools=7.3-1+b1
+          # renovate: datasource=repology depName=debian_12/tree
+          - tree=2.1.0-1
+          # renovate: datasource=repology depName=debian_12/nvme-cli
+          - nvme-cli=2.3-2
+          # renovate: datasource=repology depName=debian_12/prometheus-node-exporter
+          - prometheus-node-exporter=1.5.0-1
+          # renovate: datasource=repology depName=debian_12/ethtool
+          - ethtool=1:6.1-1
+          # renovate: datasource=repology depName=debian_12/python-pip
+          - python3-pip=23.0.1+dfsg-1
+
     - name: Download YQ
-      get_url:
+      ansible.builtin.get_url:
         # renovate: datasource=github-releases depName=mikefarah/yq
         url: https://github.com/mikefarah/yq/releases/download/v4.44.2/yq_linux_amd64
         dest: /usr/local/bin/yq
-        mode: a+x
+        mode: "0755"
+
     - name: Install JC
-      pip:
-        name: JC
+      ansible.builtin.pip:
+        name:
+          # renovate: datasource=pypi depName=jc
+          - jc==1.25.2
+        state: present

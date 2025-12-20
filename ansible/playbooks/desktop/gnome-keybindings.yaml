@@ -1,116 +1,118 @@
-- hosts: ryzen
-  gather_facts: no
+---
+- name: Configure GNOME keybindings
+  hosts: ryzen
+  gather_facts: false
   user: arthur
   tasks:
     - name: Switch Windows
-      dconf:
+      community.general.dconf:
         key: "/org/gnome/desktop/wm/keybindings/switch-windows"
         value: "['<Alt>Tab']"
 
     - name: Switch Windows Backward
-      dconf:
+      community.general.dconf:
         key: "/org/gnome/desktop/wm/keybindings/switch-windows-backward"
         value: "['<Shift><Alt>Tab']"
 
     - name: Switch Applications
-      dconf:
+      community.general.dconf:
         key: "/org/gnome/desktop/wm/keybindings/switch-applications"
         value: "['']"
 
     - name: Switch Applications Backward
-      dconf:
+      community.general.dconf:
         key: "/org/gnome/desktop/wm/keybindings/switch-applications-backward"
         value: "['']"
 
     - name: Switch Group
-      dconf:
+      community.general.dconf:
         key: "/org/gnome/desktop/wm/keybindings/switch-group"
         value: "['<Super>Tab']"
 
     - name: Switch Group Backward
-      dconf:
+      community.general.dconf:
         key: "/org/gnome/desktop/wm/keybindings/switch-group-backward"
         value: "['<Shift><Super>Tab']"
 
     - name: Menu Shortcut name
-      dconf:
+      community.general.dconf:
         key: "/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom1/name"
         value: "'New Document'"
     - name: Menu Shortcut command
-      dconf:
+      community.general.dconf:
         key: "/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom1/command"
         value: "'gedit'"
     - name: Menu Shortcut binding
-      dconf:
+      community.general.dconf:
         key: "/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom1/binding"
         value: "'Menu'"
 
     - name: Update Shortcut name
-      dconf:
+      community.general.dconf:
         key: "/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom2/name"
         value: "'Update'"
     - name: Update Shortcut command
-      dconf:
+      community.general.dconf:
         key: "/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom2/command"
         value: '''gnome-terminal -x bash -c "sudo apt-get update && sudo apt-get upgrade -y && sudo apt-get dist-upgrade -y && sudo apt-get autoremove -y && flatpak update -y"'''
     - name: Update Shortcut binding
-      dconf:
+      community.general.dconf:
         key: "/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom2/binding"
         value: "'<Super>F2'"
 
     - name: Conky Shortcut name
-      dconf:
+      community.general.dconf:
         key: "/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom3/name"
         value: "'Conky'"
     - name: Conky Shortcut command
-      dconf:
+      community.general.dconf:
         key: "/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom3/command"
         value: '''sh -c "killall conky && conky"'''
     - name: Conky Shortcut binding
-      dconf:
+      community.general.dconf:
         key: "/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom3/binding"
         value: "'<Super>F5'"
 
     - name: Discord Shortcut name
-      dconf:
+      community.general.dconf:
         key: "/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom4/name"
         value: "'Discord'"
     - name: Discord Shortcut command
-      dconf:
+      community.general.dconf:
         key: "/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom4/command"
         value: "'flatpak run com.discordapp.Discord'"
     - name: Discord Shortcut binding
-      dconf:
+      community.general.dconf:
         key: "/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom4/binding"
         value: "'<Shift>Menu'"
 
     - name: SSH AVNAS Shortcut name
-      dconf:
+      community.general.dconf:
         key: "/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom5/name"
         value: "'SSH AVNAS'"
     - name: SSH AVNAS Shortcut command
-      dconf:
+      community.general.dconf:
         key: "/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom5/command"
         value: '''gnome-terminal -x bash -c "ssh 10.0.0.110"'''
     - name: SSH AVNAS Shortcut binding
-      dconf:
+      community.general.dconf:
         key: "/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom5/binding"
         value: "'<Super>F3'"
 
     - name: Spotify Shortcut name
-      dconf:
+      community.general.dconf:
         key: "/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom6/name"
         value: "'Spotify'"
     - name: Spotify Shortcut command
-      dconf:
+      community.general.dconf:
         key: "/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom6/command"
         value: "'/usr/bin/spotify --force-device-scale-factor=2'"
     - name: Spotify Shortcut binding
-      dconf:
+      community.general.dconf:
         key: "/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom6/binding"
         value: "'<Super>F4'"
 
     - name: Enable Custom Keybindings
-      dconf:
+      community.general.dconf:
         key: "/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings"
         value: "['/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom1/', '/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom2/', '/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom3/', '/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom0/', '/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom4/', '/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom5/', '/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom6/']"

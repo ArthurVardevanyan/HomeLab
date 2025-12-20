@@ -1,13 +1,18 @@
-- hosts: kvm-2
-  gather_facts: no
+---
+- name: Configure Promtail on KVM-2
+  hosts: kvm-2
+  gather_facts: false
   become: true
   user: arthur
   tasks:
     - name: Promtail Directory
-      file:
+      ansible.builtin.file:
         path: /etc/promtail
         state: directory
+        mode: "0755"
+
     - name: Promtail Config
-      copy:
+      ansible.builtin.copy:
         src: "../../../../machineConfigs/servers/kvm-2/etc/promtail/config.yml"
         dest: "/etc/promtail/config.yml"
+        mode: "0644"

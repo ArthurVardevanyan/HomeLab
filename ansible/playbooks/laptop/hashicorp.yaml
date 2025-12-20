@@ -1,22 +1,24 @@
-- hosts: lenovo
-  gather_facts: no
+---
+- name: Install Hashicorp Tools
+  hosts: lenovo
+  gather_facts: false
   become: true
   user: arthur
   tasks:
     - name: Add HashiCorp Key
-      apt_key:
+      ansible.builtin.apt_key:
         url: https://apt.releases.hashicorp.com/gpg
         keyring: /usr/share/keyrings/hashicorp-archive-keyring.gpg
         state: present
     - name: Add HashiCorp Repo
-      apt_repository:
+      ansible.builtin.apt_repository:
         repo: "deb [signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] https://apt.releases.hashicorp.com noble main"
         state: present
-        update_cache: True
+        update_cache: true
         filename: hashicorp
     - name: Install Terraform & Vault
-      apt:
-        state: latest
+      ansible.builtin.apt:
+        state: present
         name:
           - terraform
           - vault

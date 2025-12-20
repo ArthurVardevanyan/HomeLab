@@ -1,29 +1,38 @@
-- hosts: k3s
-  gather_facts: no
+---
+- name: Install and configure Promtail on K3s nodes
+  hosts: k3s
+  gather_facts: false
   become: true
   user: arthur
   ignore_unreachable: true
   tasks:
     - name: Promtail Directory
-      file:
+      ansible.builtin.file:
         path: /etc/promtail
         state: directory
+        mode: "0755"
+
     - name: Promtail Config
-      copy:
+      ansible.builtin.copy:
         src: "../../../../machineConfigs/servers/k3s-server/etc/promtail/config.yml"
         dest: "/etc/promtail/config.yml"
+        mode: "0644"
+
     - name: Add grafana key
-      apt_key:
+      ansible.builtin.apt_key:
         url: https://apt.grafana.com/gpg.key
         state: present
+
     - name: Add grafana Repo
-      apt_repository:
+      ansible.builtin.apt_repository:
         repo: deb https://apt.grafana.com stable main
         state: present
-        update_cache: True
+        update_cache: true
         filename: grafana
+
     - name: Install promtail
-      apt:
-        state: latest
+      ansible.builtin.apt:
+        state: present
         name:
-          - promtail
+          # renovate: datasource=github-releases depName=grafana/loki
+          - promtail=3.1.0

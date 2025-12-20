@@ -1,13 +1,16 @@
-- hosts: lenovo
-  gather_facts: no
+---
+- name: Install Discord
+  hosts: lenovo
+  gather_facts: false
   user: arthur
   tasks:
     - name: Discord
-      flatpak:
+      community.general.flatpak:
         name: xyz.armcord.ArmCord
         remote: flathub
         method: user
     - name: Discord Startup
-      copy:
+      ansible.builtin.copy:
         src: "../../../machineConfigs/desktop/home/arthur/.config/autostart/discord-stable.desktop"
         dest: "/home/arthur/.config/autostart/discord-stable.desktop"
+        mode: "0644"

@@ -1,21 +1,25 @@
-- hosts: lenovo
-  gather_facts: no
+---
+- name: Laptop Other Configuration
+  hosts: lenovo
+  gather_facts: false
   user: arthur
   tasks:
     - name: AutoStart directory
-      file:
+      ansible.builtin.file:
         path: /home/arthur/.config/autostart
         state: directory
+        mode: "0755"
     - name: Set a hostname
       become: true
-      hostname:
+      ansible.builtin.hostname:
         name: lenovo
         use: systemd
     - name: Wallpaper Paper Path
-      dconf:
+      community.general.dconf:
         key: "/org/gnome/desktop/background/picture-uri"
         value: "'file:///home/arthur/Pictures/Wallpapers/starlitnight1920x1200 No Logo.jpg'"
     - name: Git Config
-      copy:
+      ansible.builtin.copy:
         src: "../../../machineConfigs/desktop/home/arthur/.gitconfig"
         dest: "/home/arthur/.gitconfig"
+        mode: "0644"

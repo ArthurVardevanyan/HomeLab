@@ -1,5 +1,7 @@
-- hosts: ryzen
-  gather_facts: no
+---
+- name: Install VSCodium on Ryzen desktop
+  hosts: ryzen
+  gather_facts: false
   become: true
   user: arthur
   tasks:
@@ -9,12 +11,19 @@
         description: vscodium YUM repo
         baseurl: https://download.vscodium.com/rpms/
         gpgkey: https://gitlab.com/paulcarroty/vscodium-deb-rpm-repo/-/raw/master/pub.gpg
+        mode: "0644"
+
     - name: Install VSCodium
-      yum:
-        state: latest
+      ansible.builtin.dnf:
+        state: present
         name:
-          - codium
+          # renovate: datasource=repology depName=fedora_43/vscodium
+          - codium-1.90.1.24165
+
     - name: VSCodium Marketplace
-      copy:
+      ansible.builtin.copy:
         src: "../../../machineConfigs/desktop/home/arthur/.config/VSCodium/product.json"
         dest: "/home/arthur/.config/VSCodium/product.json"
+        mode: "0644"
+        owner: arthur
+        group: arthur

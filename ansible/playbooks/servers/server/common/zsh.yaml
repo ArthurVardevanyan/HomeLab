@@ -1,51 +1,59 @@
-- hosts: servers-common
-  gather_facts: no
+---
+- name: Configure ZSH on common servers
+  hosts: servers-common
+  gather_facts: false
   user: arthur
   tasks:
-    - name: install packages
+    - name: Install packages
       become: true
-      yum:
-        state: latest
+      ansible.builtin.dnf:
+        state: present
         name:
-          - zsh
-          #- zsh-autosuggestions
-          #- zsh-syntax-highlighting
-          - autojump-zsh
+          # renovate: datasource=repology depName=centos_stream_10/zsh
+          - zsh-5.8.1-1.el10
+          # renovate: datasource=repology depName=centos_stream_10/autojump
+          - autojump-zsh-22.5.3-14.el10
 
     - name: Cloning zsh-autosuggestions
       become: true
-      git:
+      ansible.builtin.git:
         repo: https://github.com/zsh-users/zsh-autosuggestions
-        dest: //usr/share/zsh-autosuggestions
+        dest: /usr/share/zsh-autosuggestions
+        version: master
 
     - name: Cloning zsh-syntax-highlighting
       become: true
-      git:
+      ansible.builtin.git:
         repo: https://github.com/zsh-users/zsh-syntax-highlighting
-        dest: //usr/share/zsh-syntax-highlighting
+        dest: /usr/share/zsh-syntax-highlighting
+        version: master
 
-    - name: Cloning  oh-my-zsh
-      git:
+    - name: Cloning oh-my-zsh
+      ansible.builtin.git:
         repo: https://github.com/ohmyzsh/ohmyzsh.git
         dest: /home/arthur/.oh-my-zsh
+        version: master
 
-    - name: Cloning  zsh-kubectl-prompt
-      git:
+    - name: Cloning zsh-kubectl-prompt
+      ansible.builtin.git:
         repo: https://github.com/superbrothers/zsh-kubectl-prompt.git
         dest: /home/arthur/.oh-my-zsh/custom/plugins/zsh-kubectl-prompt
+        version: master
 
     - name: Creating new zsh theme
-      copy:
+      ansible.builtin.copy:
         src: "../../../../../machineConfigs/desktop/home/arthur/.oh-my-zsh/themes/custom.zsh-theme"
         dest: "/home/arthur/.oh-my-zsh/themes/custom.zsh-theme"
+        mode: "0644"
 
     - name: Creating new ~/.zshrc
-      copy:
+      ansible.builtin.copy:
         src: "../../../../../machineConfigs/desktop/home/arthur/.zshrc"
         dest: "/home/arthur/.zshrc"
+        mode: "0644"
 
-    - name: change user shell to zsh
-      become: yes
-      user:
+    - name: Change user shell to zsh
+      become: true
+      ansible.builtin.user:
         name: "arthur"
         shell: /bin/zsh

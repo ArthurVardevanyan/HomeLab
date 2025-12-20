@@ -1,25 +1,30 @@
-- hosts: lenovo
-  gather_facts: no
+---
+- name: Install Nextcloud
+  hosts: lenovo
+  gather_facts: false
   user: arthur
   tasks:
     - name: Add Nextcloud Repo
       become: true
-      apt_repository:
-        validate_certs: no
+      ansible.builtin.apt_repository:
+        validate_certs: false
         repo: "ppa:nextcloud-devs/client"
         state: present
-        update_cache: True
+        update_cache: true
     - name: Install Nextcloud
       become: true
-      apt:
-        state: latest
+      ansible.builtin.apt:
+        state: present
         name:
-          - nextcloud-desktop
+          # renovate: datasource=repology depName=ubuntu_25_10/nextcloud-desktop
+          - nextcloud-desktop=3.13.0-1
     - name: Nextcloud Startup
-      copy:
+      ansible.builtin.copy:
         src: "../../../machineConfigs/desktop/home/arthur/.config/autostart/com.nextcloud.desktopclient.nextcloud.desktop"
         dest: "/home/arthur/.config/autostart/com.nextcloud.desktopclient.nextcloud.desktop"
+        mode: "0644"
     - name: Create Nextcloud Sync Directories
-      file:
+      ansible.builtin.file:
         path: /home/arthur/Projects
         state: directory
+        mode: "0755"

@@ -1,21 +1,23 @@
-- hosts: lenovo
-  gather_facts: no
+---
+- name: Install Google Cloud SDK
+  hosts: lenovo
+  gather_facts: false
   become: true
   user: arthur
   tasks:
     - name: Add gcloud-sdk key
-      apt_key:
+      ansible.builtin.apt_key:
         url: https://packages.cloud.google.com/apt/doc/apt-key.gpg
         state: present
     - name: Add gcloud-sdk Repo
-      apt_repository:
+      ansible.builtin.apt_repository:
         repo: deb https://packages.cloud.google.com/apt cloud-sdk main
         state: present
-        update_cache: True
+        update_cache: true
         filename: google-chrome
     - name: Install gcloud-sdk
-      apt:
-        state: latest
+      ansible.builtin.apt:
+        state: present
         name:
           - google-cloud-cli
           - google-cloud-sdk-gke-gcloud-auth-plugin
