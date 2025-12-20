@@ -34,9 +34,11 @@ repos:
       - id: prettier
   - repo: https://github.com/bridgecrewio/checkov.git
     # renovate: datasource=github-releases depName=bridgecrewio/checkov
-    rev: 6c3c39a25d24dd2259e4af1e5a7528d5c61af206 # 3.2.342
+    rev: 9ea6d83d477afb3691795eda79d8f4dd56851d4b # 3.2.495
     hooks:
       - id: checkov
+        args: ["--config-file", ".checkov.yaml"]
+        files: \.(tf|json|y(a)?ml)$|Dockerfile|Containerfile
   - repo: https://github.com/ansible/ansible-lint.git
     # renovate: datasource=github-releases depName=ansible/ansible-lint
     rev: 1080d91d521d909ad79b868131e7ed7c6c708c77 # v25.8.1

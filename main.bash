@@ -50,6 +50,9 @@ function kustomize_fix() {
     find . -type f -name "kustomization.yaml" | while read -r FILE; do
       DIR=$(dirname "${FILE}")
       pushd "${DIR}" && kustomize edit fix --vars 1>/dev/null && popd
+      if ! grep -q "^---" "$FILE"; then
+        sed -i '1s/^/---\n/' "$FILE"
+      fi
     done
     prettier ./ --write
   elif [[ "$option" == "--dir" ]]; then
@@ -62,6 +65,9 @@ function kustomize_fix() {
       find "$target_dir" -type f -name "kustomization.yaml" | while read -r FILE; do
         DIR=$(dirname "${FILE}")
         pushd "${DIR}" && kustomize edit fix --vars 1>/dev/null && popd
+        if ! grep -q "^---" "$FILE"; then
+          sed -i '1s/^/---\n/' "$FILE"
+        fi
       done
     else
       echo "Error: Specified directory does not exist."
