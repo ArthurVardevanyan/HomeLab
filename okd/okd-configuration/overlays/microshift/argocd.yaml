@@ -9,10 +9,25 @@
 #     kubernetes.io/service-account.name: argocd
 # ---
 apiVersion: v1
+kind: Namespace
+metadata:
+  name: argocd
+  labels:
+    app-ingress: ""
+    pod-security.kubernetes.io/enforce: restricted
+    pod-security.kubernetes.io/enforce-version: latest
+    pod-security.kubernetes.io/warn: restricted
+    pod-security.kubernetes.io/warn-version: latest
+    pod-security.kubernetes.io/audit: restricted
+    pod-security.kubernetes.io/audit-version: latest
+    kubernetes.io/metadata.name: argocd
+    app.kubernetes.io/instance: argocd
+---
+apiVersion: v1
 kind: ServiceAccount
 metadata:
   name: argocd
-  namespace: default
+  namespace: argocd
   annotations:
     kfca_1: '{ "issuer": "https://storage.googleapis.com/okd-homelab-wif-oidc", "subject": "system:serviceaccount:argocd:argocd-creds"}'
 ---
@@ -27,4 +42,4 @@ roleRef:
 subjects:
   - kind: ServiceAccount
     name: argocd
-    namespace: default
+    namespace: argocd

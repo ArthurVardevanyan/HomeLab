@@ -5,6 +5,8 @@ metadata:
   name: microshift-credential-rotation
   annotations:
     checkov.io/skip1: CKV_K8S_40=OpenShift Injects Random UID
+    checkov.io/skip2: CKV_K8S_43=Don't Mind Tag for This
+    checkov.io/skip3: CKV_K8S_38= Require Use of Service Account Tokens
   namespace: argocd
 spec:
   schedule: "0 * * * *"
@@ -62,7 +64,7 @@ spec:
                   set -o pipefail
 
                   export JSON='{
-                    "namespace": "default",
+                    "namespace": "argocd",
                     "serviceAccountName": "argocd"
                   }'
 

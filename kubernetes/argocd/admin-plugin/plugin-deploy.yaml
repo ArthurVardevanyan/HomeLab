@@ -9,6 +9,7 @@ metadata:
   name: gitops-admin-plugin
   annotations:
     checkov.io/skip1: CKV_K8S_40=OpenShift Injects Random UID
+    checkov.io/skip2: CKV_K8S_38= Require Use of Service Account Tokens
   namespace: gitops-admin-plugin
 spec:
   progressDeadlineSeconds: 600
@@ -80,6 +81,7 @@ spec:
         seccompProfile:
           type: RuntimeDefault
       terminationGracePeriodSeconds: 30
+      automountServiceAccountToken: false
       volumes:
         - name: gitops-admin-plugin-cert
           secret:
