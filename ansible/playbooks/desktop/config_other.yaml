@@ -1,13 +1,16 @@
-- hosts: ryzen
-  gather_facts: no
+---
+- name: Other desktop configurations
+  hosts: ryzen
+  gather_facts: false
   user: arthur
   tasks:
     - name: AutoStart directory
-      file:
+      ansible.builtin.file:
         path: /home/arthur/.config/autostart
         state: directory
+        mode: "0755"
     - name: Set a hostname
       become: true
-      hostname:
+      ansible.builtin.hostname:
         name: arthur-ryzen
         use: systemd

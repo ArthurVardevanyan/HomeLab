@@ -1,24 +1,25 @@
-- hosts: kvm
-  gather_facts: no
+---
+- name: Install KVM packages on KVM nodes
+  hosts: kvm
+  gather_facts: false
   become: true
   user: arthur
   tasks:
-    - name: install packages
-      yum:
-        state: latest
+    - name: Install packages
+      ansible.builtin.dnf:
+        state: present
         name:
-          #- firmware-realtek
-          #- firmware-misc-nonfree
-          - cockpit-machines
-          - qemu-kvm
-          #- libvirt-clients
-          #- libvirt-daemon-system
-          #- bridge-utils
-          #- virtinst
-          - libvirt-daemon
-          - guestfs-tools
+          # renovate: datasource=repology depName=centos_stream_9/cockpit-machines
+          - cockpit-machines-287-1.el9
+          # renovate: datasource=repology depName=centos_stream_9/qemu-kvm
+          - qemu-kvm-7.2.0-14.el9
+          # renovate: datasource=repology depName=centos_stream_9/libvirt
+          - libvirt-daemon-9.0.0-10.el9
+          # renovate: datasource=repology depName=centos_stream_9/guestfs-tools
+          - guestfs-tools-1.48.2-1.el9
 
     - name: Creates VM Directory
-      file:
+      ansible.builtin.file:
         path: /home/okd
         state: directory
+        mode: "0755"

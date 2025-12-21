@@ -1,71 +1,74 @@
-- hosts: servers-x86
-  gather_facts: no
+---
+- name: Install and configure Promtail
+  hosts: servers-x86
+  gather_facts: false
   become: true
   user: arthur
   tasks:
     # https://www.ozonejunkie.com/posts/loki-rhel/
     - name: Download PromTail
-      get_url:
+      ansible.builtin.get_url:
         # renovate: datasource=github-releases depName=grafana/loki
         url: https://github.com/grafana/loki/releases/download/v2.9.2/promtail-linux-amd64.zip
         dest: /tmp/promtail-linux-amd64.zip
+        mode: "0644"
       check_mode: false
 
     - name: PromTail
-      file:
+      ansible.builtin.file:
         path: /tmp/promtail-linux-amd64
         state: directory
+        mode: "0755"
       check_mode: false
 
     - name: Extract PromTail
-      unarchive:
+      ansible.builtin.unarchive:
         src: /tmp/promtail-linux-amd64.zip
         dest: /tmp/promtail-linux-amd64
-        remote_src: yes
+        remote_src: true
       check_mode: false
 
     - name: Copy PromTail Binary To Bin
-      copy:
+      ansible.builtin.copy:
         src: /tmp/promtail-linux-amd64/promtail-linux-amd64
         dest: /usr/local/bin/promtail-linux-amd64
-        mode: a+x
-        remote_src: yes
+        mode: "0755"
+        remote_src: true
 
     - name: Promtail Systemd File
-      copy:
+      ansible.builtin.copy:
         src: "../../../../../machineConfigs/servers/server/etc/systemd/system/promtail.service"
         dest: "/etc/systemd/system/promtail.service"
-      register: promtail
+        mode: "0644"
+      notify: Restart PromTail SystemD
 
     - name: Enable PromTail SystemD
-      ansible.builtin.systemd:
+      ansible.builtin.systemd_service:
         enabled: true
         name: promtail
         state: started
         daemon_reload: true
 
+    - name: SeLinux File
+      ansible.builtin.copy:
+        src: "../../../../../machineConfigs/servers/server/home/arthur/promtail.te"
+        dest: "/home/arthur/promtail.te"
+        mode: "0644"
+      notify: Install SeLinux Policy
+
+  handlers:
     - name: Restart PromTail SystemD
-      ansible.builtin.systemd:
+      ansible.builtin.systemd_service:
         enabled: true
         name: promtail
         state: restarted
         daemon_reload: true
-      when: promtail.changed
-
-    - name: SeLinux File
-      copy:
-        src: "../../../../../machineConfigs/servers/server/home/arthur/promtail.te"
-        dest: "/home/arthur/promtail.te"
-      register: selinux
-
-    - name: Convert to SeLinux Module
-      command: checkmodule -M -m -o promtail.mod promtail.te
-      when: selinux.changed
-
-    - name: Convert to SeLinux Policy
-      command: semodule_package -o promtail.pp -m promtail.mod
-      when: selinux.changed
 
     - name: Install SeLinux Policy
-      command: semodule -i promtail.pp
-      when: selinux.changed
+      ansible.builtin.shell: |
+        checkmodule -M -m -o promtail.mod promtail.te
+        semodule_package -o promtail.pp -m promtail.mod
+        semodule -i promtail.pp
+      args:
+        chdir: /home/arthur
+      changed_when: true

@@ -1,3 +1,4 @@
+---
 kind: Ingress
 apiVersion: networking.k8s.io/v1
 metadata:
@@ -9,7 +10,7 @@ metadata:
   annotations:
     externaldns.k8s.io: pihole
     route.openshift.io/termination: reencrypt
-    route.openshift.io/destination-ca-certificate-secret: ca-bundle
+    route.openshift.io/destination-ca-certificate-secret: ca-bundle # checkov:skip=CKV_SECRET_6 Secret Name
 spec:
   ingressClassName: openshift-default
   rules:

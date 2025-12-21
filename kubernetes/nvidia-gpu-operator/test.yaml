@@ -1,7 +1,10 @@
+---
 apiVersion: apps/v1
 kind: DaemonSet
 metadata:
   name: cuda-vectoradd
+  annotations:
+    checkov.io/skip1: CKV_K8S_40=OpenShift Injects Random UID
   namespace: nvidia-gpu-operator
 spec:
   selector:
@@ -12,6 +15,7 @@ spec:
       labels:
         name: cuda-vectoradd
     spec:
+      automountServiceAccountToken: false
       tolerations:
         - effect: NoSchedule
           key: node-role.kubernetes.io/gpu
@@ -35,10 +39,37 @@ spec:
             - /bin/bash
             - -c
             - sleep infinity
+          livenessProbe:
+            exec:
+              command:
+                - nvidia-smi
+                - -L
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          readinessProbe:
+            exec:
+              command:
+                - nvidia-smi
+                - -L
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          resources:
+            requests:
+              cpu: 10m
+              memory: 128Mi
+            limits:
+              cpu: 100m
+              memory: 256Mi
+              nvidia.com/gpu: 1
       initContainers:
         - image: "nvcr.io/nvidia/k8s/cuda-sample:vectoradd-cuda11.7.1-ubuntu20.04"
           imagePullPolicy: IfNotPresent
           name: cuda-vectoradd-smoke-test
           resources:
+            requests:
+              cpu: 10m
+              memory: 128Mi
             limits:
+              cpu: 100m
+              memory: 256Mi
               nvidia.com/gpu: 1

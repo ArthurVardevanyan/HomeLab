@@ -1,97 +1,141 @@
-- hosts: vscode-server
-  gather_facts: no
+---
+- name: Install desktop packages on VSCode Server
+  hosts: vscode-server
+  gather_facts: false
   become: true
   user: arthur
   tasks:
-    - name: Upgrade all yum packages
-      yum:
+    - name: Upgrade all packages
+      ansible.builtin.dnf:
         name: "*"
-        state: latest
-    - name: install core packages
-      yum:
-        state: latest
+        state: latest # noqa package-latest
+
+    - name: Install core packages
+      ansible.builtin.dnf:
+        state: present
         name:
-          - openssh-server
-          - speedtest-cli
-          - sshpass
-          - htop
-          - pv
-          - jq
-          - rsync
-          - smartmontools
-          #- caffeine
-    - name: install development tools
-      yum:
-        state: latest
+          # renovate: datasource=repology depName=fedora_43/openssh
+          - openssh-server-9.6p1-11.fc43
+          # renovate: datasource=repology depName=fedora_43/speedtest-cli
+          - speedtest-cli-2.1.3-11.fc43
+          # renovate: datasource=repology depName=fedora_43/sshpass
+          - sshpass-1.10-4.fc43
+          # renovate: datasource=repology depName=fedora_43/htop
+          - htop-3.3.0-2.fc43
+          # renovate: datasource=repology depName=fedora_43/pv
+          - pv-1.8.5-2.fc43
+          # renovate: datasource=repology depName=fedora_43/jq
+          - jq-1.7.1-3.fc43
+          # renovate: datasource=repology depName=fedora_43/rsync
+          - rsync-3.3.0-1.fc43
+          # renovate: datasource=repology depName=fedora_43/smartmontools
+          - smartmontools-7.4-4.fc43
+
+    - name: Install development tools
+      ansible.builtin.dnf:
+        state: present
         name:
-          - gnupg
-          - git
-          - gh
-          - ansible
-          - make
-          - gcc
-          - g++
-          - gcc-c++
-          - python3-pip
-          - typescript
-          - gdb
-          - adb
-          - podman
-          - buildah
-          - skopeo
-          - npm
-          - tree
-          - adb
-          - podman
-          - buildah
-          - skopeo
-          - helm
-          - bat
-          - opentofu
-          #- apache2
-          #- php
-          #- mariadb-server
-          #- libmariadb-dev
-          - unzip
-          - butane
-          - nmstatectl
-          - traceroute
-          - coreos-installer
-          - dig
-          - iperf3
-          - ntpdate
+          # renovate: datasource=repology depName=fedora_43/gnupg
+          - gnupg2-2.4.8-4.fc43.fc43
+          # renovate: datasource=repology depName=fedora_43/git
+          - git-2.52.0-1.fc43
+          # renovate: datasource=repology depName=fedora_43/gh
+          - gh-2.83.0-1.fc43
+          # renovate: datasource=repology depName=fedora_43/ansible
+          - ansible-11.13.0-1.fc43
+          # renovate: datasource=repology depName=fedora_43/make
+          - make-4.4.1-11.fc43
+          # renovate: datasource=repology depName=fedora_43/gcc
+          - gcc-15.2.1-5.fc43
+          # renovate: datasource=repology depName=fedora_43/gcc
+          - g++-15.2.1-5.fc43
+          # renovate: datasource=repology depName=fedora_43/gcc
+          - gcc-c++-15.2.1-5.fc43
+          # renovate: datasource=repology depName=fedora_43/python-pip
+          - python3-pip-25.1.1-18.fc43
+          # renovate: datasource=repology depName=fedora_43/typescript
+          - typescript-5.7.3-3.fc43
+          # renovate: datasource=repology depName=fedora_43/gdb
+          - gdb-16.3-6.fc43
+          # renovate: datasource=repology depName=fedora_43/android-tools
+          - adb-35.0.2-10.fc43
+          # renovate: datasource=repology depName=fedora_43/podman
+          - podman-5.7.1-1.fc43
+          # renovate: datasource=repology depName=fedora_43/buildah
+          - buildah-1.42.2-1.fc43
+          # renovate: datasource=repology depName=fedora_43/skopeo
+          - skopeo-1.21.0-1.fc43
+            # renovate: datasource=repology depName=fedora_43/npm
+          - npm-10.8.1-1.20.14.0.1.fc43
+          # renovate: datasource=repology depName=fedora_43/tree
+          - tree-2.1.1-3.fc43
+          # renovate: datasource=repology depName=fedora_43/helm
+          - helm-3.14.4-1.fc43
+          # renovate: datasource=repology depName=fedora_43/bat
+          - bat-0.24.0-4.fc43
+          # renovate: datasource=repology depName=fedora_43/opentofu
+          - opentofu-1.10.7-1.fc43
+          # renovate: datasource=repology depName=fedora_43/unzip
+          - unzip-6.0-63.fc43
+          # renovate: datasource=repology depName=fedora_43/butane
+          - butane-0.21.0-1.fc43
+          # renovate: datasource=repology depName=fedora_43/nmstate
+          - nmstatectl-2.2.24-1.fc43
+          # renovate: datasource=repology depName=fedora_43/traceroute
+          - traceroute-2.1.5-1.fc43
+          # renovate: datasource=repology depName=fedora_43/coreos-installer
+          - coreos-installer-0.21.0-1.fc43
+          # renovate: datasource=repology depName=fedora_43/bind
+          - dig-9.18.26-1.fc43
+          # renovate: datasource=repology depName=fedora_43/iperf3
+          - iperf3-3.16-2.fc43
+          # renovate: datasource=repology depName=fedora_43/ntp
+          - ntpdate-4.2.8p18-1.fc43
+
     - name: Download YQ
-      get_url:
+      ansible.builtin.get_url:
         # renovate: datasource=github-releases depName=mikefarah/yq
         url: https://github.com/mikefarah/yq/releases/download/v4.44.2/yq_linux_amd64
         dest: /usr/local/bin/yq
-        mode: a+x
+        mode: "0755"
+
     - name: Download ArgoCD Vault Plugin
-      get_url:
+      ansible.builtin.get_url:
         # renovate: datasource=github-releases depName=argoproj-labs/argocd-vault-plugin
         url: https://github.com/argoproj-labs/argocd-vault-plugin/releases/download/v1.17.0/argocd-vault-plugin_1.17.0_linux_amd64
         dest: /usr/local/bin/argocd-vault-plugin
-        mode: a+x
+        mode: "0755"
+
     - name: Download Minio Client
-      get_url:
+      ansible.builtin.get_url:
         url: https://dl.min.io/client/mc/release/linux-amd64/mc
         dest: /usr/local/bin/mc
-        mode: a+x
+        mode: "0755"
+
     - name: Download golang
-      get_url:
+      ansible.builtin.get_url:
         # renovate: datasource=golang-version depName=golang
         url: https://go.dev/dl/go1.22.4.linux-amd64.tar.gz
         dest: /tmp/go.linux-amd64.tar.gz
+        mode: "0644"
       check_mode: false
+
     - name: Extract golang
-      unarchive:
+      ansible.builtin.unarchive:
         src: /tmp/go.linux-amd64.tar.gz
         dest: /usr/local
-        remote_src: yes
-    - name: Install JC
-      pip:
-        name: JC
-    - name: Install pre-commit
+        remote_src: true
 
-      pip:
-        name: pre-commit
+    - name: Install JC
+      ansible.builtin.pip:
+        name:
+          # renovate: datasource=pypi depName=jc
+          - jc==1.25.2
+        state: present
+
+    - name: Install pre-commit
+      ansible.builtin.pip:
+        name:
+          # renovate: datasource=pypi depName=pre-commit
+          - pre-commit==3.7.1
+        state: present

@@ -1,15 +1,19 @@
-- hosts: ryzen
-  gather_facts: no
+---
+- name: Install Terminator
+  hosts: ryzen
+  gather_facts: false
   user: arthur
   tasks:
     - name: Install Terminator
       become: true
-      yum:
-        state: latest
+      ansible.builtin.dnf:
+        state: present
         name:
-          - terminator
+          # renovate: datasource=repology depName=fedora_43/terminator
+          - terminator-2.1.3-5.fc40
 
     - name: Copy Terminator Config
-      copy:
+      ansible.builtin.copy:
         src: "../../../machineConfigs/desktop/home/arthur/.config/terminator"
         dest: "/home/arthur/.config/"
+        mode: "0644"

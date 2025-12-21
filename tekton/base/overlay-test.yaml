@@ -1,3 +1,4 @@
+---
 apiVersion: tekton.dev/v1
 kind: Task
 metadata:
@@ -37,7 +38,7 @@ spec:
           memory: 1Gi
       securityContext:
         runAsNonRoot: true
-        #runAsUser: 65532
+        # runAsUser: 65532
         privileged: false
         readOnlyRootFilesystem: true
         allowPrivilegeEscalation: false
@@ -70,7 +71,6 @@ spec:
         ## set -o xtrace  # command tracing
         shopt -s failglob # If no matches are found, an error message is printed and the command is not executed
 
-
         export URL=arthurvardevanyan.com
 
         export AVP_TYPE=vault
@@ -83,7 +83,8 @@ spec:
 
         gh auth login --with-token <"/${WORKSPACE_BASIC_AUTH_PATH}/git-provider-token"
 
-        WHATS_CHANGED=$(gh pr diff --repo "${GIT_URL}" "${GIT_PR_NUMBER}"  --name-only | grep -v "^terraform/")
+        REPO=$(echo "${GIT_URL}" | cut -d "/" -f 4,5)
+        WHATS_CHANGED=$(gh api --paginate -H "Accept: application/vnd.github+json" -H "X-GitHub-Api-Version: 2022-11-28" /repos/"${REPO}"/pulls/${GIT_PR_NUMBER}/files -q ".[].filename")
 
         for FILE_PATH in ${WHATS_CHANGED}; do
           echo "${FILE_PATH}" | cut -d'/' -f1,2 >>/tmp/files_changed.log

@@ -1,10 +1,13 @@
-- hosts: k3s
-  gather_facts: no
+---
+- name: Configure SSHD on K3s nodes
+  hosts: k3s
+  gather_facts: false
   become: true
   user: arthur
   ignore_unreachable: true
   tasks:
     - name: Modify SSHD Config
-      copy:
+      ansible.builtin.copy:
         src: "../../../../machineConfigs/servers/k3s-server/etc/pam.d/sshd"
         dest: "/etc/pam.d/sshd"
+        mode: "0644"

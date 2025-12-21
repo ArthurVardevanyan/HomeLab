@@ -1,3 +1,4 @@
+---
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
@@ -9,6 +10,8 @@ metadata:
     #   checkov.io/skip1: CKV_K8S_40=OpenShift Injects Random UID
     checkov.io/skip2: CKV_K8S_20=Containers Runs CHOWN and MKDIR
     checkov.io/skip3: CKV_K8S_25=Containers Runs CHOWN and MKDIR
+    checkov.io/skip4: CKV_K8S_16=Can't figure out non priv yet
+    checkov.io/skip5: CKV_K8S_39=Can't figure out non priv yet
 spec:
   replicas: 0
   serviceName: music-assistant-server
@@ -68,7 +71,7 @@ spec:
             runAsNonRoot: true
             runAsUser: 1000790000 # Namespace Random UID, AutoDetection Not Picking Up
           ports:
-            #- hostPort: 8095
+            # - hostPort: 8095
             - containerPort: 8095
               protocol: TCP
           resources:
@@ -116,7 +119,7 @@ spec:
       terminationGracePeriodSeconds: 30
       dnsPolicy: ClusterFirst
       automountServiceAccountToken: false
-      #hostNetwork: true
+      # hostNetwork: true
       hostname: homeassistant
       schedulerName: default-scheduler
 

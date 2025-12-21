@@ -1,3 +1,4 @@
+---
 image:
   repository: linuxserver/unifi-network-application
   pullPolicy: IfNotPresent
@@ -23,8 +24,7 @@ environment:
 
 service:
   type: "LoadBalancer"
-  annotations:
-    {}
+  annotations: {}
     # traefik.ingress.kubernetes.io/service.serversscheme: https
   ports:
     devicecom: 8080
@@ -36,8 +36,7 @@ service:
 ingress:
   enabled: true
   className: ""
-  annotations:
-    {}
+  annotations: {}
     # kubernetes.io/ingress.class: nginx
     # kubernetes.io/tls-acme: "true"
   hosts:
@@ -70,8 +69,7 @@ persistence:
     storageClass: longhorn
     annotations: {}
 
-podSecurityContext:
-  {}
+podSecurityContext: {}
   # runAsUser: 999
   # fsGroup: 999
 
@@ -91,9 +89,8 @@ resources:
     cpu: 250m
     memory: 1Gi
 
-nodeSelector:
-  {}
-  #unifi-network-application/enabled: "true"
+nodeSelector: {}
+  # unifi-network-application/enabled: "true"
 
 tolerations: []
 

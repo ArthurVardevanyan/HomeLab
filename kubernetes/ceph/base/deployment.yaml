@@ -1,7 +1,12 @@
+---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: rook-ceph-operator
+  annotations:
+    checkov.io/skip1: CKV_K8S_40=OpenShift Injects Random UID
+    checkov.io/skip2: CKV_K8S_43=Don't Mind Tag for This
+    checkov.io/skip3: CKV_K8S_38= Require Use of Service Account Tokens
   namespace: rook-ceph # namespace:operator
   labels:
     operator: rook
@@ -122,7 +127,7 @@ spec:
               memory: 256Mi
 
           #  Uncomment it to run lib bucket provisioner in multithreaded mode
-          #- name: LIB_BUCKET_PROVISIONER_THREADS
+          # - name: LIB_BUCKET_PROVISIONER_THREADS
           #  value: "5"
 
       # Uncomment these two settings to run the operator on the host network

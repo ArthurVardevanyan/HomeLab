@@ -4,6 +4,9 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: trust-manager
+  annotations:
+    checkov.io/skip1: CKV_K8S_40=OpenShift Injects Random UID
+    checkov.io/skip2: CKV_K8S_38= Require Use of Service Account Tokens
   namespace: cert-manager
   labels:
     app.kubernetes.io/name: trust-manager
@@ -81,9 +84,9 @@ spec:
             - "--leader-elect=true"
             - "--leader-election-lease-duration=15s"
             - "--leader-election-renew-deadline=10s"
-              # trust
+            # trust
             - "--trust-namespace=cert-manager"
-              # webhook
+            # webhook
             - "--webhook-host=0.0.0.0"
             - "--webhook-port=6443"
             - "--webhook-certificate-dir=/tls"

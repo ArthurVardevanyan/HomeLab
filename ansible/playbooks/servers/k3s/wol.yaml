@@ -1,14 +1,21 @@
-- hosts: k3s
-  gather_facts: no
+---
+- name: Configure Wake-on-LAN on K3s nodes
+  hosts: k3s
+  gather_facts: false
   become: true
   user: arthur
   ignore_unreachable: true
   tasks:
     - name: Create WOL Boot Service
-      copy:
+      ansible.builtin.copy:
         src: "../../../../machineConfigs/servers/k3s-server/etc/systemd/system/wol.service"
         dest: "/etc/systemd/system/wol.service"
-      register: wol
-    - name: Enable Service
-      command: systemctl enable wol.service
-      when: wol.changed
+        mode: "0644"
+      notify: Enable WOL Service
+
+  handlers:
+    - name: Enable WOL Service
+      ansible.builtin.systemd:
+        name: wol.service
+        enabled: true
+        daemon_reload: true

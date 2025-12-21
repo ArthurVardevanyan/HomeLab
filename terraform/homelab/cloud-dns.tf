@@ -16,6 +16,10 @@ resource "google_dns_managed_zone" "homelab_okd" {
     enable_logging = true
   }
 
+  dnssec_config {
+    state = "on"
+  }
+
 }
 
 

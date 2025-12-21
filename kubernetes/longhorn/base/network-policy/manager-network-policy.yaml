@@ -1,3 +1,4 @@
+---
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
@@ -27,10 +28,12 @@ spec:
             matchLabels:
               longhorn.io/managed-by: longhorn-manager
             matchExpressions:
-              - { key: recurring-job.longhorn.io, operator: Exists }
+              - key: recurring-job.longhorn.io
+                operator: Exists
         - podSelector:
             matchExpressions:
-              - { key: longhorn.io/job-task, operator: Exists }
+              - key: longhorn.io/job-task
+                operator: Exists
         - podSelector:
             matchLabels:
               app: longhorn-driver-deployer

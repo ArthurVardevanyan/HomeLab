@@ -50,6 +50,9 @@ function kustomize_fix() {
     find . -type f -name "kustomization.yaml" | while read -r FILE; do
       DIR=$(dirname "${FILE}")
       pushd "${DIR}" && kustomize edit fix --vars 1>/dev/null && popd
+      if ! grep -q "^---" "$FILE"; then
+        sed -i '1s/^/---\n/' "$FILE"
+      fi
     done
     prettier ./ --write
   elif [[ "$option" == "--dir" ]]; then
@@ -62,6 +65,9 @@ function kustomize_fix() {
       find "$target_dir" -type f -name "kustomization.yaml" | while read -r FILE; do
         DIR=$(dirname "${FILE}")
         pushd "${DIR}" && kustomize edit fix --vars 1>/dev/null && popd
+        if ! grep -q "^---" "$FILE"; then
+          sed -i '1s/^/---\n/' "$FILE"
+        fi
       done
     else
       echo "Error: Specified directory does not exist."
@@ -138,7 +144,6 @@ stateful_workload_stop() {
   kubectl patch cronjobs -n nextcloud nextcloud-preview -p '{"spec" : {"suspend" : true }}'
   kubectl patch cronjobs -n nextcloud nextcloud-rsync -p '{"spec" : {"suspend" : true }}'
   kubectl patch cronjobs -n nextcloud nextcloud-cron -p '{"spec" : {"suspend" : true }}'
-  # kubectl patch cronjobs -n mariadb-galera mysqldump-cron -p '{"spec" : {"suspend" : true }}'
 
   kubectl scale --replicas=0 -n openshift-monitoring deployment/cluster-monitoring-operator
   kubectl scale --replicas=0 -n openshift-monitoring deployment/prometheus-operator
@@ -155,7 +160,6 @@ stateful_workload_stop() {
   kubectl scale --replicas=0 -n heimdall statefulset/heimdall
   kubectl scale --replicas=0 -n homeassistant statefulset/homeassistant
   # kubectl scale --replicas=0 -n loki statefulset/loki
-  # kubectl scale --replicas=0 -n mariadb-galera statefulset/mariadb-galera
   kubectl scale --replicas=0 -n nextcloud deployment/nextcloud
   kubectl scale --replicas=0 -n immich statefulset/immich
   kubectl scale --replicas=0 -n prometheus statefulset/prometheus
@@ -264,7 +268,6 @@ stateful_workload_start_pre() {
   # kubectl scale --replicas=3 -n unifi-network-application statefulset/mongo-unifi-network-application
 
   # kubectl scale --replicas=1 -n loki statefulset/loki
-  # kubectl scale --replicas=3 -n mariadb-galera statefulset/mariadb-galera
   kubectl scale --replicas=1 -n prometheus statefulset/prometheus
   kubectl scale --replicas=1 -n prometheus statefulset/thanos-store-gateway
   kubectl scale --replicas=1 -n quay deployment/quay-operator-tng
@@ -310,7 +313,6 @@ stateful_workload_start() {
   kubectl patch cronjobs -n nextcloud nextcloud-preview -p '{"spec" : {"suspend" : false }}'
   kubectl patch cronjobs -n nextcloud nextcloud-rsync -p '{"spec" : {"suspend" : false }}'
   kubectl patch cronjobs -n nextcloud nextcloud-cron -p '{"spec" : {"suspend" : false }}'
-  # kubectl patch cronjobs -n mariadb-galera mysqldump-cron -p '{"spec" : {"suspend" : false }}'
 
   kubectl scale --replicas=1 -n openshift-monitoring deployment/cluster-monitoring-operator
 
@@ -334,7 +336,6 @@ stateful_workload_start() {
   kubectl scale --replicas=1 -n heimdall statefulset/heimdall
   kubectl scale --replicas=1 -n homeassistant statefulset/homeassistant
   kubectl scale --replicas=1 -n loki statefulset/loki
-  # kubectl scale --replicas=3 -n mariadb-galera statefulset/mariadb-galera
   kubectl scale --replicas=2 -n nextcloud deployment/nextcloud
   kubectl scale --replicas=1 -n immich statefulset/immich
   kubectl scale --replicas=1 -n prometheus statefulset/prometheus

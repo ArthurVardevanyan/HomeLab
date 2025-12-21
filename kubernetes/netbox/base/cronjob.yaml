@@ -1,8 +1,11 @@
+---
 # Source: netbox/templates/cronjob.yaml
 apiVersion: batch/v1
 kind: CronJob
 metadata:
   name: netbox-housekeeping
+  annotations:
+    checkov.io/skip1: CKV_K8S_40=OpenShift Injects Random UID
   namespace: "netbox"
   labels:
     app.kubernetes.io/instance: netbox

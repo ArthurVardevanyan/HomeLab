@@ -1,70 +1,80 @@
-- hosts: servers-x86
-  gather_facts: no
+---
+- name: Install and configure Node Exporter
+  hosts: servers-x86
+  gather_facts: false
   become: true
   user: arthur
   tasks:
-    - name: install node exporter
+    - name: Install node exporter
       # https://techviewleo.com/install-prometheus-with-node-exporter-on-rhel-centos/
-      yum:
-        state: latest
+      ansible.builtin.dnf:
+        state: present
         name:
-          - node_exporter
+          # renovate: datasource=repology depName=centos_stream_10/node_exporter
+          - node_exporter-1.5.0-1.el10
 
     - name: Node Exporter Collector Directory
-      file:
+      ansible.builtin.file:
         path: /var/lib/prometheus/node-exporter
         state: directory
+        mode: "0755"
 
     - name: Git Clone node-exporter-textfile-collector-scripts
-      git:
+      ansible.builtin.git:
         repo: "https://github.com/prometheus-community/node-exporter-textfile-collector-scripts"
         dest: /usr/share/node-exporter-textfile-collector-scripts/
+        version: master
 
     - name: Node Exporter Systemd File
-      copy:
+      ansible.builtin.copy:
         src: "../../../../../machineConfigs/servers/server/usr/lib/systemd/system/node_exporter.service"
         dest: "/usr/lib/systemd/system/node_exporter.service"
-      register: node_exporter
+        mode: "0644"
+      notify: Restart Node Exporter SystemD
 
     - name: Enable Node Exporter SystemD
-      ansible.builtin.systemd:
+      ansible.builtin.systemd_service:
         enabled: true
         name: node_exporter
         state: started
         daemon_reload: true
 
-    - name: Restart Node Exporter SystemD
-      ansible.builtin.systemd:
-        enabled: true
-        name: node_exporter
-        state: restarted
-        daemon_reload: true
-      when: node_exporter.changed
-
     - name: Node Exporter NVME Plugin Systemd File
-      copy:
+      ansible.builtin.copy:
         src: "../../../../../machineConfigs/servers/server/usr/lib/systemd/system/prometheus-node-exporter-nvme.service"
         dest: "/usr/lib/systemd/system/prometheus-node-exporter-nvme.service"
-
-    - name: Enable Node Exporter NVME Plugin SystemD
-      ansible.builtin.systemd:
-        enabled: true
-        name: prometheus-node-exporter-nvme
-        daemon_reload: true
+        mode: "0644"
+      notify: Enable Node Exporter NVME Plugin SystemD
 
     - name: Node Exporter NVME Plugin Timer Systemd File
-      copy:
+      ansible.builtin.copy:
         src: "../../../../../machineConfigs/servers/server/usr/lib/systemd/system/prometheus-node-exporter-nvme.timer"
         dest: "/usr/lib/systemd/system/prometheus-node-exporter-nvme.timer"
-
-    - name: Enable Node Exporter NVME Timer Plugin SystemD
-      ansible.builtin.systemd:
-        enabled: true
-        name: prometheus-node-exporter-nvme.timer
-        daemon_reload: true
+        mode: "0644"
+      notify: Enable Node Exporter NVME Timer Plugin SystemD
 
     - name: Allow Node Exporter Firewall
       ansible.posix.firewalld:
         port: 9100/tcp
         permanent: true
         state: enabled
+
+  handlers:
+    - name: Restart Node Exporter SystemD
+      ansible.builtin.systemd_service:
+        enabled: true
+        name: node_exporter
+        state: restarted
+        daemon_reload: true
+
+    - name: Enable Node Exporter NVME Plugin SystemD
+      ansible.builtin.systemd_service:
+        enabled: true
+        name: prometheus-node-exporter-nvme
+        daemon_reload: true
+
+    - name: Enable Node Exporter NVME Timer Plugin SystemD
+      ansible.builtin.systemd_service:
+        enabled: true
+        name: prometheus-node-exporter-nvme.timer
+        daemon_reload: true

@@ -1,17 +1,22 @@
-- hosts: ryzen
-  gather_facts: no
+---
+- name: Install Hashicorp Tools
+  hosts: ryzen
+  gather_facts: false
   become: true
   user: arthur
   tasks:
-    - name: Add hashicorp Repo
+    - name: Add Hashicorp Repo
       ansible.builtin.yum_repository:
-        name: hashicorp.repo
-        description: hashicorp.repo
-        baseurl: https://rpm.releases.hashicorp.com/fedora/40/x86_64/stable
+        name: hashicorp
+        description: Hashicorp YUM repo
+        baseurl: https://rpm.releases.hashicorp.com/fedora/43/x86_64/stable
         gpgcheck: false
+        mode: "0644"
     - name: Install Terraform & Vault
-      yum:
-        state: latest
+      ansible.builtin.dnf:
+        state: present
         name:
-          - terraform
-          - vault
+          # renovate: datasource=repology depName=fedora_43/terraform
+          - terraform-1.9.0-1
+          # renovate: datasource=repology depName=fedora_43/vault
+          - vault-1.17.0-1

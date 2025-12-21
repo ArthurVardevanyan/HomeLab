@@ -1,9 +1,11 @@
+---
 kind: Deployment
 apiVersion: apps/v1
 metadata:
   name: nextcloud
   namespace: nextcloud-fpm
   annotations:
+    checkov.io/skip1: CKV_K8S_40=OpenShift Injects Random UID
     argocd.argoproj.io/sync-wave: "2"
   labels:
     app: nextcloud
@@ -99,12 +101,11 @@ spec:
         - name: init-max-children
           # https://github.com/nextcloud/helm/pull/752
           image: docker.io/nextcloud:32.0.2-fpm
-          command: [
-              "sh",
-              "-c",
-              "echo 'pm = dynamic\npm.max_children = 25\npm.start_servers
-              = 5\npm.min_spare_servers = 5\npm.max_spare_servers = 10' > /usr/local/etc/php-fpm.d/www.conf",
-            ]
+          command:
+            - "sh"
+            - "-c"
+            - "echo 'pm = dynamic\\npm.max_children = 25\\npm.start_servers
+              = 5\\npm.min_spare_servers = 5\\npm.max_spare_servers = 10' > /usr/local/etc/php-fpm.d/www.conf"
           resources:
             limits:
               cpu: 50m

@@ -4,6 +4,9 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: arc-gha-rs-controller
+  annotations:
+    checkov.io/skip1: CKV_K8S_40=OpenShift Injects Random UID
+    checkov.io/skip2: CKV_K8S_38=Operators Require Use of Service Account Tokens
   namespace: github-arc-systems
   labels:
     helm.sh/chart: gha-rs-controller-0.13.0
@@ -45,6 +48,15 @@ spec:
             requests:
               cpu: 5m
               memory: 128Mi
+          securityContext:
+            runAsNonRoot: true
+            readOnlyRootFilesystem: true
+            allowPrivilegeEscalation: false
+            seccompProfile:
+              type: RuntimeDefault
+            capabilities:
+              drop:
+                - ALL
           imagePullPolicy: IfNotPresent
           args:
             - "--auto-scaling-runner-set-only"
@@ -55,6 +67,19 @@ spec:
             - "--listener-metrics-addr=0"
             - "--listener-metrics-endpoint="
             - "--metrics-addr=0"
+            - "--health-probe-bind-address=:8081"
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: 8081
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /readyz
+              port: 8081
+            initialDelaySeconds: 5
+            periodSeconds: 10
           command:
             - "/manager"
           env:

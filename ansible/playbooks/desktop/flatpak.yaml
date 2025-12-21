@@ -1,30 +1,37 @@
-- hosts: ryzen
-  gather_facts: no
+---
+- name: Install Flatpak packages
+  hosts: ryzen
+  gather_facts: false
   user: arthur
   tasks:
     - name: Discord
       become: true
-      flatpak:
+      community.general.flatpak:
         name: com.discordapp.Discord
         remote: flathub
         method: system
+        state: present
     - name: Discord Startup
-      copy:
+      ansible.builtin.copy:
         src: "../../../machineConfigs/desktop/home/arthur/.config/autostart/discord-stable.desktop"
         dest: "/home/arthur/.config/autostart/discord-stable.desktop"
+        mode: "0644"
     - name: Slack
       become: true
-      flatpak:
+      community.general.flatpak:
         name: com.slack.Slack
         remote: flathub
         method: system
+        state: present
     - name: Spotify
       become: true
-      flatpak:
+      community.general.flatpak:
         name: com.spotify.Client
         remote: flathub
         method: system
+        state: present
     - name: Spotify Startup
-      copy:
+      ansible.builtin.copy:
         src: "../../../machineConfigs/desktop/home/arthur/.config/autostart/spotify.desktop"
         dest: "/home/arthur/.config/autostart/spotify.desktop"
+        mode: "0644"

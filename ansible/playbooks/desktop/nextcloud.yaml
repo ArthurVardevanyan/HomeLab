@@ -1,18 +1,23 @@
-- hosts: ryzen
-  gather_facts: no
+---
+- name: Install Nextcloud
+  hosts: ryzen
+  gather_facts: false
   user: arthur
   tasks:
     - name: Install Nextcloud
       become: true
-      yum:
-        state: latest
+      ansible.builtin.dnf:
+        state: present
         name:
-          - nextcloud-client
+          # renovate: datasource=repology depName=fedora_43/nextcloud-client
+          - nextcloud-client-3.12.3-1.fc40
     - name: Nextcloud Startup
-      copy:
+      ansible.builtin.copy:
         src: "../../../machineConfigs/desktop/home/arthur/.config/autostart/com.nextcloud.desktopclient.nextcloud.desktop"
         dest: "/home/arthur/.config/autostart/com.nextcloud.desktopclient.nextcloud.desktop"
+        mode: "0644"
     - name: Create Nextcloud Sync Directories
-      file:
+      ansible.builtin.file:
         path: /home/arthur/Projects
         state: directory
+        mode: "0755"

@@ -1,24 +1,34 @@
-- hosts: k3s
-  gather_facts: no
+---
+- name: Install and configure Cockpit on K3s nodes
+  hosts: k3s
+  gather_facts: false
   ignore_unreachable: true
   become: true
   user: arthur
   tasks:
     - name: Install Cockpit
-      apt:
-        state: latest
+      ansible.builtin.apt:
+        state: present
         name:
-          - cockpit
-          - cockpit-pcp
+          # renovate: datasource=repology depName=debian_12/cockpit
+          - cockpit=287-1
+          # renovate: datasource=repology depName=debian_12/cockpit-pcp
+          - cockpit-pcp=287-1
+
     - name: Cockpit Web Gui Devices
-      copy:
+      ansible.builtin.copy:
         src: "../../../../machineConfigs/servers/server/etc/cockpit/machines.d/99-webui.json"
         dest: "/etc/cockpit/machines.d/99-webui.json"
+        mode: "0644"
+
     - name: Cockpit Cert
-      copy:
+      ansible.builtin.copy:
         src: "/tmp/cockpit.crt"
         dest: "/etc/cockpit/ws-certs.d/cockpit.crt"
+        mode: "0644"
+
     - name: Cockpit Key
-      copy:
+      ansible.builtin.copy:
         src: "/tmp/cockpit.key"
         dest: "/etc/cockpit/ws-certs.d/cockpit.key"
+        mode: "0600"

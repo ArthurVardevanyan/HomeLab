@@ -1,3 +1,4 @@
+---
 apiVersion: kyverno.io/v1
 kind: Policy
 metadata:
@@ -21,3 +22,56 @@ spec:
         patchStrategicMerge:
           spec:
             minReplicas: 2
+    - name: add-cpu-memory-limits-webhook
+      skipBackgroundRequests: true
+      match:
+        resources:
+          kinds:
+            - Deployment
+          selector:
+            matchLabels:
+              app.kubernetes.io/component: webhook
+              app.kubernetes.io/instance: default
+              app.kubernetes.io/name: webhook
+              app.kubernetes.io/part-of: tekton-pipelines
+      mutate:
+        patchStrategicMerge:
+          spec:
+            template:
+              spec:
+                containers:
+                  - (name): webhook
+                    resources:
+                      limits:
+                        cpu: 250m
+                        memory: 512Mi
+                      requests:
+                        cpu: 25m
+                        memory: 384Mi
+
+    - name: add-cpu-memory-limits-pipelines
+      skipBackgroundRequests: true
+      match:
+        resources:
+          kinds:
+            - Deployment
+          selector:
+            matchLabels:
+              app.kubernetes.io/component: controller
+              app.kubernetes.io/instance: default
+              app.kubernetes.io/name: controller
+              app.kubernetes.io/part-of: tekton-pipelines
+      mutate:
+        patchStrategicMerge:
+          spec:
+            template:
+              spec:
+                containers:
+                  - (name): tekton-pipelines-controller
+                    resources:
+                      limits:
+                        cpu: 250m
+                        memory: 256Mi
+                      requests:
+                        cpu: 25m
+                        memory: 192Mi

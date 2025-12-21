@@ -1,8 +1,11 @@
+---
 # Source: external-dns/templates/deployment.yaml
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: external-dns-okd-vlan3
+  annotations:
+    checkov.io/skip1: CKV_K8S_40=OpenShift Injects Random UID
   namespace: external-dns
   labels:
     app.kubernetes.io/name: external-dns-okd-vlan3
@@ -16,7 +19,7 @@ spec:
       app.kubernetes.io/name: external-dns-okd-vlan3
       app.kubernetes.io/instance: external-dns-okd-vlan3
   strategy:
-    type: RollingUpdate #Recreate
+    type: RollingUpdate # Recreate
   template:
     metadata:
       labels:
@@ -89,7 +92,7 @@ spec:
             # Change this to the actual address of your Pi-hole web server
             - --pihole-server=https://pihole-vlan3.app.okd.homelab.arthurvardevanyan.com
             - --annotation-filter=externaldns.k8s.io in (pihole-vlan3)
-            #- --policy=sync #upsert-only
+            #- --policy=sync # upsert-only
           envFrom:
             - secretRef:
                 # Change this if you gave the secret a different name
@@ -132,6 +135,8 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: external-dns-microshift-vlan3
+  annotations:
+    checkov.io/skip1: CKV_K8S_40=OpenShift Injects Random UID
   namespace: external-dns
   labels:
     app.kubernetes.io/name: external-dns-okd-vlan3
@@ -145,7 +150,7 @@ spec:
       app.kubernetes.io/name: external-dns-okd-vlan3
       app.kubernetes.io/instance: external-dns-okd-vlan3
   strategy:
-    type: RollingUpdate #Recreate
+    type: RollingUpdate # Recreate
   template:
     metadata:
       labels:
@@ -218,7 +223,7 @@ spec:
             # Change this to the actual address of your Pi-hole web server
             - --pihole-server=https://pihole-vlan3.arthurvardevanyan.com
             - --annotation-filter=externaldns.k8s.io in (pihole-vlan3)
-            #- --policy=sync #upsert-only
+            #- --policy=sync # upsert-only
           envFrom:
             - secretRef:
                 # Change this if you gave the secret a different name

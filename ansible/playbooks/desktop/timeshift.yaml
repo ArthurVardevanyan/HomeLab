@@ -1,18 +1,23 @@
-- hosts: ryzen
-  gather_facts: no
+---
+- name: Install Timeshift
+  hosts: ryzen
+  gather_facts: false
   become: true
   user: arthur
   tasks:
     - name: Create Timeshift Folder
-      file:
+      ansible.builtin.file:
         path: /etc/timeshift
         state: directory
+        mode: "0755"
     - name: Install Timeshift
-      yum:
-        state: latest
+      ansible.builtin.dnf:
+        state: present
         name:
-          - timeshift
+          # renovate: datasource=repology depName=fedora_43/timeshift
+          - timeshift-24.06.1-1.fc40
     - name: Create Timeshift Config
-      copy:
+      ansible.builtin.copy:
         src: "../../../machineConfigs/desktop/etc/timeshift/timeshift.json"
         dest: "/etc/timeshift/timeshift.json"
+        mode: "0644"

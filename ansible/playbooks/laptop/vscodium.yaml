@@ -1,25 +1,29 @@
-- hosts: lenovo
-  gather_facts: no
+---
+- name: Install VSCodium
+  hosts: lenovo
+  gather_facts: false
   become: true
   user: arthur
   tasks:
     - name: Add VSCodium Key
-      apt_key:
+      ansible.builtin.apt_key:
         url: https://gitlab.com/paulcarroty/vscodium-deb-rpm-repo/raw/master/pub.gpg
         keyring: /etc/apt/trusted.gpg.d/vscodium-archive-keyring.gpg
         state: present
     - name: Add VSCodium Repo
-      apt_repository:
+      ansible.builtin.apt_repository:
         repo: deb https://paulcarroty.gitlab.io/vscodium-deb-rpm-repo/debs/ vscodium main
         state: present
-        update_cache: True
+        update_cache: true
         filename: vscodium
     - name: Install VSCodium
-      apt:
-        state: latest
+      ansible.builtin.apt:
+        state: present
         name:
-          - codium
+          # renovate: datasource=repology depName=ubuntu_25_10/vscodium
+          - codium-1.90.1.24165
     - name: VSCodium Marketplace
-      copy:
+      ansible.builtin.copy:
         src: "../../../machineConfigs/desktop/home/arthur/.config/VSCodium/product.json"
         dest: "/home/arthur/.config/VSCodium/product.json"
+        mode: "0644"

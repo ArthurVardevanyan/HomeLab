@@ -1,120 +1,123 @@
-- hosts: lenovo
-  gather_facts: no
+---
+- name: Laptop Gnome Extensions Configuration
+  hosts: lenovo
+  gather_facts: false
   user: arthur
   tasks:
     - name: Install Extensions
       become: true
-      package:
+      ansible.builtin.package:
         name:
           - dconf-editor
           - gnome-shell-extension-gsconnect
-          #- gnome-shell-extension-autohidetopbar
-          #- gnome-shell-extension-netspeed
-          #- gnome-shell-extension-places-menu
-          #- gnome-shell-extension-transparentnotification
+          # - gnome-shell-extension-autohidetopbar
+          # - gnome-shell-extension-netspeed
+          # - gnome-shell-extension-places-menu
+          # - gnome-shell-extension-transparentnotification
 
     - name: Enable Extensions
-      dconf:
+      community.general.dconf:
         key: "/org/gnome/shell/enabled-extensions"
         value:
           "['netspeed@hedayaty.gmail.com', 'places-menu@gnome-shell-extensions.gcampax.github.com', 'gsconnect@andyholmes.github.io', \
           'transparentnotification@ipaq3870', 'hidetopbar@mathieu.bidon.ca', 'pop-shell@system76.com', 'caffeine@patapon.info', \
           'appindicatorsupport@rgcjonas.gmail.com', 'apps-menu@gnome-shell-extensions.gcampax.github.com']"
     - name: Nautilus Show Image Thumbnails
-      dconf:
+      community.general.dconf:
         key: "/org/gnome/nautilus/preferences/show-image-thumbnails"
         value: "'always'"
     - name: Nautilus Bookmarks
-      copy:
+      ansible.builtin.copy:
         src: "../../../machineConfigs/desktop/home/arthur/.config/gtk-3.0/bookmarks"
         dest: "/home/arthur/.config/gtk-3.0/bookmarks"
+        mode: "0644"
 
     - name: Dash to Dock Cycle Windows
-      dconf:
+      community.general.dconf:
         key: "/org/gnome/shell/extensions/dash-to-dock/click-action"
         value: "'cycle-windows'"
 
     - name: Dock Auto Hide
-      dconf:
+      community.general.dconf:
         key: "/org/gnome/shell/extensions/dash-to-dock/manualhide"
         value: "false"
 
     - name: Dock Fixed
-      dconf:
+      community.general.dconf:
         key: "/org/gnome/shell/extensions/dash-to-dock/dock-fixed"
         value: "false"
 
     - name: Dock Max Icon Size
-      dconf:
+      community.general.dconf:
         key: "/org/gnome/shell/extensions/dash-to-dock/dash-max-icon-size"
         value: "36"
 
     - name: Dock Multi Monitor
-      dconf:
+      community.general.dconf:
         key: "/org/gnome/shell/extensions/dash-to-dock/multi-monitor"
         value: "true"
 
     - name: Dock Show Mounts
-      dconf:
+      community.general.dconf:
         key: "/org/gnome/shell/extensions/dash-to-dock/show-mounts"
         value: "false"
 
     - name: Dock Extend Height
-      dconf:
+      community.general.dconf:
         key: "/org/gnome/shell/extensions/dash-to-dock/extend-height"
         value: "false"
 
     - name: Dock Position
-      dconf:
+      community.general.dconf:
         key: "/org/gnome/shell/extensions/dash-to-dock/dock-position"
         value: "'BOTTOM'"
 
     - name: Show Volumes on Desktop
-      dconf:
+      community.general.dconf:
         key: "/org/gnome/shell/extensions/ding/show-volumes"
         value: "false"
 
     - name: Show Trash on Desktop
-      dconf:
+      community.general.dconf:
         key: "/org/gnome/shell/extensions/ding/show-trash"
         value: "false"
 
     - name: Show Home on Desktop
-      dconf:
+      community.general.dconf:
         key: "/org/gnome/shell/extensions/ding/show-home"
         value: "false"
 
     - name: Pop Cosmic Overlay Key Action
-      dconf:
+      community.general.dconf:
         key: "/org/gnome/shell/extensions/pop-cosmic/overlay-key-action"
         value: "'WORKSPACES'"
 
     - name: Pop Cosmic Show Applications Button
-      dconf:
+      community.general.dconf:
         key: "/org/gnome/shell/extensions/pop-cosmic/show-applications-button"
         value: "true"
 
     - name: Pop Shell Gap Inner
-      dconf:
+      community.general.dconf:
         key: "/org/gnome/shell/extensions/pop-shell/gap-inner"
         value: "uint32 0"
 
     - name: Pop Shell Gap Outer
-      dconf:
+      community.general.dconf:
         key: "/org/gnome/shell/extensions/pop-shell/gap-outer"
         value: "uint32 0"
 
     - name: Pop Shell Hint Color
-      dconf:
+      community.general.dconf:
         key: "/org/gnome/shell/extensions/pop-shell/hint-color-rgba"
         value: "'rgb(0,0,0)'"
 
     - name: Pop Shell Show Title
-      dconf:
+      community.general.dconf:
         key: "/org/gnome/shell/extensions/pop-shell/show-title"
         value: "true"
 
     - name: Pop Shell Tile
-      dconf:
+      community.general.dconf:
         key: "/org/gnome/shell/extensions/pop-shell/tile-by-default"
         value: "false"

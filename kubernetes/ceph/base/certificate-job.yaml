@@ -1,8 +1,13 @@
+---
 # https://github.com/dronenb/HomeLab/blob/1ccdcfb8f5c2ecb195e7ab928a9e6df88d8a71b8/kubernetes/workloads/rook-ceph/manifests/overlays/fh/cronjob.yaml
 apiVersion: batch/v1
 kind: CronJob
 metadata:
   name: ceph-dashboard-cert-rotate
+  annotations:
+    checkov.io/skip1: CKV_K8S_40=OpenShift Injects Random UID
+    checkov.io/skip2: CKV_K8S_43=Don't Mind Tag for This
+    checkov.io/skip3: CKV_K8S_38= Require Use of Service Account Tokens
   namespace: rook-ceph
   labels:
     app: ceph-toolbox-job

@@ -1,22 +1,26 @@
-- hosts: lenovo
-  gather_facts: no
+---
+- name: Install Terminator
+  hosts: lenovo
+  gather_facts: false
   user: arthur
   tasks:
     - name: Add Terminator Repo
       become: true
-      apt_repository:
-        validate_certs: no
+      ansible.builtin.apt_repository:
+        validate_certs: false
         repo: "deb https://ppa.launchpadcontent.net/mattrose/terminator/ubuntu noble main"
         state: present
-        update_cache: True
+        update_cache: true
     - name: Install Terminator
       become: true
-      apt:
-        state: latest
+      ansible.builtin.apt:
+        state: present
         name:
-          - terminator
+          # renovate: datasource=repology depName=ubuntu_25_10/terminator
+          - terminator-2.1.3-1
 
     - name: Copy Terminator Config
-      copy:
+      ansible.builtin.copy:
         src: "../../../machineConfigs/desktop/home/arthur/.config/terminator"
         dest: "/home/arthur/.config/"
+        mode: "0644"

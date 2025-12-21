@@ -1,3 +1,4 @@
+---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
@@ -27,6 +28,9 @@ metadata:
   name: installplan-approver-kubevirt-hyperconverged
   namespace: kubevirt-hyperconverged
   annotations:
+    checkov.io/skip1: CKV_K8S_40=OpenShift Injects Random UID
+    checkov.io/skip2: CKV_K8S_43=Don't Mind Tag for This
+    checkov.io/skip3: CKV_K8S_38= Require Use of Service Account Tokens
     argocd.argoproj.io/hook: Sync
     argocd.argoproj.io/hook-delete-policy: HookSucceeded
     argocd.argoproj.io/sync-wave: "1"

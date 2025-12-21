@@ -1,47 +1,61 @@
-- hosts: microshift
-  gather_facts: no
+---
+- name: Configure Microshift nodes
+  hosts: microshift
+  gather_facts: false
   become: true
   user: arthur
   tasks:
     - name: Set a hostname
       ansible.builtin.hostname:
         name: microshift.arthurvardevanyan.com
+
     - name: Add Local DNS for MicroShift
       ansible.builtin.lineinfile:
         path: /etc/hosts
         line: 10.101.1.7 microshift microshift.arthurvardevanyan.com
-        create: yes
-    - name: cGroupsV2
-      copy:
+        create: true
+        mode: "0644"
+
+    - name: CGroupsV2
+      ansible.builtin.copy:
         src: "../../../../machineConfigs/servers/microshift/boot/cmdline.txt"
         dest: "/boot/cmdline.txt"
+        mode: "0644"
+
     - name: Load iptables modules
-      command: modprobe {{ item }}
+      community.general.modprobe:
+        name: "{{ item }}"
+        state: present
       loop:
         - iptable_filter
         - iptable_nat
         - iptable_mangle
-      ignore_errors: yes
+      failed_when: false
+
     - name: Persist iptables modules
-      copy:
+      ansible.builtin.copy:
         dest: /etc/modules-load.d/kube-vip.conf
         content: |
           iptable_filter
           iptable_nat
           iptable_mangle
-    - name: create partition
-      parted:
+        mode: "0644"
+
+    - name: Create partition
+      community.general.parted:
         device: /dev/nvme0n1
         number: 3
         flags: [lvm]
         state: present
-    - name: rhel volumegroup
-      lvg:
+
+    - name: RHEL volumegroup
+      community.general.lvg:
         vg: rhel
         pvs: /dev/nvme0n1p3
-    - name: logical volume test
-      lvol:
+
+    - name: Logical volume test
+      community.general.lvol:
         vg: rhel
         lv: rhel
         size: 1g
-        force: yes
+        force: true

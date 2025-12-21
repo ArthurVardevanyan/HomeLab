@@ -1,33 +1,43 @@
-- hosts: servers-common
-  gather_facts: no
+---
+- name: Install and configure Cockpit on common servers
+  hosts: servers-common
+  gather_facts: false
   become: true
   user: arthur
   tasks:
     - name: Install Cockpit
-      yum:
-        state: latest
+      ansible.builtin.dnf:
+        state: present
         name:
-          - cockpit
-          - cockpit-pcp
+          # renovate: datasource=repology depName=centos_stream_10/cockpit
+          - cockpit-287-1.el10
+          # renovate: datasource=repology depName=centos_stream_10/cockpit-pcp
+          - cockpit-pcp-287-1.el10
+
     - name: Cockpit Web Gui Devices
-      copy:
+      ansible.builtin.copy:
         src: "../../../../../machineConfigs/servers/server/etc/cockpit/machines.d/99-webui.json"
         dest: "/etc/cockpit/machines.d/99-webui.json"
+        mode: "0644"
+
     - name: Cockpit Cert
-      copy:
+      ansible.builtin.copy:
         src: "/tmp/cockpit.crt"
         dest: "/etc/cockpit/ws-certs.d/cockpit.crt"
+        mode: "0644"
+
     - name: Cockpit Key
-      copy:
+      ansible.builtin.copy:
         src: "/tmp/cockpit.key"
         dest: "/etc/cockpit/ws-certs.d/cockpit.key"
-    - name: cockpit enable port 9090
-      firewalld:
+        mode: "0600"
+
+    - name: Cockpit enable port 9090
+      ansible.posix.firewalld:
         zone: public
         port: 9090/tcp
         permanent: true
         state: enabled
-      become: yes
     - name: Make sure cockpit service unit is running
       ansible.builtin.systemd_service:
         state: started

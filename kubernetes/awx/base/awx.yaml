@@ -1,3 +1,4 @@
+---
 apiVersion: awx.ansible.com/v1beta1
 kind: AWX
 metadata:
@@ -54,7 +55,7 @@ spec:
   loadbalancer_protocol: http
   metrics_utility_cronjob_gather_schedule: "@hourly"
   task_liveness_timeout: 1
-  postgres_configuration_secret: postgres-configuration
+  postgres_configuration_secret: postgres-configuration # checkov:skip=CKV_SECRET_6 Secret Key Name
   image: quay.io/ansible/awx:24.6.1@sha256
   image_version: 5d47e132014ae4c6a026a2e8f19ce7b3cf3c8f313d59e44fdfa95cd9f3669209
   init_container_image: quay.io/ansible/awx-ee:24.6.1@sha256

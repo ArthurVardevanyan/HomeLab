@@ -1,13 +1,20 @@
-- hosts: vscode-server
-  gather_facts: no
+---
+- name: Configure Wireguard IP routes
+  hosts: vscode-server
+  gather_facts: false
   become: true
   user: arthur
   tasks:
     - name: Create Wireguard Static Route Service
-      copy:
+      ansible.builtin.copy:
         src: "../../../machineConfigs/vscode-server/etc/systemd/system/static-route.service"
         dest: "/etc/systemd/system/static-route.service"
-      register: wireguard_conf
-    - name: Enable Service
-      command: systemctl enable static-route.service
-      when: wireguard_conf.changed
+        mode: "0644"
+      notify: Enable Wireguard Static Route Service
+
+  handlers:
+    - name: Enable Wireguard Static Route Service
+      ansible.builtin.systemd_service:
+        name: static-route.service
+        enabled: true
+        daemon_reload: true

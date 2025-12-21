@@ -1,3 +1,4 @@
+---
 kind: StatefulSet
 apiVersion: apps/v1
 metadata:
@@ -8,6 +9,7 @@ metadata:
     app.kubernetes.io/instance: pihole
   annotations:
     checkov.io/skip1: CKV_K8S_40=OpenShift Injects Random UID
+    checkov.io/skip2: CKV_K8S_16=Does some privileged operations during startup
 spec:
   replicas: 1
   serviceName: pihole
@@ -55,7 +57,7 @@ spec:
             - name: FTLCONF_dns_cache_size
               value: "10000"
             - name: FTLCONF_dns_upstreams
-              value: "10.101.11.4;10.101.11.5" #"10.101.11.5"
+              value: "10.101.11.4;10.101.11.5" # "10.101.11.5"
             - name: FTLCONF_misc_etc_dnsmasq_d
               value: "true"
           securityContext:
@@ -72,7 +74,7 @@ spec:
                 - ALL
           readinessProbe:
             exec:
-              command: ["dig", "@127.0.0.1"] #, "cloudflare.com"]
+              command: ["dig", "@127.0.0.1"] # , "cloudflare.com"]
             initialDelaySeconds: 15
             timeoutSeconds: 20
             periodSeconds: 30
@@ -156,6 +158,24 @@ spec:
             - secretRef:
                 # Change this if you gave the secret a different name
                 name: pihole-password
+          readinessProbe:
+            httpGet:
+              path: /metrics
+              port: 9617
+            initialDelaySeconds: 5
+            timeoutSeconds: 1
+            periodSeconds: 30
+            successThreshold: 1
+            failureThreshold: 5
+          livenessProbe:
+            httpGet:
+              path: /metrics
+              port: 9617
+            initialDelaySeconds: 5
+            timeoutSeconds: 1
+            periodSeconds: 30
+            successThreshold: 1
+            failureThreshold: 5
       automountServiceAccountToken: false
       serviceAccountName: pihole
       volumes:

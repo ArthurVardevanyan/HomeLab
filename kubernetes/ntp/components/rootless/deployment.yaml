@@ -1,7 +1,10 @@
+---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: ntp-rootless
+  annotations:
+    checkov.io/skip1: CKV_K8S_40=OpenShift Injects Random UID
   namespace: ntp
   labels:
     app: ntp-rootless
@@ -57,7 +60,7 @@ spec:
           imagePullPolicy: IfNotPresent
           name: ntp-rootless
           ports:
-            - containerPort: 123 #12345
+            - containerPort: 123 # 12345
               name: ntp
               protocol: UDP
             - containerPort: 9433
