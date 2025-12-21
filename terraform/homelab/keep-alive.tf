@@ -123,6 +123,7 @@ resource "google_storage_bucket_iam_member" "okd_homelab_keep_alive_cloud_functi
 
 
 resource "google_cloudfunctions2_function" "okd_homelab_keep_alive_cloud_function" {
+  # checkov:skip=CKV_GCP_124: "Website needs to be reachable for everyone"
   name     = "okd-homelab-keep-alive-cloud-function"
   project  = "homelab-${local.project_id}"
   location = "us-central1"
