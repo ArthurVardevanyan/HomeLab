@@ -10,9 +10,9 @@
     "ArthurVardevanyan/Analytics-for-Spotify"
   ],
   "gitAuthor": "Renovate <arthur@arthurvardevanyan.com>",
-  "groupName": "all",
   "automerge": false,
   "prHourlyLimit": 0,
+  "postUpdateOptions": ["gomodTidy"],
   "ansible": {
     "enabled": false
   },
@@ -23,6 +23,18 @@
     }
   },
   "packageRules": [
+    {
+      "matchDatasources": ["docker"],
+      "groupName": "Container Updates"
+    },
+    {
+      "matchDatasources": ["github-releases", "github-tags"],
+      "groupName": "GitHub Releases"
+    },
+    {
+      "matchManagers": ["gomod"],
+      "groupName": "Go Modules"
+    },
     {
       "matchDepNames": ["shellcheck-py/shellcheck-py"],
       "versioning": "semver",
@@ -44,7 +56,7 @@
     {
       "fileMatch": ["\\.yaml$"],
       "matchStrings": [
-        "#\\s*renovate:\\s*datasource=(?<datasource>.*?) depName=(?<depName>.*?)(?: versioning=(?<versioning>.*?))?\\s+(?:-\\s+)?\\w+:\\s+[\"']?(?:[^@\\s]*:)?(?<currentValue>[^@\\s\"']+?)(?<suffix>-cluster)?(?:@(?<currentDigest>sha256:[a-f0-9]+))?[\"']?"
+        "#\\s*renovate:\\s*datasource=(?<datasource>.*?) depName=(?<depName>.*?)(?: versioning=(?<versioning>.*?))?\\s+(?:-\\s+)?\\w+:\\s+[\"']?(?:[^@\\s]*:)?(?<currentValue>[^@\\s\"']+)(?<suffix>-cluster)?(?:@(?<currentDigest>sha256:[a-f0-9]+))?[\"']?"
       ]
     },
     {
@@ -64,16 +76,16 @@
     {
       "fileMatch": ["^ansible/.*\\.ya?ml$"],
       "matchStrings": [
-        "(?<comment>#\\s*renovate:\\s*datasource=(?<datasource>\\S+)\\s+depName=(?<depName>\\S+)(?:\\s+registryUrl=(?<registryUrl>\\S+))?(?:\\s+versioning=(?<versioning>\\S+))?)\\s+-\\s+(?<packageName>[\\w.-]+?)-(?<currentValue>\\d[^\\s]*)"
+        "(?<comment>#\\s*renovate:\\s*datasource=(?<datasource>\\S+)\\s+depName=(?<depName>\\S+)(?:\\s+registryUrl=(?<registryUrl>\\S+))?(?:\\s+versioning=(?<versioning>\\S+))?)\\s+-\\s+(?<artifactName>[\\w.-]+?)-(?<currentValue>\\d[^\\s]*)"
       ],
-      "autoReplaceStringTemplate": "{{{comment}}}\n          - {{{packageName}}}-{{{newVersion}}}"
+      "autoReplaceStringTemplate": "{{{comment}}}\n          - {{{artifactName}}}-{{{newVersion}}}"
     },
     {
       "fileMatch": ["^ansible/.*\\.ya?ml$"],
       "matchStrings": [
-        "(?<comment>#\\s*renovate:\\s*datasource=(?<datasource>\\S+)\\s+depName=(?<depName>\\S+)(?:\\s+registryUrl=(?<registryUrl>\\S+))?(?:\\s+versioning=(?<versioning>\\S+))?)\\s+-\\s+(?<packageName>[\\w.-]+?)==(?<currentValue>\\S+)"
+        "(?<comment>#\\s*renovate:\\s*datasource=(?<datasource>\\S+)\\s+depName=(?<depName>\\S+)(?:\\s+registryUrl=(?<registryUrl>\\S+))?(?:\\s+versioning=(?<versioning>\\S+))?)\\s+-\\s+(?<artifactName>[\\w.-]+?)==(?<currentValue>\\S+)"
       ],
-      "autoReplaceStringTemplate": "{{{comment}}}\n          - {{{packageName}}}=={{{newVersion}}}"
+      "autoReplaceStringTemplate": "{{{comment}}}\n          - {{{artifactName}}}=={{{newVersion}}}"
     },
     {
       "fileMatch": ["^ansible/.*\\.ya?ml$"],
