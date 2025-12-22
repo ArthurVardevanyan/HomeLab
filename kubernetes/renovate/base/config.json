@@ -76,10 +76,11 @@
     {
       "description": "Custom pre-commit SHA matcher",
       "fileMatch": ["\\.pre-commit-config\\.yaml$"],
-      "matchStrings": ["rev: (?<currentValue>[a-f0-9]{40})"],
-      "datasourceTemplate": "git-refs",
-      "extractVersionTemplate": "^(?<version>[a-f0-9]{40})$",
-      "packageNameTemplate": "github.com"
+      "matchStrings": [
+        "rev:\\s+(?<currentDigest>[a-f0-9]{40})\\s+#\\s+(?<currentValue>\\S+)"
+      ],
+      "datasourceTemplate": "github-tags",
+      "autoReplaceStringTemplate": "rev: {{{newDigest}}} # {{{newVersion}}}"
     }
   ]
 }
