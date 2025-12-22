@@ -21,6 +21,33 @@ spec:
           terminationGracePeriodSeconds: 300
           automountServiceAccountToken: false
           serviceAccountName: renovate
+          # initContainers:
+          #   - name: mod
+          #     # renovate: datasource=docker depName=docker.io/renovate/renovate
+          #     image: docker.io/renovate/renovate:42.64.1-full@sha256:f58d457847cbeae5000d00331cbcae9abf600e25a2f42fe6add9b5e38950e2ce
+          #     command: ["touch", "/usr/local/bin/mod"]
+          #     resources:
+          #       limits:
+          #         cpu: 50m
+          #         ephemeral-storage: 64Mi
+          #         memory: 64Mi
+          #       requests:
+          #         cpu: 25m
+          #         ephemeral-storage: 32Mi
+          #         memory: 32Mi
+          #     securityContext:
+          #       privileged: false
+          #       runAsNonRoot: true
+          #       readOnlyRootFilesystem: true
+          #       allowPrivilegeEscalation: false
+          #       seccompProfile:
+          #         type: RuntimeDefault
+          #       capabilities:
+          #         drop:
+          #           - ALL
+          #     volumeMounts:
+          #       - name: mod
+          #         mountPath: "/usr/local/bin"
           containers:
             # renovate: datasource=docker depName=docker.io/renovate/renovate
             - image: docker.io/renovate/renovate:42.64.1-full@sha256:f58d457847cbeae5000d00331cbcae9abf600e25a2f42fe6add9b5e38950e2ce
@@ -34,7 +61,7 @@ spec:
                   memory: 512Mi
               securityContext:
                 runAsNonRoot: true
-                readOnlyRootFilesystem: true
+                readOnlyRootFilesystem: false
                 allowPrivilegeEscalation: false
                 seccompProfile:
                   type: RuntimeDefault
@@ -52,6 +79,10 @@ spec:
                   value: "true"
                 - name: LOG_LEVEL
                   value: debug
+                - name: GOFLAGS
+                  value: "-mod=mod"
+                - name: GOBIN
+                  value: /tmp/bin
               envFrom:
                 - secretRef:
                     name: renovate-env
@@ -64,6 +95,9 @@ spec:
                   mountPath: /tmp/
                 - name: home
                   mountPath: /home/ubuntu/
+                # - name: mod
+                #   mountPath: "/usr/local/bin/mod"
+                #   subPath: mod
           volumes:
             - name: config-volume
               configMap:
@@ -77,3 +111,6 @@ spec:
             - name: home
               emptyDir:
                 sizeLimit: "512Mi"
+            # - name: mod
+            #   emptyDir:
+            #     sizeLimit: 1Gi
