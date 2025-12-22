@@ -5,13 +5,14 @@
   become: true
   user: arthur
   tasks:
-    - name: Add Google Chrome Repo
-      ansible.builtin.yum_repository:
-        name: google-chrome
-        description: Google Chrome YUM repo
-        baseurl: https://dl.google.com/linux/chrome/rpm/stable/x86_64
-        gpgkey: https://dl.google.com/linux/linux_signing_key.pub
-        mode: "0644"
+    - name: Install Fedora Workstation Repositories
+      ansible.builtin.dnf:
+        name: fedora-workstation-repositories
+        state: present
+
+    - name: Enable Google Chrome Repo
+      ansible.builtin.command: dnf config-manager setopt google-chrome.enabled=1
+      changed_when: false
     - name: Install Google Chrome
       ansible.builtin.dnf:
         state: present
