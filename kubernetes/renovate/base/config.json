@@ -12,48 +12,77 @@
   "gitAuthor": "Renovate <arthur@arthurvardevanyan.com>",
   "groupName": "all",
   "automerge": false,
-  "customManagers": [
+  "prHourlyLimit": 0,
+  "ansible": {
+    "enabled": false
+  },
+  "packageRules": [
     {
-      "customType": "regex",
+      "matchDepNames": ["shellcheck-py/shellcheck-py"],
+      "versioning": "semver",
+      "extractVersion": "^v0\\.(?<version>.*)$"
+    }
+  ],
+  "regexManagers": [
+    {
       "fileMatch": ["(^|/)containerfile$"],
       "matchStrings": [
         "#\\s*renovate:\\s*datasource=(?<datasource>.*?) depName=(?<depName>.*?)(?: versioning=(?<versioning>.*?))?\\s+(?:(?:ENV|ARG)\\s+)?\\w+?_VERSION=(?<currentValue>[^\\s\\\\]+)"
       ]
     },
     {
-      "customType": "regex",
       "fileMatch": ["\\.yaml$"],
       "matchStrings": [
         "#\\s*renovate:\\s*datasource=(?<datasource>.*?) depName=(?<depName>.*?)(?: versioning=(?<versioning>.*?))?\\s+(?:-\\s+)?\\w+:\\s+[\"']?(?:[^@\\s]*:)?(?<currentValue>[^@\\s\"']+?)(?<suffix>-cluster)?(?:@(?<currentDigest>sha256:[a-f0-9]+))?[\"']?"
       ]
     },
     {
-      "customType": "regex",
       "fileMatch": ["vm-cluster\\.yaml$"],
       "matchStrings": [
-        "#\\s*renovate:\\s*datasource=(?<datasource>.*?) depName=(?<depName>.*?)(?: versioning=(?<versioning>.*?))?\\s+clusterVersion:\\s+\"(?<currentValue>.*)-cluster\""
-      ]
+        "(?<comment>#\\s*renovate:\\s*datasource=(?<datasource>.*?) depName=(?<depName>.*?)(?: versioning=(?<versioning>.*?))?)\\s+clusterVersion:\\s+\"(?<currentValue>.*)-cluster\""
+      ],
+      "autoReplaceStringTemplate": "{{{comment}}}\n  clusterVersion: \"{{{newVersion}}}-cluster\""
     },
     {
-      "customType": "regex",
       "fileMatch": ["\\.yaml$"],
       "matchStrings": [
-        "#\\s*renovate:\\s*datasource=(?<datasource>.*?) depName=(?<depName>.*?)(?: versioning=(?<versioning>.*?))?\\s+(?:-\\s+)?\\w+:\\s+(?<currentDigest>sha256:[a-f0-9]+)\\s*#\\s*(?<currentValue>\\S+)"
-      ]
+        "(?<comment>#\\s*renovate:\\s*datasource=(?<datasource>.*?) depName=(?<depName>.*?)(?: versioning=(?<versioning>.*?))?)(?<linePrefix>\\s+(?:-\\s+)?\\w+:\\s+)(?<currentDigest>sha256:[a-f0-9]+)\\s*#\\s*(?<currentValue>\\S+)"
+      ],
+      "autoReplaceStringTemplate": "{{{comment}}}{{{linePrefix}}}{{{newDigest}}} # {{{newVersion}}}"
     },
     {
-      "customType": "regex",
-      "fileMatch": ["ansible/.*\\.yaml$"],
+      "fileMatch": ["^ansible/.*\\.ya?ml$"],
       "matchStrings": [
-        "#\\s*renovate:\\s*datasource=(?<datasource>.*?) depName=(?<depName>.*?)(?: versioning=(?<versioning>.*?))?\\s+url:\\s+\\S+?/(?<currentValue>[vV]?\\d+\\.\\d+\\.\\d+[^/]*)/"
+        "(?<comment>#\\s*renovate:\\s*datasource=(?<datasource>.*?) depName=(?<depName>.*?)(?: versioning=(?<versioning>.*?))?)\\s+-\\s+(?<packageName>.+?)-(?<currentValue>\\d[^\\s]*)"
+      ],
+      "autoReplaceStringTemplate": "{{{comment}}}\n          - {{{packageName}}}-{{{newVersion}}}"
+    },
+    {
+      "fileMatch": ["^ansible/.*\\.ya?ml$"],
+      "matchStrings": [
+        "#\\s*renovate:\\s*datasource=(?<datasource>.*?) depName=(?<depName>.*?)(?: versioning=(?<versioning>.*?))?\\s+-\\s+(?<currentValue>.*)"
       ]
     },
     {
-      "customType": "regex",
+      "fileMatch": ["^ansible/.*\\.ya?ml$"],
+      "matchStrings": [
+        "(?<comment>#\\s*renovate:\\s*datasource=(?<datasource>.*?) depName=(?<depName>.*?)(?: versioning=(?<versioning>.*?))?)(?<linePrefix>\\s+url:\\s+)(?<urlPrefix>\\S+?)(?<currentValue>[vV]?\\d+\\.\\d+\\.\\d+[^/\\s]*)(?<urlMiddle>\\S+?)[vV]?\\d+\\.\\d+\\.\\d+[^/\\s]*(?<urlSuffix>\\S*)"
+      ],
+      "autoReplaceStringTemplate": "{{{comment}}}{{{linePrefix}}}{{{urlPrefix}}}{{{newVersion}}}{{{urlMiddle}}}{{{newVersion}}}{{{urlSuffix}}}"
+    },
+    {
+      "fileMatch": ["^ansible/.*\\.ya?ml$"],
+      "matchStrings": [
+        "(?<comment>#\\s*renovate:\\s*datasource=(?<datasource>.*?) depName=(?<depName>.*?)(?: versioning=(?<versioning>.*?))?)(?<linePrefix>\\s+url:\\s+)(?<urlPrefix>\\S+?)(?<currentValue>[vV]?\\d+\\.\\d+\\.\\d+[^/\\s]*)(?<urlSuffix>\\S*)"
+      ],
+      "autoReplaceStringTemplate": "{{{comment}}}{{{linePrefix}}}{{{urlPrefix}}}{{{newVersion}}}{{{urlSuffix}}}"
+    },
+    {
       "fileMatch": ["\\.pre-commit-config\\.yaml$"],
       "matchStrings": [
-        "#\\s*renovate:\\s*datasource=(?<datasource>.*?) depName=(?<depName>.*?)(?: versioning=(?<versioning>.*?))?\\s+rev:\\s+(?<currentDigest>[a-f0-9]+)\\s*#\\s*(?<currentValue>\\S+)"
-      ]
+        "(?<comment>#\\s*renovate:\\s*datasource=(?<datasource>.*?) depName=(?<depName>.*?)(?: versioning=(?<versioning>.*?))?)(?<linePrefix>\\s+rev:\\s+)(?:(?<currentDigest>[a-f0-9]{7,40})\\s*#\\s*)?(?<currentValue>\\S+)"
+      ],
+      "autoReplaceStringTemplate": "{{{comment}}}{{{linePrefix}}}{{#if newDigest}}{{{newDigest}}} # {{{newVersion}}}{{else}}{{{newVersion}}}{{/if}}"
     }
   ]
 }

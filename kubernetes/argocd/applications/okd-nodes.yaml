@@ -26,12 +26,13 @@ spec:
   syncPolicy:
     syncOptions:
       - ServerSideApply=true
+      - RespectIgnoreDifferences=true
   ignoreDifferences:
     - group: machine.openshift.io
       kind: MachineSet
       jsonPointers:
         - /spec/replicas
-    - group: baremetal.cluster.k8s.io
+    - group: metal3.io
       kind: BareMetalHost
       jsonPointers:
         - /spec/online

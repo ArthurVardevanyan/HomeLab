@@ -48,15 +48,6 @@ spec:
             requests:
               cpu: 5m
               memory: 128Mi
-          securityContext:
-            runAsNonRoot: true
-            readOnlyRootFilesystem: true
-            allowPrivilegeEscalation: false
-            seccompProfile:
-              type: RuntimeDefault
-            capabilities:
-              drop:
-                - ALL
           imagePullPolicy: IfNotPresent
           args:
             - "--auto-scaling-runner-set-only"
@@ -67,19 +58,6 @@ spec:
             - "--listener-metrics-addr=0"
             - "--listener-metrics-endpoint="
             - "--metrics-addr=0"
-            - "--health-probe-bind-address=:8081"
-          livenessProbe:
-            httpGet:
-              path: /healthz
-              port: 8081
-            initialDelaySeconds: 5
-            periodSeconds: 10
-          readinessProbe:
-            httpGet:
-              path: /readyz
-              port: 8081
-            initialDelaySeconds: 5
-            periodSeconds: 10
           command:
             - "/manager"
           env:

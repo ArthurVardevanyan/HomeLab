@@ -15,10 +15,10 @@
       ansible.builtin.dnf:
         state: present
         name:
-          # renovate: datasource=repology depName=centos_stream_10/centos-release-openstack-zed
-          - centos-release-openstack-zed-1-1.el10
-          # renovate: datasource=repology depName=centos_stream_10/centos-release-okd-4.16
-          - centos-release-okd-4.16-1-1.el10
+          # renovate: datasource=repology depName=centos_stream_9/centos-release-openstack-zed
+          - centos-release-openstack-zed-1-1.el9
+          # renovate: datasource=repology depName=centos_stream_9/centos-release-okd-4.16
+          - centos-release-okd-4.16-1-1.el9
 
     - name: Remove CentOS-OpenStack-zed.repo
       ansible.builtin.file:
@@ -29,11 +29,11 @@
       ansible.builtin.dnf:
         state: present
         name:
-          # renovate: datasource=repology depName=centos_stream_10/cri-o
+          # renovate: datasource=github-releases depName=cri-o/cri-o
           - cri-o-1.28.0
-          # renovate: datasource=repology depName=centos_stream_10/cri-tools
+          # renovate: datasource=github-releases depName=kubernetes-sigs/cri-tools
           - cri-tools-1.28.0
-          # renovate: datasource=repology depName=centos_stream_10/containernetworking-plugins
+          # renovate: datasource=github-releases depName=containernetworking/plugins
           - containernetworking-plugins-1.3.0
 
     - name: Copy Pull Secret
@@ -78,7 +78,7 @@
       ansible.builtin.yum_repository:
         name: redhat-et
         description: redhat-et/microshift-testing
-        baseurl: https://download.copr.fedorainfracloud.org/results/@redhat-et/microshift-testing/centos-stream-10-aarch64
+        baseurl: https://download.copr.fedorainfracloud.org/results/@redhat-et/microshift-testing/centos-stream-9-aarch64
         gpgkey: https://download.copr.fedorainfracloud.org/results/@redhat-et/microshift-testing/pubkey.gpg
         mode: "0644"
 
@@ -86,14 +86,14 @@
       ansible.builtin.dnf:
         state: present
         name:
-          # renovate: datasource=repology depName=centos_stream_10/microshift
-          - microshift-4.16.0-202406111433.p0.g8966666.assembly.4.16.0.el10
-          # renovate: datasource=repology depName=centos_stream_10/microshift-networking
-          - microshift-networking-4.16.0-202406111433.p0.g8966666.assembly.4.16.0.el10
-          # renovate: datasource=repology depName=centos_stream_10/microshift-greenboot
-          - microshift-greenboot-4.16.0-202406111433.p0.g8966666.assembly.4.16.0.el10
-          # renovate: datasource=repology depName=centos_stream_10/microshift-selinux
-          - microshift-selinux-4.16.0-202406111433.p0.g8966666.assembly.4.16.0.el10
+          # renovate: datasource=repology depName=centos_stream_9/microshift
+          - microshift-4.16.0-202406111433.p0.g8966666.assembly.4.16.0.el9
+          # renovate: datasource=repology depName=centos_stream_9/microshift-networking
+          - microshift-networking-4.16.0-202406111433.p0.g8966666.assembly.4.16.0.el9
+          # renovate: datasource=repology depName=centos_stream_9/microshift-greenboot
+          - microshift-greenboot-4.16.0-202406111433.p0.g8966666.assembly.4.16.0.el9
+          # renovate: datasource=repology depName=centos_stream_9/microshift-selinux
+          - microshift-selinux-4.16.0-202406111433.p0.g8966666.assembly.4.16.0.el9
 
     - name: Firewalld pod network
       ansible.posix.firewalld:
