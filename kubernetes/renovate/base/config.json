@@ -18,6 +18,10 @@
   },
   "packageRules": [
     {
+      "matchFile": [".pre-commit-config.yaml"],
+      "groupName": "Pre-commit Hooks"
+    },
+    {
       "matchDatasources": ["docker"],
       "groupName": "Container Updates"
     },
@@ -70,39 +74,12 @@
       ]
     },
     {
-      "fileMatch": ["^ansible/.*\\.ya?ml$"],
-      "matchStrings": [
-        "(?<comment>#\\s*renovate:\\s*datasource=(?<datasource>\\S+)\\s+depName=(?<depName>\\S+)(?:\\s+registryUrl=(?<registryUrl>\\S+))?(?:\\s+versioning=(?<versioning>\\S+))?)\\s+-\\s+(?<artifactName>[\\w.-]+?)-(?<currentValue>\\d[^\\s]*)"
-      ],
-      "autoReplaceStringTemplate": "{{{comment}}}\n          - {{{artifactName}}}-{{{newVersion}}}"
-    },
-    {
-      "fileMatch": ["^ansible/.*\\.ya?ml$"],
-      "matchStrings": [
-        "(?<comment>#\\s*renovate:\\s*datasource=(?<datasource>\\S+)\\s+depName=(?<depName>\\S+)(?:\\s+registryUrl=(?<registryUrl>\\S+))?(?:\\s+versioning=(?<versioning>\\S+))?)\\s+-\\s+(?<artifactName>[\\w.-]+?)==(?<currentValue>\\S+)"
-      ],
-      "autoReplaceStringTemplate": "{{{comment}}}\n          - {{{artifactName}}}=={{{newVersion}}}"
-    },
-    {
-      "fileMatch": ["^ansible/.*\\.ya?ml$"],
-      "matchStrings": [
-        "(?<comment>#\\s*renovate:\\s*datasource=(?<datasource>\\S+)\\s+depName=(?<depName>\\S+)(?:\\s+versioning=(?<versioning>\\S+))?)(?<linePrefix>\\s+url:\\s+)(?<urlPrefix>\\S+?)(?<currentValue>[vV]?\\d+\\.\\d+\\.\\d+[^/\\s]*)(?<urlMiddle>\\S+?)[vV]?\\d+\\.\\d+\\.\\d+[^/\\s]*(?<urlSuffix>\\S*)"
-      ],
-      "autoReplaceStringTemplate": "{{{comment}}}{{{linePrefix}}}{{{urlPrefix}}}{{{newVersion}}}{{{urlMiddle}}}{{{newVersion}}}{{{urlSuffix}}}"
-    },
-    {
-      "fileMatch": ["^ansible/.*\\.ya?ml$"],
-      "matchStrings": [
-        "(?<comment>#\\s*renovate:\\s*datasource=(?<datasource>\\S+)\\s+depName=(?<depName>\\S+)(?:\\s+versioning=(?<versioning>\\S+))?)(?<linePrefix>\\s+url:\\s+)(?<urlPrefix>\\S+?)(?<currentValue>[vV]?\\d+\\.\\d+\\.\\d+[^/\\s]*)(?<urlSuffix>\\S*)"
-      ],
-      "autoReplaceStringTemplate": "{{{comment}}}{{{linePrefix}}}{{{urlPrefix}}}{{{newVersion}}}{{{urlSuffix}}}"
-    },
-    {
+      "description": "Custom pre-commit SHA matcher",
       "fileMatch": ["\\.pre-commit-config\\.yaml$"],
-      "matchStrings": [
-        "(?<comment>#\\s*renovate:\\s*datasource=(?<datasource>.*?) depName=(?<depName>.*?)(?: versioning=(?<versioning>.*?))?)(?<linePrefix>\\s+rev:\\s+)(?:(?<currentDigest>[a-f0-9]{7,40})\\s*#\\s*)?(?<currentValue>\\S+)"
-      ],
-      "autoReplaceStringTemplate": "{{{comment}}}{{{linePrefix}}}{{#if newDigest}}{{{newDigest}}} # {{{newVersion}}}{{else}}{{{newVersion}}}{{/if}}"
+      "matchStrings": ["rev: (?<currentValue>[a-f0-9]{40})"],
+      "datasourceTemplate": "git-refs",
+      "extractVersionTemplate": "^(?<version>[a-f0-9]{40})$",
+      "packageNameTemplate": "github.com"
     }
   ]
 }
