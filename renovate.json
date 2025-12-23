@@ -1,3 +1,24 @@
 {
-  "$schema": "https://docs.renovatebot.com/renovate-schema.json"
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "regexManagers": [
+    {
+      "description": "Universal Ansible Github Release Updater",
+      "fileMatch": ["^ansible/playbooks/.*\\.yaml$"],
+      "matchStrings": [
+        "# renovate: custom-github-release depName=(?<depName>[^\\s]+)(?: versioning=(?<versioning>[^\\s]+))?\\n\\s+url: .*?/releases/download/v?(?<currentValue>[^/]+)/",
+        "# renovate: custom-github-release depName=(?<depName>[^\\s]+).*?\\n\\s+url: .*?_(?<currentValue>[0-9]+\\.[0-9]+\\.[0-9]+)_",
+        "# renovate: custom-github-release depName=(?<depName>[^\\s]+).*?\\n\\s+url: .*?linux-(?:arm64-)?(?<currentValue>[0-9]+\\.[0-9]+\\.[0-9]+(?:[-.][a-z0-9]+)*)\\.tar\\.gz"
+      ],
+      "datasourceTemplate": "github-releases",
+      "extractVersionTemplate": "^v(?<version>.*)$"
+    }
+  ],
+  "packageRules": [
+    {
+      "matchDatasources": ["github-releases"],
+      "matchManagers": ["regex"],
+      "matchUpdateTypes": ["major", "minor", "patch"],
+      "groupName": "Ansible Binaries"
+    }
+  ]
 }
