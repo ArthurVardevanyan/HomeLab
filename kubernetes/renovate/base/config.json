@@ -16,9 +16,13 @@
   "ansible": {
     "enabled": false
   },
+  "pre-commit": {
+    "enabled": true
+  },
   "packageRules": [
     {
-      "matchFile": [".pre-commit-config.yaml"],
+      "matchUpdateTypes": ["major", "minor", "patch"],
+      "matchFileNames": [".pre-commit-config.yaml"],
       "groupName": "Pre-commit Hooks"
     },
     {
@@ -27,6 +31,7 @@
     },
     {
       "matchDatasources": ["github-releases", "github-tags"],
+      "matchPaths": ["ansible/**"],
       "groupName": "GitHub Releases"
     },
     {
@@ -34,11 +39,6 @@
       "matchUpdateTypes": ["major", "minor", "patch"],
       "groupName": "Go Modules",
       "postUpdateOptions": ["gomodTidy", "gomodUpdateImportPaths"]
-    },
-    {
-      "matchDepNames": ["shellcheck-py/shellcheck-py"],
-      "versioning": "semver",
-      "extractVersion": "^v0\\.(?<version>.*)$"
     },
     {
       "matchManagers": ["gomod"],
@@ -49,10 +49,13 @@
   ],
   "regexManagers": [
     {
-      "fileMatch": ["(^|/)containerfile$"],
-      "matchStrings": [
-        "#\\s*renovate:\\s*datasource=(?<datasource>.*?) depName=(?<depName>.*?)(?: versioning=(?<versioning>.*?))?\\s+(?:(?:ENV|ARG)\\s+)?\\w+?_VERSION=(?<currentValue>[^\\s\\\\]+)"
-      ]
+      "fileMatch": ["^\\.pre-commit-config.yaml$"],
+      "matchStrings": ["rev: v0\\.(?<currentValue>[^\\s]+)"],
+      "datasourceTemplate": "github-releases",
+      "depNameTemplate": "shellcheck-py/shellcheck-py",
+      "versioningTemplate": "loose",
+      "extractVersionTemplate": "^v0\\.(?<version>.*)$",
+      "autoReplaceStringTemplate": "rev: v0.{{{newVersion}}}"
     },
     {
       "fileMatch": ["\\.yaml$"],
@@ -72,14 +75,6 @@
       "matchStrings": [
         "#\\s*renovate:\\s*datasource=(?<datasource>.*?) depName=(?<depName>.*?)(?: versioning=(?<versioning>.*?))?\\s+(?:-\\s+)?\\w+:\\s+(?<currentDigest>sha256:[a-f0-9]+)\\s*#\\s*(?<currentValue>\\S+)"
       ]
-    },
-    {
-      "description": "Custom pre-commit SHA matcher",
-      "fileMatch": ["\\.pre-commit-config\\.yaml$"],
-      "matchStrings": ["rev: (?<currentValue>[a-f0-9]{40})"],
-      "datasourceTemplate": "git-refs",
-      "extractVersionTemplate": "^(?<version>[a-f0-9]{40})$",
-      "packageNameTemplate": "github.com"
     }
   ]
 }
