@@ -10,15 +10,15 @@
         "# renovate: custom-github-release depName=(?<depName>[^\\s]+).*?\\n\\s+url: .*?linux-(?:arm64-)?(?<currentValue>[0-9]+\\.[0-9]+\\.[0-9]+(?:[-.][a-z0-9]+)*)\\.tar\\.gz"
       ],
       "datasourceTemplate": "github-releases",
-      "extractVersionTemplate": "^v(?<version>.*)$"
+      "extractVersionTemplate": "^v?(?<version>.*)$"
     }
   ],
   "packageRules": [
     {
       "matchDatasources": ["github-releases"],
       "matchManagers": ["regex"],
-      "matchUpdateTypes": ["major", "minor", "patch"],
-      "groupName": "Ansible Binaries"
+      "groupName": "Ansible Binaries",
+      "separateMajorMinor": false
     }
   ]
 }
