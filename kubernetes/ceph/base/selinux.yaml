@@ -1,46 +1,46 @@
----
-# https://access.redhat.com/solutions/6221251
-apiVersion: machineconfiguration.openshift.io/v1
-kind: MachineConfig
-metadata:
-  labels:
-    machineconfiguration.openshift.io/role: master
-  name: 99-master-selinux-configuration
-spec:
-  config:
-    ignition:
-      version: 3.2.0
-    storage:
-      files:
-        - contents:
-            source: data:text/plain;charset=utf-8;base64,W2NyaW8ucnVudGltZS5ydW50aW1lcy5zZWxpbnV4XQpydW50aW1lX3BhdGggPSAiL3Vzci9iaW4vY3J1biIKcnVudGltZV9yb290ID0gIi9ydW4vY3J1biIKcnVudGltZV90eXBlID0gIm9jaSIKYWxsb3dlZF9hbm5vdGF0aW9ucyA9IFsiaW8ua3ViZXJuZXRlcy5jcmktby5UcnlTa2lwVm9sdW1lU0VMaW51eExhYmVsIl0K
-          mode: 0640
-          overwrite: true
-          path: /etc/crio/crio.conf.d/01-selinux.conf
-  osImageURL: ""
----
-# https://access.redhat.com/solutions/6221251
-apiVersion: machineconfiguration.openshift.io/v1
-kind: MachineConfig
-metadata:
-  labels:
-    machineconfiguration.openshift.io/role: worker
-  name: 99-worker-selinux-configuration
-spec:
-  config:
-    ignition:
-      version: 3.2.0
-    storage:
-      files:
-        - contents:
-            source: data:text/plain;charset=utf-8;base64,W2NyaW8ucnVudGltZS5ydW50aW1lcy5zZWxpbnV4XQpydW50aW1lX3BhdGggPSAiL3Vzci9iaW4vY3J1biIKcnVudGltZV9yb290ID0gIi9ydW4vY3J1biIKcnVudGltZV90eXBlID0gIm9jaSIKYWxsb3dlZF9hbm5vdGF0aW9ucyA9IFsiaW8ua3ViZXJuZXRlcy5jcmktby5UcnlTa2lwVm9sdW1lU0VMaW51eExhYmVsIl0K
-          mode: 0640
-          overwrite: true
-          path: /etc/crio/crio.conf.d/01-selinux.conf
-  osImageURL: ""
----
-apiVersion: node.k8s.io/v1
-kind: RuntimeClass
-metadata:
-  name: selinux
-handler: selinux
+# ---
+# # https://access.redhat.com/solutions/6221251
+# apiVersion: machineconfiguration.openshift.io/v1
+# kind: MachineConfig
+# metadata:
+#   labels:
+#     machineconfiguration.openshift.io/role: master
+#   name: 99-master-selinux-configuration
+# spec:
+#   config:
+#     ignition:
+#       version: 3.2.0
+#     storage:
+#       files:
+#         - contents:
+#             source: data:text/plain;charset=utf-8;base64,W2NyaW8ucnVudGltZS5ydW50aW1lcy5zZWxpbnV4XQpydW50aW1lX3BhdGggPSAiL3Vzci9iaW4vY3J1biIKcnVudGltZV9yb290ID0gIi9ydW4vY3J1biIKcnVudGltZV90eXBlID0gIm9jaSIKYWxsb3dlZF9hbm5vdGF0aW9ucyA9IFsiaW8ua3ViZXJuZXRlcy5jcmktby5UcnlTa2lwVm9sdW1lU0VMaW51eExhYmVsIl0K
+#           mode: 0640
+#           overwrite: true
+#           path: /etc/crio/crio.conf.d/01-selinux.conf
+#   osImageURL: ""
+# ---
+# # https://access.redhat.com/solutions/6221251
+# apiVersion: machineconfiguration.openshift.io/v1
+# kind: MachineConfig
+# metadata:
+#   labels:
+#     machineconfiguration.openshift.io/role: worker
+#   name: 99-worker-selinux-configuration
+# spec:
+#   config:
+#     ignition:
+#       version: 3.2.0
+#     storage:
+#       files:
+#         - contents:
+#             source: data:text/plain;charset=utf-8;base64,W2NyaW8ucnVudGltZS5ydW50aW1lcy5zZWxpbnV4XQpydW50aW1lX3BhdGggPSAiL3Vzci9iaW4vY3J1biIKcnVudGltZV9yb290ID0gIi9ydW4vY3J1biIKcnVudGltZV90eXBlID0gIm9jaSIKYWxsb3dlZF9hbm5vdGF0aW9ucyA9IFsiaW8ua3ViZXJuZXRlcy5jcmktby5UcnlTa2lwVm9sdW1lU0VMaW51eExhYmVsIl0K
+#           mode: 0640
+#           overwrite: true
+#           path: /etc/crio/crio.conf.d/01-selinux.conf
+#   osImageURL: ""
+# ---
+# apiVersion: node.k8s.io/v1
+# kind: RuntimeClass
+# metadata:
+#   name: selinux
+# handler: selinux
