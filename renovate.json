@@ -1,3 +1,23 @@
 {
-  "$schema": "https://docs.renovatebot.com/renovate-schema.json"
+  "$schema": "docs.renovatebot.com/renovate-schema.json",
+  "packageRules": [
+    {
+      "matchDepNames": ["kubecolor/kubecolor"],
+      "extractVersion": "^v(?<version>.*)$"
+    }
+  ],
+
+  "regexManagers": [
+    {
+      "description": "Update Kubecolor URL (Surgical)",
+      "fileMatch": ["^ansible/playbooks/vscode-server/kubernetes\\.yaml$"],
+      "matchStrings": [
+        "# renovate: custom-kubecolor\\n\\s+url: .*?/v(?<currentValue>[^/]+)/",
+        "# renovate: custom-kubecolor\\n\\s+url: .*?kubecolor_(?<currentValue>[^_]+)_"
+      ],
+      "datasourceTemplate": "github-releases",
+      "depNameTemplate": "kubecolor/kubecolor",
+      "extractVersionTemplate": "^v(?<version>.*)$"
+    }
+  ]
 }
