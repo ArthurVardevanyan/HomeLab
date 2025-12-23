@@ -2,23 +2,44 @@
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   "regexManagers": [
     {
-      "description": "Universal Ansible Github Release Updater",
-      "fileMatch": ["^ansible/playbooks/.*\\.yaml$"],
+      "description": "Universal Homelab Release Updater (Ansible & Docker)",
+      "fileMatch": [
+        "^ansible/playbooks/.*\\.yaml$",
+        "(^|/)Dockerfile$",
+        "(^|/)Containerfile$",
+        "(^|/)containerfile$"
+      ],
       "matchStrings": [
         "# renovate: custom-github-release depName=(?<depName>[^\\s]+)(?: versioning=(?<versioning>[^\\s]+))?\\n\\s+url: .*?/releases/download/v?(?<currentValue>[^/]+)/",
         "# renovate: custom-github-release depName=(?<depName>[^\\s]+).*?\\n\\s+url: .*?_(?<currentValue>[0-9]+\\.[0-9]+\\.[0-9]+)_",
-        "# renovate: custom-github-release depName=(?<depName>[^\\s]+).*?\\n\\s+url: .*?linux-(?:arm64-)?(?<currentValue>[0-9]+\\.[0-9]+\\.[0-9]+(?:[-.][a-z0-9]+)*)\\.tar\\.gz"
+        "# renovate: custom-github-release depName=(?<depName>[^\\s]+).*?\\n\\s+url: .*?linux-(?:arm64-)?(?<currentValue>[0-9]+\\.[0-9]+\\.[0-9]+(?:[-.][a-z0-9]+)*)\\.tar\\.gz",
+        "# renovate: custom-github-release depName=(?<depName>[^\\s]+)(?: versioning=(?<versioning>[^\\s]+))?\\n\\s*OKD_VERSION=(?<currentValue>[^\\\\]+)\\\\"
       ],
       "datasourceTemplate": "github-releases",
-      "extractVersionTemplate": "^v(?<version>.*)$"
+      "extractVersionTemplate": "^v?(?<version>.*)$"
+    },
+    {
+      "description": "Update vm-cluster.yaml clusterVersion",
+      "fileMatch": ["vm-cluster\\.yaml$"],
+      "matchStrings": [
+        "(?<comment>#\\s*renovate:\\s*datasource=(?<datasource>.*?) depName=(?<depName>.*?)(?: versioning=(?<versioning>.*?))?)\\s+clusterVersion:\\s+\"(?<currentValue>.*)-cluster\""
+      ],
+      "autoReplaceStringTemplate": "{{{comment}}}\n  clusterVersion: \"{{{newVersion}}}-cluster\""
+    },
+    {
+      "description": "Update ArgoCD manifests with SHA256 digests",
+      "fileMatch": ["argocd\\.yaml$"],
+      "matchStrings": [
+        "#\\s*renovate:\\s*datasource=(?<datasource>.*?) depName=(?<depName>.*?)(?: versioning=(?<versioning>.*?))?\\s+(?:-\\s+)?\\w+:\\s+(?<currentDigest>sha256:[a-f0-9]+)\\s*#\\s*(?<currentValue>\\S+)"
+      ]
     }
   ],
   "packageRules": [
     {
       "matchDatasources": ["github-releases"],
       "matchManagers": ["regex"],
-      "matchUpdateTypes": ["major", "minor", "patch"],
-      "groupName": "Ansible Binaries"
+      "groupName": "Homelab Binaries",
+      "separateMajorMinor": false
     }
   ]
 }
