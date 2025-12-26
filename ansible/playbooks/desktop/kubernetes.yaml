@@ -9,8 +9,8 @@
       ansible.builtin.dnf:
         state: present
         name:
-          # renovate: datasource=github-releases depName=kubernetes/kubernetes
-          - kubernetes-client-1.29.5-1.fc40
+          # TODO renovate: datasource=github-releases depName=kubernetes/kubernetes
+          - kubernetes-client # -1.29.5-1.fc40
     - name: Download Kubectl Neat
       ansible.builtin.get_url:
         # renovate: custom-github-release depName=itaysk/kubectl-neat
@@ -126,3 +126,9 @@
         dest: /usr/local/bin/kubecolor
         mode: "0755"
         remote_src: true
+
+    - name: Creating new ~/.kuberc
+      ansible.builtin.copy:
+        src: "../../../machineConfigs/desktop/home/arthur/.kube/kuberc"
+        dest: "/home/arthur/.kube/kuberc"
+        mode: "0644"
