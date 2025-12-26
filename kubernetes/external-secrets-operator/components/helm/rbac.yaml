@@ -6,10 +6,10 @@ metadata:
   name: external-secrets-cert-controller
   namespace: external-secrets-operator
   labels:
-    helm.sh/chart: external-secrets-1.1.0
+    helm.sh/chart: external-secrets-1.2.0
     app.kubernetes.io/name: external-secrets-cert-controller
     app.kubernetes.io/instance: external-secrets
-    app.kubernetes.io/version: "v1.1.0"
+    app.kubernetes.io/version: "v1.2.0"
     app.kubernetes.io/managed-by: Helm
 ---
 # Source: external-secrets/templates/serviceaccount.yaml
@@ -19,10 +19,10 @@ metadata:
   name: external-secrets
   namespace: external-secrets-operator
   labels:
-    helm.sh/chart: external-secrets-1.1.0
+    helm.sh/chart: external-secrets-1.2.0
     app.kubernetes.io/name: external-secrets
     app.kubernetes.io/instance: external-secrets
-    app.kubernetes.io/version: "v1.1.0"
+    app.kubernetes.io/version: "v1.2.0"
     app.kubernetes.io/managed-by: Helm
 ---
 # Source: external-secrets/templates/webhook-serviceaccount.yaml
@@ -32,10 +32,10 @@ metadata:
   name: external-secrets-webhook
   namespace: external-secrets-operator
   labels:
-    helm.sh/chart: external-secrets-1.1.0
+    helm.sh/chart: external-secrets-1.2.0
     app.kubernetes.io/name: external-secrets-webhook
     app.kubernetes.io/instance: external-secrets
-    app.kubernetes.io/version: "v1.1.0"
+    app.kubernetes.io/version: "v1.2.0"
     app.kubernetes.io/managed-by: Helm
 ---
 # Source: external-secrets/templates/webhook-secret.yaml
@@ -45,10 +45,10 @@ metadata:
   name: external-secrets-webhook
   namespace: external-secrets-operator
   labels:
-    helm.sh/chart: external-secrets-1.1.0
+    helm.sh/chart: external-secrets-1.2.0
     app.kubernetes.io/name: external-secrets-webhook
     app.kubernetes.io/instance: external-secrets
-    app.kubernetes.io/version: "v1.1.0"
+    app.kubernetes.io/version: "v1.2.0"
     app.kubernetes.io/managed-by: Helm
     external-secrets.io/component: webhook
 ---
@@ -58,11 +58,13 @@ kind: ClusterRole
 metadata:
   name: external-secrets-cert-controller
   labels:
-    helm.sh/chart: external-secrets-1.1.0
+    helm.sh/chart: external-secrets-1.2.0
     app.kubernetes.io/name: external-secrets-cert-controller
     app.kubernetes.io/instance: external-secrets
-    app.kubernetes.io/version: "v1.1.0"
+    app.kubernetes.io/version: "v1.2.0"
     app.kubernetes.io/managed-by: Helm
+  annotations:
+    checkov.io/skip1: CKV_K8S_155=This requires webhook
 rules:
   - apiGroups:
       - "apiextensions.k8s.io"
@@ -141,10 +143,10 @@ kind: ClusterRole
 metadata:
   name: external-secrets-controller
   labels:
-    helm.sh/chart: external-secrets-1.1.0
+    helm.sh/chart: external-secrets-1.2.0
     app.kubernetes.io/name: external-secrets
     app.kubernetes.io/instance: external-secrets
-    app.kubernetes.io/version: "v1.1.0"
+    app.kubernetes.io/version: "v1.2.0"
     app.kubernetes.io/managed-by: Helm
 rules:
   - apiGroups:
@@ -293,10 +295,10 @@ kind: ClusterRole
 metadata:
   name: external-secrets-view
   labels:
-    helm.sh/chart: external-secrets-1.1.0
+    helm.sh/chart: external-secrets-1.2.0
     app.kubernetes.io/name: external-secrets
     app.kubernetes.io/instance: external-secrets
-    app.kubernetes.io/version: "v1.1.0"
+    app.kubernetes.io/version: "v1.2.0"
     app.kubernetes.io/managed-by: Helm
     rbac.authorization.k8s.io/aggregate-to-view: "true"
     rbac.authorization.k8s.io/aggregate-to-edit: "true"
@@ -344,10 +346,10 @@ kind: ClusterRole
 metadata:
   name: external-secrets-edit
   labels:
-    helm.sh/chart: external-secrets-1.1.0
+    helm.sh/chart: external-secrets-1.2.0
     app.kubernetes.io/name: external-secrets
     app.kubernetes.io/instance: external-secrets
-    app.kubernetes.io/version: "v1.1.0"
+    app.kubernetes.io/version: "v1.2.0"
     app.kubernetes.io/managed-by: Helm
     rbac.authorization.k8s.io/aggregate-to-edit: "true"
     rbac.authorization.k8s.io/aggregate-to-admin: "true"
@@ -399,10 +401,10 @@ metadata:
   name: external-secrets-servicebindings
   labels:
     servicebinding.io/controller: "true"
-    helm.sh/chart: external-secrets-1.1.0
+    helm.sh/chart: external-secrets-1.2.0
     app.kubernetes.io/name: external-secrets
     app.kubernetes.io/instance: external-secrets
-    app.kubernetes.io/version: "v1.1.0"
+    app.kubernetes.io/version: "v1.2.0"
     app.kubernetes.io/managed-by: Helm
 rules:
   - apiGroups:
@@ -421,10 +423,10 @@ kind: ClusterRoleBinding
 metadata:
   name: external-secrets-cert-controller
   labels:
-    helm.sh/chart: external-secrets-1.1.0
+    helm.sh/chart: external-secrets-1.2.0
     app.kubernetes.io/name: external-secrets-cert-controller
     app.kubernetes.io/instance: external-secrets
-    app.kubernetes.io/version: "v1.1.0"
+    app.kubernetes.io/version: "v1.2.0"
     app.kubernetes.io/managed-by: Helm
 roleRef:
   apiGroup: rbac.authorization.k8s.io
@@ -441,10 +443,10 @@ kind: ClusterRoleBinding
 metadata:
   name: external-secrets-controller
   labels:
-    helm.sh/chart: external-secrets-1.1.0
+    helm.sh/chart: external-secrets-1.2.0
     app.kubernetes.io/name: external-secrets
     app.kubernetes.io/instance: external-secrets
-    app.kubernetes.io/version: "v1.1.0"
+    app.kubernetes.io/version: "v1.2.0"
     app.kubernetes.io/managed-by: Helm
 roleRef:
   apiGroup: rbac.authorization.k8s.io
@@ -462,10 +464,10 @@ metadata:
   name: external-secrets-leaderelection
   namespace: external-secrets-operator
   labels:
-    helm.sh/chart: external-secrets-1.1.0
+    helm.sh/chart: external-secrets-1.2.0
     app.kubernetes.io/name: external-secrets
     app.kubernetes.io/instance: external-secrets
-    app.kubernetes.io/version: "v1.1.0"
+    app.kubernetes.io/version: "v1.2.0"
     app.kubernetes.io/managed-by: Helm
 rules:
   - apiGroups:
@@ -501,10 +503,10 @@ metadata:
   name: external-secrets-leaderelection
   namespace: external-secrets-operator
   labels:
-    helm.sh/chart: external-secrets-1.1.0
+    helm.sh/chart: external-secrets-1.2.0
     app.kubernetes.io/name: external-secrets
     app.kubernetes.io/instance: external-secrets
-    app.kubernetes.io/version: "v1.1.0"
+    app.kubernetes.io/version: "v1.2.0"
     app.kubernetes.io/managed-by: Helm
 roleRef:
   apiGroup: rbac.authorization.k8s.io

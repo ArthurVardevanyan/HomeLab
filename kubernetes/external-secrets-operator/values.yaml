@@ -1,18 +1,38 @@
 ---
 certController:
+  deploymentAnnotations:
+    checkov.io/skip1: CKV_K8S_40=OpenShift Injects Random UID
+    checkov.io/skip2: CKV2_K8S_6=NP Pre Commit Check not Working
+    checkov.io/skip3: CKV_K8S_38=This is an operator
+    checkov.io/skip4: CKV_K8S_8=livenessProbe not in helm
+  podSecurityContext:
+    enabled: true
+  securityContext:
+    allowPrivilegeEscalation: false
+    capabilities:
+      drop:
+        - ALL
+    readOnlyRootFilesystem: true
+    runAsNonRoot: true
+    runAsUser: null
+    seccompProfile:
+      type: RuntimeDefault
+  replicaCount: 2
+  readinessProbe:
+    enabled: true
   resources:
     requests:
-      cpu: 50m
+      cpu: 10m
       memory: 256Mi
     limits:
-      cpu: 10m
+      cpu: 50m
       memory: 512Mi
   create: true
   fullnameOverride: ""
   image:
     pullPolicy: IfNotPresent
-    repository: ghcr.io/external-secrets/external-secrets
-    # tag: v0.14.3@sha256:91a039ca0db52ed1b85b24c3c79f6df19cbb749826f09d1811fad0fce8ed9fd2
+    repository: ghcr.io/external-secrets/external-secrets:v1.2.0-ubi@sha256
+    tag: 90b1fcf5c8679513f1485612bab3e53a94eb3c8865f2e69b73e5c3d80ae49088 # checkov:skip=CKV_SECRET_6 This is an image name
   nameOverride: ""
   priorityClassName: ""
   prometheus:
@@ -34,9 +54,8 @@ createOperator: true
 fullnameOverride: ""
 image:
   pullPolicy: IfNotPresent
-  repository:
-    ghcr.io/external-secrets/external-secrets
-    # tag: v0.14.3@sha256:91a039ca0db52ed1b85b24c3c79f6df19cbb749826f09d1811fad0fce8ed9fd2
+  repository: ghcr.io/external-secrets/external-secrets:v1.2.0-ubi@sha256
+  tag: 90b1fcf5c8679513f1485612bab3e53a94eb3c8865f2e69b73e5c3d80ae49088 # checkov:skip=CKV_SECRET_6 This is an image name
 resources:
   requests:
     cpu: 10m
@@ -63,6 +82,25 @@ serviceAccount:
   create: true
   name: ""
 webhook:
+  deploymentAnnotations:
+    checkov.io/skip1: CKV_K8S_40=OpenShift Injects Random UID
+    checkov.io/skip2: CKV2_K8S_6=NP Pre Commit Check not Working
+    checkov.io/skip3: CKV_K8S_38=This is an operator
+    checkov.io/skip4: CKV_K8S_8=livenessProbe not in helm
+  podSecurityContext:
+    enabled: true
+  securityContext:
+    allowPrivilegeEscalation: false
+    capabilities:
+      drop:
+        - ALL
+    readOnlyRootFilesystem: true
+    runAsUser: null
+    runAsNonRoot: true
+    seccompProfile:
+      type: RuntimeDefault
+  readinessProbe:
+    enabled: true
   resources:
     requests:
       cpu: 10m
@@ -76,8 +114,8 @@ webhook:
   fullnameOverride: ""
   image:
     pullPolicy: IfNotPresent
-    repository: ghcr.io/external-secrets/external-secrets
-    # tag: v0.14.3@sha256:91a039ca0db52ed1b85b24c3c79f6df19cbb749826f09d1811fad0fce8ed9fd2
+    repository: ghcr.io/external-secrets/external-secrets:v1.2.0-ubi@sha256
+    tag: 90b1fcf5c8679513f1485612bab3e53a94eb3c8865f2e69b73e5c3d80ae49088 # checkov:skip=CKV_SECRET_6 This is an image name
   nameOverride: ""
   priorityClassName: ""
   prometheus:
@@ -90,3 +128,22 @@ webhook:
   serviceAccount:
     create: true
     name: ""
+livenessProbe:
+  enabled: true
+podSecurityContext:
+  enabled: true
+securityContext:
+  allowPrivilegeEscalation: false
+  capabilities:
+    drop:
+      - ALL
+  readOnlyRootFilesystem: true
+  runAsUser: null
+  runAsNonRoot: true
+  seccompProfile:
+    type: RuntimeDefault
+deploymentAnnotations:
+  checkov.io/skip1: CKV_K8S_40=OpenShift Injects Random UID
+  checkov.io/skip2: CKV2_K8S_6=NP Pre Commit Check not Working
+  checkov.io/skip3: CKV_K8S_38=This is an operator
+  checkov.io/skip4: CKV_K8S_9=readinessProbe not in helm
