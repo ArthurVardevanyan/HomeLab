@@ -6,3 +6,10 @@ resources:
 components:
   - ../../components/helm
   - ../../components/openshift
+patches:
+  - patch: |-
+      - op: replace
+        path: /spec/replicas
+        value: 2
+    target:
+      kind: Deployment

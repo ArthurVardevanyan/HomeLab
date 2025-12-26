@@ -7,6 +7,10 @@ kubectl kustomize kubernetes/cert-manager/overlays/okd | argocd-vault-plugin gen
 ## Trust Manager
 
 ```bash
+wget -O /tmp/dump.yaml https://github.com/cert-manager/cert-manager/releases/download/v1.19.2/cert-manager.yaml
+wget -O kubernetes/cert-manager/components/yaml/crds.yaml https://github.com/cert-manager/cert-manager/releases/download/v1.19.2/cert-manager.crds.yaml
+prettier --write kubernetes/cert-manager/components/yaml/crds.yaml
+
 helm template trust-manager oci://quay.io/jetstack/charts/trust-manager --include-crds --namespace cert-manager -f kubernetes/cert-manager/trust-values.yaml
 
 secretTargets.authorizedSecretsAll

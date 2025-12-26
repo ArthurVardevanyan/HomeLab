@@ -7,13 +7,15 @@ metadata:
   annotations:
     checkov.io/skip1: CKV_K8S_40=OpenShift Injects Random UID
     checkov.io/skip2: CKV_K8S_38= Require Use of Service Account Tokens
+    checkov.io/skip3: CKV_K8S_8=Not Supported
+    checkov.io/skip4: CKV_K8S_9=Not Supported
   namespace: cert-manager
   labels:
     app: cainjector
     app.kubernetes.io/name: cainjector
     app.kubernetes.io/instance: cert-manager
     app.kubernetes.io/component: "cainjector"
-    app.kubernetes.io/version: "v1.19.1"
+    app.kubernetes.io/version: "v1.19.2"
 spec:
   replicas: 2
   selector:
@@ -28,7 +30,7 @@ spec:
         app.kubernetes.io/name: cainjector
         app.kubernetes.io/instance: cert-manager
         app.kubernetes.io/component: "cainjector"
-        app.kubernetes.io/version: "v1.19.1"
+        app.kubernetes.io/version: "v1.19.2"
       annotations:
         prometheus.io/path: "/metrics"
         prometheus.io/scrape: "true"
@@ -42,7 +44,7 @@ spec:
           type: RuntimeDefault
       containers:
         - name: cert-manager-cainjector
-          image: "quay.io/jetstack/cert-manager-cainjector:v1.19.1@sha256:c7898aece8fb08102fca0b37683e37cb94e0a77c0d15b8e3c9128f6c04c868e0"
+          image: "quay.io/jetstack/cert-manager-cainjector:v1.19.2@sha256:1a24f9848e7ae83a787187f4e75fdf5e9adf401f44de2f156c09c6fae1bf046e"
           imagePullPolicy: IfNotPresent
           args:
             - --v=2
@@ -82,13 +84,14 @@ metadata:
   annotations:
     checkov.io/skip1: CKV_K8S_40=OpenShift Injects Random UID
     checkov.io/skip2: CKV_K8S_38= Require Use of Service Account Tokens
+    checkov.io/skip3: CKV_K8S_9=Not Supported
   namespace: cert-manager
   labels:
     app: cert-manager
     app.kubernetes.io/name: cert-manager
     app.kubernetes.io/instance: cert-manager
     app.kubernetes.io/component: "controller"
-    app.kubernetes.io/version: "v1.19.1"
+    app.kubernetes.io/version: "v1.19.2"
 spec:
   replicas: 2
   selector:
@@ -103,7 +106,7 @@ spec:
         app.kubernetes.io/name: cert-manager
         app.kubernetes.io/instance: cert-manager
         app.kubernetes.io/component: "controller"
-        app.kubernetes.io/version: "v1.19.1"
+        app.kubernetes.io/version: "v1.19.2"
       annotations:
         prometheus.io/path: "/metrics"
         prometheus.io/scrape: "true"
@@ -117,13 +120,13 @@ spec:
           type: RuntimeDefault
       containers:
         - name: cert-manager-controller
-          image: "quay.io/jetstack/cert-manager-controller:v1.19.1@sha256:cd49e769e18ada1fd7b9a9bacc87c90db24c65cbfd4bf71694dda7ed40e91187"
+          image: "quay.io/jetstack/cert-manager-controller:v1.19.2@sha256:d4ffb81a6d89a0e690ee80d07fcdcb6cccb99118010e3eb0808442e506e18ab0"
           imagePullPolicy: IfNotPresent
           args:
             - --v=2
             - --cluster-resource-namespace=$(POD_NAMESPACE)
             - --leader-election-namespace=kube-system
-            - --acme-http01-solver-image=quay.io/jetstack/cert-manager-acmesolver:v1.19.1@sha256:35ed1103cb49a3e1fc2438de84f304e3fbdeb53e0366f6b1bc2ec9b2e57462db
+            - --acme-http01-solver-image=quay.io/jetstack/cert-manager-acmesolver:v1.19.2@sha256:cd353aa4ad8ec5dbcc64f454599611c8201a2b23f67720978140800999129b62
             - --max-concurrent-challenges=60
           ports:
             - containerPort: 9402
@@ -180,7 +183,7 @@ metadata:
     app.kubernetes.io/name: webhook
     app.kubernetes.io/instance: cert-manager
     app.kubernetes.io/component: "webhook"
-    app.kubernetes.io/version: "v1.19.1"
+    app.kubernetes.io/version: "v1.19.2"
 spec:
   replicas: 2
   selector:
@@ -195,7 +198,7 @@ spec:
         app.kubernetes.io/name: webhook
         app.kubernetes.io/instance: cert-manager
         app.kubernetes.io/component: "webhook"
-        app.kubernetes.io/version: "v1.19.1"
+        app.kubernetes.io/version: "v1.19.2"
       annotations:
         prometheus.io/path: "/metrics"
         prometheus.io/scrape: "true"
@@ -211,7 +214,7 @@ spec:
           type: RuntimeDefault
       containers:
         - name: cert-manager-webhook
-          image: "quay.io/jetstack/cert-manager-webhook:v1.19.1@sha256:f5bfe77541e38978aec53cc6eb924d190e1fe923c98b2582e6ccf5edf6c02cce"
+          image: "quay.io/jetstack/cert-manager-webhook:v1.19.2@sha256:2ba4918d1581ed29bd5d68a017244560b353bcaf9932c814a8713887589bda6c"
           imagePullPolicy: IfNotPresent
           args:
             - --v=2

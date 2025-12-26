@@ -4,15 +4,17 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: external-secrets-cert-controller
-  annotations:
-    checkov.io/skip1: CKV_K8S_40=OpenShift Injects Random UID
   namespace: external-secrets-operator
   labels:
-    helm.sh/chart: external-secrets-1.1.0
+    helm.sh/chart: external-secrets-1.2.0
     app.kubernetes.io/name: external-secrets-cert-controller
     app.kubernetes.io/instance: external-secrets
-    app.kubernetes.io/version: "v1.1.0"
+    app.kubernetes.io/version: "v1.2.0"
     app.kubernetes.io/managed-by: Helm
+  annotations:
+    checkov.io/skip1: CKV_K8S_40=OpenShift Injects Random UID
+    checkov.io/skip2: CKV_K8S_38=This is an operator
+    checkov.io/skip3: CKV_K8S_8=Not Supported
 spec:
   replicas: 2
   revisionHistoryLimit: 10
@@ -23,12 +25,15 @@ spec:
   template:
     metadata:
       labels:
-        helm.sh/chart: external-secrets-1.1.0
+        helm.sh/chart: external-secrets-1.2.0
         app.kubernetes.io/name: external-secrets-cert-controller
         app.kubernetes.io/instance: external-secrets
-        app.kubernetes.io/version: "v1.1.0"
+        app.kubernetes.io/version: "v1.2.0"
         app.kubernetes.io/managed-by: Helm
     spec:
+      securityContext:
+        seccompProfile:
+          type: RuntimeDefault
       serviceAccountName: external-secrets-cert-controller
       automountServiceAccountToken: true
       hostNetwork: false
@@ -41,10 +46,9 @@ spec:
                 - ALL
             readOnlyRootFilesystem: true
             runAsNonRoot: true
-            # runAsUser: 1000
             seccompProfile:
               type: RuntimeDefault
-          image: ghcr.io/external-secrets/external-secrets:v1.1.0-ubi@sha256:f27619afa57ca66cdde88ff46493cd114eb177a8f97414dcfa8a9394b959c741 # checkov:skip=CKV_SECRET_6 This is an image name
+          image: ghcr.io/external-secrets/external-secrets:v1.2.0-ubi@sha256:90b1fcf5c8679513f1485612bab3e53a94eb3c8865f2e69b73e5c3d80ae49088 # checkov:skip=CKV_SECRET_6 This is an image name
           imagePullPolicy: IfNotPresent
           args:
             - certcontroller
@@ -81,15 +85,17 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: external-secrets
-  annotations:
-    checkov.io/skip1: CKV_K8S_40=OpenShift Injects Random UID
   namespace: external-secrets-operator
   labels:
-    helm.sh/chart: external-secrets-1.1.0
+    helm.sh/chart: external-secrets-1.2.0
     app.kubernetes.io/name: external-secrets
     app.kubernetes.io/instance: external-secrets
-    app.kubernetes.io/version: "v1.1.0"
+    app.kubernetes.io/version: "v1.2.0"
     app.kubernetes.io/managed-by: Helm
+  annotations:
+    checkov.io/skip1: CKV_K8S_40=OpenShift Injects Random UID
+    checkov.io/skip2: CKV_K8S_38=This is an operator
+    checkov.io/skip3: CKV_K8S_9=Not Supported
 spec:
   replicas: 2
   revisionHistoryLimit: 10
@@ -100,12 +106,15 @@ spec:
   template:
     metadata:
       labels:
-        helm.sh/chart: external-secrets-1.1.0
+        helm.sh/chart: external-secrets-1.2.0
         app.kubernetes.io/name: external-secrets
         app.kubernetes.io/instance: external-secrets
-        app.kubernetes.io/version: "v1.1.0"
+        app.kubernetes.io/version: "v1.2.0"
         app.kubernetes.io/managed-by: Helm
     spec:
+      securityContext:
+        seccompProfile:
+          type: RuntimeDefault
       serviceAccountName: external-secrets
       automountServiceAccountToken: true
       hostNetwork: false
@@ -118,20 +127,29 @@ spec:
                 - ALL
             readOnlyRootFilesystem: true
             runAsNonRoot: true
-            # runAsUser: 1000
             seccompProfile:
               type: RuntimeDefault
-          image: ghcr.io/external-secrets/external-secrets:v1.1.0-ubi@sha256:f27619afa57ca66cdde88ff46493cd114eb177a8f97414dcfa8a9394b959c741 # checkov:skip=CKV_SECRET_6 This is an image name
+          image: ghcr.io/external-secrets/external-secrets:v1.2.0-ubi@sha256:90b1fcf5c8679513f1485612bab3e53a94eb3c8865f2e69b73e5c3d80ae49088 # checkov:skip=CKV_SECRET_6 This is an image name
           imagePullPolicy: IfNotPresent
           args:
             - --concurrent=1
             - --metrics-addr=:8080
             - --loglevel=info
             - --zap-time-encoding=epoch
+            - --live-addr=:8082
           ports:
             - containerPort: 8080
               protocol: TCP
               name: metrics
+          livenessProbe:
+            failureThreshold: 5
+            httpGet:
+              path: /healthz
+              port: 8082
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            successThreshold: 1
+            timeoutSeconds: 5
           resources:
             limits:
               cpu: 50m
@@ -147,15 +165,17 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: external-secrets-webhook
-  annotations:
-    checkov.io/skip1: CKV_K8S_40=OpenShift Injects Random UID
   namespace: external-secrets-operator
   labels:
-    helm.sh/chart: external-secrets-1.1.0
+    helm.sh/chart: external-secrets-1.2.0
     app.kubernetes.io/name: external-secrets-webhook
     app.kubernetes.io/instance: external-secrets
-    app.kubernetes.io/version: "v1.1.0"
+    app.kubernetes.io/version: "v1.2.0"
     app.kubernetes.io/managed-by: Helm
+  annotations:
+    checkov.io/skip1: CKV_K8S_40=OpenShift Injects Random UID
+    checkov.io/skip2: CKV_K8S_38=This is an operator
+    checkov.io/skip3: CKV_K8S_8=Not Supported
 spec:
   replicas: 2
   revisionHistoryLimit: 10
@@ -166,12 +186,15 @@ spec:
   template:
     metadata:
       labels:
-        helm.sh/chart: external-secrets-1.1.0
+        helm.sh/chart: external-secrets-1.2.0
         app.kubernetes.io/name: external-secrets-webhook
         app.kubernetes.io/instance: external-secrets
-        app.kubernetes.io/version: "v1.1.0"
+        app.kubernetes.io/version: "v1.2.0"
         app.kubernetes.io/managed-by: Helm
     spec:
+      securityContext:
+        seccompProfile:
+          type: RuntimeDefault
       hostNetwork: false
       serviceAccountName: external-secrets-webhook
       automountServiceAccountToken: true
@@ -184,10 +207,9 @@ spec:
                 - ALL
             readOnlyRootFilesystem: true
             runAsNonRoot: true
-            # runAsUser: 1000
             seccompProfile:
               type: RuntimeDefault
-          image: ghcr.io/external-secrets/external-secrets:v1.1.0-ubi@sha256:f27619afa57ca66cdde88ff46493cd114eb177a8f97414dcfa8a9394b959c741 # checkov:skip=CKV_SECRET_6 This is an image name
+          image: ghcr.io/external-secrets/external-secrets:v1.2.0-ubi@sha256:90b1fcf5c8679513f1485612bab3e53a94eb3c8865f2e69b73e5c3d80ae49088 # checkov:skip=CKV_SECRET_6 This is an image name
           imagePullPolicy: IfNotPresent
           args:
             - webhook
