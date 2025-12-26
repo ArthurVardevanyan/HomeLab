@@ -34,6 +34,8 @@ ENV \
   GCLOUD_VERSION=550.0.0 \
   # renovate: datasource=golang-version depName=go
   GO_VERSION=1.25.5 \
+  # renovate: datasource=github-releases depName=golangci/golangci-lint
+  GOLANGCI_LINT_VERSION=2.7.2 \
   LANG=en_US.UTF-8 \
   LC_ALL=en_US.UTF-8 \
   HOME=/tmp \
@@ -93,6 +95,7 @@ RUN rpm --import https://dl.fedoraproject.org/pub/epel/RPM-GPG-KEY-EPEL-10 && \
   curl -L -o go.tar.gz "https://go.dev/dl/go${GO_VERSION}.linux-amd64.tar.gz" && \
   tar -xzf go.tar.gz -C /usr/local --no-same-owner && rm -f go.tar.gz && \
   mkdir -p /go && \
+  curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b /usr/local/bin v${GOLANGCI_LINT_VERSION} && \
   GOOS=linux GOARCH=amd64 GOAMD64=v3 go build -v std && \
   GOOS=linux GOARCH=arm64 go build -v std && \
   rm -rf /usr/local/go/test /usr/local/go/doc /usr/local/go/api /usr/local/go/misc && \
@@ -104,4 +107,5 @@ RUN rpm --import https://dl.fedoraproject.org/pub/epel/RPM-GPG-KEY-EPEL-10 && \
   unzip vault_linux_amd64.zip && chmod +x vault && mv vault /usr/local/bin/ && rm -f vault_linux_amd64.zip && \
   rm -rf /usr/share/doc/* /usr/share/man/* /usr/share/info/* /tmp/* && find /usr -name '*.pyc' -delete
 
+RUN golangci-lint --version
 CMD ["sleep", "infinity"]
