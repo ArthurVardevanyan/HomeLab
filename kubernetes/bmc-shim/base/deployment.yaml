@@ -39,22 +39,32 @@ spec:
               app: bmc-shim
       containers:
         # renovate: datasource=docker depName=registry.arthurvardevanyan.com/homelab/bmc-shim versioning=loose
-        - image: registry.arthurvardevanyan.com/homelab/bmc-shim:v0.1.2@sha256:f2c4091b3a141f162b28b3052a4701038d42d6191b77e88aac5e689f8e2d12fd
+        - image: registry.arthurvardevanyan.com/homelab/bmc-shim:v0.2.0@sha256:ffb5325fc106715691ee7177656693d17ee56333261fd4d185febcf922fead7e
           name: bmc-shim
-          envFrom:
-            - secretRef:
-                name: bmc-shim-credentials
+          volumeMounts:
+            - name: bmc-shim-config
+              mountPath: /etc/bmc-shim
+              readOnly: true
+          env:
+            - name: BMC_SHIM_HA_SYSTEMS
+              valueFrom:
+                configMapKeyRef:
+                  name: bmc-shim-config
+                  key: ha_systems
+            - name: BMC_SHIM_HA_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: bmc-shim-config
+                  key: ha_url
           args:
             - --listen
             - :8080
             - --backend
             - homeassistant
-            - --ha-url
-            - https://home.arthurvardevanyan.com
-            - --ha-token
-            - $(BMC_SHIM_HA_TOKEN)
             - --systems
-            - "1=switch.power_strip_zone_1_kvm_1,2=switch.power_strip_zone_2_kvm_2,3=switch.power_strip_zone_3_kvm_3,4=switch.power_strip_zone_1_kvm_4,5=switch.power_strip_zone_2_kvm_5,6=switch.power_strip_zone_3_kvm_6"
+            - $(BMC_SHIM_HA_SYSTEMS)
+            - --ha-url
+            - $(BMC_SHIM_HA_URL)
           ports:
             - containerPort: 8080
               name: http
@@ -102,6 +112,11 @@ spec:
             capabilities:
               drop:
                 - ALL
+      volumes:
+        - name: bmc-shim-config
+          secret:
+            secretName: bmc-shim-credentials
+            optional: false
       serviceAccountName: bmc-shim
       terminationGracePeriodSeconds: 10
       automountServiceAccountToken: true
