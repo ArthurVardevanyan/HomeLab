@@ -15,10 +15,10 @@
       ansible.builtin.dnf:
         state: present
         name:
-          # renovate: datasource=repology depName=almalinux_9/centos-release-openstack-zed
-          - centos-release-openstack-zed #1-4.el9
-          # renovate: datasource=repology depName=almalinux_9/centos-release-okd-4.16
-          - centos-release-okd-4.16 #1-1.el9
+          # TODO: renovate: datasource=repology depName=almalinux_9/centos-release-openstack-zed
+          - centos-release-openstack-zed # 1-4.el9
+          # TODO: renovate: datasource=repology depName=almalinux_9/centos-release-okd-4.16
+          - centos-release-okd-4.16 # 1-1.el9
 
     - name: Remove CentOS-OpenStack-zed.repo
       ansible.builtin.file:
@@ -30,11 +30,11 @@
         state: present
         name:
           # renovate: datasource=rpm depName=cri-o registryUrl=https://mirror.stream.centos.org/SIGs/9-stream/cloud/aarch64/okd-4.16/
-          - cri-o #1.29.5-1.el9s
+          - cri-o # 1.29.5-1.el9s
           # renovate: datasource=rpm depName=cri-tools registryUrl=https://mirror.stream.centos.org/SIGs/9-stream/cloud/aarch64/okd-4.16/
-          - cri-tools #1.29.0-1.el9s
-          # renovate: datasource=repology depName=centos_stream_9/containernetworking-plugins
-          - containernetworking-plugins #1:1.7.1-1.el9
+          - cri-tools # 1.29.0-1.el9s
+          # TODO: renovate: datasource=repology depName=centos_stream_9/containernetworking-plugins
+          - containernetworking-plugins # 1:1.7.1-1.el9
     - name: Copy Pull Secret
       ansible.builtin.copy:
         src: "/tmp/pull_secret.json"
