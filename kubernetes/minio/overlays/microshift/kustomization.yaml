@@ -4,3 +4,11 @@ kind: Kustomization
 resources:
   - ../../base
   - ./pvc.yaml
+patches:
+  - patch: |-
+      - op: replace
+        path: /spec/template/spec/containers/0/resources/requests/memory
+        value: 1Gi
+    target:
+      kind: Deployment
+      name: minio

@@ -5,6 +5,8 @@ resources:
   - ../../base
   - ./vlan3.yaml
   - ./vlan11.yaml
+components:
+  - ../../components/rollout
 patches:
   - patch: |-
       - op: add
@@ -13,6 +15,19 @@ patches:
     target:
       kind: DaemonSet
       name: kube-vip-ds
+  - patch: |-
+      - op: add
+        path: /spec/egress/-
+        value:
+          to:
+            - ipBlock:
+                cidr: 10.44.0.0/32
+          ports:
+            - protocol: TCP
+              port: 6443
+    target:
+      kind: NetworkPolicy
+      name: allow-api-server
   - patch: |-
       - op: replace
         path: /spec/replicas
