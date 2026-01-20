@@ -1,0 +1,90 @@
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: rollout
+  namespace: kube-vip
+  annotations:
+    checkov.io/skip1: CKV_K8S_38=Need to run Kubectl Commands
+    checkov.io/skip2: CKV_K8S_40=OpenShift Injects Random UID
+    checkov.io/skip3: CKV_K8S_43=Don't Mind Tag for This
+spec:
+  schedule: "0 0,12 * * *"
+  suspend: false
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 1
+  failedJobsHistoryLimit: 1
+  jobTemplate:
+    spec:
+      parallelism: 1
+      backoffLimit: 0
+      ttlSecondsAfterFinished: 500
+      completionMode: NonIndexed
+      template:
+        metadata:
+          labels:
+            app: rollout
+        spec:
+          restartPolicy: OnFailure
+          activeDeadlineSeconds: 300
+          serviceAccountName: rollout
+          automountServiceAccountToken: true
+          enableServiceLinks: true
+          terminationGracePeriodSeconds: 30
+          securityContext:
+            runAsNonRoot: true
+            seccompProfile:
+              type: RuntimeDefault
+          dnsPolicy: ClusterFirst
+          containers:
+            - name: rollout
+              imagePullPolicy: IfNotPresent
+              image: registry.arthurvardevanyan.com/homelab/toolbox:not_latest
+              env:
+                - name: NAMESPACE
+                  valueFrom:
+                    fieldRef:
+                      fieldPath: metadata.namespace
+              securityContext:
+                runAsNonRoot: true
+                privileged: false
+                readOnlyRootFilesystem: true
+                allowPrivilegeEscalation: false
+                seccompProfile:
+                  type: RuntimeDefault
+                capabilities:
+                  drop:
+                    - ALL
+              resources:
+                requests:
+                  cpu: 10m
+                  memory: 32Mi
+                limits:
+                  cpu: 100m
+                  memory: 128Mi
+              command:
+                - /bin/bash
+                - -c
+                - |
+                  set -o errexit  # exit on any failure
+                  set -o nounset  # exit on undeclared variables
+                  set -o pipefail # return value of all commands in a pipe
+
+                  if ! command -v oc >/dev/null 2>&1; then
+                    echo "ERROR: oc not found in image"
+                    exit 1
+                  fi
+
+                  echo "Detecting DaemonSets in namespace: ${NAMESPACE}"
+                  mapfile -t DAEMONSETS < <(oc -n "${NAMESPACE}" get daemonset -o jsonpath='{range .items[*]}{.metadata.name}{"\n"}{end}')
+
+                  if [[ ${#DAEMONSETS[@]} -eq 0 ]]; then
+                    echo "No DaemonSets found; nothing to rollout"
+                    exit 0
+                  fi
+
+                  for ds in "${DAEMONSETS[@]}"; do
+                    echo "Rolling out daemonset/${ds}"
+                    oc -n "${NAMESPACE}" rollout restart "daemonset/${ds}"
+                    oc -n "${NAMESPACE}" rollout status "daemonset/${ds}" --timeout=300s
+                  done
