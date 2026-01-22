@@ -14,6 +14,10 @@ spec:
         - Include @demo-conf
         - SecDebugLogLevel 9
         - SecRuleEngine On
+        - SecRule REQUEST_HEADERS:Host "@streq vault.arthurvardevanyan.com" "id:1000,phase:1,pass,nolog,chain"
+        - SecRule REQUEST_URI "@beginsWith /v1/auth/" "ctl:ruleRemoveById=911100,ctl:ruleRemoveById=949111"
+        - SecRule REQUEST_HEADERS:Host "@streq files.arthurvardevanyan.com" "id:1001,phase:1,pass,nolog,chain"
+        - SecRule REQUEST_URI "@beginsWith /remote.php/dav/" "ctl:ruleRemoveById=911100,ctl:ruleRemoveById=949111"
         - Include @crs-setup-conf
         - Include @owasp_crs/*.conf
   selector:
