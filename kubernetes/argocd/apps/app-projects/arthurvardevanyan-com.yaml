@@ -1,0 +1,23 @@
+---
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: arthurvardevanyan-com
+  namespace: argocd-apps
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+spec:
+  destinations:
+    - name: in-cluster
+      namespace: arthurvardevanyan-com
+      server: "https://kubernetes.default.svc"
+    - name: in-cluster
+      namespace: arthurvardevanyan-ci
+      server: "https://kubernetes.default.svc"
+  sourceNamespaces:
+    - arthurvardevanyan-com
+    - arthurvardevanyan-ci
+  sourceRepos:
+    - "https://git.arthurvardevanyan.com/ArthurVardevanyan/ArthurVardevanyan-com"
+    - "https://github.com/ArthurVardevanyan/ArthurVardevanyan-com"
