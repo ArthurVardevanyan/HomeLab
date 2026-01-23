@@ -4,19 +4,16 @@ kind: Service
 metadata:
   labels:
     gateway.istio.io/managed: openshift.io-gateway-controller-v1
-    gateway.networking.k8s.io/gateway-name: https-gateway
+    gateway.networking.k8s.io/gateway-name: https-gateway-external
   annotations:
     kube-vip.io/egress: "true"
     kube-vip.io/egress-internal: "true"
-    kube-vip.io/loadbalancerIPs: "10.101.10.9"
-  name: https-gateway-openshift-default
+    kube-vip.io/loadbalancerIPs: "10.101.10.10"
+  name: https-gateway-external-openshift-default
   namespace: openshift-ingress
 spec:
   externalTrafficPolicy: Local
   internalTrafficPolicy: Cluster
-  ipFamilies:
-    - IPv4
-  ipFamilyPolicy: PreferDualStack
   ports:
     - appProtocol: tcp
       protocol: TCP
@@ -27,6 +24,6 @@ spec:
       name: https
       port: 443
   selector:
-    gateway.networking.k8s.io/gateway-name: https-gateway
+    gateway.networking.k8s.io/gateway-name: https-gateway-external
   type: LoadBalancer
   loadBalancerClass: kube-vip.io/kube-vip-class
