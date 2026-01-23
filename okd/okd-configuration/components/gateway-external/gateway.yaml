@@ -1,0 +1,43 @@
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: Gateway
+metadata:
+  name: https-gateway-external
+  namespace: openshift-ingress
+  labels:
+    gateway.networking.k8s.io/gateway-name: https-gateway-external
+spec:
+  gatewayClassName: openshift-default
+  listeners:
+    - name: https
+      protocol: HTTPS
+      port: 443
+      hostname: "arthurvardevanyan.com"
+      allowedRoutes:
+        namespaces:
+          from: Selector
+          selector:
+            matchLabels:
+              kubernetes.io/metadata.name: arthurvardevanyan-com
+      tls:
+        mode: Terminate
+        certificateRefs:
+          - group: ""
+            kind: Secret
+            name: arthurvardevanyan-com-cert
+    - name: https-www
+      protocol: HTTPS
+      port: 443
+      hostname: "www.arthurvardevanyan.com"
+      allowedRoutes:
+        namespaces:
+          from: Selector
+          selector:
+            matchLabels:
+              kubernetes.io/metadata.name: arthurvardevanyan-com
+      tls:
+        mode: Terminate
+        certificateRefs:
+          - group: ""
+            kind: Secret
+            name: arthurvardevanyan-com-cert

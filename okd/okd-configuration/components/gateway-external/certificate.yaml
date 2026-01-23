@@ -1,0 +1,20 @@
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: arthurvardevanyan-com-cert
+  namespace: openshift-ingress
+spec:
+  secretName: arthurvardevanyan-com-cert
+  duration: 2160h # 90d
+  renewBefore: 1080h # 45d
+  privateKey:
+    rotationPolicy: Always
+    algorithm: ECDSA
+    size: 384
+  dnsNames:
+    - "www.arthurvardevanyan.com"
+    - "arthurvardevanyan.com"
+  issuerRef:
+    kind: ClusterIssuer
+    name: letsencrypt

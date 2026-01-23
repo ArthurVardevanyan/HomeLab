@@ -1,0 +1,11 @@
+---
+kind: PodDisruptionBudget
+apiVersion: policy/v1
+metadata:
+  name: gateway-external
+  namespace: openshift-ingress
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      gateway.networking.k8s.io/gateway-name: https-gateway-external

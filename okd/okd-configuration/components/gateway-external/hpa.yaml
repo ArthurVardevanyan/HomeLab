@@ -1,0 +1,20 @@
+---
+kind: HorizontalPodAutoscaler
+apiVersion: autoscaling/v2
+metadata:
+  name: gateway-external
+  namespace: openshift-ingress
+spec:
+  scaleTargetRef:
+    kind: Deployment
+    name: https-gateway-external-openshift-default
+    apiVersion: apps/v1
+  minReplicas: 2
+  maxReplicas: 4
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 200
