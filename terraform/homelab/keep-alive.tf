@@ -130,7 +130,7 @@ resource "google_cloudfunctions2_function" "okd_homelab_keep_alive_cloud_functio
 
 
   build_config {
-    runtime           = "go123"
+    runtime           = "go125"
     entry_point       = "KeepAlive"
     docker_repository = "projects/homelab-${local.project_id}/locations/us-central1/repositories/gcf-artifacts"
     source {
