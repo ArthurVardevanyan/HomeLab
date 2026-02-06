@@ -41,7 +41,7 @@ These images were found in files but do not appear to be managed by Renovate (no
 | `ghcr.io/immich-app/immich-machine-learning:v2.3.1@sha256:379e31b8c75107b0af8141904baa8cc933d7454b88fdb204265ef11749d7d908`                                                                   |
 | `ghcr.io/immich-app/immich-server:v2.3.1@sha256:f8d06a32b1b2a81053d78e40bf8e35236b9faefb5c3903ce9ca8712c9ed78445`                                                                             |
 | `ghcr.io/kube-vip/kube-vip-cloud-provider:v0.0.12@sha256:f8f4e3401f7637dd55faefb35571e731a477f65d5c3f062aef73dfd31a8da596`                                                                    |
-| `ghcr.io/kube-vip/kube-vip:v1.0.3@sha256:4e2791cc0238ae01b3986d827f4d568a25d846c94bab51238fe6241281a27113`                                                                                    |
+| `ghcr.io/kube-vip/kube-vip:v1.0.4@sha256:5e0d817bfa35f922e7ca5cf5fa88f30b71a88ab4837e550185b1c97bcef818c2`                                                                                    |
 | `ghcr.io/music-assistant/server:2.3.4@sha256:301cc44d2405e1f12953a44ddb65454630007755af9ada9d204bc1a3b9a06175`                                                                                |
 | `ghcr.io/netbox-community/netbox:v4.4.6@sha256:150fb9808d633712a75ad57ba364fa38caab3a88d123c470967fd3b9b2f32d9c`                                                                              |
 | `ghcr.io/tektoncd/operator/operator-1d69a75f22dd094880847eac907fb2c1:v0.77.0@sha256:f164d2e5e209765e2ffd267e3af9ac904645937beb84a30d19d938b6780baabf`                                         |
