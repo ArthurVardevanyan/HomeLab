@@ -18,3 +18,22 @@ spec:
   issuerRef:
     kind: ClusterIssuer
     name: letsencrypt
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: spotify-cert
+  namespace: openshift-ingress
+spec:
+  secretName: spotify-cert
+  duration: 2160h # 90d
+  renewBefore: 1080h # 45d
+  privateKey:
+    rotationPolicy: Always
+    algorithm: ECDSA
+    size: 384
+  dnsNames:
+    - "analytics-for-spotify.arthurvardevanyan.com"
+  issuerRef:
+    kind: ClusterIssuer
+    name: letsencrypt

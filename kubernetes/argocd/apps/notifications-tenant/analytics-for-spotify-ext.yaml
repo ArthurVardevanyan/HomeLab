@@ -1,0 +1,133 @@
+---
+apiVersion: external-secrets.io/v1
+kind: ExternalSecret
+metadata:
+  name: argocd-notifications-secret
+  namespace: analytics-for-spotify-ext
+  annotations:
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+spec:
+  refreshInterval: "1h"
+  secretStoreRef:
+    name: vault
+    kind: ClusterSecretStore
+  target:
+    name: argocd-notifications-secret
+    # creationPolicy: "Merge"
+  data:
+    - secretKey: github-privateKey
+      remoteRef: # checkov:skip=CKV_SECRET_6 PlaceHolder Values
+        conversionStrategy: Default
+        decodingStrategy: None
+        key: homelab/argo/tenant
+        property: github_pk
+        metadataPolicy: None
+---
+apiVersion: argoproj.io/v1alpha1
+kind: NotificationsConfiguration
+metadata:
+  name: default-notifications-configuration
+  namespace: analytics-for-spotify-ext
+  annotations:
+    argocd.argoproj.io/sync-wave: "2"
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+spec:
+  context:
+    environmentName: HomeLab-External
+  services:
+    service.github.gh-tenant: |-
+      appID: <path:secret/data/homelab/argo/tenant#github_app>
+      installationID: <path:secret/data/homelab/argo/tenant#github_app_installation>
+      privateKey: $github-privateKey
+
+  triggers:
+    trigger.on-sync-succeeded: |-
+      - description: Application syncing has succeeded
+        send:
+        - app-sync-succeeded
+        when: app.status.operationState.phase in ['Succeeded']
+    trigger.on-health-degraded: |-
+      - description: Application has degraded
+        send:
+        - app-health-degraded
+        when: app.status.health.status == 'Degraded'
+    trigger.on-sync-status-unknown: |-
+      - description: Application status is 'Unknown'
+        send:
+        - app-sync-status-unknown
+        when: app.status.sync.status == 'Unknown'
+    trigger.on-sync-failed: |-
+      - description: Application syncing has failed
+        send:
+        - app-sync-failed
+        when: app.status.operationState.phase in ['Error', 'Failed']
+  templates:
+    template.app-sync-status-unknown: |-
+      message: |
+        Application {{.app.metadata.name}} Unknown
+      status:
+        state: queued
+        label: "{{ .context.environmentName }}-{{.app.metadata.name}}"
+        targetURL: "https://{{.context.argocdUrl}}/applications/{{.app.metadata.name}}?operation=true"
+      github:
+        repoURLPath: "{{.app.spec.source.repoURL}}"
+        revisionPath: "{{.app.status.operationState.syncResult.revision}}"
+        deployment:
+          state: queued
+          logURL: "https://{{.context.argocdUrl}}/applications/{{.app.metadata.name}}?operation=true"
+          environment: "{{ .context.environmentName }}"
+          description: "{{.app.metadata.name}}"
+          requiredContexts: []
+          autoMerge: false
+          transientEnvironment: false
+    template.app-sync-failed: |-
+      message: |
+        Application {{.app.metadata.name}} Failed
+      github:
+        repoURLPath: "{{.app.spec.source.repoURL}}"
+        revisionPath: "{{.app.status.operationState.operation.sync.revision}}"
+        status:
+          state: failure
+          label: "{{ .context.environmentName }}-{{.app.metadata.name}}"
+        deployment:
+          state: failure
+          logURL: "https://{{.context.argocdUrl}}/applications/{{.app.metadata.name}}?operation=true"
+          environment: "{{ .context.environmentName }}"
+          description: "{{.app.metadata.name}}"
+          requiredContexts: []
+          autoMerge: false
+          transientEnvironment: false
+    template.app-sync-succeeded: |-
+      message: |
+        Application {{.app.metadata.name}} Succeeded
+      github:
+        repoURLPath: "{{.app.spec.source.repoURL}}"
+        revisionPath: "{{.app.status.operationState.syncResult.revision}}"
+        status:
+          state: success
+          label: "{{ .context.environmentName }}-{{.app.metadata.name}}"
+        deployment:
+          state: success
+          logURL: "https://{{.context.argocdUrl}}/applications/{{.app.metadata.name}}?operation=true"
+          environment: "{{ .context.environmentName }}"
+          description: "{{.app.metadata.name}}"
+          requiredContexts: []
+          autoMerge: false
+          transientEnvironment: false
+    template.app-health-degraded: |-
+      message: |
+        Application {{.app.metadata.name}} Degraded
+      github:
+        repoURLPath: "{{.app.spec.source.repoURL}}"
+        revisionPath: "{{.app.status.operationState.syncResult.revision}}"
+        status:
+          state: error
+          label: "{{ .context.environmentName }}-{{.app.metadata.name}}"
+        deployment:
+          state: error
+          logURL: "https://{{.context.argocdUrl}}/applications/{{.app.metadata.name}}?operation=true"
+          environment: "{{ .context.environmentName }}"
+          description: "{{.app.metadata.name}}"
+          requiredContexts: []
+          autoMerge: false
+          transientEnvironment: false
