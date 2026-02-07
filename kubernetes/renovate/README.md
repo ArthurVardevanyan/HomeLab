@@ -51,7 +51,7 @@ These images were found in files but do not appear to be managed by Renovate (no
 | `nginx:1.29.3-bookworm@sha256:553f64aecdc31b5bf944521731cd70e35da4faed96b2b7548a3d8e2598c52a42`                                                                                               |
 | `nvidia/driver`                                                                                                                                                                               |
 | `quay.io/ansible/awx:24.6.1@sha256`                                                                                                                                                           |
-| `quay.io/ceph/ceph:v19.2.3-20250717@sha256:af0c5903e901e329adabe219dfc8d0c3efc1f05102a753902f33ee16c26b6cee`                                                                                  |
+| `quay.io/ceph/ceph:v20.2.0-20251104@sha256:1228c3d05e45fbc068a8c33614e4409b6dac688bcc77369b06009b5830fa8d86`                                                                                  |
 | `quay.io/cephcsi/ceph-csi-operator:v0.4.0@sha256:5f6cc5e678cedbf2b408b61f3bd3612ff98f88521c1775853b8ded5b621d10b4`                                                                            |
 | `quay.io/devfile/devworkspace-operator-index:release`                                                                                                                                         |
 | `quay.io/jetstack/cert-manager-cainjector:v1.19.1@sha256:c7898aece8fb08102fca0b37683e37cb94e0a77c0d15b8e3c9128f6c04c868e0`                                                                    |
