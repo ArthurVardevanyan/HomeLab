@@ -74,7 +74,8 @@ spec:
       initContainers:
         - name: init-redis-session-ini
           # https://github.com/nextcloud/helm/pull/752
-          image: docker.io/nextcloud:32.0.2-fpm
+          # renovate: datasource=docker depName=docker.io/nextcloud
+          image: docker.io/nextcloud:32.0.5-fpm
           command: ["touch", "/usr/local/etc/php/conf.d/redis-session.ini"]
           resources:
             limits:
@@ -100,7 +101,8 @@ spec:
               mountPath: "/usr/local/etc/php/conf.d"
         - name: init-max-children
           # https://github.com/nextcloud/helm/pull/752
-          image: docker.io/nextcloud:32.0.2-fpm
+          # renovate: datasource=docker depName=docker.io/nextcloud
+          image: docker.io/nextcloud:32.0.5-fpm
           command:
             - "sh"
             - "-c"
@@ -130,7 +132,8 @@ spec:
               mountPath: "/usr/local/etc/php-fpm.d"
       containers:
         - name: nextcloud
-          image: docker.io/nextcloud:32.0.2-fpm
+          # renovate: datasource=docker depName=docker.io/nextcloud
+          image: docker.io/nextcloud:32.0.5-fpm
           env:
             - name: NEXTCLOUD_TRUSTED_DOMAINS
               value: files.arthurvardevanyan.com,nextcloud.kube.home

@@ -30,7 +30,7 @@ These images were found in files but do not appear to be managed by Renovate (no
 | `docker.io/longhornio/longhorn-manager:v1.7.0@sha256:02a98fe2dce45d3bcd3a56955fa5f600f63abaf43debc2ef9a81b44ce47d5ec0`                                                                        |
 | `docker.io/longhornio/longhorn-share-manager:v1.7.0@sha256:83973fb06f38e07b33be9d26139089684064919a98e9d733aeddf9c504f35c0a`                                                                  |
 | `docker.io/longhornio/longhorn-ui:v1.7.0@sha256:6e503a5f0ca1aa37194fade95670c93fbfb75bfeccac2f9221cecfda3fc1ca0e`                                                                             |
-| `docker.io/nextcloud:32.0.2-fpm`                                                                                                                                                              |
+| `docker.io/nextcloud:32.0.5-fpm`                                                                                                                                                              |
 | `docker.io/rook/ceph:master`                                                                                                                                                                  |
 | `docker.io/rook/ceph:v1.18.7`                                                                                                                                                                 |
 | `docker.io/velero/velero:v1.17.1@sha256:58f551f0d89a9ef1919771bdc7475c08bc1795a50a51a57b5f14316d68fc3baa`                                                                                     |
