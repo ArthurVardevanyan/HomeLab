@@ -41,6 +41,22 @@ spec:
           - group: ""
             kind: Secret
             name: arthurvardevanyan-com-cert
+    - name: spotify
+      protocol: HTTPS
+      port: 443
+      hostname: "analytics-for-spotify.arthurvardevanyan.com"
+      allowedRoutes:
+        namespaces:
+          from: Selector
+          selector:
+            matchLabels:
+              kubernetes.io/metadata.name: analytics-for-spotify-ext
+      tls:
+        mode: Terminate
+        certificateRefs:
+          - group: ""
+            kind: Secret
+            name: spotify-cert
   infrastructure:
     parametersRef:
       group: ""
