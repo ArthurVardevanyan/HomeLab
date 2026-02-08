@@ -16,6 +16,8 @@ spec:
         - SecRuleEngine On
         - Include @crs-setup-conf
         - Include @owasp_crs/*.conf
+        # Disable body inspection for historical import endpoints (files too large for WASM memory)
+        - SecRule REQUEST_URI "@rx ^/analytics/(analyzeHistoricalImport|importHistoricalData)/" "id:1000,phase:1,t:none,nolog,pass,ctl:requestBodyAccess=Off"
   selector:
     matchLabels:
       gateway.networking.k8s.io/gateway-name: https-gateway-external

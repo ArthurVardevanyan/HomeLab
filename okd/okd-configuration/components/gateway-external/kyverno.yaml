@@ -2,26 +2,13 @@
 apiVersion: kyverno.io/v1
 kind: Policy
 metadata:
-  name: istiod-openshift-gateway
+  name: istiod-openshift-gateway-external
   namespace: openshift-ingress
   annotations:
     argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
 spec:
   background: false
   rules:
-    - name: istiod-openshift-gateway
-      skipBackgroundRequests: true
-      match:
-        any:
-          - resources:
-              kinds:
-                - HorizontalPodAutoscaler
-              names:
-                - istiod-openshift-gateway
-      mutate:
-        patchStrategicMerge:
-          spec:
-            minReplicas: 2
     - name: gateway-resources
       skipBackgroundRequests: true
       match:
@@ -41,7 +28,7 @@ spec:
                     resources:
                       requests:
                         cpu: 100m
-                        memory: 512Mi
+                        memory: 1Gi
                       limits:
                         cpu: 2
-                        memory: 1Gi
+                        memory: 2Gi
