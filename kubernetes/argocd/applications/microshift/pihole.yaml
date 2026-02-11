@@ -15,16 +15,12 @@ metadata:
     app.kubernetes.io/instance: argocd
 spec:
   destination:
-    namespace: pihole
     server: https://microshift.arthurvardevanyan.com:6443
   project: default
   source:
     path: kubernetes/pihole/overlays/microshift
     repoURL: https://git.arthurvardevanyan.com/ArthurVardevanyan/HomeLab
     targetRevision: HEAD
-    plugin:
-      name: argocd-vault-plugin-kustomize
   syncPolicy:
     syncOptions:
       - ServerSideApply=true
-      - CreateNamespace=true

@@ -1,0 +1,28 @@
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: cloudflare-ddns
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+    notifications.argoproj.io/subscribe.on-sync-succeeded.gh-cluster: ""
+    notifications.argoproj.io/subscribe.on-sync-failed.gh-cluster: ""
+    notifications.argoproj.io/subscribe.on-sync-status-unknown.gh-cluster: ""
+    notifications.argoproj.io/subscribe.on-health-degraded.gh-cluster: ""
+  labels:
+    app.kubernetes.io/instance: argocd
+spec:
+  destination:
+    server: https://kubernetes.default.svc
+  project: default
+  source:
+    path: kubernetes/cloudflare-ddns/overlays/okd
+    repoURL: https://git.arthurvardevanyan.com/ArthurVardevanyan/HomeLab
+    targetRevision: HEAD
+    plugin:
+      name: argocd-vault-plugin-kustomize
+  syncPolicy:
+    syncOptions:
+      - ServerSideApply=true
