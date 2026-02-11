@@ -86,7 +86,7 @@ spec:
 
     applicationTemplate:
       description: Application template content read from file
-      type: string
+      type: any
       resolve:
         with:
           - provider: file
@@ -94,30 +94,50 @@ spec:
               operation: read
               path: ".scafctl/templates/argocd/applications/application.yaml"
 
+    renderedTemplates:
+      type: any
+      resolve:
+        with:
+          - provider: static
+            inputs:
+              value: placeholder
+      transform:
+        with:
+          - provider: go-template
+            forEach:
+              item: target
+              in:
+                expr: "_.targets"
+            inputs:
+              template:
+                expr: "_.applicationTemplate.content"
+              name: "application-manifest"
+              data:
+                expr: "__item"
+
   workflow:
     actions:
-      createOutputDir:
-        description: Ensure output directory exists
-        provider: exec
-        inputs:
-          command: "mkdir"
-          args:
-            - "-p"
-            - expr: "_.outputDir"
+      # createOutputDir:
+      #   description: Ensure output directory exists
+      #   provider: exec
+      #   inputs:
+      #     command: "mkdir"
+      #     args:
+      #       - "-p"
+      #       - expr: "_.outputDir"
 
       generateApplications:
         description: Generate ArgoCD Application manifests for each target (cluster+folder)
-        dependsOn: [createOutputDir]
+        provider: file
         forEach:
           item: target
           in:
             rslvr: targets
-        provider: file
+
         inputs:
           operation: write
           path:
             expr: "_.outputDir + '/' + target.cluster + '/' + target.folder + '.yaml'"
           createDirs: true
           content:
-            tmpl:
-              rslvr: applicationTemplate
+            expr: "_.renderedTemplates[__index]"
