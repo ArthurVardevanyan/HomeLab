@@ -100,7 +100,7 @@ spec:
           cp "${WORKSPACE_DATA_PATH}/${FILE_PATH}" "/${TEST_DIR:-tmp}/${FILE_PATH//\//_}" 2>/dev/null || :
         done
         if echo "${WHATS_CHANGED}" | grep -q "\.md$"; then
-          markdownlint --disable MD013 -- /${TEST_DIR:-tmp}/*.md
+          find /${TEST_DIR:-tmp}/ -name '*.md' -exec markdownlint --disable MD013 -- {} +
         fi
         if compgen -G "/${TEST_DIR:-tmp}/*" > /dev/null; then
           prettier /${TEST_DIR:-tmp}/* --check --no-error-on-unmatched-pattern --ignore-unknown

@@ -84,6 +84,16 @@ spec:
                   'vault': line.split('|')[3] == 'true'
                 })
 
+    applicationTemplate:
+      description: Application template content read from file
+      type: string
+      resolve:
+        with:
+          - provider: file
+            inputs:
+              operation: read
+              path: ".scafctl/templates/argocd/applications/application.yaml"
+
   workflow:
     actions:
       createOutputDir:
@@ -109,34 +119,5 @@ spec:
             expr: "_.outputDir + '/' + target.cluster + '/' + target.folder + '.yaml'"
           createDirs: true
           content:
-            tmpl: |
-              ---
-              apiVersion: argoproj.io/v1alpha1
-              kind: Application
-              metadata:
-                name: {{ if eq .target.cluster "okd" }}{{ .target.folder }}{{ else }}{{ .target.folder }}-{{ .target.cluster }}{{ end }}
-                namespace: argocd
-                annotations:
-                  argocd.argoproj.io/sync-wave: "1"
-                  argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
-                  notifications.argoproj.io/subscribe.on-sync-succeeded.gh-cluster: ""
-                  notifications.argoproj.io/subscribe.on-sync-failed.gh-cluster: ""
-                  notifications.argoproj.io/subscribe.on-sync-status-unknown.gh-cluster: ""
-                  notifications.argoproj.io/subscribe.on-health-degraded.gh-cluster: ""
-                labels:
-                  app.kubernetes.io/instance: argocd
-              spec:
-                destination:
-                  server: {{ .target.server }}
-                project: default
-                source:
-                  path: kubernetes/{{ .target.folder }}/overlays/{{ .target.cluster }}
-                  repoURL: {{ ._.repoURL }}
-                  targetRevision: HEAD
-                  {{- if .target.vault }}
-                  plugin:
-                    name: argocd-vault-plugin-kustomize
-                  {{- end }}
-                syncPolicy:
-                  syncOptions:
-                    - ServerSideApply=true
+            tmpl:
+              rslvr: applicationTemplate
