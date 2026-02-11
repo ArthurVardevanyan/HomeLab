@@ -2,7 +2,7 @@
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: stackrox-secured-cluster-services-microshift
+  name: stackrox-secure-microshift
   namespace: argocd
   annotations:
     argocd.argoproj.io/sync-wave: "1"
@@ -15,7 +15,6 @@ metadata:
     app.kubernetes.io/instance: argocd
 spec:
   destination:
-    namespace: stackrox
     server: https://microshift.arthurvardevanyan.com:6443
   project: default
   source:
@@ -27,4 +26,3 @@ spec:
   syncPolicy:
     syncOptions:
       - ServerSideApply=true
-      - CreateNamespace=true
