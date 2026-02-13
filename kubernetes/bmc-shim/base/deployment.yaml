@@ -41,6 +41,11 @@ spec:
         # renovate: datasource=docker depName=registry.arthurvardevanyan.com/homelab/bmc-shim versioning=loose
         - image: registry.arthurvardevanyan.com/homelab/bmc-shim:v0.2.0@sha256:ffb5325fc106715691ee7177656693d17ee56333261fd4d185febcf922fead7e
           name: bmc-shim
+          resizePolicy:
+            - resourceName: cpu
+              restartPolicy: NotRequired
+            - resourceName: memory
+              restartPolicy: NotRequired
           volumeMounts:
             - name: bmc-shim-config
               mountPath: /etc/bmc-shim

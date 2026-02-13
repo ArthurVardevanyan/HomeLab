@@ -64,6 +64,11 @@ spec:
         - name: trust-manager
           image: "quay.io/jetstack/trust-manager:v0.20.2@sha256:c446258c1ac5bcd0558802dd8db2ef490d6ecdaff4b9c9aa7e45ac73f35b20e5"
           imagePullPolicy: IfNotPresent
+          resizePolicy:
+            - resourceName: cpu
+              restartPolicy: NotRequired
+            - resourceName: memory
+              restartPolicy: NotRequired
           ports:
             - containerPort: 6443
               name: webhook # for the PodMonitor port field

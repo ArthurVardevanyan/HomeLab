@@ -1,0 +1,28 @@
+---
+apiVersion: autoscaling.k8s.io/v1
+kind: VerticalPodAutoscaler
+metadata:
+  name: bmc-shim
+  namespace: bmc-shim
+  labels:
+    app: bmc-shim
+spec:
+  targetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: bmc-shim
+  updatePolicy:
+    updateMode: "InPlaceOrRecreate"
+  resourcePolicy:
+    containerPolicies:
+      - containerName: bmc-shim
+        minAllowed:
+          cpu: 5m
+          memory: 16Mi
+        maxAllowed:
+          cpu: 10m
+          memory: 48Mi
+        controlledResources:
+          - cpu
+          - memory
+        controlledValues: "RequestsAndLimits" # RequestsOnly
