@@ -119,7 +119,7 @@ graph TD
 
 | Kubernetes Channel | OKD Version | OKD Channel   | OKD OS                    | Storage Layer |
 | ------------------ | ----------- | ------------- | ------------------------- | ------------- |
-| v1.34.\*           | 4.21-\*     | stable-scos-4 | CentOS Stream CoreOS 10.0 | CEPH          |
+| v1.35.\*           | 4.22-\*     | stable-scos-4 | CentOS Stream CoreOS 10.0 | CEPH          |
 
 #### Machines
 
