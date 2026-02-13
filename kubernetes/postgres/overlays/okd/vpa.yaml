@@ -26,3 +26,30 @@ spec:
           - cpu
           - memory
         controlledValues: RequestsOnly # "RequestsAndLimits"
+---
+apiVersion: autoscaling.k8s.io/v1
+kind: VerticalPodAutoscaler
+metadata:
+  name: pgadmin
+  namespace: postgres
+  annotations:
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+spec:
+  targetRef:
+    apiVersion: apps/v1
+    kind: StatefulSet
+    name: pgadmin-f081176c-eed4-444d-8d15-2fea74016db9
+  updatePolicy:
+    updateMode: "InPlaceOrRecreate"
+  resourcePolicy:
+    containerPolicies:
+      - containerName: pgadmin
+        minAllowed:
+          cpu: 5m
+          memory: 16Mi
+        maxAllowed:
+          cpu: 250m
+          memory: 576Mi
+        controlledResources:
+          - memory
+        controlledValues: RequestsOnly # "RequestsAndLimits"
