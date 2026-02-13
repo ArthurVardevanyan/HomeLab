@@ -422,7 +422,7 @@ spec:
       - containerName: log-collector
         mode: "Off"
 ---
-# MGRs - RequestsOnly
+# MGRs - Off mode (read-only recommendations)
 apiVersion: autoscaling.k8s.io/v1
 kind: VerticalPodAutoscaler
 metadata:
@@ -436,7 +436,7 @@ spec:
     kind: Deployment
     name: rook-ceph-mgr-a
   updatePolicy:
-    updateMode: "InPlaceOrRecreate"
+    updateMode: "Off"
   resourcePolicy:
     containerPolicies:
       - containerName: mgr
@@ -488,7 +488,7 @@ spec:
     kind: Deployment
     name: rook-ceph-mgr-b
   updatePolicy:
-    updateMode: "InPlaceOrRecreate"
+    updateMode: "Off"
   resourcePolicy:
     containerPolicies:
       - containerName: mgr
@@ -527,7 +527,7 @@ spec:
       - containerName: log-collector
         mode: "Off"
 ---
-# Crashcollectors - RequestsOnly
+# Crashcollectors - Off mode (read-only recommendations)
 apiVersion: autoscaling.k8s.io/v1
 kind: VerticalPodAutoscaler
 metadata:
@@ -541,7 +541,7 @@ spec:
     kind: Deployment
     name: rook-ceph-crashcollector-server-1
   updatePolicy:
-    updateMode: "InPlaceOrRecreate"
+    updateMode: "Off"
   resourcePolicy:
     containerPolicies:
       - containerName: ceph-crash
@@ -569,7 +569,7 @@ spec:
     kind: Deployment
     name: rook-ceph-crashcollector-server-2
   updatePolicy:
-    updateMode: "InPlaceOrRecreate"
+    updateMode: "Off"
   resourcePolicy:
     containerPolicies:
       - containerName: ceph-crash
@@ -597,7 +597,7 @@ spec:
     kind: Deployment
     name: rook-ceph-crashcollector-server-3
   updatePolicy:
-    updateMode: "InPlaceOrRecreate"
+    updateMode: "Off"
   resourcePolicy:
     containerPolicies:
       - containerName: ceph-crash
@@ -612,7 +612,7 @@ spec:
           - memory
         controlledValues: RequestsOnly # "RequestsAndLimits"
 ---
-# Exporters - RequestsOnly
+# Exporters - Off mode (read-only recommendations)
 apiVersion: autoscaling.k8s.io/v1
 kind: VerticalPodAutoscaler
 metadata:
@@ -626,7 +626,7 @@ spec:
     kind: Deployment
     name: rook-ceph-exporter-server-1
   updatePolicy:
-    updateMode: "InPlaceOrRecreate"
+    updateMode: "Off"
   resourcePolicy:
     containerPolicies:
       - containerName: ceph-exporter
@@ -654,7 +654,7 @@ spec:
     kind: Deployment
     name: rook-ceph-exporter-server-2
   updatePolicy:
-    updateMode: "InPlaceOrRecreate"
+    updateMode: "Off"
   resourcePolicy:
     containerPolicies:
       - containerName: ceph-exporter
@@ -682,7 +682,7 @@ spec:
     kind: Deployment
     name: rook-ceph-exporter-server-3
   updatePolicy:
-    updateMode: "InPlaceOrRecreate"
+    updateMode: "Off"
   resourcePolicy:
     containerPolicies:
       - containerName: ceph-exporter
@@ -697,7 +697,7 @@ spec:
           - memory
         controlledValues: RequestsOnly # "RequestsAndLimits"
 ---
-# RGW - RequestsOnly
+# RGW - Off mode (read-only recommendations)
 apiVersion: autoscaling.k8s.io/v1
 kind: VerticalPodAutoscaler
 metadata:
@@ -711,7 +711,7 @@ spec:
     kind: Deployment
     name: rook-ceph-rgw-rook-ceph-obj-a
   updatePolicy:
-    updateMode: "InPlaceOrRecreate"
+    updateMode: "Off"
   resourcePolicy:
     containerPolicies:
       - containerName: rgw
