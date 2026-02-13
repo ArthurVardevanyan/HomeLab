@@ -1,43 +1,104 @@
 ---
-apiVersion: autoscaling.openshift.io/v1
-kind: VerticalPodAutoscalerController
+apiVersion: autoscaling.k8s.io/v1
+kind: VerticalPodAutoscaler
 metadata:
-  name: default
+  name: vpa-admission-plugin-default
   namespace: openshift-vertical-pod-autoscaler
   annotations:
-    argocd.argoproj.io/sync-wave: "1"
     argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+    argocd.argoproj.io/sync-wave: "1"
 spec:
-  deploymentOverrides:
-    admission:
-      container:
-        resources:
-          requests:
-            cpu: 10m
-            memory: 120Mi
-          limits:
-            cpu: 50m
-            memory: 264Mi
-    recommender:
-      container:
-        resources:
-          requests:
-            cpu: 25m
-            memory: 168Mi
-          limits:
-            cpu: 100m
-            memory: 504Mi
-    updater:
-      container:
-        resources:
-          requests:
-            cpu: 25m
-            memory: 192Mi
-          limits:
-            cpu: 100m
-            memory: 384Mi
-  minReplicas: 1
-  podMinCPUMillicores: 1
-  podMinMemoryMb: 32
-  recommendationOnly: false
-  safetyMarginFraction: 0
+  targetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: vpa-admission-plugin-default
+  updatePolicy:
+    updateMode: InPlaceOrRecreate
+  resourcePolicy:
+    containerPolicies:
+      - containerName: admission-plugin
+        minAllowed:
+          cpu: 5m
+          memory: 16Mi
+        maxAllowed:
+          cpu: 20m
+          memory: 256Mi
+        controlledValues: "RequestsAndLimits" # RequestsOnly
+---
+apiVersion: autoscaling.k8s.io/v1
+kind: VerticalPodAutoscaler
+metadata:
+  name: vpa-recommender-default
+  namespace: openshift-vertical-pod-autoscaler
+  annotations:
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+    argocd.argoproj.io/sync-wave: "1"
+spec:
+  targetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: vpa-recommender-default
+  updatePolicy:
+    updateMode: InPlaceOrRecreate
+  resourcePolicy:
+    containerPolicies:
+      - containerName: recommender
+        minAllowed:
+          cpu: 5m
+          memory: 16Mi
+        maxAllowed:
+          cpu: 50m
+          memory: 256Mi
+        controlledValues: "RequestsAndLimits" # RequestsOnly
+---
+apiVersion: autoscaling.k8s.io/v1
+kind: VerticalPodAutoscaler
+metadata:
+  name: vpa-updater-default
+  namespace: openshift-vertical-pod-autoscaler
+  annotations:
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+    argocd.argoproj.io/sync-wave: "1"
+spec:
+  targetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: vpa-updater-default
+  updatePolicy:
+    updateMode: InPlaceOrRecreate
+  resourcePolicy:
+    containerPolicies:
+      - containerName: updater
+        minAllowed:
+          cpu: 5m
+          memory: 16Mi
+        maxAllowed:
+          cpu: 50m
+          memory: 384Mi
+        controlledValues: "RequestsAndLimits" # RequestsOnly
+---
+apiVersion: autoscaling.k8s.io/v1
+kind: VerticalPodAutoscaler
+metadata:
+  name: vertical-pod-autoscaler-operator
+  namespace: openshift-vertical-pod-autoscaler
+  annotations:
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+    argocd.argoproj.io/sync-wave: "1"
+spec:
+  targetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: vertical-pod-autoscaler-operator
+  updatePolicy:
+    updateMode: InPlaceOrRecreate
+  resourcePolicy:
+    containerPolicies:
+      - containerName: vertical-pod-autoscaler-operator
+        minAllowed:
+          cpu: 5m
+          memory: 16Mi
+        maxAllowed:
+          cpu: 20m
+          memory: 64Mi
+        controlledValues: "RequestsAndLimits" # RequestsOnly

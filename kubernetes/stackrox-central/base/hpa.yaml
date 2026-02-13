@@ -1,102 +1,102 @@
----
-# Source: stackrox-central-services/templates/02-scanner-08-hpa.yaml
-apiVersion: autoscaling/v2
-kind: HorizontalPodAutoscaler
-metadata:
-  name: scanner
-  namespace: stackrox
-  labels:
-    app.kubernetes.io/component: scanner
-    app.kubernetes.io/instance: stackrox-central-services
-    app.kubernetes.io/managed-by: Helm
-    app.kubernetes.io/name: stackrox
-    app.kubernetes.io/part-of: stackrox-central-services
-    app.kubernetes.io/version: 4.9.1
-    helm.sh/chart: stackrox-central-services-400.9.1
-  annotations:
-    email: support@stackrox.com
-    meta.helm.sh/release-name: stackrox-central-services
-    meta.helm.sh/release-namespace: stackrox
-    owner: stackrox
-spec:
-  minReplicas: 2
-  maxReplicas: 5
-  scaleTargetRef:
-    apiVersion: apps/v1
-    kind: Deployment
-    name: scanner
-  metrics:
-    - type: Resource
-      resource:
-        name: cpu
-        target:
-          type: Utilization
-          averageUtilization: 3000 # 150
----
-# Source: stackrox-central-services/templates/02-scanner-v4-09-indexer-hpa.yaml
-apiVersion: autoscaling/v2
-kind: HorizontalPodAutoscaler
-metadata:
-  name: scanner-v4-indexer
-  namespace: stackrox
-  labels:
-    app.kubernetes.io/component: scanner-v4
-    app.kubernetes.io/instance: stackrox-central-services
-    app.kubernetes.io/managed-by: Helm
-    app.kubernetes.io/name: stackrox
-    app.kubernetes.io/part-of: stackrox-central-services
-    app.kubernetes.io/version: 4.9.1
-    helm.sh/chart: stackrox-central-services-400.9.1
-  annotations:
-    email: support@stackrox.com
-    meta.helm.sh/release-name: stackrox-central-services
-    meta.helm.sh/release-namespace: stackrox
-    owner: stackrox
-spec:
-  minReplicas: 2
-  maxReplicas: 5
-  scaleTargetRef:
-    apiVersion: apps/v1
-    kind: Deployment
-    name: scanner-v4-indexer
-  metrics:
-    - type: Resource
-      resource:
-        name: cpu
-        target:
-          type: Utilization
-          averageUtilization: 150
----
-# Source: stackrox-central-services/templates/02-scanner-v4-09-matcher-hpa.yaml
-apiVersion: autoscaling/v2
-kind: HorizontalPodAutoscaler
-metadata:
-  name: scanner-v4-matcher
-  namespace: stackrox
-  labels:
-    app.kubernetes.io/component: scanner-v4
-    app.kubernetes.io/instance: stackrox-central-services
-    app.kubernetes.io/managed-by: Helm
-    app.kubernetes.io/name: stackrox
-    app.kubernetes.io/part-of: stackrox-central-services
-    app.kubernetes.io/version: 4.9.1
-    helm.sh/chart: stackrox-central-services-400.9.1
-  annotations:
-    email: support@stackrox.com
-    meta.helm.sh/release-name: stackrox-central-services
-    meta.helm.sh/release-namespace: stackrox
-    owner: stackrox
-spec:
-  minReplicas: 2
-  maxReplicas: 3
-  scaleTargetRef:
-    apiVersion: apps/v1
-    kind: Deployment
-    name: scanner-v4-matcher
-  metrics:
-    - type: Resource
-      resource:
-        name: cpu
-        target:
-          type: Utilization
-          averageUtilization: 3000 # 150
+# ---
+# # Source: stackrox-central-services/templates/02-scanner-08-hpa.yaml
+# apiVersion: autoscaling/v2
+# kind: HorizontalPodAutoscaler
+# metadata:
+#   name: scanner
+#   namespace: stackrox
+#   labels:
+#     app.kubernetes.io/component: scanner
+#     app.kubernetes.io/instance: stackrox-central-services
+#     app.kubernetes.io/managed-by: Helm
+#     app.kubernetes.io/name: stackrox
+#     app.kubernetes.io/part-of: stackrox-central-services
+#     app.kubernetes.io/version: 4.9.1
+#     helm.sh/chart: stackrox-central-services-400.9.1
+#   annotations:
+#     email: support@stackrox.com
+#     meta.helm.sh/release-name: stackrox-central-services
+#     meta.helm.sh/release-namespace: stackrox
+#     owner: stackrox
+# spec:
+#   minReplicas: 2
+#   maxReplicas: 5
+#   scaleTargetRef:
+#     apiVersion: apps/v1
+#     kind: Deployment
+#     name: scanner
+#   metrics:
+#     - type: Resource
+#       resource:
+#         name: cpu
+#         target:
+#           type: Utilization
+#           averageUtilization: 3000 # 150
+# ---
+# # Source: stackrox-central-services/templates/02-scanner-v4-09-indexer-hpa.yaml
+# apiVersion: autoscaling/v2
+# kind: HorizontalPodAutoscaler
+# metadata:
+#   name: scanner-v4-indexer
+#   namespace: stackrox
+#   labels:
+#     app.kubernetes.io/component: scanner-v4
+#     app.kubernetes.io/instance: stackrox-central-services
+#     app.kubernetes.io/managed-by: Helm
+#     app.kubernetes.io/name: stackrox
+#     app.kubernetes.io/part-of: stackrox-central-services
+#     app.kubernetes.io/version: 4.9.1
+#     helm.sh/chart: stackrox-central-services-400.9.1
+#   annotations:
+#     email: support@stackrox.com
+#     meta.helm.sh/release-name: stackrox-central-services
+#     meta.helm.sh/release-namespace: stackrox
+#     owner: stackrox
+# spec:
+#   minReplicas: 2
+#   maxReplicas: 5
+#   scaleTargetRef:
+#     apiVersion: apps/v1
+#     kind: Deployment
+#     name: scanner-v4-indexer
+#   metrics:
+#     - type: Resource
+#       resource:
+#         name: cpu
+#         target:
+#           type: Utilization
+#           averageUtilization: 150
+# ---
+# # Source: stackrox-central-services/templates/02-scanner-v4-09-matcher-hpa.yaml
+# apiVersion: autoscaling/v2
+# kind: HorizontalPodAutoscaler
+# metadata:
+#   name: scanner-v4-matcher
+#   namespace: stackrox
+#   labels:
+#     app.kubernetes.io/component: scanner-v4
+#     app.kubernetes.io/instance: stackrox-central-services
+#     app.kubernetes.io/managed-by: Helm
+#     app.kubernetes.io/name: stackrox
+#     app.kubernetes.io/part-of: stackrox-central-services
+#     app.kubernetes.io/version: 4.9.1
+#     helm.sh/chart: stackrox-central-services-400.9.1
+#   annotations:
+#     email: support@stackrox.com
+#     meta.helm.sh/release-name: stackrox-central-services
+#     meta.helm.sh/release-namespace: stackrox
+#     owner: stackrox
+# spec:
+#   minReplicas: 2
+#   maxReplicas: 3
+#   scaleTargetRef:
+#     apiVersion: apps/v1
+#     kind: Deployment
+#     name: scanner-v4-matcher
+#   metrics:
+#     - type: Resource
+#       resource:
+#         name: cpu
+#         target:
+#           type: Utilization
+#           averageUtilization: 3000 # 150

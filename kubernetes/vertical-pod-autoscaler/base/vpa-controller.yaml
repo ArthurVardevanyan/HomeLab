@@ -1,0 +1,43 @@
+---
+apiVersion: autoscaling.openshift.io/v1
+kind: VerticalPodAutoscalerController
+metadata:
+  name: default
+  namespace: openshift-vertical-pod-autoscaler
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+spec:
+  deploymentOverrides:
+    admission:
+      container:
+        resources:
+          requests:
+            cpu: 10m
+            memory: 128Mi
+          limits:
+            cpu: 20m
+            memory: 256Mi
+    recommender:
+      container:
+        resources:
+          requests:
+            cpu: 25m
+            memory: 128Mi
+          limits:
+            cpu: 50m
+            memory: 256Mi
+    updater:
+      container:
+        resources:
+          requests:
+            cpu: 25m
+            memory: 192Mi
+          limits:
+            cpu: 50m
+            memory: 384Mi
+  minReplicas: 1
+  podMinCPUMillicores: 1
+  podMinMemoryMb: 32
+  recommendationOnly: false
+  safetyMarginFraction: 0

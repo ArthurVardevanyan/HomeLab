@@ -107,10 +107,15 @@ spec:
           resources:
             limits:
               cpu: 50m
-              memory: 768Mi
+              memory: 512Mi
             requests:
               cpu: 25m
               memory: 256Mi
+          resizePolicy:
+            - resourceName: cpu
+              restartPolicy: NotRequired
+            - resourceName: memory
+              restartPolicy: NotRequired
           securityContext:
             capabilities:
               drop:
@@ -189,11 +194,16 @@ spec:
           name: compliance
           resources:
             limits:
-              cpu: "1"
-              memory: 2Gi
+              cpu: "30m"
+              memory: 256Mi
             requests:
               cpu: 10m
-              memory: 10Mi
+              memory: 128Mi
+          resizePolicy:
+            - resourceName: cpu
+              restartPolicy: NotRequired
+            - resourceName: memory
+              restartPolicy: NotRequired
           securityContext:
             runAsUser: 0
             readOnlyRootFilesystem: true
@@ -227,11 +237,16 @@ spec:
               name: grpc
           resources:
             limits:
-              cpu: "100m"
+              cpu: "20m"
               memory: 144Mi
             requests:
               cpu: 10m
               memory: 72Mi
+          resizePolicy:
+            - resourceName: cpu
+              restartPolicy: NotRequired
+            - resourceName: memory
+              restartPolicy: NotRequired
           securityContext:
             privileged: true
           env:
