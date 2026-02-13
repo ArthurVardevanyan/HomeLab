@@ -66,11 +66,16 @@ spec:
             failureThreshold: 3
           resources:
             limits:
-              cpu: 100m
+              cpu: 20m
               memory: 128Mi
             requests:
               cpu: 10m
               memory: 64Mi
+          resizePolicy:
+            - resourceName: cpu
+              restartPolicy: NotRequired
+            - resourceName: memory
+              restartPolicy: NotRequired
           securityContext:
             runAsNonRoot: true
             readOnlyRootFilesystem: true

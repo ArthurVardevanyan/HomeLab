@@ -2,59 +2,59 @@
 apiVersion: autoscaling.k8s.io/v1
 kind: VerticalPodAutoscaler
 metadata:
-  name: velero
-  namespace: velero
+  name: admission-control
+  namespace: stackrox
   annotations:
     argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
   labels:
-    app.kubernetes.io/name: velero
+    app: admission-control
 spec:
   targetRef:
     apiVersion: apps/v1
     kind: Deployment
-    name: velero
+    name: admission-control
   updatePolicy:
     updateMode: "InPlaceOrRecreate"
   resourcePolicy:
     containerPolicies:
-      - containerName: velero
+      - containerName: admission-control
         minAllowed:
           cpu: 5m
           memory: 16Mi
         maxAllowed:
-          cpu: 1000m
-          memory: 2Gi
+          cpu: 50m
+          memory: 100Mi
         controlledResources:
           - cpu
           - memory
-        controlledValues: RequestsOnly # "RequestsAndLimits"
+        controlledValues: "RequestsAndLimits" # RequestsOnly
 ---
 apiVersion: autoscaling.k8s.io/v1
 kind: VerticalPodAutoscaler
 metadata:
-  name: node-agent
-  namespace: velero
+  name: sensor
+  namespace: stackrox
   annotations:
     argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
   labels:
-    app.kubernetes.io/name: velero
+    app: sensor
 spec:
   targetRef:
     apiVersion: apps/v1
-    kind: DaemonSet
-    name: node-agent
+    kind: Deployment
+    name: sensor
   updatePolicy:
     updateMode: "InPlaceOrRecreate"
   resourcePolicy:
     containerPolicies:
-      - containerName: node-agent
+      - containerName: sensor
         minAllowed:
           cpu: 5m
           memory: 16Mi
         maxAllowed:
-          cpu: 500m
+          cpu: 250m
           memory: 2Gi
         controlledResources:
           - cpu
           - memory
-        controlledValues: RequestsOnly # "RequestsAndLimits"
+        controlledValues: "RequestsAndLimits" # RequestsOnly

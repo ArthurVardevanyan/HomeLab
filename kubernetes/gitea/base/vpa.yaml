@@ -1,0 +1,30 @@
+---
+apiVersion: autoscaling.k8s.io/v1
+kind: VerticalPodAutoscaler
+metadata:
+  name: gitea
+  namespace: gitea
+  annotations:
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+  labels:
+    app.kubernetes.io/name: gitea
+spec:
+  targetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: gitea
+  updatePolicy:
+    updateMode: "InPlaceOrRecreate"
+  resourcePolicy:
+    containerPolicies:
+      - containerName: gitea
+        minAllowed:
+          cpu: 5m
+          memory: 16Mi
+        maxAllowed:
+          cpu: 500m
+          memory: 512Mi
+        controlledResources:
+          - cpu
+          - memory
+        controlledValues: RequestsOnly # "RequestsAndLimits"

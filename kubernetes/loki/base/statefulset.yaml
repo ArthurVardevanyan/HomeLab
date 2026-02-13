@@ -31,7 +31,8 @@ spec:
         fsGroupChangePolicy: "OnRootMismatch"
         seccompProfile:
           type: RuntimeDefault
-        # fsGroup: 10001
+        # fsGroup: 10001        controlledValues: RequestsOnly # "RequestsAndLimits"
+
         # runAsGroup: 10001
         # runAsUser: 10001
       containers:
@@ -52,8 +53,8 @@ spec:
               cpu: "10m"
             limits:
               ephemeral-storage: "256Mi"
-              memory: "256Mi"
-              cpu: "20m"
+              memory: "1Gi"
+              cpu: "200m"
           volumeMounts:
             - name: config
               mountPath: /etc/loki

@@ -1,0 +1,30 @@
+---
+apiVersion: autoscaling.k8s.io/v1
+kind: VerticalPodAutoscaler
+metadata:
+  name: vault-singleton
+  namespace: vault
+  annotations:
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+  labels:
+    app: vault
+spec:
+  targetRef:
+    apiVersion: apps/v1
+    kind: StatefulSet
+    name: vault-singleton
+  updatePolicy:
+    updateMode: "InPlaceOrRecreate"
+  resourcePolicy:
+    containerPolicies:
+      - containerName: vault
+        minAllowed:
+          cpu: 5m
+          memory: 16Mi
+        maxAllowed:
+          cpu: 100m
+          memory: 512Mi
+        controlledResources:
+          - cpu
+          - memory
+        controlledValues: RequestsOnly # "RequestsAndLimits"

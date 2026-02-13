@@ -127,6 +127,11 @@ spec:
               cpu: 25m
               memory: 1Gi
               ephemeral-storage: 30Gi
+          resizePolicy:
+            - resourceName: cpu
+              restartPolicy: NotRequired
+            - resourceName: memory
+              restartPolicy: NotRequired
         - name: pihole-exporter
           securityContext:
             runAsNonRoot: false
@@ -145,6 +150,11 @@ spec:
             requests:
               cpu: 5m
               memory: 96Mi
+          resizePolicy:
+            - resourceName: cpu
+              restartPolicy: NotRequired
+            - resourceName: memory
+              restartPolicy: NotRequired
           # renovate: datasource=docker depName=docker.io/ekofr/pihole-exporter
           image: docker.io/ekofr/pihole-exporter:v1.2.0@sha256:242c53ef3c24b88fcbe8184390b456d05604bd50de5732ca3fd3eb24395585b3
           imagePullPolicy: IfNotPresent

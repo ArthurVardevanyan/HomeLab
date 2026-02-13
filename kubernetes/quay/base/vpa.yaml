@@ -2,28 +2,28 @@
 apiVersion: autoscaling.k8s.io/v1
 kind: VerticalPodAutoscaler
 metadata:
-  name: velero
-  namespace: velero
+  name: quay-clair-app
+  namespace: quay
   annotations:
     argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
   labels:
-    app.kubernetes.io/name: velero
+    app: quay-clair-app
 spec:
   targetRef:
     apiVersion: apps/v1
     kind: Deployment
-    name: velero
+    name: quay-clair-app
   updatePolicy:
     updateMode: "InPlaceOrRecreate"
   resourcePolicy:
     containerPolicies:
-      - containerName: velero
+      - containerName: quay-clair-app
         minAllowed:
           cpu: 5m
           memory: 16Mi
         maxAllowed:
-          cpu: 1000m
-          memory: 2Gi
+          cpu: 6000m
+          memory: 8Gi
         controlledResources:
           - cpu
           - memory
@@ -32,28 +32,28 @@ spec:
 apiVersion: autoscaling.k8s.io/v1
 kind: VerticalPodAutoscaler
 metadata:
-  name: node-agent
-  namespace: velero
+  name: quay-quay-app
+  namespace: quay
   annotations:
     argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
   labels:
-    app.kubernetes.io/name: velero
+    app: quay-quay-app
 spec:
   targetRef:
     apiVersion: apps/v1
-    kind: DaemonSet
-    name: node-agent
+    kind: Deployment
+    name: quay-quay-app
   updatePolicy:
     updateMode: "InPlaceOrRecreate"
   resourcePolicy:
     containerPolicies:
-      - containerName: node-agent
+      - containerName: quay-quay-app
         minAllowed:
           cpu: 5m
           memory: 16Mi
         maxAllowed:
-          cpu: 500m
-          memory: 2Gi
+          cpu: 3000m
+          memory: 10Gi
         controlledResources:
           - cpu
           - memory

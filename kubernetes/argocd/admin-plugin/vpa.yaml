@@ -1,0 +1,30 @@
+---
+apiVersion: autoscaling.k8s.io/v1
+kind: VerticalPodAutoscaler
+metadata:
+  name: gitops-admin-plugin
+  namespace: gitops-admin-plugin
+  annotations:
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+  labels:
+    app: gitops-admin-plugin
+spec:
+  targetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: gitops-admin-plugin
+  updatePolicy:
+    updateMode: "InPlaceOrRecreate"
+  resourcePolicy:
+    containerPolicies:
+      - containerName: gitops-admin-plugin
+        minAllowed:
+          cpu: 5m
+          memory: 16Mi
+        maxAllowed:
+          cpu: 100m
+          memory: 48Mi
+        controlledResources:
+          - cpu
+          - memory
+        controlledValues: RequestsOnly # "RequestsAndLimits"

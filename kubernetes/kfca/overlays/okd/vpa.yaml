@@ -1,0 +1,30 @@
+---
+apiVersion: autoscaling.k8s.io/v1
+kind: VerticalPodAutoscaler
+metadata:
+  name: k8s-federated-credential-api
+  namespace: kfca
+  annotations:
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+  labels:
+    app: k8s-federated-credential-api
+spec:
+  targetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: k8s-federated-credential-api
+  updatePolicy:
+    updateMode: "InPlaceOrRecreate"
+  resourcePolicy:
+    containerPolicies:
+      - containerName: k8s-federated-credential-api
+        minAllowed:
+          cpu: 5m
+          memory: 16Mi
+        maxAllowed:
+          cpu: 100m
+          memory: 128Mi
+        controlledResources:
+          - cpu
+          - memory
+        controlledValues: "RequestsAndLimits" # RequestsOnly

@@ -61,6 +61,11 @@ spec:
               cpu: 100m
               memory: 256Mi
               nvidia.com/gpu: 1
+          resizePolicy:
+            - resourceName: cpu
+              restartPolicy: NotRequired
+            - resourceName: memory
+              restartPolicy: NotRequired
       initContainers:
         - image: "nvcr.io/nvidia/k8s/cuda-sample:vectoradd-cuda11.7.1-ubuntu20.04"
           imagePullPolicy: IfNotPresent

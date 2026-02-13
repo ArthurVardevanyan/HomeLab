@@ -1,0 +1,172 @@
+---
+apiVersion: autoscaling.k8s.io/v1
+kind: VerticalPodAutoscaler
+metadata:
+  name: prometheus
+  namespace: prometheus
+  annotations:
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+  labels:
+    app: prometheus-server
+spec:
+  targetRef:
+    apiVersion: apps/v1
+    kind: StatefulSet
+    name: prometheus
+  updatePolicy:
+    updateMode: "InPlaceOrRecreate"
+  resourcePolicy:
+    containerPolicies:
+      - containerName: prometheus
+        minAllowed:
+          cpu: 5m
+          memory: 16Mi
+        maxAllowed:
+          cpu: 1500m
+          memory: 5Gi
+        controlledResources:
+          - cpu
+          - memory
+        controlledValues: RequestsOnly # "RequestsAndLimits"
+      - containerName: thanos-ceph
+        minAllowed:
+          cpu: 5m
+          memory: 16Mi
+        maxAllowed:
+          cpu: 100m
+          memory: 384Mi
+        controlledResources:
+          - cpu
+          - memory
+        controlledValues: RequestsOnly # "RequestsAndLimits"
+---
+apiVersion: autoscaling.k8s.io/v1
+kind: VerticalPodAutoscaler
+metadata:
+  name: prometheus-nas
+  namespace: prometheus
+  annotations:
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+  labels:
+    app: prometheus-nas
+spec:
+  targetRef:
+    apiVersion: apps/v1
+    kind: StatefulSet
+    name: prometheus-nas
+  updatePolicy:
+    updateMode: "InPlaceOrRecreate"
+  resourcePolicy:
+    containerPolicies:
+      - containerName: prometheus
+        minAllowed:
+          cpu: 5m
+          memory: 16Mi
+        maxAllowed:
+          cpu: 1500m
+          memory: 5Gi
+        controlledResources:
+          - cpu
+          - memory
+        controlledValues: RequestsOnly # "RequestsAndLimits"
+      - containerName: thanos-nas
+        minAllowed:
+          cpu: 5m
+          memory: 16Mi
+        maxAllowed:
+          cpu: 100m
+          memory: 384Mi
+        controlledResources:
+          - cpu
+          - memory
+        controlledValues: RequestsOnly # "RequestsAndLimits"
+---
+apiVersion: autoscaling.k8s.io/v1
+kind: VerticalPodAutoscaler
+metadata:
+  name: thanos-store-gateway
+  namespace: prometheus
+  annotations:
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+  labels:
+    app: thanos-store-gateway
+spec:
+  targetRef:
+    apiVersion: apps/v1
+    kind: StatefulSet
+    name: thanos-store-gateway
+  updatePolicy:
+    updateMode: "InPlaceOrRecreate"
+  resourcePolicy:
+    containerPolicies:
+      - containerName: thanos-store-gateway
+        minAllowed:
+          cpu: 5m
+          memory: 16Mi
+        maxAllowed:
+          cpu: 1000m
+          memory: 10Gi
+        controlledResources:
+          - cpu
+          - memory
+        controlledValues: RequestsOnly # "RequestsAndLimits"
+---
+apiVersion: autoscaling.k8s.io/v1
+kind: VerticalPodAutoscaler
+metadata:
+  name: thanos-nas-store-gateway
+  namespace: prometheus
+  annotations:
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+  labels:
+    app: thanos-nas-store-gateway
+spec:
+  targetRef:
+    apiVersion: apps/v1
+    kind: StatefulSet
+    name: thanos-nas-store-gateway
+  updatePolicy:
+    updateMode: "InPlaceOrRecreate"
+  resourcePolicy:
+    containerPolicies:
+      - containerName: thanos-store-gateway
+        minAllowed:
+          cpu: 5m
+          memory: 16Mi
+        maxAllowed:
+          cpu: 1000m
+          memory: 10Gi
+        controlledResources:
+          - cpu
+          - memory
+        controlledValues: RequestsOnly # "RequestsAndLimits"
+---
+apiVersion: autoscaling.k8s.io/v1
+kind: VerticalPodAutoscaler
+metadata:
+  name: node-exporter
+  namespace: prometheus
+  annotations:
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+  labels:
+    app.kubernetes.io/name: node-exporter
+spec:
+  targetRef:
+    apiVersion: apps/v1
+    kind: DaemonSet
+    name: node-exporter
+  updatePolicy:
+    updateMode: "InPlaceOrRecreate"
+  resourcePolicy:
+    containerPolicies:
+      - containerName: node-exporter
+        minAllowed:
+          cpu: 5m
+          memory: 16Mi
+        maxAllowed:
+          cpu: 74m
+          memory: 256Mi
+        controlledResources:
+          - cpu
+          - memory
+        controlledValues: "RequestsAndLimits" # RequestsOnly
