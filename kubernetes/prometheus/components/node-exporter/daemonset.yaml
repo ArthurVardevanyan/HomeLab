@@ -65,11 +65,16 @@ spec:
               name: metrics
           resources:
             limits:
-              cpu: 74m
-              memory: 256Mi
+              cpu: 50m
+              memory: 192Mi
             requests:
               cpu: 25m
               memory: 64Mi
+          resizePolicy:
+            - resourceName: cpu
+              restartPolicy: NotRequired
+            - resourceName: memory
+              restartPolicy: NotRequired
           volumeMounts:
             - mountPath: /host/sys
               mountPropagation: HostToContainer

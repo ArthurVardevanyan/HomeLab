@@ -1,0 +1,129 @@
+---
+# openshift-ingress routers
+apiVersion: autoscaling.k8s.io/v1
+kind: VerticalPodAutoscaler
+metadata:
+  name: router-default
+  namespace: openshift-ingress
+  annotations:
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+spec:
+  targetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: router-default
+  updatePolicy:
+    updateMode: "InPlaceOrRecreate"
+  resourcePolicy:
+    containerPolicies:
+      - containerName: router
+        minAllowed:
+          memory: 16Mi
+        maxAllowed:
+          memory: 2Gi
+        controlledResources:
+          - memory
+        controlledValues: "RequestsAndLimits" # RequestsOnly
+---
+apiVersion: autoscaling.k8s.io/v1
+kind: VerticalPodAutoscaler
+metadata:
+  name: router-apps
+  namespace: openshift-ingress
+  annotations:
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+spec:
+  targetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: router-apps
+  updatePolicy:
+    updateMode: "InPlaceOrRecreate"
+  resourcePolicy:
+    containerPolicies:
+      - containerName: router
+        minAllowed:
+          memory: 16Mi
+        maxAllowed:
+          memory: 2Gi
+        controlledResources:
+          - memory
+        controlledValues: "RequestsAndLimits" # RequestsOnly
+---
+# istiod - has CPU HPA, so VPA memory only
+apiVersion: autoscaling.k8s.io/v1
+kind: VerticalPodAutoscaler
+metadata:
+  name: istiod-openshift-gateway
+  namespace: openshift-ingress
+  annotations:
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+spec:
+  targetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: istiod-openshift-gateway
+  updatePolicy:
+    updateMode: "InPlaceOrRecreate"
+  resourcePolicy:
+    containerPolicies:
+      - containerName: discovery
+        minAllowed:
+          memory: 16Mi
+        maxAllowed:
+          memory: 4Gi
+        controlledResources:
+          - memory
+        controlledValues: RequestsAndLimits # RequestsOnly
+---
+# https-gateway-openshift - has CPU HPA, so VPA memory only
+apiVersion: autoscaling.k8s.io/v1
+kind: VerticalPodAutoscaler
+metadata:
+  name: https-gateway-openshift-default
+  namespace: openshift-ingress
+  annotations:
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+spec:
+  targetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: https-gateway-openshift-default
+  updatePolicy:
+    updateMode: "InPlaceOrRecreate"
+  resourcePolicy:
+    containerPolicies:
+      - containerName: istio-proxy
+        minAllowed:
+          memory: 16Mi
+        maxAllowed:
+          memory: 1Gi
+        controlledResources:
+          - memory
+        controlledValues: RequestsAndLimits # RequestsOnly
+---
+# https-gateway-external - has CPU HPA, so VPA memory only
+apiVersion: autoscaling.k8s.io/v1
+kind: VerticalPodAutoscaler
+metadata:
+  name: https-gateway-external-openshift-default
+  namespace: openshift-ingress
+  annotations:
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+spec:
+  targetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: https-gateway-external-openshift-default
+  updatePolicy:
+    updateMode: "InPlaceOrRecreate"
+  resourcePolicy:
+    containerPolicies:
+      - containerName: istio-proxy
+        minAllowed:
+          memory: 16Mi
+        maxAllowed:
+          memory: 2Gi
+        controlledResources:
+          - memory
+        controlledValues: RequestsAndLimits # RequestsOnly

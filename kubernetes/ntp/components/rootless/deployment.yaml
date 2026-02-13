@@ -78,15 +78,20 @@ spec:
                 - NET_BIND_SERVICE
               drop:
                 - ALL
+          resizePolicy:
+            - resourceName: cpu
+              restartPolicy: NotRequired
+            - resourceName: memory
+              restartPolicy: NotRequired
           resources:
             requests:
               ephemeral-storage: "15Mi"
-              memory: "16Mi"
+              memory: "24Mi"
               cpu: "5m"
             limits:
               ephemeral-storage: "15Mi"
-              memory: "32Mi"
-              cpu: "50m"
+              memory: "48Mi"
+              cpu: "25m"
           env:
             - name: SKIP_CHOWN
               value: "true"

@@ -43,11 +43,16 @@ spec:
           image: "ghcr.io/actions/gha-runner-scale-set-controller:0.13.0@sha256:4b98af135cd2768098fd8723ba3af4d1d7c9b4b1c3951b3649aa7a33fd4f4964"
           resources:
             limits:
-              cpu: 50m
+              cpu: 10m
               memory: 256Mi
             requests:
               cpu: 5m
               memory: 128Mi
+          resizePolicy:
+            - resourceName: cpu
+              restartPolicy: NotRequired
+            - resourceName: memory
+              restartPolicy: NotRequired
           imagePullPolicy: IfNotPresent
           args:
             - "--auto-scaling-runner-set-only"

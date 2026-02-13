@@ -41,6 +41,11 @@ spec:
               value: "true"
           name: kube-vip-cloud-provider
           imagePullPolicy: IfNotPresent
+          resizePolicy:
+            - resourceName: cpu
+              restartPolicy: NotRequired
+            - resourceName: memory
+              restartPolicy: NotRequired
           resources:
             requests:
               ephemeral-storage: "15Mi"
@@ -48,8 +53,8 @@ spec:
               cpu: "5m"
             limits:
               ephemeral-storage: "15Mi"
-              memory: "128Mi"
-              cpu: "100m"
+              memory: "64Mi"
+              cpu: "15m"
           securityContext:
             runAsNonRoot: true
             readOnlyRootFilesystem: true

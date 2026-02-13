@@ -1,0 +1,31 @@
+---
+apiVersion: autoscaling.k8s.io/v1
+kind: VerticalPodAutoscaler
+metadata:
+  name: blackbox-exporter
+  namespace: blackbox-exporter
+  annotations:
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+  labels:
+    app: blackbox-exporter
+    app.kubernetes.io/instance: blackbox-exporter
+spec:
+  targetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: blackbox-exporter
+  updatePolicy:
+    updateMode: "InPlaceOrRecreate"
+  resourcePolicy:
+    containerPolicies:
+      - containerName: blackbox-exporter-container
+        minAllowed:
+          cpu: 5m
+          memory: 16Mi
+        maxAllowed:
+          cpu: 50m
+          memory: 144Mi
+        controlledResources:
+          - cpu
+          - memory
+        controlledValues: RequestsAndLimits # RequestsOnly

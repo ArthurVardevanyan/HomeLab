@@ -46,6 +46,11 @@ spec:
         - name: cert-manager-cainjector
           image: "quay.io/jetstack/cert-manager-cainjector:v1.19.2@sha256:1a24f9848e7ae83a787187f4e75fdf5e9adf401f44de2f156c09c6fae1bf046e"
           imagePullPolicy: IfNotPresent
+          resizePolicy:
+            - resourceName: cpu
+              restartPolicy: NotRequired
+            - resourceName: memory
+              restartPolicy: NotRequired
           args:
             - --v=2
             - --leader-election-namespace=kube-system
@@ -122,6 +127,11 @@ spec:
         - name: cert-manager-controller
           image: "quay.io/jetstack/cert-manager-controller:v1.19.2@sha256:d4ffb81a6d89a0e690ee80d07fcdcb6cccb99118010e3eb0808442e506e18ab0"
           imagePullPolicy: IfNotPresent
+          resizePolicy:
+            - resourceName: cpu
+              restartPolicy: NotRequired
+            - resourceName: memory
+              restartPolicy: NotRequired
           args:
             - --v=2
             - --cluster-resource-namespace=$(POD_NAMESPACE)
@@ -216,6 +226,11 @@ spec:
         - name: cert-manager-webhook
           image: "quay.io/jetstack/cert-manager-webhook:v1.19.2@sha256:2ba4918d1581ed29bd5d68a017244560b353bcaf9932c814a8713887589bda6c"
           imagePullPolicy: IfNotPresent
+          resizePolicy:
+            - resourceName: cpu
+              restartPolicy: NotRequired
+            - resourceName: memory
+              restartPolicy: NotRequired
           args:
             - --v=2
             - --secure-port=10250

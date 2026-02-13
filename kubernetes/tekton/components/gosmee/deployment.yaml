@@ -35,13 +35,18 @@ spec:
             - name: http
               containerPort: 3333
               protocol: TCP
+          resizePolicy:
+            - resourceName: cpu
+              restartPolicy: NotRequired
+            - resourceName: memory
+              restartPolicy: NotRequired
           resources:
             limits:
-              cpu: 100m
-              memory: 64Mi
+              cpu: 20m
+              memory: 32Mi
             requests:
               cpu: 10m
-              memory: 32Mi
+              memory: 16Mi
           securityContext:
             runAsNonRoot: true
             readOnlyRootFilesystem: true

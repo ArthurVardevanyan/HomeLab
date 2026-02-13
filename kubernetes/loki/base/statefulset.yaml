@@ -31,7 +31,8 @@ spec:
         fsGroupChangePolicy: "OnRootMismatch"
         seccompProfile:
           type: RuntimeDefault
-        # fsGroup: 10001
+        # fsGroup: 10001        controlledValues: RequestsOnly # "RequestsAndLimits"
+
         # runAsGroup: 10001
         # runAsUser: 10001
       containers:
@@ -40,6 +41,11 @@ spec:
           imagePullPolicy: IfNotPresent
           args:
             - "-config.file=/etc/loki/loki.yaml"
+          resizePolicy:
+            - resourceName: cpu
+              restartPolicy: NotRequired
+            - resourceName: memory
+              restartPolicy: NotRequired
           resources:
             requests:
               ephemeral-storage: "256Mi"

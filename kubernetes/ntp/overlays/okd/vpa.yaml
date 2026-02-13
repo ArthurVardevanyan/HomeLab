@@ -1,0 +1,30 @@
+---
+apiVersion: autoscaling.k8s.io/v1
+kind: VerticalPodAutoscaler
+metadata:
+  name: ntp-rootless
+  namespace: ntp
+  annotations:
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+  labels:
+    app: ntp
+spec:
+  targetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: ntp-rootless
+  updatePolicy:
+    updateMode: "InPlaceOrRecreate"
+  resourcePolicy:
+    containerPolicies:
+      - containerName: ntp-rootless
+        minAllowed:
+          cpu: 5m
+          memory: 16Mi
+        maxAllowed:
+          cpu: 50m
+          memory: 64Mi
+        controlledResources:
+          - cpu
+          - memory
+        controlledValues: RequestsOnly #"RequestsAndLimits"

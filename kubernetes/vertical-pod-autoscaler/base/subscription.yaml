@@ -1,0 +1,21 @@
+---
+apiVersion: operators.coreos.com/v1alpha1
+kind: Subscription
+metadata:
+  name: openshift-vertical-pod-autoscaler
+  namespace: openshift-vertical-pod-autoscaler
+spec:
+  channel: stable
+  installPlanApproval: Manual
+  name: vertical-pod-autoscaler
+  source: redhat-operators-4.21
+  sourceNamespace: openshift-marketplace
+  startingCSV: vertical-pod-autoscaler.v4.21.0-202601292040
+  config:
+    resources:
+      requests:
+        memory: 32Mi
+        cpu: 10m
+      limits:
+        memory: 64Mi
+        cpu: 20m

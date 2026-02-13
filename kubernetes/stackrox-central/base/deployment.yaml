@@ -100,6 +100,11 @@ spec:
               path: /v1/ping
               port: 8443
             timeoutSeconds: 3
+          resizePolicy:
+            - resourceName: cpu
+              restartPolicy: NotRequired
+            - resourceName: memory
+              restartPolicy: NotRequired
           resources:
             limits:
               cpu: 500m
@@ -360,6 +365,11 @@ spec:
             requests:
               cpu: 10m
               memory: 96Mi
+          resizePolicy:
+            - resourceName: cpu
+              restartPolicy: NotRequired
+            - resourceName: memory
+              restartPolicy: NotRequired
           env:
             - name: POD_NAMESPACE
               valueFrom:
@@ -430,7 +440,7 @@ metadata:
     checkov.io/skip8: CKV_K8S_38=Security Tool
     checkov.io/skip9: CKV_K8S_40=OpenShift Injects Random UID
 spec:
-  # replicas: 3
+  replicas: 2
   minReadySeconds: 15
   selector:
     matchLabels:
@@ -516,6 +526,11 @@ spec:
             requests:
               cpu: 10m
               memory: 256Mi
+          resizePolicy:
+            - resourceName: cpu
+              restartPolicy: NotRequired
+            - resourceName: memory
+              restartPolicy: NotRequired
           command:
             - /entrypoint.sh
           ports:
@@ -726,6 +741,11 @@ spec:
             requests:
               cpu: 10m
               memory: 768Mi
+          resizePolicy:
+            - resourceName: cpu
+              restartPolicy: NotRequired
+            - resourceName: memory
+              restartPolicy: RestartContainer
           volumeMounts:
             - name: scanner-db-data
               mountPath: /var/lib/postgresql/data
@@ -896,6 +916,11 @@ spec:
             requests:
               cpu: 10m
               memory: 2Gi
+          resizePolicy:
+            - resourceName: cpu
+              restartPolicy: NotRequired
+            - resourceName: memory
+              restartPolicy: RestartContainer
           volumeMounts:
             - name: disk
               mountPath: /var/lib/postgresql/data
@@ -960,7 +985,7 @@ metadata:
     meta.helm.sh/release-namespace: stackrox
     owner: stackrox
 spec:
-  # replicas: 3
+  replicas: 2
   minReadySeconds: 15
   selector:
     matchLabels:
@@ -1053,6 +1078,11 @@ spec:
             requests:
               cpu: 10m
               memory: 384Mi
+          resizePolicy:
+            - resourceName: cpu
+              restartPolicy: NotRequired
+            - resourceName: memory
+              restartPolicy: NotRequired
           command:
             - entrypoint.sh
             - --conf=/etc/scanner/config.yaml
@@ -1166,7 +1196,7 @@ metadata:
     meta.helm.sh/release-namespace: stackrox
     owner: stackrox
 spec:
-  # replicas: 2
+  replicas: 2
   minReadySeconds: 15
   selector:
     matchLabels:
@@ -1259,6 +1289,11 @@ spec:
             requests:
               cpu: 10m
               memory: 256Mi
+          resizePolicy:
+            - resourceName: cpu
+              restartPolicy: NotRequired
+            - resourceName: memory
+              restartPolicy: NotRequired
           command:
             - entrypoint.sh
             - --conf=/etc/scanner/config.yaml
