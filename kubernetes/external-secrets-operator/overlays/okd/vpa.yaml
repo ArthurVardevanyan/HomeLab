@@ -2,122 +2,88 @@
 apiVersion: autoscaling.k8s.io/v1
 kind: VerticalPodAutoscaler
 metadata:
-  name: cert-manager-cainjector
-  namespace: cert-manager
+  name: external-secrets-cert-controller
+  namespace: external-secrets-operator
   annotations:
     argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
   labels:
-    app: cainjector
-    app.kubernetes.io/instance: cert-manager
+    app.kubernetes.io/name: external-secrets-cert-controller
 spec:
   targetRef:
     apiVersion: apps/v1
     kind: Deployment
-    name: cert-manager-cainjector
+    name: external-secrets-cert-controller
   updatePolicy:
     updateMode: "InPlaceOrRecreate"
   resourcePolicy:
     containerPolicies:
-      - containerName: cert-manager-cainjector
-        minAllowed:
-          cpu: 5m
-          memory: 16Mi
-        maxAllowed:
-          cpu: 20m
-          memory: 256Mi
-        controlledResources:
-          - cpu
-          - memory
-        controlledValues: "RequestsAndLimits" # RequestsOnly
----
-apiVersion: autoscaling.k8s.io/v1
-kind: VerticalPodAutoscaler
-metadata:
-  name: cert-manager
-  namespace: cert-manager
-  annotations:
-    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
-  labels:
-    app: cert-manager
-    app.kubernetes.io/instance: cert-manager
-spec:
-  targetRef:
-    apiVersion: apps/v1
-    kind: Deployment
-    name: cert-manager
-  updatePolicy:
-    updateMode: "InPlaceOrRecreate"
-  resourcePolicy:
-    containerPolicies:
-      - containerName: cert-manager-controller
-        minAllowed:
-          cpu: 5m
-          memory: 16Mi
-        maxAllowed:
-          cpu: 20m
-          memory: 128Mi
-        controlledResources:
-          - cpu
-          - memory
-        controlledValues: "RequestsAndLimits" # RequestsOnly
----
-apiVersion: autoscaling.k8s.io/v1
-kind: VerticalPodAutoscaler
-metadata:
-  name: cert-manager-webhook
-  namespace: cert-manager
-  annotations:
-    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
-  labels:
-    app: webhook
-    app.kubernetes.io/instance: cert-manager
-spec:
-  targetRef:
-    apiVersion: apps/v1
-    kind: Deployment
-    name: cert-manager-webhook
-  updatePolicy:
-    updateMode: "InPlaceOrRecreate"
-  resourcePolicy:
-    containerPolicies:
-      - containerName: cert-manager-webhook
-        minAllowed:
-          cpu: 5m
-          memory: 16Mi
-        maxAllowed:
-          cpu: 20m
-          memory: 128Mi
-        controlledResources:
-          - cpu
-          - memory
-        controlledValues: "RequestsAndLimits" # RequestsOnly
----
-apiVersion: autoscaling.k8s.io/v1
-kind: VerticalPodAutoscaler
-metadata:
-  name: trust-manager
-  namespace: cert-manager
-  annotations:
-    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
-  labels:
-    app.kubernetes.io/name: trust-manager
-    app.kubernetes.io/instance: trust-manager
-spec:
-  targetRef:
-    apiVersion: apps/v1
-    kind: Deployment
-    name: trust-manager
-  updatePolicy:
-    updateMode: "InPlaceOrRecreate"
-  resourcePolicy:
-    containerPolicies:
-      - containerName: trust-manager
+      - containerName: cert-controller
         minAllowed:
           cpu: 5m
           memory: 16Mi
         maxAllowed:
           cpu: 50m
-          memory: 96Mi
+          memory: 512Mi
+        controlledResources:
+          - cpu
+          - memory
+        controlledValues: "RequestsAndLimits" # RequestsOnly
+---
+apiVersion: autoscaling.k8s.io/v1
+kind: VerticalPodAutoscaler
+metadata:
+  name: external-secrets
+  namespace: external-secrets-operator
+  annotations:
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+  labels:
+    app.kubernetes.io/name: external-secrets
+spec:
+  targetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: external-secrets
+  updatePolicy:
+    updateMode: "InPlaceOrRecreate"
+  resourcePolicy:
+    containerPolicies:
+      - containerName: external-secrets
+        minAllowed:
+          cpu: 5m
+          memory: 16Mi
+        maxAllowed:
+          cpu: 50m
+          memory: 384Mi
+        controlledResources:
+          - cpu
+          - memory
+        controlledValues: "RequestsAndLimits" # RequestsOnly
+---
+apiVersion: autoscaling.k8s.io/v1
+kind: VerticalPodAutoscaler
+metadata:
+  name: external-secrets-webhook
+  namespace: external-secrets-operator
+  annotations:
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+  labels:
+    app.kubernetes.io/name: external-secrets-webhook
+spec:
+  targetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: external-secrets-webhook
+  updatePolicy:
+    updateMode: "InPlaceOrRecreate"
+  resourcePolicy:
+    containerPolicies:
+      - containerName: webhook
+        minAllowed:
+          cpu: 5m
+          memory: 16Mi
+        maxAllowed:
+          cpu: 50m
+          memory: 144Mi
         controlledResources:
           - cpu
           - memory

@@ -2,30 +2,29 @@
 apiVersion: autoscaling.k8s.io/v1
 kind: VerticalPodAutoscaler
 metadata:
-  name: blackbox-exporter
-  namespace: blackbox-exporter
+  name: zitadel
+  namespace: zitadel
   annotations:
     argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
   labels:
-    app: blackbox-exporter
-    app.kubernetes.io/instance: blackbox-exporter
+    app.kubernetes.io/name: zitadel
 spec:
   targetRef:
     apiVersion: apps/v1
     kind: Deployment
-    name: blackbox-exporter
+    name: zitadel
   updatePolicy:
     updateMode: "InPlaceOrRecreate"
   resourcePolicy:
     containerPolicies:
-      - containerName: blackbox-exporter-container
+      - containerName: zitadel
         minAllowed:
           cpu: 5m
           memory: 16Mi
         maxAllowed:
-          cpu: 50m
-          memory: 144Mi
+          cpu: 1000m
+          memory: 512Mi
         controlledResources:
           - cpu
           - memory
-        controlledValues: RequestsAndLimits # RequestsOnly
+        controlledValues: RequestsOnly # "RequestsAndLimits"

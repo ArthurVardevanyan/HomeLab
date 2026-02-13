@@ -1,0 +1,60 @@
+---
+apiVersion: autoscaling.k8s.io/v1
+kind: VerticalPodAutoscaler
+metadata:
+  name: netbox
+  namespace: netbox
+  annotations:
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+  labels:
+    app.kubernetes.io/name: netbox
+spec:
+  targetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: netbox
+  updatePolicy:
+    updateMode: "InPlaceOrRecreate"
+  resourcePolicy:
+    containerPolicies:
+      - containerName: netbox
+        minAllowed:
+          cpu: 5m
+          memory: 16Mi
+        maxAllowed:
+          cpu: 1
+          memory: 2Gi
+        controlledResources:
+          - cpu
+          - memory
+        controlledValues: RequestsOnly # "RequestsAndLimits"
+---
+apiVersion: autoscaling.k8s.io/v1
+kind: VerticalPodAutoscaler
+metadata:
+  name: netbox-worker
+  namespace: netbox
+  annotations:
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+  labels:
+    app.kubernetes.io/name: netbox
+spec:
+  targetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: netbox-worker
+  updatePolicy:
+    updateMode: "InPlaceOrRecreate"
+  resourcePolicy:
+    containerPolicies:
+      - containerName: netbox-worker
+        minAllowed:
+          cpu: 5m
+          memory: 16Mi
+        maxAllowed:
+          cpu: 100m
+          memory: 512Mi
+        controlledResources:
+          - cpu
+          - memory
+        controlledValues: RequestsOnly # "RequestsAndLimits"

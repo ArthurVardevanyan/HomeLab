@@ -40,6 +40,11 @@ spec:
           imagePullPolicy: IfNotPresent
           args:
             - "-config.file=/etc/loki/loki.yaml"
+          resizePolicy:
+            - resourceName: cpu
+              restartPolicy: NotRequired
+            - resourceName: memory
+              restartPolicy: NotRequired
           resources:
             requests:
               ephemeral-storage: "256Mi"
@@ -47,8 +52,8 @@ spec:
               cpu: "10m"
             limits:
               ephemeral-storage: "256Mi"
-              memory: "1Gi"
-              cpu: "200m"
+              memory: "256Mi"
+              cpu: "20m"
           volumeMounts:
             - name: config
               mountPath: /etc/loki

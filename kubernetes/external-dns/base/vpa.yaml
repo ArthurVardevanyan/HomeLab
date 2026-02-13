@@ -1,0 +1,180 @@
+---
+apiVersion: autoscaling.k8s.io/v1
+kind: VerticalPodAutoscaler
+metadata:
+  name: external-dns-okd
+  namespace: external-dns
+  annotations:
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+  labels:
+    app.kubernetes.io/name: external-dns-okd
+spec:
+  targetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: external-dns-okd
+  updatePolicy:
+    updateMode: "InPlaceOrRecreate"
+  resourcePolicy:
+    containerPolicies:
+      - containerName: external-dns-okd
+        minAllowed:
+          cpu: 5m
+          memory: 16Mi
+        maxAllowed:
+          cpu: 50m
+          memory: 256Mi
+        controlledResources:
+          - cpu
+          - memory
+        controlledValues: "RequestsAndLimits" # RequestsOnly
+---
+apiVersion: autoscaling.k8s.io/v1
+kind: VerticalPodAutoscaler
+metadata:
+  name: external-dns-microshift
+  namespace: external-dns
+  annotations:
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+  labels:
+    app.kubernetes.io/name: external-dns-microshift
+spec:
+  targetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: external-dns-microshift
+  updatePolicy:
+    updateMode: "InPlaceOrRecreate"
+  resourcePolicy:
+    containerPolicies:
+      - containerName: external-dns-microshift
+        minAllowed:
+          cpu: 5m
+          memory: 16Mi
+        maxAllowed:
+          cpu: 50m
+          memory: 256Mi
+        controlledResources:
+          - cpu
+          - memory
+        controlledValues: "RequestsAndLimits" # RequestsOnly
+---
+apiVersion: autoscaling.k8s.io/v1
+kind: VerticalPodAutoscaler
+metadata:
+  name: external-dns-okd-infra
+  namespace: external-dns
+  annotations:
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+  labels:
+    app.kubernetes.io/name: external-dns-okd-infra
+spec:
+  targetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: external-dns-okd-infra
+  updatePolicy:
+    updateMode: "InPlaceOrRecreate"
+  resourcePolicy:
+    containerPolicies:
+      - containerName: external-dns-okd-infra
+        minAllowed:
+          cpu: 5m
+          memory: 16Mi
+        maxAllowed:
+          cpu: 50m
+          memory: 256Mi
+        controlledResources:
+          - cpu
+          - memory
+        controlledValues: "RequestsAndLimits" # RequestsOnly
+---
+apiVersion: autoscaling.k8s.io/v1
+kind: VerticalPodAutoscaler
+metadata:
+  name: external-dns-microshift-infra
+  namespace: external-dns
+  annotations:
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+  labels:
+    app.kubernetes.io/name: external-dns-microshift-infra
+spec:
+  targetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: external-dns-microshift-infra
+  updatePolicy:
+    updateMode: "InPlaceOrRecreate"
+  resourcePolicy:
+    containerPolicies:
+      - containerName: external-dns-microshift-infra
+        minAllowed:
+          cpu: 5m
+          memory: 16Mi
+        maxAllowed:
+          cpu: 50m
+          memory: 256Mi
+        controlledResources:
+          - cpu
+          - memory
+        controlledValues: "RequestsAndLimits" # RequestsOnly
+---
+apiVersion: autoscaling.k8s.io/v1
+kind: VerticalPodAutoscaler
+metadata:
+  name: external-dns-okd-vlan3
+  namespace: external-dns
+  annotations:
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+  labels:
+    app.kubernetes.io/name: external-dns-okd-vlan3
+spec:
+  targetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: external-dns-okd-vlan3
+  updatePolicy:
+    updateMode: "InPlaceOrRecreate"
+  resourcePolicy:
+    containerPolicies:
+      - containerName: external-dns-okd-vlan3
+        minAllowed:
+          cpu: 5m
+          memory: 16Mi
+        maxAllowed:
+          cpu: 50m
+          memory: 256Mi
+        controlledResources:
+          - cpu
+          - memory
+        controlledValues: "RequestsAndLimits" # RequestsOnly
+---
+apiVersion: autoscaling.k8s.io/v1
+kind: VerticalPodAutoscaler
+metadata:
+  name: external-dns-microshift-vlan3
+  namespace: external-dns
+  annotations:
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+  labels:
+    app.kubernetes.io/name: external-dns-microshift-vlan3
+spec:
+  targetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: external-dns-microshift-vlan3
+  updatePolicy:
+    updateMode: "InPlaceOrRecreate"
+  resourcePolicy:
+    containerPolicies:
+      - containerName: external-dns-microshift-vlan3
+        minAllowed:
+          cpu: 5m
+          memory: 16Mi
+        maxAllowed:
+          cpu: 50m
+          memory: 256Mi
+        controlledResources:
+          - cpu
+          - memory
+        controlledValues: "RequestsAndLimits" # RequestsOnly

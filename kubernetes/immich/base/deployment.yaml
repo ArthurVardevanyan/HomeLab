@@ -56,6 +56,11 @@ spec:
         - name: immich-machine-learning
           image: ghcr.io/immich-app/immich-machine-learning:v2.3.1@sha256:379e31b8c75107b0af8141904baa8cc933d7454b88fdb204265ef11749d7d908
           imagePullPolicy: IfNotPresent
+          resizePolicy:
+            - resourceName: cpu
+              restartPolicy: NotRequired
+            - resourceName: memory
+              restartPolicy: NotRequired
           resources:
             limits:
               cpu: 6000m
@@ -230,6 +235,11 @@ spec:
             capabilities:
               drop:
                 - ALL
+          resizePolicy:
+            - resourceName: cpu
+              restartPolicy: NotRequired
+            - resourceName: memory
+              restartPolicy: NotRequired
           resources:
             limits:
               cpu: 3000m

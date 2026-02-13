@@ -2,30 +2,29 @@
 apiVersion: autoscaling.k8s.io/v1
 kind: VerticalPodAutoscaler
 metadata:
-  name: blackbox-exporter
-  namespace: blackbox-exporter
+  name: heimdall
+  namespace: heimdall
   annotations:
     argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
   labels:
-    app: blackbox-exporter
-    app.kubernetes.io/instance: blackbox-exporter
+    app: heimdall
 spec:
   targetRef:
     apiVersion: apps/v1
-    kind: Deployment
-    name: blackbox-exporter
+    kind: StatefulSet
+    name: heimdall
   updatePolicy:
     updateMode: "InPlaceOrRecreate"
   resourcePolicy:
     containerPolicies:
-      - containerName: blackbox-exporter-container
+      - containerName: heimdall
         minAllowed:
           cpu: 5m
           memory: 16Mi
         maxAllowed:
-          cpu: 50m
-          memory: 144Mi
+          cpu: 300m
+          memory: 256Mi
         controlledResources:
           - cpu
           - memory
-        controlledValues: RequestsAndLimits # RequestsOnly
+        controlledValues: RequestsOnly # "RequestsAndLimits"

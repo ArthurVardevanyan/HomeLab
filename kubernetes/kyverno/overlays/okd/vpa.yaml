@@ -2,30 +2,29 @@
 apiVersion: autoscaling.k8s.io/v1
 kind: VerticalPodAutoscaler
 metadata:
-  name: blackbox-exporter
-  namespace: blackbox-exporter
+  name: kyverno-admission-controller
+  namespace: kyverno
   annotations:
     argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
   labels:
-    app: blackbox-exporter
-    app.kubernetes.io/instance: blackbox-exporter
+    app.kubernetes.io/name: kyverno
 spec:
   targetRef:
     apiVersion: apps/v1
     kind: Deployment
-    name: blackbox-exporter
+    name: kyverno-admission-controller
   updatePolicy:
     updateMode: "InPlaceOrRecreate"
   resourcePolicy:
     containerPolicies:
-      - containerName: blackbox-exporter-container
+      - containerName: kyverno
         minAllowed:
           cpu: 5m
           memory: 16Mi
         maxAllowed:
-          cpu: 50m
-          memory: 144Mi
+          cpu: 750m
+          memory: 1Gi
         controlledResources:
           - cpu
           - memory
-        controlledValues: RequestsAndLimits # RequestsOnly
+        controlledValues: RequestsOnly # "RequestsAndLimits"
