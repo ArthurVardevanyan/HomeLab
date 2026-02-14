@@ -1,0 +1,19 @@
+---
+# Required until Istio-based OpenShift gateway controller supports BackendTLSPolicy
+apiVersion: networking.istio.io/v1
+kind: DestinationRule
+metadata:
+  name: rook-ceph-mgr-dashboard-tls
+  namespace: rook-ceph
+  labels:
+    app.kubernetes.io/instance: ceph
+spec:
+  host: rook-ceph-mgr-dashboard.rook-ceph.svc.cluster.local
+  trafficPolicy:
+    portLevelSettings:
+      - port:
+          number: 8443
+        tls:
+          mode: SIMPLE
+          insecureSkipVerify: false
+          sni: ceph.okd.homelab.arthurvardevanyan.com

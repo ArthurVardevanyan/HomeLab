@@ -2,20 +2,20 @@
 apiVersion: cert-manager.io/v1
 kind: Certificate
 metadata:
-  name: zitadel-cert
-  namespace: zitadel
+  name: gitea-cert
+  namespace: gitea
   labels:
-    app.kubernetes.io/instance: zitadel
+    app.kubernetes.io/instance: gitea
 spec:
-  secretName: zitadel-cert
+  secretName: gitea-cert
   duration: 2160h # 90d
   renewBefore: 1080h # 45d
   privateKey:
     rotationPolicy: Always
     algorithm: ECDSA
-    size: 384
+    size: 256 # P-384 not supported by Envoy/OpenShift Ingress for re-encrypt (wrong_curve)
   dnsNames:
-    - "zitadel.arthurvardevanyan.com"
+    - "git.arthurvardevanyan.com"
   issuerRef:
     kind: ClusterIssuer
     name: letsencrypt

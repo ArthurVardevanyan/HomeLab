@@ -1,4 +1,4 @@
-# ceph dashboard sso setup saml2 https://ceph.apps.okd.homelab.arthurvardevanyan.com https://zitadel.arthurvardevanyan.com/saml/v2/metadata UserName
+# ceph dashboard sso setup saml2 https://ceph.okd.homelab.arthurvardevanyan.com https://zitadel.arthurvardevanyan.com/saml/v2/metadata UserName
 # ceph dashboard ac-user-create ArthurVardevanyan
 # ceph dashboard ac-user-create ArthurVardevanyan --force-password --enabled -i /tmp/pass
 # ceph dashboard ac-user-add-roles ArthurVardevanyan administrator
@@ -11,13 +11,13 @@ resource "zitadel_project" "ceph" {
   private_labeling_setting = "PRIVATE_LABELING_SETTING_UNSPECIFIED"
 }
 
-data "http" "get_ceph_saml" {
-  url = "https://ceph.apps.okd.homelab.arthurvardevanyan.com/auth/saml2/metadata"
+data "http" "get_ceph_saml_1" {
+  url = "https://ceph.okd.homelab.arthurvardevanyan.com/auth/saml2/metadata"
 }
 
 resource "zitadel_application_saml" "ceph" {
   org_id       = zitadel_org.zitadel.id
   project_id   = zitadel_project.ceph.id
   name         = "ceph"
-  metadata_xml = data.http.get_ceph_saml.response_body
+  metadata_xml = data.http.get_ceph_saml_1.response_body
 }

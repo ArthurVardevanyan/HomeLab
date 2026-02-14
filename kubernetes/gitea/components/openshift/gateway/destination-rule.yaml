@@ -1,0 +1,19 @@
+---
+# Required until Istio-based OpenShift gateway controller supports BackendTLSPolicy
+apiVersion: networking.istio.io/v1
+kind: DestinationRule
+metadata:
+  name: gitea-http-tls
+  namespace: gitea
+  labels:
+    app.kubernetes.io/instance: gitea
+spec:
+  host: gitea-http.gitea.svc.cluster.local
+  trafficPolicy:
+    portLevelSettings:
+      - port:
+          number: 3000
+        tls:
+          mode: SIMPLE
+          insecureSkipVerify: false
+          sni: git.arthurvardevanyan.com
