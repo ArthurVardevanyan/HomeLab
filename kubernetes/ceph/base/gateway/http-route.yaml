@@ -1,0 +1,25 @@
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: ceph
+  namespace: rook-ceph
+spec:
+  parentRefs:
+    - group: gateway.networking.k8s.io
+      kind: Gateway
+      name: https-gateway
+      namespace: openshift-ingress
+  hostnames: ["ceph.okd.homelab.arthurvardevanyan.com"]
+  rules:
+    - backendRefs:
+        - group: ""
+          kind: Service
+          name: rook-ceph-mgr-dashboard
+          namespace: rook-ceph
+          port: 8443
+          weight: 1
+      matches:
+        - path:
+            type: PathPrefix
+            value: /

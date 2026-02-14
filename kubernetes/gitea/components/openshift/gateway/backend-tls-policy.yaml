@@ -1,0 +1,18 @@
+apiVersion: gateway.networking.k8s.io/v1
+kind: BackendTLSPolicy
+metadata:
+  name: gitea
+  namespace: gitea
+  labels:
+    app.kubernetes.io/instance: gitea
+spec:
+  targetRefs:
+    - group: ""
+      kind: Service
+      name: gitea-http
+  validation:
+    caCertificateRefs:
+      - group: ""
+        kind: ConfigMap
+        name: ca-bundle
+    hostname: git.arthurvardevanyan.com

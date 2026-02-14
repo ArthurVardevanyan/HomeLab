@@ -1,0 +1,19 @@
+---
+# Required until Istio-based OpenShift gateway controller supports BackendTLSPolicy
+apiVersion: networking.istio.io/v1
+kind: DestinationRule
+metadata:
+  name: homeassistant-tls
+  namespace: homeassistant
+  labels:
+    app.kubernetes.io/instance: homeassistant
+spec:
+  host: homeassistant.homeassistant.svc.cluster.local
+  trafficPolicy:
+    portLevelSettings:
+      - port:
+          number: 8123
+        tls:
+          mode: SIMPLE
+          insecureSkipVerify: false
+          sni: home.arthurvardevanyan.com

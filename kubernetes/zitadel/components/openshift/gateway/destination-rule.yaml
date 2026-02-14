@@ -1,0 +1,19 @@
+---
+# Required until Istio-based OpenShift gateway controller supports BackendTLSPolicy
+apiVersion: networking.istio.io/v1
+kind: DestinationRule
+metadata:
+  name: zitadel-tls
+  namespace: zitadel
+  labels:
+    app.kubernetes.io/instance: zitadel
+spec:
+  host: zitadel.zitadel.svc.cluster.local
+  trafficPolicy:
+    portLevelSettings:
+      - port:
+          number: 8080
+        tls:
+          mode: SIMPLE
+          insecureSkipVerify: false
+          sni: zitadel.arthurvardevanyan.com
