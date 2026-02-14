@@ -69,11 +69,11 @@ spec:
       g, arthur@arthurvardevanyan.com, role:admin
       g, 305070630980550817, role:admin
   # renovate: datasource=docker depName=quay.io/argoproj/argocd
-  version: sha256:3c9b3b33a7e6c9c56a9d8417af1845afc516f714941962208b125017bbc1e4b1 # v3.2.0
+  version: sha256:ed0740273790e58154816104c1e1b41fb308a9c516ade3d0f195fa56f1840cca #v3.3.0
   repo:
     replicas: 3
     # renovate: datasource=docker depName=quay.io/argoproj/argocd
-    version: sha256:3c9b3b33a7e6c9c56a9d8417af1845afc516f714941962208b125017bbc1e4b1 # v3.2.0
+    version: sha256:ed0740273790e58154816104c1e1b41fb308a9c516ade3d0f195fa56f1840cca #v3.3.0
     mountsatoken: true
     serviceaccount: argocd-repo-server
     resources:
@@ -100,6 +100,7 @@ spec:
     enabled: true
     remote: "argocd-dragonfly:6379"
   controller:
+    respectRBAC: "true"
     parallelismLimit: 25
     sharding:
       enabled: true
@@ -122,3 +123,9 @@ spec:
       kinds:
       - TaskRun
       - PipelineRun
+    - apiGroups:
+      - packages.operators.coreos.com
+      clusters:
+      - '*'
+      kinds:
+      - PackageManifest

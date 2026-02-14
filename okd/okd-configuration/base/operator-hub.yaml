@@ -55,38 +55,38 @@ spec:
         operator: Exists
         tolerationSeconds: 120
 ---
-apiVersion: operators.coreos.com/v1alpha1
-kind: CatalogSource
-metadata:
-  name: okderators
-  namespace: openshift-marketplace
-spec:
-  displayName: OKDerators
-  image: "quay.io/okderators/catalog-index:testing-4.20"
-  publisher: OKD Community
-  icon:
-    base64data: "" # Todo
-    mediatype: "" # Todo
-  updateStrategy:
-    registryPoll:
-      interval: 10m
-  priority: -100 # Prefer default/manual CatalogSources
-  sourceType: grpc
-  grpcPodConfig:
-    nodeSelector:
-      kubernetes.io/os: linux
-      node-role.kubernetes.io/control-plane: ""
-    priorityClassName: system-cluster-critical
-    securityContextConfig: restricted
-    tolerations:
-      - effect: NoSchedule
-        key: node-role.kubernetes.io/control-plane
-        operator: Exists
-      - effect: NoExecute
-        key: node.kubernetes.io/unreachable
-        operator: Exists
-        tolerationSeconds: 120
-      - effect: NoExecute
-        key: node.kubernetes.io/not-ready
-        operator: Exists
-        tolerationSeconds: 120
+# apiVersion: operators.coreos.com/v1alpha1
+# kind: CatalogSource
+# metadata:
+#   name: okderators
+#   namespace: openshift-marketplace
+# spec:
+#   displayName: OKDerators
+#   image: "quay.io/okderators/catalog-index:testing-4.20"
+#   publisher: OKD Community
+#   icon:
+#     base64data: "" # Todo
+#     mediatype: "" # Todo
+#   updateStrategy:
+#     registryPoll:
+#       interval: 10m
+#   priority: -100 # Prefer default/manual CatalogSources
+#   sourceType: grpc
+#   grpcPodConfig:
+#     nodeSelector:
+#       kubernetes.io/os: linux
+#       node-role.kubernetes.io/control-plane: ""
+#     priorityClassName: system-cluster-critical
+#     securityContextConfig: restricted
+#     tolerations:
+#       - effect: NoSchedule
+#         key: node-role.kubernetes.io/control-plane
+#         operator: Exists
+#       - effect: NoExecute
+#         key: node.kubernetes.io/unreachable
+#         operator: Exists
+#         tolerationSeconds: 120
+#       - effect: NoExecute
+#         key: node.kubernetes.io/not-ready
+#         operator: Exists
+#         tolerationSeconds: 120
