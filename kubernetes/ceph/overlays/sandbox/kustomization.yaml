@@ -14,15 +14,36 @@ components:
 patches:
   - patch: |-
       - op: replace
-        path: /spec/rules/0/host
+        path: /spec/hostnames/0
         value: ceph.apps.okd.virt.arthurvardevanyan.com
     target:
-      kind: Ingress
+      kind: HTTPRoute
+      name: ceph
+  - patch: |-
+      - op: replace
+        path: /spec/trafficPolicy/portLevelSettings/0/tls/sni
+        value: ceph.apps.okd.virt.arthurvardevanyan.com
+    target:
+      kind: DestinationRule
+      name: rook-ceph-mgr-dashboard-tls
+  - patch: |-
+      - op: replace
+        path: /spec/validation/hostname
+        value: ceph.apps.okd.virt.arthurvardevanyan.com
+    target:
+      kind: BackendTLSPolicy
       name: ceph
   - patch: |-
       - op: replace
         path: /spec/dnsNames/0
         value: ceph.apps.okd.virt.arthurvardevanyan.com
     target:
-      kind: Ingress
-      name: Certificate
+      kind: Certificate
+      name: rook-ceph-cert
+  - patch: |-
+      - op: replace
+        path: /spec/targets/staticConfig/static/0
+        value: https://ceph.apps.okd.virt.arthurvardevanyan.com
+    target:
+      kind: Probe
+      name: ceph
