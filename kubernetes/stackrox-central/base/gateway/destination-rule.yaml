@@ -1,0 +1,19 @@
+---
+# Required until Istio-based OpenShift gateway controller supports BackendTLSPolicy
+apiVersion: networking.istio.io/v1
+kind: DestinationRule
+metadata:
+  name: central-tls
+  namespace: stackrox
+  labels:
+    app.kubernetes.io/instance: stackrox-central
+spec:
+  host: central.stackrox.svc.cluster.local
+  trafficPolicy:
+    portLevelSettings:
+      - port:
+          number: 443
+        tls:
+          mode: SIMPLE
+          insecureSkipVerify: false
+          sni: central-stackrox.okd.homelab.arthurvardevanyan.com

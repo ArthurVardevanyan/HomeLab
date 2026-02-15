@@ -1,138 +1,144 @@
 ---
-kind: Ingress
-apiVersion: networking.k8s.io/v1
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
 metadata:
   name: pihole-infra
   namespace: pihole
   labels:
     app.kubernetes.io/instance: pihole
-    blackbox: ignore
   annotations:
-    route.openshift.io/termination: edge
+    externaldns.k8s.io: pihole
 spec:
-  ingressClassName: openshift-default
+  parentRefs:
+    - group: gateway.networking.k8s.io
+      kind: Gateway
+      name: https-gateway
+      namespace: openshift-ingress
+  hostnames: ["pihole-infra.okd.homelab.arthurvardevanyan.com"]
   rules:
-    - host: pihole-infra.app.okd.homelab.arthurvardevanyan.com
-      http:
-        paths:
-          - pathType: ImplementationSpecific
-            backend:
-              service:
-                name: pihole-okd-infra
-                port:
-                  number: 80
+    - backendRefs:
+        - group: ""
+          kind: Service
+          name: pihole-okd-infra
+          namespace: pihole
+          port: 80
+          weight: 1
+      matches:
+        - path:
+            type: PathPrefix
+            value: /
 ---
-kind: Ingress
-apiVersion: networking.k8s.io/v1
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
 metadata:
   name: pihole
   namespace: pihole
   labels:
     app.kubernetes.io/instance: pihole
-    blackbox: ignore
   annotations:
-    route.openshift.io/termination: edge
+    externaldns.k8s.io: pihole
 spec:
-  ingressClassName: openshift-default
+  parentRefs:
+    - group: gateway.networking.k8s.io
+      kind: Gateway
+      name: https-gateway
+      namespace: openshift-ingress
+  hostnames: ["pihole.okd.homelab.arthurvardevanyan.com"]
   rules:
-    - host: pihole.app.okd.homelab.arthurvardevanyan.com
-      http:
-        paths:
-          - pathType: ImplementationSpecific
-            backend:
-              service:
-                name: pihole-okd
-                port:
-                  number: 80
+    - backendRefs:
+        - group: ""
+          kind: Service
+          name: pihole-okd
+          namespace: pihole
+          port: 80
+          weight: 1
+      matches:
+        - path:
+            type: PathPrefix
+            value: /
 ---
-kind: Ingress
-apiVersion: networking.k8s.io/v1
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
 metadata:
   name: pihole-vlan3
   namespace: pihole
   labels:
     app.kubernetes.io/instance: pihole
-    blackbox: ignore
   annotations:
-    route.openshift.io/termination: edge
+    externaldns.k8s.io: pihole
 spec:
-  ingressClassName: openshift-default
+  parentRefs:
+    - group: gateway.networking.k8s.io
+      kind: Gateway
+      name: https-gateway
+      namespace: openshift-ingress
+  hostnames: ["pihole-vlan3.okd.homelab.arthurvardevanyan.com"]
   rules:
-    - host: pihole-vlan3.app.okd.homelab.arthurvardevanyan.com
-      http:
-        paths:
-          - pathType: ImplementationSpecific
-            backend:
-              service:
-                name: pihole-okd-vlan3
-                port:
-                  number: 80
+    - backendRefs:
+        - group: ""
+          kind: Service
+          name: pihole-okd-vlan3
+          namespace: pihole
+          port: 80
+          weight: 1
+      matches:
+        - path:
+            type: PathPrefix
+            value: /
 ---
-kind: Ingress
-apiVersion: networking.k8s.io/v1
+apiVersion: monitoring.coreos.com/v1
+kind: Probe
 metadata:
-  name: pihole-infra-admin
+  name: pihole-infra
   namespace: pihole
   labels:
     app.kubernetes.io/instance: pihole
-  annotations:
-    route.openshift.io/termination: edge
 spec:
-  ingressClassName: openshift-default
-  rules:
-    - host: pihole-infra.app.okd.homelab.arthurvardevanyan.com
-      http:
-        paths:
-          - path: "/admin"
-            pathType: ImplementationSpecific
-            backend:
-              service:
-                name: pihole-okd-infra
-                port:
-                  number: 80
+  jobName: urls-static
+  interval: 30s
+  module: http_2xx
+  prober:
+    path: /probe
+    url: blackbox-exporter.blackbox-exporter.svc.cluster.local:9115
+  targets:
+    staticConfig:
+      static:
+        - https://pihole-infra.okd.homelab.arthurvardevanyan.com
 ---
-kind: Ingress
-apiVersion: networking.k8s.io/v1
+apiVersion: monitoring.coreos.com/v1
+kind: Probe
 metadata:
-  name: pihole-admin
+  name: pihole
   namespace: pihole
   labels:
     app.kubernetes.io/instance: pihole
-  annotations:
-    route.openshift.io/termination: edge
 spec:
-  ingressClassName: openshift-default
-  rules:
-    - host: pihole.app.okd.homelab.arthurvardevanyan.com
-      http:
-        paths:
-          - path: "/admin"
-            pathType: ImplementationSpecific
-            backend:
-              service:
-                name: pihole-okd
-                port:
-                  number: 80
+  jobName: urls-static
+  interval: 30s
+  module: http_2xx
+  prober:
+    path: /probe
+    url: blackbox-exporter.blackbox-exporter.svc.cluster.local:9115
+  targets:
+    staticConfig:
+      static:
+        - https://pihole.okd.homelab.arthurvardevanyan.com
 ---
-kind: Ingress
-apiVersion: networking.k8s.io/v1
+apiVersion: monitoring.coreos.com/v1
+kind: Probe
 metadata:
-  name: pihole-vlan3-admin
+  name: pihole-vlan3
   namespace: pihole
   labels:
     app.kubernetes.io/instance: pihole
-  annotations:
-    route.openshift.io/termination: edge
 spec:
-  ingressClassName: openshift-default
-  rules:
-    - host: pihole-vlan3.app.okd.homelab.arthurvardevanyan.com
-      http:
-        paths:
-          - path: "/admin"
-            pathType: ImplementationSpecific
-            backend:
-              service:
-                name: pihole-okd-vlan3
-                port:
-                  number: 80
+  jobName: urls-static
+  interval: 30s
+  module: http_2xx
+  prober:
+    path: /probe
+    url: blackbox-exporter.blackbox-exporter.svc.cluster.local:9115
+  targets:
+    staticConfig:
+      static:
+        - https://pihole-vlan3.okd.homelab.arthurvardevanyan.com

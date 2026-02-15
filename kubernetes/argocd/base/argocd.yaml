@@ -26,7 +26,7 @@ spec:
     enabled: true
   server:
     replicas: 2
-    host: argocd.app.okd.homelab.arthurvardevanyan.com
+    host: argocd.okd.homelab.arthurvardevanyan.com
     autoscale:
       enabled: false
     grpc:
@@ -41,12 +41,10 @@ spec:
       requests:
         cpu: 5m
         memory: 128Mi
-    insecure: true
     route:
       enabled: true
       tls:
-        termination: edge
-        insecureEdgeTerminationPolicy: Redirect
+        termination: passthrough
     service:
       type: ""
   grafana:

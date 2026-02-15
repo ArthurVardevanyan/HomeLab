@@ -36,3 +36,25 @@ spec:
   issuerRef:
     kind: ClusterIssuer
     name: letsencrypt
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: unas-cert
+  namespace: openshift-ingress
+spec:
+  secretName: unas-cert
+  duration: 2160h # 90d
+  renewBefore: 1080h # 45d
+  privateKey:
+    rotationPolicy: Always
+    algorithm: ECDSA
+    size: 384
+  dnsNames:
+    - "*.unas.arthurvardevanyan.com"
+    - "*.s3.unas.arthurvardevanyan.com"
+    - "*.ssd.unas.arthurvardevanyan.com"
+    - "*.s3.ssd.unas.arthurvardevanyan.com"
+  issuerRef:
+    kind: ClusterIssuer
+    name: letsencrypt

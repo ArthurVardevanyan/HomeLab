@@ -1,69 +1,144 @@
 ---
-kind: Ingress
-apiVersion: networking.k8s.io/v1
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
 metadata:
   name: prometheus
   namespace: prometheus
   labels:
     app.kubernetes.io/instance: prometheus
   annotations:
-    route.openshift.io/termination: edge
+    externaldns.k8s.io: pihole
 spec:
-  ingressClassName: openshift-default
+  parentRefs:
+    - group: gateway.networking.k8s.io
+      kind: Gateway
+      name: https-gateway
+      namespace: openshift-ingress
+  hostnames: ["prometheus.okd.homelab.arthurvardevanyan.com"]
   rules:
-    - host: prometheus.app.okd.homelab.arthurvardevanyan.com
-      http:
-        paths:
-          - path: ""
-            pathType: ImplementationSpecific
-            backend:
-              service:
-                name: prometheus-service
-                port:
-                  name: metrics
+    - backendRefs:
+        - group: ""
+          kind: Service
+          name: prometheus-service
+          namespace: prometheus
+          port: 9090
+          weight: 1
+      matches:
+        - path:
+            type: PathPrefix
+            value: /
 ---
-kind: Ingress
-apiVersion: networking.k8s.io/v1
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
 metadata:
   name: prometheus-nas
   namespace: prometheus
   labels:
     app.kubernetes.io/instance: prometheus
   annotations:
-    route.openshift.io/termination: edge
+    externaldns.k8s.io: pihole
 spec:
-  ingressClassName: openshift-default
+  parentRefs:
+    - group: gateway.networking.k8s.io
+      kind: Gateway
+      name: https-gateway
+      namespace: openshift-ingress
+  hostnames: ["prometheus-nas.okd.homelab.arthurvardevanyan.com"]
   rules:
-    - host: prometheus-nas.app.okd.homelab.arthurvardevanyan.com
-      http:
-        paths:
-          - path: ""
-            pathType: ImplementationSpecific
-            backend:
-              service:
-                name: prometheus-nas
-                port:
-                  name: metrics
+    - backendRefs:
+        - group: ""
+          kind: Service
+          name: prometheus-nas
+          namespace: prometheus
+          port: 9090
+          weight: 1
+      matches:
+        - path:
+            type: PathPrefix
+            value: /
 ---
-kind: Ingress
-apiVersion: networking.k8s.io/v1
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
 metadata:
   name: thanos-querier
   namespace: prometheus
   labels:
     app.kubernetes.io/instance: prometheus
   annotations:
-    route.openshift.io/termination: edge
+    externaldns.k8s.io: pihole
 spec:
-  ingressClassName: openshift-default
+  parentRefs:
+    - group: gateway.networking.k8s.io
+      kind: Gateway
+      name: https-gateway
+      namespace: openshift-ingress
+  hostnames: ["thanos-querier.okd.homelab.arthurvardevanyan.com"]
   rules:
-    - host: thanos-querier.app.okd.homelab.arthurvardevanyan.com
-      http:
-        paths:
-          - path: ""
-            pathType: ImplementationSpecific
-            backend:
-              service:
-                name: thanos-querier
-                port:
-                  name: http
+    - backendRefs:
+        - group: ""
+          kind: Service
+          name: thanos-querier
+          namespace: prometheus
+          port: 9090
+          weight: 1
+      matches:
+        - path:
+            type: PathPrefix
+            value: /
+---
+apiVersion: monitoring.coreos.com/v1
+kind: Probe
+metadata:
+  name: prometheus
+  namespace: prometheus
+  labels:
+    app.kubernetes.io/instance: prometheus
+spec:
+  jobName: urls-static
+  interval: 30s
+  module: http_2xx
+  prober:
+    path: /probe
+    url: blackbox-exporter.blackbox-exporter.svc.cluster.local:9115
+  targets:
+    staticConfig:
+      static:
+        - https://prometheus.okd.homelab.arthurvardevanyan.com
+---
+apiVersion: monitoring.coreos.com/v1
+kind: Probe
+metadata:
+  name: prometheus-nas
+  namespace: prometheus
+  labels:
+    app.kubernetes.io/instance: prometheus
+spec:
+  jobName: urls-static
+  interval: 30s
+  module: http_2xx
+  prober:
+    path: /probe
+    url: blackbox-exporter.blackbox-exporter.svc.cluster.local:9115
+  targets:
+    staticConfig:
+      static:
+        - https://prometheus-nas.okd.homelab.arthurvardevanyan.com
+---
+apiVersion: monitoring.coreos.com/v1
+kind: Probe
+metadata:
+  name: thanos-querier
+  namespace: prometheus
+  labels:
+    app.kubernetes.io/instance: prometheus
+spec:
+  jobName: urls-static
+  interval: 30s
+  module: http_2xx
+  prober:
+    path: /probe
+    url: blackbox-exporter.blackbox-exporter.svc.cluster.local:9115
+  targets:
+    staticConfig:
+      static:
+        - https://thanos-querier.okd.homelab.arthurvardevanyan.com

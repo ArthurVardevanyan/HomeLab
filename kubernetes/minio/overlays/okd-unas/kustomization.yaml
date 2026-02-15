@@ -8,6 +8,7 @@ resources:
   - ./network-policy.yaml
   - ./pvc.yaml
   - ./vpa.yaml
+  - ./gateway
 components:
   - ../../components/ssd
 patches:
@@ -17,32 +18,6 @@ patches:
         value: 1
     target:
       kind: Deployment
-  - patch: |-
-      - op: replace
-        path: /spec/ingressClassName
-        value: openshift-default
-    target:
-      kind: Ingress
-  - patch: |-
-      - op: replace
-        path: /spec/tls/0/hosts/0
-        value: console.s3.ssd.unas.arthurvardevanyan.com
-      - op: replace
-        path: /spec/rules/0/host
-        value: console.s3.ssd.unas.arthurvardevanyan.com
-    target:
-      kind: Ingress
-      name: minio-console-ssd
-  - patch: |-
-      - op: replace
-        path: /spec/tls/0/hosts/0
-        value: s3.ssd.unas.arthurvardevanyan.com
-      - op: replace
-        path: /spec/rules/0/host
-        value: s3.ssd.unas.arthurvardevanyan.com
-    target:
-      kind: Ingress
-      name: minio-ssd
   - patch: |-
       - op: replace
         path: /spec/template/spec/containers/0/env/0/value
@@ -63,3 +38,11 @@ patches:
     target:
       kind: Deployment
       name: minio-ssd
+  - patch: |-
+      $patch: delete
+      apiVersion: networking.k8s.io/v1
+      kind: Ingress
+      metadata:
+        name: does-not-matter
+    target:
+      kind: Ingress

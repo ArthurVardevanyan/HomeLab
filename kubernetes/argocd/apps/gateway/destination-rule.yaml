@@ -1,0 +1,18 @@
+---
+# Required until Istio-based OpenShift gateway controller supports BackendTLSPolicy
+apiVersion: networking.istio.io/v1
+kind: DestinationRule
+metadata:
+  name: argocd-apps-server-tls
+  namespace: argocd-apps
+  labels:
+    app.kubernetes.io/instance: argocd
+spec:
+  host: argocd-apps-server.argocd-apps.svc.cluster.local
+  trafficPolicy:
+    portLevelSettings:
+      - port:
+          number: 443
+        tls:
+          mode: SIMPLE
+          insecureSkipVerify: true

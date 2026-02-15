@@ -1,0 +1,76 @@
+---
+apiVersion: monitoring.coreos.com/v1
+kind: Probe
+metadata:
+  name: minio-s3
+  namespace: minio-unas
+  labels:
+    app.kubernetes.io/instance: minio
+spec:
+  jobName: urls-static
+  interval: 30s
+  module: http_2xx
+  prober:
+    path: /probe
+    url: blackbox-exporter.blackbox-exporter.svc.cluster.local:9115
+  targets:
+    staticConfig:
+      static:
+        - https://s3.unas.arthurvardevanyan.com
+---
+apiVersion: monitoring.coreos.com/v1
+kind: Probe
+metadata:
+  name: minio-console-s3
+  namespace: minio-unas
+  labels:
+    app.kubernetes.io/instance: minio
+spec:
+  jobName: urls-static
+  interval: 30s
+  module: http_2xx
+  prober:
+    path: /probe
+    url: blackbox-exporter.blackbox-exporter.svc.cluster.local:9115
+  targets:
+    staticConfig:
+      static:
+        - https://console.s3.unas.arthurvardevanyan.com
+---
+apiVersion: monitoring.coreos.com/v1
+kind: Probe
+metadata:
+  name: minio-s3-ssd
+  namespace: minio-unas
+  labels:
+    app.kubernetes.io/instance: minio
+spec:
+  jobName: urls-static
+  interval: 30s
+  module: http_2xx
+  prober:
+    path: /probe
+    url: blackbox-exporter.blackbox-exporter.svc.cluster.local:9115
+  targets:
+    staticConfig:
+      static:
+        - https://s3.ssd.unas.arthurvardevanyan.com
+---
+apiVersion: monitoring.coreos.com/v1
+kind: Probe
+metadata:
+  name: minio-console-s3-ssd
+  namespace: minio-unas
+  labels:
+    app.kubernetes.io/instance: minio
+spec:
+  jobName: urls-static
+  interval: 30s
+  module: http_2xx
+  prober:
+    path: /probe
+    url: blackbox-exporter.blackbox-exporter.svc.cluster.local:9115
+  targets:
+    staticConfig:
+      static:
+        - https://console.s3.ssd.unas.arthurvardevanyan.com

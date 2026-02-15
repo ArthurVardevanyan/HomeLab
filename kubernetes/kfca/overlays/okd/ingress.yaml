@@ -1,44 +1,44 @@
 ---
-kind: Ingress
-apiVersion: networking.k8s.io/v1
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
 metadata:
   name: k8s-federated-credential-api
   namespace: k8s-federated-credential
-  labels:
-    blackbox: ignore
   annotations:
-    route.openshift.io/termination: edge
+    externaldns.k8s.io: pihole
 spec:
-  ingressClassName: openshift-default
+  parentRefs:
+    - group: gateway.networking.k8s.io
+      kind: Gateway
+      name: https-gateway
+      namespace: openshift-ingress
+  hostnames: ["kfca.apps.okd.homelab.arthurvardevanyan.com"]
   rules:
-    - host: "kfca.apps.okd.homelab.arthurvardevanyan.com"
-      http:
-        paths:
-          - path: ""
-            pathType: ImplementationSpecific
-            backend:
-              service:
-                name: k8s-federated-credential-api
-                port:
-                  name: http
+    - backendRefs:
+        - group: ""
+          kind: Service
+          name: k8s-federated-credential-api
+          namespace: k8s-federated-credential
+          port: 8088
+          weight: 1
+      matches:
+        - path:
+            type: PathPrefix
+            value: /
 ---
-kind: Ingress
-apiVersion: networking.k8s.io/v1
+apiVersion: monitoring.coreos.com/v1
+kind: Probe
 metadata:
-  name: k8s-federated-credential-api-live
+  name: kfca
   namespace: k8s-federated-credential
-  annotations:
-    route.openshift.io/termination: edge
 spec:
-  ingressClassName: openshift-default
-  rules:
-    - host: "kfca.apps.okd.homelab.arthurvardevanyan.com"
-      http:
-        paths:
-          - path: "/livez"
-            pathType: ImplementationSpecific
-            backend:
-              service:
-                name: k8s-federated-credential-api
-                port:
-                  name: http
+  jobName: urls-static
+  interval: 30s
+  module: http_2xx
+  prober:
+    path: /probe
+    url: blackbox-exporter.blackbox-exporter.svc.cluster.local:9115
+  targets:
+    staticConfig:
+      static:
+        - https://kfca.apps.okd.homelab.arthurvardevanyan.com/livez
