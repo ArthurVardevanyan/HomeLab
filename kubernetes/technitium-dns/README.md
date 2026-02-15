@@ -11,12 +11,15 @@ Technitium DNS Server is an open source authoritative as well as recursive DNS s
 
 ## Overlays
 
-| Overlay    | Description                             |
-| ---------- | --------------------------------------- |
-| okd        | OKD cluster with full observability     |
-| microshift | MicroShift with topolvm storage         |
-| k3s        | K3s cluster with Traefik ingress        |
-| sno        | Single Node OpenShift with LVMS storage |
+| Overlay    | Description                                                                             |
+| ---------- | --------------------------------------------------------------------------------------- |
+| okd        | OKD cluster with Gateway API, Velero backup, VPA, Prometheus Probe, kube-vip on VLAN 11 |
+| microshift | MicroShift with topolvm storage, Kubernetes Ingress, kube-vip on VLAN 11                |
+
+## Notes
+
+- External DNS support is not yet added; DNS records are managed manually.
+- Local DNS records are being pulled from the UniFi UDM SE.
 
 ## Links
 
