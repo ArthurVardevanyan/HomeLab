@@ -2,10 +2,12 @@
 apiVersion: cert-manager.io/v1
 kind: Certificate
 metadata:
-  name: registry-cert
-  namespace: quay
+  name: central-default-tls-cert
+  namespace: stackrox
+  labels:
+    app.kubernetes.io/instance: stackrox-central
 spec:
-  secretName: quay-certs # quay-config-bundle
+  secretName: central-default-tls-cert
   duration: 2160h # 90d
   renewBefore: 1080h # 45d
   privateKey:
@@ -13,7 +15,7 @@ spec:
     algorithm: ECDSA
     size: 256 # P-384 not supported by Envoy/OpenShift Ingress for re-encrypt (wrong_curve)
   dnsNames:
-    - "registry.arthurvardevanyan.com"
+    - "central-stackrox.okd.homelab.arthurvardevanyan.com"
   issuerRef:
     kind: ClusterIssuer
-    name: letsencrypt
+    name: letsencrypt # cloud-dns-letsencrypt

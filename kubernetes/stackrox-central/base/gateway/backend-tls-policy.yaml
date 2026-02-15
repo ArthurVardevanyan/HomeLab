@@ -1,0 +1,18 @@
+apiVersion: gateway.networking.k8s.io/v1
+kind: BackendTLSPolicy
+metadata:
+  name: central
+  namespace: stackrox
+  labels:
+    app.kubernetes.io/instance: stackrox-central
+spec:
+  targetRefs:
+    - group: ""
+      kind: Service
+      name: central
+  validation:
+    caCertificateRefs:
+      - group: ""
+        kind: ConfigMap
+        name: ca-bundle
+    hostname: central-stackrox.okd.homelab.arthurvardevanyan.com

@@ -20,22 +20,22 @@ patches:
       kind: StatefulSet
   - patch: |-
       - op: replace
-        path: /spec/rules/0/host
+        path: /spec/hostnames/0
         value: prometheus.apps.okd.sno.arthurvardevanyan.com
     target:
-      kind: Ingress
+      kind: HTTPRoute
       name: prometheus
   - patch: |-
       - op: replace
-        path: /spec/rules/0/host
+        path: /spec/hostnames/0
         value: prometheus-nas.apps.okd.sno.arthurvardevanyan.com
     target:
-      kind: Ingress
+      kind: HTTPRoute
       name: prometheus-nas
   - patch: |-
       - op: replace
-        path: /spec/rules/0/host
+        path: /spec/hostnames/0
         value: thanos-querier.apps.okd.sno.arthurvardevanyan.com
     target:
-      kind: Ingress
+      kind: HTTPRoute
       name: thanos-querier

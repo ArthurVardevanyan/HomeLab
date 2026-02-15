@@ -16,13 +16,13 @@ resource "zitadel_application_oidc" "okd" {
   redirect_uris = [
     "https://console-openshift-console.apps.okd.homelab.arthurvardevanyan.com/auth/callback",
     "https://oauth-openshift.apps.okd.homelab.arthurvardevanyan.com/oauth2callback/zitadel",
-    "https://argocd.app.okd.homelab.arthurvardevanyan.com/auth/callback",
-    "https://argocd-apps.app.okd.homelab.arthurvardevanyan.com/auth/callback",
+    "https://argocd.okd.homelab.arthurvardevanyan.com/auth/callback",
+    "https://argocd-apps.okd.homelab.arthurvardevanyan.com/auth/callback",
 
     "https://console-openshift-console.apps.okd.virt.arthurvardevanyan.com/auth/callback",
     "https://oauth-openshift.apps.okd.virt.arthurvardevanyan.com/oauth2callback/zitadel",
-    "https://argocd.app.okd.virt.arthurvardevanyan.com/auth/callback",
-    "https://argocd-apps.app.okd.virt.arthurvardevanyan.com/auth/callback",
+    "https://argocd.okd.virt.arthurvardevanyan.com/auth/callback",
+    "https://argocd-apps.okd.virt.arthurvardevanyan.com/auth/callback",
 
     "http://localhost:*"
   ]

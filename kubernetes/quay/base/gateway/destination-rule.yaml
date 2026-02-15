@@ -1,0 +1,19 @@
+---
+# Required until Istio-based OpenShift gateway controller supports BackendTLSPolicy
+apiVersion: networking.istio.io/v1
+kind: DestinationRule
+metadata:
+  name: quay-quay-app-tls
+  namespace: quay
+  labels:
+    app.kubernetes.io/instance: quay
+spec:
+  host: quay-quay-app.quay.svc.cluster.local
+  trafficPolicy:
+    portLevelSettings:
+      - port:
+          number: 443
+        tls:
+          mode: SIMPLE
+          insecureSkipVerify: false
+          sni: registry.arthurvardevanyan.com

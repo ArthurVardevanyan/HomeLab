@@ -1,28 +1,29 @@
 ---
-apiVersion: networking.k8s.io/v1
-kind: Ingress
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
 metadata:
   name: netbox
-  namespace: "netbox"
-  annotations:
-    route.openshift.io/termination: edge
+  namespace: netbox
   labels:
-    blackbox: ignore
     app.kubernetes.io/instance: netbox
-    app.kubernetes.io/managed-by: Helm
-    app.kubernetes.io/name: netbox
-    app.kubernetes.io/version: v4.0.0
-    helm.sh/chart: netbox-5.0.0-beta9
+  annotations:
+    externaldns.k8s.io: pihole
 spec:
-  ingressClassName: openshift-default
+  parentRefs:
+    - group: gateway.networking.k8s.io
+      kind: Gateway
+      name: https-gateway
+      namespace: openshift-ingress
+  hostnames: ["netbox.okd.homelab.arthurvardevanyan.com"]
   rules:
-    - host: "netbox.app.okd.homelab.arthurvardevanyan.com"
-      http:
-        paths:
-          - path: /
-            pathType: Prefix
-            backend:
-              service:
-                name: netbox
-                port:
-                  name: http
+    - backendRefs:
+        - group: ""
+          kind: Service
+          name: netbox
+          namespace: netbox
+          port: 80
+          weight: 1
+      matches:
+        - path:
+            type: PathPrefix
+            value: /
