@@ -1,0 +1,69 @@
+---
+apiVersion: k8s.ovn.org/v1
+kind: EgressFirewall
+metadata:
+  name: default
+  namespace: technitium-dns
+spec:
+  egress:
+    # Cloudflare DNS
+    - type: Allow
+      to:
+        cidrSelector: 1.1.1.1/32
+    - type: Allow
+      to:
+        cidrSelector: 1.0.0.1/32
+    # Google DNS
+    - type: Allow
+      to:
+        cidrSelector: 8.8.8.8/32
+    - type: Allow
+      to:
+        cidrSelector: 8.8.4.4/32
+    # Quad9 DNS
+    - type: Allow
+      to:
+        cidrSelector: 9.9.9.9/32
+    - type: Allow
+      to:
+        cidrSelector: 149.112.112.112/32
+    # Root DNS Servers (allow recursive resolution)
+    - type: Allow
+      to:
+        cidrSelector: 192.5.5.241/32
+    - type: Allow
+      to:
+        cidrSelector: 198.41.0.4/32
+    - type: Allow
+      to:
+        cidrSelector: 199.7.91.13/32
+    - type: Allow
+      to:
+        cidrSelector: 192.33.4.12/32
+    - type: Allow
+      to:
+        cidrSelector: 192.203.230.10/32
+    - type: Allow
+      to:
+        cidrSelector: 192.112.36.4/32
+    # Cloudflare API IPs (arthurvardevanyan.com)
+    # https://www.cloudflare.com/ips/
+    - type: Allow
+      to:
+        cidrSelector: 104.16.0.0/13
+    - type: Allow
+      to:
+        cidrSelector: 104.24.0.0/14
+    - type: Allow
+      to:
+        cidrSelector: 172.64.0.0/13
+    # Internal services
+    - type: Allow
+      to:
+        dnsName: router-apps.app.okd.homelab.arthurvardevanyan.com
+    - type: Allow
+      to:
+        dnsName: api.okd.homelab.arthurvardevanyan.com
+    - type: Deny
+      to:
+        cidrSelector: 0.0.0.0/0

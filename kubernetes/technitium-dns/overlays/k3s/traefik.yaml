@@ -1,0 +1,18 @@
+---
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: technitium-dns
+  namespace: technitium-dns
+  labels:
+    app.kubernetes.io/instance: technitium-dns
+spec:
+  entryPoints:
+    - web
+    - websecure
+  routes:
+    - match: Host(`technitium-dns.arthurvardevanyan.com`)
+      kind: Rule
+      services:
+        - name: technitium-dns-service
+          port: 5380

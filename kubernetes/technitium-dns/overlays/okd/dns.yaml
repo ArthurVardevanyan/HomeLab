@@ -1,0 +1,16 @@
+---
+apiVersion: externaldns.k8s.io/v1alpha1
+kind: DNSEndpoint
+metadata:
+  name: technitium-dns
+  namespace: technitium-dns
+  annotations:
+    externaldns.k8s.io: pihole
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+spec:
+  endpoints:
+    - dnsName: technitium-dns.arthurvardevanyan.com
+      recordTTL: 60
+      recordType: CNAME
+      targets:
+        - microshift.arthurvardevanyan.com

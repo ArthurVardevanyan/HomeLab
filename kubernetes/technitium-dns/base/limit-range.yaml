@@ -1,0 +1,19 @@
+---
+apiVersion: v1
+kind: LimitRange
+metadata:
+  name: technitium-dns-lr
+  namespace: technitium-dns
+  labels:
+    app.kubernetes.io/instance: technitium-dns
+spec:
+  limits:
+    - type: Container
+      default:
+        cpu: 50m
+        memory: 128Mi
+        ephemeral-storage: 256Mi
+      defaultRequest:
+        cpu: 10m
+        memory: 64Mi
+        ephemeral-storage: 128Mi

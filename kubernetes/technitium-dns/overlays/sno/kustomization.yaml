@@ -1,0 +1,17 @@
+---
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - ../../base
+components:
+  - ../../components/technitium-dns
+  - ../../components/openshift
+  - ../../components/ingress
+patches:
+  - patch: |-
+      - op: replace
+        path: /spec/storageClassName
+        value: lvms-vg1-immediate
+    target:
+      kind: PersistentVolumeClaim
+      name: technitium-dns-config

@@ -1,0 +1,28 @@
+---
+kind: Ingress
+apiVersion: networking.k8s.io/v1
+metadata:
+  name: technitium-dns
+  namespace: technitium-dns
+  labels:
+    app.kubernetes.io/instance: technitium-dns
+  annotations:
+    externaldns.k8s.io: pihole
+    route.openshift.io/termination: edge
+spec:
+  ingressClassName: openshift-default
+  tls:
+    - hosts:
+        - technitium-dns.arthurvardevanyan.com
+      secretName: technitium-dns-cert
+  rules:
+    - host: technitium-dns.arthurvardevanyan.com
+      http:
+        paths:
+          - path: ""
+            pathType: ImplementationSpecific
+            backend:
+              service:
+                name: technitium-dns-service
+                port:
+                  name: http-console

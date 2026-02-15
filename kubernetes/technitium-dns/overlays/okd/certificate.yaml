@@ -1,0 +1,19 @@
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: technitium-dns-cert
+  namespace: technitium-dns
+spec:
+  secretName: technitium-dns-cert
+  duration: 2160h # 90d
+  renewBefore: 1080h # 45d
+  privateKey:
+    rotationPolicy: Always
+    algorithm: ECDSA
+    size: 256
+  dnsNames:
+    - "technitium-dns.okd.homelab.arthurvardevanyan.com"
+  issuerRef:
+    kind: ClusterIssuer
+    name: letsencrypt

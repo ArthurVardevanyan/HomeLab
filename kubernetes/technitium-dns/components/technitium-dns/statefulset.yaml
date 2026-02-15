@@ -1,0 +1,103 @@
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: technitium-dns
+  namespace: technitium-dns
+  labels:
+    app: technitium-dns
+    app.kubernetes.io/instance: technitium-dns
+  annotations:
+    checkov.io/skip1: CKV_K8S_40=OpenShift Injects Random UID
+spec:
+  revisionHistoryLimit: 0
+  replicas: 1
+  serviceName: technitium-dns-service
+  selector:
+    matchLabels:
+      app: technitium-dns
+  template:
+    metadata:
+      labels:
+        app: technitium-dns
+      annotations:
+        enable.version-checker.io/technitium-dns: "true"
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
+        sysctls:
+          - name: net.ipv4.ip_unprivileged_port_start
+            value: "0"
+      hostname: technitium-dns
+      restartPolicy: Always
+      automountServiceAccountToken: false
+      serviceAccountName: technitium-dns-sa
+      containers:
+        # renovate: datasource=docker depName=docker.io/technitium/dns-server
+        - image: docker.io/technitium/dns-server:14.3.0@sha256:322b236403ca25028032f28736e2270a860527b030b162c9f82451c6494c4698
+          imagePullPolicy: IfNotPresent
+          name: technitium-dns
+          securityContext:
+            runAsNonRoot: true
+            readOnlyRootFilesystem: true
+            allowPrivilegeEscalation: false
+            seccompProfile:
+              type: RuntimeDefault
+            capabilities:
+              drop:
+                - ALL
+          env:
+            - name: DNS_SERVER_DOMAIN
+              value: "technitium-dns"
+            - name: DNS_SERVER_LOG_USING_LOCAL_TIME
+              value: "true"
+          ports:
+            - containerPort: 5380
+              name: http-console
+              protocol: TCP
+            - containerPort: 53
+              name: dns-tcp
+              protocol: TCP
+            - containerPort: 53
+              name: dns-udp
+              protocol: UDP
+          resizePolicy:
+            - resourceName: cpu
+              restartPolicy: NotRequired
+            - resourceName: memory
+              restartPolicy: NotRequired
+          resources:
+            requests:
+              memory: "128Mi"
+              cpu: "15m"
+            limits:
+              memory: "512Mi"
+              cpu: "500m"
+          volumeMounts:
+            - name: technitium-dns-config
+              mountPath: /etc/dns
+            - name: tmp
+              mountPath: /tmp
+          livenessProbe:
+            tcpSocket:
+              port: 5380
+            initialDelaySeconds: 30
+            periodSeconds: 60
+            timeoutSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 5380
+              scheme: HTTP
+            initialDelaySeconds: 15
+            periodSeconds: 10
+            timeoutSeconds: 5
+      volumes:
+        - name: technitium-dns-config
+          persistentVolumeClaim:
+            claimName: technitium-dns-config
+        - name: tmp
+          emptyDir: {}
+      enableServiceLinks: false
