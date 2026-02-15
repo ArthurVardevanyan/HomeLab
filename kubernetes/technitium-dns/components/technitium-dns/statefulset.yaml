@@ -22,6 +22,14 @@ spec:
         app: technitium-dns
       annotations:
         enable.version-checker.io/technitium-dns: "true"
+        k8s.v1.cni.cncf.io/networks: |
+          [{
+            "name": "bond4-nad-vlan11",
+            "namespace": "default",
+            "mac": "10:01:01:01:10:11",
+            "ips": ["10.101.11.5/24"],
+            "default-route": ["10.101.11.1"]
+          }]
     spec:
       securityContext:
         runAsNonRoot: true
@@ -53,6 +61,8 @@ spec:
               value: "technitium-dns"
             - name: DNS_SERVER_LOG_USING_LOCAL_TIME
               value: "true"
+            - name: DNS_SERVER_FORWARDERS
+              value: "10.101.10.1"
           ports:
             - containerPort: 5380
               name: http-console
@@ -70,11 +80,11 @@ spec:
               restartPolicy: NotRequired
           resources:
             requests:
-              memory: "128Mi"
-              cpu: "15m"
-            limits:
               memory: "512Mi"
-              cpu: "500m"
+              cpu: "50m"
+            limits:
+              memory: "1Gi"
+              cpu: "150m"
           volumeMounts:
             - name: technitium-dns-config
               mountPath: /etc/dns
@@ -83,7 +93,7 @@ spec:
           livenessProbe:
             tcpSocket:
               port: 5380
-            initialDelaySeconds: 30
+            initialDelaySeconds: 15
             periodSeconds: 60
             timeoutSeconds: 10
           readinessProbe:
@@ -91,7 +101,7 @@ spec:
               path: /
               port: 5380
               scheme: HTTP
-            initialDelaySeconds: 15
+            initialDelaySeconds: 10
             periodSeconds: 10
             timeoutSeconds: 5
       volumes:
