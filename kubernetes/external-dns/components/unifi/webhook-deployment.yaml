@@ -1,0 +1,119 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: unifi-webhook
+  annotations:
+    checkov.io/skip1: CKV_K8S_40=OpenShift Injects Random UID
+  namespace: external-dns
+  labels:
+    app.kubernetes.io/name: unifi-webhook
+    app.kubernetes.io/instance: unifi-webhook
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: unifi-webhook
+      app.kubernetes.io/instance: unifi-webhook
+  strategy:
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: unifi-webhook
+        app.kubernetes.io/instance: unifi-webhook
+    spec:
+      tolerations:
+        - key: node-role.kubernetes.io/control-plane
+          effect: NoSchedule
+        - key: node-role.kubernetes.io/control-plane
+          effect: NoSchedule
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - key: node-role.kubernetes.io/control-plane
+                    operator: Exists
+                  - key: node-role.kubernetes.io/control-plane
+                    operator: Exists
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - labelSelector:
+                matchLabels:
+                  app: unifi-webhook
+              topologyKey: "kubernetes.io/hostname"
+      securityContext:
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
+      automountServiceAccountToken: false
+      containers:
+        - name: unifi-webhook
+          securityContext:
+            runAsNonRoot: true
+            privileged: false
+            readOnlyRootFilesystem: true
+            allowPrivilegeEscalation: false
+            seccompProfile:
+              type: RuntimeDefault
+            capabilities:
+              drop:
+                - ALL
+          resizePolicy:
+            - resourceName: cpu
+              restartPolicy: NotRequired
+            - resourceName: memory
+              restartPolicy: NotRequired
+          resources:
+            limits:
+              cpu: 50m
+              memory: 128Mi
+            requests:
+              cpu: 5m
+              memory: 64Mi
+          # renovate: datasource=docker depName=ghcr.io/kashalls/external-dns-unifi-webhook
+          image: ghcr.io/kashalls/external-dns-unifi-webhook:v0.8.2@sha256:7f0ddbbc83a36a2a9d762e25eef9cafcb3adf0493068a27d72ae71087eafe6f0
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: UNIFI_HOST
+              value: "https://unifi.arthurvardevanyan.com"
+            - name: UNIFI_EXTERNAL_CONTROLLER
+              value: "false"
+            - name: UNIFI_SKIP_TLS_VERIFY
+              value: "true"
+            - name: LOG_LEVEL
+              value: "info"
+            - name: SERVER_HOST
+              value: "0.0.0.0"
+            - name: UNIFI_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: unifi-api-key
+                  key: UNIFI_API_KEY
+          ports:
+            - name: http-webhook
+              protocol: TCP
+              containerPort: 8888
+            - name: http-health
+              protocol: TCP
+              containerPort: 8080
+          livenessProbe:
+            failureThreshold: 2
+            httpGet:
+              path: /healthz
+              port: http-health
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            successThreshold: 1
+            timeoutSeconds: 5
+          readinessProbe:
+            failureThreshold: 6
+            httpGet:
+              path: /readyz
+              port: http-health
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            successThreshold: 1
+            timeoutSeconds: 5
+      enableServiceLinks: false

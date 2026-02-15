@@ -125,6 +125,71 @@ spec:
         - ipBlock:
             cidr: 10.101.10.7/32 # OKD APP WildCard
 ---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-unifi-egress
+  namespace: external-dns
+  annotations:
+    argocd.argoproj.io/sync-wave: "0"
+spec:
+  policyTypes:
+    - Egress
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: unifi-webhook
+  egress:
+    - to:
+        - ipBlock:
+            cidr: 10.101.10.1/32
+      ports:
+        - protocol: TCP
+          port: 443
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-unifi-webhook-ingress
+  namespace: external-dns
+  annotations:
+    argocd.argoproj.io/sync-wave: "0"
+spec:
+  policyTypes:
+    - Ingress
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: unifi-webhook
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: external-dns-unifi
+      ports:
+        - protocol: TCP
+          port: 8888
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-unifi-webhook-egress
+  namespace: external-dns
+  annotations:
+    argocd.argoproj.io/sync-wave: "0"
+spec:
+  policyTypes:
+    - Egress
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: external-dns-unifi
+  egress:
+    - to:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: unifi-webhook
+      ports:
+        - protocol: TCP
+          port: 8888
+---
 kind: NetworkPolicy
 apiVersion: networking.k8s.io/v1
 metadata:

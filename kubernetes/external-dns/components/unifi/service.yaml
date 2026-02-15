@@ -1,0 +1,23 @@
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: unifi-webhook
+  namespace: external-dns
+  labels:
+    app.kubernetes.io/name: unifi-webhook
+    app.kubernetes.io/instance: unifi-webhook
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/name: unifi-webhook
+    app.kubernetes.io/instance: unifi-webhook
+  ports:
+    - name: http-webhook
+      port: 8888
+      targetPort: http-webhook
+      protocol: TCP
+    - name: http-health
+      port: 8080
+      targetPort: http-health
+      protocol: TCP
