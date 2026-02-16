@@ -12,7 +12,6 @@ resources:
   - network-policy.yaml
 components:
   - ../../components/pihole
-  - ../../components/vlan3
   - ../../components/metrics
     # - op: remove
     #   path: /spec/template/spec/containers/0/ports/1/hostPort
@@ -42,21 +41,6 @@ patches:
     target:
       kind: StatefulSet
       name: pihole
-  - patch: |-
-      - op: replace
-        path: /spec/template/spec/containers/0/name
-        value: pihole-okd-vlan3
-      - op: replace
-        path: /spec/template/spec/containers/1/name
-        value: pihole-exporter-okd-vlan3
-      - op: replace
-        path: /spec/template/spec/containers/1/env/0/value
-        value: pihole-okd-vlan3
-      # - op: remove
-      #   path: /spec/template/spec/containers/0/ports/1/hostPort
-    target:
-      kind: StatefulSet
-      name: pihole-vlan3
   - patch: |-
       - op: replace
         path: /spec/storageClassName

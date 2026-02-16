@@ -28,35 +28,6 @@ spec:
             type: PathPrefix
             value: /
 ---
-apiVersion: gateway.networking.k8s.io/v1
-kind: HTTPRoute
-metadata:
-  name: pihole-vlan3
-  namespace: pihole
-  labels:
-    app.kubernetes.io/instance: pihole
-  annotations:
-    externaldns.k8s.io: pihole
-spec:
-  parentRefs:
-    - group: gateway.networking.k8s.io
-      kind: Gateway
-      name: https-gateway
-      namespace: openshift-ingress
-  hostnames: ["pihole-vlan3.okd.homelab.arthurvardevanyan.com"]
-  rules:
-    - backendRefs:
-        - group: ""
-          kind: Service
-          name: pihole-okd-vlan3
-          namespace: pihole
-          port: 80
-          weight: 1
-      matches:
-        - path:
-            type: PathPrefix
-            value: /
----
 apiVersion: monitoring.coreos.com/v1
 kind: Probe
 metadata:
@@ -76,23 +47,3 @@ spec:
       static:
         - https://pihole.okd.homelab.arthurvardevanyan.com/admin
         - https://pihole.arthurvardevanyan.com/admin
----
-apiVersion: monitoring.coreos.com/v1
-kind: Probe
-metadata:
-  name: pihole-vlan3
-  namespace: pihole
-  labels:
-    app.kubernetes.io/instance: pihole
-spec:
-  jobName: urls-static
-  interval: 30s
-  module: http_2xx
-  prober:
-    path: /probe
-    url: blackbox-exporter.blackbox-exporter.svc.cluster.local:9115
-  targets:
-    staticConfig:
-      static:
-        - https://pihole-vlan3.okd.homelab.arthurvardevanyan.com/admin
-        - https://pihole-vlan3.arthurvardevanyan.com/admin
