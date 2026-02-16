@@ -1,0 +1,36 @@
+## Builder: fetch prebuilt FFmpeg with NVENC support (Option A)
+FROM registry.access.redhat.com/ubi9 AS ffmpeg-fetch
+
+# BtbN prebuilt FFmpeg (GPL) with NVENC enabled
+ARG FFMPEG_URL=https://github.com/BtbN/FFmpeg-Builds/releases/download/latest/ffmpeg-master-latest-linux64-gpl.tar.xz
+
+RUN set -eux; \
+  dnf -y install --setopt=tsflags=nodocs xz tar ca-certificates \
+  && update-ca-trust || true \
+  && curl -fSL --retry 5 --retry-connrefused "$FFMPEG_URL" -o /tmp/ffmpeg.tar.xz \
+  && mkdir -p /opt/ffmpeg /out \
+  && tar -xJf /tmp/ffmpeg.tar.xz -C /opt/ffmpeg --strip-components=1 \
+  && cp -f /opt/ffmpeg/bin/ffmpeg /out/ffmpeg \
+  && cp -f /opt/ffmpeg/bin/ffprobe /out/ffprobe \
+  && chmod 0755 /out/ffmpeg /out/ffprobe \
+  && /out/ffmpeg -hide_banner -encoders | grep -E 'nvenc|h264_nvenc|hevc_nvenc' || true \
+  && dnf -y remove xz tar || true \
+  && dnf clean all && rm -rf /var/cache/* /var/log/dnf* /var/log/yum* /tmp/* /opt/ffmpeg /tmp/ffmpeg.tar.xz
+
+## Final: CUDA runtime with FFmpeg (NVENC-enabled)
+FROM nvcr.io/nvidia/cuda:13.0.0-runtime-ubi9
+LABEL org.opencontainers.image.source="https://github.com/ArthurVardevanyan/HomeLab" \
+  org.opencontainers.image.title="GPU Toolbox" \
+  org.opencontainers.image.description="CUDA runtime with FFmpeg (NVENC-enabled)" \
+  org.opencontainers.image.licenses="MIT"
+
+ENV NVIDIA_VISIBLE_DEVICES=all \
+  NVIDIA_DRIVER_CAPABILITIES=all \
+  LD_LIBRARY_PATH=/usr/local/nvidia/lib64:/usr/local/nvidia/lib:/usr/local/cuda/lib64${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}
+
+COPY --from=ffmpeg-fetch /out/ffmpeg /usr/local/bin/ffmpeg
+COPY --from=ffmpeg-fetch /out/ffprobe /usr/local/bin/ffprobe
+RUN chmod 0755 /usr/local/bin/ffmpeg /usr/local/bin/ffprobe \
+  && /usr/local/bin/ffmpeg -hide_banner -encoders | grep -E "nvenc|cuvid" || true
+
+CMD ["sleep", "infinity"]

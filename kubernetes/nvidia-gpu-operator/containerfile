@@ -266,7 +266,16 @@ RUN set -e; \
 	if [ -x /usr/local/bin/nvidia-smi ]; then cp -f /usr/local/bin/nvidia-smi /usr/bin/nvidia-smi && chmod +x /usr/bin/nvidia-smi; fi; \
 	mkdir -p /usr/lib64; \
 	# Copy essential runtime libraries (ML, CUDA core, sandboxutils if present)
-	find /opt/nvidia/userland/__ul -maxdepth 5 -type f \( -name 'libnvidia-ml.so.*' -o -name 'libcuda.so.*' -o -name 'libnvidia-sandboxutils.so.*' -o -name 'libnvidia-compiler.so.*' \) -exec cp -f {} /usr/lib64/ \; || true; \
+	find /opt/nvidia/userland/__ul -maxdepth 5 -type f \( \
+	-name 'libnvidia-ml.so.*' -o \
+	-name 'libcuda.so.*' -o \
+	-name 'libnvidia-sandboxutils.so.*' -o \
+	-name 'libnvidia-compiler.so.*' -o \
+	# NVENC-related runtime libraries
+	-name 'libnvidia-encode.so.*' -o \
+	-name 'libnvcuvid.so.*' -o \
+	-name 'libnvidia-opticalflow.so.*' \
+	\) -exec cp -f {} /usr/lib64/ \; || true; \
 	if ls /usr/lib64/libnvidia-ml.so.* >/dev/null 2>&1; then \
 	ML="$(ls /usr/lib64/libnvidia-ml.so.* | head -n1)"; \
 	ln -sf "$(basename "$ML")" /usr/lib64/libnvidia-ml.so.1; \
@@ -280,6 +289,19 @@ RUN set -e; \
 	if ls /usr/lib64/libnvidia-sandboxutils.so.* >/dev/null 2>&1; then \
 	SBOX="$(ls /usr/lib64/libnvidia-sandboxutils.so.* | head -n1)"; \
 	ln -sf "$(basename "$SBOX")" /usr/lib64/libnvidia-sandboxutils.so.1; \
+	fi; \
+	# Create symlinks for NVENC-related libraries if present
+	if ls /usr/lib64/libnvidia-encode.so.* >/dev/null 2>&1; then \
+	ENC="$(ls /usr/lib64/libnvidia-encode.so.* | head -n1)"; \
+	ln -sf "$(basename "$ENC")" /usr/lib64/libnvidia-encode.so.1; \
+	fi; \
+	if ls /usr/lib64/libnvcuvid.so.* >/dev/null 2>&1; then \
+	CVID="$(ls /usr/lib64/libnvcuvid.so.* | head -n1)"; \
+	ln -sf "$(basename "$CVID")" /usr/lib64/libnvcuvid.so.1; \
+	fi; \
+	if ls /usr/lib64/libnvidia-opticalflow.so.* >/dev/null 2>&1; then \
+	OFLW="$(ls /usr/lib64/libnvidia-opticalflow.so.* | head -n1)"; \
+	ln -sf "$(basename "$OFLW")" /usr/lib64/libnvidia-opticalflow.so.1; \
 	fi; \
 	rm -rf /opt/nvidia/userland/__ul || true
 
@@ -478,13 +500,24 @@ for ROOT in /run/nvidia/driver /host /rootfs; do
 	[ -d "$ROOT" ] || continue
 	mkdir -p "$ROOT/usr/bin" "$ROOT/usr/lib64" 2>/dev/null || true
 	if [ -x /usr/bin/nvidia-smi ]; then cp -f /usr/bin/nvidia-smi "$ROOT/usr/bin/nvidia-smi" 2>/dev/null || true; fi
-	for pat in libnvidia-ml.so.* libcuda.so.* libnvidia-sandboxutils.so.* libnvidia-compiler.so.*; do
+	for pat in \
+		libnvidia-ml.so.* \
+		libcuda.so.* \
+		libnvidia-sandboxutils.so.* \
+		libnvidia-compiler.so.* \
+		# NVENC-related runtime libraries
+		libnvidia-encode.so.* \
+		libnvcuvid.so.* \
+		libnvidia-opticalflow.so.*; do
 		for f in /usr/lib64/$pat; do [ -f "$f" ] || continue; cp -f "$f" "$ROOT/usr/lib64/" 2>/dev/null || true; done
 	done
 	# Recreate symlinks inside host roots if base libs copied
 	if ls "$ROOT/usr/lib64/libcuda.so."* >/dev/null 2>&1; then cd "$ROOT/usr/lib64" && ln -sf $(ls libcuda.so.* | head -n1 | xargs basename) libcuda.so.1 && ln -sf libcuda.so.1 libcuda.so || true; fi
 	if ls "$ROOT/usr/lib64/libnvidia-ml.so."* >/dev/null 2>&1; then cd "$ROOT/usr/lib64" && ln -sf $(ls libnvidia-ml.so.* | head -n1 | xargs basename) libnvidia-ml.so.1 && ln -sf libnvidia-ml.so.1 libnvidia-ml.so || true; fi
 	if ls "$ROOT/usr/lib64/libnvidia-sandboxutils.so."* >/dev/null 2>&1; then cd "$ROOT/usr/lib64" && ln -sf $(ls libnvidia-sandboxutils.so.* | head -n1 | xargs basename) libnvidia-sandboxutils.so.1 || true; fi
+	if ls "$ROOT/usr/lib64/libnvidia-encode.so."* >/dev/null 2>&1; then cd "$ROOT/usr/lib64" && ln -sf $(ls libnvidia-encode.so.* | head -n1 | xargs basename) libnvidia-encode.so.1 || true; fi
+	if ls "$ROOT/usr/lib64/libnvcuvid.so."* >/dev/null 2>&1; then cd "$ROOT/usr/lib64" && ln -sf $(ls libnvcuvid.so.* | head -n1 | xargs basename) libnvcuvid.so.1 || true; fi
+	if ls "$ROOT/usr/lib64/libnvidia-opticalflow.so."* >/dev/null 2>&1; then cd "$ROOT/usr/lib64" && ln -sf $(ls libnvidia-opticalflow.so.* | head -n1 | xargs basename) libnvidia-opticalflow.so.1 || true; fi
 done
 
 # If the expected kernel source directory is missing (e.g., /usr/src is host-mounted),

@@ -1,0 +1,106 @@
+---
+apiVersion: tekton.dev/v1
+kind: PipelineRun
+metadata:
+  name: gpu-toolbox-image
+  annotations:
+    pipelinesascode.tekton.dev/max-keep-runs: "1"
+    pipelinesascode.tekton.dev/on-cel-expression: |
+      event == "pull_request" &&  target_branch == "main" && "containers/gpu-toolbox/containerfile".pathChanged()
+    pipelinesascode.tekton.dev/target-namespace: "homelab"
+    pipelinesascode.tekton.dev/task: "https://raw.githubusercontent.com/ArthurVardevanyan/HomeLab/main/tekton/tasks/git-clone/0.9.1/git-clone.yaml"
+    pipelinesascode.tekton.dev/task-1: "tekton/tasks/buildah/0.7.1/buildah.yaml"
+    pipelinesascode.tekton.dev/task-2: "tekton/base/clair-action/clair-action-task.yaml"
+spec:
+  params:
+    - name: git-url
+      value: "{{ repo_url }}"
+    - name: git-commit
+      value: "{{ revision }}"
+    - name: DOCKERFILE
+      value: "./containers/gpu-toolbox/containerfile"
+    - name: IMAGE
+      value: "registry.arthurvardevanyan.com/homelab/gpu-toolbox:not_latest"
+
+  pipelineSpec:
+    params:
+      - name: git-url
+        description: Repository URL to clone from.
+        type: string
+      - name: git-commit
+        type: string
+      - name: IMAGE
+        description: Reference of the image buildah will produce.
+      - name: DOCKERFILE
+        description: Path to the Dockerfile to build.
+        type: string
+        default: ./Dockerfile
+
+    results:
+      - description: The common vulnerabilities and exposures (CVE) result
+        name: SCAN_OUTPUT
+        value: $(tasks.clair-action.results.SCAN_OUTPUT)
+
+    workspaces:
+      - name: data
+      - name: git_auth_secret
+
+    tasks:
+      - name: git-clone
+        taskRef:
+          name: git-clone
+          kind: Task
+        params:
+          - name: url
+            value: $(params.git-url)
+          - name: revision
+            value: $(params.git-commit)
+        workspaces:
+          - name: output
+            workspace: data
+          - name: basic-auth
+            workspace: git_auth_secret
+
+      - name: buildah
+        runAfter:
+          - git-clone
+        taskRef:
+          name: buildah
+          kind: Task
+        params:
+          - name: IMAGE
+            value: $(params.IMAGE)
+          - name: DOCKERFILE
+            value: $(params.DOCKERFILE)
+        workspaces:
+          - name: source
+            workspace: data
+
+      - name: clair-action
+        runAfter:
+          - buildah
+        taskRef:
+          name: clair-action
+          kind: Task
+        params:
+          - name: IMAGE
+            value: $(params.IMAGE)
+
+  serviceAccountName: pipeline
+  workspaces:
+    - name: data
+      volumeClaimTemplate:
+        apiVersion: v1
+        kind: PersistentVolumeClaim
+        metadata:
+          name: data
+        spec:
+          accessModes:
+            - ReadWriteOnce
+          resources:
+            requests:
+              storage: "100Mi"
+          storageClassName: rook-ceph-block-ci
+    - name: git_auth_secret
+      secret:
+        secretName: "{{ git_auth_secret }}"
