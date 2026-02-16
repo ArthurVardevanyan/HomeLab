@@ -62,3 +62,35 @@ spec:
       targetPort: 53443
   selector:
     app: technitium-dns
+---
+apiVersion: v1
+kind: Service
+metadata:
+  annotations:
+    kube-vip.io/egress: "true"
+    kube-vip.io/egress-internal: "true"
+    kube-vip.io/loadbalancerIPs: "10.101.10.245"
+  name: technitium-dns-udp-bgp
+  namespace: technitium-dns
+spec:
+  externalTrafficPolicy: Cluster
+  internalTrafficPolicy: Cluster
+  ipFamilies:
+    - IPv4
+  ports:
+    - name: dns-udp
+      port: 53
+      protocol: UDP
+      targetPort: 53
+    - name: dns-tcp
+      port: 53
+      protocol: TCP
+      targetPort: 53
+    - name: https
+      port: 53443
+      protocol: TCP
+      targetPort: 53443
+  selector:
+    app: technitium-dns
+  type: LoadBalancer
+  loadBalancerClass: kube-vip.io/kube-vip-class-bgp
