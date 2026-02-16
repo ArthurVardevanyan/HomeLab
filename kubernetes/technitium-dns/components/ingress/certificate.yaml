@@ -12,8 +12,14 @@ spec:
     rotationPolicy: Always
     algorithm: ECDSA
     size: 256 # P-384 not supported by Envoy/OpenShift Ingress for re-encrypt (wrong_curve)
+  keystores:
+    pkcs12:
+      create: true
+      password: technitium-dns
+      profile: Modern2023
   dnsNames:
-    - "technitium-dns.arthurvardevanyan.com"
+    - "technitium.arthurvardevanyan.com"
+    - "technitium.dns.arthurvardevanyan.com"
   issuerRef:
     kind: ClusterIssuer
     name: letsencrypt

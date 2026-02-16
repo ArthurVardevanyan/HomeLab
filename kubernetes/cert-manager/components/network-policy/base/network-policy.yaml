@@ -66,3 +66,17 @@ spec:
             cidr: 104.16.0.0/13
         - ipBlock:
             cidr: 172.64.0.0/13
+      ports:
+        - protocol: TCP
+          port: 443
+    # Cloudflare DNS (dns01 recursive nameservers)
+    - to:
+        - ipBlock:
+            cidr: 1.1.1.1/32
+        - ipBlock:
+            cidr: 1.0.0.1/32
+      ports:
+        - protocol: UDP
+          port: 53
+        - protocol: TCP
+          port: 53

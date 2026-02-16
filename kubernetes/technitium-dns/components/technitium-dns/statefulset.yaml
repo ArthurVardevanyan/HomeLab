@@ -70,7 +70,7 @@ spec:
                 - ALL
           env:
             - name: DNS_SERVER_DOMAIN
-              value: "technitium-dns"
+              value: "technitium"
             - name: DNS_SERVER_LOG_USING_LOCAL_TIME
               value: "true"
             - name: DNS_SERVER_FORWARDERS
@@ -78,6 +78,9 @@ spec:
           ports:
             - containerPort: 5380
               name: http-console
+              protocol: TCP
+            - containerPort: 53443
+              name: https-console
               protocol: TCP
             - containerPort: 53
               name: dns-tcp
@@ -100,6 +103,9 @@ spec:
           volumeMounts:
             - name: technitium-dns-config
               mountPath: /etc/dns
+            - name: technitium-dns-cert
+              mountPath: /etc/tls
+              readOnly: true
             - name: tmp
               mountPath: /tmp
           livenessProbe:
@@ -120,6 +126,9 @@ spec:
         - name: technitium-dns-config
           persistentVolumeClaim:
             claimName: technitium-dns-config
+        - name: technitium-dns-cert
+          secret:
+            secretName: technitium-dns-cert
         - name: tmp
           emptyDir: {}
       enableServiceLinks: false

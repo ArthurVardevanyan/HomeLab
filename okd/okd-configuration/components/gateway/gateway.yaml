@@ -22,6 +22,19 @@ spec:
           - group: ""
             kind: Secret
             name: arthurvardevanyan-cert
+    - name: https-dns
+      protocol: HTTPS
+      port: 443
+      hostname: "*.dns.arthurvardevanyan.com"
+      allowedRoutes:
+        namespaces:
+          from: All
+      tls:
+        mode: Terminate
+        certificateRefs:
+          - group: ""
+            kind: Secret
+            name: arthurvardevanyan-cert
     - name: https-cluster
       protocol: HTTPS
       port: 443
