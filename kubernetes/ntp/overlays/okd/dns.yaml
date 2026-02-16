@@ -43,29 +43,3 @@ spec:
       recordType: CNAME
       targets:
         - time.arthurvardevanyan.com #10.101.1.2 #  10.101.1.3
----
-apiVersion: externaldns.k8s.io/v1alpha1
-kind: DNSEndpoint
-metadata:
-  name: ntp-vlan3
-  namespace: ntp
-  annotations:
-    externaldns.k8s.io: pihole-vlan3
-    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
-spec:
-  endpoints:
-    - dnsName: pool.ntp.org
-      recordTTL: 60
-      recordType: CNAME
-      targets:
-        - time.arthurvardevanyan.com #10.102.3.2 # 10.102.3.3
-    - dnsName: time.nist.gov
-      recordTTL: 60
-      recordType: CNAME
-      targets:
-        - time.arthurvardevanyan.com #10.102.3.2 # 10.102.3.3
-    - dnsName: time.windows.com
-      recordTTL: 60
-      recordType: CNAME
-      targets:
-        - time.arthurvardevanyan.com #10.102.3.2 # 10.102.3.3

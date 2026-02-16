@@ -8,7 +8,6 @@ resources:
   - certificate.yaml
 components:
   - ../../components/pihole
-  - ../../components/vlan3
     #       - op: remove
     #         path: /spec/template/metadata/annotations/k8s.v1.cni.cncf.io~1networks
 patches:
@@ -27,31 +26,11 @@ patches:
       name: pihole
   - patch: |-
       - op: replace
-        path: /spec/template/spec/containers/0/name
-        value: pihole-microshift-vlan3
-      - op: replace
-        path: /spec/template/spec/containers/1/name
-        value: pihole-exporter-microshift-vlan3
-      - op: replace
-        path: /spec/template/spec/containers/1/env/0/value
-        value: pihole-microshift-vlan3
-    target:
-      kind: StatefulSet
-      name: pihole-vlan3
-  - patch: |-
-      - op: replace
         path: /metadata/name
         value: pihole-microshift
     target:
       kind: Service
       name: pihole-okd
-  - patch: |-
-      - op: replace
-        path: /metadata/name
-        value: pihole-microshift-vlan3
-    target:
-      kind: Service
-      name: pihole-okd-vlan3
   - patch: |-
       - op: replace
         path: /spec/storageClassName
