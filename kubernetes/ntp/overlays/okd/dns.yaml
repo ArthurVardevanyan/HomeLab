@@ -3,6 +3,24 @@
 apiVersion: externaldns.k8s.io/v1alpha1
 kind: DNSEndpoint
 metadata:
+  name: ntp-time
+  namespace: ntp
+  annotations:
+    externaldns.k8s.io: unifi
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+spec:
+  endpoints:
+    - dnsName: time.arthurvardevanyan.com
+      recordTTL: 60
+      recordType: A
+      targets:
+        - 10.101.1.2
+        - 10.101.1.3
+---
+# A ReCord is Configured Manually for Multiple A Records
+apiVersion: externaldns.k8s.io/v1alpha1
+kind: DNSEndpoint
+metadata:
   name: ntp
   namespace: ntp
   annotations:
