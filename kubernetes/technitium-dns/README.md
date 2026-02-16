@@ -21,6 +21,14 @@ Technitium DNS Server is an open source authoritative as well as recursive DNS s
 - External DNS support is not yet added; DNS records are managed manually.
 - Local DNS records are being pulled from the UniFi UDM SE.
 
+## TODO
+
+- External DNS Support
+- Technitium Prometheus Exporter
+  - <https://github.com/Work-m8/technitium-prometheus-exporter>
+  - <https://github.com/guycalledseven/technitium-dns-prometheus-exporter>
+  - <https://github.com/brioche-works/technitium-dns-prometheus-exporter>
+
 ## Links
 
 - [Technitium DNS Server](https://technitium.com/dns/)
