@@ -1,0 +1,30 @@
+---
+apiVersion: autoscaling.k8s.io/v1
+kind: VerticalPodAutoscaler
+metadata:
+  name: technitium-dns
+  namespace: technitium-dns
+  annotations:
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+  labels:
+    app: technitium-dns
+spec:
+  targetRef:
+    apiVersion: apps/v1
+    kind: StatefulSet
+    name: technitium-dns
+  updatePolicy:
+    updateMode: "InPlaceOrRecreate"
+  resourcePolicy:
+    containerPolicies:
+      - containerName: technitium-dns
+        minAllowed:
+          cpu: 5m
+          memory: 32Mi
+        maxAllowed:
+          cpu: 500m
+          memory: 1Gi
+        controlledResources:
+          - cpu
+          - memory
+        controlledValues: RequestsAndLimits

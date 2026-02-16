@@ -1,0 +1,26 @@
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: technitium-dns-service
+  namespace: technitium-dns
+  labels:
+    app.kubernetes.io/instance: technitium-dns
+spec:
+  selector:
+    app: technitium-dns
+  type: ClusterIP
+  clusterIP: None
+  ports:
+    - protocol: TCP
+      port: 5380
+      targetPort: 5380
+      name: http-console
+    - protocol: TCP
+      port: 53
+      targetPort: 53
+      name: dns-tcp
+    - protocol: UDP
+      port: 53
+      targetPort: 53
+      name: dns-udp

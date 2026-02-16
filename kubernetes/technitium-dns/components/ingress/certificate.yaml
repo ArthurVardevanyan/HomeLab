@@ -2,15 +2,10 @@
 apiVersion: cert-manager.io/v1
 kind: Certificate
 metadata:
-  name: pihole-cert
-  namespace: pihole
-  annotations:
-    argocd.argoproj.io/sync-wave: "1"
-    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
-  labels:
-    app.kubernetes.io/instance: pihole
+  name: technitium-dns-cert
+  namespace: technitium-dns
 spec:
-  secretName: pihole-cert
+  secretName: technitium-dns-cert
   duration: 2160h # 90d
   renewBefore: 1080h # 45d
   privateKey:
@@ -18,8 +13,7 @@ spec:
     algorithm: ECDSA
     size: 256 # P-384 not supported by Envoy/OpenShift Ingress for re-encrypt (wrong_curve)
   dnsNames:
-    - "pihole.arthurvardevanyan.com"
-    - "pihole-vlan3.arthurvardevanyan.com"
+    - "technitium-dns.arthurvardevanyan.com"
   issuerRef:
     kind: ClusterIssuer
     name: letsencrypt

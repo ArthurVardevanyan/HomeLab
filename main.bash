@@ -170,14 +170,12 @@ stateful_workload_stop() {
   kubectl scale --replicas=0 -n vault statefulset/vault
 
   kubectl scale --replicas=0 -n pihole statefulset/pihole
-  kubectl scale --replicas=0 -n pihole statefulset/pihole-infra
   kubectl scale --replicas=0 -n pihole statefulset/pihole-vlan3
+  kubectl scale --replicas=0 -n technitium-dns statefulset/technitium-dns
 
   kubectl scale --replicas=0 -n external-dns deployment/external-dns-microshift
-  kubectl scale --replicas=0 -n external-dns deployment/external-dns-microshift-infra
   kubectl scale --replicas=0 -n external-dns deployment/external-dns-microshift-vlan3
   kubectl scale --replicas=0 -n external-dns deployment/external-dns-okd
-  kubectl scale --replicas=0 -n external-dns deployment/external-dns-okd-infra
   kubectl scale --replicas=0 -n external-dns deployment/external-dns-okd-vlan3
 
   kubectl scale --replicas=0 -n ntp deployment/ntp-rootless
@@ -287,8 +285,8 @@ stateful_workload_start_pre() {
   # kubectl patch postgresCluster netbox -n netbox --type=merge -p '{"spec":{"shutdown":false}}'
 
   kubectl scale --replicas=1 -n pihole statefulset/pihole
-  kubectl scale --replicas=1 -n pihole statefulset/pihole-infra
   kubectl scale --replicas=1 -n pihole statefulset/pihole-vlan3
+  kubectl scale --replicas=1 -n technitium-dns statefulset/technitium-dns
 
   kubectl scale --replicas=2 -n ntp deployment/ntp-rootless
 }
@@ -296,14 +294,12 @@ stateful_workload_start_pre() {
 stateful_workload_start() {
 
   kubectl scale --replicas=1 -n pihole statefulset/pihole
-  kubectl scale --replicas=1 -n pihole statefulset/pihole-infra
   kubectl scale --replicas=1 -n pihole statefulset/pihole-vlan3
+  kubectl scale --replicas=1 -n technitium-dns statefulset/technitium-dns
 
   kubectl scale --replicas=2 -n external-dns deployment/external-dns-microshift
-  kubectl scale --replicas=2 -n external-dns deployment/external-dns-microshift-infra
   kubectl scale --replicas=2 -n external-dns deployment/external-dns-microshift-vlan3
   kubectl scale --replicas=2 -n external-dns deployment/external-dns-okd
-  kubectl scale --replicas=2 -n external-dns deployment/external-dns-okd-infra
   kubectl scale --replicas=2 -n external-dns deployment/external-dns-okd-vlan3
 
   kubectl scale --replicas=2 -n cloudflare-ddns deployment/cloudflare-ddns

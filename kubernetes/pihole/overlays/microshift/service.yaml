@@ -2,34 +2,6 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: pihole-dns-udp-infra
-  namespace: pihole
-  labels:
-    app.kubernetes.io/instance: pihole
-  annotations:
-    argocd.argoproj.io/sync-wave: "2"
-    kube-vip.io/egress: "true"
-    kube-vip.io/egress-internal: "true"
-    kube-vip.io/loadbalancerIPs: "10.101.11.4"
-spec:
-  loadBalancerClass: kube-vip.io/kube-vip-class-vlan11
-  type: LoadBalancer
-  externalTrafficPolicy: Local
-  ports:
-    - name: dns
-      port: 53
-      protocol: UDP
-      targetPort: 53
-    - name: metrics
-      port: 9617
-      protocol: TCP
-      targetPort: 9617
-  selector:
-    app: pihole-infra
----
-apiVersion: v1
-kind: Service
-metadata:
   name: pihole-dns-udp
   namespace: pihole
   labels:

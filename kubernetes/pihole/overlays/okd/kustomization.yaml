@@ -11,7 +11,6 @@ resources:
   - ./egress-firewall.yaml
   - network-policy.yaml
 components:
-  - ../../components/pihole-infra
   - ../../components/pihole
   - ../../components/vlan3
   - ../../components/metrics
@@ -28,21 +27,6 @@ components:
     # - op: remove
     #   path: /spec/template/spec/containers/0/ports/1/hostPort
 patches:
-  - patch: |-
-      - op: replace
-        path: /spec/template/spec/containers/0/name
-        value: pihole-okd-infra
-      - op: replace
-        path: /spec/template/spec/containers/1/name
-        value: pihole-exporter-okd-infra
-      - op: replace
-        path: /spec/template/spec/containers/1/env/0/value
-        value: pihole-okd-infra
-      # - op: remove
-      #   path: /spec/template/spec/containers/0/ports/1/hostPort
-    target:
-      kind: StatefulSet
-      name: pihole-infra
   - patch: |-
       - op: replace
         path: /spec/template/spec/containers/0/name

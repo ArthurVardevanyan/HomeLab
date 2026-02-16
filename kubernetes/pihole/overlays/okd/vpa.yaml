@@ -43,47 +43,6 @@ spec:
 apiVersion: autoscaling.k8s.io/v1
 kind: VerticalPodAutoscaler
 metadata:
-  name: pihole-infra
-  namespace: pihole
-  annotations:
-    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
-  labels:
-    app: pihole-infra
-spec:
-  targetRef:
-    apiVersion: apps/v1
-    kind: StatefulSet
-    name: pihole-infra
-  updatePolicy:
-    updateMode: "InPlaceOrRecreate"
-  resourcePolicy:
-    containerPolicies:
-      - containerName: pihole-okd-infra
-        minAllowed:
-          cpu: 5m
-          memory: 16Mi
-        maxAllowed:
-          cpu: 500m
-          memory: 3Gi
-        controlledResources:
-          - cpu
-          - memory
-        controlledValues: RequestsOnly # "RequestsAndLimits"
-      - containerName: pihole-exporter-okd-infra
-        minAllowed:
-          cpu: 5m
-          memory: 16Mi
-        maxAllowed:
-          cpu: 50m
-          memory: 192Mi
-        controlledResources:
-          - cpu
-          - memory
-        controlledValues: RequestsOnly # "RequestsAndLimits"
----
-apiVersion: autoscaling.k8s.io/v1
-kind: VerticalPodAutoscaler
-metadata:
   name: pihole-vlan3
   namespace: pihole
   annotations:
