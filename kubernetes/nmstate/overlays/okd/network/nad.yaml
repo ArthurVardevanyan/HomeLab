@@ -2,6 +2,24 @@
 apiVersion: "k8s.cni.cncf.io/v1"
 kind: NetworkAttachmentDefinition
 metadata:
+  name: bond4-nad-vlan2
+  namespace: default
+  annotations:
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+    argocd.argoproj.io/sync-wave: "4"
+spec:
+  config: '{
+    "cniVersion": "0.3.1",
+    "name": "br4.2",
+    "type": "ovn-k8s-cni-overlay",
+    "mtu": 9000,
+    "topology":"localnet",
+    "netAttachDefName": "default/bond4-nad-vlan2"
+    }'
+---
+apiVersion: "k8s.cni.cncf.io/v1"
+kind: NetworkAttachmentDefinition
+metadata:
   name: bond4-nad-vlan3
   namespace: default
   annotations:
