@@ -14,9 +14,20 @@ spec:
   tls:
     - hosts:
         - technitium.arthurvardevanyan.com
+        - technitium.dns.arthurvardevanyan.com
       secretName: technitium-dns-cert
   rules:
     - host: technitium.arthurvardevanyan.com
+      http:
+        paths:
+          - path: ""
+            pathType: ImplementationSpecific
+            backend:
+              service:
+                name: technitium-dns-service
+                port:
+                  name: http-console
+    - host: technitium.dns.arthurvardevanyan.com
       http:
         paths:
           - path: ""

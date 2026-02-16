@@ -1,0 +1,77 @@
+[2026-02-16 04:46:34 UTC] Logging started.
+[2026-02-16 04:46:34 UTC] [10.42.0.11:48662] [admin] All log files were deleted.
+[2026-02-16 04:47:32 UTC] [10.42.0.11:33290] [admin] User logged in.
+[2026-02-16 04:47:32 UTC] [10.42.0.11:33290] [admin] Secondary node 'technitium-okd.dns.arthurvardevanyan.com (10.101.1.5)' joined the Cluster (dns.arthurvardevanyan.com) successfully.
+[2026-02-16 04:47:32 UTC] The Cluster Catalog member zones NS and SOA records were successfully updated to reflect the Cluster changes.
+[2026-02-16 04:47:37 UTC] [10.42.0.11:33290] [admin] Server configuration was transferred successfully.
+[2026-02-16 04:47:37 UTC] DNS Server auth config file was saved: /etc/dns/auth.config
+[2026-02-16 04:47:37 UTC] DNS Server Cluster config file was saved: /etc/dns/cluster.config
+[2026-02-16 04:47:37 UTC] Saved zone file for domain: dns.arthurvardevanyan.com
+[2026-02-16 04:47:37 UTC] Saved zone file for domain: cluster-catalog.dns.arthurvardevanyan.com
+[2026-02-16 04:47:45 UTC] [10.42.0.11:33290] Check for update was done {updateAvailable: False; updateVersion: 14.3; updateTitle: New Update (14.3) Available!; updateMessage: Follow the instructions from the link below to update the DNS server to the latest version. Read the change logs before installing this update to know if there are any breaking changes.; instructionsLink: https://blog.technitium.com/2017/11/running-dns-server-on-ubuntu-linux.html; changeLogLink: https://github.com/TechnitiumSoftware/DnsServer/blob/master/CHANGELOG.md;}
+[2026-02-16 04:47:55 UTC] System.TimeoutException: The operation has timed out.
+   at TechnitiumLibrary.TaskExtensions.TimeoutAsync[T](Func`2 func, Int32 timeout, CancellationToken cancellationToken) in Z:\Technitium\Projects\TechnitiumLibrary\TechnitiumLibrary\TaskExtensions.cs:line 60
+   at TechnitiumLibrary.TaskExtensions.TimeoutAsync[T](Func`2 func, Int32 timeout, CancellationToken cancellationToken) in Z:\Technitium\Projects\TechnitiumLibrary\TechnitiumLibrary\TaskExtensions.cs:line 65
+   at DnsServerCore.DnsWebService.WebServiceDashboardApi.GetStats(HttpContext context) in Z:\Technitium\Projects\DnsServer\DnsServerCore\WebServiceDashboardApi.cs:line 294
+[2026-02-16 04:47:57 UTC] [10.42.0.11:44590] [admin] Primary node 'technitium.dns.arthurvardevanyan.com (10.101.1.4)' IP address was updated successfully.
+[2026-02-16 04:48:02 UTC] [10.42.0.11:44560] Check for update was done {updateAvailable: False; updateVersion: 14.3; updateTitle: New Update (14.3) Available!; updateMessage: Follow the instructions from the link below to update the DNS server to the latest version. Read the change logs before installing this update to know if there are any breaking changes.; instructionsLink: https://blog.technitium.com/2017/11/running-dns-server-on-ubuntu-linux.html; changeLogLink: https://github.com/TechnitiumSoftware/DnsServer/blob/master/CHANGELOG.md;}
+[2026-02-16 04:48:02 UTC] Saved zone file for domain: dns.arthurvardevanyan.com
+[2026-02-16 04:48:02 UTC] Saved zone file for domain: cluster-catalog.dns.arthurvardevanyan.com
+[2026-02-16 04:48:02 UTC] DNS Server Cluster config file was saved: /etc/dns/cluster.config
+[2026-02-16 04:48:05 UTC] [10.42.0.11:55960] [admin] User logged out.
+[2026-02-16 04:48:05 UTC] [10.101.1.5:39048] [TCP] DNS Server received zone transfer request for zone: cluster-catalog.dns.arthurvardevanyan.com
+[2026-02-16 04:48:05 UTC] [10.101.1.5:39048] [TCP] DNS Server received zone transfer request for zone: dns.arthurvardevanyan.com
+[2026-02-16 04:48:07 UTC] DNS Server failed to notify Secondary node 'technitium-okd.dns.arthurvardevanyan.com (10.101.1.5)' for server configuration changes.
+System.Threading.Tasks.TaskCanceledException: The request was canceled due to the configured HttpClient.Timeout of 30 seconds elapsing.
+ ---> System.TimeoutException: A task was canceled.
+ ---> System.Threading.Tasks.TaskCanceledException: A task was canceled.
+   at System.Threading.Tasks.TaskCompletionSourceWithCancellation`1.WaitWithCancellationAsync(CancellationToken cancellationToken)
+   at System.Net.Http.HttpConnectionPool.SendWithVersionDetectionAndRetryAsync(HttpRequestMessage request, Boolean async, Boolean doRequestAuth, CancellationToken cancellationToken)
+   at System.Net.Http.RedirectHandler.SendAsync(HttpRequestMessage request, Boolean async, CancellationToken cancellationToken)
+   at System.Net.Http.DecompressionHandler.SendAsync(HttpRequestMessage request, Boolean async, CancellationToken cancellationToken)
+   at TechnitiumLibrary.Net.Http.Client.HttpClientNetworkHandler.SendAsync(HttpRequestMessage request, CancellationToken cancellationToken) in Z:\Technitium\Projects\TechnitiumLibrary\TechnitiumLibrary.Net\Http\Client\HttpClientNetworkHandler.cs:line 501
+   at System.Net.Http.HttpClient.GetStreamAsyncCore(HttpRequestMessage request, CancellationToken cancellationToken)
+   --- End of inner exception stack trace ---
+   --- End of inner exception stack trace ---
+   at System.Net.Http.HttpClient.HandleFailure(Exception e, Boolean telemetryStarted, HttpResponseMessage response, CancellationTokenSource cts, CancellationToken cancellationToken, CancellationTokenSource pendingRequestsCts)
+   at System.Net.Http.HttpClient.GetStreamAsyncCore(HttpRequestMessage request, CancellationToken cancellationToken)
+   at DnsServerCore.HttpApi.HttpApiClient.NotifySecondaryNodeAsync(Int32 primaryNodeId, Uri primaryNodeUrl, IReadOnlyCollection`1 primaryNodeIpAddresses, CancellationToken cancellationToken) in Z:\Technitium\Projects\DnsServer\DnsServerCore.HttpApi\HttpApiClient.cs:line 474
+   at DnsServerCore.Cluster.ClusterNode.NotifySecondaryNodeAsync(ClusterNode primaryNode, CancellationToken cancellationToken) in Z:\Technitium\Projects\DnsServer\DnsServerCore\Cluster\ClusterNode.cs:line 527
+[2026-02-16 04:48:10 UTC] DNS Server auth config file was saved: /etc/dns/auth.config
+[2026-02-16 04:48:10 UTC] [10.101.1.5:45272] [admin] Server configuration was transferred successfully.
+[2026-02-16 04:48:12 UTC] System.TimeoutException: The operation has timed out.
+   at TechnitiumLibrary.TaskExtensions.TimeoutAsync[T](Func`2 func, Int32 timeout, CancellationToken cancellationToken) in Z:\Technitium\Projects\TechnitiumLibrary\TechnitiumLibrary\TaskExtensions.cs:line 60
+   at TechnitiumLibrary.TaskExtensions.TimeoutAsync[T](Func`2 func, Int32 timeout, CancellationToken cancellationToken) in Z:\Technitium\Projects\TechnitiumLibrary\TechnitiumLibrary\TaskExtensions.cs:line 65
+   at DnsServerCore.DnsWebService.WebServiceDashboardApi.GetStats(HttpContext context) in Z:\Technitium\Projects\DnsServer\DnsServerCore\WebServiceDashboardApi.cs:line 294
+[2026-02-16 04:48:27 UTC] DNS Server failed to notify name server '10.101.1.5' for zone: dns.arthurvardevanyan.com
+TechnitiumLibrary.Net.Dns.DnsClientNoResponseException: DnsClient failed to resolve the request 'dns.arthurvardevanyan.com. SOA IN': request timed out for name server [10.101.1.5].
+ ---> System.Net.Sockets.SocketException (110): Connection timed out
+   at TechnitiumLibrary.Net.SocketExtensions.UdpQueryAsync(Socket socket, ArraySegment`1 request, ArraySegment`1 response, IPEndPoint remoteEP, Int32 timeout, Int32 retries, Boolean expBackoffTimeout, Func`2 isResponseValid, CancellationToken cancellationToken) in Z:\Technitium\Projects\TechnitiumLibrary\TechnitiumLibrary.Net\SocketExtensions.cs:line 141
+   at TechnitiumLibrary.Net.Dns.ClientConnection.UdpClientConnection.QueryAsync(DnsDatagram request, Int32 timeout, Int32 retries, CancellationToken cancellationToken) in Z:\Technitium\Projects\TechnitiumLibrary\TechnitiumLibrary.Net\Dns\ClientConnection\UdpClientConnection.cs:line 330
+   --- End of inner exception stack trace ---
+   at TechnitiumLibrary.Net.Dns.ClientConnection.UdpClientConnection.QueryAsync(DnsDatagram request, Int32 timeout, Int32 retries, CancellationToken cancellationToken) in Z:\Technitium\Projects\TechnitiumLibrary\TechnitiumLibrary.Net\Dns\ClientConnection\UdpClientConnection.cs:line 339
+   at TechnitiumLibrary.Net.Dns.DnsClient.<>c__DisplayClass90_0.<<InternalResolveAsync>g__DoResolveAsync|1>d.MoveNext() in Z:\Technitium\Projects\TechnitiumLibrary\TechnitiumLibrary.Net\Dns\DnsClient.cs:line 4546
+--- End of stack trace from previous location ---
+   at TechnitiumLibrary.Net.Dns.DnsClient.<>c__DisplayClass90_0.<<InternalResolveAsync>g__DoResolveAsync|1>d.MoveNext() in Z:\Technitium\Projects\TechnitiumLibrary\TechnitiumLibrary.Net\Dns\DnsClient.cs:line 4772
+--- End of stack trace from previous location ---
+   at TechnitiumLibrary.Net.Dns.DnsClient.<>c__DisplayClass90_0.<<InternalResolveAsync>g__DoResolveAsync|1>d.MoveNext() in Z:\Technitium\Projects\TechnitiumLibrary\TechnitiumLibrary.Net\Dns\DnsClient.cs:line 4462
+--- End of stack trace from previous location ---
+   at TechnitiumLibrary.Net.Dns.DnsClient.InternalResolveAsync(DnsDatagram request, Func`3 getValidatedResponseAsync, Boolean doNotReorderNameServers, CancellationToken cancellationToken) in Z:\Technitium\Projects\TechnitiumLibrary\TechnitiumLibrary.Net\Dns\DnsClient.cs:line 4934
+   at DnsServerCore.Dns.Zones.ApexZone.NotifyNameServerAsync(String nameServerHost, IReadOnlyList`1 nameServers) in Z:\Technitium\Projects\DnsServer\DnsServerCore\Dns\Zones\ApexZone.cs:line 417
+[2026-02-16 04:48:27 UTC] DNS Server failed to notify name server '10.101.1.5' for zone: cluster-catalog.dns.arthurvardevanyan.com
+TechnitiumLibrary.Net.Dns.DnsClientNoResponseException: DnsClient failed to resolve the request 'cluster-catalog.dns.arthurvardevanyan.com. SOA IN': request timed out for name server [10.101.1.5].
+ ---> System.Net.Sockets.SocketException (110): Connection timed out
+   at TechnitiumLibrary.Net.SocketExtensions.UdpQueryAsync(Socket socket, ArraySegment`1 request, ArraySegment`1 response, IPEndPoint remoteEP, Int32 timeout, Int32 retries, Boolean expBackoffTimeout, Func`2 isResponseValid, CancellationToken cancellationToken) in Z:\Technitium\Projects\TechnitiumLibrary\TechnitiumLibrary.Net\SocketExtensions.cs:line 141
+   at TechnitiumLibrary.Net.Dns.ClientConnection.UdpClientConnection.QueryAsync(DnsDatagram request, Int32 timeout, Int32 retries, CancellationToken cancellationToken) in Z:\Technitium\Projects\TechnitiumLibrary\TechnitiumLibrary.Net\Dns\ClientConnection\UdpClientConnection.cs:line 330
+   --- End of inner exception stack trace ---
+   at TechnitiumLibrary.Net.Dns.ClientConnection.UdpClientConnection.QueryAsync(DnsDatagram request, Int32 timeout, Int32 retries, CancellationToken cancellationToken) in Z:\Technitium\Projects\TechnitiumLibrary\TechnitiumLibrary.Net\Dns\ClientConnection\UdpClientConnection.cs:line 339
+   at TechnitiumLibrary.Net.Dns.DnsClient.<>c__DisplayClass90_0.<<InternalResolveAsync>g__DoResolveAsync|1>d.MoveNext() in Z:\Technitium\Projects\TechnitiumLibrary\TechnitiumLibrary.Net\Dns\DnsClient.cs:line 4546
+--- End of stack trace from previous location ---
+   at TechnitiumLibrary.Net.Dns.DnsClient.<>c__DisplayClass90_0.<<InternalResolveAsync>g__DoResolveAsync|1>d.MoveNext() in Z:\Technitium\Projects\TechnitiumLibrary\TechnitiumLibrary.Net\Dns\DnsClient.cs:line 4772
+--- End of stack trace from previous location ---
+   at TechnitiumLibrary.Net.Dns.DnsClient.<>c__DisplayClass90_0.<<InternalResolveAsync>g__DoResolveAsync|1>d.MoveNext() in Z:\Technitium\Projects\TechnitiumLibrary\TechnitiumLibrary.Net\Dns\DnsClient.cs:line 4462
+--- End of stack trace from previous location ---
+   at TechnitiumLibrary.Net.Dns.DnsClient.InternalResolveAsync(DnsDatagram request, Func`3 getValidatedResponseAsync, Boolean doNotReorderNameServers, CancellationToken cancellationToken) in Z:\Technitium\Projects\TechnitiumLibrary\TechnitiumLibrary.Net\Dns\DnsClient.cs:line 4934
+   at DnsServerCore.Dns.Zones.ApexZone.NotifyNameServerAsync(String nameServerHost, IReadOnlyList`1 nameServers) in Z:\Technitium\Projects\DnsServer\DnsServerCore\Dns\Zones\ApexZone.cs:line 417
+[2026-02-16 04:48:43 UTC] [10.42.0.11:52696] Check for update was done {updateAvailable: False; updateVersion: 14.3; updateTitle: New Update (14.3) Available!; updateMessage: Follow the instructions from the link below to update the DNS server to the latest version. Read the change logs before installing this update to know if there are any breaking changes.; instructionsLink: https://blog.technitium.com/2017/11/running-dns-server-on-ubuntu-linux.html; changeLogLink: https://github.com/TechnitiumSoftware/DnsServer/blob/master/CHANGELOG.md;}
+[2026-02-16 04:48:43 UTC] [10.42.0.11:52680] Check for update was done {updateAvailable: False; updateVersion: 14.3; updateTitle: New Update (14.3) Available!; updateMessage: Follow the instructions from the link below to update the DNS server to the latest version. Read the change logs before installing this update to know if there are any breaking changes.; instructionsLink: https://blog.technitium.com/2017/11/running-dns-server-on-ubuntu-linux.html; changeLogLink: https://github.com/TechnitiumSoftware/DnsServer/blob/master/CHANGELOG.md;}
