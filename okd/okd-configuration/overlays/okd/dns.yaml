@@ -9,16 +9,16 @@ metadata:
     argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
 spec:
   endpoints:
+    - dnsName: "*.apps.okd.homelab.arthurvardevanyan.com"
+      recordTTL: 60
+      recordType: A
+      targets:
+        - 10.101.10.5
     - dnsName: router-default.apps.okd.homelab.arthurvardevanyan.com
       recordTTL: 60
       recordType: A
       targets:
         - 10.101.10.5
-    - dnsName: router-apps.app.okd.homelab.arthurvardevanyan.com
-      recordTTL: 60
-      recordType: A
-      targets:
-        - 10.101.10.7
 ---
 apiVersion: externaldns.k8s.io/v1alpha1
 kind: DNSEndpoint

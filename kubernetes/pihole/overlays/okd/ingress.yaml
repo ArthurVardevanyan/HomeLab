@@ -27,23 +27,3 @@ spec:
         - path:
             type: PathPrefix
             value: /
----
-apiVersion: monitoring.coreos.com/v1
-kind: Probe
-metadata:
-  name: pihole
-  namespace: pihole
-  labels:
-    app.kubernetes.io/instance: pihole
-spec:
-  jobName: urls-static
-  interval: 30s
-  module: http_2xx
-  prober:
-    path: /probe
-    url: blackbox-exporter.blackbox-exporter.svc.cluster.local:9115
-  targets:
-    staticConfig:
-      static:
-        - https://pihole.okd.homelab.arthurvardevanyan.com/admin
-        - https://pihole.arthurvardevanyan.com/admin

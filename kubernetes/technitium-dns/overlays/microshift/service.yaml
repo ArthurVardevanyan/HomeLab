@@ -30,6 +30,34 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
+  name: technitium-dns-udp-vlan1
+  namespace: technitium-dns
+  labels:
+    app.kubernetes.io/instance: technitium-dns
+  annotations:
+    argocd.argoproj.io/sync-wave: "2"
+    kube-vip.io/egress: "true"
+    kube-vip.io/egress-internal: "true"
+    kube-vip.io/loadbalancerIPs: "10.101.1.4"
+spec:
+  loadBalancerClass: kube-vip.io/kube-vip-class
+  type: LoadBalancer
+  externalTrafficPolicy: Local
+  ports:
+    - name: dns-udp
+      port: 53
+      protocol: UDP
+      targetPort: 53
+    - name: dns-tcp
+      port: 53
+      protocol: TCP
+      targetPort: 53
+  selector:
+    app: technitium-dns
+---
+apiVersion: v1
+kind: Service
+metadata:
   name: technitium-dns-udp-vlan3
   namespace: technitium-dns
   labels:
