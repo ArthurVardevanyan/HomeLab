@@ -1,0 +1,30 @@
+---
+apiVersion: autoscaling.k8s.io/v1
+kind: VerticalPodAutoscaler
+metadata:
+  name: cnpg-controller-manager
+  namespace: cnpg-system
+  annotations:
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+  labels:
+    app.kubernetes.io/instance: cloudnative-pg
+spec:
+  targetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: cnpg-controller-manager
+  updatePolicy:
+    updateMode: "InPlaceOrRecreate"
+  resourcePolicy:
+    containerPolicies:
+      - containerName: manager
+        minAllowed:
+          cpu: 5m
+          memory: 128Mi
+        maxAllowed:
+          cpu: 150m
+          memory: 512Mi
+        controlledResources:
+          - cpu
+          - memory
+        controlledValues: RequestsAndLimits #  RequestsOnly
