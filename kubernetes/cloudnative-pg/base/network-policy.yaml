@@ -100,7 +100,7 @@ spec:
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
-  name: allow-webhook-ingress
+  name: allow-api-server-ingress
   namespace: cnpg-system
   annotations:
     argocd.argoproj.io/sync-wave: "0"
@@ -114,9 +114,21 @@ spec:
       app.kubernetes.io/name: cloudnative-pg
   ingress:
     - from:
-        - namespaceSelector:
+        - podSelector:
+            matchLabels:
+              app: openshift-kube-apiserver
+          namespaceSelector:
             matchLabels:
               kubernetes.io/metadata.name: openshift-kube-apiserver
+        - namespaceSelector:
+            matchLabels:
+              policy-group.network.openshift.io/host-network: ""
+        - podSelector:
+            matchLabels:
+              app: kube-apiserver-operator
+          namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: openshift-kube-apiserver-operator
       ports:
         - protocol: TCP
           port: 9443

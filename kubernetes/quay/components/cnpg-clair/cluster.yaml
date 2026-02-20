@@ -1,0 +1,73 @@
+---
+apiVersion: postgresql.cnpg.io/v1
+kind: Cluster
+metadata:
+  name: clair
+  namespace: quay
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+  labels:
+    app.kubernetes.io/instance: quay
+spec:
+  enablePDB: true
+  instances: 2
+  imagePullPolicy: IfNotPresent
+  logLevel: info
+  primaryUpdateMethod: restart
+  primaryUpdateStrategy: unsupervised
+  startDelay: 3600
+  stopDelay: 1800
+  smartShutdownTimeout: 180
+  switchoverDelay: 3600
+  failoverDelay: 0
+  minSyncReplicas: 0
+  maxSyncReplicas: 0
+  postgresUID: 26
+  postgresGID: 26
+  postgresql:
+    parameters:
+      shared_buffers: "256MB"
+      pg_stat_statements.max: "10000"
+      pg_stat_statements.track: all
+    pg_hba:
+      - "host all all 0.0.0.0/0 trust"
+  bootstrap:
+    initdb:
+      database: clair
+      owner: clair
+      postInitSQL:
+        - GRANT CREATE ON SCHEMA public TO clair;
+  enableSuperuserAccess: true
+  monitoring:
+    enablePodMonitor: false
+  storage:
+    storageClass: rook-ceph-block-ci
+    size: 50Gi
+  walStorage:
+    storageClass: rook-ceph-block-ci
+    size: 10Gi
+  resources: # TODO Update Post Metrics
+    requests:
+      cpu: 200m
+      memory: 2Gi
+    limits:
+      cpu: 1000m
+      memory: 4Gi
+  affinity:
+    enablePodAntiAffinity: true
+    podAntiAffinityType: required
+    topologyKey: kubernetes.io/hostname
+    additionalPodAntiAffinity:
+      preferredDuringSchedulingIgnoredDuringExecution:
+        - weight: 100
+          podAffinityTerm:
+            labelSelector:
+              matchLabels:
+                cnpg.io/cluster: clair
+            topologyKey: topology.kubernetes.io/zone
+  seccompProfile:
+    type: RuntimeDefault
+  replicationSlots:
+    highAvailability:
+      enabled: true
