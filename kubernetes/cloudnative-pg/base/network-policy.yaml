@@ -1,0 +1,160 @@
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: deny-all
+  namespace: cnpg-system
+  annotations:
+    argocd.argoproj.io/sync-wave: "0"
+  labels:
+    app.kubernetes.io/instance: cloudnative-pg
+spec:
+  policyTypes:
+    - Ingress
+    - Egress
+  podSelector: {}
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-dns-traffic
+  namespace: cnpg-system
+  annotations:
+    argocd.argoproj.io/sync-wave: "0"
+  labels:
+    app.kubernetes.io/instance: cloudnative-pg
+spec:
+  policyTypes:
+    - Egress
+  podSelector: {}
+  egress:
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: openshift-dns
+          podSelector:
+            matchLabels:
+              dns.operator.openshift.io/daemonset-dns: default
+      ports:
+        - port: 5353
+          protocol: UDP
+        - port: 5353
+          protocol: TCP
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-api-server
+  namespace: cnpg-system
+  annotations:
+    argocd.argoproj.io/sync-wave: "0"
+  labels:
+    app.kubernetes.io/instance: cloudnative-pg
+spec:
+  podSelector: {}
+  policyTypes:
+    - Egress
+  egress:
+    - to:
+        - podSelector:
+            matchLabels:
+              app: openshift-kube-apiserver
+          namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: openshift-kube-apiserver
+      ports:
+        - protocol: TCP
+          port: 6443
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-openshift-monitoring
+  namespace: cnpg-system
+  annotations:
+    argocd.argoproj.io/sync-wave: "0"
+  labels:
+    app.kubernetes.io/instance: cloudnative-pg
+spec:
+  policyTypes:
+    - Ingress
+  podSelector: {}
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              name: openshift-monitoring
+          podSelector:
+            matchLabels:
+              app.kubernetes.io/name: prometheus
+        - namespaceSelector:
+            matchLabels:
+              name: openshift-user-workload-monitoring
+          podSelector:
+            matchLabels:
+              app.kubernetes.io/name: prometheus
+      ports:
+        - protocol: TCP
+          port: 8080
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-api-server-ingress
+  namespace: cnpg-system
+  annotations:
+    argocd.argoproj.io/sync-wave: "0"
+  labels:
+    app.kubernetes.io/instance: cloudnative-pg
+spec:
+  policyTypes:
+    - Ingress
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: cloudnative-pg
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              app: openshift-kube-apiserver
+          namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: openshift-kube-apiserver
+        - namespaceSelector:
+            matchLabels:
+              policy-group.network.openshift.io/host-network: ""
+        - podSelector:
+            matchLabels:
+              app: kube-apiserver-operator
+          namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: openshift-kube-apiserver-operator
+      ports:
+        - protocol: TCP
+          port: 9443
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-managed-namespaces-egress
+  namespace: cnpg-system
+  annotations:
+    argocd.argoproj.io/sync-wave: "0"
+  labels:
+    app.kubernetes.io/instance: cloudnative-pg
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: cloudnative-pg
+  policyTypes:
+    - Egress
+  egress:
+    - to:
+        - namespaceSelector: {}
+      ports:
+        - protocol: TCP
+          port: 5432
+        - protocol: TCP
+          port: 8000
+        - protocol: TCP
+          port: 9187

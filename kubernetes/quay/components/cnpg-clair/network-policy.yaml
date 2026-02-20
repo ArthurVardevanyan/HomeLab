@@ -2,7 +2,7 @@
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
-  name: clair-app
+  name: cnpg-clair-app
   namespace: quay
   annotations:
     argocd.argoproj.io/sync-wave: "1"
@@ -11,7 +11,7 @@ metadata:
 spec:
   podSelector:
     matchLabels:
-      postgres-operator.crunchydata.com/cluster: clair
+      cnpg.io/cluster: clair
   policyTypes:
     - Ingress
   ingress:
@@ -29,7 +29,7 @@ spec:
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
-  name: clair-postgres
+  name: cnpg-clair-cluster
   namespace: quay
   annotations:
     argocd.argoproj.io/sync-wave: "1"
@@ -38,7 +38,7 @@ metadata:
 spec:
   podSelector:
     matchLabels:
-      postgres-operator.crunchydata.com/cluster: clair
+      cnpg.io/cluster: clair
   policyTypes:
     - Ingress
     - Egress
@@ -49,7 +49,7 @@ spec:
               kubernetes.io/metadata.name: quay
           podSelector:
             matchLabels:
-              postgres-operator.crunchydata.com/cluster: clair
+              cnpg.io/cluster: clair
   egress:
     - to:
         - namespaceSelector:
@@ -57,43 +57,12 @@ spec:
               kubernetes.io/metadata.name: quay
           podSelector:
             matchLabels:
-              postgres-operator.crunchydata.com/cluster: clair
+              cnpg.io/cluster: clair
 ---
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
-  name: clair-allow-truenas-egress
-  namespace: quay
-  annotations:
-    argocd.argoproj.io/sync-wave: "0"
-  labels:
-    app.kubernetes.io/instance: quay
-spec:
-  policyTypes:
-    - Egress
-  podSelector:
-    matchLabels:
-      postgres-operator.crunchydata.com/cluster: clair
-  egress:
-    - to:
-        - ipBlock:
-            cidr: 10.101.1.6/32
-    - to:
-        - ipBlock:
-            cidr: 10.101.1.7/32
-    - to:
-        - ipBlock:
-            cidr: 10.101.10.7/32
-      ports:
-        - protocol: TCP
-          port: 9000
-        - protocol: TCP
-          port: 443
----
-apiVersion: networking.k8s.io/v1
-kind: NetworkPolicy
-metadata:
-  name: clair-pgdump-ingress
+  name: cnpg-clair-webhook
   namespace: quay
   annotations:
     argocd.argoproj.io/sync-wave: "1"
@@ -102,7 +71,117 @@ metadata:
 spec:
   podSelector:
     matchLabels:
-      postgres-operator.crunchydata.com/cluster: clair
+      cnpg.io/cluster: clair
+  policyTypes:
+    - Egress
+  egress:
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: cnpg-system
+          podSelector:
+            matchLabels:
+              app.kubernetes.io/name: cloudnative-pg
+      ports:
+        - protocol: TCP
+          port: 9443
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: cnpg-clair-api-server
+  namespace: quay
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+  labels:
+    app.kubernetes.io/instance: quay
+spec:
+  podSelector:
+    matchLabels:
+      cnpg.io/cluster: clair
+  policyTypes:
+    - Egress
+  egress:
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: openshift-kube-apiserver
+          podSelector:
+            matchLabels:
+              app: openshift-kube-apiserver
+      ports:
+        - protocol: TCP
+          port: 6443
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: cnpg-clair-dns
+  namespace: quay
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+  labels:
+    app.kubernetes.io/instance: quay
+spec:
+  podSelector:
+    matchLabels:
+      cnpg.io/cluster: clair
+  policyTypes:
+    - Egress
+  egress:
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: openshift-dns
+          podSelector:
+            matchLabels:
+              dns.operator.openshift.io/daemonset-dns: default
+      ports:
+        - protocol: UDP
+          port: 5353
+        - protocol: TCP
+          port: 5353
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: cnpg-clair-monitoring
+  namespace: quay
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+  labels:
+    app.kubernetes.io/instance: quay
+spec:
+  podSelector:
+    matchLabels:
+      cnpg.io/cluster: clair
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: openshift-monitoring
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: openshift-user-workload-monitoring
+      ports:
+        - protocol: TCP
+          port: 9187
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: cnpg-clair-pgdump-ingress
+  namespace: quay
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+  labels:
+    app.kubernetes.io/instance: quay
+spec:
+  podSelector:
+    matchLabels:
+      cnpg.io/cluster: clair
   policyTypes:
     - Ingress
   ingress:
@@ -120,7 +199,7 @@ spec:
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
-  name: clair-pgadmin-ingress
+  name: cnpg-clair-cnpg-operator
   namespace: quay
   annotations:
     argocd.argoproj.io/sync-wave: "1"
@@ -129,41 +208,17 @@ metadata:
 spec:
   podSelector:
     matchLabels:
-      postgres-operator.crunchydata.com/cluster: clair
+      cnpg.io/cluster: clair
   policyTypes:
     - Ingress
   ingress:
     - from:
         - namespaceSelector:
             matchLabels:
-              kubernetes.io/metadata.name: postgres
+              kubernetes.io/metadata.name: cnpg-system
           podSelector:
             matchLabels:
-              postgres-operator.crunchydata.com/pgadmin: pgadmin
+              app.kubernetes.io/name: cloudnative-pg
       ports:
         - protocol: TCP
-          port: 5432
----
-apiVersion: networking.k8s.io/v1
-kind: NetworkPolicy
-metadata:
-  name: allow-to-openshift-ingress-psql-clair
-  namespace: quay
-  annotations:
-    argocd.argoproj.io/sync-wave: "1"
-spec:
-  policyTypes:
-    - Egress
-  podSelector:
-    matchLabels:
-      postgres-operator.crunchydata.com/cluster: clair
-  egress:
-    - to:
-        - namespaceSelector:
-            matchLabels:
-              network.openshift.io/policy-group: ingress
-      ports:
-        - protocol: TCP
-          port: 443 # Passthrough/ReEncrypt Termination
-        - protocol: TCP
-          port: 80 # Edge Termination
+          port: 8000

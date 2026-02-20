@@ -1,0 +1,406 @@
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: cnpg-manager
+  namespace: cnpg-system
+  labels:
+    app.kubernetes.io/instance: cloudnative-pg
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/name: cloudnative-pg-kubebuilderv4
+    app.kubernetes.io/instance: cloudnative-pg
+  name: cnpg-database-editor-role
+rules:
+  - apiGroups:
+      - postgresql.cnpg.io
+    resources:
+      - databases
+    verbs:
+      - create
+      - delete
+      - get
+      - list
+      - patch
+      - update
+      - watch
+  - apiGroups:
+      - postgresql.cnpg.io
+    resources:
+      - databases/status
+    verbs:
+      - get
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/name: cloudnative-pg-kubebuilderv4
+    app.kubernetes.io/instance: cloudnative-pg
+  name: cnpg-database-viewer-role
+rules:
+  - apiGroups:
+      - postgresql.cnpg.io
+    resources:
+      - databases
+    verbs:
+      - get
+      - list
+      - watch
+  - apiGroups:
+      - postgresql.cnpg.io
+    resources:
+      - databases/status
+    verbs:
+      - get
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: cnpg-manager
+  labels:
+    app.kubernetes.io/instance: cloudnative-pg
+rules:
+  - apiGroups:
+      - ""
+    resources:
+      - configmaps
+      - secrets
+      - services
+    verbs:
+      - create
+      - delete
+      - get
+      - list
+      - patch
+      - update
+      - watch
+  - apiGroups:
+      - ""
+    resources:
+      - configmaps/status
+      - secrets/status
+    verbs:
+      - get
+      - patch
+      - update
+  - apiGroups:
+      - ""
+    resources:
+      - events
+    verbs:
+      - create
+      - patch
+  - apiGroups:
+      - ""
+    resources:
+      - nodes
+    verbs:
+      - get
+      - list
+      - watch
+  - apiGroups:
+      - ""
+    resources:
+      - persistentvolumeclaims
+      - pods
+      - pods/exec
+    verbs:
+      - create
+      - delete
+      - get
+      - list
+      - patch
+      - watch
+  - apiGroups:
+      - ""
+    resources:
+      - pods/status
+    verbs:
+      - get
+  - apiGroups:
+      - ""
+    resources:
+      - serviceaccounts
+    verbs:
+      - create
+      - get
+      - list
+      - patch
+      - update
+      - watch
+  - apiGroups:
+      - admissionregistration.k8s.io
+    resources:
+      - mutatingwebhookconfigurations
+      - validatingwebhookconfigurations
+    verbs:
+      - get
+      - patch
+  - apiGroups:
+      - apps
+    resources:
+      - deployments
+    verbs:
+      - create
+      - delete
+      - get
+      - list
+      - patch
+      - update
+      - watch
+  - apiGroups:
+      - batch
+    resources:
+      - jobs
+    verbs:
+      - create
+      - delete
+      - get
+      - list
+      - patch
+      - watch
+  - apiGroups:
+      - coordination.k8s.io
+    resources:
+      - leases
+    verbs:
+      - create
+      - get
+      - update
+  - apiGroups:
+      - monitoring.coreos.com
+    resources:
+      - podmonitors
+    verbs:
+      - create
+      - delete
+      - get
+      - list
+      - patch
+      - watch
+  - apiGroups:
+      - policy
+    resources:
+      - poddisruptionbudgets
+    verbs:
+      - create
+      - delete
+      - get
+      - list
+      - patch
+      - update
+      - watch
+  - apiGroups:
+      - postgresql.cnpg.io
+    resources:
+      - backups
+      - clusters
+      - databases
+      - poolers
+      - publications
+      - scheduledbackups
+      - subscriptions
+    verbs:
+      - create
+      - delete
+      - get
+      - list
+      - patch
+      - update
+      - watch
+  - apiGroups:
+      - postgresql.cnpg.io
+    resources:
+      - backups/status
+      - databases/status
+      - publications/status
+      - scheduledbackups/status
+      - subscriptions/status
+    verbs:
+      - get
+      - patch
+      - update
+  - apiGroups:
+      - postgresql.cnpg.io
+    resources:
+      - clusterimagecatalogs
+      - imagecatalogs
+    verbs:
+      - get
+      - list
+      - watch
+  - apiGroups:
+      - postgresql.cnpg.io
+    resources:
+      - clusters/finalizers
+      - poolers/finalizers
+    verbs:
+      - update
+  - apiGroups:
+      - postgresql.cnpg.io
+    resources:
+      - clusters/status
+      - failoverquorums/status
+      - poolers/status
+    verbs:
+      - get
+      - patch
+      - update
+      - watch
+  - apiGroups:
+      - postgresql.cnpg.io
+    resources:
+      - failoverquorums
+    verbs:
+      - create
+      - delete
+      - get
+      - list
+      - watch
+  - apiGroups:
+      - rbac.authorization.k8s.io
+    resources:
+      - rolebindings
+      - roles
+    verbs:
+      - create
+      - get
+      - list
+      - patch
+      - update
+      - watch
+  - apiGroups:
+      - snapshot.storage.k8s.io
+    resources:
+      - volumesnapshots
+    verbs:
+      - create
+      - get
+      - list
+      - patch
+      - watch
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/name: cloudnative-pg-kubebuilderv4
+    app.kubernetes.io/instance: cloudnative-pg
+  name: cnpg-publication-editor-role
+rules:
+  - apiGroups:
+      - postgresql.cnpg.io
+    resources:
+      - publications
+    verbs:
+      - create
+      - delete
+      - get
+      - list
+      - patch
+      - update
+      - watch
+  - apiGroups:
+      - postgresql.cnpg.io
+    resources:
+      - publications/status
+    verbs:
+      - get
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/name: cloudnative-pg-kubebuilderv4
+    app.kubernetes.io/instance: cloudnative-pg
+  name: cnpg-publication-viewer-role
+rules:
+  - apiGroups:
+      - postgresql.cnpg.io
+    resources:
+      - publications
+    verbs:
+      - get
+      - list
+      - watch
+  - apiGroups:
+      - postgresql.cnpg.io
+    resources:
+      - publications/status
+    verbs:
+      - get
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/name: cloudnative-pg-kubebuilderv4
+    app.kubernetes.io/instance: cloudnative-pg
+  name: cnpg-subscription-editor-role
+rules:
+  - apiGroups:
+      - postgresql.cnpg.io
+    resources:
+      - subscriptions
+    verbs:
+      - create
+      - delete
+      - get
+      - list
+      - patch
+      - update
+      - watch
+  - apiGroups:
+      - postgresql.cnpg.io
+    resources:
+      - subscriptions/status
+    verbs:
+      - get
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/name: cloudnative-pg-kubebuilderv4
+    app.kubernetes.io/instance: cloudnative-pg
+  name: cnpg-subscription-viewer-role
+rules:
+  - apiGroups:
+      - postgresql.cnpg.io
+    resources:
+      - subscriptions
+    verbs:
+      - get
+      - list
+      - watch
+  - apiGroups:
+      - postgresql.cnpg.io
+    resources:
+      - subscriptions/status
+    verbs:
+      - get
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: cnpg-manager-rolebinding
+  labels:
+    app.kubernetes.io/instance: cloudnative-pg
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: cnpg-manager
+subjects:
+  - kind: ServiceAccount
+    name: cnpg-manager
+    namespace: cnpg-system
