@@ -63,28 +63,60 @@ spec:
                   set -o nounset
                   set -o pipefail
 
-                  export JSON='{
+                  SA_TOKEN_PATH="/var/run/secrets/openshift/serviceaccount/token"
+                  if [[ ! -f "${SA_TOKEN_PATH}" ]]; then
+                    echo "ERROR: Service account token not found at ${SA_TOKEN_PATH}" >&2
+                    exit 1
+                  fi
+
+                  JSON='{
                     "namespace": "argocd",
                     "serviceAccountName": "argocd"
                   }'
 
-                  export TOKEN=$(curl --header "Authorization: Bearer $(cat /var/run/secrets/openshift/serviceaccount/token)"\
+                  echo "Exchanging service account token with KFCA..."
+                  RESPONSE=$(curl --silent --show-error --fail --max-time 30 --retry 3 --retry-delay 5 \
+                    --header "Authorization: Bearer $(cat "${SA_TOKEN_PATH}")" \
                     "https://kfca.microshift.arthurvardevanyan.com/exchangeToken" -X POST \
                     -H "Content-type: application/json" \
                     -H "Accept: application/json" \
-                    -d "${JSON}" | jq --raw-output '.status.token')
+                    -d "${JSON}") || {
+                      echo "ERROR: KFCA token exchange request failed" >&2
+                      exit 1
+                    }
 
-                  export CA_DATA=$(kubectl get secret -n argocd microshift -o yaml | yq '.data.caData' | base64 -d)
+                  TOKEN=$(echo "${RESPONSE}" | jq --raw-output --exit-status '.status.token') || {
+                    echo "ERROR: Failed to parse token from KFCA response" >&2
+                    echo "Response: ${RESPONSE}" >&2
+                    exit 1
+                  }
+                  if [[ -z "${TOKEN}" || "${TOKEN}" == "null" ]]; then
+                    echo "ERROR: KFCA returned empty or null token" >&2
+                    exit 1
+                  fi
+
+                  echo "Retrieving CA data from microshift secret..."
+                  CA_DATA=$(kubectl get secret -n argocd microshift -o jsonpath='{.data.caData}' | base64 -d) || {
+                    echo "ERROR: Failed to retrieve caData from secret argocd/microshift" >&2
+                    exit 1
+                  }
+                  if [[ -z "${CA_DATA}" ]]; then
+                    echo "ERROR: caData is empty in secret argocd/microshift" >&2
+                    exit 1
+                  fi
+
                   CONFIG_JSON=$(jq -n \
-                    --arg token "$TOKEN" \
-                    --arg ca "$CA_DATA" \
+                    --arg token "${TOKEN}" \
+                    --arg ca "${CA_DATA}" \
                     '{"bearerToken": $token, "tlsClientConfig": {"insecure": false, "caData": $ca}}')
 
-                  CONFIG_BASE64=$(echo -n "$CONFIG_JSON" | base64 | tr -d '\n')
+                  CONFIG_BASE64=$(echo -n "${CONFIG_JSON}" | base64 | tr -d '\n')
 
+                  echo "Patching microshift secret with rotated credentials..."
                   kubectl patch secret microshift -n argocd \
                     --type='merge' \
-                    -p="{\"data\": {\"config\": \"$CONFIG_BASE64\"}}"
+                    -p="{\"data\": {\"config\": \"${CONFIG_BASE64}\"}}"
+                  echo "Credential rotation complete."
 
               volumeMounts:
                 - name: serviceaccount-token
