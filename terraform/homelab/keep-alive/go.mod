@@ -5,7 +5,7 @@ go 1.25.6
 require (
 	cloud.google.com/go/storage v1.60.0
 	github.com/gtuk/discordwebhook v1.2.0
-	google.golang.org/api v0.266.0
+	google.golang.org/api v0.267.0
 )
 
 require (
