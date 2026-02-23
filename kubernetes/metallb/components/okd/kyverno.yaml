@@ -1,0 +1,56 @@
+---
+apiVersion: kyverno.io/v1
+kind: Policy
+metadata:
+  name: add-resource-limits
+  namespace: metallb-system
+spec:
+  rules:
+    - name: add-kube-rbac-proxy-limits-controller
+      skipBackgroundRequests: true
+      match:
+        resources:
+          kinds:
+            - Deployment
+          selector:
+            matchLabels:
+              app: metallb
+              component: controller
+      mutate:
+        patchStrategicMerge:
+          spec:
+            template:
+              spec:
+                containers:
+                  - (name): "kube-rbac-proxy"
+                    resources:
+                      limits:
+                        cpu: 10m
+                        memory: 40Mi
+                      requests:
+                        cpu: 5m
+                        memory: 20Mi
+    - name: add-kube-rbac-proxy-limits-speaker
+      skipBackgroundRequests: true
+      match:
+        resources:
+          kinds:
+            - DaemonSet
+          selector:
+            matchLabels:
+              app: metallb
+              component: speaker
+      mutate:
+        patchStrategicMerge:
+          spec:
+            template:
+              spec:
+                containers:
+                  - (name): "kube-rbac-proxy"
+                    resources:
+                      limits:
+                        cpu: 10m
+                        memory: 40Mi
+                      requests:
+                        cpu: 5m
+                        memory: 20Mi

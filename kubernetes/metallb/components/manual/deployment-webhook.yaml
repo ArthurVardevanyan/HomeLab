@@ -30,8 +30,8 @@ spec:
             - --log-level=info
           env:
             - name: METALLB_BGP_TYPE
-              value: native
-          image: quay.io/metallb/controller:v0.14.8@sha256:93b83b39d06bbcb0aedc0eb750c9e43e3c46dc08a6f88400ed96105224d784ec
+              value: frr
+          image: quay.io/metallb/controller:v0.14.9@sha256:86261567e5ff03978893bf03ea865275283ad1e3f0f20dd342ed501b651fdf78
           livenessProbe:
             failureThreshold: 3
             httpGet:
@@ -115,7 +115,7 @@ spec:
           requiredDuringSchedulingIgnoredDuringExecution:
             - labelSelector:
                 matchLabels:
-                  app: kube-vip
-                  component: kube-vip-cloud-provider
+                  app: metallb
+                  component: webhook-server
               topologyKey: "kubernetes.io/hostname"
       enableServiceLinks: false

@@ -29,17 +29,17 @@ spec:
             - name: METALLB_BGP_TYPE
               value: frr
             - name: SPEAKER_IMAGE
-              value: quay.io/metallb/speaker@sha256:fd86bfc502601d6525739d411a0045e7085a4008a732be7e271c851800952142 # v0.14.8
+              value: quay.io/metallb/speaker@sha256:b09a1dfcf330938950b65115cd58f6989108c0c21d3c096040e7fe9a25a92993 # v0.14.9
             - name: CONTROLLER_IMAGE
-              value: quay.io/metallb/controller@sha256:93b83b39d06bbcb0aedc0eb750c9e43e3c46dc08a6f88400ed96105224d784ec # v0.14.8
+              value: quay.io/metallb/controller@sha256:86261567e5ff03978893bf03ea865275283ad1e3f0f20dd342ed501b651fdf78 # v0.14.9
             - name: FRR_IMAGE
-              value: quay.io/frrouting/frr@sha256:f310c2ebb3827fa03b9674ee05e70a7d5eef2123bcc3b475eb2ef14dafcb52b4 # 9.1.0
+              value: quay.io/frrouting/frr@sha256:848482643a8d6f56452b659ea68f6138472bb57414a4f295a7c4107a0416269c # 10.5.1
             - name: KUBE_RBAC_PROXY_IMAGE
               value: quay.io/brancz/kube-rbac-proxy:v0.11.0
             - name: DEPLOY_KUBE_RBAC_PROXIES
               value: "false"
             - name: FRRK8S_IMAGE
-              value: quay.io/metallb/frr-k8s@sha256:00f8c40129fb1403760d2e846fc970dc11ca8d19068f012a26f2b683f98cb598 # v0.0.14
+              value: quay.io/metallb/frr-k8s@sha256:ee5dcdeb9520c78066e8af4a47de1c05d2b36db442034b02b1210e3d7fd17e45 # v0.0.22
             - name: FRRK8S_EXTERNAL_NAMESPACE
               value: frr-k8s-system
             - name: OPERATOR_NAMESPACE
@@ -113,7 +113,6 @@ spec:
           requiredDuringSchedulingIgnoredDuringExecution:
             - labelSelector:
                 matchLabels:
-                  app: kube-vip
-                  component: kube-vip-cloud-provider
+                  control-plane: controller-manager
               topologyKey: "kubernetes.io/hostname"
       enableServiceLinks: false

@@ -9,9 +9,7 @@ metadata:
     gateway.istio.io/managed: openshift.io-gateway-controller-v1
     gateway.networking.k8s.io/gateway-name: https-gateway-external
   annotations:
-    kube-vip.io/egress: "true"
-    kube-vip.io/egress-internal: "true"
-    kube-vip.io/loadbalancerIPs: "10.101.10.241" # 10.101.10.10
+    metallb.universe.tf/loadBalancerIPs: "10.101.10.241"
   name: https-gateway-external-openshift-default
   namespace: openshift-ingress
 spec:
@@ -32,4 +30,4 @@ spec:
   selector:
     gateway.networking.k8s.io/gateway-name: https-gateway-external
   type: LoadBalancer
-  loadBalancerClass: kube-vip.io/kube-vip-class-bgp
+  loadBalancerClass: metallb.io/metallb-class
