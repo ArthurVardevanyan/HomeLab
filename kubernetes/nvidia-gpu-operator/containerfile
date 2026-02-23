@@ -262,6 +262,7 @@ RUN curl -fsSL -o /usr/local/bin/ocp_dtk_entrypoint https://raw.githubuserconten
 	&& printf '%s\n' '# --- overrides injected by image build ---' \
 	'_update_package_cache() { echo "[override] Skipping package cache refresh" >&2; return 0; }' \
 	'_enable_rhocp_and_eus_repos() { echo "[override] Skipping RH OCP/EUS repo enable" >&2; return 0; }' \
+	'_install_prerequisites() { echo "[override] Skipping kernel header install (modules pre-compiled)" >&2; return 0; }' \
 	>> /usr/local/bin/common.sh \
 	&& chmod +x /usr/local/bin/ocp_dtk_entrypoint /usr/local/bin/nvidia-driver /usr/local/bin/common.sh
 ## Upstream script runs from /usr/local/bin and expects the runfile in CWD
