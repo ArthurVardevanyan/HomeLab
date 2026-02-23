@@ -1,0 +1,122 @@
+---
+apiVersion: autoscaling.k8s.io/v1
+kind: VerticalPodAutoscaler
+metadata:
+  name: frr-k8s
+  namespace: openshift-frr-k8s
+  annotations:
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+spec:
+  targetRef:
+    apiVersion: apps/v1
+    kind: DaemonSet
+    name: frr-k8s
+  updatePolicy:
+    updateMode: "InPlaceOrRecreate"
+  resourcePolicy:
+    containerPolicies:
+      - containerName: controller
+        minAllowed:
+          cpu: 10m
+          memory: 48Mi
+        maxAllowed:
+          cpu: 200m
+          memory: 384Mi
+        controlledResources:
+          - cpu
+          - memory
+        controlledValues: "RequestsAndLimits"
+      - containerName: frr
+        minAllowed:
+          cpu: 10m
+          memory: 48Mi
+        maxAllowed:
+          cpu: 200m
+          memory: 384Mi
+        controlledResources:
+          - cpu
+          - memory
+        controlledValues: "RequestsAndLimits"
+      - containerName: reloader
+        minAllowed:
+          cpu: 5m
+          memory: 16Mi
+        maxAllowed:
+          cpu: 50m
+          memory: 128Mi
+        controlledResources:
+          - cpu
+          - memory
+        controlledValues: "RequestsAndLimits"
+      - containerName: frr-metrics
+        minAllowed:
+          cpu: 5m
+          memory: 16Mi
+        maxAllowed:
+          cpu: 50m
+          memory: 128Mi
+        controlledResources:
+          - cpu
+          - memory
+        controlledValues: "RequestsAndLimits"
+      - containerName: frr-status
+        minAllowed:
+          cpu: 5m
+          memory: 16Mi
+        maxAllowed:
+          cpu: 50m
+          memory: 128Mi
+        controlledResources:
+          - cpu
+          - memory
+        controlledValues: "RequestsAndLimits"
+      - containerName: kube-rbac-proxy
+        minAllowed:
+          cpu: 5m
+          memory: 16Mi
+        maxAllowed:
+          cpu: 50m
+          memory: 128Mi
+        controlledResources:
+          - cpu
+          - memory
+        controlledValues: "RequestsAndLimits"
+      - containerName: kube-rbac-proxy-frr
+        minAllowed:
+          cpu: 5m
+          memory: 16Mi
+        maxAllowed:
+          cpu: 50m
+          memory: 128Mi
+        controlledResources:
+          - cpu
+          - memory
+        controlledValues: "RequestsAndLimits"
+---
+apiVersion: autoscaling.k8s.io/v1
+kind: VerticalPodAutoscaler
+metadata:
+  name: frr-k8s-statuscleaner
+  namespace: openshift-frr-k8s
+  annotations:
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+spec:
+  targetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: frr-k8s-statuscleaner
+  updatePolicy:
+    updateMode: "InPlaceOrRecreate"
+  resourcePolicy:
+    containerPolicies:
+      - containerName: frr-k8s-statuscleaner
+        minAllowed:
+          cpu: 5m
+          memory: 16Mi
+        maxAllowed:
+          cpu: 50m
+          memory: 128Mi
+        controlledResources:
+          - cpu
+          - memory
+        controlledValues: "RequestsAndLimits"
