@@ -4,27 +4,44 @@ hosts:
     rootDeviceHints:
       deviceName: /dev/nvme0n1
     interfaces:
+      - macAddress: 3C:52:A1:B0:C5:8B
+        name: enp4s0
       - macAddress: 2c:f0:5d:83:73:a2
         name: enp42s0
     networkConfig:
       interfaces:
-        - name: enp42s0
-          type: ethernet
+        - name: bond0
+          type: bond
           state: up
           mtu: 9000
           mac-address: 2c:f0:5d:83:73:a2
           ipv4:
             enabled: true
             address:
-              - ip: 10.101.10.104
+              - ip: 10.101.10.107
                 prefix-length: 24
             dhcp: false
-
+          ipv6:
+            enabled: false
+          link-aggregation:
+            mode: active-backup
+            options:
+              miimon: "150"
+              primary: enp4s0
+            port:
+              - enp4s0
+              - enp42s0
       dns-resolver:
         config:
           server:
             - 10.101.11.4
             - 10.101.11.5
+      routes:
+        config:
+          - destination: 0.0.0.0/0
+            next-hop-address: 10.101.10.1
+            next-hop-interface: bond0
+            table-id: 254
 # ---
 # hosts:
 #   - hostname: gpu-1
