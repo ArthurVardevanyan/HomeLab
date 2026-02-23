@@ -6,7 +6,7 @@ ARG BUILD_ARCH=x86_64
 ARG TARGET_ARCH=x86_64
 ARG DRIVER_EPOCH=1
 ARG DRIVER_STREAM_TYPE=stable
-ARG BASE_URL="https://us.download.nvidia.com/tesla"
+ARG BASE_URL="https://us.download.nvidia.com/XFree86/Linux-x86_64"
 
 # Stage 1: Build kernel RPMs (optional, if you already have them, skip this stage)
 FROM quay.io/centos/centos:stream10 AS kernel
@@ -160,7 +160,7 @@ WORKDIR /root
 # Download and build NVIDIA kernel modules directly
 RUN set -e; \
 	(curl -fSsLO ${BASE_URL}/${DRIVER_VERSION}/NVIDIA-Linux-${TARGET_ARCH}-${DRIVER_VERSION}.run \
-	|| curl -fSsLO https://download.nvidia.com/tesla/${DRIVER_VERSION}/NVIDIA-Linux-${TARGET_ARCH}-${DRIVER_VERSION}.run); \
+	|| curl -fSsLO https://download.nvidia.com/XFree86/Linux-x86_64/${DRIVER_VERSION}/NVIDIA-Linux-${TARGET_ARCH}-${DRIVER_VERSION}.run); \
 	sh ./NVIDIA-Linux-${TARGET_ARCH}-${DRIVER_VERSION}.run --extract-only --target /root/nvidia-tmp; \
 	/root/nvidia-tmp/nvidia-installer \
 	--silent --accept-license --no-questions \
