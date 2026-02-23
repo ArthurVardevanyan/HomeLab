@@ -1,0 +1,277 @@
+Creating directory /usr/src/nvidia-590.48.01/__extract
+Verifying archive integrity... OK
+Uncompressing NVIDIA Accelerated Graphics Driver for Linux-x86_64 590.48.01...............................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................
++ set -eu
++ RUN_DIR=/run/nvidia
++ PID_FILE=/run/nvidia/nvidia-driver.orig.pid
++ DRIVER_VERSION=590.48.01
++ KERNEL_UPDATE_HOOK=/run/kernel/postinst.d/update-nvidia-driver
++ NUM_VGPU_DEVICES=0
++ NVIDIA_MODULE_PARAMS=()
++ NVIDIA_UVM_MODULE_PARAMS=()
++ NVIDIA_MODESET_MODULE_PARAMS=()
++ NVIDIA_PEERMEM_MODULE_PARAMS=()
++ TARGETARCH=x86_64
++ USE_HOST_MOFED=false
++ DNF_RELEASEVER=10
++ RHEL_VERSION=10
++ RHEL_MAJOR_VERSION=9
++ RHEL_MINOR_VERSION=
++ KERNEL_MODULE_TYPE=auto
++ MODPROBE_CONFIG_DIR=/etc/modprobe.d
++ DRIVER_ARCH=x86_64
++ DRIVER_ARCH=x86_64
++ echo 'DRIVER_ARCH is x86_64'
+DRIVER_ARCH is x86_64
++++ dirname -- /usr/local/bin/nvidia-driver.orig
+++ cd -- /usr/local/bin
+++ pwd
++ SCRIPT_DIR=/usr/local/bin
++ source /usr/local/bin/common.sh
+++ GPU_DIRECT_RDMA_ENABLED=false
+++ GDS_ENABLED=false
+++ GDRCOPY_ENABLED=false
++ '[' 1 -eq 0 ']'
++ command=init
++ shift
++ case "${command}" in
+++ getopt -l accept-license,max-threads: -o am: --
++ options=' --'
++ '[' 0 -ne 0 ']'
++ eval set -- ' --'
+++ set -- --
++ ACCEPT_LICENSE=
++ MAX_THREADS=
+++ uname -r
++ KERNEL_VERSION=6.12.0-206.el10.x86_64
++ PRIVATE_KEY=
++ PACKAGE_TAG=
++ for opt in ${options}
++ case "$opt" in
++ shift
++ break
++ '[' 0 -ne 0 ']'
++ _resolve_rhel_version
++ _get_rhel_version_from_kernel
++ local rhel_version_underscore rhel_version_arr
+++ echo 6.12.0-206.el10.x86_64
+++ sed 's/.*el\([0-9]\+_[0-9]\+\).*/\1/g'
++ rhel_version_underscore=6.12.0-206.el10.x86_64
++ [[ ! 6.12.0-206.el10.x86_64 =~ ^[0-9]+_[0-9]+$ ]]
++ echo 'Unable to resolve RHEL version from kernel version'
+Unable to resolve RHEL version from kernel version
++ return 1
++ RHEL_VERSION=9
++ [[ -z 10 ]]
++ return 0
++ init
++ _prepare_exclusive
++ _prepare
++ '[' passthrough = vgpu ']'
++ _create_module_params_conf
+Parsing kernel module parameters...
++ echo 'Parsing kernel module parameters...'
++ _get_module_params
++ local base_path=/drivers
++ NVIDIA_MODULE_PARAMS+=("NVreg_CoherentGPUMemoryMode=driver")
++ '[' -f /drivers/nvidia.conf ']'
++ '[' -f /drivers/nvidia-uvm.conf ']'
++ '[' -f /drivers/nvidia-modeset.conf ']'
++ '[' -f /drivers/nvidia-peermem.conf ']'
++ '[' 1 -gt 0 ']'
++ echo 'Configuring nvidia module parameters in /etc/modprobe.d/nvidia.conf'
+Configuring nvidia module parameters in /etc/modprobe.d/nvidia.conf
++ echo 'options nvidia NVreg_CoherentGPUMemoryMode=driver'
++ '[' 0 -gt 0 ']'
++ '[' 0 -gt 0 ']'
++ '[' 0 -gt 0 ']'
++ sh NVIDIA-Linux-x86_64-590.48.01.run -x
+tail: cannot open 'NVIDIA-Linux-x86_64-590.48.01.run' for reading: No such file or directory
+Creating directory NVIDIA-Linux-x86_64-590.48.01
+Verifying archive integrity... tail: cannot open 'NVIDIA-Linux-x86_64-590.48.01.run' for reading: No such file or directory
+Error in check sums 4294967295 2552067467
++ _resolve_kernel_type
++ '[' auto == proprietary ']'
++ '[' auto == open ']'
++ '[' auto == auto ']'
+++ nvidia-installer --print-recommended-kernel-module-type
+
+WARNING: This system requires a kernel module type which is not present in this installer package.
+
++ kernel_module_type=proprietary
++ '[' 0 -ne 0 ']'
++ [[ proprietary == \o\p\e\n ]]
++ KERNEL_TYPE=kernel
++ mkdir -p /usr/src/nvidia-590.48.01
++ mv LICENSE mkprecompiled kernel /usr/src/nvidia-590.48.01
+mv: cannot stat 'LICENSE': No such file or directory
+mv: cannot stat 'mkprecompiled': No such file or directory
+mv: cannot stat 'kernel': No such file or directory
+
+========== NVIDIA Software Installer ==========
+
++ echo -e '\n========== NVIDIA Software Installer ==========\n'
++ echo -e 'Starting installation of NVIDIA driver version 590.48.01 for Linux kernel version 6.12.0-206.el10.x86_64\n'
+Starting installation of NVIDIA driver version 590.48.01 for Linux kernel version 6.12.0-206.el10.x86_64
+
++ exec
++ flock -n 3
++ echo 10329
++ trap 'echo '\''Caught signal'\''; exit 1' HUP INT QUIT PIPE TERM
++ trap _shutdown EXIT
++ _should_skip_kernel_module_reload
++ '[' -f /sys/module/nvidia/refcnt ']'
++ return 1
++ _unload_driver
++ rmmod_args=()
++ local rmmod_args
++ local nvidia_deps=0
++ local nvidia_refs=0
++ local nvidia_uvm_refs=0
++ local nvidia_modeset_refs=0
++ local nvidia_peermem_refs=0
++ '[' -f /var/run/nvidia-persistenced/nvidia-persistenced.pid ']'
++ '[' -f /var/run/nvidia-gridd/nvidia-gridd.pid ']'
++ '[' -f /var/run/nvidia-topologyd/nvidia-topologyd.pid ']'
++ '[' -f /var/run/nvidia-fabricmanager/nv-fabricmanager.pid ']'
++ '[' -f /var/run/nvidia-fabricmanager/nvlsm.pid ']'
+Unloading NVIDIA driver kernel modules...
++ echo 'Unloading NVIDIA driver kernel modules...'
++ '[' -f /sys/module/nvidia_modeset/refcnt ']'
++ '[' -f /sys/module/nvidia_uvm/refcnt ']'
++ '[' -f /sys/module/nvidia/refcnt ']'
++ '[' -f /sys/module/nvidia_peermem/refcnt ']'
++ '[' 0 -gt 0 ']'
++ '[' 0 -gt 0 ']'
++ '[' 0 -gt 0 ']'
++ '[' 0 -gt 0 ']'
++ '[' 0 -gt 0 ']'
++ return 0
++ _unmount_rootfs
+Unmounting NVIDIA driver rootfs...
++ echo 'Unmounting NVIDIA driver rootfs...'
++ findmnt -r -o TARGET
++ grep /run/nvidia/driver
++ _build
++ _kernel_requires_package
++ local proc_mount_arg=
+Checking NVIDIA driver packages...
++ echo 'Checking NVIDIA driver packages...'
++ [[ ! -d /usr/src/nvidia-590.48.01/kernel ]]
++ cd /usr/src/nvidia-590.48.01/kernel
++ proc_mount_arg='--proc-mount-point /lib/modules/6.12.0-206.el10.x86_64/proc'
+++ ls -d -1 'precompiled/**'
++ return 0
++ _update_package_cache
++ '[' '' '!=' builtin ']'
++ echo 'Updating the package cache...'
+Updating the package cache...
++ yum -q makecache
++ _install_prerequisites
+++ mktemp -d
++ local tmp_dir=/tmp/tmp.1wyJ3gzOZq
++ trap 'rm -rf /tmp/tmp.1wyJ3gzOZq' EXIT
++ cd /tmp/tmp.1wyJ3gzOZq
++ rm -rf /lib/modules/6.12.0-206.el10.x86_64
++ mkdir -p /lib/modules/6.12.0-206.el10.x86_64/proc
+Enabling RHOCP and EUS RPM repos...
++ echo 'Enabling RHOCP and EUS RPM repos...'
++ '[' -n '' ']'
++ dnf config-manager --set-enabled rhel-9-for-x86_64-baseos-eus-rpms
+Error: No matching repo to modify: rhel-9-for-x86_64-baseos-eus-rpms.
++ true
++ dnf makecache --releasever=10
+CentOS Stream 10 - BaseOS                        25 kB/s | 7.1 kB     00:00    
+CentOS Stream 10 - AppStream                    244  B/s | 7.2 kB     00:30    
+CentOS Stream 10 - Extras packages               31 kB/s | 7.7 kB     00:00    
+Metadata cache created.
++ dnf makecache --releasever=10
+CentOS Stream 10 - BaseOS                        48 kB/s | 7.1 kB     00:00    
+CentOS Stream 10 - AppStream                    717  B/s | 7.2 kB     00:10    
+CentOS Stream 10 - Extras packages              774  B/s | 7.7 kB     00:10    
+Metadata cache created.
+Installing elfutils...
++ echo 'Installing elfutils...'
++ dnf install -q -y --releasever=10 elfutils-libelf.x86_64
++ dnf install -y --releasever=10 elfutils-libelf-devel.x86_64
+Dependencies resolved.
+================================================================================
+ Package                    Arch        Version            Repository      Size
+================================================================================
+Installing:
+ elfutils-libelf-devel      x86_64      0.194-1.el10       appstream       79 k
+Installing dependencies:
+ cmake-filesystem           x86_64      3.31.8-1.el10      appstream       21 k
+ libzstd-devel              x86_64      1.5.5-9.el10       appstream       52 k
+ zlib-ng-compat-devel       x86_64      2.2.3-3.el10       appstream       36 k
+
+Transaction Summary
+================================================================================
+Install  4 Packages
+
+Total download size: 188 k
+Installed size: 380 k
+Downloading Packages:
+(1/4): cmake-filesystem-3.31.8-1.el10.x86_64.rp  74 kB/s |  21 kB     00:00    
+(2/4): libzstd-devel-1.5.5-9.el10.x86_64.rpm    145 kB/s |  52 kB     00:00    
+(3/4): elfutils-libelf-devel-0.194-1.el10.x86_6 7.9 kB/s |  79 kB     00:10    
+(4/4): zlib-ng-compat-devel-2.2.3-3.el10.x86_64 3.7 kB/s |  36 kB     00:09    
+--------------------------------------------------------------------------------
+Total                                            18 kB/s | 188 kB     00:10     
+Running transaction check
+Transaction check succeeded.
+Running transaction test
+Transaction test succeeded.
+Running transaction
+  Preparing        :                                                        1/1 
+  Installing       : libzstd-devel-1.5.5-9.el10.x86_64                      1/4 
+  Installing       : cmake-filesystem-3.31.8-1.el10.x86_64                  2/4 
+  Installing       : zlib-ng-compat-devel-2.2.3-3.el10.x86_64               3/4 
+  Installing       : elfutils-libelf-devel-0.194-1.el10.x86_64              4/4 
+  Running scriptlet: elfutils-libelf-devel-0.194-1.el10.x86_64              4/4 
+
+Installed:
+  cmake-filesystem-3.31.8-1.el10.x86_64                                         
+  elfutils-libelf-devel-0.194-1.el10.x86_64                                     
+  libzstd-devel-1.5.5-9.el10.x86_64                                             
+  zlib-ng-compat-devel-2.2.3-3.el10.x86_64                                      
+
+Complete!
+Installing Linux kernel headers...
++ echo 'Installing Linux kernel headers...'
++ dnf -q -y --releasever=10 install kernel-headers-6.12.0-206.el10.x86_64 kernel-devel-6.12.0-206.el10.x86_64
+Error: Unable to find a match: kernel-headers-6.12.0-206.el10.x86_64 kernel-devel-6.12.0-206.el10.x86_64
+++ rm -rf /tmp/tmp.1wyJ3gzOZq
++ _shutdown
++ _unload_driver
++ rmmod_args=()
++ local rmmod_args
++ local nvidia_deps=0
++ local nvidia_refs=0
++ local nvidia_uvm_refs=0
++ local nvidia_modeset_refs=0
++ local nvidia_peermem_refs=0
++ '[' -f /var/run/nvidia-persistenced/nvidia-persistenced.pid ']'
++ '[' -f /var/run/nvidia-gridd/nvidia-gridd.pid ']'
++ '[' -f /var/run/nvidia-topologyd/nvidia-topologyd.pid ']'
++ '[' -f /var/run/nvidia-fabricmanager/nv-fabricmanager.pid ']'
++ '[' -f /var/run/nvidia-fabricmanager/nvlsm.pid ']'
++ echo 'Unloading NVIDIA driver kernel modules...'
+Unloading NVIDIA driver kernel modules...
++ '[' -f /sys/module/nvidia_modeset/refcnt ']'
++ '[' -f /sys/module/nvidia_uvm/refcnt ']'
++ '[' -f /sys/module/nvidia/refcnt ']'
++ '[' -f /sys/module/nvidia_peermem/refcnt ']'
++ '[' 0 -gt 0 ']'
++ '[' 0 -gt 0 ']'
++ '[' 0 -gt 0 ']'
++ '[' 0 -gt 0 ']'
++ '[' 0 -gt 0 ']'
++ return 0
++ _unmount_rootfs
++ echo 'Unmounting NVIDIA driver rootfs...'
+Unmounting NVIDIA driver rootfs...
++ findmnt -r -o TARGET
++ grep /run/nvidia/driver
++ rm -f /run/nvidia/nvidia-driver.orig.pid /run/kernel/postinst.d/update-nvidia-driver
++ return 0
