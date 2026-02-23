@@ -57,15 +57,7 @@ if [ "${fallback_binary}" = false ]; then
 	mv centos* "linux-${KVer%.x86_64}" || true
 	tar -cf - "linux-${KVer%.x86_64}/" | xz -0 -T0 - > "linux-${KVer%.x86_64}.tar.xz" || true
 else
-	echo "Attempting to download kernel binary RPMs for ${KVer}" >&2
-	dnf install -y dnf-plugins-core || true
-	mkdir -p ~/rpmbuild/RPMS/x86_64
-	pushd ~/rpmbuild/RPMS/x86_64 >/dev/null
-	dnf download --resolve --alldeps --arch=x86_64 kernel-core-${KVer} kernel-headers-${KVer} kernel-devel-${KVer} || {
-		echo "Failed to download specific kernel RPMs, listing available kernels" >&2
-		dnf list kernel-core || true
-	}
-	popd >/dev/null
+	echo "Will use binary RPM fallback for ${KVer}" >&2
 fi
 
 
@@ -102,7 +94,31 @@ fi
 cd ~/rpmbuild
 if [ "${fallback_binary}" = false ]; then
 	dnf builddep -y SPECS/kernel.spec || echo "Build dependencies failed; continuing with available sources" >&2
-	rpmbuild -bb --with baseonly --without pae --without debug --without zfcpdump --without arm64_64k --without realtime --without realtime_arm64_64k --without cross_headers --without perf --without tools --without debuginfo --with kernel_abi_stablelists --without selftests --clean --target x86_64 SPECS/kernel.spec || echo "Kernel build failed; falling back to binary RPMs" >&2
+	rpmbuild -bb --with baseonly --without pae --without debug --without zfcpdump --without arm64_64k --without realtime --without realtime_arm64_64k --without cross_headers --without perf --without tools --without debuginfo --with kernel_abi_stablelists --without selftests --clean --target x86_64 SPECS/kernel.spec || {
+		echo "Kernel build failed; falling back to binary RPMs" >&2
+		fallback_binary=true
+	}
+fi
+
+if [ "${fallback_binary}" = true ]; then
+	echo "Downloading binary kernel RPMs for ${KVer}" >&2
+	dnf install -y dnf-plugins-core || true
+	mkdir -p ~/rpmbuild/RPMS/x86_64
+	pushd ~/rpmbuild/RPMS/x86_64 >/dev/null
+	dnf download --resolve --alldeps --arch=x86_64 kernel-core-${KVer} kernel-headers-${KVer} kernel-devel-${KVer} || {
+		echo "dnf download failed; attempting Koji fallback for ${KVer}" >&2
+		# Parse version/release from KVer (e.g. 6.12.0-206.el10.x86_64 -> ver=6.12.0 rel=206.el10)
+		KVER_NOARCH="${KVer%.x86_64}"
+		KVER_VER="${KVER_NOARCH%%-*}"
+		KVER_REL="${KVER_NOARCH#*-}"
+		KOJI_BASE="https://kojihub.stream.centos.org/kojifiles/packages/kernel/${KVER_VER}/${KVER_REL}/x86_64"
+		for pkg in kernel-core kernel-headers kernel-devel kernel-modules-core; do
+			curl -fLO "${KOJI_BASE}/${pkg}-${KVER_NOARCH}.x86_64.rpm" || \
+			curl -fLO "${KOJI_BASE}/${pkg}-${KVER_VER}-${KVER_REL}.x86_64.rpm" || \
+				echo "WARNING: Failed to download ${pkg} from Koji" >&2
+		done
+	}
+	popd >/dev/null
 fi
 
 rm -rf ~/rpmbuild/BUILD ~/rpmbuild/BUILDROOT ~/rpmbuild/SOURCES
