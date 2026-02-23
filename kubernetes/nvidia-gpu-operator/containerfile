@@ -259,10 +259,9 @@ RUN curl -fsSL -o /usr/local/bin/ocp_dtk_entrypoint https://raw.githubuserconten
 	&& curl -fsSL -o /usr/local/bin/nvidia-driver https://raw.githubusercontent.com/NVIDIA/gpu-driver-container/refs/heads/main/rhel9/nvidia-driver \
 	&& curl -fsSL -o /usr/local/bin/common.sh https://raw.githubusercontent.com/NVIDIA/gpu-driver-container/refs/heads/main/rhel9/common.sh \
 	&& sed -i 's/dnf install -q -y --releasever=\${DNF_RELEASEVER} "gcc-[^"]*"/dnf install -q -y --releasever=\${DNF_RELEASEVER} gcc \|\| true/' /usr/local/bin/nvidia-driver \
+	&& sed -i '$i # Build-time override: modules pre-compiled, skip runtime prereqs\n_kernel_requires_package() { return 1; }\n_install_prerequisites() { return 0; }\n_update_package_cache() { return 0; }' /usr/local/bin/nvidia-driver \
 	&& printf '%s\n' '# --- overrides injected by image build ---' \
-	'_update_package_cache() { echo "[override] Skipping package cache refresh" >&2; return 0; }' \
 	'_enable_rhocp_and_eus_repos() { echo "[override] Skipping RH OCP/EUS repo enable" >&2; return 0; }' \
-	'_install_prerequisites() { echo "[override] Skipping kernel header install (modules pre-compiled)" >&2; return 0; }' \
 	>> /usr/local/bin/common.sh \
 	&& chmod +x /usr/local/bin/ocp_dtk_entrypoint /usr/local/bin/nvidia-driver /usr/local/bin/common.sh
 ## Upstream script runs from /usr/local/bin and expects the runfile in CWD
