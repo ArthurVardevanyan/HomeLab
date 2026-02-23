@@ -1,0 +1,36 @@
+---
+apiVersion: kyverno.io/v1
+kind: Policy
+metadata:
+  name: nfd-worker-metrics-port
+  namespace: openshift-nfd
+  annotations:
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+    argocd.argoproj.io/sync-wave: "1"
+spec:
+  background: false
+  rules:
+    - name: nfd-worker-metrics-port
+      skipBackgroundRequests: true
+      match:
+        any:
+          - resources:
+              kinds:
+                - DaemonSet
+              selector:
+                matchLabels:
+                  app: nfd
+      mutate:
+        patchStrategicMerge:
+          spec:
+            template:
+              spec:
+                containers:
+                  - (name): nfd-worker
+                    args:
+                      - "-port"
+                      - "8082"
+                    ports:
+                      - containerPort: 8082
+                        name: http
+                        protocol: TCP
