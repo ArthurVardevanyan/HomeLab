@@ -1,0 +1,36 @@
+---
+apiVersion: kyverno.io/v1
+kind: Policy
+metadata:
+  name: add-resource-limits
+  namespace: openshift-frr-k8s
+spec:
+  rules:
+    - name: add-controller-frr-limits
+      skipBackgroundRequests: true
+      match:
+        resources:
+          kinds:
+            - DaemonSet
+          names:
+            - frr-k8s
+      mutate:
+        patchesJson6902: |-
+          - op: add
+            path: /spec/template/spec/containers/0/resources
+            value:
+              requests:
+                cpu: "100m"
+                memory: "200Mi"
+              limits:
+                cpu: "300m"
+                memory: "400Mi"
+          - op: add
+            path: /spec/template/spec/containers/1/resources
+            value:
+              requests:
+                cpu: "100m"
+                memory: "200Mi"
+              limits:
+                cpu: "300m"
+                memory: "400Mi"
