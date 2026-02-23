@@ -1007,6 +1007,7 @@ okd_bm_worker_startup() {
 install_okd_prep() {
 
   sudo mount -o remount,size=8G,noatime /tmp
+  sudo setquota -u "$(whoami)" 0 0 0 0 /tmp
 
   export XDG_CACHE_HOME="/tmp/cache"
   mkdir -p "${XDG_CACHE_HOME}"
@@ -1037,32 +1038,61 @@ install_okd_prep() {
 
   echo -e "\n\n${BLUE}Download Dependencies:${NC}"
   export OKD_VERSION=${OKD_VERSION:-""}
-  if [ -z "${OKD_VERSION}" ]; then
-    export OKD_CHANNEL=${OKD_CHANNEL:-4-scos-stable}
-    # https://github.com/JaimeMagiera/oct/blob/3968059ca79d9b60245aaff659533f6090c9a722/helpers/okd-query-releases.sh#L137
-    OKD_VERSION=$(curl -s "https://amd64.origin.releases.ci.openshift.org/releasestream/${OKD_CHANNEL}" | grep "Accepted" -B 1 | awk 'sub(/.*release\/ */,""){f=1} f{if ( sub(/ *".*/,"") ) f=0; print}' | head -n 1)
+
+  # Auto-detect OCP vs OKD: OKD versions always contain "okd"
+  if [ -n "${OKD_VERSION}" ] && [[ "${OKD_VERSION}" != *"okd"* ]]; then
+    OCP=true
+  fi
+  export OCP=${OCP:-false}
+
+  if [[ "${OCP}" == "true" ]]; then
+    # OCP Official Releases: https://amd64.ocp.releases.ci.openshift.org/
+    # Channels: 4-stable, 4-dev-preview
+    export OCP_CHANNEL=${OCP_CHANNEL:-4-stable}
+    if [ -z "${OKD_VERSION}" ]; then
+      OKD_VERSION=$(curl -s "https://amd64.ocp.releases.ci.openshift.org/api/v1/releasestream/${OCP_CHANNEL}/latest" | jq -r '.name')
+    fi
+    echo "${OKD_VERSION}"
+    export OKD_URL="quay.io/openshift-release-dev/ocp-release:${OKD_VERSION}-x86_64"
+  else
+    # OKD Releases: https://amd64.origin.releases.ci.openshift.org/
+    if [ -z "${OKD_VERSION}" ]; then
+      export OKD_CHANNEL=${OKD_CHANNEL:-4-scos-stable}
+      # https://github.com/JaimeMagiera/oct/blob/3968059ca79d9b60245aaff659533f6090c9a722/helpers/okd-query-releases.sh#L137
+      OKD_VERSION=$(curl -s "https://amd64.origin.releases.ci.openshift.org/releasestream/${OKD_CHANNEL}" | grep "Accepted" -B 1 | awk 'sub(/.*release\/ */,""){f=1} f{if ( sub(/ *".*/,"") ) f=0; print}' | head -n 1)
+    fi
+    echo "${OKD_VERSION}"
+    if [[ $OKD_VERSION == *"scos"* ]]; then
+      export OKD_URL="quay.io/okd/scos-release:${OKD_VERSION}"
+      export OKD_URL_CI="registry.ci.openshift.org/origin/release-scos:${OKD_VERSION}"
+    else
+      export OKD_URL="quay.io/openshift/okd:${OKD_VERSION}"
+      export OKD_URL_CI="registry.ci.openshift.org/origin/release:${OKD_VERSION}"
+    fi
   fi
 
-  echo "${OKD_VERSION}"
-  if [[ $OKD_VERSION == *"scos"* ]]; then
-    export OKD_URL="quay.io/okd/scos-release:${OKD_VERSION}"
-    export OKD_URL_CI="registry.ci.openshift.org/origin/release-scos:${OKD_VERSION}"
-  else
-    export OKD_URL="quay.io/openshift/okd:${OKD_VERSION}"
-    export OKD_URL_CI="registry.ci.openshift.org/origin/release:${OKD_VERSION}"
-  fi
+  mkdir -p "${OKD}"
   if [ ! -f "${OKD}/openshift-install-linux-${OKD_VERSION}.tar.gz" ]; then
     echo "Required tools not found. Downloading..."
+    # Clean up tarballs and binaries from any previous version
+    find "${OKD}" -maxdepth 1 -name 'openshift-install-linux-4*.tar.gz' -delete
+    find "${OKD}" -maxdepth 1 -name 'openshift-client-linux-4*.tar.gz' -delete
+    rm -f "${OKD}/oc" "${OKD}/openshift-install" "${OKD}/kubectl"
     if ! oc adm release extract --tools "${OKD_URL}" --to="${OKD}/"; then
-      echo -e "${BLUE}Trying CI Registry:${NC}"
-      oc adm release extract --tools "${OKD_URL_CI}" --to="${OKD}/"
+      if [[ "${OCP}" != "true" ]]; then
+        echo -e "${BLUE}Trying CI Registry:${NC}"
+        oc adm release extract --tools "${OKD_URL_CI}" --to="${OKD}/"
+      else
+        echo "ERROR: Failed to extract tools from ${OKD_URL}" >&2
+        exit 1
+      fi
     fi
   else
     echo "Tools already present. Skipping download."
   fi
 
-  tar xvzf "${OKD}"/openshift-install-linux-4* -C "${OKD}"
-  tar xvzf "${OKD}"/openshift-client-linux-4* -C "${OKD}"
+  tar xvzf "${OKD}/openshift-install-linux-${OKD_VERSION}.tar.gz" -C "${OKD}"
+  tar xvzf "${OKD}/openshift-client-linux-${OKD_VERSION}.tar.gz" -C "${OKD}"
   mkdir -p "${OKD}/vm"
 
   echo -e "\n\n${BLUE}Create Config Files:${NC}"
