@@ -78,7 +78,7 @@ spec:
     usePrecompiled: true # Test
     imagePullPolicy: Always
     repository: registry.arthurvardevanyan.com/homelab # nvcr.io/nvidia
-    version: 580.95.05
+    version: 580.126.18
     image: nvidia/driver
     resources:
       limits:
@@ -103,6 +103,10 @@ spec:
     plugin:
       env:
         - name: WITH_WORKLOAD
+          value: "true"
+    driver:
+      env:
+        - name: DISABLE_DEV_CHAR_SYMLINK_CREATION
           value: "true"
     resources:
       limits:

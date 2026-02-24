@@ -2,11 +2,11 @@
 apiVersion: tekton.dev/v1
 kind: PipelineRun
 metadata:
-  name: gpu-driver
+  name: gpu-toolbox-image
   annotations:
     pipelinesascode.tekton.dev/max-keep-runs: "1"
     pipelinesascode.tekton.dev/on-cel-expression: |
-      event == "pull_request" &&  target_branch == "main" && ("kubernetes/nvidia-gpu-operator/containerfile".pathChanged() || ".tekton/gpu-driver.yaml".pathChanged())
+      event == "pull_request" && target_branch == "main" && "containers/gpu-toolbox/containerfile".pathChanged()
     pipelinesascode.tekton.dev/target-namespace: "homelab"
     pipelinesascode.tekton.dev/task: "https://raw.githubusercontent.com/ArthurVardevanyan/HomeLab/main/tekton/tasks/git-clone/0.9.1/git-clone.yaml"
     pipelinesascode.tekton.dev/task-1: "tekton/tasks/buildah/0.7.1/buildah.yaml"
@@ -18,15 +18,9 @@ spec:
     - name: git-commit
       value: "{{ revision }}"
     - name: DOCKERFILE
-      value: "./kubernetes/nvidia-gpu-operator/containerfile"
+      value: "./containers/gpu-toolbox/containerfile"
     - name: IMAGE
-      value: "registry.arthurvardevanyan.com/homelab/nvidia/driver"
-    - name: KERNEL_VERSION
-      value: 6.12.0-206.el10.x86_64
-    - name: DRIVER_VERSION
-      value: "580.126.18"
-    - name: OS
-      value: "centos10"
+      value: "registry.arthurvardevanyan.com/homelab/gpu-toolbox:not_latest"
 
   pipelineSpec:
     params:
@@ -76,11 +70,9 @@ spec:
           kind: Task
         params:
           - name: IMAGE
-            value: $(params.IMAGE):$(params.DRIVER_VERSION)-$(params.KERNEL_VERSION)-$(params.OS)
+            value: $(params.IMAGE)
           - name: DOCKERFILE
             value: $(params.DOCKERFILE)
-          - name: BUILD_EXTRA_ARGS
-            value: --build-arg KERNEL_VERSION="$(params.KERNEL_VERSION)" --build-arg DRIVER_VERSION="$(params.DRIVER_VERSION)"
         workspaces:
           - name: source
             workspace: data
@@ -93,7 +85,7 @@ spec:
           kind: Task
         params:
           - name: IMAGE
-            value: $(params.IMAGE):$(params.DRIVER_VERSION)-$(params.KERNEL_VERSION)-$(params.OS)
+            value: $(params.IMAGE)
 
   taskRunTemplate:
     serviceAccountName: pipeline

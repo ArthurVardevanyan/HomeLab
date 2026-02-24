@@ -6,7 +6,7 @@ ARG BUILD_ARCH=x86_64
 ARG TARGET_ARCH=x86_64
 ARG DRIVER_EPOCH=1
 ARG DRIVER_STREAM_TYPE=stable
-ARG BASE_URL="https://us.download.nvidia.com/tesla"
+ARG BASE_URL="https://us.download.nvidia.com/XFree86/Linux-x86_64"
 
 # Stage 1: Build kernel RPMs (optional, if you already have them, skip this stage)
 FROM quay.io/centos/centos:stream10 AS kernel
@@ -57,15 +57,7 @@ if [ "${fallback_binary}" = false ]; then
 	mv centos* "linux-${KVer%.x86_64}" || true
 	tar -cf - "linux-${KVer%.x86_64}/" | xz -0 -T0 - > "linux-${KVer%.x86_64}.tar.xz" || true
 else
-	echo "Attempting to download kernel binary RPMs for ${KVer}" >&2
-	dnf install -y dnf-plugins-core || true
-	mkdir -p ~/rpmbuild/RPMS/x86_64
-	pushd ~/rpmbuild/RPMS/x86_64 >/dev/null
-	dnf download --resolve --alldeps --arch=x86_64 kernel-core-${KVer} kernel-headers-${KVer} kernel-devel-${KVer} || {
-		echo "Failed to download specific kernel RPMs, listing available kernels" >&2
-		dnf list kernel-core || true
-	}
-	popd >/dev/null
+	echo "Will use binary RPM fallback for ${KVer}" >&2
 fi
 
 
@@ -102,7 +94,31 @@ fi
 cd ~/rpmbuild
 if [ "${fallback_binary}" = false ]; then
 	dnf builddep -y SPECS/kernel.spec || echo "Build dependencies failed; continuing with available sources" >&2
-	rpmbuild -bb --with baseonly --without pae --without debug --without zfcpdump --without arm64_64k --without realtime --without realtime_arm64_64k --without cross_headers --without perf --without tools --without debuginfo --with kernel_abi_stablelists --without selftests --clean --target x86_64 SPECS/kernel.spec || echo "Kernel build failed; falling back to binary RPMs" >&2
+	rpmbuild -bb --with baseonly --without pae --without debug --without zfcpdump --without arm64_64k --without realtime --without realtime_arm64_64k --without cross_headers --without perf --without tools --without debuginfo --with kernel_abi_stablelists --without selftests --clean --target x86_64 SPECS/kernel.spec || {
+		echo "Kernel build failed; falling back to binary RPMs" >&2
+		fallback_binary=true
+	}
+fi
+
+if [ "${fallback_binary}" = true ]; then
+	echo "Downloading binary kernel RPMs for ${KVer}" >&2
+	dnf install -y dnf-plugins-core || true
+	mkdir -p ~/rpmbuild/RPMS/x86_64
+	pushd ~/rpmbuild/RPMS/x86_64 >/dev/null
+	dnf download --resolve --alldeps --arch=x86_64 kernel-core-${KVer} kernel-headers-${KVer} kernel-devel-${KVer} || {
+		echo "dnf download failed; attempting Koji fallback for ${KVer}" >&2
+		# Parse version/release from KVer (e.g. 6.12.0-206.el10.x86_64 -> ver=6.12.0 rel=206.el10)
+		KVER_NOARCH="${KVer%.x86_64}"
+		KVER_VER="${KVER_NOARCH%%-*}"
+		KVER_REL="${KVER_NOARCH#*-}"
+		KOJI_BASE="https://kojihub.stream.centos.org/kojifiles/packages/kernel/${KVER_VER}/${KVER_REL}/x86_64"
+		for pkg in kernel-core kernel-headers kernel-devel kernel-modules-core; do
+			curl -fLO "${KOJI_BASE}/${pkg}-${KVER_NOARCH}.x86_64.rpm" || \
+			curl -fLO "${KOJI_BASE}/${pkg}-${KVER_VER}-${KVER_REL}.x86_64.rpm" || \
+				echo "WARNING: Failed to download ${pkg} from Koji" >&2
+		done
+	}
+	popd >/dev/null
 fi
 
 rm -rf ~/rpmbuild/BUILD ~/rpmbuild/BUILDROOT ~/rpmbuild/SOURCES
@@ -125,26 +141,25 @@ RUN useradd -u 1001 -m -s /bin/bash builder
 
 # Install build tooling required for cloning and building the NVIDIA kmod
 ARG DNF_FLAGS="--setopt=tsflags=nodocs --setopt=install_weak_deps=0 --setopt=fastestmirror=True"
-RUN dnf install -y $DNF_FLAGS git gcc make perl bc elfutils-libelf-devel openssl curl tar xz jq dnf-plugins-core ca-certificates kmod rsync \
-	&& dnf clean all \
-	&& rm -rf /var/cache/dnf /var/cache/yum
 
-# Copy kernel RPMs from previous stage
+# Copy and install kernel RPMs first so that gcc's kernel-headers dependency
+# is satisfied by the pinned version rather than pulling latest from the repo
 COPY --from=kernel /root/rpmbuild/RPMS/x86_64/kernel-headers-${KERNEL_VERSION}.rpm /tmp/
 COPY --from=kernel /root/rpmbuild/RPMS/x86_64/kernel-devel-${KERNEL_VERSION}.rpm /tmp/
 COPY --from=kernel /root/rpmbuild/RPMS/x86_64/kernel-core-${KERNEL_VERSION}.rpm /tmp/
 COPY --from=kernel /root/rpmbuild/RPMS/x86_64/kernel-modules-core-${KERNEL_VERSION}.rpm /tmp/
 
 RUN dnf install -y $DNF_FLAGS /tmp/kernel-*.rpm \
+	&& dnf install -y $DNF_FLAGS git gcc make perl bc elfutils-libelf-devel openssl curl tar xz jq dnf-plugins-core ca-certificates kmod rsync \
 	&& dnf clean all \
-	&& rm -rf /var/cache/dnf /var/cache/yum
+	&& rm -rf /var/cache/dnf /var/cache/yum /tmp/kernel-*.rpm
 
 WORKDIR /root
 
 # Download and build NVIDIA kernel modules directly
 RUN set -e; \
 	(curl -fSsLO ${BASE_URL}/${DRIVER_VERSION}/NVIDIA-Linux-${TARGET_ARCH}-${DRIVER_VERSION}.run \
-	|| curl -fSsLO https://download.nvidia.com/tesla/${DRIVER_VERSION}/NVIDIA-Linux-${TARGET_ARCH}-${DRIVER_VERSION}.run); \
+	|| curl -fSsLO https://download.nvidia.com/XFree86/Linux-x86_64/${DRIVER_VERSION}/NVIDIA-Linux-${TARGET_ARCH}-${DRIVER_VERSION}.run); \
 	sh ./NVIDIA-Linux-${TARGET_ARCH}-${DRIVER_VERSION}.run --extract-only --target /root/nvidia-tmp; \
 	/root/nvidia-tmp/nvidia-installer \
 	--silent --accept-license --no-questions \
@@ -152,7 +167,8 @@ RUN set -e; \
 	--no-systemd \
 	--no-rpms \
 	--no-backup \
-	--no-precompiled-interface; \
+	--no-precompiled-interface \
+	|| { echo "=== nvidia-installer.log ==="; cat /var/log/nvidia-installer.log 2>/dev/null || true; exit 1; }; \
 	mkdir -p /staging/lib/modules/${KERNEL_VERSION}; \
 	if [ -d "/lib/modules/${KERNEL_VERSION}" ]; then \
 	rsync -a /lib/modules/${KERNEL_VERSION}/ /staging/lib/modules/${KERNEL_VERSION}/ 2>/dev/null || cp -a /lib/modules/${KERNEL_VERSION}/. /staging/lib/modules/${KERNEL_VERSION}/; \
@@ -243,8 +259,8 @@ RUN curl -fsSL -o /usr/local/bin/ocp_dtk_entrypoint https://raw.githubuserconten
 	&& curl -fsSL -o /usr/local/bin/nvidia-driver https://raw.githubusercontent.com/NVIDIA/gpu-driver-container/refs/heads/main/rhel9/nvidia-driver \
 	&& curl -fsSL -o /usr/local/bin/common.sh https://raw.githubusercontent.com/NVIDIA/gpu-driver-container/refs/heads/main/rhel9/common.sh \
 	&& sed -i 's/dnf install -q -y --releasever=\${DNF_RELEASEVER} "gcc-[^"]*"/dnf install -q -y --releasever=\${DNF_RELEASEVER} gcc \|\| true/' /usr/local/bin/nvidia-driver \
+	&& sed -i '$i # Build-time override: modules pre-compiled, skip runtime prereqs\n_kernel_requires_package() { return 1; }\n_install_prerequisites() { return 0; }\n_update_package_cache() { return 0; }\nmodprobe() { if [[ "$*" == *nvidia-modeset* ]]; then command modprobe "$@" || true; else command modprobe "$@"; fi; }' /usr/local/bin/nvidia-driver \
 	&& printf '%s\n' '# --- overrides injected by image build ---' \
-	'_update_package_cache() { echo "[override] Skipping package cache refresh" >&2; return 0; }' \
 	'_enable_rhocp_and_eus_repos() { echo "[override] Skipping RH OCP/EUS repo enable" >&2; return 0; }' \
 	>> /usr/local/bin/common.sh \
 	&& chmod +x /usr/local/bin/ocp_dtk_entrypoint /usr/local/bin/nvidia-driver /usr/local/bin/common.sh
@@ -266,7 +282,16 @@ RUN set -e; \
 	if [ -x /usr/local/bin/nvidia-smi ]; then cp -f /usr/local/bin/nvidia-smi /usr/bin/nvidia-smi && chmod +x /usr/bin/nvidia-smi; fi; \
 	mkdir -p /usr/lib64; \
 	# Copy essential runtime libraries (ML, CUDA core, sandboxutils if present)
-	find /opt/nvidia/userland/__ul -maxdepth 5 -type f \( -name 'libnvidia-ml.so.*' -o -name 'libcuda.so.*' -o -name 'libnvidia-sandboxutils.so.*' -o -name 'libnvidia-compiler.so.*' \) -exec cp -f {} /usr/lib64/ \; || true; \
+	find /opt/nvidia/userland/__ul -maxdepth 5 -type f \( \
+	-name 'libnvidia-ml.so.*' -o \
+	-name 'libcuda.so.*' -o \
+	-name 'libnvidia-sandboxutils.so.*' -o \
+	-name 'libnvidia-compiler.so.*' -o \
+	# NVENC-related runtime libraries
+	-name 'libnvidia-encode.so.*' -o \
+	-name 'libnvcuvid.so.*' -o \
+	-name 'libnvidia-opticalflow.so.*' \
+	\) -exec cp -f {} /usr/lib64/ \; || true; \
 	if ls /usr/lib64/libnvidia-ml.so.* >/dev/null 2>&1; then \
 	ML="$(ls /usr/lib64/libnvidia-ml.so.* | head -n1)"; \
 	ln -sf "$(basename "$ML")" /usr/lib64/libnvidia-ml.so.1; \
@@ -280,6 +305,19 @@ RUN set -e; \
 	if ls /usr/lib64/libnvidia-sandboxutils.so.* >/dev/null 2>&1; then \
 	SBOX="$(ls /usr/lib64/libnvidia-sandboxutils.so.* | head -n1)"; \
 	ln -sf "$(basename "$SBOX")" /usr/lib64/libnvidia-sandboxutils.so.1; \
+	fi; \
+	# Create symlinks for NVENC-related libraries if present
+	if ls /usr/lib64/libnvidia-encode.so.* >/dev/null 2>&1; then \
+	ENC="$(ls /usr/lib64/libnvidia-encode.so.* | head -n1)"; \
+	ln -sf "$(basename "$ENC")" /usr/lib64/libnvidia-encode.so.1; \
+	fi; \
+	if ls /usr/lib64/libnvcuvid.so.* >/dev/null 2>&1; then \
+	CVID="$(ls /usr/lib64/libnvcuvid.so.* | head -n1)"; \
+	ln -sf "$(basename "$CVID")" /usr/lib64/libnvcuvid.so.1; \
+	fi; \
+	if ls /usr/lib64/libnvidia-opticalflow.so.* >/dev/null 2>&1; then \
+	OFLW="$(ls /usr/lib64/libnvidia-opticalflow.so.* | head -n1)"; \
+	ln -sf "$(basename "$OFLW")" /usr/lib64/libnvidia-opticalflow.so.1; \
 	fi; \
 	rm -rf /opt/nvidia/userland/__ul || true
 
@@ -478,13 +516,24 @@ for ROOT in /run/nvidia/driver /host /rootfs; do
 	[ -d "$ROOT" ] || continue
 	mkdir -p "$ROOT/usr/bin" "$ROOT/usr/lib64" 2>/dev/null || true
 	if [ -x /usr/bin/nvidia-smi ]; then cp -f /usr/bin/nvidia-smi "$ROOT/usr/bin/nvidia-smi" 2>/dev/null || true; fi
-	for pat in libnvidia-ml.so.* libcuda.so.* libnvidia-sandboxutils.so.* libnvidia-compiler.so.*; do
+	for pat in \
+		libnvidia-ml.so.* \
+		libcuda.so.* \
+		libnvidia-sandboxutils.so.* \
+		libnvidia-compiler.so.* \
+		# NVENC-related runtime libraries
+		libnvidia-encode.so.* \
+		libnvcuvid.so.* \
+		libnvidia-opticalflow.so.*; do
 		for f in /usr/lib64/$pat; do [ -f "$f" ] || continue; cp -f "$f" "$ROOT/usr/lib64/" 2>/dev/null || true; done
 	done
 	# Recreate symlinks inside host roots if base libs copied
 	if ls "$ROOT/usr/lib64/libcuda.so."* >/dev/null 2>&1; then cd "$ROOT/usr/lib64" && ln -sf $(ls libcuda.so.* | head -n1 | xargs basename) libcuda.so.1 && ln -sf libcuda.so.1 libcuda.so || true; fi
 	if ls "$ROOT/usr/lib64/libnvidia-ml.so."* >/dev/null 2>&1; then cd "$ROOT/usr/lib64" && ln -sf $(ls libnvidia-ml.so.* | head -n1 | xargs basename) libnvidia-ml.so.1 && ln -sf libnvidia-ml.so.1 libnvidia-ml.so || true; fi
 	if ls "$ROOT/usr/lib64/libnvidia-sandboxutils.so."* >/dev/null 2>&1; then cd "$ROOT/usr/lib64" && ln -sf $(ls libnvidia-sandboxutils.so.* | head -n1 | xargs basename) libnvidia-sandboxutils.so.1 || true; fi
+	if ls "$ROOT/usr/lib64/libnvidia-encode.so."* >/dev/null 2>&1; then cd "$ROOT/usr/lib64" && ln -sf $(ls libnvidia-encode.so.* | head -n1 | xargs basename) libnvidia-encode.so.1 || true; fi
+	if ls "$ROOT/usr/lib64/libnvcuvid.so."* >/dev/null 2>&1; then cd "$ROOT/usr/lib64" && ln -sf $(ls libnvcuvid.so.* | head -n1 | xargs basename) libnvcuvid.so.1 || true; fi
+	if ls "$ROOT/usr/lib64/libnvidia-opticalflow.so."* >/dev/null 2>&1; then cd "$ROOT/usr/lib64" && ln -sf $(ls libnvidia-opticalflow.so.* | head -n1 | xargs basename) libnvidia-opticalflow.so.1 || true; fi
 done
 
 # If the expected kernel source directory is missing (e.g., /usr/src is host-mounted),

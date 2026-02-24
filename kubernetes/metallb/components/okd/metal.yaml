@@ -6,6 +6,10 @@ metadata:
   namespace: metallb-system
 spec:
   loadBalancerClass: metallb.io/metallb-class
+  speakerTolerations:
+    - key: "node-role.kubernetes.io/gpu"
+      operator: "Exists"
+      effect: "NoSchedule"
   speakerConfig:
     resources:
       requests:
@@ -15,8 +19,6 @@ spec:
         cpu: 20m
         memory: 96Mi
   controllerTolerations:
-    - key: node-role.kubernetes.io/control-plane
-      effect: NoSchedule
     - key: node-role.kubernetes.io/control-plane
       effect: NoSchedule
   controllerConfig:
@@ -32,7 +34,5 @@ spec:
         requiredDuringSchedulingIgnoredDuringExecution:
           nodeSelectorTerms:
             - matchExpressions:
-                - key: node-role.kubernetes.io/control-plane
-                  operator: Exists
                 - key: node-role.kubernetes.io/control-plane
                   operator: Exists
