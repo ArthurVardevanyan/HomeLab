@@ -141,19 +141,18 @@ RUN useradd -u 1001 -m -s /bin/bash builder
 
 # Install build tooling required for cloning and building the NVIDIA kmod
 ARG DNF_FLAGS="--setopt=tsflags=nodocs --setopt=install_weak_deps=0 --setopt=fastestmirror=True"
-RUN dnf install -y $DNF_FLAGS git gcc make perl bc elfutils-libelf-devel openssl curl tar xz jq dnf-plugins-core ca-certificates kmod rsync \
-	&& dnf clean all \
-	&& rm -rf /var/cache/dnf /var/cache/yum
 
-# Copy kernel RPMs from previous stage
+# Copy and install kernel RPMs first so that gcc's kernel-headers dependency
+# is satisfied by the pinned version rather than pulling latest from the repo
 COPY --from=kernel /root/rpmbuild/RPMS/x86_64/kernel-headers-${KERNEL_VERSION}.rpm /tmp/
 COPY --from=kernel /root/rpmbuild/RPMS/x86_64/kernel-devel-${KERNEL_VERSION}.rpm /tmp/
 COPY --from=kernel /root/rpmbuild/RPMS/x86_64/kernel-core-${KERNEL_VERSION}.rpm /tmp/
 COPY --from=kernel /root/rpmbuild/RPMS/x86_64/kernel-modules-core-${KERNEL_VERSION}.rpm /tmp/
 
 RUN dnf install -y $DNF_FLAGS /tmp/kernel-*.rpm \
+	&& dnf install -y $DNF_FLAGS git gcc make perl bc elfutils-libelf-devel openssl curl tar xz jq dnf-plugins-core ca-certificates kmod rsync \
 	&& dnf clean all \
-	&& rm -rf /var/cache/dnf /var/cache/yum
+	&& rm -rf /var/cache/dnf /var/cache/yum /tmp/kernel-*.rpm
 
 WORKDIR /root
 
@@ -259,8 +258,7 @@ RUN curl -fsSL -o /usr/local/bin/ocp_dtk_entrypoint https://raw.githubuserconten
 	&& curl -fsSL -o /usr/local/bin/nvidia-driver https://raw.githubusercontent.com/NVIDIA/gpu-driver-container/refs/heads/main/rhel9/nvidia-driver \
 	&& curl -fsSL -o /usr/local/bin/common.sh https://raw.githubusercontent.com/NVIDIA/gpu-driver-container/refs/heads/main/rhel9/common.sh \
 	&& sed -i 's/dnf install -q -y --releasever=\${DNF_RELEASEVER} "gcc-[^"]*"/dnf install -q -y --releasever=\${DNF_RELEASEVER} gcc \|\| true/' /usr/local/bin/nvidia-driver \
-	&& sed -i 's/modprobe nvidia-modeset/modprobe nvidia-modeset \|\| true/' /usr/local/bin/nvidia-driver \
-	&& sed -i '$i # Build-time override: modules pre-compiled, skip runtime prereqs\n_kernel_requires_package() { return 1; }\n_install_prerequisites() { return 0; }\n_update_package_cache() { return 0; }' /usr/local/bin/nvidia-driver \
+	&& sed -i '$i # Build-time override: modules pre-compiled, skip runtime prereqs\n_kernel_requires_package() { return 1; }\n_install_prerequisites() { return 0; }\n_update_package_cache() { return 0; }\nmodprobe() { if [[ "$*" == *nvidia-modeset* ]]; then command modprobe "$@" || true; else command modprobe "$@"; fi; }' /usr/local/bin/nvidia-driver \
 	&& printf '%s\n' '# --- overrides injected by image build ---' \
 	'_enable_rhocp_and_eus_repos() { echo "[override] Skipping RH OCP/EUS repo enable" >&2; return 0; }' \
 	>> /usr/local/bin/common.sh \
