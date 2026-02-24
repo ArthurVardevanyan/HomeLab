@@ -167,7 +167,8 @@ RUN set -e; \
 	--no-systemd \
 	--no-rpms \
 	--no-backup \
-	--no-precompiled-interface; \
+	--no-precompiled-interface \
+	|| { echo "=== nvidia-installer.log ==="; cat /var/log/nvidia-installer.log 2>/dev/null || true; exit 1; }; \
 	mkdir -p /staging/lib/modules/${KERNEL_VERSION}; \
 	if [ -d "/lib/modules/${KERNEL_VERSION}" ]; then \
 	rsync -a /lib/modules/${KERNEL_VERSION}/ /staging/lib/modules/${KERNEL_VERSION}/ 2>/dev/null || cp -a /lib/modules/${KERNEL_VERSION}/. /staging/lib/modules/${KERNEL_VERSION}/; \
