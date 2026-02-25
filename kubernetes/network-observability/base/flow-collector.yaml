@@ -9,28 +9,46 @@ metadata:
   labels:
     app.kubernetes.io/instance: network-observability
 spec:
+  networkPolicy:
+    enable: true
   agent:
     ebpf:
-      cacheActiveTimeout: 5s
-      cacheMaxFlows: 100000
+      cacheActiveTimeout: 15s
+      cacheMaxFlows: 120000
       excludeInterfaces:
         - lo
       imagePullPolicy: IfNotPresent
       kafkaBatchSize: 1048576
       logLevel: info
+      metrics:
+        server:
+          tls:
+            insecureSkipVerify: true
+            type: Auto
       resources:
         limits:
-          cpu: 200m
-          memory: 256Mi
+          cpu: 45m
+          memory: 512Mi
         requests:
-          cpu: 10m
-          memory: 64Mi
+          cpu: 15m
+          memory: 384Mi
       sampling: 75 #50 # 35 # 5 # 0 # Send All Flows, 50 Default
+      privileged: true
+      features:
+        - PacketDrop
+        - DNSTracking
+        - FlowRTT
+        - NetworkEvents
+        - PacketTranslation
+        # - EbpfManager
+        - UDNMapping
+        # - IPSec
     ipfix:
       cacheActiveTimeout: 20s
       cacheMaxFlows: 400
       clusterNetworkOperator:
         namespace: openshift-network-operator
+      forceSampleAll: false
       ovnKubernetes:
         containerName: ovnkube-node
         daemonSetName: ovnkube-node
@@ -39,7 +57,7 @@ spec:
     type: eBPF
   consolePlugin:
     autoscaler:
-      maxReplicas: 3
+      maxReplicas: 2
       status: Disabled
     enable: true
     imagePullPolicy: IfNotPresent
@@ -49,23 +67,29 @@ spec:
     quickFilters:
       - default: true
         filter:
-          flow_layer: app
+          flow_layer: '"app"'
         name: Applications
       - filter:
-          flow_layer: infra
+          flow_layer: '"infra"'
         name: Infrastructure
       - default: true
         filter:
-          dst_kind: Pod
-          src_kind: Pod
+          dst_kind: '"Pod"'
+          src_kind: '"Pod"'
         name: Pods network
       - filter:
-          dst_kind: Service
+          dst_kind: '"Service"'
         name: Services network
+      - filter:
+          src_subnet_label: '"",EXT:'
+        name: External ingress
+      - filter:
+          dst_subnet_label: '"",EXT:'
+        name: External egress
     replicas: 2
     resources:
       limits:
-        cpu: 150m
+        cpu: 100m
         memory: 128Mi
       requests:
         cpu: 5m
@@ -77,41 +101,44 @@ spec:
       type: Disabled
     topic: ""
   loki:
-    enable: true
+    enable: false # true
     lokiStack:
       name: loki
     manual:
       authToken: Forward
-      ingesterUrl: https://netobserv-gateway-http.network-observability-loki.svc:8080/api/logs/v1/network/
-      querierUrl: https://netobserv-gateway-http.network-observability-loki.svc:8080/api/logs/v1/network/
-      statusUrl: https://netobserv-query-frontend-http.network-observability-loki.svc:3100/
+      ingesterUrl: https://netobserv-gateway-http.openshift-netobserv-loki.svc.cluster.local.:8080/api/logs/v1/network/
+      querierUrl: https://netobserv-gateway-http.openshift-netobserv-loki.svc.cluster.local.:8080/api/logs/v1/network/
+      statusUrl: https://netobserv-query-frontend-http.openshift-netobserv-loki.svc.cluster.local.:3100/
       tenantID: netobserv
       tls:
         enable: true
         insecureSkipVerify: true
     microservices:
-      ingesterUrl: https://netobserv-distributor.network-observability-loki.svc:3100/
-      querierUrl: https://netobserv-query-frontend.network-observability-loki.svc:3100/
+      ingesterUrl: https://netobserv-distributor.openshift-netobserv-loki.svc.cluster.local.:3100/
+      querierUrl: https://netobserv-query-frontend.openshift-netobserv-loki.svc.cluster.local.:3100/
       tenantID: netobserv
     mode: Manual
     monolithic:
       tenantID: netobserv
       tls:
         insecureSkipVerify: true
-      url: http://loki.loki.svc:3100/
+      url: http://loki.loki.svc.cluster.local.:3100/
     readTimeout: 30s
     writeBatchSize: 102760448
     writeBatchWait: 15s
     writeTimeout: 30s
-  namespace: openshift-netobserv-operator
+  namespace: openshift-netobserv
   processor:
+    clusterName: ""
+    addZone: true
     imagePullPolicy: IfNotPresent
     kafkaConsumerAutoscaler:
-      maxReplicas: 3
+      maxReplicas: 2
       status: Disabled
+    subnetLabels: {}
     kafkaConsumerBatchSize: 10485760
     kafkaConsumerQueueCapacity: 1000
-    kafkaConsumerReplicas: 3
+    kafkaConsumerReplicas: 2
     logLevel: info
     logTypes: Flows
     metrics:
@@ -120,10 +147,13 @@ spec:
         tls:
           type: Disabled
     multiClusterDeployment: false
+    slicesConfig:
+      collectionMode: AlwaysCollect
+      enable: false
     resources:
       limits:
         cpu: 150m
-        memory: 256Mi
+        memory: 192Mi
       requests:
-        cpu: 25m
-        memory: 64Mi
+        cpu: 50m
+        memory: 128Mi

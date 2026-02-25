@@ -5,13 +5,12 @@ metadata:
   annotations:
     argocd.argoproj.io/sync-wave: "0"
   labels:
-    pod-security.kubernetes.io/enforce: privileged # restricted
+    pod-security.kubernetes.io/enforce: restricted
     pod-security.kubernetes.io/enforce-version: latest
-    pod-security.kubernetes.io/warn: privileged # restricted
+    pod-security.kubernetes.io/warn: restricted
     pod-security.kubernetes.io/warn-version: latest
-    pod-security.kubernetes.io/audit: privileged # restricted
+    pod-security.kubernetes.io/audit: restricted
     pod-security.kubernetes.io/audit-version: latest
-    app.kubernetes.io/instance: openshift-netobserv-operator
     kubernetes.io/metadata.name: openshift-netobserv-operator
     openshift.io/cluster-monitoring: "true"
   name: openshift-netobserv-operator
@@ -28,7 +27,39 @@ metadata:
     pod-security.kubernetes.io/warn-version: latest
     pod-security.kubernetes.io/audit: restricted
     pod-security.kubernetes.io/audit-version: latest
-    app.kubernetes.io/instance: network-observability
-    kubernetes.io/metadata.name: network-observability-loki
+    kubernetes.io/metadata.name: openshift-netobserv-loki
     openshift.io/cluster-monitoring: "true"
-  name: network-observability-loki
+  name: openshift-netobserv-loki
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  annotations:
+    argocd.argoproj.io/sync-wave: "0"
+  labels:
+    pod-security.kubernetes.io/enforce: privileged
+    pod-security.kubernetes.io/enforce-version: latest
+    pod-security.kubernetes.io/warn: privileged
+    pod-security.kubernetes.io/warn-version: latest
+    pod-security.kubernetes.io/audit: privileged
+    pod-security.kubernetes.io/audit-version: latest
+    kubernetes.io/metadata.name: openshift-netobserv
+    openshift.io/cluster-monitoring: "true"
+  name: openshift-netobserv
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  annotations:
+    argocd.argoproj.io/sync-wave: "0"
+  labels:
+    pod-security.kubernetes.io/enforce: privileged
+    pod-security.kubernetes.io/enforce-version: latest
+    pod-security.kubernetes.io/warn: privileged
+    pod-security.kubernetes.io/warn-version: latest
+    pod-security.kubernetes.io/audit: privileged
+    pod-security.kubernetes.io/audit-version: latest
+    kubernetes.io/metadata.name: openshift-netobserv-privileged
+    openshift.io/cluster-monitoring: "true"
+  name: openshift-netobserv-privileged
+---
