@@ -230,13 +230,13 @@ stateful_workload_stop() {
   # kubectl scale --replicas=0 -n netbox statefulset/netbox-dragonfly
 
   kubectl scale --replicas=0 -n loki-operator deployment/loki-operator-controller-manager
-  kubectl scale --replicas=0 -n network-observability-loki statefulset/netobserv-compactor
-  kubectl scale --replicas=0 -n network-observability-loki statefulset/netobserv-index-gateway
-  kubectl scale --replicas=0 -n network-observability-loki statefulset/netobserv-ingester
-  kubectl scale --replicas=0 -n network-observability-loki deployment/netobserv-distributor
-  kubectl scale --replicas=0 -n network-observability-loki deployment/netobserv-gateway
-  kubectl scale --replicas=0 -n network-observability-loki deployment/netobserv-querier
-  kubectl scale --replicas=0 -n network-observability-loki deployment/netobserv-query-frontend
+  kubectl scale --replicas=0 -n openshift-netobserv-loki statefulset/netobserv-compactor
+  kubectl scale --replicas=0 -n openshift-netobserv-loki statefulset/netobserv-index-gateway
+  kubectl scale --replicas=0 -n openshift-netobserv-loki statefulset/netobserv-ingester
+  kubectl scale --replicas=0 -n openshift-netobserv-loki deployment/netobserv-distributor
+  kubectl scale --replicas=0 -n openshift-netobserv-loki deployment/netobserv-gateway
+  kubectl scale --replicas=0 -n openshift-netobserv-loki deployment/netobserv-querier
+  kubectl scale --replicas=0 -n openshift-netobserv-loki deployment/netobserv-query-frontend
 
   kubectl scale --replicas=0 -n openshift-logging statefulset/logging-loki-compactor
   kubectl scale --replicas=0 -n openshift-logging statefulset/logging-loki-index-gateway

@@ -20,7 +20,7 @@ apiVersion: k8s.ovn.org/v1
 kind: EgressFirewall
 metadata:
   name: default
-  namespace: network-observability-loki
+  namespace: openshift-netobserv-loki
 spec:
   egress:
     # Control Plane
@@ -32,13 +32,29 @@ spec:
     - type: Deny
       to:
         cidrSelector: 0.0.0.0/0
-
 ---
 apiVersion: k8s.ovn.org/v1
 kind: EgressFirewall
 metadata:
   name: default
-  namespace: network-observability-privileged
+  namespace: openshift-netobserv
+spec:
+  egress:
+    # Control Plane
+    - type: Allow
+      to:
+        nodeSelector:
+          matchLabels:
+            node-role.kubernetes.io/control-plane: ""
+    - type: Deny
+      to:
+        cidrSelector: 0.0.0.0/0
+---
+apiVersion: k8s.ovn.org/v1
+kind: EgressFirewall
+metadata:
+  name: default
+  namespace: openshift-netobserv-privileged
 spec:
   egress:
     # Control Plane

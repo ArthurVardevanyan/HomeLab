@@ -3,7 +3,7 @@ apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
   name: deny-all
-  namespace: network-observability-loki
+  namespace: openshift-netobserv-loki
   annotations:
     argocd.argoproj.io/sync-wave: "0"
 spec:
@@ -16,7 +16,7 @@ apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
   name: allow-openshift-monitoring
-  namespace: network-observability-loki
+  namespace: openshift-netobserv-loki
   annotations:
     argocd.argoproj.io/sync-wave: "0"
 spec:
@@ -62,7 +62,7 @@ apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
   name: allow-api-server
-  namespace: network-observability-loki
+  namespace: openshift-netobserv-loki
   annotations:
     argocd.argoproj.io/sync-wave: "0"
 spec:
@@ -85,7 +85,7 @@ apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
   name: allow-dns-traffic
-  namespace: network-observability-loki
+  namespace: openshift-netobserv-loki
   annotations:
     argocd.argoproj.io/sync-wave: "0"
 spec:
@@ -110,7 +110,7 @@ apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
   name: allow-ceph-obj
-  namespace: network-observability-loki
+  namespace: openshift-netobserv-loki
   annotations:
     argocd.argoproj.io/sync-wave: "0"
 spec:
@@ -134,7 +134,7 @@ apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
   name: allow-egress-loki
-  namespace: network-observability-loki
+  namespace: openshift-netobserv-loki
 spec:
   policyTypes:
     - Ingress
@@ -149,7 +149,7 @@ apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
   name: internal-communication
-  namespace: network-observability-loki
+  namespace: openshift-netobserv-loki
   annotations:
     argocd.argoproj.io/sync-wave: "0"
 spec:
@@ -161,9 +161,9 @@ spec:
     - from:
         - namespaceSelector:
             matchLabels:
-              kubernetes.io/metadata.name: network-observability-loki
+              kubernetes.io/metadata.name: openshift-netobserv-loki
   egress:
     - to:
         - namespaceSelector:
             matchLabels:
-              kubernetes.io/metadata.name: network-observability-loki
+              kubernetes.io/metadata.name: openshift-netobserv-loki
