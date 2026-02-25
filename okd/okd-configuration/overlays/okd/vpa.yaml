@@ -25,31 +25,6 @@ spec:
           - memory
         controlledValues: "RequestsAndLimits" # RequestsOnly
 ---
-apiVersion: autoscaling.k8s.io/v1
-kind: VerticalPodAutoscaler
-metadata:
-  name: router-apps
-  namespace: openshift-ingress
-  annotations:
-    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
-spec:
-  targetRef:
-    apiVersion: apps/v1
-    kind: Deployment
-    name: router-apps
-  updatePolicy:
-    updateMode: "InPlaceOrRecreate"
-  resourcePolicy:
-    containerPolicies:
-      - containerName: router
-        minAllowed:
-          memory: 16Mi
-        maxAllowed:
-          memory: 2Gi
-        controlledResources:
-          - memory
-        controlledValues: "RequestsAndLimits" # RequestsOnly
----
 # istiod - has CPU HPA, so VPA memory only
 apiVersion: autoscaling.k8s.io/v1
 kind: VerticalPodAutoscaler
