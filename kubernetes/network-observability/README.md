@@ -10,7 +10,7 @@ kubectl kustomize kubernetes/network-observability/overlays/okd | argocd-vault-p
 
 ## Architecture
 
-```
+```text
 ┌─────────────────────────────────────────────────────────────────────┐
 │ openshift-netobserv-privileged (privileged PSA)                     │
 │   netobserv-ebpf-agent  [DaemonSet]  — captures flows on each node  │
@@ -126,7 +126,7 @@ OVN `EgressFirewall` resources restrict all four namespaces to only egress to co
 
 ## Directory Structure
 
-```
+```text
 network-observability/
 ├── base/
 │   ├── flow-collector.yaml        # FlowCollector CR (v1beta2)
