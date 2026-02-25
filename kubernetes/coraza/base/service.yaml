@@ -1,0 +1,29 @@
+---
+# Source: coraza-kubernetes-operator/templates/service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: coraza-kubernetes-operator
+  namespace: coraza-system
+  labels:
+    helm.sh/chart: coraza-kubernetes-operator-0.1.0
+    app.kubernetes.io/name: coraza-kubernetes-operator
+    app.kubernetes.io/instance: coraza-kubernetes-operator
+    control-plane: coraza-controller-manager
+    app.kubernetes.io/version: "0.2.0"
+    app.kubernetes.io/managed-by: Helm
+spec:
+  type: ClusterIP
+  ports:
+    - name: http
+      port: 80
+      protocol: TCP
+      targetPort: 18080
+    - name: metrics
+      port: 8082
+      protocol: TCP
+      targetPort: 8082
+  selector:
+    app.kubernetes.io/name: coraza-kubernetes-operator
+    app.kubernetes.io/instance: coraza-kubernetes-operator
+    control-plane: coraza-controller-manager

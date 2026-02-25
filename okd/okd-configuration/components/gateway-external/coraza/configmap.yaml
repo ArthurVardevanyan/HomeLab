@@ -1,0 +1,15 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: coraza-custom-rules-external
+  namespace: openshift-ingress
+data:
+  rules: |
+    # Include @demo-conf
+    SecDebugLogLevel 9
+    SecRuleEngine On
+    # Include @crs-setup-conf
+    # Include @owasp_crs/*.conf
+    # Disable body inspection for historical import endpoints (files too large for WASM memory)
+    SecRule REQUEST_URI "@rx ^/analytics/(analyzeHistoricalImport|importHistoricalData)/" "id:1000,phase:1,t:none,nolog,pass,ctl:requestBodyAccess=Off"
