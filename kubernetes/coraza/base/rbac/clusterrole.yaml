@@ -1,0 +1,80 @@
+---
+# Source: coraza-kubernetes-operator/templates/clusterrole.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: coraza-kubernetes-operator
+  labels:
+    helm.sh/chart: coraza-kubernetes-operator-0.1.0
+    app.kubernetes.io/name: coraza-kubernetes-operator
+    app.kubernetes.io/instance: coraza-kubernetes-operator
+    control-plane: coraza-controller-manager
+    app.kubernetes.io/version: "0.2.0"
+    app.kubernetes.io/managed-by: Helm
+rules:
+  - apiGroups:
+      - ""
+    resources:
+      - configmaps
+    verbs:
+      - get
+      - list
+      - watch
+  - apiGroups:
+      - "events.k8s.io"
+      - ""
+    resources:
+      - events
+    verbs:
+      - create
+      - patch
+  - apiGroups:
+      - coordination.k8s.io
+    resources:
+      - leases
+    verbs:
+      - create
+      - delete
+      - get
+      - list
+      - patch
+      - update
+      - watch
+  - apiGroups:
+      - extensions.istio.io
+    resources:
+      - wasmplugins
+    verbs:
+      - create
+      - delete
+      - get
+      - list
+      - patch
+      - update
+      - watch
+  - apiGroups:
+      - waf.k8s.coraza.io
+    resources:
+      - engines
+      - rulesets
+    verbs:
+      - get
+      - list
+      - patch
+      - update
+      - watch
+  - apiGroups:
+      - waf.k8s.coraza.io
+    resources:
+      - engines/status
+      - rulesets/status
+    verbs:
+      - get
+      - patch
+      - update
+  - apiGroups:
+      - waf.k8s.coraza.io
+    resources:
+      - engines/finalizers
+    verbs:
+      - update

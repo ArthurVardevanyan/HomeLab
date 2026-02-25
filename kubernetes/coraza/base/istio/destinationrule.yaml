@@ -1,0 +1,22 @@
+---
+# Source: coraza-kubernetes-operator/templates/istio-destinationrule.yaml
+apiVersion: networking.istio.io/v1
+kind: DestinationRule
+metadata:
+  name: coraza-kubernetes-operator-ruleset-cache
+  namespace: coraza-system
+  annotations:
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+  labels:
+    helm.sh/chart: coraza-kubernetes-operator-0.1.0
+    app.kubernetes.io/name: coraza-kubernetes-operator
+    app.kubernetes.io/instance: coraza-kubernetes-operator
+    control-plane: coraza-controller-manager
+    app.kubernetes.io/version: "0.2.0"
+    app.kubernetes.io/managed-by: Helm
+    istio.io/rev: "coraza"
+spec:
+  host: coraza-kubernetes-operator.coraza-system.svc.cluster.local
+  trafficPolicy:
+    tls:
+      mode: DISABLE
