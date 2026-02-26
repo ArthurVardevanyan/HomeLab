@@ -82,14 +82,14 @@ metadata:
   namespace: openshift-ingress
 data:
   rules: |
-    # Include @demo-conf
+    Include @demo-conf
     SecDebugLogLevel 9
-    # SecRuleEngine On
+    SecRuleEngine On
     SecRule REQUEST_HEADERS:Host "@streq vault.arthurvardevanyan.com" "id:1100,phase:1,pass,nolog,chain"
     SecRule REQUEST_URI "@beginsWith /v1/auth/" "ctl:ruleRemoveById=911100,ctl:ruleRemoveById=949111"
     SecRule REQUEST_HEADERS:Host "@streq files.arthurvardevanyan.com" "id:1101,phase:1,pass,nolog,chain"
     SecRule REQUEST_URI "@beginsWith /remote.php/dav/" "ctl:ruleRemoveById=911100,ctl:ruleRemoveById=949111"
-    # Include @crs-setup-conf
-    # Include @owasp_crs/*.conf
+    Include @crs-setup-conf
+    Include @owasp_crs/*.conf
     # Disable body inspection for historical import endpoints (files too large for WASM memory)
     SecRule REQUEST_URI "@rx ^/analytics/(analyzeHistoricalImport|importHistoricalData)/" "id:1102,phase:1,t:none,nolog,pass,ctl:requestBodyAccess=Off"
