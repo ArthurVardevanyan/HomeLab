@@ -1,0 +1,24 @@
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: ollama
+  namespace: ollama
+rules:
+  - apiGroups: [""]
+    resources: ["pods"]
+    verbs: ["get", "list", "watch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: ollama
+  namespace: ollama
+subjects:
+  - kind: ServiceAccount
+    name: ollama
+    namespace: ollama
+roleRef:
+  kind: Role
+  name: ollama
+  apiGroup: rbac.authorization.k8s.io.v1
