@@ -1,0 +1,71 @@
+kind: Deployment
+apiVersion: apps/v1
+metadata:
+  name: ollama-coder
+  namespace: ollama
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ollama-coder
+  template:
+    metadata:
+      labels:
+        app: ollama-coder
+    spec:
+      restartPolicy: Always
+      schedulerName: default-scheduler
+      terminationGracePeriodSeconds: 30
+      runtimeClassName: nvidia
+      securityContext: {}
+      containers:
+        - resources:
+            limits:
+              cpu: "10"
+              memory: 48Gi
+              nvidia.com/gpu: "1"
+            requests:
+              cpu: "8"
+              memory: 48Gi
+          terminationMessagePath: /dev/termination-log
+          lifecycle:
+            postStart:
+              exec:
+                command:
+                  - /bin/sh
+                  - "-c"
+                  - |
+                    sleep 5;
+                    # ollama pull qwen2.5-coder:14b;
+                    # ollama pull qwen2.5-coder:7b;
+                    ollama pull qwen2.5-coder:1.5b;
+                    ollama pull qwen3-coder:30b;
+                    ollama pull nomic-embed-text;
+          name: ollama
+          env:
+            - name: OLLAMA_HOST
+              value: 0.0.0.0
+            - name: OLLAMA_KEEP_ALIVE
+              value: 24h
+          ports:
+            - containerPort: 11434
+              protocol: TCP
+          imagePullPolicy: Always
+          volumeMounts:
+            - name: ollama-config
+              mountPath: /.ollama
+          terminationMessagePolicy: File
+          image: "ollama/ollama:latest"
+      volumes:
+        - name: ollama-config
+          persistentVolumeClaim:
+            claimName: ollama-storage
+      dnsPolicy: ClusterFirst
+      tolerations:
+        - key: node-role.kubernetes.io/gpu
+          operator: Exists
+          effect: NoSchedule
+  strategy:
+    type: Recreate
+  revisionHistoryLimit: 10
+  progressDeadlineSeconds: 600
