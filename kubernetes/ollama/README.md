@@ -17,8 +17,24 @@ The base directory contains the following resources:
 - `service.yaml` - ClusterIP service for Ollama
 - `deployment.yaml` - Ollama deployment with GPU support
 - `network-policy.yaml` - Network policies for Ollama
-- `pdb.yaml` - Pod disruption budget
-- `rbac.yaml` - Role-based access control
+
+### Network Policies
+
+The base deployment includes multiple network policies:
+
+| Policy Name                  | Description                                                          |
+| ---------------------------- | -------------------------------------------------------------------- |
+| `deny-all`                   | Default deny both ingress and egress                                 |
+| `allow-dns-traffic`          | Allows egress to OpenShift DNS (port 53)                             |
+| `allow-ollama-api`           | Allows ingress on port 11434 from same namespace                     |
+| `allow-openshift-monitoring` | Allows ingress on port 11434 from OpenShift monitoring namespaces    |
+| `allow-external-egress`      | Allows egress to external networks (excludes RFC1918 private ranges) |
+
+## OKD Overlay Resources
+
+The `okd/` overlay adds:
+
+- `egress-firewall.yaml` - OVN EgressFirewall for additional egress control (Cloudflare IPs for registry.ollama.ai)
 
 ## Usage
 
@@ -26,6 +42,12 @@ To deploy Ollama to OKD:
 
 ```bash
 kubectl apply -k kubernetes/ollama/overlays/okd
+```
+
+To deploy to other Kubernetes clusters:
+
+```bash
+kubectl apply -k kubernetes/ollama/base
 ```
 
 ## Configuration
