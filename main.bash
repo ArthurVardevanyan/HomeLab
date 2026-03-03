@@ -972,6 +972,28 @@ delete_okd_virt() {
   # ${OKD}/openshift-install-linux* \
   # ${OKD}/openshift-client-linux* \
 
+  echo -e "\n\n${BLUE}Stopping VMs Gracefully:${NC}"
+  VM_NAMES=$(kubectl get vm -n okd-virt -o jsonpath='{.items[*].metadata.name}' 2>/dev/null)
+  for VM in ${VM_NAMES}; do
+    echo "Stopping VM: ${VM}"
+    virtctl stop "${VM}" -n okd-virt --ignore-not-found 2>/dev/null || true
+  done
+
+  echo -e "\n\n${BLUE}Waiting for VMs to Stop:${NC}"
+  for VM in ${VM_NAMES}; do
+    echo -n "Waiting for ${VM}..."
+    while true; do
+      PHASE=$(kubectl get vm "${VM}" -n okd-virt -o jsonpath='{.status.printableStatus}' 2>/dev/null || echo "Deleted")
+      if [[ "${PHASE}" == "Stopped" || "${PHASE}" == "Deleted" ]]; then
+        echo " done (${PHASE})"
+        break
+      fi
+      echo -n "."
+      sleep 5
+    done
+  done
+
+  echo -e "\n\n${BLUE}Deleting VMs:${NC}"
   kubectl delete -f "${HOMELAB}/sandbox/kubevirt/okd/vm" --ignore-not-found
 }
 
