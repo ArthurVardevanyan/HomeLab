@@ -1,0 +1,189 @@
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: deny-all
+  namespace: openshift-ingress-logs
+  labels:
+    app.kubernetes.io/instance: ingress-logs
+spec:
+  policyTypes:
+    - Ingress
+    - Egress
+  podSelector: {}
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-dns-traffic
+  namespace: openshift-ingress-logs
+  labels:
+    app.kubernetes.io/instance: ingress-logs
+spec:
+  policyTypes:
+    - Egress
+  podSelector: {}
+  egress:
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: openshift-dns
+          podSelector:
+            matchLabels:
+              dns.operator.openshift.io/daemonset-dns: default
+      ports:
+        - port: 5353
+          protocol: UDP
+        - port: 5353
+          protocol: TCP
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-victoria-metrics-storage-egress
+  namespace: openshift-ingress-logs
+  labels:
+    app.kubernetes.io/instance: ingress-logs
+spec:
+  policyTypes:
+    - Egress
+  podSelector:
+    matchExpressions:
+      - key: app.kubernetes.io/name
+        operator: In
+        values:
+          - vminsert
+          - vmselect
+  egress:
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: openshift-ingress-logs
+          podSelector:
+            matchLabels:
+              app.kubernetes.io/instance: ingress-logs
+              app.kubernetes.io/name: vmstorage
+      ports:
+        - port: 8400
+          protocol: TCP
+        - port: 8401
+          protocol: TCP
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-victoria-metrics-storage-ingress
+  namespace: openshift-ingress-logs
+  labels:
+    app.kubernetes.io/instance: ingress-logs
+spec:
+  policyTypes:
+    - Ingress
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: vmstorage
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: openshift-ingress-logs
+          podSelector:
+            matchExpressions:
+              - key: app.kubernetes.io/name
+                operator: In
+                values:
+                  - vminsert
+                  - vmselect
+      ports:
+        - port: 8400
+          protocol: TCP
+        - port: 8401
+          protocol: TCP
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-victoria-metrics-insert-ingress
+  namespace: openshift-ingress-logs
+  labels:
+    app.kubernetes.io/instance: ingress-logs
+spec:
+  policyTypes:
+    - Ingress
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/instance: ingress-logs
+      app.kubernetes.io/name: vminsert
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: openshift-ingress
+          podSelector:
+            matchLabels:
+              gateway.networking.k8s.io/gateway-name: https-gateway
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: openshift-ingress
+          podSelector:
+            matchLabels:
+              gateway.networking.k8s.io/gateway-name: https-gateway-external
+      ports:
+        - port: 8480
+          protocol: TCP
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-grafana-victoria-metrics
+  namespace: openshift-ingress-logs
+  labels:
+    app.kubernetes.io/instance: ingress-logs
+spec:
+  policyTypes:
+    - Ingress
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/instance: ingress-logs
+      app.kubernetes.io/name: vmselect
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: grafana
+      ports:
+        - port: 8481
+          protocol: TCP
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-openshift-monitoring
+  namespace: openshift-ingress-logs
+  labels:
+    app.kubernetes.io/instance: ingress-logs
+spec:
+  policyTypes:
+    - Ingress
+  podSelector: {}
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              name: openshift-monitoring
+          podSelector:
+            matchLabels:
+              app.kubernetes.io/name: prometheus
+        - namespaceSelector:
+            matchLabels:
+              name: openshift-user-workload-monitoring
+          podSelector:
+            matchLabels:
+              app.kubernetes.io/name: prometheus
+      ports:
+        - protocol: TCP
+          port: 8482
+        - protocol: TCP
+          port: 8480
+        - protocol: TCP
+          port: 8481
