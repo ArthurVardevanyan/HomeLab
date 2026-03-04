@@ -1,18 +1,14 @@
 ---
-apiVersion: operator.victoriametrics.com/v1beta1
-kind: VMCluster
+apiVersion: operator.victoriametrics.com/v1
+kind: VLCluster
 metadata:
   name: ingress-logs
   namespace: openshift-ingress-logs
   annotations:
     argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
 spec:
-  # renovate: datasource=github-releases depName=VictoriaMetrics/VictoriaMetrics
-  clusterVersion: "v1.132.0-cluster"
-  retentionPeriod: 7d
-  vminsert:
-    image:
-      repository: docker.io/victoriametrics/vminsert
+  useStrictSecurity: true
+  vlinsert:
     replicaCount: 2
     resources:
       requests:
@@ -33,7 +29,7 @@ spec:
     podDisruptionBudget:
       minAvailable: 1
       selectorLabels:
-        app.kubernetes.io/name: vminsert
+        app.kubernetes.io/name: vlinsert
         app.kubernetes.io/instance: ingress-logs
     topologySpreadConstraints:
       - maxSkew: 1
@@ -41,36 +37,24 @@ spec:
         whenUnsatisfiable: DoNotSchedule
         labelSelector:
           matchLabels:
-            app.kubernetes.io/name: vminsert
+            app.kubernetes.io/name: vlinsert
             app.kubernetes.io/instance: ingress-logs
       - maxSkew: 1
         topologyKey: "kubernetes.io/hostname"
         whenUnsatisfiable: DoNotSchedule
         labelSelector:
           matchLabels:
-            app.kubernetes.io/name: vminsert
+            app.kubernetes.io/name: vlinsert
             app.kubernetes.io/instance: ingress-logs
-  vmselect:
-    image:
-      repository: docker.io/victoriametrics/vmselect
+  vlselect:
     replicaCount: 2
-    cacheMountPath: "/select-cache"
-    storage:
-      volumeClaimTemplate:
-        spec:
-          storageClassName: rook-ceph-block-ci
-          accessModes:
-            - ReadWriteOnce
-          resources:
-            requests:
-              storage: 10Gi
     resources:
       requests:
         cpu: "10m"
         memory: "32Mi"
       limits:
-        cpu: "100m"
-        memory: "3Gi"
+        cpu: "50m"
+        memory: "512Mi"
     securityContext:
       runAsNonRoot: true
       readOnlyRootFilesystem: true
@@ -83,7 +67,7 @@ spec:
     podDisruptionBudget:
       minAvailable: 1
       selectorLabels:
-        app.kubernetes.io/name: vmselect
+        app.kubernetes.io/name: vlselect
         app.kubernetes.io/instance: ingress-logs
     topologySpreadConstraints:
       - maxSkew: 1
@@ -91,20 +75,19 @@ spec:
         whenUnsatisfiable: DoNotSchedule
         labelSelector:
           matchLabels:
-            app.kubernetes.io/name: vmselect
+            app.kubernetes.io/name: vlselect
             app.kubernetes.io/instance: ingress-logs
       - maxSkew: 1
         topologyKey: "kubernetes.io/hostname"
         whenUnsatisfiable: DoNotSchedule
         labelSelector:
           matchLabels:
-            app.kubernetes.io/name: vmselect
+            app.kubernetes.io/name: vlselect
             app.kubernetes.io/instance: ingress-logs
-  vmstorage:
-    image:
-      repository: docker.io/victoriametrics/vmstorage
+  vlstorage:
     replicaCount: 2
-    storageDataPath: "/vm-data"
+    retentionPeriod: "7d"
+    storageDataPath: "/vl-data"
     storage:
       volumeClaimTemplate:
         spec:
@@ -133,7 +116,7 @@ spec:
     podDisruptionBudget:
       minAvailable: 1
       selectorLabels:
-        app.kubernetes.io/name: vmstorage
+        app.kubernetes.io/name: vlstorage
         app.kubernetes.io/instance: ingress-logs
     topologySpreadConstraints:
       - maxSkew: 1
@@ -141,12 +124,12 @@ spec:
         whenUnsatisfiable: DoNotSchedule
         labelSelector:
           matchLabels:
-            app.kubernetes.io/name: vmstorage
+            app.kubernetes.io/name: vlstorage
             app.kubernetes.io/instance: ingress-logs
       - maxSkew: 1
         topologyKey: "kubernetes.io/hostname"
         whenUnsatisfiable: DoNotSchedule
         labelSelector:
           matchLabels:
-            app.kubernetes.io/name: vmstorage
+            app.kubernetes.io/name: vlstorage
             app.kubernetes.io/instance: ingress-logs

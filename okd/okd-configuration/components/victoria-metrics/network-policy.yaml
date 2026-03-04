@@ -40,70 +40,7 @@ spec:
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
-  name: allow-victoria-metrics-storage-egress
-  namespace: openshift-ingress-logs
-  labels:
-    app.kubernetes.io/instance: ingress-logs
-spec:
-  policyTypes:
-    - Egress
-  podSelector:
-    matchExpressions:
-      - key: app.kubernetes.io/name
-        operator: In
-        values:
-          - vminsert
-          - vmselect
-  egress:
-    - to:
-        - namespaceSelector:
-            matchLabels:
-              kubernetes.io/metadata.name: openshift-ingress-logs
-          podSelector:
-            matchLabels:
-              app.kubernetes.io/instance: ingress-logs
-              app.kubernetes.io/name: vmstorage
-      ports:
-        - port: 8400
-          protocol: TCP
-        - port: 8401
-          protocol: TCP
----
-apiVersion: networking.k8s.io/v1
-kind: NetworkPolicy
-metadata:
-  name: allow-victoria-metrics-storage-ingress
-  namespace: openshift-ingress-logs
-  labels:
-    app.kubernetes.io/instance: ingress-logs
-spec:
-  policyTypes:
-    - Ingress
-  podSelector:
-    matchLabels:
-      app.kubernetes.io/name: vmstorage
-  ingress:
-    - from:
-        - namespaceSelector:
-            matchLabels:
-              kubernetes.io/metadata.name: openshift-ingress-logs
-          podSelector:
-            matchExpressions:
-              - key: app.kubernetes.io/name
-                operator: In
-                values:
-                  - vminsert
-                  - vmselect
-      ports:
-        - port: 8400
-          protocol: TCP
-        - port: 8401
-          protocol: TCP
----
-apiVersion: networking.k8s.io/v1
-kind: NetworkPolicy
-metadata:
-  name: allow-victoria-metrics-insert-ingress
+  name: allow-vlinsert-ingress
   namespace: openshift-ingress-logs
   labels:
     app.kubernetes.io/instance: ingress-logs
@@ -113,7 +50,7 @@ spec:
   podSelector:
     matchLabels:
       app.kubernetes.io/instance: ingress-logs
-      app.kubernetes.io/name: vminsert
+      app.kubernetes.io/name: vlinsert
   ingress:
     - from:
         - namespaceSelector:
@@ -129,13 +66,13 @@ spec:
             matchLabels:
               gateway.networking.k8s.io/gateway-name: https-gateway-external
       ports:
-        - port: 8480
+        - port: 9480
           protocol: TCP
 ---
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
-  name: allow-grafana-victoria-metrics
+  name: allow-vlselect-ingress
   namespace: openshift-ingress-logs
   labels:
     app.kubernetes.io/instance: ingress-logs
@@ -145,15 +82,40 @@ spec:
   podSelector:
     matchLabels:
       app.kubernetes.io/instance: ingress-logs
-      app.kubernetes.io/name: vmselect
+      app.kubernetes.io/name: vlselect
   ingress:
     - from:
         - namespaceSelector:
             matchLabels:
               kubernetes.io/metadata.name: grafana
       ports:
-        - port: 8481
+        - port: 9471
           protocol: TCP
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-cluster-internal
+  namespace: openshift-ingress-logs
+  labels:
+    app.kubernetes.io/instance: ingress-logs
+spec:
+  policyTypes:
+    - Ingress
+    - Egress
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/instance: ingress-logs
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/instance: ingress-logs
+  egress:
+    - to:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/instance: ingress-logs
 ---
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
@@ -182,8 +144,8 @@ spec:
               app.kubernetes.io/name: prometheus
       ports:
         - protocol: TCP
-          port: 8482
+          port: 9480
         - protocol: TCP
-          port: 8480
+          port: 9471
         - protocol: TCP
-          port: 8481
+          port: 9491
