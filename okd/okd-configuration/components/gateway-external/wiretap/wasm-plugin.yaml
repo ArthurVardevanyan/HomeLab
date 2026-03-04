@@ -1,0 +1,33 @@
+apiVersion: extensions.istio.io/v1alpha1
+kind: WasmPlugin
+metadata:
+  name: wasm-wiretap-external
+  namespace: openshift-ingress
+spec:
+  # Target the gateway workload(s).
+  targetRefs:
+    - group: gateway.networking.k8s.io
+      kind: Gateway
+      name: https-gateway-external
+
+  # Where Istio pulls the .wasm binary from (OCI image).
+  url: oci://registry.arthurvardevanyan.com/homelab/wasm-wiretap@sha256:0c56fdc4f0da4e205db09cbd06ba9bd1034b1f06ccbae1aca7bb746eb999a86e
+
+  # Phase – AUTHN runs early; STATS runs late.  For passive capture
+  # we typically want STATS so we see final response codes.
+  phase: STATS
+  priority: 1
+
+  # JSON config forwarded to the plugin's on_configure().
+  pluginConfig:
+    backend: "loki"
+    upstream_cluster: "outbound|3100||loki.loki.svc.cluster.local."
+    upstream_authority: "loki.loki.svc.cluster.local."
+    upstream_port: 3100
+    upstream_path: "/loki/api/v1/push"
+    service_name: "https-gateway-external"
+    capture_request_headers: true
+    capture_request_body: true
+    capture_response_headers: true
+    capture_response_body: true
+    max_body_bytes: 65536
