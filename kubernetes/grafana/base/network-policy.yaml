@@ -159,6 +159,13 @@ spec:
             matchLabels:
               app.kubernetes.io/instance: homeassistant
               app.kubernetes.io/name: vmselect
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: openshift-ingress-logs
+          podSelector:
+            matchLabels:
+              app.kubernetes.io/instance: ingress-logs
+              app.kubernetes.io/name: vmselect
       ports:
         - port: 8481
           protocol: TCP
