@@ -1,0 +1,14 @@
+apiVersion: networking.istio.io/v1
+kind: ServiceEntry
+metadata:
+  name: loki-external
+  namespace: openshift-ingress
+spec:
+  hosts:
+    - loki.loki.svc.cluster.local.
+  ports:
+    - number: 3100
+      name: http
+      protocol: HTTP
+  resolution: DNS
+  location: MESH_INTERNAL
