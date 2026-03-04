@@ -26,11 +26,11 @@ kubectl kustomize kubernetes/cloudnative-pg/overlays/okd | kubectl apply -f - --
 ### Variables
 
 ```bash
-NAMESPACE=homeassistant
-CLUSTER=homeassistant
-DB_NAME=homeassistant
-DB_USER=homeassistant
-APP_DEPLOYMENT=homeassistant
+NAMESPACE=stackrox
+CLUSTER=stackrox
+DB_NAME=stackrox
+DB_USER=stackrox
+APP_DEPLOYMENT=stackrox
 ```
 
 ### 1. Scale down the application
