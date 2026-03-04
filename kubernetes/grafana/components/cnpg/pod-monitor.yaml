@@ -1,0 +1,14 @@
+---
+apiVersion: monitoring.coreos.com/v1
+kind: PodMonitor
+metadata:
+  name: cnpg-grafana
+  namespace: grafana
+  labels:
+    app.kubernetes.io/instance: grafana
+spec:
+  selector:
+    matchLabels:
+      cnpg.io/cluster: grafana
+  podMetricsEndpoints:
+    - port: metrics
