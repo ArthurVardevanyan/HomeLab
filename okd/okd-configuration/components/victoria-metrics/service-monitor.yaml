@@ -2,7 +2,7 @@
 apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
 metadata:
-  name: vm-vminsert
+  name: vlinsert-ingress-logs
   namespace: openshift-ingress-logs
 spec:
   namespaceSelector:
@@ -11,7 +11,7 @@ spec:
   selector:
     matchLabels:
       app.kubernetes.io/instance: ingress-logs
-      app.kubernetes.io/name: vminsert
+      app.kubernetes.io/name: vlinsert
   endpoints:
     - interval: 30s
       path: /metrics
@@ -20,7 +20,7 @@ spec:
 apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
 metadata:
-  name: vm-vmselect
+  name: vlselect-ingress-logs
   namespace: openshift-ingress-logs
 spec:
   namespaceSelector:
@@ -29,7 +29,7 @@ spec:
   selector:
     matchLabels:
       app.kubernetes.io/instance: ingress-logs
-      app.kubernetes.io/name: vmselect
+      app.kubernetes.io/name: vlselect
   endpoints:
     - interval: 30s
       path: /metrics
@@ -38,7 +38,7 @@ spec:
 apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
 metadata:
-  name: vm-vmstorage
+  name: vlstorage-ingress-logs
   namespace: openshift-ingress-logs
 spec:
   namespaceSelector:
@@ -47,7 +47,7 @@ spec:
   selector:
     matchLabels:
       app.kubernetes.io/instance: ingress-logs
-      app.kubernetes.io/name: vmstorage
+      app.kubernetes.io/name: vlstorage
   endpoints:
     - interval: 30s
       path: /metrics

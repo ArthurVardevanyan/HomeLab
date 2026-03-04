@@ -2,22 +2,22 @@
 apiVersion: autoscaling.k8s.io/v1
 kind: VerticalPodAutoscaler
 metadata:
-  name: vminsert-ingress-logs
+  name: vlinsert-ingress-logs
   namespace: openshift-ingress-logs
   annotations:
     argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
   labels:
-    app: vminsert-ingress-logs
+    app: vlinsert-ingress-logs
 spec:
   targetRef:
     apiVersion: apps/v1
     kind: Deployment
-    name: vminsert-ingress-logs
+    name: vlinsert-ingress-logs
   updatePolicy:
     updateMode: "InPlaceOrRecreate"
   resourcePolicy:
     containerPolicies:
-      - containerName: vminsert
+      - containerName: vlinsert
         minAllowed:
           cpu: 5m
           memory: 16Mi
@@ -27,57 +27,57 @@ spec:
         controlledResources:
           - cpu
           - memory
-        controlledValues: RequestsOnly # "RequestsAndLimits"
+        controlledValues: RequestsAndLimits
 ---
 apiVersion: autoscaling.k8s.io/v1
 kind: VerticalPodAutoscaler
 metadata:
-  name: vmselect-ingress-logs
+  name: vlselect-ingress-logs
   namespace: openshift-ingress-logs
   annotations:
     argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
   labels:
-    app: vmselect-ingress-logs
+    app: vlselect-ingress-logs
 spec:
   targetRef:
     apiVersion: apps/v1
-    kind: StatefulSet
-    name: vmselect-ingress-logs
+    kind: Deployment
+    name: vlselect-ingress-logs
   updatePolicy:
     updateMode: "InPlaceOrRecreate"
   resourcePolicy:
     containerPolicies:
-      - containerName: vmselect
+      - containerName: vlselect
         minAllowed:
           cpu: 5m
           memory: 16Mi
         maxAllowed:
-          cpu: 100m
-          memory: 3Gi
+          cpu: 50m
+          memory: 512Mi
         controlledResources:
           - cpu
           - memory
-        controlledValues: RequestsOnly # "RequestsAndLimits"
+        controlledValues: RequestsAndLimits
 ---
 apiVersion: autoscaling.k8s.io/v1
 kind: VerticalPodAutoscaler
 metadata:
-  name: vmstorage-ingress-logs
+  name: vlstorage-ingress-logs
   namespace: openshift-ingress-logs
   annotations:
     argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
   labels:
-    app: vmstorage-ingress-logs
+    app: vlstorage-ingress-logs
 spec:
   targetRef:
     apiVersion: apps/v1
     kind: StatefulSet
-    name: vmstorage-ingress-logs
+    name: vlstorage-ingress-logs
   updatePolicy:
     updateMode: "InPlaceOrRecreate"
   resourcePolicy:
     containerPolicies:
-      - containerName: vmstorage
+      - containerName: vlstorage
         minAllowed:
           cpu: 5m
           memory: 16Mi
@@ -87,4 +87,4 @@ spec:
         controlledResources:
           - cpu
           - memory
-        controlledValues: RequestsOnly # "RequestsAndLimits"
+        controlledValues: RequestsAndLimits
