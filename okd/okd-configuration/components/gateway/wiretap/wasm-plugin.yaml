@@ -11,7 +11,7 @@ spec:
       name: https-gateway
 
   # Where Istio pulls the .wasm binary from (OCI image).
-  url: oci://registry.arthurvardevanyan.com/homelab/wasm-wiretap@sha256:0c56fdc4f0da4e205db09cbd06ba9bd1034b1f06ccbae1aca7bb746eb999a86e
+  url: oci://registry.arthurvardevanyan.com/homelab/wasm-wiretap@sha256:8aa96ba7c4902729eb97bdb5aae8b8566668608853d0c661bd050ed8761e809a
 
   # Phase – AUTHN runs early; STATS runs late.  For passive capture
   # we typically want STATS so we see final response codes.
@@ -21,9 +21,9 @@ spec:
   # JSON config forwarded to the plugin's on_configure().
   pluginConfig:
     backend: "loki"
-    upstream_cluster: "outbound|9480||vlinsert-ingress-logs.openshift-ingress-logs.svc.cluster.local."
+    upstream_cluster: "outbound|9481||vlinsert-ingress-logs.openshift-ingress-logs.svc.cluster.local."
     upstream_authority: "vlinsert-ingress-logs.openshift-ingress-logs.svc.cluster.local."
-    upstream_port: 9480
+    upstream_port: 9481
     upstream_path: "/insert/loki/api/v1/push"
     service_name: "https-gateway"
     capture_request_headers: true
