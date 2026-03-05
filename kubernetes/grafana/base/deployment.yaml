@@ -99,22 +99,32 @@ spec:
               ephemeral-storage: "100Mi"
               memory: "256Mi"
               cpu: "5m"
+          env:
+            - name: GF_INSTALL_PLUGINS
+              value: "victoriametrics-logs-datasource"
           envFrom:
             - secretRef:
                 name: database
           volumeMounts:
-            - mountPath: /var/lib/grafana
-              name: grafana-cache
+            - name: grafana-cache
+              mountPath: /var/lib/grafana
+            # - name: grafana-plugins
+            #   mountPath: /var/lib/grafana/plugins
             - name: grafana-dash-config
               mountPath: /etc/grafana/provisioning/dashboards
             - name: dashboard-templates
               mountPath: /var/lib/grafana/dashboards
             - name: grafana-source-config
               mountPath: /etc/grafana/provisioning/datasources
+            - name: tmp
+              mountPath: /tmp
       volumes:
+        - name: tmp
+          emptyDir:
+            sizeLimit: 128Mi
         - name: grafana-cache
           emptyDir:
-            sizeLimit: 1Mi
+            sizeLimit: 128Mi
         - name: grafana-source-config
           configMap:
             name: grafana-source-config
@@ -124,4 +134,7 @@ spec:
         - name: dashboard-templates
           configMap:
             name: grafana-dashboards
+        # - name: grafana-plugins
+        #   persistentVolumeClaim:
+        #     claimName: grafana-plugins
       enableServiceLinks: false
