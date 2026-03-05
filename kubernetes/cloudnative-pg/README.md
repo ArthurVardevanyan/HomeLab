@@ -26,11 +26,11 @@ kubectl kustomize kubernetes/cloudnative-pg/overlays/okd | kubectl apply -f - --
 ### Variables
 
 ```bash
-NAMESPACE=immich
-CLUSTER=immich
-DB_NAME=immich
-DB_USER=immich
-APP_DEPLOYMENT=immich
+NAMESPACE=netbox
+CLUSTER=netbox
+DB_NAME=netbox
+DB_USER=netbox
+APP_DEPLOYMENT=netbox
 ```
 
 ### 1. Scale down the application
@@ -58,8 +58,7 @@ echo "$CRUNCHY_PRIMARY"
 
 ```bash
 kubectl exec -n "$NAMESPACE" -it "$CRUNCHY_PRIMARY" -c database -- \
-  bash -c "PGOPTIONS='-c statement_timeout=0' pg_dump -h 127.0.0.1 -U \"$DB_USER\" -d \"$DB_NAME\" -Fc -f /tmp/dump.db && \
-           PGOPTIONS='-c statement_timeout=0' pg_dump -h 127.0.0.1 -U \"$DB_USER\" -d \"$DB_NAME\" -f /tmp/dump.sql"
+  bash -c "PGOPTIONS='-c statement_timeout=0' pg_dump -h 127.0.0.1 -U \"$DB_USER\" -d \"$DB_NAME\" -Fc -f /tmp/dump.db"
 ```
 
 ### 4. Copy the dump to the CNPG primary pod
@@ -73,7 +72,6 @@ echo "$CNPG_PRIMARY"
 
 # Copy from Crunchy to local
 kubectl cp -n "$NAMESPACE" -c database "$CRUNCHY_PRIMARY":/tmp/dump.db ./dump.db
-kubectl cp -n "$NAMESPACE" -c database "$CRUNCHY_PRIMARY":/tmp/dump.sql ./dump.sql
 
 # Copy from local to CNPG
 kubectl cp -n "$NAMESPACE" -c postgres ./dump.db "$CNPG_PRIMARY":/run/dump.db
