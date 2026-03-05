@@ -2,7 +2,7 @@
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
-  name: immich-app
+  name: cnpg-immich-app
   namespace: immich
   annotations:
     argocd.argoproj.io/sync-wave: "1"
@@ -11,7 +11,7 @@ metadata:
 spec:
   podSelector:
     matchLabels:
-      postgres-operator.crunchydata.com/cluster: immich
+      cnpg.io/cluster: immich
   policyTypes:
     - Ingress
   ingress:
@@ -29,7 +29,7 @@ spec:
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
-  name: immich-postgres
+  name: cnpg-immich-app-egress
   namespace: immich
   annotations:
     argocd.argoproj.io/sync-wave: "1"
@@ -38,7 +38,34 @@ metadata:
 spec:
   podSelector:
     matchLabels:
-      postgres-operator.crunchydata.com/cluster: immich
+      app.kubernetes.io/instance: immich
+  policyTypes:
+    - Egress
+  egress:
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: immich
+          podSelector:
+            matchLabels:
+              cnpg.io/cluster: immich
+      ports:
+        - protocol: TCP
+          port: 5432
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: cnpg-immich-cluster
+  namespace: immich
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+  labels:
+    app.kubernetes.io/instance: immich
+spec:
+  podSelector:
+    matchLabels:
+      cnpg.io/cluster: immich
   policyTypes:
     - Ingress
     - Egress
@@ -49,7 +76,7 @@ spec:
               kubernetes.io/metadata.name: immich
           podSelector:
             matchLabels:
-              postgres-operator.crunchydata.com/cluster: immich
+              cnpg.io/cluster: immich
   egress:
     - to:
         - namespaceSelector:
@@ -57,58 +84,58 @@ spec:
               kubernetes.io/metadata.name: immich
           podSelector:
             matchLabels:
-              postgres-operator.crunchydata.com/cluster: immich
+              cnpg.io/cluster: immich
 ---
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
-  name: allow-postgres
+  name: cnpg-immich-webhook
   namespace: immich
   annotations:
-    argocd.argoproj.io/sync-wave: "0"
+    argocd.argoproj.io/sync-wave: "1"
   labels:
     app.kubernetes.io/instance: immich
 spec:
-  policyTypes:
-    - Egress
   podSelector:
     matchLabels:
-      app.kubernetes.io/instance: immich
+      cnpg.io/cluster: immich
+  policyTypes:
+    - Egress
   egress:
     - to:
         - namespaceSelector:
             matchLabels:
-              kubernetes.io/metadata.name: immich
+              kubernetes.io/metadata.name: cnpg-system
           podSelector:
             matchLabels:
-              postgres-operator.crunchydata.com/cluster: immich
+              app.kubernetes.io/name: cloudnative-pg
       ports:
-        - port: 5432
-          protocol: TCP
+        - protocol: TCP
+          port: 9443
 ---
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
-  name: allow-api-server
+  name: cnpg-immich-api-server
   namespace: immich
   annotations:
-    argocd.argoproj.io/sync-wave: "0"
+    argocd.argoproj.io/sync-wave: "1"
   labels:
     app.kubernetes.io/instance: immich
 spec:
   podSelector:
     matchLabels:
-      postgres-operator.crunchydata.com/cluster: immich
+      cnpg.io/cluster: immich
   policyTypes:
     - Egress
   egress:
     - to:
-        - podSelector:
-            matchLabels:
-              app: openshift-kube-apiserver
-          namespaceSelector:
+        - namespaceSelector:
             matchLabels:
               kubernetes.io/metadata.name: openshift-kube-apiserver
+          podSelector:
+            matchLabels:
+              app: openshift-kube-apiserver
       ports:
         - protocol: TCP
           port: 6443
@@ -116,38 +143,7 @@ spec:
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
-  name: allow-truenas-egress
-  namespace: immich
-  annotations:
-    argocd.argoproj.io/sync-wave: "0"
-  labels:
-    app.kubernetes.io/instance: immich
-spec:
-  policyTypes:
-    - Egress
-  podSelector:
-    matchLabels:
-      postgres-operator.crunchydata.com/cluster: immich
-  egress:
-    - to:
-        - ipBlock:
-            cidr: 10.101.1.6/32
-    - to:
-        - ipBlock:
-            cidr: 10.101.1.7/32
-    - to:
-        - ipBlock:
-            cidr: 10.101.10.7/32
-      ports:
-        - protocol: TCP
-          port: 9000
-        - protocol: TCP
-          port: 443
----
-apiVersion: networking.k8s.io/v1
-kind: NetworkPolicy
-metadata:
-  name: pgdump-ingress
+  name: cnpg-immich-dns
   namespace: immich
   annotations:
     argocd.argoproj.io/sync-wave: "1"
@@ -156,14 +152,70 @@ metadata:
 spec:
   podSelector:
     matchLabels:
-      postgres-operator.crunchydata.com/cluster: immich
+      cnpg.io/cluster: immich
+  policyTypes:
+    - Egress
+  egress:
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: openshift-dns
+          podSelector:
+            matchLabels:
+              dns.operator.openshift.io/daemonset-dns: default
+      ports:
+        - protocol: UDP
+          port: 5353
+        - protocol: TCP
+          port: 5353
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: cnpg-immich-monitoring
+  namespace: immich
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+  labels:
+    app.kubernetes.io/instance: immich
+spec:
+  podSelector:
+    matchLabels:
+      cnpg.io/cluster: immich
   policyTypes:
     - Ingress
   ingress:
     - from:
         - namespaceSelector:
             matchLabels:
-              kubernetes.io/metadata.name: postgres
+              kubernetes.io/metadata.name: openshift-monitoring
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: openshift-user-workload-monitoring
+      ports:
+        - protocol: TCP
+          port: 9187
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: cnpg-immich-pgdump-ingress
+  namespace: immich
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+  labels:
+    app.kubernetes.io/instance: immich
+spec:
+  podSelector:
+    matchLabels:
+      cnpg.io/cluster: immich
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: cnpg-system
           podSelector:
             matchLabels:
               app: pgdump-cron
@@ -174,7 +226,7 @@ spec:
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
-  name: pgadmin-ingress
+  name: cnpg-immich-cnpg-operator
   namespace: immich
   annotations:
     argocd.argoproj.io/sync-wave: "1"
@@ -183,41 +235,17 @@ metadata:
 spec:
   podSelector:
     matchLabels:
-      postgres-operator.crunchydata.com/cluster: immich
+      cnpg.io/cluster: immich
   policyTypes:
     - Ingress
   ingress:
     - from:
         - namespaceSelector:
             matchLabels:
-              kubernetes.io/metadata.name: postgres
+              kubernetes.io/metadata.name: cnpg-system
           podSelector:
             matchLabels:
-              postgres-operator.crunchydata.com/pgadmin: pgadmin
+              app.kubernetes.io/name: cloudnative-pg
       ports:
         - protocol: TCP
-          port: 5432
----
-apiVersion: networking.k8s.io/v1
-kind: NetworkPolicy
-metadata:
-  name: allow-to-openshift-ingress-psql
-  namespace: immich
-  annotations:
-    argocd.argoproj.io/sync-wave: "1"
-spec:
-  policyTypes:
-    - Egress
-  podSelector:
-    matchLabels:
-      postgres-operator.crunchydata.com/cluster: immich
-  egress:
-    - to:
-        - namespaceSelector:
-            matchLabels:
-              network.openshift.io/policy-group: ingress
-      ports:
-        - protocol: TCP
-          port: 443 # Passthrough/ReEncrypt Termination
-        - protocol: TCP
-          port: 80 # Edge Termination
+          port: 8000
