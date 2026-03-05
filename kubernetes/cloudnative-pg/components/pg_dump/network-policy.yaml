@@ -3,11 +3,11 @@ apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
   name: pgdump-allow-truenas-egress
-  namespace: postgres
+  namespace: cnpg-system
   annotations:
     argocd.argoproj.io/sync-wave: "0"
   labels:
-    app.kubernetes.io/instance: postgres
+    app.kubernetes.io/instance: cloudnative-pg
 spec:
   policyTypes:
     - Egress
@@ -34,7 +34,7 @@ apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
   name: allow-to-openshift-ingress-psql
-  namespace: postgres
+  namespace: cnpg-system
   annotations:
     argocd.argoproj.io/sync-wave: "1"
 spec:
@@ -58,11 +58,11 @@ apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
   name: pgdump-grafana-egress
-  namespace: postgres
+  namespace: cnpg-system
   annotations:
     argocd.argoproj.io/sync-wave: "1"
   labels:
-    app.kubernetes.io/instance: postgres
+    app.kubernetes.io/instance: cloudnative-pg
 spec:
   podSelector:
     matchLabels:
@@ -76,7 +76,7 @@ spec:
               kubernetes.io/metadata.name: grafana
           podSelector:
             matchLabels:
-              postgres-operator.crunchydata.com/cluster: grafana
+              cnpg.io/cluster: grafana
       ports:
         - protocol: TCP
           port: 5432
@@ -85,11 +85,11 @@ apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
   name: pgdump-immich-egress
-  namespace: postgres
+  namespace: cnpg-system
   annotations:
     argocd.argoproj.io/sync-wave: "1"
   labels:
-    app.kubernetes.io/instance: postgres
+    app.kubernetes.io/instance: cloudnative-pg
 spec:
   podSelector:
     matchLabels:
@@ -112,11 +112,11 @@ apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
   name: pgdump-gitea-egress
-  namespace: postgres
+  namespace: cnpg-system
   annotations:
     argocd.argoproj.io/sync-wave: "1"
   labels:
-    app.kubernetes.io/instance: postgres
+    app.kubernetes.io/instance: cloudnative-pg
 spec:
   podSelector:
     matchLabels:
@@ -139,11 +139,11 @@ apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
   name: pgdump-homeassistant-egress
-  namespace: postgres
+  namespace: cnpg-system
   annotations:
     argocd.argoproj.io/sync-wave: "1"
   labels:
-    app.kubernetes.io/instance: postgres
+    app.kubernetes.io/instance: cloudnative-pg
 spec:
   podSelector:
     matchLabels:
@@ -166,11 +166,11 @@ apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
   name: pgdump-nextcloud-egress
-  namespace: postgres
+  namespace: cnpg-system
   annotations:
     argocd.argoproj.io/sync-wave: "1"
   labels:
-    app.kubernetes.io/instance: postgres
+    app.kubernetes.io/instance: cloudnative-pg
 spec:
   podSelector:
     matchLabels:
@@ -193,11 +193,11 @@ apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
   name: pgdump-quay-egress
-  namespace: postgres
+  namespace: cnpg-system
   annotations:
     argocd.argoproj.io/sync-wave: "1"
   labels:
-    app.kubernetes.io/instance: postgres
+    app.kubernetes.io/instance: cloudnative-pg
 spec:
   podSelector:
     matchLabels:
@@ -220,11 +220,11 @@ apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
   name: pgdump-clair-egress
-  namespace: postgres
+  namespace: cnpg-system
   annotations:
     argocd.argoproj.io/sync-wave: "1"
   labels:
-    app.kubernetes.io/instance: postgres
+    app.kubernetes.io/instance: cloudnative-pg
 spec:
   podSelector:
     matchLabels:
@@ -247,11 +247,11 @@ apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
   name: pgdump-stackrox-egress
-  namespace: postgres
+  namespace: cnpg-system
   annotations:
     argocd.argoproj.io/sync-wave: "1"
   labels:
-    app.kubernetes.io/instance: postgres
+    app.kubernetes.io/instance: cloudnative-pg
 spec:
   podSelector:
     matchLabels:
@@ -265,7 +265,7 @@ spec:
               kubernetes.io/metadata.name: stackrox
           podSelector:
             matchLabels:
-              postgres-operator.crunchydata.com/cluster: stackrox
+              cnpg.io/cluster: stackrox
       ports:
         - protocol: TCP
           port: 5432
@@ -274,11 +274,11 @@ apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
   name: pgdump-netbox-egress
-  namespace: postgres
+  namespace: cnpg-system
   annotations:
     argocd.argoproj.io/sync-wave: "1"
   labels:
-    app.kubernetes.io/instance: postgres
+    app.kubernetes.io/instance: cloudnative-pg
 spec:
   podSelector:
     matchLabels:
@@ -301,11 +301,11 @@ apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
   name: pgdump-spotify-egress
-  namespace: postgres
+  namespace: cnpg-system
   annotations:
     argocd.argoproj.io/sync-wave: "1"
   labels:
-    app.kubernetes.io/instance: postgres
+    app.kubernetes.io/instance: cloudnative-pg
 spec:
   podSelector:
     matchLabels:
@@ -323,17 +323,16 @@ spec:
       ports:
         - protocol: TCP
           port: 5432
-
 ---
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
   name: pgdump-finance-tracker-egress
-  namespace: postgres
+  namespace: cnpg-system
   annotations:
     argocd.argoproj.io/sync-wave: "1"
   labels:
-    app.kubernetes.io/instance: postgres
+    app.kubernetes.io/instance: cloudnative-pg
 spec:
   podSelector:
     matchLabels:
