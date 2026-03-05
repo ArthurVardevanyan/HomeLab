@@ -1,0 +1,670 @@
+{
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": {
+          "type": "grafana",
+          "uid": "-- Grafana --"
+        },
+        "enable": true,
+        "hide": true,
+        "iconColor": "rgba(0, 211, 255, 1)",
+        "name": "Annotations & Alerts",
+        "type": "dashboard"
+      }
+    ]
+  },
+  "description": "Ingress Gateway Traffic via VictoriaLogs",
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 1,
+  "id": null,
+  "links": [],
+  "liveNow": false,
+  "panels": [
+    {
+      "datasource": {
+        "type": "victoriametrics-logs-datasource",
+        "uid": "${DS_VICTORIALOGS}"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisLabel": "Requests",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 15,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "smooth",
+            "lineWidth": 2,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": true,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          },
+          "unit": "reqps"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 10,
+        "w": 24,
+        "x": 0,
+        "y": 0
+      },
+      "id": 1,
+      "options": {
+        "legend": {
+          "calcs": ["sum", "mean", "max"],
+          "displayMode": "table",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "title": "Total Requests Over Time",
+      "type": "timeseries",
+      "targets": [
+        {
+          "datasource": {
+            "type": "victoriametrics-logs-datasource",
+            "uid": "${DS_VICTORIALOGS}"
+          },
+          "editorMode": "code",
+          "expr": "service:$service | stats by (_time:$__interval) rate() as requests",
+          "legendFormat": "requests",
+          "queryType": "statsRange",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "datasource": {
+        "type": "victoriametrics-logs-datasource",
+        "uid": "${DS_VICTORIALOGS}"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisLabel": "Requests",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 15,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "smooth",
+            "lineWidth": 2,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": true,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          },
+          "unit": "short"
+        },
+        "overrides": [
+          {
+            "matcher": { "id": "byName", "options": "200 OK" },
+            "properties": [
+              {
+                "id": "color",
+                "value": { "fixedColor": "green", "mode": "fixed" }
+              }
+            ]
+          },
+          {
+            "matcher": { "id": "byName", "options": "201 Created" },
+            "properties": [
+              {
+                "id": "color",
+                "value": { "fixedColor": "dark-green", "mode": "fixed" }
+              }
+            ]
+          },
+          {
+            "matcher": { "id": "byName", "options": "204 No Content" },
+            "properties": [
+              {
+                "id": "color",
+                "value": { "fixedColor": "semi-dark-green", "mode": "fixed" }
+              }
+            ]
+          },
+          {
+            "matcher": { "id": "byName", "options": "101 Switching Protocols" },
+            "properties": [
+              {
+                "id": "color",
+                "value": { "fixedColor": "purple", "mode": "fixed" }
+              }
+            ]
+          },
+          {
+            "matcher": { "id": "byName", "options": "301 Moved Permanently" },
+            "properties": [
+              {
+                "id": "color",
+                "value": { "fixedColor": "blue", "mode": "fixed" }
+              }
+            ]
+          },
+          {
+            "matcher": { "id": "byName", "options": "302 Found" },
+            "properties": [
+              {
+                "id": "color",
+                "value": { "fixedColor": "light-blue", "mode": "fixed" }
+              }
+            ]
+          },
+          {
+            "matcher": { "id": "byName", "options": "304 Not Modified" },
+            "properties": [
+              {
+                "id": "color",
+                "value": { "fixedColor": "super-light-blue", "mode": "fixed" }
+              }
+            ]
+          },
+          {
+            "matcher": { "id": "byName", "options": "400 Bad Request" },
+            "properties": [
+              {
+                "id": "color",
+                "value": { "fixedColor": "orange", "mode": "fixed" }
+              }
+            ]
+          },
+          {
+            "matcher": { "id": "byName", "options": "401 Unauthorized" },
+            "properties": [
+              {
+                "id": "color",
+                "value": { "fixedColor": "dark-orange", "mode": "fixed" }
+              }
+            ]
+          },
+          {
+            "matcher": { "id": "byName", "options": "403 Forbidden" },
+            "properties": [
+              {
+                "id": "color",
+                "value": { "fixedColor": "semi-dark-orange", "mode": "fixed" }
+              }
+            ]
+          },
+          {
+            "matcher": { "id": "byName", "options": "404 Not Found" },
+            "properties": [
+              {
+                "id": "color",
+                "value": { "fixedColor": "yellow", "mode": "fixed" }
+              }
+            ]
+          },
+          {
+            "matcher": { "id": "byName", "options": "429 Too Many Requests" },
+            "properties": [
+              {
+                "id": "color",
+                "value": { "fixedColor": "dark-yellow", "mode": "fixed" }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "500 Internal Server Error"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": { "fixedColor": "red", "mode": "fixed" }
+              }
+            ]
+          },
+          {
+            "matcher": { "id": "byName", "options": "502 Bad Gateway" },
+            "properties": [
+              {
+                "id": "color",
+                "value": { "fixedColor": "dark-red", "mode": "fixed" }
+              }
+            ]
+          },
+          {
+            "matcher": { "id": "byName", "options": "503 Service Unavailable" },
+            "properties": [
+              {
+                "id": "color",
+                "value": { "fixedColor": "semi-dark-red", "mode": "fixed" }
+              }
+            ]
+          },
+          {
+            "matcher": { "id": "byName", "options": "504 Gateway Timeout" },
+            "properties": [
+              {
+                "id": "color",
+                "value": { "fixedColor": "dark-purple", "mode": "fixed" }
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 10,
+        "w": 24,
+        "x": 0,
+        "y": 10
+      },
+      "id": 2,
+      "options": {
+        "legend": {
+          "calcs": ["sum", "mean", "max"],
+          "displayMode": "table",
+          "placement": "bottom",
+          "showLegend": true,
+          "sortBy": "Total",
+          "sortDesc": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "title": "Requests by Status Code",
+      "type": "timeseries",
+      "targets": [
+        {
+          "datasource": {
+            "type": "victoriametrics-logs-datasource",
+            "uid": "${DS_VICTORIALOGS}"
+          },
+          "editorMode": "code",
+          "expr": "service:$service status_code:200 | stats by (_time:$__interval) count() as requests",
+          "legendFormat": "200 OK",
+          "queryType": "statsRange",
+          "refId": "A"
+        },
+        {
+          "datasource": {
+            "type": "victoriametrics-logs-datasource",
+            "uid": "${DS_VICTORIALOGS}"
+          },
+          "editorMode": "code",
+          "expr": "service:$service status_code:201 | stats by (_time:$__interval) count() as requests",
+          "legendFormat": "201 Created",
+          "queryType": "statsRange",
+          "refId": "B"
+        },
+        {
+          "datasource": {
+            "type": "victoriametrics-logs-datasource",
+            "uid": "${DS_VICTORIALOGS}"
+          },
+          "editorMode": "code",
+          "expr": "service:$service status_code:204 | stats by (_time:$__interval) count() as requests",
+          "legendFormat": "204 No Content",
+          "queryType": "statsRange",
+          "refId": "C"
+        },
+        {
+          "datasource": {
+            "type": "victoriametrics-logs-datasource",
+            "uid": "${DS_VICTORIALOGS}"
+          },
+          "editorMode": "code",
+          "expr": "service:$service status_code:101 | stats by (_time:$__interval) count() as requests",
+          "legendFormat": "101 Switching Protocols",
+          "queryType": "statsRange",
+          "refId": "D"
+        },
+        {
+          "datasource": {
+            "type": "victoriametrics-logs-datasource",
+            "uid": "${DS_VICTORIALOGS}"
+          },
+          "editorMode": "code",
+          "expr": "service:$service status_code:301 | stats by (_time:$__interval) count() as requests",
+          "legendFormat": "301 Moved Permanently",
+          "queryType": "statsRange",
+          "refId": "E"
+        },
+        {
+          "datasource": {
+            "type": "victoriametrics-logs-datasource",
+            "uid": "${DS_VICTORIALOGS}"
+          },
+          "editorMode": "code",
+          "expr": "service:$service status_code:302 | stats by (_time:$__interval) count() as requests",
+          "legendFormat": "302 Found",
+          "queryType": "statsRange",
+          "refId": "F"
+        },
+        {
+          "datasource": {
+            "type": "victoriametrics-logs-datasource",
+            "uid": "${DS_VICTORIALOGS}"
+          },
+          "editorMode": "code",
+          "expr": "service:$service status_code:304 | stats by (_time:$__interval) count() as requests",
+          "legendFormat": "304 Not Modified",
+          "queryType": "statsRange",
+          "refId": "G"
+        },
+        {
+          "datasource": {
+            "type": "victoriametrics-logs-datasource",
+            "uid": "${DS_VICTORIALOGS}"
+          },
+          "editorMode": "code",
+          "expr": "service:$service status_code:400 | stats by (_time:$__interval) count() as requests",
+          "legendFormat": "400 Bad Request",
+          "queryType": "statsRange",
+          "refId": "H"
+        },
+        {
+          "datasource": {
+            "type": "victoriametrics-logs-datasource",
+            "uid": "${DS_VICTORIALOGS}"
+          },
+          "editorMode": "code",
+          "expr": "service:$service status_code:401 | stats by (_time:$__interval) count() as requests",
+          "legendFormat": "401 Unauthorized",
+          "queryType": "statsRange",
+          "refId": "I"
+        },
+        {
+          "datasource": {
+            "type": "victoriametrics-logs-datasource",
+            "uid": "${DS_VICTORIALOGS}"
+          },
+          "editorMode": "code",
+          "expr": "service:$service status_code:403 | stats by (_time:$__interval) count() as requests",
+          "legendFormat": "403 Forbidden",
+          "queryType": "statsRange",
+          "refId": "J"
+        },
+        {
+          "datasource": {
+            "type": "victoriametrics-logs-datasource",
+            "uid": "${DS_VICTORIALOGS}"
+          },
+          "editorMode": "code",
+          "expr": "service:$service status_code:404 | stats by (_time:$__interval) count() as requests",
+          "legendFormat": "404 Not Found",
+          "queryType": "statsRange",
+          "refId": "K"
+        },
+        {
+          "datasource": {
+            "type": "victoriametrics-logs-datasource",
+            "uid": "${DS_VICTORIALOGS}"
+          },
+          "editorMode": "code",
+          "expr": "service:$service status_code:429 | stats by (_time:$__interval) count() as requests",
+          "legendFormat": "429 Too Many Requests",
+          "queryType": "statsRange",
+          "refId": "L"
+        },
+        {
+          "datasource": {
+            "type": "victoriametrics-logs-datasource",
+            "uid": "${DS_VICTORIALOGS}"
+          },
+          "editorMode": "code",
+          "expr": "service:$service status_code:500 | stats by (_time:$__interval) count() as requests",
+          "legendFormat": "500 Internal Server Error",
+          "queryType": "statsRange",
+          "refId": "M"
+        },
+        {
+          "datasource": {
+            "type": "victoriametrics-logs-datasource",
+            "uid": "${DS_VICTORIALOGS}"
+          },
+          "editorMode": "code",
+          "expr": "service:$service status_code:502 | stats by (_time:$__interval) count() as requests",
+          "legendFormat": "502 Bad Gateway",
+          "queryType": "statsRange",
+          "refId": "N"
+        },
+        {
+          "datasource": {
+            "type": "victoriametrics-logs-datasource",
+            "uid": "${DS_VICTORIALOGS}"
+          },
+          "editorMode": "code",
+          "expr": "service:$service status_code:503 | stats by (_time:$__interval) count() as requests",
+          "legendFormat": "503 Service Unavailable",
+          "queryType": "statsRange",
+          "refId": "O"
+        },
+        {
+          "datasource": {
+            "type": "victoriametrics-logs-datasource",
+            "uid": "${DS_VICTORIALOGS}"
+          },
+          "editorMode": "code",
+          "expr": "service:$service status_code:504 | stats by (_time:$__interval) count() as requests",
+          "legendFormat": "504 Gateway Timeout",
+          "queryType": "statsRange",
+          "refId": "P"
+        }
+      ]
+    },
+    {
+      "datasource": {
+        "type": "victoriametrics-logs-datasource",
+        "uid": "${DS_VICTORIALOGS}"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisLabel": "Duration (ms)",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "smooth",
+            "lineWidth": 2,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": true,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          },
+          "unit": "ms"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 10,
+        "w": 24,
+        "x": 0,
+        "y": 20
+      },
+      "id": 3,
+      "options": {
+        "legend": {
+          "calcs": ["mean", "max", "last"],
+          "displayMode": "table",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "title": "Average Response Duration",
+      "type": "timeseries",
+      "targets": [
+        {
+          "datasource": {
+            "type": "victoriametrics-logs-datasource",
+            "uid": "${DS_VICTORIALOGS}"
+          },
+          "editorMode": "code",
+          "expr": "service:$service | stats by (_time:$__interval) avg(duration_ms) as avg_duration, max(duration_ms) as max_duration, median(duration_ms) as p50_duration",
+          "legendFormat": "",
+          "queryType": "statsRange",
+          "refId": "A"
+        }
+      ]
+    }
+  ],
+  "schemaVersion": 39,
+  "tags": ["ingress", "traffic", "victorialogs"],
+  "templating": {
+    "list": [
+      {
+        "current": {},
+        "description": "VictoriaLogs datasource",
+        "hide": 0,
+        "includeAll": false,
+        "label": "VictoriaLogs",
+        "multi": false,
+        "name": "DS_VICTORIALOGS",
+        "options": [],
+        "query": "victoriametrics-logs-datasource",
+        "refresh": 1,
+        "regex": "",
+        "skipUrlSync": false,
+        "type": "datasource"
+      },
+      {
+        "current": {
+          "selected": true,
+          "text": "https-gateway",
+          "value": "https-gateway"
+        },
+        "description": "Gateway service name",
+        "hide": 0,
+        "includeAll": true,
+        "label": "Service",
+        "multi": false,
+        "name": "service",
+        "options": [
+          {
+            "selected": false,
+            "text": "https-gateway",
+            "value": "https-gateway"
+          },
+          {
+            "selected": false,
+            "text": "https-gateway-external",
+            "value": "https-gateway-external"
+          }
+        ],
+        "query": "https-gateway,https-gateway-external",
+        "skipUrlSync": false,
+        "type": "custom"
+      }
+    ]
+  },
+  "time": {
+    "from": "now-6h",
+    "to": "now"
+  },
+  "timepicker": {},
+  "timezone": "browser",
+  "title": "Ingress Gateway Traffic",
+  "uid": "ingress-gateway-traffic",
+  "version": 1
+}
