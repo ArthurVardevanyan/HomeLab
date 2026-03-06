@@ -1,0 +1,12 @@
+---
+apiVersion: postgresql.cnpg.io/v1
+kind: ScheduledBackup
+metadata:
+  name: netbox
+  namespace: netbox
+spec:
+  schedule: "0 15 2 * * *"
+  backupOwnerReference: self
+  cluster:
+    name: netbox
+  method: volumeSnapshot

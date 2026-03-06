@@ -1,0 +1,14 @@
+---
+apiVersion: monitoring.coreos.com/v1
+kind: PodMonitor
+metadata:
+  name: cnpg-netbox
+  namespace: netbox
+  labels:
+    app.kubernetes.io/instance: netbox
+spec:
+  selector:
+    matchLabels:
+      cnpg.io/cluster: netbox
+  podMetricsEndpoints:
+    - port: metrics

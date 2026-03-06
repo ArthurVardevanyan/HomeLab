@@ -1,0 +1,79 @@
+---
+apiVersion: postgresql.cnpg.io/v1
+kind: Cluster
+metadata:
+  name: quay
+  namespace: quay
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+  labels:
+    app.kubernetes.io/instance: quay
+spec:
+  enablePDB: true
+  imageName: "ghcr.io/cloudnative-pg/postgresql:18.1-system-trixie@sha256:51bc94428be3df3e234447278e33803544a93d27a57a4b6af737f218d6472d12"
+  instances: 2
+  imagePullPolicy: IfNotPresent
+  logLevel: info
+  primaryUpdateMethod: restart
+  primaryUpdateStrategy: unsupervised
+  startDelay: 3600
+  stopDelay: 1800
+  smartShutdownTimeout: 180
+  switchoverDelay: 3600
+  failoverDelay: 0
+  minSyncReplicas: 0
+  maxSyncReplicas: 0
+  postgresUID: 26
+  postgresGID: 26
+  postgresql:
+    parameters:
+      shared_buffers: "256MB"
+      pg_stat_statements.max: "10000"
+      pg_stat_statements.track: all
+    pg_hba:
+      - "host all all 0.0.0.0/0 trust"
+  bootstrap:
+    initdb:
+      database: quay
+      owner: quay
+      postInitSQL:
+        - GRANT CREATE ON SCHEMA public TO quay;
+        - ALTER USER quay SUPERUSER CREATEDB;
+        - CREATE EXTENSION IF NOT EXISTS pg_trgm;
+  enableSuperuserAccess: true
+  monitoring:
+    enablePodMonitor: false
+  storage:
+    storageClass: rook-ceph-block
+    size: 10Gi
+  walStorage:
+    storageClass: rook-ceph-block
+    size: 5Gi
+  resources:
+    requests:
+      cpu: 50m
+      memory: 350Mi
+    limits:
+      cpu: 500m
+      memory: 700Mi
+  affinity:
+    enablePodAntiAffinity: true
+    podAntiAffinityType: required
+    topologyKey: kubernetes.io/hostname
+    additionalPodAntiAffinity:
+      preferredDuringSchedulingIgnoredDuringExecution:
+        - weight: 100
+          podAffinityTerm:
+            labelSelector:
+              matchLabels:
+                cnpg.io/cluster: quay
+            topologyKey: topology.kubernetes.io/zone
+  seccompProfile:
+    type: RuntimeDefault
+  replicationSlots:
+    highAvailability:
+      enabled: true
+  backup:
+    volumeSnapshot:
+      className: csi-rbdplugin-snapclass

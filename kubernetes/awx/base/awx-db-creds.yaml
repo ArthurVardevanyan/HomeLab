@@ -14,64 +14,8 @@ spec:
         # checkov:skip=CKV_SECRET_6 PlaceHolder Values
         key: homelab/awx/postgres
         metadataPolicy: None
-        property: host
-      secretKey: host
-    - remoteRef:
-        conversionStrategy: Default
-        decodingStrategy: None
-        # checkov:skip=CKV_SECRET_6 PlaceHolder Values
-        key: homelab/awx/postgres
-        metadataPolicy: None
-        property: port
-      secretKey: port
-    - remoteRef:
-        conversionStrategy: Default
-        decodingStrategy: None
-        # checkov:skip=CKV_SECRET_6 PlaceHolder Values
-        key: homelab/awx/postgres
-        metadataPolicy: None
-        property: database
-      secretKey: database
-    - remoteRef:
-        conversionStrategy: Default
-        decodingStrategy: None
-        # checkov:skip=CKV_SECRET_6 PlaceHolder Values
-        key: homelab/awx/postgres
-        metadataPolicy: None
-        property: username
-      secretKey: username
-    - remoteRef:
-        conversionStrategy: Default
-        decodingStrategy: None
-        # checkov:skip=CKV_SECRET_6 PlaceHolder Values
-        key: homelab/awx/postgres
-        metadataPolicy: None
         property: password
       secretKey: password
-    - remoteRef:
-        conversionStrategy: Default
-        decodingStrategy: None
-        # checkov:skip=CKV_SECRET_6 PlaceHolder Values
-        key: homelab/awx/postgres
-        metadataPolicy: None
-        property: sslmode
-      secretKey: sslmode
-    - remoteRef:
-        conversionStrategy: Default
-        decodingStrategy: None
-        # checkov:skip=CKV_SECRET_6 PlaceHolder Values
-        key: homelab/awx/postgres
-        metadataPolicy: None
-        property: target_session_attrs
-      secretKey: target_session_attrs
-    - remoteRef:
-        conversionStrategy: Default
-        decodingStrategy: None
-        # checkov:skip=CKV_SECRET_6 PlaceHolder Values
-        key: homelab/awx/postgres
-        metadataPolicy: None
-        property: type
-      secretKey: type
   refreshInterval: 1h
   secretStoreRef:
     kind: ClusterSecretStore
@@ -80,3 +24,13 @@ spec:
     creationPolicy: Owner
     deletionPolicy: Retain
     name: postgres-configuration
+    template:
+      data:
+        host: "awx-rw.awx.svc.cluster.local"
+        port: "5432"
+        database: "awx"
+        username: "awx"
+        type: "postgresql"
+        sslmode: "prefer"
+        target_session_attrs: "any"
+        password: "{{ .password }}"

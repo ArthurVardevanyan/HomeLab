@@ -1,0 +1,14 @@
+---
+apiVersion: monitoring.coreos.com/v1
+kind: PodMonitor
+metadata:
+  name: cnpg-quay
+  namespace: quay
+  labels:
+    app.kubernetes.io/instance: quay
+spec:
+  selector:
+    matchLabels:
+      cnpg.io/cluster: quay
+  podMetricsEndpoints:
+    - port: metrics

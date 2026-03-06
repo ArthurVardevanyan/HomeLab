@@ -115,31 +115,6 @@ spec:
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
-  name: allow-postgres
-  namespace: grafana
-  annotations:
-    argocd.argoproj.io/sync-wave: "0"
-  labels:
-    app.kubernetes.io/instance: grafana
-spec:
-  policyTypes:
-    - Egress
-  podSelector: {}
-  egress:
-    - to:
-        - namespaceSelector:
-            matchLabels:
-              kubernetes.io/metadata.name: grafana
-          podSelector:
-            matchLabels:
-              postgres-operator.crunchydata.com/cluster: grafana
-      ports:
-        - port: 5432
-          protocol: TCP
----
-apiVersion: networking.k8s.io/v1
-kind: NetworkPolicy
-metadata:
   name: allow-victoria-metrics
   namespace: grafana
   annotations:

@@ -1,0 +1,16 @@
+---
+apiVersion: monitoring.coreos.com/v1
+kind: PodMonitor
+metadata:
+  name: awx-cnpg
+  namespace: awx
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+  labels:
+    app.kubernetes.io/instance: awx
+spec:
+  selector:
+    matchLabels:
+      cnpg.io/cluster: awx
+  podMetricsEndpoints:
+    - port: metrics
