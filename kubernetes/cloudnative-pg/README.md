@@ -26,11 +26,11 @@ kubectl kustomize kubernetes/cloudnative-pg/overlays/okd | kubectl apply -f - --
 ### Variables
 
 ```bash
-NAMESPACE=quay
-CLUSTER=quay
-DB_NAME=quay
-DB_USER=quay
-APP_DEPLOYMENT=quay
+NAMESPACE=nextcloud-fpm
+CLUSTER=nextcloud
+DB_NAME=nextcloud
+DB_USER=nextcloud
+APP_DEPLOYMENT=nextcloud
 ```
 
 ### 1. Scale down the application
