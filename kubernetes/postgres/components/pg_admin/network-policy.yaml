@@ -45,7 +45,7 @@ spec:
               kubernetes.io/metadata.name: grafana
           podSelector:
             matchLabels:
-              postgres-operator.crunchydata.com/cluster: grafana
+              cnpg.io/cluster: grafana
       ports:
         - protocol: TCP
           port: 5432
@@ -72,7 +72,7 @@ spec:
               kubernetes.io/metadata.name: immich
           podSelector:
             matchLabels:
-              postgres-operator.crunchydata.com/cluster: immich
+              cnpg.io/cluster: immich
       ports:
         - protocol: TCP
           port: 5432
@@ -99,7 +99,7 @@ spec:
               kubernetes.io/metadata.name: gitea
           podSelector:
             matchLabels:
-              postgres-operator.crunchydata.com/cluster: gitea
+              cnpg.io/cluster: gitea
       ports:
         - protocol: TCP
           port: 5432
@@ -126,7 +126,7 @@ spec:
               kubernetes.io/metadata.name: homeassistant
           podSelector:
             matchLabels:
-              postgres-operator.crunchydata.com/cluster: homeassistant
+              cnpg.io/cluster: homeassistant
       ports:
         - protocol: TCP
           port: 5432
@@ -150,10 +150,10 @@ spec:
     - to:
         - namespaceSelector:
             matchLabels:
-              kubernetes.io/metadata.name: nextcloud
+              kubernetes.io/metadata.name: nextcloud-fpm
           podSelector:
             matchLabels:
-              postgres-operator.crunchydata.com/cluster: nextcloud
+              cnpg.io/cluster: nextcloud
       ports:
         - protocol: TCP
           port: 5432
@@ -180,7 +180,7 @@ spec:
               kubernetes.io/metadata.name: quay
           podSelector:
             matchLabels:
-              postgres-operator.crunchydata.com/cluster: quay
+              cnpg.io/cluster: quay
       ports:
         - protocol: TCP
           port: 5432
@@ -207,7 +207,7 @@ spec:
               kubernetes.io/metadata.name: quay
           podSelector:
             matchLabels:
-              postgres-operator.crunchydata.com/cluster: clair
+              cnpg.io/cluster: clair
       ports:
         - protocol: TCP
           port: 5432
@@ -234,7 +234,7 @@ spec:
               kubernetes.io/metadata.name: stackrox
           podSelector:
             matchLabels:
-              postgres-operator.crunchydata.com/cluster: stackrox
+              cnpg.io/cluster: stackrox
       ports:
         - protocol: TCP
           port: 5432
@@ -261,7 +261,61 @@ spec:
               kubernetes.io/metadata.name: netbox
           podSelector:
             matchLabels:
-              postgres-operator.crunchydata.com/cluster: netbox
+              cnpg.io/cluster: netbox
+      ports:
+        - protocol: TCP
+          port: 5432
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: pgadmin-awx-egress
+  namespace: postgres
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+  labels:
+    app.kubernetes.io/instance: postgres
+spec:
+  podSelector:
+    matchLabels:
+      postgres-operator.crunchydata.com/pgadmin: pgadmin
+  policyTypes:
+    - Egress
+  egress:
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: awx
+          podSelector:
+            matchLabels:
+              cnpg.io/cluster: awx
+      ports:
+        - protocol: TCP
+          port: 5432
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: pgadmin-zitadel-egress
+  namespace: postgres
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+  labels:
+    app.kubernetes.io/instance: postgres
+spec:
+  podSelector:
+    matchLabels:
+      postgres-operator.crunchydata.com/pgadmin: pgadmin
+  policyTypes:
+    - Egress
+  egress:
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: zitadel
+          podSelector:
+            matchLabels:
+              cnpg.io/cluster: zitadel
       ports:
         - protocol: TCP
           port: 5432
@@ -288,13 +342,13 @@ spec:
               kubernetes.io/metadata.name: analytics-for-spotify
           podSelector:
             matchLabels:
-              postgres-operator.crunchydata.com/cluster: spotify
+              cnpg.io/cluster: spotify
         - namespaceSelector:
             matchLabels:
               kubernetes.io/metadata.name: analytics-for-spotify-ext
           podSelector:
             matchLabels:
-              postgres-operator.crunchydata.com/cluster: spotify
+              cnpg.io/cluster: spotify
       ports:
         - protocol: TCP
           port: 5432
@@ -322,7 +376,7 @@ spec:
               kubernetes.io/metadata.name: finance-tracker
           podSelector:
             matchLabels:
-              postgres-operator.crunchydata.com/cluster: finance
+              cnpg.io/cluster: finance
       ports:
         - protocol: TCP
           port: 5432
