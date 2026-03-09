@@ -241,7 +241,7 @@ graph TD
  linkStyle default interpolate basis
 
 subgraph Networking
-    wan1[<center>WAN<br>192.168.100.1</center>]---|1000/50 Mb|router{<center>UDM Pro SE<br>10.0.0.1</center>}
+    wan1[<center>WAN<br>192.168.1.254</center>]---|2/2 GB|router{<center>UDM Pro SE<br>10.0.0.1</center>}
     wan2[<center>LTE<br>192.168.1.1</center>]---|750/25 Mb|router
 
     router---|10GbE|switch_hd[<center>USW Pro HD 24</center>]

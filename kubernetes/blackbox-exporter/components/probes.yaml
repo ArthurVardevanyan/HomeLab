@@ -39,7 +39,6 @@ spec:
       static:
         - https://1.1.1.1/
         - https://1.0.0.1/
-        - http://192.168.100.1/
         - https://api.okd.homelab.arthurvardevanyan.com:6443/healthz
         - https://console-openshift-console.apps.okd.homelab.arthurvardevanyan.com/
         - https://unifi.arthurvardevanyan.com/
@@ -47,6 +46,23 @@ spec:
         - https://console.minio.microshift.arthurvardevanyan.com/minio/health/live
         - https://minio.microshift.arthurvardevanyan.com/minio/health/live
         - http://metrics.microshift.arthurvardevanyan.com/health
+---
+apiVersion: monitoring.coreos.com/v1
+kind: Probe
+metadata:
+  name: urls-static-insecure
+  namespace: blackbox-exporter
+spec:
+  jobName: urls-static-insecure
+  interval: 30s
+  module: http_2xx_insecure
+  prober:
+    path: /probe
+    url: blackbox-exporter.blackbox-exporter.svc.cluster.local:9115
+  targets:
+    staticConfig:
+      static:
+        - https://192.168.1.254/
 ---
 apiVersion: monitoring.coreos.com/v1
 kind: Probe
