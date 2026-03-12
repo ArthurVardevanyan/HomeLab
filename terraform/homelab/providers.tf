@@ -2,7 +2,7 @@ terraform {
   required_providers {
     google = {
       source  = "hashicorp/google"
-      version = "7.19.0"
+      version = "7.23.0"
     }
     vault = {
       source  = "hashicorp/vault"
@@ -10,7 +10,7 @@ terraform {
     }
     zitadel = {
       source  = "zitadel/zitadel"
-      version = "2.7.0"
+      version = "2.10.0"
 
     }
     http = {

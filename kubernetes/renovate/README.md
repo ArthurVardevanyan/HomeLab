@@ -7,6 +7,7 @@ kubectl kustomize kubernetes/renovate/overlays/okd | argocd-vault-plugin generat
 ## REF
 
 - <https://docs.renovatebot.com/examples/self-hosting/>
+- <https://docs.renovatebot.com/modules/platform/github/#running-as-a-github-app>
 
 ## Image Audit
 
