@@ -1,13 +1,14 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
-  "regexManagers": [
+  "customManagers": [
     {
+      "customType": "regex",
       "description": "Universal Homelab Release Updater (Ansible & Docker)",
-      "fileMatch": [
-        "^ansible/playbooks/.*\\.yaml$",
-        "(^|/)Dockerfile$",
-        "(^|/)Containerfile$",
-        "(^|/)containerfile$"
+      "managerFilePatterns": [
+        "/^ansible/playbooks/.*\\.yaml$/",
+        "/(^|/)Dockerfile$/",
+        "/(^|/)Containerfile$/",
+        "/(^|/)containerfile$/"
       ],
       "matchStrings": [
         "# renovate: custom-github-release depName=(?<depName>[^\\s]+)(?: versioning=(?<versioning>[^\\s]+))?\\n\\s+url: .*?/releases/download/v?(?<currentValue>[^/]+)/",
@@ -20,16 +21,18 @@
       "extractVersionTemplate": "^v?(?<version>.*)$"
     },
     {
+      "customType": "regex",
       "description": "Update vm-cluster.yaml clusterVersion",
-      "fileMatch": ["vm-cluster\\.yaml$"],
+      "managerFilePatterns": ["/vm-cluster\\.yaml$/"],
       "matchStrings": [
         "(?<comment>#\\s*renovate:\\s*datasource=(?<datasource>.*?) depName=(?<depName>.*?)(?: versioning=(?<versioning>.*?))?)\\s+clusterVersion:\\s+\"(?<currentValue>.*)-cluster\""
       ],
       "autoReplaceStringTemplate": "{{{comment}}}\n  clusterVersion: \"{{{newVersion}}}-cluster\""
     },
     {
+      "customType": "regex",
       "description": "Update ArgoCD manifests with SHA256 digests",
-      "fileMatch": ["argocd\\.yaml$"],
+      "managerFilePatterns": ["/argocd\\.yaml$/"],
       "matchStrings": [
         "#\\s*renovate:\\s*datasource=(?<datasource>.*?) depName=(?<depName>.*?)(?: versioning=(?<versioning>.*?))?\\s+(?:-\\s+)?\\w+:\\s+(?<currentDigest>sha256:[a-f0-9]+)\\s*#\\s*(?<currentValue>\\S+)"
       ]
@@ -38,7 +41,7 @@
   "packageRules": [
     {
       "matchDatasources": ["github-releases"],
-      "matchManagers": ["regex"],
+      "matchManagers": ["custom.regex"],
       "groupName": "Homelab Binaries",
       "separateMajorMinor": false
     }
