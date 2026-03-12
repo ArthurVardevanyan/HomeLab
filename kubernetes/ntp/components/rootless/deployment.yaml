@@ -10,7 +10,7 @@ metadata:
     app: ntp-rootless
     app.kubernetes.io/instance: ntp
 spec:
-  replicas: 1 # 2
+  replicas: 2
   strategy:
     type: RollingUpdate
   revisionHistoryLimit: 0
@@ -24,27 +24,27 @@ spec:
       annotations:
         enable.version-checker.io/ntp-rootless: "true"
         seccomp.security.alpha.kubernetes.io/defaultProfileName: "runtime/default"
-        k8s.v1.cni.cncf.io/networks: |
-          [{
-            "name": "bond4-nad-vlan3",
-            "namespace": "default",
-            "mac": "10:01:02:00:30:03",
-            "ips": ["10.102.3.3/24"]
-          },
-          {
-            "name": "bond4-nad-vlan111",
-            "namespace": "default",
-            "mac": "10:01:01:00:10:03",
-            "ips": ["10.101.1.3/24"],
-            "default-route": ["10.101.1.1"]
-          }]
+        # k8s.v1.cni.cncf.io/networks: |
+        #   [{
+        #     "name": "bond4-nad-vlan3",
+        #     "namespace": "default",
+        #     "mac": "10:01:02:00:30:03",
+        #     "ips": ["10.102.3.3/24"]
+        #   },
+        #   {
+        #     "name": "bond4-nad-vlan111",
+        #     "namespace": "default",
+        #     "mac": "10:01:01:00:10:03",
+        #     "ips": ["10.101.1.3/24"],
+        #     "default-route": ["10.101.1.1"]
+        #   }]
     spec:
       securityContext:
         seccompProfile:
           type: RuntimeDefault
-        sysctls:
-          - name: net.ipv4.ip_unprivileged_port_start
-            value: "0"
+        # sysctls:
+        #   - name: net.ipv4.ip_unprivileged_port_start
+        #     value: "0"
         runAsNonRoot: true
       hostname: ntp-rootless
       restartPolicy: Always
@@ -60,7 +60,7 @@ spec:
           imagePullPolicy: IfNotPresent
           name: ntp-rootless
           ports:
-            - containerPort: 123 # 12345
+            - containerPort: 12345 #123
               name: ntp
               protocol: UDP
             - containerPort: 9433
@@ -96,7 +96,7 @@ spec:
             - name: SKIP_CHOWN
               value: "true"
             - name: PORT
-              value: "123" # 12345
+              value: "12345" # 123
             - name: CMDPORT
               value: "10323"
             - name: ENABLE_NTS

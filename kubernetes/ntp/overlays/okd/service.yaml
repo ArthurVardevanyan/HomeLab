@@ -15,3 +15,26 @@ spec:
   selector:
     app: ntp-rootless
   type: ClusterIP
+---
+apiVersion: v1
+kind: Service
+metadata:
+  annotations:
+    metallb.universe.tf/loadBalancerIPs: "10.101.10.252"
+  name: ntp-bgp
+  namespace: ntp
+spec:
+  externalTrafficPolicy: Cluster
+  internalTrafficPolicy: Cluster
+  ipFamilies:
+    - IPv4
+  ipFamilyPolicy: SingleStack
+  ports:
+    - name: ntp
+      port: 123
+      targetPort: ntp
+      protocol: UDP
+  selector:
+    app: ntp-rootless
+  type: LoadBalancer
+  loadBalancerClass: metallb.io/metallb-class

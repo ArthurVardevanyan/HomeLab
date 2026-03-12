@@ -1,111 +1,111 @@
----
-apiVersion: nmstate.io/v1
-kind: NodeNetworkConfigurationPolicy
-metadata:
-  name: vlan3-eth0
-  annotations:
-    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
-spec:
-  nodeSelector:
-    kubernetes.io/hostname: microshift.arthurvardevanyan.com
-  desiredState:
-    interfaces:
-      - name: eth0.3
-        description: VLAN using eth0
-        type: vlan
-        state: up
-        ipv4:
-          dhcp: false
-          enabled: false
-        vlan:
-          base-iface: eth0
-          id: 3
-      - name: br1.3
-        description: linux-bridge with eth0.3 as a port
-        type: linux-bridge
-        state: up
-        ipv4:
-          dhcp: true
-          enabled: true
-        bridge:
-          options:
-            stp:
-              enabled: false
-          port:
-            - name: eth0.3
----
-apiVersion: nmstate.io/v1
-kind: NodeNetworkConfigurationPolicy
-metadata:
-  name: vlan11-eth0
-  annotations:
-    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
-spec:
-  nodeSelector:
-    kubernetes.io/hostname: microshift.arthurvardevanyan.com
-  desiredState:
-    interfaces:
-      - name: eth0.11
-        description: VLAN using eth0
-        type: vlan
-        state: up
-        ipv4:
-          dhcp: false
-          enabled: false
-        vlan:
-          base-iface: eth0
-          id: 11
-      - name: br1.11
-        description: linux-bridge with eth0.11 as a port
-        type: linux-bridge
-        state: up
-        ipv4:
-          dhcp: true
-          enabled: true
-        bridge:
-          options:
-            stp:
-              enabled: false
-          port:
-            - name: eth0.11
----
-apiVersion: nmstate.io/v1
-kind: NodeNetworkConfigurationPolicy
-metadata:
-  name: vlan10-eth0
-  annotations:
-    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
-spec:
-  nodeSelector:
-    kubernetes.io/hostname: microshift.arthurvardevanyan.com
-  desiredState:
-    interfaces:
-      - name: eth0.10
-        description: VLAN using eth0
-        type: vlan
-        state: up
-        ipv4:
-          dhcp: false
-          enabled: false
-        vlan:
-          base-iface: eth0
-          id: 10
-      - name: br1.10
-        description: linux-bridge with eth0.10 as a port
-        type: linux-bridge
-        state: up
-        ipv4:
-          dhcp: true
-          enabled: true
-        bridge:
-          options:
-            stp:
-              enabled: false
-          port:
-            - name: eth0.10
-    routes:
-      config:
-        # BGP for OKD Cluster
-        - destination: 10.101.10.240/28
-          next-hop-address: 10.101.10.1
-          next-hop-interface: br1.10
+# ---
+# apiVersion: nmstate.io/v1
+# kind: NodeNetworkConfigurationPolicy
+# metadata:
+#   name: vlan3-eth0
+#   annotations:
+#     argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+# spec:
+#   nodeSelector:
+#     kubernetes.io/hostname: microshift.arthurvardevanyan.com
+#   desiredState:
+#     interfaces:
+#       - name: eth0.3
+#         description: VLAN using eth0
+#         type: vlan
+#         state: up
+#         ipv4:
+#           dhcp: false
+#           enabled: false
+#         vlan:
+#           base-iface: eth0
+#           id: 3
+#       - name: br1.3
+#         description: linux-bridge with eth0.3 as a port
+#         type: linux-bridge
+#         state: up
+#         ipv4:
+#           dhcp: true
+#           enabled: true
+#         bridge:
+#           options:
+#             stp:
+#               enabled: false
+#           port:
+#             - name: eth0.3
+# ---
+# apiVersion: nmstate.io/v1
+# kind: NodeNetworkConfigurationPolicy
+# metadata:
+#   name: vlan11-eth0
+#   annotations:
+#     argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+# spec:
+#   nodeSelector:
+#     kubernetes.io/hostname: microshift.arthurvardevanyan.com
+#   desiredState:
+#     interfaces:
+#       - name: eth0.11
+#         description: VLAN using eth0
+#         type: vlan
+#         state: up
+#         ipv4:
+#           dhcp: false
+#           enabled: false
+#         vlan:
+#           base-iface: eth0
+#           id: 11
+#       - name: br1.11
+#         description: linux-bridge with eth0.11 as a port
+#         type: linux-bridge
+#         state: up
+#         ipv4:
+#           dhcp: true
+#           enabled: true
+#         bridge:
+#           options:
+#             stp:
+#               enabled: false
+#           port:
+#             - name: eth0.11
+# ---
+# apiVersion: nmstate.io/v1
+# kind: NodeNetworkConfigurationPolicy
+# metadata:
+#   name: vlan10-eth0
+#   annotations:
+#     argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+# spec:
+#   nodeSelector:
+#     kubernetes.io/hostname: microshift.arthurvardevanyan.com
+#   desiredState:
+#     interfaces:
+#       - name: eth0.10
+#         description: VLAN using eth0
+#         type: vlan
+#         state: up
+#         ipv4:
+#           dhcp: false
+#           enabled: false
+#         vlan:
+#           base-iface: eth0
+#           id: 10
+#       - name: br1.10
+#         description: linux-bridge with eth0.10 as a port
+#         type: linux-bridge
+#         state: up
+#         ipv4:
+#           dhcp: true
+#           enabled: true
+#         bridge:
+#           options:
+#             stp:
+#               enabled: false
+#           port:
+#             - name: eth0.10
+#     routes:
+#       config:
+#         # BGP for OKD Cluster
+#         - destination: 10.101.10.240/28
+#           next-hop-address: 10.101.10.1
+#           next-hop-interface: br1.10
