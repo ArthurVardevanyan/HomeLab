@@ -42,9 +42,10 @@
       "enabled": true
     }
   ],
-  "regexManagers": [
+  "customManagers": [
     {
-      "fileMatch": ["^\\.pre-commit-config.yaml$"],
+      "customType": "regex",
+      "managerFilePatterns": ["/^\\.pre-commit-config.yaml$/"],
       "matchStrings": ["rev: v0\\.(?<currentValue>[^\\s]+)"],
       "datasourceTemplate": "github-tags",
       "depNameTemplate": "shellcheck-py/shellcheck-py",
@@ -53,7 +54,8 @@
       "autoReplaceStringTemplate": "rev: v0.{{{newVersion}}}"
     },
     {
-      "fileMatch": ["\\.yaml$"],
+      "customType": "regex",
+      "managerFilePatterns": ["/\\.yaml$/"],
       "matchStrings": [
         "#\\s*renovate:\\s*datasource=(?<datasource>.*?) depName=(?<depName>.*?)(?: versioning=(?<versioning>.*?))?\\s+(?:-\\s+)?\\w+:\\s+(?:[^@\\s]*:)?(?<currentValue>[^@\\s]+)(?:@(?<currentDigest>\\S+))?"
       ]
