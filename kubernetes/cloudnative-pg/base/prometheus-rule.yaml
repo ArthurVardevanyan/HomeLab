@@ -1,0 +1,147 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: cnpg-default-alerts
+  namespace: openshift-monitoring #cnpg-system
+spec:
+  groups:
+    - name: cnp-default.rules
+      rules:
+        - alert: LongRunningTransaction
+          annotations:
+            description: Pod {{ $labels.pod }} is taking more than 5 minutes (300 seconds) for a query.
+            summary: A query is taking longer than 5 minutes.
+          expr: |-
+            cnpg_backends_max_tx_duration_seconds > 300
+          for: 1m
+          labels:
+            severity: warning
+        - alert: BackendsWaiting
+          annotations:
+            description: Pod {{ $labels.pod  }} has been waiting for longer than 5 minutes
+            summary: If a backend is waiting for longer than 5 minutes
+          expr: |-
+            cnpg_backends_waiting_total > 300
+          for: 1m
+          labels:
+            severity: warning
+        - alert: PGDatabaseXidAge
+          annotations:
+            description: Over 300,000,000 transactions from frozen xid on pod {{ $labels.pod  }}
+            summary: Number of transactions from the frozen XID to the current one
+          expr: |-
+            cnpg_pg_database_xid_age > 300000000
+          for: 1m
+          labels:
+            severity: warning
+        - alert: PGReplication
+          annotations:
+            description: Standby is lagging behind by over 300 seconds (5 minutes)
+            summary: The standby is lagging behind the primary
+          expr: |-
+            cnpg_pg_replication_lag > 300
+          for: 1m
+          labels:
+            severity: warning
+        - alert: LastFailedArchiveTime
+          annotations:
+            description: Archiving failed for {{ $labels.pod }}
+            summary: Checks the last time archiving failed. Will be < 0 when it has not failed.
+          expr: |-
+            (cnpg_pg_stat_archiver_last_failed_time - cnpg_pg_stat_archiver_last_archived_time) > 1
+          for: 1m
+          labels:
+            severity: warning
+        - alert: DatabaseDeadlockConflicts
+          annotations:
+            description: There are over 10 deadlock conflicts in {{ $labels.pod }}
+            summary: Checks the number of database conflicts
+          expr: |-
+            cnpg_pg_stat_database_deadlocks > 10
+          for: 1m
+          labels:
+            severity: warning
+        - alert: ReplicaFailingReplication
+          annotations:
+            description: Replica {{ $labels.pod }} is failing to replicate
+            summary: Checks if the replica is failing to replicate
+          expr: |-
+            cnpg_pg_replication_in_recovery > cnpg_pg_replication_is_wal_receiver_up
+          for: 1m
+          labels:
+            severity: warning
+---
+# https://oneuptime.com/blog/post/2026-01-21-cloudnativepg-prometheus-monitoring/view
+# Article Wrong, modified slightly to use cnpg_collector_up instead of cnpg_pg_up, and added some more alerts
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: cloudnativepg-alerts
+  namespace: openshift-monitoring #cnpg-system
+  labels:
+    release: prometheus
+spec:
+  groups:
+    - name: cloudnativepg.rules
+      rules:
+        # Cluster Health (using cnpg_collector_up from pod exporter)
+        - alert: CNPGClusterNotHealthy
+          expr: count by (cluster) (cnpg_collector_up == 1) < count by (cluster) (cnpg_collector_up)
+          for: 5m
+          labels:
+            severity: warning
+          annotations:
+            summary: "PostgreSQL cluster not healthy"
+            description: "Cluster {{ $labels.cluster }} has instances that are not up"
+
+        - alert: CNPGClusterDown
+          expr: count by (cluster) (cnpg_collector_up == 1) == 0
+          for: 1m
+          labels:
+            severity: critical
+          annotations:
+            summary: "PostgreSQL cluster is down"
+            description: "Cluster {{ $labels.cluster }} has no ready instances"
+
+        # Replication
+        - alert: CNPGHighReplicationLag
+          expr: cnpg_pg_replication_lag > 30
+          for: 5m
+          labels:
+            severity: warning
+          annotations:
+            summary: "High replication lag"
+            description: "Replication lag is {{ $value }}s on {{ $labels.pod }}"
+
+        # Backups
+        - alert: CNPGNoRecentBackup
+          expr: time() - cnpg_pg_stat_archiver_last_archived_time > 3600
+          for: 15m
+          labels:
+            severity: warning
+          annotations:
+            summary: "No recent WAL archive"
+            description: "No WAL archived in the last hour for {{ $labels.cluster }}"
+
+        - alert: CNPGArchiveFailure
+          expr: increase(cnpg_pg_stat_archiver_failed_count[1h]) > 0
+          for: 5m
+          labels:
+            severity: warning
+          annotations:
+            summary: "WAL archive failures"
+            description: "Archive failures on {{ $labels.cluster }}"
+
+        # Storage
+        - alert: CNPGDiskSpaceLow
+          expr: >
+            cnpg_pg_database_size_bytes
+            / on (namespace, persistentvolumeclaim)
+            max by (namespace, persistentvolumeclaim) (kubelet_volume_stats_capacity_bytes)
+            > 0.8
+          for: 10m
+          labels:
+            severity: warning
+          annotations:
+            summary: "PostgreSQL disk space low"
+            description: "Database {{ $labels.datname }} is using {{ $value | humanizePercentage }} of disk"
