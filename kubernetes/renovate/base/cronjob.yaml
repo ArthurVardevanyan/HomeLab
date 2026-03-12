@@ -48,10 +48,71 @@ spec:
           #     volumeMounts:
           #       - name: mod
           #         mountPath: "/usr/local/bin"
+          initContainers:
+            #  https://api.github.com/users/homelab-okd[bot]
+            - name: github-app-token
+              image: registry.arthurvardevanyan.com/homelab/toolbox:not_latest
+              command: ["bash", "-c"]
+              args:
+                - |
+                  set -euo pipefail
+                  APP_ID="$GITHUB_APP_ID"
+                  INSTALL_ID="$GITHUB_APP_INSTALLATION_ID"
+
+                  # Base64url encode (no padding)
+                  b64url() { openssl base64 -A | tr '+/' '-_' | tr -d '='; }
+
+                  # Build JWT header and payload
+                  NOW=$(date +%s)
+                  IAT=$((NOW - 60))
+                  EXP=$((NOW + 600))
+                  HEADER=$(echo -n '{"alg":"RS256","typ":"JWT"}' | b64url)
+                  PAYLOAD=$(echo -n "{\"iat\":${IAT},\"exp\":${EXP},\"iss\":\"${APP_ID}\"}" | b64url)
+
+                  # Sign and assemble JWT
+                  SIGNATURE=$(echo -n "${HEADER}.${PAYLOAD}" | \
+                    openssl dgst -sha256 -sign <(echo "$GITHUB_APP_KEY") -binary | b64url)
+                  JWT="${HEADER}.${PAYLOAD}.${SIGNATURE}"
+
+                  # Exchange JWT for installation access token
+                  RESPONSE=$(curl -sf -X POST \
+                    -H "Authorization: Bearer ${JWT}" \
+                    -H "Accept: application/vnd.github+json" \
+                    "https://api.github.com/app/installations/${INSTALL_ID}/access_tokens")
+
+                  echo "$RESPONSE" | jq -r '.token' > /tmp/token/token
+              resources:
+                limits:
+                  cpu: 100m
+                  ephemeral-storage: 64Mi
+                  memory: 128Mi
+                requests:
+                  cpu: 50m
+                  ephemeral-storage: 32Mi
+                  memory: 64Mi
+              securityContext:
+                runAsNonRoot: true
+                readOnlyRootFilesystem: true
+                allowPrivilegeEscalation: false
+                seccompProfile:
+                  type: RuntimeDefault
+                capabilities:
+                  drop:
+                    - ALL
+              envFrom:
+                - secretRef:
+                    name: renovate-env
+              volumeMounts:
+                - name: token
+                  mountPath: /tmp/token
           containers:
             # renovate: datasource=docker depName=docker.io/renovate/renovate
             - image: docker.io/renovate/renovate:43.0.6-full@sha256:5ab1cc4c752020f83548dfb0430c5d1a8086269e9053c1c8d7eb2c52749bafc6
               name: renovate-bot
+              command: ["sh", "-c"]
+              args:
+                - |
+                  export RENOVATE_TOKEN=$(cat /tmp/token/token) && renovate
               resources:
                 limits:
                   cpu: 1000m
@@ -69,6 +130,8 @@ spec:
                   drop:
                     - ALL
               env:
+                - name: RENOVATE_PLATFORM
+                  value: "github"
                 - name: RENOVATE_AUTODISCOVER
                   value: "false"
                 - name: RENOVATE_BASE_DIR
@@ -83,10 +146,10 @@ spec:
                   value: "-mod=mod"
                 - name: GOBIN
                   value: /tmp/bin
-              envFrom:
-                - secretRef:
-                    name: renovate-env
               volumeMounts:
+                - name: token
+                  mountPath: /tmp/token
+                  readOnly: true
                 - name: config-volume
                   mountPath: /opt/renovate/
                 - name: work-volume
@@ -111,6 +174,6 @@ spec:
             - name: home
               emptyDir:
                 sizeLimit: "512Mi"
-            # - name: mod
-            #   emptyDir:
-            #     sizeLimit: 1Gi
+            - name: token
+              emptyDir:
+                sizeLimit: "1Mi"
