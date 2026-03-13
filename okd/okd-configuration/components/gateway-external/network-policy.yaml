@@ -201,3 +201,22 @@ spec:
       ports:
         - protocol: TCP
           port: 9481
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-to-microshift
+  namespace: openshift-ingress
+spec:
+  podSelector:
+    matchLabels:
+      gateway.networking.k8s.io/gateway-name: https-gateway-external
+  policyTypes:
+    - Egress
+  egress:
+    - to:
+        - ipBlock:
+            cidr: 10.101.1.7/32
+      ports:
+        - protocol: TCP
+          port: 443

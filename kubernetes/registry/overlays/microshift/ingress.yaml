@@ -1,0 +1,26 @@
+---
+kind: Ingress
+apiVersion: networking.k8s.io/v1
+metadata:
+  name: registry
+  namespace: registry
+  labels:
+    app.kubernetes.io/instance: registry
+  annotations:
+    route.openshift.io/termination: edge
+spec:
+  tls:
+    - hosts:
+        - registry.microshift.arthurvardevanyan.com
+      secretName: registry-cert
+  rules:
+    - host: registry.microshift.arthurvardevanyan.com
+      http:
+        paths:
+          - path: ""
+            pathType: ImplementationSpecific
+            backend:
+              service:
+                name: registry
+                port:
+                  number: 5000
