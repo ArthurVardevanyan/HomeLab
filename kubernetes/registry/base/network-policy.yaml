@@ -1,0 +1,36 @@
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: deny-all
+  namespace: registry
+  annotations:
+    argocd.argoproj.io/sync-wave: "0"
+  labels:
+    app.kubernetes.io/instance: registry
+spec:
+  policyTypes:
+    - Ingress
+    - Egress
+  podSelector: {}
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-from-openshift-ingress
+  namespace: registry
+  annotations:
+    argocd.argoproj.io/sync-wave: "0"
+  labels:
+    app.kubernetes.io/instance: registry
+spec:
+  policyTypes:
+    - Ingress
+  podSelector:
+    matchLabels:
+      app: registry
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              name: openshift-ingress

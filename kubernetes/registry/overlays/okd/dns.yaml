@@ -1,0 +1,17 @@
+---
+apiVersion: externaldns.k8s.io/v1alpha1
+kind: DNSEndpoint
+metadata:
+  name: registry
+  namespace: homelab
+  annotations:
+    externaldns.k8s.io: unifi
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+    argocd.argoproj.io/sync-wave: "2"
+spec:
+  endpoints:
+    - dnsName: registry.microshift.arthurvardevanyan.com
+      recordTTL: 60
+      recordType: CNAME
+      targets:
+        - microshift.arthurvardevanyan.com
