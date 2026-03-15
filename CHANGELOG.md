@@ -25,6 +25,7 @@ This document analyzes the git history of the HomeLab project, grouping changes 
 | **Virt**            | Late 2024  | OKD / MicroShift   | AWX, Netbox              | Tekton, Gitea          | Ceph, LVM         | Loki, Logging              | Cloudflare DDNS               | -                   |
 | **Bare Metal**      | Early 2025 | OKD IPI / SNO      | Agent Installer          | Tekton, Gitea          | Ceph, LVM         | Power Monitoring           | OVN-K8s                       | KFCA                |
 | **Accel**           | Late 2025  | OKD IPI            | Agent Installer          | Tekton, Gitea          | Ceph, LVM         | VictoriaMetrics, Dragonfly | Gateway API, Service Mesh     | NetworkPolicy       |
+| **Resilience**      | Early 2026 | OKD IPI            | Renovate (GitHub App)    | Tekton, Gitea          | Ceph, CNPG        | Wire-Tap                   | BGP, Gateway API              | Coraza WAF          |
 
 - [Changelog](#changelog)
   - [Overview](#overview)
@@ -64,6 +65,9 @@ This document analyzes the git history of the HomeLab project, grouping changes 
   - [15. Hardware Acceleration \& Observability 2.0 (Late 2025)](#15-hardware-acceleration--observability-20-late-2025)
     - [Key Characteristics](#key-characteristics-9)
     - [Major Milestones](#major-milestones-9)
+  - [16. Platform Resilience \& Networking 2.0 (Early 2026)](#16-platform-resilience--networking-20-early-2026)
+    - [Key Characteristics](#key-characteristics-10)
+    - [Major Milestones](#major-milestones-10)
 
 ## 1. Windows Server (Early 2016)
 
@@ -301,3 +305,36 @@ Focus on GPU integration, advanced networking, and next-gen observability.
 - **November 15, 2025**: **OpenShift Service Mesh**.
 - **November 18, 2025**: Adoption of **VictoriaMetrics**.
 - **Late 2025**: **BMC Shim** for bare-metal autoscaling.
+
+## 16. Platform Resilience & Networking 2.0 (Early 2026)
+
+Focus on platform maturity, DNS modernization, web application security, database migration, and advanced networking with BGP.
+
+### Key Characteristics
+
+- **Networking:** **BGP** (Jan 2026) for Gateway API load balancing, **MetalLB** revived, **WASM** and **External Gateway** with Cloudflare IP whitelisting.
+- **DNS:** **Technitium DNS** (Feb 2026) replaced Pi-hole, with multi-node **clustering** and **External DNS UniFi** integration.
+- **Security:** **Coraza WAF** (Feb 2026) for web application firewall, **Let's Encrypt** cert validity drop preparation.
+- **Database:** Migration from **Crunchy Postgres** to **CloudNative-PG** (Mar 2026) with monitoring and automated backups.
+- **Observability:** **Wire-Tap** (Mar 2026) inception for network traffic inspection.
+- **Platform:** OKD upgraded to **4.22** (Feb 2026), **VPA** (Vertical Pod Autoscaler) inception, **Docker Registry** inception.
+- **Automation:** **Renovate** matured to **GitHub App** (Mar 2026), IaC linting with **Checkov**, **ansible-lint**, and **yamllint**.
+- **GitOps:** ArgoCD **server-side apply** and **shallow clone** optimizations.
+
+### Major Milestones
+
+- **December 11, 2025**: **Renovate** inception for automated dependency management.
+- **December 20, 2025**: **IaC Linting** with Checkov, ansible-lint, and yamllint.
+- **January 20, 2026**: OKD upgrade to **4.21.0-okd-scos.1** (GA).
+- **January 23, 2026**: **WASM** inception and **External Gateway** with Cloudflare IP whitelisting.
+- **January 23, 2026**: **BGP** for Gateway API load balancing.
+- **January 31, 2026**: ArgoCD **Shallow Clone** for faster syncs.
+- **February 12, 2026**: **Vertical Pod Autoscaler (VPA)** inception.
+- **February 13, 2026**: OKD upgrade to **4.22**.
+- **February 15, 2026**: **Technitium DNS** inception, replacing Pi-hole. Clustering and VLAN integration.
+- **February 15, 2026**: **External DNS UniFi** inception for automatic DNS record management.
+- **February 23, 2026**: **MetalLB** revived, **Coraza WAF** prep.
+- **February 25, 2026**: **Coraza WAF** inception.
+- **March 4, 2026**: **Wire-Tap** inception for network traffic inspection.
+- **March 6, 2026**: **CloudNative-PG** migration from Crunchy Postgres.
+- **March 12, 2026**: **Docker Registry** inception, Renovate switch to **GitHub App**.
