@@ -49,16 +49,14 @@ spec:
       dnsPolicy: ClusterFirst
       affinity:
         podAntiAffinity:
-          preferredDuringSchedulingIgnoredDuringExecution:
-            - podAffinityTerm:
-                labelSelector:
-                  matchExpressions:
-                    - key: app.kubernetes.io/component
-                      operator: In
-                      values:
-                        - admission-controller
-                topologyKey: kubernetes.io/hostname
-              weight: 1
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - labelSelector:
+                matchExpressions:
+                  - key: app.kubernetes.io/component
+                    operator: In
+                    values:
+                      - admission-controller
+              topologyKey: kubernetes.io/hostname
       serviceAccountName: kyverno-admission-controller
       automountServiceAccountToken: true
       initContainers:
