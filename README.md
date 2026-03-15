@@ -361,23 +361,32 @@ end
 - **Storage Strategy**:
   - **Rook-Ceph**: Block, Object, and File storage for the cluster.
   - **MinIO**: S3-compatible object storage for applications.
-  - **Longhorn**: Distributed block storage (alternative/backup).
+  - **CloudNative-PG**: Cloud-native PostgreSQL operator for database workloads.
 - **Observability Stack**:
+  - **VictoriaMetrics**: Long-term metrics storage (replaced Prometheus remote write).
   - **Prometheus & Grafana**: Metrics collection and visualization.
   - **Loki**: Log aggregation.
+  - **Wire-Tap**: Network traffic inspection and analysis.
   - **StackRox (ACS)**: Kubernetes security and compliance.
   - **Network Observability**: Flow logs and traffic analysis.
+  - **Dragonfly Operator**: In-cluster image caching.
 - **Security**:
   - **Vault**: Secret management.
   - **Cert-Manager**: Automated certificate management.
   - **External Secrets**: Syncing secrets from external providers.
+  - **Coraza WAF**: Web application firewall.
+  - **Kyverno**: Kubernetes policy engine.
 - **Home Automation**:
   - **Home Assistant**: Central automation hub.
   - **ESPHome**: Microcontroller management.
 - **DevOps**:
   - **Gitea**: Self-hosted Git service.
   - **Tekton**: CI/CD pipelines.
-  - **Woodpecker**: CI/CD automation.
+  - **Renovate**: Automated dependency management (GitHub App).
+  - **Docker Registry**: In-cluster container image registry.
+- **DNS**:
+  - **Technitium DNS**: Primary DNS server (replaced Pi-hole), with multi-node clustering.
+  - **External DNS (UniFi)**: Automatic DNS record management for UniFi controller.
 
 ### 4. Tooling (`/containers`, `main.bash`)
 
