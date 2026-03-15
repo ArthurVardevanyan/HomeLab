@@ -36,27 +36,18 @@ kubectl exec -it vault-0 -n vault -- vault operator unseal --tls-skip-verify
 # https://itnext.io/argocd-secret-management-with-argocd-vault-plugin-539f104aff05
 vault auth enable kubernetes
 
-token_reviewer_jwt=$(kubectl get secrets -n argocd -o jsonpath="{.items[?(@.metadata.annotations.kubernetes.io/service-account.name=='argocd-repo-server')].data.token}" |base64 -d)
-
-#kubernetes_host=$(oc whoami --show-server)
 kubernetes_host="https://kubernetes.default.svc:443"
 
-# Pod With Service Account Token Mounted
-kubectl cp -n vault vault-0:/var/run/secrets/kubernetes.io/serviceaccount/..data/ca.crt /tmp/ca.crt
+vault write auth/kubernetes/config \
+   kubernetes_host=${kubernetes_host}
 
-vault write auth/arthurvardevanyan-ci/config \
-   token_reviewer_jwt="${token_reviewer_jwt}" \
-   kubernetes_host=${kubernetes_host} \
-   kubernetes_ca_cert=@/tmp/ca.crt \
-   disable_local_ca_jwt=true
-
-vault write auth/kubernetes/role/arthurvardevanyan-ci \
-    bound_service_account_names=pipeline \
-    bound_service_account_namespaces=arthurvardevanyan-ci \
-    policies=arthurvardevanyan-ci \
+vault write auth/kubernetes/role/kubernetes \
+    bound_service_account_names=argocd \
+    bound_service_account_namespaces=argocd \
+    policies=argocd \
     ttl=1h
 
-vault policy write arthurvardevanyan-ci - <<EOF
+vault policy write argocd - <<EOF
 path "secret/*" {
     capabilities = ["create", "read", "update", "delete", "list"]
 }
