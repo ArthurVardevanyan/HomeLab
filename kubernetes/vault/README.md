@@ -41,6 +41,15 @@ kubernetes_host="https://kubernetes.default.svc:443"
 vault write auth/kubernetes/config \
    kubernetes_host=${kubernetes_host}
 
+vault write auth/analytics-for-spotify/config kubernetes_host=${kubernetes_host}
+vault write auth/arthur-vardevanyan/config kubernetes_host=${kubernetes_host}
+vault write auth/arthurvardevanyan-ci/config kubernetes_host=${kubernetes_host}
+vault write auth/ezservermonitor/config kubernetes_host=${kubernetes_host}
+vault write auth/finance-tracker/config kubernetes_host=${kubernetes_host}
+vault write auth/homelab/config kubernetes_host=${kubernetes_host}
+vault write auth/kubernetes/config kubernetes_host=${kubernetes_host}
+vault write auth/microshift/config kubernetes_host=${kubernetes_host}
+
 vault write auth/kubernetes/role/kubernetes \
     bound_service_account_names=argocd \
     bound_service_account_namespaces=argocd \
