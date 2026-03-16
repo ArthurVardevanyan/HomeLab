@@ -28,7 +28,30 @@ spec:
   postgresGID: 26
   postgresql:
     parameters:
+      # Memory
       shared_buffers: "256MB"
+      effective_cache_size: "3GB"
+      work_mem: "16MB"
+      maintenance_work_mem: "256MB"
+      # WAL / Checkpoint tuning for write-heavy workload
+      wal_buffers: "64MB"
+      wal_compression: "lz4"
+      max_wal_size: "2GB"
+      min_wal_size: "512MB"
+      checkpoint_completion_target: "0.9"
+      checkpoint_timeout: "15min"
+      synchronous_commit: "off"
+      commit_delay: "100"
+      # Autovacuum - more aggressive for write-heavy tables
+      autovacuum_max_workers: "4"
+      autovacuum_naptime: "15s"
+      autovacuum_vacuum_scale_factor: "0.05"
+      autovacuum_analyze_scale_factor: "0.02"
+      autovacuum_vacuum_cost_delay: "2ms"
+      # Planner - tuned for SSD (Ceph RBD)
+      random_page_cost: "1.1"
+      effective_io_concurrency: "200"
+      # Monitoring
       pg_stat_statements.max: "10000"
       pg_stat_statements.track: all
     pg_hba:
