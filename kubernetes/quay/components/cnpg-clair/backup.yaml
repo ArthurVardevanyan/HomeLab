@@ -1,0 +1,12 @@
+---
+apiVersion: postgresql.cnpg.io/v1
+kind: ScheduledBackup
+metadata:
+  name: clair
+  namespace: quay
+spec:
+  schedule: "0 0 4 * * *"
+  backupOwnerReference: self
+  cluster:
+    name: clair
+  method: volumeSnapshot
