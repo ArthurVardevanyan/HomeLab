@@ -44,11 +44,21 @@ spec:
             metadata:
               type: object
             spec:
-              description: Spec defines the desired state of RuleSet.
+              description: spec defines the desired state of RuleSet.
               properties:
+                ruleData:
+                  description: |-
+                    ruleData contains the name of a secret with the required data for rules.
+                    Usually rules that contain the directive '@pmFromFile'.
+                    This secret must be created containing the type coraza/data otherwise it will
+                    not be watched.
+                    Additionally, the secret must contain the name of each file as the key, and the content
+                    of the file as the value
+                  minLength: 1
+                  type: string
                 rules:
                   description: |-
-                    Rules is an ordered list of references to ConfigMaps that contain the
+                    rules is an ordered list of references to ConfigMaps that contain the
                     firewall rules to be compiled into a complete set.
 
                     Each entry refers to a ConfigMap by name in the same namespace as
@@ -60,7 +70,7 @@ spec:
                     properties:
                       name:
                         description:
-                          Name is the name of the ConfigMap in the same namespace
+                          name is the name of the ConfigMap in the same namespace
                           as the RuleSet.
                         minLength: 1
                         type: string
@@ -70,15 +80,16 @@ spec:
                   maxItems: 2048
                   minItems: 1
                   type: array
+                  x-kubernetes-list-type: atomic
               required:
                 - rules
               type: object
             status:
-              description: Status defines the observed state of RuleSet.
+              description: status defines the observed state of RuleSet.
               properties:
                 conditions:
                   description: |-
-                    Conditions represent the current state of the RuleSet resource.
+                    conditions represent the current state of the RuleSet resource.
                     Each condition has a unique type and reflects the status of a specific aspect of the resource.
 
                     Standard condition types include:

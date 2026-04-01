@@ -52,36 +52,43 @@ spec:
             metadata:
               type: object
             spec:
-              description: Spec defines the desired state of Engine.
+              description: spec defines the desired state of Engine.
               properties:
                 driver:
                   description: |-
-                    Driver specifies the driver configuration for the engine. This
+                    driver specifies the driver configuration for the engine. This
                     determines how the WAF engine will be deployed and integrated with some
                     implementation. Currently only supports Istio ingress Gateways.
                   properties:
                     istio:
                       description:
-                        Istio configures the Engine to integrate with Istio
+                        istio configures the Engine to integrate with Istio
                         service mesh.
                       properties:
                         wasm:
                           description:
-                            Wasm configures the Engine to be deployed as
+                            wasm configures the Engine to be deployed as
                             a WebAssembly plugin.
                           properties:
                             image:
                               description:
-                                Image is the OCI image reference for the
+                                image is the OCI image reference for the
                                 Coraza WASM plugin.
                               maxLength: 1024
                               minLength: 1
                               pattern: ^oci://
                               type: string
+                            imagePullSecret:
+                              description: |-
+                                imagePullSecret is the name of a Kubernetes Secret in the same namespace
+                                as the Engine that contains Docker registry credentials for pulling the
+                                WASM OCI image. This is passed directly to the Istio WasmPlugin resource.
+                              maxLength: 253
+                              type: string
                             mode:
                               default: gateway
                               description: |-
-                                Mode specifies what mechanism will be used to integrate the WAF with
+                                mode specifies what mechanism will be used to integrate the WAF with
                                 Istio.
 
                                 Currently only supports "Gateway" mode, utilizing Gateway API resources.
@@ -90,7 +97,7 @@ spec:
                               type: string
                             ruleSetCacheServer:
                               description: |-
-                                RuleSetCacheServer contains configuration for the ruleset cache server.
+                                ruleSetCacheServer contains configuration for the ruleset cache server.
 
                                 When omitted, no cache server will be used and no rulesets will be
                                 dynamically loaded. This implies that your Engine will be deployed with
@@ -99,7 +106,7 @@ spec:
                                 pollIntervalSeconds:
                                   default: 15
                                   description: |-
-                                    PollIntervalSeconds specifies how often the WAF should check for
+                                    pollIntervalSeconds specifies how often the WAF should check for
                                     configuration updates. The value is specified in seconds.
 
                                     When omitted, this means the user has no opinion and the platform
@@ -109,13 +116,13 @@ spec:
                                   maximum: 3600
                                   minimum: 1
                                   type: integer
-                              required:
-                                - pollIntervalSeconds
                               type: object
                             workloadSelector:
                               description: |-
-                                WorkloadSelector specifies the selection criteria for attaching the WAF to
+                                workloadSelector specifies the selection criteria for attaching the WAF to
                                 Istio resources.
+
+                                Required when mode is "gateway".
                               properties:
                                 matchExpressions:
                                   description:
@@ -164,7 +171,6 @@ spec:
                               x-kubernetes-map-type: atomic
                           required:
                             - image
-                            - mode
                           type: object
                           x-kubernetes-validations:
                             - message: workloadSelector is required when mode is gateway
@@ -184,7 +190,7 @@ spec:
                 failurePolicy:
                   default: fail
                   description: |-
-                    FailurePolicy determines the behavior when the WAF is not ready or
+                    failurePolicy determines the behavior when the WAF is not ready or
                     encounters errors. Valid values are:
 
                     - "Fail": Block traffic when the WAF is not ready or encounters errors
@@ -200,13 +206,13 @@ spec:
                   type: string
                 ruleSet:
                   description: |-
-                    RuleSet specifies the RuleSet resource that will be used to load rules
+                    ruleSet specifies the RuleSet resource that will be used to load rules
                     into the Engine. The referenced RuleSet must be in the same namespace
                     as the Engine.
                   properties:
                     name:
                       description:
-                        Name is the name of the RuleSet in the same namespace
+                        name is the name of the RuleSet in the same namespace
                         as the Engine.
                       minLength: 1
                       type: string
@@ -214,16 +220,17 @@ spec:
                     - name
                   type: object
               required:
-                - driver
-                - failurePolicy
                 - ruleSet
               type: object
+              x-kubernetes-validations:
+                - message: driver is required
+                  rule: has(self.driver)
             status:
-              description: Status defines the observed state of Engine.
+              description: status defines the observed state of Engine.
               properties:
                 conditions:
                   description: |-
-                    Conditions represent the current state of the Engine resource.
+                    conditions represent the current state of the Engine resource.
                     Each condition has a unique type and reflects the status of a specific
                     aspect of the resource.
 
@@ -291,6 +298,28 @@ spec:
                   type: array
                   x-kubernetes-list-map-keys:
                     - type
+                  x-kubernetes-list-type: map
+                gateways:
+                  description: |-
+                    gateways is the list of Gateways in the same namespace that match
+                    the Engine's workload selector.
+                  items:
+                    description: |-
+                      GatewayReference is a reference to a Gateway resource in the same namespace
+                      as the Engine.
+                    properties:
+                      name:
+                        description:
+                          name is the name of the Gateway in the same namespace
+                          as the Engine.
+                        minLength: 1
+                        type: string
+                    required:
+                      - name
+                    type: object
+                  type: array
+                  x-kubernetes-list-map-keys:
+                    - name
                   x-kubernetes-list-type: map
               type: object
           required:
