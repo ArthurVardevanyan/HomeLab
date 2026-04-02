@@ -1,0 +1,48 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: coraza-recommended-conf
+  namespace: openshift-ingress
+data:
+  rules: |
+    # -- Coraza Engine Configuration (from coraza.conf-recommended.conf)
+    SecRuleEngine DetectionOnly
+    SecRequestBodyAccess On
+
+    # Enable XML request body parser
+    SecRule REQUEST_HEADERS:Content-Type "^(?:application(?:/soap\+|/)|text/)xml" \
+        "id:'200000',phase:1,t:none,t:lowercase,pass,nolog,ctl:requestBodyProcessor=XML"
+
+    # Enable JSON request body parser
+    SecRule REQUEST_HEADERS:Content-Type "^application/json" \
+        "id:'200001',phase:1,t:none,t:lowercase,pass,nolog,ctl:requestBodyProcessor=JSON"
+
+    # Enable JSON request body parser for +json subtypes
+    SecRule REQUEST_HEADERS:Content-Type "^application/[a-z0-9.-]+[+]json" \
+        "id:'200006',phase:1,t:none,t:lowercase,pass,nolog,ctl:requestBodyProcessor=JSON"
+
+    SecRequestBodyLimit 131072
+    SecRequestBodyInMemoryLimit 131072
+    SecRequestBodyNoFilesLimit 131072
+    SecRequestBodyLimitAction Reject
+
+    # Reject requests with body parsing errors
+    SecRule REQBODY_ERROR "!@eq 0" \
+        "id:'200002',phase:2,t:none,log,deny,status:400,msg:'Failed to parse request body.',logdata:'%{reqbody_error_msg}',severity:2"
+
+    # Strict multipart/form-data validation
+    SecRule MULTIPART_STRICT_ERROR "!@eq 0" \
+        "id:'200003',phase:2,t:none,log,deny,status:400,msg:'Multipart request body failed strict validation.'"
+
+    SecResponseBodyAccess On
+    SecResponseBodyMimeType text/plain text/html text/xml
+    SecResponseBodyLimit 524288
+    SecResponseBodyLimitAction ProcessPartial
+
+    SecAuditEngine Off
+    SecAuditLogRelevantStatus "^(?:(5|4)(0|1)[0-9])$"
+    SecAuditLogParts ABIJDEFHZ
+    SecAuditLogType Serial
+    SecAuditLog /dev/stdout
+    SecAuditLogFormat JSON
