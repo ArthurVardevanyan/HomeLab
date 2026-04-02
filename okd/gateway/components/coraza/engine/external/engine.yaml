@@ -1,0 +1,22 @@
+---
+apiVersion: waf.k8s.coraza.io/v1alpha1
+kind: Engine
+metadata:
+  name: coraza-external
+  namespace: openshift-ingress
+  annotations:
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+spec:
+  ruleSet:
+    name: external-ruleset
+  failurePolicy: fail
+  driver:
+    istio:
+      wasm:
+        image: "oci://ghcr.io/networking-incubator/coraza-proxy-wasm:1902646ac7391b65be092cdec9b47d29fa5724c7"
+        mode: gateway
+        workloadSelector:
+          matchLabels:
+            coraza: external-ruleset
+        ruleSetCacheServer:
+          pollIntervalSeconds: 5

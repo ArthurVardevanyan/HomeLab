@@ -1,0 +1,43 @@
+---
+apiVersion: waf.k8s.coraza.io/v1alpha1
+kind: RuleSet
+metadata:
+  name: external-ruleset
+  namespace: openshift-ingress
+  annotations:
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+    waf.k8s.coraza.io/skip-unsupported-rules-check: "true" # Do we need this?
+spec:
+  ruleData: crs-rule-data
+  rules:
+    - name: coraza-recommended-conf
+    - name: coraza-crs-setup
+    # - name: coraza-custom-default # Doesn't Validate Properly?
+    - name: crs-request-901-initialization
+    - name: crs-request-905-common-exceptions
+    - name: crs-request-911-method-enforcement
+    - name: crs-request-913-scanner-detection
+    - name: crs-request-920-protocol-enforcement
+    - name: crs-request-921-protocol-attack
+    - name: crs-request-922-multipart-attack
+    - name: crs-request-930-application-attack-lfi
+    - name: crs-request-931-application-attack-rfi
+    - name: crs-request-932-application-attack-rce
+    - name: crs-request-933-application-attack-php
+    - name: crs-request-934-application-attack-generic
+    - name: crs-request-941-application-attack-xss
+    - name: crs-request-942-application-attack-sqli
+    - name: crs-request-943-application-attack-session-fixation
+    - name: crs-request-944-application-attack-java
+    - name: crs-request-949-blocking-evaluation
+    # Response body inspection rules removed — not supported in Envoy WASM mode
+    # - name: crs-response-950-data-leakages
+    # - name: crs-response-951-data-leakages-sql
+    # - name: crs-response-952-data-leakages-java
+    # - name: crs-response-953-data-leakages-php
+    # - name: crs-response-954-data-leakages-iis
+    # - name: crs-response-955-web-shells
+    - name: crs-response-959-blocking-evaluation
+    - name: crs-response-980-correlation
+    - name: coraza-base-rules
+    - name: coraza-rule-exclusions-external
