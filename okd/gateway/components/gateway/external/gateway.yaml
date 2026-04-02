@@ -6,7 +6,6 @@ metadata:
   namespace: openshift-ingress
   labels:
     gateway.networking.k8s.io/gateway-name: https-gateway-external
-    coraza: external-ruleset
 spec:
   gatewayClassName: openshift-default
   listeners:
@@ -59,6 +58,8 @@ spec:
             kind: Secret
             name: spotify-cert
   infrastructure:
+    labels:
+      coraza: external-ruleset
     parametersRef:
       group: ""
       kind: ConfigMap
