@@ -10,16 +10,17 @@ patches:
         name: patch
       spec:
         url: oci://registry.microshift.arthurvardevanyan.com/homelab/wasm-wiretap@sha256:92bf37dcc89365ff16b1a877f6404e96a56cbbd7a9455d237dcfd61211d008ad
-        backend: "loki"
-        upstream_cluster: "outbound|9481||vlinsert-ingress-logs.openshift-ingress-logs.svc.cluster.local."
-        upstream_authority: "vlinsert-ingress-logs.openshift-ingress-logs.svc.cluster.local."
-        upstream_port: 9481
-        upstream_path: "/insert/loki/api/v1/push"
-        capture_request_headers: true
-        capture_request_body: true
-        capture_response_headers: true
-        capture_response_body: true
-        max_body_bytes: 65536
+        pluginConfig:
+          backend: "loki"
+          upstream_cluster: "outbound|9481||vlinsert-ingress-logs.openshift-ingress-logs.svc.cluster.local."
+          upstream_authority: "vlinsert-ingress-logs.openshift-ingress-logs.svc.cluster.local."
+          upstream_port: 9481
+          upstream_path: "/insert/loki/api/v1/push"
+          capture_request_headers: true
+          capture_request_body: true
+          capture_response_headers: true
+          capture_response_body: true
+          max_body_bytes: 65536
     target:
       group: extensions.istio.io
       kind: WasmPlugin
