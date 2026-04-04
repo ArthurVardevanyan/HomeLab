@@ -1,0 +1,35 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: coraza-crs-setup
+  namespace: openshift-ingress
+data:
+  rules: |
+    # -- OWASP CRS v4.14.0 Setup Configuration (from crs-setup.conf.example)
+
+    # Anomaly Scoring mode (default)
+    SecDefaultAction "phase:1,log,auditlog,pass"
+    SecDefaultAction "phase:2,log,auditlog,pass"
+
+    # Enable early blocking for faster enforcement
+    SecAction \
+        "id:900120,\
+         phase:1,\
+         pass,\
+         t:none,\
+         nolog,\
+         tag:'OWASP_CRS',\
+         ver:'OWASP_CRS/4.14.0',\
+         setvar:tx.early_blocking=1"
+
+    # CRS setup version marker (required by CRS rules)
+    SecAction \
+        "id:900990,\
+         phase:1,\
+         pass,\
+         t:none,\
+         nolog,\
+         tag:'OWASP_CRS',\
+         ver:'OWASP_CRS/4.14.0',\
+         setvar:tx.crs_setup_version=4140"

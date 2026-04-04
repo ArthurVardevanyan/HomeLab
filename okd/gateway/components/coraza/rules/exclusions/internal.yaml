@@ -1,0 +1,23 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: coraza-rule-exclusions-internal
+  namespace: openshift-ingress
+data:
+  rules: |
+    # -- Rule Exclusions --
+    # Akamai Bot Manager cookies (_abck, bm_sz) contain encoded tokens
+    # with tilde (~) characters that false-positive on shell expression
+    # detection (rule 932270). These are legitimate browser cookies, not
+    # user-controlled input.
+    SecRuleUpdateTargetById 932270 "!REQUEST_COOKIES:_abck"
+    SecRuleUpdateTargetById 932270 "!REQUEST_COOKIES:bm_sz"
+    # Spotify For Analytics
+    # Disable body inspection for historical import endpoints (files too large for WASM memory)
+    SecRule REQUEST_URI "@rx ^/analytics/(analyzeHistoricalImport|importHistoricalData)/" "id:1102,phase:1,t:none,nolog,pass,ctl:requestBodyAccess=Off"
+    # Vault
+    SecRule REQUEST_HEADERS:Host "@streq vault.arthurvardevanyan.com" "id:1100,phase:1,pass,nolog,chain"
+    # Nextcloud
+    SecRule REQUEST_URI "@beginsWith /v1/auth/" "ctl:ruleRemoveById=911100,ctl:ruleRemoveById=949111"
+    SecRule REQUEST_HEADERS:Host "@streq files.arthurvardevanyan.com" "id:1101,phase:1,pass,nolog,chain"
+    SecRule REQUEST_URI "@beginsWith /remote.php/dav/" "ctl:ruleRemoveById=911100,ctl:ruleRemoveById=949111"
