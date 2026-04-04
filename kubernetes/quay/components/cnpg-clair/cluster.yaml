@@ -29,15 +29,15 @@ spec:
   postgresql:
     parameters:
       # Memory
-      shared_buffers: "256MB"
+      shared_buffers: "512MB"
       effective_cache_size: "3GB"
-      work_mem: "16MB"
+      work_mem: "32MB"
       maintenance_work_mem: "256MB"
       # WAL / Checkpoint tuning for write-heavy workload
       wal_buffers: "64MB"
       wal_compression: "lz4"
-      max_wal_size: "2GB"
-      min_wal_size: "512MB"
+      max_wal_size: "4GB"
+      min_wal_size: "1GB"
       checkpoint_completion_target: "0.9"
       checkpoint_timeout: "15min"
       synchronous_commit: "off"
@@ -51,7 +51,14 @@ spec:
       # Planner - tuned for SSD (Ceph RBD)
       random_page_cost: "1.1"
       effective_io_concurrency: "200"
+      # Timeouts - prevent runaway queries
+      statement_timeout: "600000"
+      idle_in_transaction_session_timeout: "300000"
+      # Replication - help standby keep up
+      wal_keep_size: "2GB"
+      max_slot_wal_keep_size: "4GB"
       # Monitoring
+      log_min_duration_statement: "30000"
       pg_stat_statements.max: "10000"
       pg_stat_statements.track: all
     pg_hba:
@@ -70,7 +77,7 @@ spec:
     size: 50Gi
   walStorage:
     storageClass: rook-ceph-block-ci
-    size: 10Gi
+    size: 20Gi
   resources: # TODO Update Post Metrics
     requests:
       cpu: 500m
@@ -95,6 +102,3 @@ spec:
   replicationSlots:
     highAvailability:
       enabled: true
-  backup:
-    volumeSnapshot:
-      className: csi-rbdplugin-snapclass
