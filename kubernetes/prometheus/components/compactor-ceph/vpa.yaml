@@ -1,0 +1,31 @@
+---
+apiVersion: autoscaling.k8s.io/v1
+kind: VerticalPodAutoscaler
+metadata:
+  name: thanos-compactor-ceph
+  namespace: prometheus
+  labels:
+    app: thanos-compactor-ceph
+    app.kubernetes.io/instance: prometheus
+  annotations:
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+spec:
+  targetRef:
+    apiVersion: apps/v1
+    kind: StatefulSet
+    name: thanos-compactor-ceph
+  updatePolicy:
+    updateMode: "InPlaceOrRecreate"
+  resourcePolicy:
+    containerPolicies:
+      - containerName: thanos-compactor
+        minAllowed:
+          cpu: 5m
+          memory: 16Mi
+        maxAllowed:
+          cpu: 500m
+          memory: 2Gi
+        controlledResources:
+          - cpu
+          - memory
+        controlledValues: RequestsOnly

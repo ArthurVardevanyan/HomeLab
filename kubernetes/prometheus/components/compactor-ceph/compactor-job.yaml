@@ -1,0 +1,84 @@
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: thanos-compactor-ceph
+  namespace: prometheus
+  labels:
+    app: thanos-compactor-ceph
+    app.kubernetes.io/instance: prometheus
+  annotations:
+    checkov.io/skip1: CKV_K8S_40=OpenShift Injects Random UID
+spec:
+  replicas: 1
+  serviceName: thanos-compactor-ceph
+  revisionHistoryLimit: 0
+  selector:
+    matchLabels:
+      app: thanos-compactor-ceph
+  template:
+    metadata:
+      labels:
+        app: thanos-compactor-ceph
+    spec:
+      automountServiceAccountToken: false
+      securityContext:
+        seccompProfile:
+          type: RuntimeDefault
+        runAsNonRoot: true
+      containers:
+        - name: thanos-compactor
+          # renovate: datasource=docker depName=quay.io/thanos/thanos
+          image: quay.io/thanos/thanos:v0.41.0@sha256:cf3e9b292e4302ad4a4955b56379703aea39516607d382a57604a3d003c35d10
+          securityContext:
+            runAsNonRoot: true
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: false
+            seccompProfile:
+              type: RuntimeDefault
+            capabilities:
+              drop:
+                - ALL
+          resources:
+            requests:
+              cpu: 10m
+              memory: 512Mi
+            limits:
+              cpu: 500m
+              memory: 1Gi
+          args:
+            - compact
+            - --objstore.config-file=/etc/secret/ceph.yaml
+            - --data-dir=/data/thanos-compact
+            - --delete-delay=0s
+            - --compact.cleanup-interval=24h
+            - --compact.enable-vertical-compaction
+            - --compact.concurrency=8
+            - --retention.resolution-raw=365d
+            - --retention.resolution-5m=1095d
+            - --retention.resolution-1h=0d
+            - --log.level=info
+            - --wait
+          volumeMounts:
+            - name: ceph
+              mountPath: /etc/secret
+              readOnly: true
+            - name: data
+              mountPath: /data
+      volumes:
+        - name: ceph
+          secret:
+            secretName: ceph
+      enableServiceLinks: false
+  volumeClaimTemplates:
+    - apiVersion: v1
+      kind: PersistentVolumeClaim
+      metadata:
+        name: data
+      spec:
+        accessModes:
+          - ReadWriteOnce
+        resources:
+          requests:
+            storage: 20Gi
+        storageClassName: rook-ceph-block-ci
