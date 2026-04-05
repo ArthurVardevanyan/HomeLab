@@ -49,6 +49,12 @@ spec:
           podSelector:
             matchLabels:
               app: prometheus-truenas
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: prometheus
+          podSelector:
+            matchLabels:
+              app: prometheus-ceph
       ports:
         - protocol: TCP
           port: 8082
@@ -248,3 +254,25 @@ spec:
           podSelector:
             matchLabels:
               app: thanos-querier
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-ceph-egress-prometheus-ceph
+  namespace: rook-ceph
+  annotations:
+    argocd.argoproj.io/sync-wave: "0"
+spec:
+  policyTypes:
+    - Egress
+  podSelector:
+    matchLabels:
+      app: rook-ceph-mgr
+  egress:
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: prometheus
+          podSelector:
+            matchLabels:
+              app: prometheus-ceph

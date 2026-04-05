@@ -1,0 +1,104 @@
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: prometheus-ceph
+  namespace: prometheus
+  labels:
+    app: prometheus-ceph
+    app.kubernetes.io/instance: prometheus
+  annotations:
+    checkov.io/skip1: CKV_K8S_40=OpenShift Injects Random UID
+    checkov.io/skip2: CKV_K8S_38=Monitoring Pods
+spec:
+  replicas: 1
+  serviceName: prometheus-ceph-service
+  revisionHistoryLimit: 0
+  selector:
+    matchLabels:
+      app: prometheus-ceph
+  template:
+    metadata:
+      labels:
+        app: prometheus-ceph
+      annotations:
+        enable.version-checker.io/prometheus: "true"
+    spec:
+      securityContext:
+        seccompProfile:
+          type: RuntimeDefault
+        runAsNonRoot: true
+      automountServiceAccountToken: true
+      serviceAccountName: prometheus-sa
+      containers:
+        - name: prometheus
+          imagePullPolicy: IfNotPresent
+          # renovate: datasource=docker depName=docker.io/prom/prometheus
+          image: docker.io/prom/prometheus:v3.11.0@sha256:dda13e28bf95a5e5ca5b8ed56852006094c1c8e8871d9c9dbeed30aa6e55271f
+          securityContext:
+            runAsNonRoot: true
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            seccompProfile:
+              type: RuntimeDefault
+            capabilities:
+              drop:
+                - ALL
+          args:
+            - "--config.file=/etc/prometheus/prometheus.yml"
+            - "--storage.tsdb.path=/prometheus_data/"
+            - "--storage.tsdb.retention.time=48h"
+            - "--web.enable-admin-api"
+          ports:
+            - containerPort: 9090
+          resources:
+            requests:
+              cpu: 10m
+              memory: 128Mi
+            limits:
+              cpu: 100m
+              memory: 512Mi
+          resizePolicy:
+            - resourceName: cpu
+              restartPolicy: NotRequired
+            - resourceName: memory
+              restartPolicy: NotRequired
+          readinessProbe:
+            httpGet:
+              path: /-/ready
+              port: 9090
+              scheme: HTTP
+            initialDelaySeconds: 30
+            periodSeconds: 5
+            timeoutSeconds: 4
+            failureThreshold: 3
+            successThreshold: 1
+          livenessProbe:
+            httpGet:
+              path: /-/healthy
+              port: 9090
+              scheme: HTTP
+            initialDelaySeconds: 30
+          volumeMounts:
+            - name: prometheus-config-volume
+              mountPath: /etc/prometheus/
+            - name: data
+              mountPath: /prometheus_data/
+      volumes:
+        - name: prometheus-config-volume
+          configMap:
+            defaultMode: 420
+            name: prometheus-server-conf-ceph
+      enableServiceLinks: false
+  volumeClaimTemplates:
+    - apiVersion: v1
+      kind: PersistentVolumeClaim
+      metadata:
+        name: data
+      spec:
+        accessModes:
+          - ReadWriteOnce
+        resources:
+          requests:
+            storage: "5Gi"
+        storageClassName: rook-ceph-block-ci

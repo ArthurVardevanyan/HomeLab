@@ -1,0 +1,18 @@
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: prometheus-ceph-service
+  namespace: prometheus
+  labels:
+    app.kubernetes.io/instance: prometheus
+spec:
+  type: ClusterIP
+  clusterIP: None
+  selector:
+    app: prometheus-ceph
+  ports:
+    - name: metrics
+      protocol: TCP
+      port: 9090
+      targetPort: 9090

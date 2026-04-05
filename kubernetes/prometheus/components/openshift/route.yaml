@@ -86,6 +86,35 @@ spec:
             type: PathPrefix
             value: /
 ---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: prometheus-ceph
+  namespace: prometheus
+  labels:
+    app.kubernetes.io/instance: prometheus
+  annotations:
+    externaldns.k8s.io: unifi
+spec:
+  parentRefs:
+    - group: gateway.networking.k8s.io
+      kind: Gateway
+      name: https-gateway
+      namespace: openshift-ingress
+  hostnames: ["prometheus-ceph.okd.homelab.arthurvardevanyan.com"]
+  rules:
+    - backendRefs:
+        - group: ""
+          kind: Service
+          name: prometheus-ceph-service
+          namespace: prometheus
+          port: 9090
+          weight: 1
+      matches:
+        - path:
+            type: PathPrefix
+            value: /
+---
 apiVersion: monitoring.coreos.com/v1
 kind: Probe
 metadata:
