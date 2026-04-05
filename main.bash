@@ -1716,4 +1716,61 @@ approve_csr() {
   done
 }
 
+update_install_plans() {
+  echo -e "\n${BLUE}Checking for pending InstallPlans:${NC}"
+
+  PENDING=$(kubectl get installplan -A -o jsonpath='{range .items[?(@.spec.approved==false)]}{.metadata.namespace}{"\t"}{.spec.clusterServiceVersionNames[0]}{"\n"}{end}')
+
+  if [ -z "${PENDING}" ]; then
+    echo "No pending InstallPlans found."
+    return 0
+  fi
+
+  while IFS=$'\t' read -r NAMESPACE CSV; do
+    [ -z "${NAMESPACE}" ] && continue
+    echo -e "\nPending: ${CSV} in ${NAMESPACE}"
+
+    # Find the subscription file matching this namespace
+    SUB_FILE=$(grep -rl "namespace: ${NAMESPACE}$" --include="subscription.yaml" kubernetes/ 2>/dev/null | head -1)
+
+    if [ -z "${SUB_FILE}" ]; then
+      echo "  WARNING: No subscription file found for namespace '${NAMESPACE}'"
+      continue
+    fi
+
+    # Get current startingCSV from the file
+    CURRENT_CSV=$(grep 'startingCSV:' "${SUB_FILE}" | sed 's/.*startingCSV:[[:space:]]*//' | tr -d '"' | tr -d "'" | awk '{print $1}')
+
+    if [ "${CURRENT_CSV}" == "${CSV}" ]; then
+      echo "  Already up to date: ${SUB_FILE}"
+      continue
+    fi
+
+    echo "  Updating ${SUB_FILE}"
+    echo "    ${CURRENT_CSV} -> ${CSV}"
+    sed -i "s|startingCSV:.*|startingCSV: ${CSV}|" "${SUB_FILE}"
+  done <<< "${PENDING}"
+
+  echo -e "\n${BLUE}Done updating subscription files!${NC}"
+}
+
+approve_install_plans() {
+  echo -e "\n${BLUE}Approving pending InstallPlans:${NC}"
+
+  PENDING=$(kubectl get installplan -A -o jsonpath='{range .items[?(@.spec.approved==false)]}{.metadata.namespace}{"\t"}{.metadata.name}{"\t"}{.spec.clusterServiceVersionNames[0]}{"\n"}{end}')
+
+  if [ -z "${PENDING}" ]; then
+    echo "No pending InstallPlans found."
+    return 0
+  fi
+
+  while IFS=$'\t' read -r NAMESPACE NAME CSV; do
+    [ -z "${NAMESPACE}" ] && continue
+    echo "  Approving ${NAME} (${CSV}) in ${NAMESPACE}"
+    kubectl patch installplan "${NAME}" -n "${NAMESPACE}" --type merge --patch '{"spec":{"approved":true}}'
+  done <<< "${PENDING}"
+
+  echo -e "\n${BLUE}Done approving InstallPlans!${NC}"
+}
+
 "$@"
