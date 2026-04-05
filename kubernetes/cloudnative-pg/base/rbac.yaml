@@ -4,8 +4,6 @@ kind: ServiceAccount
 metadata:
   name: cnpg-manager
   namespace: cnpg-system
-  labels:
-    app.kubernetes.io/instance: cloudnative-pg
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
@@ -13,7 +11,6 @@ metadata:
   labels:
     app.kubernetes.io/managed-by: kustomize
     app.kubernetes.io/name: cloudnative-pg-kubebuilderv4
-    app.kubernetes.io/instance: cloudnative-pg
   name: cnpg-database-editor-role
 rules:
   - apiGroups:
@@ -41,7 +38,6 @@ metadata:
   labels:
     app.kubernetes.io/managed-by: kustomize
     app.kubernetes.io/name: cloudnative-pg-kubebuilderv4
-    app.kubernetes.io/instance: cloudnative-pg
   name: cnpg-database-viewer-role
 rules:
   - apiGroups:
@@ -63,8 +59,6 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   name: cnpg-manager
-  labels:
-    app.kubernetes.io/instance: cloudnative-pg
 rules:
   - apiGroups:
       - ""
@@ -292,7 +286,6 @@ metadata:
   labels:
     app.kubernetes.io/managed-by: kustomize
     app.kubernetes.io/name: cloudnative-pg-kubebuilderv4
-    app.kubernetes.io/instance: cloudnative-pg
   name: cnpg-publication-editor-role
 rules:
   - apiGroups:
@@ -320,7 +313,6 @@ metadata:
   labels:
     app.kubernetes.io/managed-by: kustomize
     app.kubernetes.io/name: cloudnative-pg-kubebuilderv4
-    app.kubernetes.io/instance: cloudnative-pg
   name: cnpg-publication-viewer-role
 rules:
   - apiGroups:
@@ -344,7 +336,6 @@ metadata:
   labels:
     app.kubernetes.io/managed-by: kustomize
     app.kubernetes.io/name: cloudnative-pg-kubebuilderv4
-    app.kubernetes.io/instance: cloudnative-pg
   name: cnpg-subscription-editor-role
 rules:
   - apiGroups:
@@ -372,7 +363,6 @@ metadata:
   labels:
     app.kubernetes.io/managed-by: kustomize
     app.kubernetes.io/name: cloudnative-pg-kubebuilderv4
-    app.kubernetes.io/instance: cloudnative-pg
   name: cnpg-subscription-viewer-role
 rules:
   - apiGroups:
@@ -394,8 +384,6 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
   name: cnpg-manager-rolebinding
-  labels:
-    app.kubernetes.io/instance: cloudnative-pg
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
