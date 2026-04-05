@@ -48,7 +48,16 @@ vault write auth/ezservermonitor/config kubernetes_host=${kubernetes_host}
 vault write auth/finance-tracker/config kubernetes_host=${kubernetes_host}
 vault write auth/homelab/config kubernetes_host=${kubernetes_host}
 vault write auth/kubernetes/config kubernetes_host=${kubernetes_host}
-vault write auth/microshift/config kubernetes_host=${kubernetes_host}
+
+# Microshift (external cluster) requires CA cert and token reviewer JWT
+MICROSHIFT_CA=$(KUBECONFIG=~/.kube/microshift kubectl config view --raw -o jsonpath='{.clusters[0].cluster.certificate-authority-data}' | base64 -d)
+MICROSHIFT_JWT=$(KUBECONFIG=~/.kube/microshift kubectl create token argocd -n argocd --duration=87600h)
+
+vault write auth/microshift/config \
+  kubernetes_host="https://microshift.arthurvardevanyan.com:6443" \
+  kubernetes_ca_cert="${MICROSHIFT_CA}" \
+  token_reviewer_jwt="${MICROSHIFT_JWT}" \
+  disable_iss_validation=true
 
 vault write auth/kubernetes/role/kubernetes \
     bound_service_account_names=argocd \
