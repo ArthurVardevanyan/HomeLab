@@ -56,6 +56,7 @@ data:
           regex: '(eagle|node)_.+'
           action: keep
         # Drop unwanted node-exporter metrics
+        - source_labels: [ __name__ ]
           regex: 'longhorn_rest_(.+)'
           action: drop
         - source_labels: [ __name__ ]
@@ -412,6 +413,17 @@ data:
         - source_labels: [ __name__ ]
           regex: 'node_xfs_write_calls_total'
           action: drop
+        - source_labels: [ __name__ ]
+          regex: 'process_resident_memory_bytes'
+          action: drop
+        - source_labels: [ __name__ ]
+          regex: 'process_start_time_seconds'
+          action: drop
+        # Net Observ
+        - source_labels: [ __name__ ]
+          regex: 'netobserv_(.+)'
+          action: drop
+
       - job_name: 'microshift'
         scrape_interval: 15s
 
