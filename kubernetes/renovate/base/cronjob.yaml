@@ -5,7 +5,7 @@ metadata:
   name: renovate-bot
   namespace: renovate
 spec:
-  schedule: "0 12 1-7,15-21 * 6"
+  schedule: "0 13 * * 5"
   concurrencyPolicy: Forbid
   jobTemplate:
     spec:
@@ -52,7 +52,7 @@ spec:
             #  https://api.github.com/users/homelab-okd[bot]
             - name: github-app-token
               image: registry.arthurvardevanyan.com/homelab/toolbox:not_latest
-              command: ["bash", "-c"]
+              command: [ "bash", "-c" ]
               args:
                 - |
                   set -euo pipefail
@@ -109,7 +109,7 @@ spec:
             # renovate: datasource=docker depName=docker.io/renovate/renovate
             - image: docker.io/renovate/renovate:43.129.0-full@sha256:b21ba856d79b22cf1f206e991a9b9b3ac6815bbcfa9f7f2392767b623e05d979
               name: renovate-bot
-              command: ["sh", "-c"]
+              command: [ "sh", "-c" ]
               args:
                 - |
                   export RENOVATE_TOKEN=$(cat /tmp/token/token) && renovate
