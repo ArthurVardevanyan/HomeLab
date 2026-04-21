@@ -1,0 +1,18 @@
+apiVersion: gateway.networking.k8s.io/v1
+kind: BackendTLSPolicy
+metadata:
+  name: argocd-apps-server
+  namespace: argocd-apps
+  labels:
+    app.kubernetes.io/instance: argocd
+spec:
+  targetRefs:
+    - group: ""
+      kind: Service
+      name: argocd-apps-server
+  validation:
+    caCertificateRefs:
+      - group: ""
+        kind: ConfigMap
+        name: argocd-apps-ca
+    hostname: argocd-apps.argocd-apps.svc.cluster.local

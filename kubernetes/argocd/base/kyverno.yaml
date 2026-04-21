@@ -64,3 +64,22 @@ spec:
               - (image): "quay.io/argoprojlabs/argocd-operator@sha256:dafdfde863b81c8da28f37819ac4fc504ee0e9519ddcebd4dbe7c22a51d644e5"
                 image: "registry.arthurvardevanyan.com/homelab/argocd-operator@sha256:dc73eb66228dd189d2b672e04b78767a6f06220b92e68bbac2b2674f89766754"
                 # https://github.com/argoproj-labs/argocd-operator/pull/1520
+---
+apiVersion: kyverno.io/v1
+kind: Policy
+metadata:
+  name: copy-tls-to-ca-crt
+  namespace: argocd
+spec:
+  rules:
+    - name: argocd-ca-add-ca-crt
+      skipBackgroundRequests: true
+      match:
+        resources:
+          kinds:
+            - ConfigMap
+          name: argocd-ca
+      mutate:
+        patchStrategicMerge:
+          data:
+            ca.crt: "{{ request.object.data.\"tls.crt\" }}"

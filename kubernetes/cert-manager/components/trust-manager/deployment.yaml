@@ -32,37 +32,38 @@ spec:
     spec:
       serviceAccountName: trust-manager
       automountServiceAccountToken: true
-      initContainers:
-        - name: cert-manager-package-debian
-          image: "quay.io/jetstack/cert-manager-package-debian:20210119.0@sha256:116133f68938ef568aca17a0c691d5b1ef73a9a207029c9a068cf4230053fed5"
-          imagePullPolicy: IfNotPresent
-          args:
-            - "/copyandmaybepause"
-            - "/debian-package"
-            - "/packages"
-          volumeMounts:
-            - mountPath: /packages
-              name: packages
-              readOnly: false
-          securityContext:
-            allowPrivilegeEscalation: false
-            capabilities:
-              drop:
-                - ALL
-            readOnlyRootFilesystem: true
-            runAsNonRoot: true
-            seccompProfile:
-              type: RuntimeDefault
-          resources:
-            limits:
-              cpu: 50m
-              memory: 144Mi
-            requests:
-              cpu: 5m
-              memory: 72Mi
+      # initContainers:
+      #   - name: cert-manager-package-debian
+      #     image: "quay.io/jetstack/cert-manager-package-debian:20210119.0@sha256:116133f68938ef568aca17a0c691d5b1ef73a9a207029c9a068cf4230053fed5"
+      #     imagePullPolicy: IfNotPresent
+      #     args:
+      #       - "/copyandmaybepause"
+      #       - "/debian-package"
+      #       - "/packages"
+      #     volumeMounts:
+      #       - mountPath: /packages
+      #         name: packages
+      #         readOnly: false
+      #     securityContext:
+      #       allowPrivilegeEscalation: false
+      #       capabilities:
+      #         drop:
+      #           - ALL
+      #       readOnlyRootFilesystem: true
+      #       runAsNonRoot: true
+      #       seccompProfile:
+      #         type: RuntimeDefault
+      #     resources:
+      #       limits:
+      #         cpu: 50m
+      #         memory: 144Mi
+      #       requests:
+      #         cpu: 5m
+      #         memory: 72Mi
       containers:
         - name: trust-manager
-          image: "quay.io/jetstack/trust-manager:v0.20.2@sha256:c446258c1ac5bcd0558802dd8db2ef490d6ecdaff4b9c9aa7e45ac73f35b20e5"
+          image: "quay.io/jetstack/trust-manager:v0.20.2@sha256:c446258c1ac5bcd0558802dd8\
+            db2ef490d6ecdaff4b9c9aa7e45ac73f35b20e5"
           imagePullPolicy: IfNotPresent
           resizePolicy:
             - resourceName: cpu
@@ -95,7 +96,7 @@ spec:
             - "--webhook-host=0.0.0.0"
             - "--webhook-port=6443"
             - "--webhook-certificate-dir=/tls"
-            - "--default-package-location=/packages/cert-manager-package-debian.json"
+            # - "--default-package-location=/packages/cert-manager-package-debian.json"
             - "--secret-targets-enabled=true"
           volumeMounts:
             - mountPath: /tls
