@@ -49,3 +49,22 @@ spec:
             op: remove
           - path: "/spec/template/spec/containers/1/securityContext/fsGroup"
             op: remove
+---
+apiVersion: kyverno.io/v1
+kind: Policy
+metadata:
+  name: copy-tls-to-ca-crt
+  namespace: argocd-apps
+spec:
+  rules:
+    - name: argocd-apps-ca-add-ca-crt
+      skipBackgroundRequests: true
+      match:
+        resources:
+          kinds:
+            - ConfigMap
+          name: argocd-apps-ca
+      mutate:
+        patchStrategicMerge:
+          data:
+            ca.crt: "{{ request.object.data.\"tls.crt\" }}"
