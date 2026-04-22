@@ -15,7 +15,7 @@ spec:
     # versions running within the cluster. See tags available at https://hub.docker.com/r/ceph/ceph/tags/.
     # If you want to be more precise, you can always use a timestamp tag such as quay.io/ceph/ceph:v18.2.2-20240311
     # This tag might not contain a new Ceph version, just security fixes from the underlying operating system, which will reduce vulnerabilities
-    image: quay.io/ceph/ceph:v20.2.0-20251104@sha256:1228c3d05e45fbc068a8c33614e4409b6dac688bcc77369b06009b5830fa8d86
+    image: quay.io/ceph/ceph:v20.2.1-20260402@sha256:0bae386bc859cd9a05b804d1ca16cca8853a64f90809044e2bf43095419dc337
     # Whether to allow unsupported versions of Ceph. Currently `quincy` and `reef` are supported.
     # Future versions such as `squid` (v19) would require this to be set to `true`.
     # Do not set to true in production.
@@ -69,7 +69,7 @@ spec:
     prometheusEndpoint: http://prometheus-ceph-service.prometheus.svc.cluster.local:9090
     # Whether SSL should be verified if the Prometheus server is using https
     # prometheusEndpointSSLVerify: false
-  # enable prometheus alerting for cluster
+    # enable prometheus alerting for cluster
   monitoring:
     # requires Prometheus to be pre-installed
     enabled: true
@@ -121,13 +121,13 @@ spec:
     # multiClusterService:
     #  enabled: false
 
-  # enable the crash collector for ceph daemon crash collection
+    # enable the crash collector for ceph daemon crash collection
   crashCollector:
     disable: false
     # Uncomment daysToRetain to prune ceph crash entries older than the
     # specified number of days.
     # daysToRetain: 30
-  # enable log collector, daemons will log on files and rotate
+    # enable log collector, daemons will log on files and rotate
   logCollector:
     enabled: true
     periodicity: daily # one of: hourly, daily, weekly, monthly
@@ -296,7 +296,8 @@ spec:
     osd: system-node-critical
     mgr: system-cluster-critical
     # crashcollector: rook-ceph-crashcollector-priority-class
-  storage: # cluster level storage configuration and selection
+  storage:
+    # cluster level storage configuration and selection
     useAllNodes: true
     useAllDevices: true
     # deviceFilter:
@@ -323,7 +324,7 @@ spec:
     onlyApplyOSDPlacement: false
     # Time for which an OSD pod will sleep before restarting, if it stopped due to flapping
     # flappingRestartIntervalHours: 24
-  # The section for configuring management of daemon disruptions during upgrade or fencing.
+    # The section for configuring management of daemon disruptions during upgrade or fencing.
   disruptionManagement:
     # If true, the operator will create and manage PodDisruptionBudgets for OSD, Mon, RGW, and MDS daemons. OSD PDBs are managed dynamically
     # via the strategy outlined in the [design](https://github.com/rook/rook/blob/master/design/ceph/ceph-managed-disruptionbudgets.md). The operator will
@@ -345,7 +346,6 @@ spec:
       # For more details see this doc:
       # https://rook.io/docs/rook/latest/Storage-Configuration/Ceph-CSI/ceph-csi-drivers/#enable-read-affinity-for-rbd-volumes
       enabled: false
-
     # cephfs driver specific settings.
     # cephfs:
     # Set CephFS Kernel mount options to use https://docs.ceph.com/en/latest/man/8/mount.ceph/#options.
@@ -353,8 +353,8 @@ spec:
     # Set CephFS Fuse mount options to use https://docs.ceph.com/en/quincy/man/8/ceph-fuse/#options.
     # fuseMountOptions: ""
 
-  # healthChecks
-  # Valid values for daemons are 'mon', 'osd', 'status'
+    # healthChecks
+    # Valid values for daemons are 'mon', 'osd', 'status'
   healthCheck:
     daemonHealth:
       mon:
