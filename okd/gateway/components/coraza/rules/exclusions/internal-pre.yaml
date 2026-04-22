@@ -1,0 +1,67 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: coraza-rule-exclusions-internal-pre
+  namespace: openshift-ingress
+data:
+  rules: |
+    # -- Pre-CRS Rule Exclusions (Internal Gateway) --
+    # All exclusions are scoped to a specific Host header so they cannot
+    # leak to other vhosts behind the same gateway. The chained pattern is:
+    #
+    #   SecRule REQUEST_HEADERS:Host "@rx ^app\.example\.com(:|$)" \
+    #       "id:NNNN,phase:1,pass,nolog,chain"
+    #     SecRule REQUEST_URI "@beginsWith /path/" \
+    #       "ctl:ruleRemoveById=XXXXX,..."
+    #
+    # @rx with (:|$) matches both bare hostname and Host: name:port form.
+
+    # Vault — auth login endpoints (POST/PUT).
+    # https://vault.arthurvardevanyan.com/v1/auth/\*
+    SecRule REQUEST_HEADERS:Host "@rx ^vault\.arthurvardevanyan\.com(:|$)" "id:1100,phase:1,pass,nolog,chain"
+      SecRule REQUEST_URI "@beginsWith /v1/auth/" "ctl:ruleRemoveById=911100,ctl:ruleRemoveById=949111"
+
+    # Nextcloud — WebDAV / OCS / Talk (PROPFIND, MKCOL, MOVE, COPY, REPORT, etc.).
+    # https://files.arthurvardevanyan.com/remote.php/\*
+    SecRule REQUEST_HEADERS:Host "@rx ^files\.arthurvardevanyan\.com(:|$)" "id:1101,phase:1,pass,nolog,chain"
+      SecRule REQUEST_URI "@beginsWith /remote.php/" "ctl:ruleRemoveById=911100,ctl:ruleRemoveById=949111"
+
+    # Spotify analytics — disable body inspection for historical import
+    # endpoints (files too large for WASM memory).
+    # https://analytics-for-spotify.arthurvardevanyan.com/analytics/\*
+    SecRule REQUEST_HEADERS:Host "@rx ^analytics-for-spotify\.arthurvardevanyan\.com(:|$)" "id:1102,phase:1,pass,nolog,chain"
+      SecRule REQUEST_URI "@rx ^/analytics/(analyzeHistoricalImport|importHistoricalData)/" "t:none,ctl:requestBodyAccess=Off"
+
+    # MinIO (UNAS) — Velero / Kopia S3 backup bucket. Both kopia repository
+    # paths (binary chunks via PUT/POST with application/x-kopia) and the
+    # velero backups/ metadata (DELETE via x-id=DeleteObject) live under
+    # /velero-backup/. Body inspection disabled for binary backup data.
+    # https://s3.unas.arthurvardevanyan.com/velero-backup/\*
+    # https://s3.ssd.unas.arthurvardevanyan.com/velero-backup/\*
+    SecRule REQUEST_HEADERS:Host "@rx ^s3\.(ssd\.)?unas\.arthurvardevanyan\.com(:|$)" "id:1103,phase:1,pass,nolog,chain"
+      SecRule REQUEST_URI "@beginsWith /velero-backup/" "t:none,ctl:requestBodyAccess=Off,ctl:ruleRemoveById=911100,ctl:ruleRemoveById=920270,ctl:ruleRemoveById=920420,ctl:ruleRemoveById=921150,ctl:ruleRemoveById=942100,ctl:ruleRemoveById=942190,ctl:ruleRemoveById=949110,ctl:ruleRemoveById=949111"
+
+    # MinIO (UNAS) — Thanos / Prometheus long-term storage S3 bucket.
+    # Same binary-chunk false positives as kopia.
+    # https://s3.unas.arthurvardevanyan.com/prometheus-thanos/\*
+    # https://s3.ssd.unas.arthurvardevanyan.com/prometheus-thanos/\*
+    SecRule REQUEST_HEADERS:Host "@rx ^s3\.(ssd\.)?unas\.arthurvardevanyan\.com(:|$)" "id:1108,phase:1,pass,nolog,chain"
+      SecRule REQUEST_URI "@beginsWith /prometheus-thanos/" "t:none,ctl:requestBodyAccess=Off,ctl:ruleRemoveById=911100,ctl:ruleRemoveById=920270,ctl:ruleRemoveById=920420,ctl:ruleRemoveById=921150,ctl:ruleRemoveById=942100,ctl:ruleRemoveById=942190,ctl:ruleRemoveById=949110,ctl:ruleRemoveById=949111"
+
+    # Gitea — smart-HTTP endpoints. ".git/" trips 930130 (LFI); upload-pack /
+    # receive-pack POSTs use application/x-git-* binary content type.
+    # https://git.arthurvardevanyan.com/\<owner\>/\<repo\>.git/info/refs
+    # https://git.arthurvardevanyan.com/\<owner\>/\<repo\>/git-upload-pack
+    # https://git.arthurvardevanyan.com/\<owner\>/\<repo\>/git-receive-pack
+    SecRule REQUEST_HEADERS:Host "@rx ^git\.arthurvardevanyan\.com(:|$)" "id:1104,phase:1,pass,nolog,chain"
+      SecRule REQUEST_URI "@contains .git/info/refs" "ctl:ruleRemoveById=930130,ctl:ruleRemoveById=949111"
+    SecRule REQUEST_HEADERS:Host "@rx ^git\.arthurvardevanyan\.com(:|$)" "id:1105,phase:1,pass,nolog,chain"
+      SecRule REQUEST_URI "@contains /git-upload-pack" "t:none,ctl:requestBodyAccess=Off,ctl:ruleRemoveById=911100,ctl:ruleRemoveById=920420,ctl:ruleRemoveById=930130,ctl:ruleRemoveById=949110,ctl:ruleRemoveById=949111"
+    SecRule REQUEST_HEADERS:Host "@rx ^git\.arthurvardevanyan\.com(:|$)" "id:1106,phase:1,pass,nolog,chain"
+      SecRule REQUEST_URI "@contains /git-receive-pack" "t:none,ctl:requestBodyAccess=Off,ctl:ruleRemoveById=911100,ctl:ruleRemoveById=920420,ctl:ruleRemoveById=930130,ctl:ruleRemoveById=949110,ctl:ruleRemoveById=949111"
+
+    # Quay — registry REST API uses PUT for resource creation
+    # (e.g. /api/v1/organization/<org>/robots/<name>).
+    # https://registry.arthurvardevanyan.com/api/v1/\*
+    SecRule REQUEST_HEADERS:Host "@rx ^registry\.arthurvardevanyan\.com(:|$)" "id:1107,phase:1,pass,nolog,chain"
+      SecRule REQUEST_URI "@beginsWith /api/v1/" "ctl:ruleRemoveById=911100,ctl:ruleRemoveById=949111"
