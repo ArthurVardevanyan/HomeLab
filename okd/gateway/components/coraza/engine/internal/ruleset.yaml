@@ -13,6 +13,9 @@ spec:
     - name: coraza-recommended-conf
     - name: coraza-crs-setup
     # - name: coraza-custom-default # Doesn't Validate Properly?
+    # Pre-CRS exclusions: ctl:ruleRemoveById must load before CRS rules so
+    # the removal applies to subsequent rule evaluation in the transaction.
+    - name: coraza-rule-exclusions-internal-pre
     - name: crs-request-901-initialization
     - name: crs-request-905-common-exceptions
     - name: crs-request-911-method-enforcement
@@ -40,4 +43,6 @@ spec:
     - name: crs-response-959-blocking-evaluation
     - name: crs-response-980-correlation
     - name: coraza-base-rules
-    - name: coraza-rule-exclusions-internal
+    # Post-CRS exclusions: SecRuleUpdateTargetById is config-time and
+    # requires the target rule to already be loaded.
+    - name: coraza-rule-exclusions-internal-post

@@ -1,0 +1,17 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: coraza-rule-exclusions-external-pre
+  namespace: openshift-ingress
+data:
+  rules: |
+    # -- Pre-CRS Rule Exclusions (External Gateway) --
+    # These run BEFORE CRS rules so that ctl:ruleRemoveById and
+    # ctl:requestBodyAccess take effect on subsequent rule evaluation in
+    # the same transaction.
+    #
+    # Spotify analytics: disable body inspection for historical import
+    # endpoints (files too large for WASM memory).
+    # https://analytics-for-spotify.arthurvardevanyan.com/analytics/*
+    SecRule REQUEST_HEADERS:Host "@rx ^analytics-for-spotify\.arthurvardevanyan\.com(:|$)" "id:1102,phase:1,pass,nolog,chain"
+      SecRule REQUEST_URI "@rx ^/analytics/(analyzeHistoricalImport|importHistoricalData)/" "t:none,ctl:requestBodyAccess=Off"

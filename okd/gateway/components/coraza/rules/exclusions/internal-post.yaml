@@ -1,0 +1,18 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: coraza-rule-exclusions-internal-post
+  namespace: openshift-ingress
+data:
+  rules: |
+    # -- Post-CRS Rule Exclusions --
+    # SecRuleUpdateTargetById is a config-time directive that requires the
+    # target rule to already be loaded, so this configmap MUST load AFTER
+    # the CRS rules. For runtime exclusions (ctl:ruleRemoveById) see the
+    # *-pre configmap, which loads before CRS.
+    #
+    # Akamai Bot Manager cookies (_abck, bm_sz) contain encoded tokens with
+    # tilde (~) characters that false-positive on shell expression detection
+    # (rule 932270). These are legitimate browser cookies, not user input.
+    SecRuleUpdateTargetById 932270 "!REQUEST_COOKIES:_abck"
+    SecRuleUpdateTargetById 932270 "!REQUEST_COOKIES:bm_sz"
