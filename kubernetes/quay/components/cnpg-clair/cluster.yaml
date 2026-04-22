@@ -34,14 +34,22 @@ spec:
       work_mem: "64MB"
       maintenance_work_mem: "512MB"
       # WAL / Checkpoint tuning for write-heavy workload
+      # Larger max_wal_size + longer checkpoint_timeout reduces full-page-write
+      # amplification, which is the main driver of replication lag here.
       wal_buffers: "64MB"
       wal_compression: "lz4"
-      max_wal_size: "2GB"
-      min_wal_size: "1GB"
+      max_wal_size: "8GB"
+      min_wal_size: "2GB"
       checkpoint_completion_target: "0.9"
-      checkpoint_timeout: "5min"
-      synchronous_commit: "off"
-      commit_delay: "50"
+      checkpoint_timeout: "15min"
+      # synchronous_commit=local: flush WAL locally before ack, but don't wait
+      # for replica. "off" was letting the primary outrun the standby.
+      # commit_delay removed - it is a no-op when synchronous_commit != on.
+      synchronous_commit: "local"
+      # Standby WAL apply (single-threaded) - PG 18 prefetch helps on Ceph RBD
+      recovery_prefetch: "on"
+      maintenance_io_concurrency: "100"
+      hot_standby_feedback: "on"
       # Autovacuum - more aggressive for write-heavy tables
       autovacuum_max_workers: "4"
       autovacuum_naptime: "15s"
@@ -51,13 +59,15 @@ spec:
       # Planner - tuned for SSD (Ceph RBD)
       random_page_cost: "1.1"
       effective_io_concurrency: "200"
-      # Timeouts - prevent runaway queries
-      statement_timeout: "600000"
-      idle_in_transaction_session_timeout: "300000"
-      # Replication - help standby keep up
-      wal_keep_size: "2GB"
+      # Timeouts - Clair updater/matcher does long batch inserts of CVE data;
+      # the previous 5/10 min limits killed legitimate Clair transactions.
+      statement_timeout: "0"
+      idle_in_transaction_session_timeout: "1800000"
+      # Replication - keep enough WAL so a lagging standby is never invalidated
+      # (bounded by walStorage size below).
+      wal_keep_size: "4GB"
       wal_retrieve_retry_interval: "1s"
-      max_slot_wal_keep_size: "4GB"
+      max_slot_wal_keep_size: "16GB"
       # Monitoring
       log_min_duration_statement: "30000"
       pg_stat_statements.max: "10000"
@@ -78,8 +88,9 @@ spec:
     size: 50Gi
   walStorage:
     storageClass: rook-ceph-block-ci
-    size: 20Gi
-  resources: # TODO Update Post Metrics
+    size: 40Gi
+  resources:
+    # TODO Update Post Metrics
     requests:
       cpu: 500m
       memory: 2Gi
