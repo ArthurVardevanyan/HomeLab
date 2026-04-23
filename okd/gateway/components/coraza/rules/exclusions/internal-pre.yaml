@@ -65,3 +65,10 @@ data:
     # https://registry.arthurvardevanyan.com/api/v1/\*
     SecRule REQUEST_HEADERS:Host "@rx ^registry\.arthurvardevanyan\.com(:|$)" "id:1107,phase:1,pass,nolog,chain"
       SecRule REQUEST_URI "@beginsWith /api/v1/" "ctl:ruleRemoveById=911100,ctl:ruleRemoveById=949111"
+
+    # Quay — Docker Registry v2 blob upload endpoints carry binary image
+    # layer chunks (PATCH/PUT with application/octet-stream). Disable body
+    # inspection and clear out the CRS rules that fire on binary payloads.
+    # https://registry.arthurvardevanyan.com/v2/\<repo\>/blobs/uploads/\*
+    SecRule REQUEST_HEADERS:Host "@rx ^registry\.arthurvardevanyan\.com(:|$)" "id:1109,phase:1,pass,nolog,chain"
+      SecRule REQUEST_URI "@rx ^/v2/.+/blobs/uploads/" "t:none,ctl:requestBodyAccess=Off,ctl:ruleRemoveById=920270,ctl:ruleRemoveById=921150,ctl:ruleRemoveById=949110,ctl:ruleRemoveById=949111"
