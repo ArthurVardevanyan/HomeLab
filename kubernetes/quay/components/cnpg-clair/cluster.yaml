@@ -28,27 +28,40 @@ spec:
   postgresGID: 26
   postgresql:
     parameters:
-      # Memory
-      shared_buffers: "1GB"
+      # Memory - shared_buffers raised to 2GB so Clair's hot working set
+      # (vulnerability + manifest tables) fits, dramatically cutting the
+      # number of pages dirtied per checkpoint and therefore FPW WAL volume.
+      shared_buffers: "2GB"
       effective_cache_size: "3GB"
       work_mem: "64MB"
       maintenance_work_mem: "512MB"
-      # WAL / Checkpoint tuning for write-heavy workload
-      # Larger max_wal_size + longer checkpoint_timeout reduces full-page-write
-      # amplification, which is the main driver of replication lag here.
+      # WAL / Checkpoint - long checkpoints + max FPW reduction.
+      # Clair's WAL is dominated by full_page_writes after every checkpoint,
+      # so checkpoint_timeout is the single biggest replication-lag lever.
       wal_buffers: "64MB"
       wal_compression: "lz4"
-      max_wal_size: "8GB"
-      min_wal_size: "2GB"
+      max_wal_size: "16GB"
+      min_wal_size: "4GB"
       checkpoint_completion_target: "0.9"
-      checkpoint_timeout: "15min"
+      checkpoint_timeout: "30min"
+      # Background writer - drain dirty pages between checkpoints so the
+      # checkpoint itself writes less and recovery has fewer pages to touch.
+      bgwriter_delay: "50ms"
+      bgwriter_lru_maxpages: "1000"
+      bgwriter_lru_multiplier: "4.0"
+      # WAL writer - flush more often so primary doesn't burst-send to replica
+      wal_writer_delay: "20ms"
+      wal_writer_flush_after: "1MB"
       # synchronous_commit=local: flush WAL locally before ack, but don't wait
       # for replica. "off" was letting the primary outrun the standby.
       # commit_delay removed - it is a no-op when synchronous_commit != on.
       synchronous_commit: "local"
-      # Standby WAL apply (single-threaded) - PG 18 prefetch helps on Ceph RBD
+      # Standby WAL apply (single-threaded) - PG 18 prefetch helps on Ceph RBD.
+      # wal_decode_buffer_size MUST be large enough for prefetch to see ahead;
+      # default 512KB is too small to mask RBD read latency.
       recovery_prefetch: "on"
-      maintenance_io_concurrency: "100"
+      wal_decode_buffer_size: "4MB"
+      maintenance_io_concurrency: "256"
       hot_standby_feedback: "on"
       # Autovacuum - more aggressive for write-heavy tables
       autovacuum_max_workers: "4"
@@ -93,10 +106,10 @@ spec:
     # TODO Update Post Metrics
     requests:
       cpu: 500m
-      memory: 2Gi
+      memory: 2560Gi
     limits:
       cpu: 1500m
-      memory: 4Gi
+      memory: 5Gi
   affinity:
     enablePodAntiAffinity: true
     podAntiAffinityType: required
