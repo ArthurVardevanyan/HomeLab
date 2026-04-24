@@ -28,11 +28,14 @@ data:
     #      arbitrary binary content as application/octet-stream, tripping
     #      920420 (content-type), 920270 (null bytes), 920440 (extension),
     #      921150 (header injection on certain filenames), and 949111.
+    #   3. Syncing source-tree working copies (e.g. .git/, .svn/, .htaccess
+    #      under /remote.php/dav/files/<user>/Projects/...) trips 930120/930130
+    #      (Restricted File Access).
     # Body inspection is disabled because the gateway cannot meaningfully
     # scan opaque user file contents.
     # https://files.arthurvardevanyan.com/remote.php/\*
     SecRule REQUEST_HEADERS:Host "@rx ^files\.arthurvardevanyan\.com(:|$)" "id:1101,phase:1,pass,nolog,chain"
-      SecRule REQUEST_URI "@beginsWith /remote.php/" "t:none,ctl:requestBodyAccess=Off,ctl:ruleRemoveById=911100,ctl:ruleRemoveById=920270,ctl:ruleRemoveById=920420,ctl:ruleRemoveById=920440,ctl:ruleRemoveById=921150,ctl:ruleRemoveById=942100,ctl:ruleRemoveById=942190,ctl:ruleRemoveById=949110,ctl:ruleRemoveById=949111"
+      SecRule REQUEST_URI "@beginsWith /remote.php/" "t:none,ctl:requestBodyAccess=Off,ctl:ruleRemoveById=911100,ctl:ruleRemoveById=920270,ctl:ruleRemoveById=920420,ctl:ruleRemoveById=920440,ctl:ruleRemoveById=921150,ctl:ruleRemoveById=930120,ctl:ruleRemoveById=930130,ctl:ruleRemoveById=942100,ctl:ruleRemoveById=942190,ctl:ruleRemoveById=949110,ctl:ruleRemoveById=949111"
 
     # Nextcloud — OCS API. Browser/desktop clients PUT to OCS endpoints such
     # as /ocs/v2.php/apps/user_status/api/v1/heartbeat, which trips 911100
