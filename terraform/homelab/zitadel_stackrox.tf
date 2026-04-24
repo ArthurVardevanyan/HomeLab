@@ -14,8 +14,8 @@ resource "zitadel_application_oidc" "stackrox" {
 
   name = "stackrox"
   redirect_uris = [
-    "https://central-stackrox.app.okd.homelab.arthurvardevanyan.com/auth/response/oidc",
-    "https://central-stackrox.app.okd.homelab.arthurvardevanyan.com/sso/providers/oidc/callback"
+    "https://central-stackrox.okd.homelab.arthurvardevanyan.com/auth/response/oidc",
+    "https://central-stackrox.okd.homelab.arthurvardevanyan.com/sso/providers/oidc/callback"
   ]
   response_types              = ["OIDC_RESPONSE_TYPE_CODE"]
   grant_types                 = ["OIDC_GRANT_TYPE_AUTHORIZATION_CODE"]
