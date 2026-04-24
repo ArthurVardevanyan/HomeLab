@@ -11,8 +11,8 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: stackrox
     app.kubernetes.io/part-of: stackrox-central-services
-    app.kubernetes.io/version: 4.9.1
-    helm.sh/chart: stackrox-central-services-400.9.1
+    app.kubernetes.io/version: 4.10.1
+    helm.sh/chart: stackrox-central-services-400.10.1
   annotations:
     email: support@stackrox.com
     meta.helm.sh/release-name: stackrox-central-services
@@ -43,8 +43,8 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: stackrox
     app.kubernetes.io/part-of: stackrox-central-services
-    app.kubernetes.io/version: 4.9.1
-    helm.sh/chart: stackrox-central-services-400.9.1
+    app.kubernetes.io/version: 4.10.1
+    helm.sh/chart: stackrox-central-services-400.10.1
   annotations:
     email: support@stackrox.com
     meta.helm.sh/release-name: stackrox-central-services
@@ -75,8 +75,8 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: stackrox
     app.kubernetes.io/part-of: stackrox-central-services
-    app.kubernetes.io/version: 4.9.1
-    helm.sh/chart: stackrox-central-services-400.9.1
+    app.kubernetes.io/version: 4.10.1
+    helm.sh/chart: stackrox-central-services-400.10.1
   annotations:
     email: support@stackrox.com
     meta.helm.sh/release-name: stackrox-central-services
@@ -103,8 +103,8 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: stackrox
     app.kubernetes.io/part-of: stackrox-central-services
-    app.kubernetes.io/version: 4.9.1
-    helm.sh/chart: stackrox-central-services-400.9.1
+    app.kubernetes.io/version: 4.10.1
+    helm.sh/chart: stackrox-central-services-400.10.1
   annotations:
     email: support@stackrox.com
     meta.helm.sh/release-name: stackrox-central-services
@@ -113,9 +113,9 @@ metadata:
 spec:
   type: ClusterIP
   ports:
-    - name: tcp-db
-      port: 5432
-      targetPort: 5432
+  - name: tcp-db
+    port: 5432
+    targetPort: 5432
   selector:
     app: scanner-v4-db
 ---
@@ -131,8 +131,8 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: stackrox
     app.kubernetes.io/part-of: stackrox-central-services
-    app.kubernetes.io/version: 4.9.1
-    helm.sh/chart: stackrox-central-services-400.9.1
+    app.kubernetes.io/version: 4.10.1
+    helm.sh/chart: stackrox-central-services-400.10.1
   annotations:
     email: support@stackrox.com
     meta.helm.sh/release-name: stackrox-central-services
@@ -144,12 +144,12 @@ spec:
     app: scanner-v4-indexer
   clusterIP: None
   ports:
-    - name: grpc-scanner-v4-indexer
-      port: 8443
-      targetPort: grpc
-    - name: indexer-monitoring-tls
-      port: 9091
-      targetPort: monitoring-tls
+  - name: grpc-scanner-v4-indexer
+    port: 8443
+    targetPort: grpc
+  - name: indexer-monitoring-tls
+    port: 9091
+    targetPort: monitoring-tls
 ---
 # Source: stackrox-central-services/templates/02-scanner-v4-08-matcher-service.yaml
 apiVersion: v1
@@ -163,8 +163,8 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: stackrox
     app.kubernetes.io/part-of: stackrox-central-services
-    app.kubernetes.io/version: 4.9.1
-    helm.sh/chart: stackrox-central-services-400.9.1
+    app.kubernetes.io/version: 4.10.1
+    helm.sh/chart: stackrox-central-services-400.10.1
   annotations:
     email: support@stackrox.com
     meta.helm.sh/release-name: stackrox-central-services
@@ -176,10 +176,10 @@ spec:
     app: scanner-v4-matcher
   clusterIP: None
   ports:
-    - name: grpc-scanner-v4-matcher
-      port: 8443
-      targetPort: grpc
+  - name: grpc-scanner-v4-matcher
+    port: 8443
+    targetPort: grpc
 
-    - name: matcher-monitoring-tls
-      port: 9091
-      targetPort: monitoring-tls
+  - name: matcher-monitoring-tls
+    port: 9091
+    targetPort: monitoring-tls

@@ -11,8 +11,8 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: stackrox
     app.kubernetes.io/part-of: stackrox-central-services
-    app.kubernetes.io/version: 4.9.1
-    helm.sh/chart: stackrox-central-services-400.9.1
+    app.kubernetes.io/version: 4.10.1
+    helm.sh/chart: stackrox-central-services-400.10.1
   annotations:
     email: support@stackrox.com
     meta.helm.sh/release-name: stackrox-central-services
@@ -21,13 +21,13 @@ metadata:
 spec:
   ingress:
     - ports:
-        - port: 8443
-          protocol: TCP
+      - port: 8443
+        protocol: TCP
   podSelector:
     matchLabels:
       app: central
   policyTypes:
-    - Ingress
+  - Ingress
 ---
 # Source: stackrox-central-services/templates/01-central-10-networkpolicy.yaml
 apiVersion: networking.k8s.io/v1
@@ -41,8 +41,8 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: stackrox
     app.kubernetes.io/part-of: stackrox-central-services
-    app.kubernetes.io/version: 4.9.1
-    helm.sh/chart: stackrox-central-services-400.9.1
+    app.kubernetes.io/version: 4.10.1
+    helm.sh/chart: stackrox-central-services-400.10.1
   annotations:
     email: support@stackrox.com
     meta.helm.sh/release-name: stackrox-central-services
@@ -51,8 +51,8 @@ metadata:
 spec:
   ingress:
     - ports:
-        - port: 9091
-          protocol: TCP
+      - port: 9091
+        protocol: TCP
   podSelector:
     matchLabels:
       app: central
@@ -71,8 +71,8 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: stackrox
     app.kubernetes.io/part-of: stackrox-central-services
-    app.kubernetes.io/version: 4.9.1
-    helm.sh/chart: stackrox-central-services-400.9.1
+    app.kubernetes.io/version: 4.10.1
+    helm.sh/chart: stackrox-central-services-400.10.1
   annotations:
     email: support@stackrox.com
     meta.helm.sh/release-name: stackrox-central-services
@@ -80,7 +80,7 @@ metadata:
     owner: stackrox
 spec:
   policyTypes:
-    - Ingress
+  - Ingress
   podSelector:
     matchLabels:
       app: config-controller
@@ -97,8 +97,8 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: stackrox
     app.kubernetes.io/part-of: stackrox-central-services
-    app.kubernetes.io/version: 4.9.1
-    helm.sh/chart: stackrox-central-services-400.9.1
+    app.kubernetes.io/version: 4.10.1
+    helm.sh/chart: stackrox-central-services-400.10.1
   annotations:
     email: support@stackrox.com
     meta.helm.sh/release-name: stackrox-central-services
@@ -109,24 +109,24 @@ spec:
     matchLabels:
       app: scanner
   ingress:
-    - from:
-        - podSelector:
-            matchLabels:
-              app: central
-      ports:
-        - port: 8080
-          protocol: TCP
-        - port: 8443
-          protocol: TCP
-    - from:
-        - podSelector:
-            matchLabels:
-              app: sensor
-      ports:
-        - port: 8080
-          protocol: TCP
-        - port: 8443
-          protocol: TCP
+  - from:
+    - podSelector:
+        matchLabels:
+          app: central
+    ports:
+    - port: 8080
+      protocol: TCP
+    - port: 8443
+      protocol: TCP
+  - from:
+    - podSelector:
+        matchLabels:
+          app: sensor
+    ports:
+    - port: 8080
+      protocol: TCP
+    - port: 8443
+      protocol: TCP
   policyTypes:
     - Ingress
 ---
@@ -142,8 +142,8 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: stackrox
     app.kubernetes.io/part-of: stackrox-central-services
-    app.kubernetes.io/version: 4.9.1
-    helm.sh/chart: stackrox-central-services-400.9.1
+    app.kubernetes.io/version: 4.10.1
+    helm.sh/chart: stackrox-central-services-400.10.1
   annotations:
     email: support@stackrox.com
     meta.helm.sh/release-name: stackrox-central-services
@@ -154,13 +154,13 @@ spec:
     matchLabels:
       app: scanner-db
   ingress:
-    - from:
-        - podSelector:
-            matchLabels:
-              app: scanner
-      ports:
-        - port: 5432
-          protocol: TCP
+  - from:
+    - podSelector:
+        matchLabels:
+          app: scanner
+    ports:
+    - port: 5432
+      protocol: TCP
   policyTypes:
     - Ingress
 ---
@@ -176,8 +176,8 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: stackrox
     app.kubernetes.io/part-of: stackrox-central-services
-    app.kubernetes.io/version: 4.9.1
-    helm.sh/chart: stackrox-central-services-400.9.1
+    app.kubernetes.io/version: 4.10.1
+    helm.sh/chart: stackrox-central-services-400.10.1
   annotations:
     email: support@stackrox.com
     meta.helm.sh/release-name: stackrox-central-services
@@ -188,22 +188,22 @@ spec:
     matchLabels:
       app: scanner-v4-db
   ingress:
-    - from:
-        - podSelector:
-            matchLabels:
-              app: scanner-v4-indexer
-      ports:
-        - port: 5432
-          protocol: TCP
-    - from:
-        - podSelector:
-            matchLabels:
-              app: scanner-v4-matcher
-      ports:
-        - port: 5432
-          protocol: TCP
+  - from:
+    - podSelector:
+        matchLabels:
+          app: scanner-v4-indexer
+    ports:
+    - port: 5432
+      protocol: TCP
+  - from:
+    - podSelector:
+        matchLabels:
+          app: scanner-v4-matcher
+    ports:
+    - port: 5432
+      protocol: TCP
   policyTypes:
-    - Ingress
+  - Ingress
 ---
 # Source: stackrox-central-services/templates/02-scanner-v4-05-indexer-network-policy.yaml
 apiVersion: networking.k8s.io/v1
@@ -217,8 +217,8 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: stackrox
     app.kubernetes.io/part-of: stackrox-central-services
-    app.kubernetes.io/version: 4.9.1
-    helm.sh/chart: stackrox-central-services-400.9.1
+    app.kubernetes.io/version: 4.10.1
+    helm.sh/chart: stackrox-central-services-400.10.1
   annotations:
     email: support@stackrox.com
     meta.helm.sh/release-name: stackrox-central-services
@@ -229,29 +229,29 @@ spec:
     matchLabels:
       app: scanner-v4-indexer
   ingress:
-    - from:
-        - podSelector:
-            matchLabels:
-              app: central
-      ports:
-        - port: 8443
-          protocol: TCP
-    - from:
-        - podSelector:
-            matchLabels:
-              app: scanner-v4-matcher
-      ports:
-        - port: 8443
-          protocol: TCP
-    - from:
-        - podSelector:
-            matchLabels:
-              app: sensor
-      ports:
-        - port: 8443
-          protocol: TCP
+  - from:
+    - podSelector:
+        matchLabels:
+          app: central
+    ports:
+    - port: 8443
+      protocol: TCP
+  - from:
+    - podSelector:
+        matchLabels:
+          app: scanner-v4-matcher
+    ports:
+    - port: 8443
+      protocol: TCP
+  - from:
+    - podSelector:
+        matchLabels:
+          app: sensor
+    ports:
+    - port: 8443
+      protocol: TCP
   policyTypes:
-    - Ingress
+  - Ingress
 ---
 # Source: stackrox-central-services/templates/02-scanner-v4-05-indexer-network-policy.yaml
 apiVersion: networking.k8s.io/v1
@@ -265,8 +265,8 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: stackrox
     app.kubernetes.io/part-of: stackrox-central-services
-    app.kubernetes.io/version: 4.9.1
-    helm.sh/chart: stackrox-central-services-400.9.1
+    app.kubernetes.io/version: 4.10.1
+    helm.sh/chart: stackrox-central-services-400.10.1
   annotations:
     email: support@stackrox.com
     meta.helm.sh/release-name: stackrox-central-services
@@ -275,8 +275,8 @@ metadata:
 spec:
   ingress:
     - ports:
-        - port: 9091
-          protocol: TCP
+      - port: 9091
+        protocol: TCP
   podSelector:
     matchLabels:
       app: scanner-v4-indexer
@@ -295,8 +295,8 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: stackrox
     app.kubernetes.io/part-of: stackrox-central-services
-    app.kubernetes.io/version: 4.9.1
-    helm.sh/chart: stackrox-central-services-400.9.1
+    app.kubernetes.io/version: 4.10.1
+    helm.sh/chart: stackrox-central-services-400.10.1
   annotations:
     email: support@stackrox.com
     meta.helm.sh/release-name: stackrox-central-services
@@ -307,15 +307,15 @@ spec:
     matchLabels:
       app: scanner-v4-matcher
   ingress:
-    - from:
-        - podSelector:
-            matchLabels:
-              app: central
-      ports:
-        - port: 8443
-          protocol: TCP
+  - from:
+    - podSelector:
+        matchLabels:
+          app: central
+    ports:
+    - port: 8443
+      protocol: TCP
   policyTypes:
-    - Ingress
+  - Ingress
 ---
 # Source: stackrox-central-services/templates/02-scanner-v4-05-matcher-network-policy.yaml
 apiVersion: networking.k8s.io/v1
@@ -329,8 +329,8 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: stackrox
     app.kubernetes.io/part-of: stackrox-central-services
-    app.kubernetes.io/version: 4.9.1
-    helm.sh/chart: stackrox-central-services-400.9.1
+    app.kubernetes.io/version: 4.10.1
+    helm.sh/chart: stackrox-central-services-400.10.1
   annotations:
     email: support@stackrox.com
     meta.helm.sh/release-name: stackrox-central-services
@@ -339,8 +339,8 @@ metadata:
 spec:
   ingress:
     - ports:
-        - port: 9091
-          protocol: TCP
+      - port: 9091
+        protocol: TCP
   podSelector:
     matchLabels:
       app: scanner-v4-matcher
