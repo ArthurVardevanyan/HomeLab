@@ -34,6 +34,13 @@ data:
     SecRule REQUEST_HEADERS:Host "@rx ^files\.arthurvardevanyan\.com(:|$)" "id:1101,phase:1,pass,nolog,chain"
       SecRule REQUEST_URI "@beginsWith /remote.php/" "t:none,ctl:requestBodyAccess=Off,ctl:ruleRemoveById=911100,ctl:ruleRemoveById=920270,ctl:ruleRemoveById=920420,ctl:ruleRemoveById=920440,ctl:ruleRemoveById=921150,ctl:ruleRemoveById=942100,ctl:ruleRemoveById=942190,ctl:ruleRemoveById=949110,ctl:ruleRemoveById=949111"
 
+    # Nextcloud — OCS API. Browser/desktop clients PUT to OCS endpoints such
+    # as /ocs/v2.php/apps/user_status/api/v1/heartbeat, which trips 911100
+    # (PUT not in default method allow-list) → 949111 → 403.
+    # https://files.arthurvardevanyan.com/ocs/\*
+    SecRule REQUEST_HEADERS:Host "@rx ^files\.arthurvardevanyan\.com(:|$)" "id:1112,phase:1,pass,nolog,chain"
+      SecRule REQUEST_URI "@beginsWith /ocs/" "ctl:ruleRemoveById=911100,ctl:ruleRemoveById=949111"
+
     # Spotify analytics — disable body inspection for historical import
     # endpoints (files too large for WASM memory).
     # https://analytics-for-spotify.arthurvardevanyan.com/analytics/\*
@@ -94,3 +101,20 @@ data:
     # https://registry.arthurvardevanyan.com/v2/\<repo\>/manifests/\*
     SecRule REQUEST_HEADERS:Host "@rx ^registry\.arthurvardevanyan\.com(:|$)" "id:1109,phase:1,pass,nolog,chain"
       SecRule REQUEST_URI "@rx ^/v2/.+/(blobs/uploads|manifests)/" "t:none,ctl:requestBodyAccess=Off,ctl:ruleRemoveById=911100,ctl:ruleRemoveById=920270,ctl:ruleRemoveById=920420,ctl:ruleRemoveById=921150,ctl:ruleRemoveById=949110,ctl:ruleRemoveById=949111"
+
+    # Zitadel — gRPC API endpoints (Admin, Management, Auth, System,
+    # User, Session, OIDC, SAML, Org services). gRPC uses
+    # application/grpc / application/grpc+proto content types which are
+    # not in the default 920420 allow-list (trips 920420 → 949111 → 403).
+    # gRPC framing is binary, so request body inspection is also disabled.
+    # Service paths are of the form /zitadel.<package>.v<N>.<Service>/<Method>
+    # https://zitadel.arthurvardevanyan.com/zitadel.\*
+    SecRule REQUEST_HEADERS:Host "@rx ^zitadel\.arthurvardevanyan\.com(:|$)" "id:1111,phase:1,pass,nolog,chain"
+      SecRule REQUEST_URI "@rx ^/zitadel\." "t:none,ctl:requestBodyAccess=Off,ctl:ruleRemoveById=911100,ctl:ruleRemoveById=920270,ctl:ruleRemoveById=920420,ctl:ruleRemoveById=921150,ctl:ruleRemoveById=949110,ctl:ruleRemoveById=949111"
+
+    # Argo CD — REST API uses PUT to update Application resources
+    # (e.g. /api/v1/applications/<name>) and other CRUD endpoints. PUT is
+    # not in the CRS default method allow-list, tripping 911100 → 949111.
+    # https://argocd.okd.homelab.arthurvardevanyan.com/api/v1/\*
+    SecRule REQUEST_HEADERS:Host "@rx ^argocd\.okd\.homelab\.arthurvardevanyan\.com(:|$)" "id:1113,phase:1,pass,nolog,chain"
+      SecRule REQUEST_URI "@beginsWith /api/v1/" "ctl:ruleRemoveById=911100,ctl:ruleRemoveById=949111"

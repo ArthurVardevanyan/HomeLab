@@ -1,9 +1,9 @@
 ---
-# openshift-ingress routers
+# https-gateway (internal) - has CPU HPA, so VPA memory only
 apiVersion: autoscaling.k8s.io/v1
 kind: VerticalPodAutoscaler
 metadata:
-  name: router-default
+  name: https-gateway-openshift-default
   namespace: openshift-ingress
   annotations:
     argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
@@ -11,16 +11,16 @@ spec:
   targetRef:
     apiVersion: apps/v1
     kind: Deployment
-    name: router-default
+    name: https-gateway-openshift-default
   updatePolicy:
     updateMode: "InPlaceOrRecreate"
   resourcePolicy:
     containerPolicies:
-      - containerName: router
+      - containerName: istio-proxy
         minAllowed:
-          memory: 16Mi
+          memory: 512Mi
         maxAllowed:
-          memory: 2Gi
+          memory: 1Gi
         controlledResources:
           - memory
-        controlledValues: "RequestsAndLimits" # RequestsOnly
+        controlledValues: RequestsAndLimits
