@@ -21,10 +21,18 @@ data:
     SecRule REQUEST_HEADERS:Host "@rx ^vault\.arthurvardevanyan\.com(:|$)" "id:1100,phase:1,pass,nolog,chain"
       SecRule REQUEST_URI "@beginsWith /v1/auth/" "ctl:ruleRemoveById=911100,ctl:ruleRemoveById=949111"
 
-    # Nextcloud — WebDAV / OCS / Talk (PROPFIND, MKCOL, MOVE, COPY, REPORT, etc.).
+    # Nextcloud — WebDAV / OCS / Talk. Covers two distinct false-positive sources:
+    #   1. Non-standard verbs (PROPFIND, MKCOL, MOVE, COPY, REPORT) → 911100
+    #   2. Sync-client file uploads (PUT to /remote.php/dav/files/<user>/...
+    #      and chunked uploads to /remote.php/dav/uploads/<user>/...) carry
+    #      arbitrary binary content as application/octet-stream, tripping
+    #      920420 (content-type), 920270 (null bytes), 920440 (extension),
+    #      921150 (header injection on certain filenames), and 949111.
+    # Body inspection is disabled because the gateway cannot meaningfully
+    # scan opaque user file contents.
     # https://files.arthurvardevanyan.com/remote.php/\*
     SecRule REQUEST_HEADERS:Host "@rx ^files\.arthurvardevanyan\.com(:|$)" "id:1101,phase:1,pass,nolog,chain"
-      SecRule REQUEST_URI "@beginsWith /remote.php/" "ctl:ruleRemoveById=911100,ctl:ruleRemoveById=949111"
+      SecRule REQUEST_URI "@beginsWith /remote.php/" "t:none,ctl:requestBodyAccess=Off,ctl:ruleRemoveById=911100,ctl:ruleRemoveById=920270,ctl:ruleRemoveById=920420,ctl:ruleRemoveById=920440,ctl:ruleRemoveById=921150,ctl:ruleRemoveById=942100,ctl:ruleRemoveById=942190,ctl:ruleRemoveById=949110,ctl:ruleRemoveById=949111"
 
     # Spotify analytics — disable body inspection for historical import
     # endpoints (files too large for WASM memory).
@@ -48,6 +56,17 @@ data:
     SecRule REQUEST_HEADERS:Host "@rx ^s3\.(ssd\.)?unas\.arthurvardevanyan\.com(:|$)" "id:1108,phase:1,pass,nolog,chain"
       SecRule REQUEST_URI "@beginsWith /prometheus-thanos/" "t:none,ctl:requestBodyAccess=Off,ctl:ruleRemoveById=911100,ctl:ruleRemoveById=920270,ctl:ruleRemoveById=920420,ctl:ruleRemoveById=921150,ctl:ruleRemoveById=942100,ctl:ruleRemoveById=942190,ctl:ruleRemoveById=949110,ctl:ruleRemoveById=949111"
 
+    # MinIO (UNAS) — Nextcloud rclone backup. Bucket "nextcloud" contains
+    # arbitrary user files (any content-type / extension) and bucket
+    # "db-dump" carries Postgres dumps as application/x-sql with .sql keys
+    # (trips 920420 + 920440 → 949111 → 403 Forbidden on PutObject).
+    # https://s3.unas.arthurvardevanyan.com/nextcloud/\*
+    # https://s3.unas.arthurvardevanyan.com/db-dump/\*
+    # https://s3.ssd.unas.arthurvardevanyan.com/nextcloud/\*
+    # https://s3.ssd.unas.arthurvardevanyan.com/db-dump/\*
+    SecRule REQUEST_HEADERS:Host "@rx ^s3\.(ssd\.)?unas\.arthurvardevanyan\.com(:|$)" "id:1110,phase:1,pass,nolog,chain"
+      SecRule REQUEST_URI "@rx ^/(nextcloud|db-dump)/" "t:none,ctl:requestBodyAccess=Off,ctl:ruleRemoveById=911100,ctl:ruleRemoveById=920270,ctl:ruleRemoveById=920420,ctl:ruleRemoveById=920440,ctl:ruleRemoveById=921150,ctl:ruleRemoveById=942100,ctl:ruleRemoveById=942190,ctl:ruleRemoveById=949110,ctl:ruleRemoveById=949111"
+
     # Gitea — smart-HTTP endpoints. ".git/" trips 930130 (LFI); upload-pack /
     # receive-pack POSTs use application/x-git-* binary content type.
     # https://git.arthurvardevanyan.com/\<owner\>/\<repo\>.git/info/refs
@@ -66,9 +85,12 @@ data:
     SecRule REQUEST_HEADERS:Host "@rx ^registry\.arthurvardevanyan\.com(:|$)" "id:1107,phase:1,pass,nolog,chain"
       SecRule REQUEST_URI "@beginsWith /api/v1/" "ctl:ruleRemoveById=911100,ctl:ruleRemoveById=949111"
 
-    # Quay — Docker Registry v2 blob upload endpoints carry binary image
-    # layer chunks (PATCH/PUT with application/octet-stream). Disable body
-    # inspection and clear out the CRS rules that fire on binary payloads.
+    # Quay — Docker Registry v2 write endpoints. Blob uploads carry binary
+    # image layer chunks (PATCH/PUT application/octet-stream); manifest PUTs
+    # use vendor content types like application/vnd.docker.distribution.manifest.v2+json
+    # and application/vnd.oci.image.manifest.v1+json which trip 920420 and
+    # 911100 (PUT not in default method allow-list).
     # https://registry.arthurvardevanyan.com/v2/\<repo\>/blobs/uploads/\*
+    # https://registry.arthurvardevanyan.com/v2/\<repo\>/manifests/\*
     SecRule REQUEST_HEADERS:Host "@rx ^registry\.arthurvardevanyan\.com(:|$)" "id:1109,phase:1,pass,nolog,chain"
-      SecRule REQUEST_URI "@rx ^/v2/.+/blobs/uploads/" "t:none,ctl:requestBodyAccess=Off,ctl:ruleRemoveById=920270,ctl:ruleRemoveById=921150,ctl:ruleRemoveById=949110,ctl:ruleRemoveById=949111"
+      SecRule REQUEST_URI "@rx ^/v2/.+/(blobs/uploads|manifests)/" "t:none,ctl:requestBodyAccess=Off,ctl:ruleRemoveById=911100,ctl:ruleRemoveById=920270,ctl:ruleRemoveById=920420,ctl:ruleRemoveById=921150,ctl:ruleRemoveById=949110,ctl:ruleRemoveById=949111"
