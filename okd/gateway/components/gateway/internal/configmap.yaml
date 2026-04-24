@@ -1,0 +1,55 @@
+########################################################################################################
+### https://unifi.arthurvardevanyan.com/network/default/settings/policy-table?preset=port-forwarding ###
+########################################################################################################
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: gw-options-internal
+  namespace: openshift-ingress
+data:
+  service: |
+    metadata:
+      annotations:
+        metallb.universe.tf/loadBalancerIPs: "10.101.10.240"
+    spec:
+      externalTrafficPolicy: Local
+      internalTrafficPolicy: Cluster
+      loadBalancerClass: metallb.io/metallb-class
+  podDisruptionBudget: |
+    spec:
+      minAvailable: 1
+  horizontalPodAutoscaler: |
+    spec:
+      metrics:
+        - type: Resource
+          resource:
+            name: cpu
+            target:
+              type: Utilization
+              averageUtilization: 95
+  deployment: |
+    spec:
+      template:
+        spec:
+          topologySpreadConstraints:
+            - maxSkew: 1
+              topologyKey: kubernetes.io/hostname
+              whenUnsatisfiable: DoNotSchedule
+              labelSelector:
+                matchLabels:
+                  gateway.networking.k8s.io/gateway-name: https-gateway
+            - maxSkew: 1
+              topologyKey: topology.kubernetes.io/zone
+              whenUnsatisfiable: DoNotSchedule
+              labelSelector:
+                matchLabels:
+                  gateway.networking.k8s.io/gateway-name: https-gateway
+          containers:
+            - name: istio-proxy
+              resources:
+                requests:
+                  cpu: 150m
+                  memory: 512Mi
+                limits:
+                  cpu: 450m
+                  memory: 1536Mi
