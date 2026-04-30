@@ -16,10 +16,17 @@ data:
     #
     # @rx with (:|$) matches both bare hostname and Host: name:port form.
 
-    # Vault — auth login endpoints (POST/PUT).
-    # https://vault.arthurvardevanyan.com/v1/auth/\*
-    SecRule REQUEST_HEADERS:Host "@rx ^vault\.arthurvardevanyan\.com(:|$)" "id:1100,phase:1,pass,nolog,chain"
-      SecRule REQUEST_URI "@beginsWith /v1/auth/" "ctl:ruleRemoveById=911100,ctl:ruleRemoveById=949111"
+    # -- Global: allow PUT / DELETE / PATCH cluster-wide --
+    # The CRS default method allow-list (tx.allowed_methods, set in
+    # crs-setup id:900200) is "GET HEAD POST OPTIONS". Anything else
+    # trips 911100 (Method is not allowed by policy) which chains into
+    # 949111 (inbound anomaly) → 403. The internal gateway fronts many
+    # REST APIs (Argo CD, Quay, Vault, Nextcloud, Zitadel, MinIO, ...)
+    # that legitimately use PUT/DELETE/PATCH for resource CRUD, so widen
+    # the allow-list once globally instead of per-host. Non-standard
+    # WebDAV/registry verbs (PROPFIND, MKCOL, MOVE, COPY, REPORT, PATCH
+    # on registry blobs) are still handled by the per-host rules below.
+    SecAction "id:1000,phase:1,pass,nolog,t:none,setvar:'tx.allowed_methods=GET HEAD POST OPTIONS PUT DELETE PATCH'"
 
     # Nextcloud — WebDAV / OCS / Talk. Covers two distinct false-positive sources:
     #   1. Non-standard verbs (PROPFIND, MKCOL, MOVE, COPY, REPORT) → 911100
@@ -36,13 +43,6 @@ data:
     # https://files.arthurvardevanyan.com/remote.php/\*
     SecRule REQUEST_HEADERS:Host "@rx ^files\.arthurvardevanyan\.com(:|$)" "id:1101,phase:1,pass,nolog,chain"
       SecRule REQUEST_URI "@beginsWith /remote.php/" "t:none,ctl:requestBodyAccess=Off,ctl:ruleRemoveById=911100,ctl:ruleRemoveById=920270,ctl:ruleRemoveById=920420,ctl:ruleRemoveById=920440,ctl:ruleRemoveById=921150,ctl:ruleRemoveById=930120,ctl:ruleRemoveById=930130,ctl:ruleRemoveById=942100,ctl:ruleRemoveById=942190,ctl:ruleRemoveById=949110,ctl:ruleRemoveById=949111"
-
-    # Nextcloud — OCS API. Browser/desktop clients PUT to OCS endpoints such
-    # as /ocs/v2.php/apps/user_status/api/v1/heartbeat, which trips 911100
-    # (PUT not in default method allow-list) → 949111 → 403.
-    # https://files.arthurvardevanyan.com/ocs/\*
-    SecRule REQUEST_HEADERS:Host "@rx ^files\.arthurvardevanyan\.com(:|$)" "id:1112,phase:1,pass,nolog,chain"
-      SecRule REQUEST_URI "@beginsWith /ocs/" "ctl:ruleRemoveById=911100,ctl:ruleRemoveById=949111"
 
     # Spotify analytics — disable body inspection for historical import
     # endpoints (files too large for WASM memory).
@@ -89,12 +89,6 @@ data:
     SecRule REQUEST_HEADERS:Host "@rx ^git\.arthurvardevanyan\.com(:|$)" "id:1106,phase:1,pass,nolog,chain"
       SecRule REQUEST_URI "@contains /git-receive-pack" "t:none,ctl:requestBodyAccess=Off,ctl:ruleRemoveById=911100,ctl:ruleRemoveById=920420,ctl:ruleRemoveById=920450,ctl:ruleRemoveById=930130,ctl:ruleRemoveById=949110,ctl:ruleRemoveById=949111"
 
-    # Quay — registry REST API uses PUT for resource creation
-    # (e.g. /api/v1/organization/<org>/robots/<name>).
-    # https://registry.arthurvardevanyan.com/api/v1/\*
-    SecRule REQUEST_HEADERS:Host "@rx ^registry\.arthurvardevanyan\.com(:|$)" "id:1107,phase:1,pass,nolog,chain"
-      SecRule REQUEST_URI "@beginsWith /api/v1/" "ctl:ruleRemoveById=911100,ctl:ruleRemoveById=949111"
-
     # Quay — Docker Registry v2 write endpoints. Blob uploads carry binary
     # image layer chunks (PATCH/PUT application/octet-stream); manifest PUTs
     # use vendor content types like application/vnd.docker.distribution.manifest.v2+json
@@ -114,10 +108,3 @@ data:
     # https://zitadel.arthurvardevanyan.com/zitadel.\*
     SecRule REQUEST_HEADERS:Host "@rx ^zitadel\.arthurvardevanyan\.com(:|$)" "id:1111,phase:1,pass,nolog,chain"
       SecRule REQUEST_URI "@rx ^/zitadel\." "t:none,ctl:requestBodyAccess=Off,ctl:ruleRemoveById=911100,ctl:ruleRemoveById=920270,ctl:ruleRemoveById=920420,ctl:ruleRemoveById=921150,ctl:ruleRemoveById=949110,ctl:ruleRemoveById=949111"
-
-    # Argo CD — REST API uses PUT to update Application resources
-    # (e.g. /api/v1/applications/<name>) and other CRUD endpoints. PUT is
-    # not in the CRS default method allow-list, tripping 911100 → 949111.
-    # https://argocd.okd.homelab.arthurvardevanyan.com/api/v1/\*
-    SecRule REQUEST_HEADERS:Host "@rx ^argocd\.okd\.homelab\.arthurvardevanyan\.com(:|$)" "id:1113,phase:1,pass,nolog,chain"
-      SecRule REQUEST_URI "@beginsWith /api/v1/" "ctl:ruleRemoveById=911100,ctl:ruleRemoveById=949111"

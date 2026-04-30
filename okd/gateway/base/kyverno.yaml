@@ -21,4 +21,8 @@ spec:
       mutate:
         patchStrategicMerge:
           spec:
-            minReplicas: 2
+            # Pinned to 3 control-plane nodes (see configmap deployment
+            # override). minReplicas == nodes guarantees one Ready pod
+            # per node, so the MetalLB L2 announcer node never ends up
+            # with 0 local endpoints during scale-down/rollout.
+            minReplicas: 3
