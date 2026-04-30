@@ -12,25 +12,82 @@ data:
       annotations:
         metallb.universe.tf/loadBalancerIPs: "10.101.10.240"
     spec:
+      # 'Local' is required (preserves real client source IP at L4).
+      # See external/configmap.yaml for the full trade-off explanation.
+      # Mitigations: preStop + terminationDrainDuration keep Envoy
+      # serving during termination; HPA scaleDown stabilization spaces
+      # removals; topology spread + minReplicas keeps a pod on each
+      # candidate node so the MetalLB L2 announcer rarely changes.
+      # Full fix would be MetalLB BGP (FRR-K8s) ECMP from all nodes.
       externalTrafficPolicy: Local
       internalTrafficPolicy: Cluster
       loadBalancerClass: metallb.io/metallb-class
   podDisruptionBudget: |
     spec:
-      minAvailable: 1
+      minAvailable: 2
   horizontalPodAutoscaler: |
     spec:
+      # 3 control-plane nodes, one pod per node (enforced by
+      # topologySpreadConstraints maxSkew:1 hostname DoNotSchedule).
+      # minReplicas: 3 guarantees the MetalLB L2 announcer node always
+      # has a Ready local endpoint -> externalTrafficPolicy: Local never
+      # drops on HPA scale events.
+      minReplicas: 3
       metrics:
         - type: Resource
           resource:
             name: cpu
             target:
               type: Utilization
-              averageUtilization: 110
+              averageUtilization: 150
+      # Slow scale-down so externalTrafficPolicy: Local + MetalLB + upstream
+      # ARP / external health-probe have time to converge between events.
+      behavior:
+        scaleDown:
+          stabilizationWindowSeconds: 300
+          policies:
+            - type: Pods
+              value: 1
+              periodSeconds: 120
+          selectPolicy: Max
+        scaleUp:
+          stabilizationWindowSeconds: 0
+          policies:
+            - type: Percent
+              value: 100
+              periodSeconds: 30
+            - type: Pods
+              value: 2
+              periodSeconds: 30
+          selectPolicy: Max
   deployment: |
     spec:
       template:
+        metadata:
+          annotations:
+            # Envoy actively drains for 45s after SIGTERM (after preStop).
+            # Combined with terminationGracePeriodSeconds: 90 and the
+            # 45s preStop sleep, gives ~90s of graceful shutdown.
+            proxy.istio.io/config: |
+              terminationDrainDuration: 45s
         spec:
+          # Cover preStop sleep (45s) + envoy drain.
+          terminationGracePeriodSeconds: 90
+          # Pin to control-plane nodes. Combined with kyverno-mutated
+          # minReplicas: 3 and the per-hostname topology spread below,
+          # this guarantees exactly one Ready pod per control-plane
+          # node at all times, so the MetalLB L2 announcer node always
+          # has a local endpoint and externalTrafficPolicy: Local never
+          # drops traffic during HPA scale-down or rollouts.
+          nodeSelector:
+            node-role.kubernetes.io/control-plane: ""
+          tolerations:
+            - key: node-role.kubernetes.io/control-plane
+              operator: Exists
+              effect: NoSchedule
+            - key: node-role.kubernetes.io/master
+              operator: Exists
+              effect: NoSchedule
           topologySpreadConstraints:
             - maxSkew: 1
               topologyKey: kubernetes.io/hostname
@@ -46,9 +103,23 @@ data:
                   gateway.networking.k8s.io/gateway-name: https-gateway
           containers:
             - name: istio-proxy
+              # Keep envoy serving traffic while:
+              #   * EndpointSlice marks this pod NotReady
+              #   * MetalLB re-elects the L2 speaker for the LB IP
+              #   * Upstream router (UniFi) refreshes its ARP cache
+              #   * The external health probe re-targets a healthy node
+              # Without this, externalTrafficPolicy: Local drops in-flight
+              # traffic on the terminating node and the probe flaps.
+              lifecycle:
+                preStop:
+                  exec:
+                    command:
+                      - /bin/sh
+                      - -c
+                      - sleep 45
               resources:
                 requests:
-                  cpu: 150m
+                  cpu: 100m
                   memory: 512Mi
                 limits:
                   cpu: 450m
