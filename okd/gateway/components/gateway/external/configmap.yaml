@@ -27,11 +27,33 @@ data:
             name: cpu
             target:
               type: Utilization
-              averageUtilization: 110
+              averageUtilization: 150
+      # Slow scale-down so externalTrafficPolicy: Local + MetalLB + upstream
+      # ARP / external health-probe have time to converge between events.
+      behavior:
+        scaleDown:
+          stabilizationWindowSeconds: 300
+          policies:
+            - type: Pods
+              value: 1
+              periodSeconds: 120
+          selectPolicy: Max
+        scaleUp:
+          stabilizationWindowSeconds: 0
+          policies:
+            - type: Percent
+              value: 100
+              periodSeconds: 30
+            - type: Pods
+              value: 2
+              periodSeconds: 30
+          selectPolicy: Max
   deployment: |
     spec:
+      # Cover preStop sleep (45s) + envoy drain.
       template:
         spec:
+          terminationGracePeriodSeconds: 90
           topologySpreadConstraints:
             - maxSkew: 1
               topologyKey: kubernetes.io/hostname
@@ -47,6 +69,20 @@ data:
                   gateway.networking.k8s.io/gateway-name: https-gateway-external
           containers:
             - name: istio-proxy
+              # Keep envoy serving traffic while:
+              #   * EndpointSlice marks this pod NotReady
+              #   * MetalLB re-elects the L2 speaker for the LB IP
+              #   * Upstream router (UniFi) refreshes its ARP cache
+              #   * The external health probe re-targets a healthy node
+              # Without this, externalTrafficPolicy: Local drops in-flight
+              # traffic on the terminating node and the probe flaps.
+              lifecycle:
+                preStop:
+                  exec:
+                    command:
+                      - /bin/sh
+                      - -c
+                      - sleep 45
               resources:
                 requests:
                   cpu: 100m
