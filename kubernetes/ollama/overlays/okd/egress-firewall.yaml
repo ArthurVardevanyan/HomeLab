@@ -27,6 +27,12 @@ spec:
     # Cloudflare IPv4 ranges (all)
     - type: Allow
       to:
+        cidrSelector: 173.245.48.0/20
+      ports:
+        - protocol: TCP
+          port: 443
+    - type: Allow
+      to:
         cidrSelector: 103.21.244.0/22
       ports:
         - protocol: TCP
@@ -103,6 +109,13 @@ spec:
       ports:
         - protocol: TCP
           port: 443
+    - type: Allow
+      to:
+        cidrSelector: 172.64.0.0/13
+      ports:
+        - protocol: TCP
+          port: 443
+
     # Deny all other egress
     - type: Deny
       to:

@@ -46,7 +46,7 @@ spec:
         nvidia.com/gpu.present: "true"
       containers:
         # renovate: datasource=docker depName=docker.io/ollama/ollama
-        - image: docker.io/ollama/ollama:latest
+        - image: docker.io/ollama/ollama:0.22.0@sha256:05ab093b257a54318fba39293f1640d53b507d1edec8fa6ca2d3e1817c02e53b
           imagePullPolicy: Always
           name: ollama
           securityContext:
@@ -76,8 +76,10 @@ spec:
                   - "-c"
                   - |
                     sleep 5;
-                    ollama pull qwen3.6:35b-a3b;
-                    ollama pull gemma4:26b-a4b-it;
+                    ollama pull qwen3.6:27b;
+                    ollama pull qwen3.6:35b;
+                    ollama pull gemma4:e2b;
+                    ollama pull gemma4:e4b;
           startupProbe:
             httpGet:
               path: /

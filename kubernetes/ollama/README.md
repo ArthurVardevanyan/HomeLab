@@ -10,8 +10,16 @@ kubectl kustomize kubernetes/ollama/overlays/okd | argocd-vault-plugin generate 
 
 Pulled via the container `postStart` lifecycle hook:
 
-- `qwen3.6:35b-a3b`
-- `gemma4:26b-a4b-it`
+- `qwen3.6:27b`
+- `qwen3.6:35b`
+- `gemma4:e2b`
+- `gemma4:e4b`
+
+## Debug
+
+```bash
+kubectl exec -n ollama $(kubectl get pods -n ollama -l app=ollama-coder -o jsonpath='{.items[0].metadata.name}') -- ollama ps
+```
 
 ## Scaling
 
