@@ -10,6 +10,7 @@ metadata:
   labels:
     app.kubernetes.io/instance: argocd
 spec:
+  defaultClusterScopedRoleDisabled: true
   applicationInstanceLabelKey: argocd.argoproj.io/instance
   resourceTrackingMethod: annotation+label
   notifications:
@@ -77,7 +78,7 @@ spec:
         ephemeral-storage: 256Mi
     sidecarContainers:
       - name: avp-kustomize
-        command: [/var/run/argocd/argocd-cmp-server]
+        command: [ /var/run/argocd/argocd-cmp-server ]
         imagePullPolicy: IfNotPresent
         image: registry.arthurvardevanyan.com/homelab/toolbox:not_latest
         resources:
