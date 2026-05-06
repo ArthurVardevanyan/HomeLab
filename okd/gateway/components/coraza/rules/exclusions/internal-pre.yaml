@@ -28,6 +28,13 @@ data:
     # on registry blobs) are still handled by the per-host rules below.
     SecAction "id:1000,phase:1,pass,nolog,t:none,setvar:'tx.allowed_methods=GET HEAD POST OPTIONS PUT DELETE PATCH'"
 
+    # Nextcloud — .well-known self-check. The Nextcloud-Server-Crawler User-Agent
+    # triggers rule 913100 (scanner detection) when Nextcloud's admin panel verifies
+    # that /.well-known/caldav and /.well-known/carddav are correctly configured.
+    # https://files.arthurvardevanyan.com/.well-known/\*
+    SecRule REQUEST_HEADERS:Host "@rx ^files\.arthurvardevanyan\.com(:|$)" "id:1112,phase:1,pass,nolog,chain"
+      SecRule REQUEST_URI "@beginsWith /.well-known/" "t:none,ctl:ruleRemoveById=913100,ctl:ruleRemoveById=913110,ctl:ruleRemoveById=913120,ctl:ruleRemoveById=949110,ctl:ruleRemoveById=949111"
+
     # Nextcloud — WebDAV / OCS / Talk. Covers two distinct false-positive sources:
     #   1. Non-standard verbs (PROPFIND, MKCOL, MOVE, COPY, REPORT) → 911100
     #   2. Sync-client file uploads (PUT to /remote.php/dav/files/<user>/...
