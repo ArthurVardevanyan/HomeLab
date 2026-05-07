@@ -114,6 +114,132 @@ spec:
       requests:
         cpu: 200m
         memory: 1536Mi
+  resourceInclusions: |
+    - apiGroups:
+      - ""
+      clusters:
+      - '*'
+      kinds:
+      - LimitRange
+      - Namespace
+      - PersistentVolumeClaim
+      - ResourceQuota
+      - Service
+      - ServiceAccount
+    - apiGroups:
+      - apps
+      clusters:
+      - '*'
+      kinds:
+      - Deployment
+    - apiGroups:
+      - argoproj.io
+      clusters:
+      - '*'
+      kinds:
+      - Application
+    - apiGroups:
+      - autoscaling
+      clusters:
+      - '*'
+      kinds:
+      - HorizontalPodAutoscaler
+    - apiGroups:
+      - batch
+      clusters:
+      - '*'
+      kinds:
+      - CronJob
+    - apiGroups:
+      - cert-manager.io
+      clusters:
+      - '*'
+      kinds:
+      - Certificate
+    - apiGroups:
+      - external-secrets.io
+      clusters:
+      - '*'
+      kinds:
+      - ExternalSecret
+      - SecretStore
+    - apiGroups:
+      - gateway.networking.k8s.io
+      clusters:
+      - '*'
+      kinds:
+      - HTTPRoute
+    - apiGroups:
+      - generators.external-secrets.io
+      clusters:
+      - '*'
+      kinds:
+      - QuayAccessToken
+    - apiGroups:
+      - k8s.ovn.org
+      clusters:
+      - '*'
+      kinds:
+      - EgressFirewall
+    - apiGroups:
+      - monitoring.coreos.com
+      clusters:
+      - '*'
+      kinds:
+      - PodMonitor
+    - apiGroups:
+      - networking.k8s.io
+      clusters:
+      - '*'
+      kinds:
+      - Ingress
+      - NetworkPolicy
+    - apiGroups:
+      - policy
+      clusters:
+      - '*'
+      kinds:
+      - PodDisruptionBudget
+    - apiGroups:
+      - postgresql.cnpg.io
+      clusters:
+      - '*'
+      kinds:
+      - Cluster
+      - ScheduledBackup
+    - apiGroups:
+      - rbac.authorization.k8s.io
+      clusters:
+      - '*'
+      kinds:
+      - ClusterRoleBinding
+      - Role
+      - RoleBinding
+    - apiGroups:
+      - route.openshift.io
+      clusters:
+      - '*'
+      kinds:
+      - Route
+    - apiGroups:
+      - serving.knative.dev
+      clusters:
+      - '*'
+      kinds:
+      - DomainMapping
+      - Service
+    - apiGroups:
+      - traefik.containo.us
+      clusters:
+      - '*'
+      kinds:
+      - IngressRoute
+    - apiGroups:
+      - velero.io
+      clusters:
+      - '*'
+      kinds:
+      - Backup
   resourceExclusions: |
     - apiGroups:
       - tekton.dev
