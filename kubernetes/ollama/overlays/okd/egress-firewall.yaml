@@ -1,0 +1,122 @@
+---
+apiVersion: k8s.ovn.org/v1
+kind: EgressFirewall
+metadata:
+  name: default
+  namespace: ollama
+  annotations:
+    argocd.argoproj.io/sync-wave: "0"
+spec:
+  egress:
+    # Control Plane
+    - type: Allow
+      to:
+        nodeSelector:
+          matchLabels:
+            node-role.kubernetes.io/control-plane: ""
+      ports:
+        - protocol: TCP
+          port: 6443
+    # Ollama Hub/API (registry.ollama.ai - Cloudflare IPs)
+    - type: Allow
+      to:
+        dnsName: registry.ollama.ai
+      ports:
+        - protocol: TCP
+          port: 443
+    # Cloudflare IPv4 ranges (all)
+    - type: Allow
+      to:
+        cidrSelector: 173.245.48.0/20
+      ports:
+        - protocol: TCP
+          port: 443
+    - type: Allow
+      to:
+        cidrSelector: 103.21.244.0/22
+      ports:
+        - protocol: TCP
+          port: 443
+    - type: Allow
+      to:
+        cidrSelector: 103.22.200.0/22
+      ports:
+        - protocol: TCP
+          port: 443
+    - type: Allow
+      to:
+        cidrSelector: 103.31.4.0/22
+      ports:
+        - protocol: TCP
+          port: 443
+    - type: Allow
+      to:
+        cidrSelector: 141.101.64.0/18
+      ports:
+        - protocol: TCP
+          port: 443
+    - type: Allow
+      to:
+        cidrSelector: 108.162.192.0/18
+      ports:
+        - protocol: TCP
+          port: 443
+    - type: Allow
+      to:
+        cidrSelector: 190.93.240.0/20
+      ports:
+        - protocol: TCP
+          port: 443
+    - type: Allow
+      to:
+        cidrSelector: 188.114.96.0/20
+      ports:
+        - protocol: TCP
+          port: 443
+    - type: Allow
+      to:
+        cidrSelector: 197.234.240.0/22
+      ports:
+        - protocol: TCP
+          port: 443
+    - type: Allow
+      to:
+        cidrSelector: 198.41.128.0/17
+      ports:
+        - protocol: TCP
+          port: 443
+    - type: Allow
+      to:
+        cidrSelector: 162.158.0.0/15
+      ports:
+        - protocol: TCP
+          port: 443
+    - type: Allow
+      to:
+        cidrSelector: 104.16.0.0/13
+      ports:
+        - protocol: TCP
+          port: 443
+    - type: Allow
+      to:
+        cidrSelector: 104.24.0.0/14
+      ports:
+        - protocol: TCP
+          port: 443
+    - type: Allow
+      to:
+        cidrSelector: 131.0.72.0/22
+      ports:
+        - protocol: TCP
+          port: 443
+    - type: Allow
+      to:
+        cidrSelector: 172.64.0.0/13
+      ports:
+        - protocol: TCP
+          port: 443
+
+    # Deny all other egress
+    - type: Deny
+      to:
+        cidrSelector: 0.0.0.0/0

@@ -1,0 +1,128 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ollama-coder
+  namespace: ollama
+  labels:
+    app: ollama-coder
+  annotations:
+    checkov.io/skip1: CKV_K8S_40=Upstream Image Runs as Root
+    checkov.io/skip2: CKV_K8S_22=Models Cache Requires Writable Root FS
+    checkov.io/skip3: CKV_K8S_43=Sha Changes Often
+spec:
+  # Default scaled to 0 to free the GPU; scale to 1 to load the models.
+  replicas: 0
+  revisionHistoryLimit: 0
+  progressDeadlineSeconds: 600
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: ollama-coder
+  template:
+    metadata:
+      labels:
+        app: ollama-coder
+    spec:
+      hostname: ollama-coder
+      restartPolicy: Always
+      schedulerName: default-scheduler
+      terminationGracePeriodSeconds: 30
+      runtimeClassName: nvidia
+      automountServiceAccountToken: false
+      serviceAccountName: ollama
+      enableServiceLinks: false
+      dnsPolicy: ClusterFirst
+      securityContext:
+        seccompProfile:
+          type: RuntimeDefault
+        runAsNonRoot: false # true
+      tolerations:
+        - key: node-role.kubernetes.io/gpu
+          operator: Exists
+          effect: NoSchedule
+      nodeSelector:
+        nvidia.com/gpu.present: "true"
+      containers:
+        # renovate: datasource=docker depName=docker.io/ollama/ollama
+        - image: docker.io/ollama/ollama:0.22.0@sha256:05ab093b257a54318fba39293f1640d53b507d1edec8fa6ca2d3e1817c02e53b
+          imagePullPolicy: Always
+          name: ollama
+          securityContext:
+            runAsNonRoot: false # true
+            readOnlyRootFilesystem: false
+            allowPrivilegeEscalation: false
+            privileged: false
+            seccompProfile:
+              type: RuntimeDefault
+            capabilities:
+              drop:
+                - ALL
+          env:
+            - name: OLLAMA_HOST
+              value: "0.0.0.0"
+            - name: OLLAMA_KEEP_ALIVE
+              value: "24h"
+          ports:
+            - containerPort: 11434
+              name: api
+              protocol: TCP
+          lifecycle:
+            postStart:
+              exec:
+                command:
+                  - /bin/sh
+                  - "-c"
+                  - |
+                    sleep 5;
+                    ollama pull qwen3.6:27b;
+                    ollama pull qwen3.6:35b;
+                    ollama pull gemma4:e2b;
+                    ollama pull gemma4:e4b;
+          startupProbe:
+            httpGet:
+              path: /
+              port: 11434
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            failureThreshold: 60
+            timeoutSeconds: 5
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 11434
+            periodSeconds: 30
+            timeoutSeconds: 10
+            failureThreshold: 5
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 11434
+            periodSeconds: 15
+            timeoutSeconds: 5
+            failureThreshold: 3
+          resizePolicy:
+            - resourceName: cpu
+              restartPolicy: NotRequired
+            - resourceName: memory
+              restartPolicy: NotRequired
+          resources:
+            requests:
+              cpu: "8"
+              memory: 48Gi
+              ephemeral-storage: "256Mi"
+            limits:
+              cpu: "10"
+              memory: 48Gi
+              ephemeral-storage: "1Gi"
+              nvidia.com/gpu: "1"
+          volumeMounts:
+            - name: ollama-config
+              mountPath: /.ollama
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+      volumes:
+        - name: ollama-config
+          persistentVolumeClaim:
+            claimName: ollama-storage
