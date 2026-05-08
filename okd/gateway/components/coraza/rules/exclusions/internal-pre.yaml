@@ -106,6 +106,17 @@ data:
     SecRule REQUEST_HEADERS:Host "@rx ^registry\.arthurvardevanyan\.com(:|$)" "id:1109,phase:1,pass,nolog,chain"
       SecRule REQUEST_URI "@rx ^/v2/.+/(blobs/uploads|manifests)/" "t:none,ctl:requestBodyAccess=Off,ctl:ruleRemoveById=911100,ctl:ruleRemoveById=920270,ctl:ruleRemoveById=920420,ctl:ruleRemoveById=921150,ctl:ruleRemoveById=949110,ctl:ruleRemoveById=949111"
 
+    # Finance Tracker — PHP API endpoints. jQuery POSTs form-encoded data
+    # with a "Json[*]" parameter set (transactions.php: date/category/
+    # description/account/cash_flow; investments.php: raw JSON array string
+    # from a parsed CSV). Free-text description/category fields trip 942100
+    # (SQLi via libinjection on apostrophes/quotes) and 941100 (XSS via
+    # libinjection). investments.php sends a JSON array string that triggers
+    # the same rules. All inputs are safely handled by parameterized queries.
+    # https://finance.arthurvardevanyan.com/php/\*
+    SecRule REQUEST_HEADERS:Host "@rx ^finance\.arthurvardevanyan\.com(:|$)" "id:1113,phase:1,pass,nolog,chain"
+      SecRule REQUEST_URI "@beginsWith /php/" "t:none,ctl:requestBodyAccess=Off,ctl:ruleRemoveById=941100,ctl:ruleRemoveById=942100,ctl:ruleRemoveById=942190,ctl:ruleRemoveById=949110,ctl:ruleRemoveById=949111"
+
     # Zitadel — gRPC API endpoints (Admin, Management, Auth, System,
     # User, Session, OIDC, SAML, Org services). gRPC uses
     # application/grpc / application/grpc+proto content types which are
