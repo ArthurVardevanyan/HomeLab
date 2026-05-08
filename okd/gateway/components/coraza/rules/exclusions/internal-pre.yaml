@@ -117,6 +117,18 @@ data:
     SecRule REQUEST_HEADERS:Host "@rx ^finance\.arthurvardevanyan\.com(:|$)" "id:1113,phase:1,pass,nolog,chain"
       SecRule REQUEST_URI "@beginsWith /php/" "t:none,ctl:requestBodyAccess=Off,ctl:ruleRemoveById=941100,ctl:ruleRemoveById=942100,ctl:ruleRemoveById=942190,ctl:ruleRemoveById=949110,ctl:ruleRemoveById=949111"
 
+    # pgAdmin — SQL editor and settings endpoints. The /sqleditor/save/*
+    # endpoint POSTs raw SQL query text which trivially trips SQLi rules
+    # (942100, 942190 via libinjection). /settings/get_tool_data/* (GET)
+    # and /settings/save_application_state (POST) carry JSON blobs with
+    # query history and connection state that trigger the same rules.
+    # Body inspection is disabled for all three since they carry
+    # application-controlled SQL/JSON that CRS cannot meaningfully scan.
+    # https://pgadmin.okd.homelab.arthurvardevanyan.com/sqleditor/\*
+    # https://pgadmin.okd.homelab.arthurvardevanyan.com/settings/\*
+    SecRule REQUEST_HEADERS:Host "@rx ^pgadmin\.okd\.homelab\.arthurvardevanyan\.com(:|$)" "id:1114,phase:1,pass,nolog,chain"
+      SecRule REQUEST_URI "@rx ^/(sqleditor|settings)/" "t:none,ctl:requestBodyAccess=Off,ctl:ruleRemoveById=941100,ctl:ruleRemoveById=942100,ctl:ruleRemoveById=942190,ctl:ruleRemoveById=942440,ctl:ruleRemoveById=949110,ctl:ruleRemoveById=949111"
+
     # Zitadel — gRPC API endpoints (Admin, Management, Auth, System,
     # User, Session, OIDC, SAML, Org services). gRPC uses
     # application/grpc / application/grpc+proto content types which are
