@@ -153,6 +153,7 @@ spec:
       clusters:
       - '*'
       kinds:
+      - AgentConfig
       - ConfigMap
       - Endpoints
       - LimitRange
@@ -266,10 +267,25 @@ spec:
       kinds:
       - KubernetesImagePuller
     - apiGroups:
+      - config.openshift.io
+      clusters:
+      - '*'
+      kinds:
+      - APIServer
+      - Authentication
+      - ClusterVersion
+      - Image
+      - ImageDigestMirrorSet
+      - ImageTagMirrorSet
+      - Node
+      - OAuth
+      - OperatorHub
+    - apiGroups:
       - console.openshift.io
       clusters:
       - '*'
       kinds:
+      - ConsoleNotification
       - ConsolePlugin
     - apiGroups:
       - csi.ceph.io
@@ -284,6 +300,12 @@ spec:
       - '*'
       kinds:
       - Dragonfly
+    - apiGroups:
+      - extensions.istio.io
+      clusters:
+      - '*'
+      kinds:
+      - WasmPlugin
     - apiGroups:
       - external-secrets.io
       clusters:
@@ -309,6 +331,8 @@ spec:
       - '*'
       kinds:
       - BackendTLSPolicy
+      - Gateway
+      - GatewayClass
       - HTTPRoute
     - apiGroups:
       - generators.external-secrets.io
@@ -322,6 +346,12 @@ spec:
       - '*'
       kinds:
       - HyperConverged
+    - apiGroups:
+      - imageregistry.operator.openshift.io
+      clusters:
+      - '*'
+      kinds:
+      - Config
     - apiGroups:
       - k8s.cni.cncf.io
       clusters:
@@ -373,11 +403,26 @@ spec:
       kinds:
       - LVMCluster
     - apiGroups:
+      - machine.openshift.io
+      clusters:
+      - '*'
+      kinds:
+      - Machine
+      - MachineSet
+    - apiGroups:
       - machineconfiguration.openshift.io
       clusters:
       - '*'
       kinds:
+      - KubeletConfig
       - MachineConfig
+      - MachineConfigPool
+    - apiGroups:
+      - metal3.io
+      clusters:
+      - '*'
+      kinds:
+      - BareMetalHost
     - apiGroups:
       - metallb.io
       clusters:
@@ -399,6 +444,13 @@ spec:
       - '*'
       kinds:
       - MongoDBCommunity
+    - apiGroups:
+      - monitoring.arthurvardevanyan.com
+      clusters:
+      - '*'
+      kinds:
+      - Cluster
+      - User
     - apiGroups:
       - monitoring.coreos.com
       clusters:
@@ -478,7 +530,10 @@ spec:
       - '*'
       kinds:
       - Console
+      - IngressController
+      - InsightsOperator
       - KubeDescheduler
+      - Network
     - apiGroups:
       - operator.tekton.dev
       clusters:
@@ -490,6 +545,7 @@ spec:
       clusters:
       - '*'
       kinds:
+      - VLCluster
       - VMCluster
     - apiGroups:
       - operators.coreos.com
@@ -554,11 +610,23 @@ spec:
       kinds:
       - Route
     - apiGroups:
+      - samples.operator.openshift.io
+      clusters:
+      - '*'
+      kinds:
+      - Config
+    - apiGroups:
       - scheduling.k8s.io
       clusters:
       - '*'
       kinds:
       - PriorityClass
+    - apiGroups:
+      - security.istio.io
+      clusters:
+      - '*'
+      kinds:
+      - AuthorizationPolicy
     - apiGroups:
       - security.openshift.io
       clusters:
@@ -613,6 +681,13 @@ spec:
       kinds:
       - BackupStorageLocation
       - Schedule
+    - apiGroups:
+      - waf.k8s.coraza.io
+      clusters:
+      - '*'
+      kinds:
+      - Engine
+      - RuleSet
   resourceExclusions: |
     - apiGroups:
       - tekton.dev

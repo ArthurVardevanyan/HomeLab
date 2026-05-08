@@ -24,7 +24,7 @@ go run -C scripts/gen-resource-inclusions . kubernetes/
 Update the main ArgoCD instance in-place:
 
 ```sh
-go run -C scripts/gen-resource-inclusions . -write kubernetes/argocd/base/argocd.yaml kubernetes/ tekton/
+go run -C scripts/gen-resource-inclusions . -write kubernetes/argocd/base/argocd.yaml kubernetes/ okd/ tekton/
 ```
 
 Update the `argocd-apps` instance from the three app repos:
