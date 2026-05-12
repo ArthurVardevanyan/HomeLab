@@ -5,18 +5,17 @@
   become: true
   user: arthur
   tasks:
-    - name: Add gcloud-sdk key
-      ansible.builtin.apt_key:
-        url: https://packages.cloud.google.com/apt/doc/apt-key.gpg
-        state: present
     - name: Add gcloud-sdk Repo
-      ansible.builtin.apt_repository:
-        repo: deb https://packages.cloud.google.com/apt cloud-sdk main
-        state: present
-        update_cache: true
-        filename: google-chrome
+      ansible.builtin.yum_repository:
+        name: google-cloud-sdk
+        description: Google Cloud SDK
+        baseurl: https://packages.cloud.google.com/yum/repos/cloud-sdk-el9-aarch64
+        enabled: true
+        gpgcheck: true
+        gpgkey:
+          - https://packages.cloud.google.com/yum/doc/rpm-package-key.gpg
     - name: Install gcloud-sdk
-      ansible.builtin.apt:
+      ansible.builtin.dnf:
         state: present
         name:
           - google-cloud-cli

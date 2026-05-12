@@ -6,90 +6,83 @@
   user: arthur
   tasks:
     - name: Upgrade all packages
-      ansible.builtin.apt:
-        update_cache: true
-        cache_valid_time: 3600
-        upgrade: dist
-        autoremove: true
+      ansible.builtin.dnf:
+        name: "*"
+        state: latest # noqa package-latest
     - name: Install core packages
-      ansible.builtin.apt:
+      ansible.builtin.dnf:
         state: present
         name:
-          # TODO: renovate: datasource=repology depName=ubuntu_25_10/openssh-server
-          - openssh-server # 1:9.6p1-3ubuntu13
-          # TODO: renovate: datasource=repology depName=ubuntu_25_10/speedtest-cli
-          - speedtest-cli # 2.1.3-2
-          # TODO: renovate: datasource=repology depName=ubuntu_25_10/gnome-screenshot
-          - gnome-screenshot # 41.0-3build2
-          # TODO: renovate: datasource=repology depName=ubuntu_25_10/gnome-tweaks
-          - gnome-tweaks # 46.0-1
-          # TODO: renovate: datasource=repology depName=ubuntu_25_10/thunderbird
-          - thunderbird # 1:115.12.0-1ubuntu1
-          # TODO: renovate: datasource=repology depName=ubuntu_25_10/sshpass
-          - sshpass # 1.10-1
-          # TODO: renovate: datasource=repology depName=ubuntu_25_10/htop
-          - htop # 3.3.0-4build1
-          # TODO: renovate: datasource=repology depName=ubuntu_25_10/fastfetch
-          - fastfetch # 2.42.2-1
-          # TODO: renovate: datasource=repology depName=ubuntu_25_10/nvtop
-          - nvtop # 3.0.1-1build1
-          # TODO: renovate: datasource=repology depName=ubuntu_25_10/pv
-          - pv # 1.8.5-1
-          # TODO: renovate: datasource=repology depName=ubuntu_25_10/jq
-          - jq # 1.7.1-3build1
-          # TODO: renovate: datasource=repology depName=ubuntu_25_10/rsync
-          - rsync # 3.2.7-1ubuntu1
-          # TODO: renovate: datasource=repology depName=ubuntu_25_10/gparted
-          - gparted # 1.5.0-1build2
-          # TODO: renovate: datasource=repology depName=ubuntu_25_10/smartmontools
-          - smartmontools # 7.4-2
-          # TODO: renovate: datasource=repology depName=ubuntu_25_10/caffeine
-          - caffeine # 2.9.13-1
-          # - p7zip-full
+          # TODO: renovate: datasource=repology depName=fedora_44/openssh
+          - openssh-server # -10.0p1-6.fc44
+          # TODO: renovate: datasource=repology depName=fedora_44/speedtest-cli
+          - speedtest-cli # -2.1.3-16.fc44
+          # TODO: renovate: datasource=repology depName=fedora_44/gnome-screenshot
+          - gnome-screenshot # -41.0-12.fc44
+          # TODO: renovate: datasource=repology depName=fedora_44/gnome-tweaks
+          - gnome-tweaks # -46.0-1.fc44
+          # TODO: renovate: datasource=repology depName=fedora_44/thunderbird
+          - thunderbird # -115.12.0-1.fc44
+          # TODO: renovate: datasource=repology depName=fedora_44/sshpass
+          - sshpass # -1.10-1.fc44
+          # TODO: renovate: datasource=repology depName=fedora_44/htop
+          - htop # -3.3.0-4.fc44
+          # TODO: renovate: datasource=repology depName=fedora_44/fastfetch
+          - fastfetch # -2.42.2-1.fc44
+          # TODO: renovate: datasource=repology depName=fedora_44/nvtop
+          - nvtop # -3.0.1-1.fc44
+          # TODO: renovate: datasource=repology depName=fedora_44/pv
+          - pv # -1.8.5-1.fc44
+          # TODO: renovate: datasource=repology depName=fedora_44/jq
+          - jq # -1.7.1-3.fc44
+          # TODO: renovate: datasource=repology depName=fedora_44/rsync
+          - rsync # -3.2.7-1.fc44
+          # TODO: renovate: datasource=repology depName=fedora_44/gparted
+          - gparted # -1.5.0-1.fc44
+          # TODO: renovate: datasource=repology depName=fedora_44/smartmontools
+          - smartmontools # -7.4-2.fc44
+          # - caffeine
+          # - p7zip
           # - remmina
     - name: Install development tools
-      ansible.builtin.apt:
+      ansible.builtin.dnf:
         state: present
         name:
-          # TODO: renovate: datasource=repology depName=ubuntu_25_10/gnupg22
-          - gnupg2 # 2.4.4-2ubuntu17
-          # TODO: renovate: datasource=repology depName=ubuntu_25_10/git
-          - git # 1:2.43.0-1ubuntu7.1
-          # TODO: renovate: datasource=repology depName=ubuntu_25_10/gh
-          - gh # 2.45.0-1
-          # TODO: renovate: datasource=repology depName=ubuntu_25_10/ansible
-          - ansible # 9.2.0-1
-          # TODO: renovate: datasource=repology depName=ubuntu_25_10/build-essential
-          - make # 4.3-4.1build1
-          # TODO: renovate: datasource=repology depName=ubuntu_25_10/gcc
-          - gcc # 4:13.2.0-7ubuntu1
-          # TODO: renovate: datasource=repology depName=ubuntu_25_10/gcc
-          - g++ # 4:13.2.0-7ubuntu1
-          # TODO: renovate: datasource=repology depName=ubuntu_25_10/python3-pip
-          - python3-pip # 24.0+dfsg-1ubuntu1
-          # TODO: renovate: datasource=repology depName=ubuntu_25_10/cockpit
-          - cockpit # 313-1
-          # TODO: renovate: datasource=repology depName=ubuntu_25_10/gdb
-          - gdb # 15.0.50.20240403-0ubuntu1
-          # TODO: renovate: datasource=repology depName=ubuntu_25_10/android-sdk-platform-tools
-          - adb # 1:34.0.4-1ubuntu1
-          # TODO: renovate: datasource=repology depName=ubuntu_25_10/podman
-          - podman # 4.9.3+ds1-1ubuntu0.1
-          # TODO: renovate: datasource=repology depName=ubuntu_25_10/buildah
-          - buildah # 1.34.1+ds1-1ubuntu0.1
-          # TODO: renovate: datasource=repology depName=ubuntu_25_10/skopeo
-          - skopeo # 1.14.2+ds1-1ubuntu0.1
-          # TODO: renovate: datasource=repology depName=ubuntu_25_10/tree
-          - tree # 2.1.1-2
-          # TODO: renovate: datasource=repology depName=ubuntu_25_10/bat
-          - bat # 0.24.0-1build1
-          # TODO: renovate: datasource=repology depName=ubuntu_25_10/opentofu
-          - opentofu # 1.7.2
+          # TODO: renovate: datasource=repology depName=fedora_44/gnupg2
+          - gnupg2 # -2.4.4-2.fc44
+          # TODO: renovate: datasource=repology depName=fedora_44/git
+          - git # -2.43.0-1.fc44
+          # TODO: renovate: datasource=repology depName=fedora_44/gh
+          - gh # -2.45.0-1.fc44
+          # TODO: renovate: datasource=repology depName=fedora_44/ansible
+          - ansible # -9.2.0-1.fc44
+          # TODO: renovate: datasource=repology depName=fedora_44/make
+          - make # -4.3-4.fc44
+          # TODO: renovate: datasource=repology depName=fedora_44/gcc
+          - gcc # -13.2.0-7.fc44
+          # TODO: renovate: datasource=repology depName=fedora_44/gcc
+          - gcc-c++ # -13.2.0-7.fc44
+          # TODO: renovate: datasource=repology depName=fedora_44/python-pip
+          - python3-pip # -24.0-1.fc44
+          # TODO: renovate: datasource=repology depName=fedora_44/cockpit
+          - cockpit # -313-1.fc44
+          # TODO: renovate: datasource=repology depName=fedora_44/gdb
+          - gdb # -15.0.50-1.fc44
+          # TODO: renovate: datasource=repology depName=fedora_44/android-tools
+          - android-tools # -34.0.4-1.fc44
+          # TODO: renovate: datasource=repology depName=fedora_44/podman
+          - podman # -4.9.3-1.fc44
+          # TODO: renovate: datasource=repology depName=fedora_44/buildah
+          - buildah # -1.34.1-1.fc44
+          # TODO: renovate: datasource=repology depName=fedora_44/skopeo
+          - skopeo # -1.14.2-1.fc44
+          # TODO: renovate: datasource=repology depName=fedora_44/tree-pkg
+          - tree # -2.1.1-2.fc44
+          # TODO: renovate: datasource=repology depName=fedora_44/rust-bat
+          - bat # -0.24.0-1.fc44
+          # TODO: renovate: datasource=repology depName=fedora_44/opentofu
+          - opentofu # -1.7.2-1.fc44
           # - arduino
-          # - apache2
-          # - php
-          # - mariadb-server
-          # - libmariadb-dev
     - name: Download YQ
       ansible.builtin.get_url:
         # TODO: renovate: datasource=github-releases depName=mikefarah/yq
@@ -98,29 +91,29 @@
         mode: "0755"
 
     - name: Install additional packages
-      ansible.builtin.apt:
+      ansible.builtin.dnf:
         state: present
         name:
-          # TODO: renovate: datasource=repology depName=ubuntu_25_10/vlc
-          - vlc # 3.0.20-1build6
-          # TODO: renovate: datasource=repology depName=ubuntu_25_10/gimp
-          - gimp # 2.10.36-3build3
-          # TODO: renovate: datasource=repology depName=ubuntu_25_10/obs-studio
-          - obs-studio # 30.0.2+dfsg-1build3
-          # TODO: renovate: datasource=repology depName=ubuntu_25_10/openscad
-          - openscad # 2021.01-6
-          # TODO: renovate: datasource=repology depName=ubuntu_25_10/handbrake
-          - handbrake # 1.7.3+ds1-1build4
-          # TODO: renovate: datasource=repology depName=ubuntu_25_10/ffmpeg
-          - ffmpeg # 7:6.1.1-3ubuntu5
-          # TODO: renovate: datasource=repology depName=ubuntu_25_10/blender
-          - blender # 4.0.2+dfsg-1ubuntu8
+          # TODO: renovate: datasource=repology depName=fedora_44/vlc
+          - vlc # -3.0.20-1.fc44
+          # TODO: renovate: datasource=repology depName=fedora_44/gimp
+          - gimp # -2.10.36-3.fc44
+          # TODO: renovate: datasource=repology depName=fedora_44/obs-studio
+          - obs-studio # -30.0.2-1.fc44
+          # TODO: renovate: datasource=repology depName=fedora_44/openscad
+          - openscad # -2021.01-6.fc44
+          # TODO: renovate: datasource=repology depName=fedora_44/HandBrake
+          - HandBrake-gui # -1.7.3-1.fc44
+          # TODO: renovate: datasource=repology depName=fedora_44/ffmpeg-free
+          - ffmpeg-free # -8.0.1-6.fc44
+          # TODO: renovate: datasource=repology depName=fedora_44/blender
+          - blender # -4.0.2-1.fc44
     - name: Install pipx
-      ansible.builtin.apt:
+      ansible.builtin.dnf:
         state: present
         name:
-          # TODO: renovate: datasource=repology depName=ubuntu_25_10/pipx
-          - pipx # 1.4.3-1
+          # TODO: renovate: datasource=repology depName=fedora_44/python-pipx
+          - pipx # -1.4.3-1.fc44
     - name: Install JC
       community.general.pipx:
         name: JC

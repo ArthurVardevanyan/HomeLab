@@ -5,23 +5,20 @@
   become: true
   user: arthur
   tasks:
-    - name: Add kubectl Key
-      ansible.builtin.apt_key:
-        url: https://pkgs.k8s.io/core:/stable:/v1.31/deb/Release.key
-        keyring: /usr/share/keyrings/kubernetes-archive-keyring.gpg
-        state: present
     - name: Add kubectl Repo
-      ansible.builtin.apt_repository:
-        repo: deb [signed-by=/usr/share/keyrings/kubernetes-archive-keyring.gpg] https://pkgs.k8s.io/core:/stable:/v1.31/deb/ /
-        state: present
-        update_cache: true
-        filename: kubernetes
+      ansible.builtin.yum_repository:
+        name: kubernetes
+        description: Kubernetes
+        baseurl: https://pkgs.k8s.io/core:/stable:/v1.36/rpm/
+        enabled: true
+        gpgcheck: true
+        gpgkey: https://pkgs.k8s.io/core:/stable:/v1.36/rpm/repodata/repomd.xml.key
     - name: Install kubectl
-      ansible.builtin.apt:
+      ansible.builtin.dnf:
         state: present
         name:
           # renovate: datasource=github-releases depName=kubernetes/kubernetes
-          - kubectl-1.31.0-1.1
+          - kubectl # -1.36.1
 
     - name: Download Kubectl Neat
       ansible.builtin.get_url:
@@ -55,28 +52,28 @@
     - name: Download KO
       ansible.builtin.get_url:
         # renovate: custom-github-release depName=ko-build/ko
-        url: https://github.com/ko-build/ko/releases/download/v0.18.1/ko_0.18.1_Linux_x86_64.tar.gz
-        dest: /tmp/ko_Linux_x86_64.tar.gz
+        url: https://github.com/ko-build/ko/releases/download/v0.18.1/ko_0.18.1_Linux_arm64.tar.gz
+        dest: /tmp/ko_Linux_arm64.tar.gz
         mode: "0644"
       check_mode: false
 
     - name: KO Dir
       ansible.builtin.file:
-        path: /tmp/ko_Linux_x86_64
+        path: /tmp/ko_Linux_arm64
         state: directory
         mode: "0755"
       check_mode: false
 
     - name: Extract KO
       ansible.builtin.unarchive:
-        src: /tmp/ko_Linux_x86_64.tar.gz
-        dest: /tmp/ko_Linux_x86_64
+        src: /tmp/ko_Linux_arm64.tar.gz
+        dest: /tmp/ko_Linux_arm64
         remote_src: true
       check_mode: false
 
     - name: Copy KO Binary To Bin
       ansible.builtin.copy:
-        src: /tmp/ko_Linux_x86_64/ko
+        src: /tmp/ko_Linux_arm64/ko
         dest: /usr/local/bin/ko
         mode: "0755"
         remote_src: true
@@ -113,7 +110,7 @@
     - name: Download Kubecolor
       ansible.builtin.get_url:
         # renovate: custom-github-release depName=kubecolor/kubecolor
-        url: https://github.com/kubecolor/kubecolor/releases/download/v0.5.3/kubecolor_0.5.3_linux_arm64.tar.gz
+        url: https://github.com/kubecolor/kubecolor/releases/download/v0.6.0/kubecolor_0.6.0_linux_arm64.tar.gz
         dest: /tmp/kubecolor.tar.gz
         mode: "0644"
       check_mode: false
@@ -138,6 +135,14 @@
         dest: /usr/local/bin/kubecolor
         mode: "0755"
         remote_src: true
+
+    - name: Create ~/.kube directory
+      ansible.builtin.file:
+        path: /home/arthur/.kube
+        state: directory
+        owner: arthur
+        group: arthur
+        mode: "0755"
 
     - name: Creating new ~/.kuberc
       ansible.builtin.copy:

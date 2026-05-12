@@ -5,23 +5,22 @@
   become: true
   user: arthur
   tasks:
-    - name: Add VSCodium Key
-      ansible.builtin.apt_key:
-        url: https://gitlab.com/paulcarroty/vscodium-deb-rpm-repo/raw/master/pub.gpg
-        keyring: /etc/apt/trusted.gpg.d/vscodium-archive-keyring.gpg
-        state: present
     - name: Add VSCodium Repo
-      ansible.builtin.apt_repository:
-        repo: deb https://paulcarroty.gitlab.io/vscodium-deb-rpm-repo/debs/ vscodium main
-        state: present
-        update_cache: true
-        filename: vscodium
+      ansible.builtin.yum_repository:
+        name: gitlab.com_paulcarroty_vscodium_repo
+        description: VSCodium RPM repo
+        baseurl: https://paulcarroty.gitlab.io/vscodium-deb-rpm-repo/rpms/
+        enabled: true
+        gpgcheck: true
+        repo_gpgcheck: true
+        gpgkey: https://gitlab.com/paulcarroty/vscodium-deb-rpm-repo/raw/master/pub.gpg
+        metadata_expire: 1h
     - name: Install VSCodium
-      ansible.builtin.apt:
+      ansible.builtin.dnf:
         state: present
         name:
           # renovate: datasource=github-releases depName=VSCodium/vscodium
-          - codium-1.90.1.24165
+          - codium # -1.90.1.24165
     - name: VSCodium Marketplace
       ansible.builtin.copy:
         src: "../../../machineConfigs/desktop/home/arthur/.config/VSCodium/product.json"

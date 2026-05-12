@@ -14,16 +14,19 @@
           # TODO: renovate: datasource=repology depName=fedora_43/gnome-shell-extension-gsconnect
           - gnome-shell-extension-gsconnect # -56-1.fc40
           # - gnome-shell-extension-autohidetopbar
-          # - gnome-shell-extension-netspeed
           # - gnome-shell-extension-places-menu
-          # - gnome-shell-extension-transparentnotification
+    - name: Install GNOME Extensions Manager
+      become: true
+      community.general.flatpak:
+        name: org.gnome.Extensions
+        state: present
+        remote: flathub
 
     - name: Enable Extensions
       community.general.dconf:
         key: "/org/gnome/shell/enabled-extensions"
-        value:
-          "['netspeed@hedayaty.gmail.com', 'places-menu@gnome-shell-extensions.gcampax.github.com', 'gsconnect@andyholmes.github.io', \
-          'transparentnotification@ipaq3870', 'hidetopbar@mathieu.bidon.ca', 'pop-shell@system76.com', 'caffeine@patapon.info', \
+        value: "['places-menu@gnome-shell-extensions.gcampax.github.com', 'gsconnect@andyholmes.github.io', \
+          'hidetopbar@mathieu.bidon.ca', 'caffeine@patapon.info', \
           'appindicatorsupport@rgcjonas.gmail.com', 'apps-menu@gnome-shell-extensions.gcampax.github.com']"
     - name: Nautilus Show Image Thumbnails
       community.general.dconf:
