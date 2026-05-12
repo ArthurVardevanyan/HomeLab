@@ -5,20 +5,15 @@
   become: true
   user: arthur
   tasks:
-    - name: Add HashiCorp Key
-      ansible.builtin.apt_key:
-        url: https://apt.releases.hashicorp.com/gpg
-        keyring: /usr/share/keyrings/hashicorp-archive-keyring.gpg
-        state: present
-    - name: Add HashiCorp Repo
-      ansible.builtin.apt_repository:
-        repo: "deb [signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] https://apt.releases.hashicorp.com noble main"
-        state: present
-        update_cache: true
-        filename: hashicorp
-    - name: Install Terraform & Vault
-      ansible.builtin.apt:
-        state: present
-        name:
-          - terraform
-          - vault
+    - name: Download Vault zip
+      ansible.builtin.get_url:
+        # renovate: datasource=github-releases depName=hashicorp/vault
+        url: https://releases.hashicorp.com/vault/1.21.4/vault_1.21.4_linux_arm64.zip
+        dest: /tmp/vault.zip
+        timeout: 120
+        mode: "0644"
+    - name: Install Vault
+      ansible.builtin.unarchive:
+        src: /tmp/vault.zip
+        dest: /usr/local/bin
+        mode: "0755"

@@ -4,20 +4,13 @@
   gather_facts: false
   user: arthur
   tasks:
-    - name: Add Nextcloud Repo
-      become: true
-      ansible.builtin.apt_repository:
-        validate_certs: false
-        repo: "ppa:nextcloud-devs/client"
-        state: present
-        update_cache: true
     - name: Install Nextcloud
       become: true
-      ansible.builtin.apt:
+      ansible.builtin.dnf:
         state: present
         name:
-          # TODO: renovate: datasource=repology depName=ubuntu_25_10/nextcloud-desktop
-          - nextcloud-desktop # 3.13.0-1
+          # TODO: renovate: datasource=repology depName=fedora_44/nextcloud-client
+          - nextcloud-client # -3.13.0-1.fc44
     - name: Nextcloud Startup
       ansible.builtin.copy:
         src: "../../../machineConfigs/desktop/home/arthur/.config/autostart/com.nextcloud.desktopclient.nextcloud.desktop"

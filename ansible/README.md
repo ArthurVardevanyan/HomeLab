@@ -1,5 +1,13 @@
 # Ansible
 
+## Setup
+
+Install required Ansible collections before running any playbooks:
+
+```bash
+ansible-galaxy collection install -r ansible/requirements.yml
+```
+
 ## Remote VsCode
 
 ```bash
