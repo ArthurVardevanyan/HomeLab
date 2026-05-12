@@ -1,0 +1,41 @@
+---
+# DisplayLink RPM (driver installer for Fedora/RHEL):
+# https://github.com/displaylink-rpm/displaylink-rpm
+- name: DisplayLink Setup
+  hosts: lenovo
+  gather_facts: false
+  become: true
+  user: arthur
+  tasks:
+    - name: Install DisplayLink RPM
+      ansible.builtin.dnf:
+        # renovate: datasource=github-releases depName=displaylink-rpm/displaylink-rpm
+        name: https://github.com/displaylink-rpm/displaylink-rpm/releases/download/v6.2.0-1/fedora-44-displaylink-1.14.16-1.github_evdi.aarch64.rpm
+        state: present
+        disable_gpg_check: true
+
+    # - name: Set evdi initial device count
+    #   ansible.builtin.copy:
+    #     dest: /etc/modprobe.d/evdi.conf
+    #     content: "options evdi initial_device_count=4\n"
+    #     mode: "0644"
+
+    - name: Enable DisplayLink driver service
+      ansible.builtin.systemd:
+        name: displaylink-driver
+        enabled: true
+        state: started
+
+    - name: Create udev rule to disable USB autosuspend for DisplayLink
+      ansible.builtin.copy:
+        dest: /etc/udev/rules.d/50-displaylink.rules
+        content: |
+          ACTION=="add", SUBSYSTEM=="usb", ATTR{idVendor}=="17e9", ATTR{power/autosuspend}="-1"
+        mode: "0644"
+      notify: Reload udev rules
+
+  handlers:
+    - name: Reload udev rules
+      ansible.builtin.command:
+        cmd: udevadm control --reload-rules
+      changed_when: true
