@@ -1,0 +1,42 @@
+---
+- name: Qualcomm ARM Firmware Setup
+  hosts: lenovo
+  gather_facts: false
+  become: true
+  user: arthur
+  tasks:
+    - name: Remove anaconda module denylist
+      ansible.builtin.file:
+        path: /etc/modprobe.d/anaconda-denylist.conf
+        state: absent
+
+    - name: Load scmi-cpufreq module on boot
+      ansible.builtin.copy:
+        dest: /etc/modules-load.d/scmi-cpufreq.conf
+        content: "scmi-cpufreq\n"
+        mode: "0644"
+
+    - name: Disable TPM2 wait in grub
+      ansible.builtin.command:
+        cmd: grubby --update-kernel=ALL --args="systemd.tpm2_wait=0"
+      changed_when: true
+
+    - name: Configure dracut for Qualcomm firmware (sc82)
+      ansible.builtin.copy:
+        dest: /etc/dracut.conf.d/qcom-adsp-fw.conf
+        content: |
+          install_items+=" /lib/firmware/updates/qcom/sc82*/*/*/*.mbn* "
+          install_items+=" /lib/firmware/updates/qcom/x1*/*/*/*.mbn* "
+          install_items+=" /lib/firmware/updates/qcom/x1*/*/*/*.elf* "
+        mode: "0644"
+
+    - name: Install qcom-firmware-extract
+      ansible.builtin.dnf:
+        name: qcom-firmware-extract
+        state: present
+        enablerepo: updates-testing
+
+    - name: Extract Qualcomm firmware
+      ansible.builtin.command:
+        cmd: qcom-firmware-extract
+        creates: /lib/firmware/updates/qcom

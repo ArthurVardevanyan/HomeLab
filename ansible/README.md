@@ -9,6 +9,7 @@
 
 ## Ref
 
+- <https://fedoraproject.org/wiki/Snapdragon_WoA_Laptop_Install>
 - <https://github.com/k3s-io/k3s-ansible>
 - <https://webworxshop.com/automating-my-infrastructure-with-ansible-and-gitlab-ci-part-1-getting-started/?pk_campaign=reddit-homelab>
 - <https://stackoverflow.com/questions/63266075/how-to-run-ansible-playbook-from-gitlab-ci>
