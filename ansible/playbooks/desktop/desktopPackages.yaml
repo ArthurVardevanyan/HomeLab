@@ -87,6 +87,8 @@
           - bat # -0.24.0-4.fc43
           # TODO: renovate: datasource=repology depName=fedora_43/opentofu
           - opentofu # -1.7.2-1.fc43
+          # TODO: renovate: datasource=repology depName=fedora_43/nodejs
+          - nodejs # -22.15.0-1.fc43
           # - arduino
           # - apache2
           # - php
@@ -229,3 +231,13 @@
           # renovate: datasource=pypi depName=pre-commit
           - pre-commit==3.7.1
         state: present
+    - name: Install global npm packages
+      community.general.npm:
+        name: "{{ item }}"
+        global: true
+        state: present
+      loop:
+        # renovate: datasource=npm depName=markdownlint-cli
+        - markdownlint-cli
+        # renovate: datasource=npm depName=prettier
+        - prettier

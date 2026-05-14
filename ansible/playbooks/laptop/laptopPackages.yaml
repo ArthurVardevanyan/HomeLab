@@ -82,6 +82,8 @@
           - bat # -0.24.0-1.fc44
           # TODO: renovate: datasource=repology depName=fedora_44/opentofu
           - opentofu # -1.7.2-1.fc44
+          # TODO: renovate: datasource=repology depName=fedora_44/nodejs
+          - nodejs # -22.15.0-1.fc44
           # - arduino
     - name: Download YQ
       ansible.builtin.get_url:
@@ -122,3 +124,13 @@
       community.general.pipx:
         name: pre-commit
         state: present
+    - name: Install global npm packages
+      community.general.npm:
+        name: "{{ item }}"
+        global: true
+        state: present
+      loop:
+        # renovate: datasource=npm depName=markdownlint-cli
+        - markdownlint-cli
+        # renovate: datasource=npm depName=prettier
+        - prettier
