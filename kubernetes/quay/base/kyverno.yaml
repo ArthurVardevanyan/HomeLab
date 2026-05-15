@@ -58,3 +58,33 @@ spec:
                       requests:
                         cpu: 5m
                         memory: 16Mi
+---
+apiVersion: kyverno.io/v1
+kind: Policy
+metadata:
+  name: override-clair-indexer-storage
+  namespace: quay
+spec:
+  rules:
+    - name: override-indexer-layer-storage
+      skipBackgroundRequests: true
+      match:
+        resources:
+          kinds:
+            - Deployment
+          names:
+            - quay-clair-app
+      mutate:
+        patchStrategicMerge:
+          spec:
+            template:
+              spec:
+                volumes:
+                  - (name): "indexer-layer-storage"
+                    ephemeral:
+                      volumeClaimTemplate:
+                        spec:
+                          resources:
+                            requests:
+                              storage: 50Gi
+                          storageClassName: rook-ceph-block-ci
