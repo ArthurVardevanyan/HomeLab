@@ -136,6 +136,35 @@
         mode: "0755"
         remote_src: true
 
+    - name: Download tkn
+      ansible.builtin.get_url:
+        # renovate: custom-github-release depName=tektoncd/cli
+        url: https://github.com/tektoncd/cli/releases/download/v0.45.0/tkn_0.45.0_Linux_aarch64.tar.gz
+        dest: /tmp/tkn_Linux_aarch64.tar.gz
+        mode: "0644"
+      check_mode: false
+
+    - name: tkn Dir
+      ansible.builtin.file:
+        path: /tmp/tkn_Linux_aarch64
+        state: directory
+        mode: "0755"
+      check_mode: false
+
+    - name: Extract tkn
+      ansible.builtin.unarchive:
+        src: /tmp/tkn_Linux_aarch64.tar.gz
+        dest: /tmp/tkn_Linux_aarch64
+        remote_src: true
+      check_mode: false
+
+    - name: Copy tkn Binary To Bin
+      ansible.builtin.copy:
+        src: /tmp/tkn_Linux_aarch64/tkn
+        dest: /usr/local/bin/tkn
+        mode: "0755"
+        remote_src: true
+
     - name: Create ~/.kube directory
       ansible.builtin.file:
         path: /home/arthur/.kube
