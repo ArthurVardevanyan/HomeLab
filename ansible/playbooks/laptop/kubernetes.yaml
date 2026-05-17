@@ -165,6 +165,35 @@
         mode: "0755"
         remote_src: true
 
+    - name: Download Helm
+      ansible.builtin.get_url:
+        # renovate: custom-github-release depName=helm/helm
+        url: https://get.helm.sh/helm-v3.16.3-linux-arm64.tar.gz
+        dest: /tmp/helm-linux-arm64.tar.gz
+        mode: "0644"
+      check_mode: false
+
+    - name: Helm Dir
+      ansible.builtin.file:
+        path: /tmp/helm-linux-arm64
+        state: directory
+        mode: "0755"
+      check_mode: false
+
+    - name: Extract Helm
+      ansible.builtin.unarchive:
+        src: /tmp/helm-linux-arm64.tar.gz
+        dest: /tmp/helm-linux-arm64
+        remote_src: true
+      check_mode: false
+
+    - name: Copy Helm Binary To Bin
+      ansible.builtin.copy:
+        src: /tmp/helm-linux-arm64/linux-arm64/helm
+        dest: /usr/local/bin/helm
+        mode: "0755"
+        remote_src: true
+
     - name: Create ~/.kube directory
       ansible.builtin.file:
         path: /home/arthur/.kube
