@@ -3,9 +3,9 @@ module arthurvardevanyan.com/keepalive
 go 1.25.6
 
 require (
-	cloud.google.com/go/storage v1.62.1
+	cloud.google.com/go/storage v1.62.2
 	github.com/gtuk/discordwebhook v1.2.0
-	google.golang.org/api v0.277.0
+	google.golang.org/api v0.279.0
 )
 
 require (
