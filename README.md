@@ -4,18 +4,18 @@ For a detailed history of the project's evolution, see [CHANGELOG.md](CHANGELOG.
 
 - [HomeLab Infrastructure](#homelab-infrastructure)
   - [Overview](#overview)
-  - [🏗️ Architecture Overview](#️-architecture-overview)
-  - [📂 Repository Structure](#-repository-structure)
-  - [🚀 Components](#-components)
+  - [Architecture Overview](#architecture-overview)
+  - [Repository Structure](#repository-structure)
+  - [Components](#components)
     - [1. Infrastructure \& Provisioning (`/ansible`, `/machineConfigs`)](#1-infrastructure--provisioning-ansible-machineconfigs)
-  - [🖥️ Hardware Inventory](#️-hardware-inventory)
+  - [Hardware Inventory](#hardware-inventory)
     - [Kubernetes](#kubernetes)
       - [Machines](#machines)
         - [Storage](#storage)
       - [Kubernetes Nodes](#kubernetes-nodes)
         - [Ceph Performance Tests](#ceph-performance-tests)
         - [GPU](#gpu)
-  - [🌐 Network Architecture](#-network-architecture)
+  - [Network Architecture](#network-architecture)
     - [Physical Topology](#physical-topology)
     - [Networking Machines](#networking-machines)
     - [VLAN Map](#vlan-map)
@@ -23,7 +23,8 @@ For a detailed history of the project's evolution, see [CHANGELOG.md](CHANGELOG.
     - [3. GitOps \& Applications (`/kubernetes`)](#3-gitops--applications-kubernetes)
     - [4. Tooling (`/containers`, `main.bash`)](#4-tooling-containers-mainbash)
     - [5. Virtualization \& Cloud (`/vms`, `/terraform`)](#5-virtualization--cloud-vms-terraform)
-  - [🛠️ Usage](#️-usage)
+    - [6. AI Agent Tooling (`AGENTS.md`, `.agents/`)](#6-ai-agent-tooling-agentsmd-agents)
+  - [Usage](#usage)
     - [Bootstrapping](#bootstrapping)
     - [Deploying a New App](#deploying-a-new-app)
       - [Kubernetes Commands](#kubernetes-commands)
@@ -33,7 +34,7 @@ For a detailed history of the project's evolution, see [CHANGELOG.md](CHANGELOG.
 
 This repository contains the complete Infrastructure-as-Code (IaC) and GitOps configuration for my HomeLab. It manages everything from bare-metal server provisioning and virtualization to the Kubernetes (OKD) cluster and application deployment.
 
-## 🏗️ Architecture Overview
+## Architecture Overview
 
 The infrastructure is built in layers, starting from physical hardware management with Ansible, up to application deployment managed by ArgoCD.
 
@@ -70,10 +71,11 @@ graph TD
     end
 ```
 
-## 📂 Repository Structure
+## Repository Structure
 
 ```plaintext
-├── ansible/            # Ansible playbooks for node configuration (KVM, Servers, Desktops)
+├── .agents/             # Skill libraries consumed by AI coding agents
+├── ansible/             # Ansible playbooks for node configuration (KVM, Servers, Desktops)
 │   ├── playbooks/      # Reusable Ansible playbooks
 │   └── inventory       # Host inventory
 ├── containers/         # Custom container images (Toolbox, Utilities)
@@ -94,11 +96,13 @@ graph TD
 │   ├── homelab/        # Main HomeLab infrastructure
 │   └── sandbox/        # Infrastructure for the UPI Based Terraform KVM
 ├── vms/                # Virtual Machine definitions (KubeVirt)
+├── AGENTS.md           # Entry point for AI coding agents (mirrors SKILL.md)
+├── SKILL.md            # Canonical HomeLab agent skill
 ├── main.bash           # Central entrypoint script for management tasks
 └── notes/              # Documentation, scratchpads, and manual scripts
 ```
 
-## 🚀 Components
+## Components
 
 ### 1. Infrastructure & Provisioning (`/ansible`, `/machineConfigs`)
 
@@ -111,7 +115,7 @@ graph TD
   - **MTU**: Jumbo frames (9000) are enabled for storage and cluster traffic.
 - **Virtualization**: KVM is used to host virtualized control plane or worker nodes where applicable.
 
-## 🖥️ Hardware Inventory
+## Hardware Inventory
 
 ### Kubernetes
 
@@ -221,7 +225,7 @@ graph TD
 - **Driver**: 580.95.05 (CUDA 13.0)
 - **Workload**: Transcoding (Plex/Immich), AI/ML experiments.
 
-## 🌐 Network Architecture
+## Network Architecture
 
 The network is designed for high throughput (10GbE core) and segmentation via VLANs.
 
@@ -402,7 +406,13 @@ end
 - **KubeVirt (`/vms`)**: Defines Virtual Machines (e.g., Fedora) running on top of the OKD cluster, managed via GitOps.
 - **Terraform (`/terraform`)**: Manages external cloud resources (GCP) and integrates with Vault for secret management.
 
-## 🛠️ Usage
+### 6. AI Agent Tooling (`AGENTS.md`, `.agents/`)
+
+- **[AGENTS.md](AGENTS.md)**: Entry point for AI coding agents (Copilot, opencode, etc.) describing repo conventions, cluster auth, and the kubeconfig discipline.
+- **[SKILL.md](SKILL.md)**: Canonical HomeLab skill, mirrored at [.agents/skills/homelab/SKILL.md](.agents/skills/homelab/SKILL.md).
+- **[.agents/skills/kubernetes-skill/SKILL.md](.agents/skills/kubernetes-skill/SKILL.md)**: Production-grade Kubernetes manifest, Helm, and Kustomize guidance with a failure-mode workflow.
+
+## Usage
 
 ### Bootstrapping
 

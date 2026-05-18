@@ -312,14 +312,18 @@ Focus on platform maturity, DNS modernization, web application security, databas
 
 ### Key Characteristics
 
-- **Networking:** **BGP** (Jan 2026) for Gateway API load balancing, **MetalLB** revived, **WASM** and **External Gateway** with Cloudflare IP whitelisting.
+- **Networking:** **BGP** (Jan 2026) for Gateway API load balancing, **MetalLB** revived, **WASM** and **External Gateway** with Cloudflare IP whitelisting. **Gateway API rework** (Apr 2026) with **re-encrypt certificate verification**.
 - **DNS:** **Technitium DNS** (Feb 2026) replaced Pi-hole, with multi-node **clustering** and **External DNS UniFi** integration.
 - **Security:** **Coraza WAF** (Feb 2026) for web application firewall, **Let's Encrypt** cert validity drop preparation.
 - **Database:** Migration from **Crunchy Postgres** to **CloudNative-PG** (Mar 2026) with monitoring and automated backups.
 - **Observability:** **Wire-Tap** (Mar 2026) inception for network traffic inspection.
-- **Platform:** OKD upgraded to **4.22** (Feb 2026), **VPA** (Vertical Pod Autoscaler) inception, **Docker Registry** inception.
-- **Automation:** **Renovate** matured to **GitHub App** (Mar 2026), IaC linting with **Checkov**, **ansible-lint**, and **yamllint**.
-- **GitOps:** ArgoCD **server-side apply** and **shallow clone** optimizations.
+- **Platform:** OKD upgraded to **4.22** (Feb 2026) and through **4.22.0-okd-scos.0** GA (May 2026), **VPA** (Vertical Pod Autoscaler) inception, **Docker Registry** inception.
+- **Lifecycle:** **InstallPlan Updater/Approver Functions** (Apr 2026) for automated OLM operator upgrades.
+- **Automation:** **Renovate** matured to **GitHub App** (Mar 2026), **Dependabot** removed (Apr 2026), IaC linting with **Checkov**, **ansible-lint**, and **yamllint**.
+- **GitOps:** ArgoCD **server-side apply**, **shallow clone**, and **instance inclusion list** optimizations.
+- **Slimming:** **Knative** removed (May 2026).
+- **Endpoints:** **Fedora Snapdragon laptop** inception (May 2026).
+- **AI Tooling:** **Agent skills** (`AGENTS.md`, HomeLab + Kubernetes `SKILL.md`), **Copilot** instructions, and **opencode** Ansible playbooks across desktop/laptop/vscode-server (May 2026).
 
 ### Major Milestones
 
@@ -338,3 +342,12 @@ Focus on platform maturity, DNS modernization, web application security, databas
 - **March 4, 2026**: **Wire-Tap** inception for network traffic inspection.
 - **March 6, 2026**: **CloudNative-PG** migration from Crunchy Postgres.
 - **March 12, 2026**: **Docker Registry** inception, Renovate switch to **GitHub App**.
+- **April 2, 2026**: **Gateway API rework**.
+- **April 5, 2026**: **InstallPlan Updater/Approver Functions** for automated OLM upgrades.
+- **April 18, 2026**: **Dependabot** removed in favor of Renovate-only dependency management.
+- **April 21, 2026**: **Gateway** re-encrypt certificate verification.
+- **May 7, 2026**: **ArgoCD instance inclusion list** for scoped application management.
+- **May 8, 2026**: **Knative** removed from the platform.
+- **May 11, 2026**: OKD upgrade to **4.22.0-okd-scos.0** (GA).
+- **May 12, 2026**: **Fedora Snapdragon laptop** inception (ARM laptop Ansible playbooks).
+- **May 18, 2026**: **AI agent skills** inception — `AGENTS.md`, HomeLab and Kubernetes `SKILL.md`, Copilot instructions, opencode playbooks.
