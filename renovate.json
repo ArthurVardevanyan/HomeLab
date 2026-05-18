@@ -39,8 +39,12 @@
     },
     {
       "customType": "regex",
-      "description": "VS Code MCP server npm packages pinned via npx args",
-      "managerFilePatterns": ["/\\.vscode/mcp\\.json$/"],
+      "description": "MCP server npm packages pinned via npx args (VS Code mcp.json, opencode.json, scafctl mcp configs)",
+      "managerFilePatterns": [
+        "/\\.vscode/mcp\\.json$/",
+        "/(^|/)opencode\\.json$/",
+        "/machineConfigs/.*/(mcp|opencode)\\.json$/"
+      ],
       "matchStrings": [
         "\"(?<depName>[a-z0-9][a-z0-9-]*(?:/[a-z0-9][a-z0-9-]*)?)@(?<currentValue>\\d+\\.\\d+\\.\\d+)\""
       ],

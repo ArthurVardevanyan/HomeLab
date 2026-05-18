@@ -1,0 +1,36 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "mcp": {
+    "kubernetes-okd": {
+      "type": "local",
+      "command": [
+        "npx",
+        "-y",
+        "kubernetes-mcp-server@0.0.62",
+        "--read-only",
+        "--disable-multi-cluster",
+        "--kubeconfig",
+        "{env:HOME}/.kube/okd"
+      ],
+      "enabled": true
+    },
+    "kubernetes-microshift": {
+      "type": "local",
+      "command": [
+        "npx",
+        "-y",
+        "kubernetes-mcp-server@0.0.62",
+        "--read-only",
+        "--disable-multi-cluster",
+        "--kubeconfig",
+        "{env:HOME}/.kube/microshift"
+      ],
+      "enabled": true
+    },
+    "scafctl": {
+      "type": "local",
+      "command": ["scafctl", "mcp", "serve"],
+      "enabled": true
+    }
+  }
+}
