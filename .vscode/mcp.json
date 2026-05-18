@@ -1,0 +1,33 @@
+{
+  "servers": {
+    "kubernetes-okd": {
+      "type": "stdio",
+      "command": "npx",
+      "args": [
+        "-y",
+        "kubernetes-mcp-server@0.0.62",
+        "--read-only",
+        "--disable-multi-cluster",
+        "--kubeconfig",
+        "${userHome}/.kube/okd"
+      ]
+    },
+    "kubernetes-microshift": {
+      "type": "stdio",
+      "command": "npx",
+      "args": [
+        "-y",
+        "kubernetes-mcp-server@0.0.62",
+        "--read-only",
+        "--disable-multi-cluster",
+        "--kubeconfig",
+        "${userHome}/.kube/microshift"
+      ]
+    },
+    "scafctl": {
+      "type": "stdio",
+      "command": "scafctl",
+      "args": ["mcp", "serve"]
+    }
+  }
+}

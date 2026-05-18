@@ -36,6 +36,15 @@
       "matchStrings": [
         "#\\s*renovate:\\s*datasource=(?<datasource>.*?) depName=(?<depName>.*?)(?: versioning=(?<versioning>.*?))?\\s+(?:-\\s+)?\\w+:\\s+(?<currentDigest>sha256:[a-f0-9]+)\\s*#\\s*(?<currentValue>\\S+)"
       ]
+    },
+    {
+      "customType": "regex",
+      "description": "VS Code MCP server npm packages pinned via npx args",
+      "managerFilePatterns": ["/\\.vscode/mcp\\.json$/"],
+      "matchStrings": [
+        "\"(?<depName>[a-z0-9][a-z0-9-]*(?:/[a-z0-9][a-z0-9-]*)?)@(?<currentValue>\\d+\\.\\d+\\.\\d+)\""
+      ],
+      "datasourceTemplate": "npm"
     }
   ],
   "packageRules": [
