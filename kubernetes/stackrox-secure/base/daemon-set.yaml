@@ -9,11 +9,11 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: stackrox
     app.kubernetes.io/part-of: stackrox-secured-cluster-services
-    app.kubernetes.io/version: 4.9.1
-    helm.sh/chart: stackrox-secured-cluster-services-400.9.1
+    app.kubernetes.io/version: 4.10.2
+    helm.sh/chart: stackrox-secured-cluster-services-400.10.2
     service: collector
     app: collector
-    auto-upgrade.stackrox.io/component: "sensor"
+    auto-upgrade.stackrox.io/component: sensor
   annotations:
     email: support@stackrox.com
     meta.helm.sh/release-name: stackrox-secured-cluster-services
@@ -50,8 +50,8 @@ spec:
         app.kubernetes.io/managed-by: Helm
         app.kubernetes.io/name: stackrox
         app.kubernetes.io/part-of: stackrox-secured-cluster-services
-        app.kubernetes.io/version: 4.9.1
-        helm.sh/chart: stackrox-secured-cluster-services-400.9.1
+        app.kubernetes.io/version: 4.10.2
+        helm.sh/chart: stackrox-secured-cluster-services-400.10.2
       annotations:
         email: support@stackrox.com
         meta.helm.sh/release-name: stackrox-secured-cluster-services
@@ -62,37 +62,9 @@ spec:
       tolerations:
         - operator: Exists
       serviceAccountName: collector
-      initContainers:
-        - name: init-tls-certs
-          image: "quay.io/stackrox-io/main:4.9.1@sha256:e042fb64ffe0a030baf0b8691a6aaa62d3e2b624bdced73ccdc6b4db7f69f7b5"
-          command:
-            - /stackrox/bin/init-tls-certs
-          args:
-            - --legacy=/run/secrets/stackrox.io/certs-legacy/
-            - --new=/run/secrets/stackrox.io/certs-new/
-            - --destination=/run/secrets/stackrox.io/certs/
-          resources:
-            requests:
-              memory: "100Mi"
-              cpu: "60m"
-            limits:
-              memory: "200Mi"
-              cpu: "1000m"
-          securityContext:
-            runAsNonRoot: true
-            readOnlyRootFilesystem: true
-          volumeMounts:
-            - name: certs-legacy
-              mountPath: /run/secrets/stackrox.io/certs-legacy/
-              readOnly: true
-            - name: certs-new
-              mountPath: /run/secrets/stackrox.io/certs-new/
-              readOnly: true
-            - name: certs
-              mountPath: /run/secrets/stackrox.io/certs/
       containers:
         - name: collector
-          image: "quay.io/stackrox-io/collector:4.9.1@sha256:701a6166dbc38116587ec48c5c808a0545b342298f1b3fdcc45357f0a4baff86"
+          image: quay.io/stackrox-io/collector:4.10.2@sha256:b40dcbbaabe19631c1b33a3b4fd980165b6ff4c00d6e4e2ea491bad41a680e7d
           imagePullPolicy: IfNotPresent
           env:
             - name: COLLECTOR_CONFIG
@@ -102,8 +74,7 @@ spec:
             - name: GRPC_SERVER
               value: sensor.stackrox.svc:443
             - name: SNI_HOSTNAME
-              value: "sensor.stackrox.svc"
-
+              value: sensor.stackrox.svc
           resources:
             limits:
               cpu: 50m
@@ -146,12 +117,11 @@ spec:
             - mountPath: /run/secrets/stackrox.io/certs/
               name: certs
               readOnly: true
-            - mountPath: "/etc/stackrox"
+            - mountPath: /etc/stackrox
               name: collector-config
               readOnly: true
             - mountPath: /var/profiles
               name: collector-profiles
-
         - command:
             - stackrox/compliance
           env:
@@ -176,20 +146,19 @@ spec:
             - name: ROX_CALL_NODE_INVENTORY_ENABLED
               value: "true"
             - name: ROX_NODE_INDEX_HOST_PATH
-              value: "/hostindex"
+              value: /hostindex
             - name: ROX_METRICS_PORT
-              value: "disabled"
+              value: disabled
             - name: ROX_NODE_NAME
               valueFrom:
                 fieldRef:
                   apiVersion: v1
                   fieldPath: spec.nodeName
             - name: ROX_ADVERTISED_ENDPOINT
-              value: "sensor.stackrox.svc:443"
+              value: sensor.stackrox.svc:443
             - name: ROX_NODE_SCANNING_ENDPOINT
-              value: "127.0.0.1:8444"
-
-          image: "quay.io/stackrox-io/main:4.9.1@sha256:e042fb64ffe0a030baf0b8691a6aaa62d3e2b624bdced73ccdc6b4db7f69f7b5"
+              value: 127.0.0.1:8444
+          image: quay.io/stackrox-io/main:4.10.2@sha256:8f483d29437b6425475e9dd1d032ac01579904b7103fc765c25e71ee58071ec8
           imagePullPolicy: IfNotPresent
           name: compliance
           resources:
@@ -207,10 +176,8 @@ spec:
           securityContext:
             runAsUser: 0
             readOnlyRootFilesystem: true
-
             seLinuxOptions:
-              type: "container_runtime_t"
-
+              type: container_runtime_t
           volumeMounts:
             - mountPath: /etc/ssl/
               name: etc-ssl
@@ -229,9 +196,13 @@ spec:
             - mountPath: /tmp
               name: index-volume
         - name: node-inventory
-          image: "quay.io/stackrox-io/scanner-slim:4.9.1@sha256:1dc3585a2a6ff8b061a422411409fc82d20b06da0c75c6209630d16f40eb445c"
+          image: quay.io/stackrox-io/scanner-slim:4.10.2@sha256:14621db68ebbd4304b0fe4bd5fe876cd1ee35d85a6cdfb9c27c383ac39c05889
           imagePullPolicy: IfNotPresent
-          command: ["/scanner", "--nodeinventory", "--config=", ""]
+          command:
+            - /scanner
+            - --nodeinventory
+            - --config=
+            - ""
           ports:
             - containerPort: 8444
               name: grpc
@@ -263,7 +234,6 @@ spec:
               valueFrom:
                 fieldRef:
                   fieldPath: metadata.namespace
-
           volumeMounts:
             - mountPath: /host
               name: host-root-ro
@@ -290,22 +260,8 @@ spec:
             path: /dev
           name: dev-ro
         - name: certs
-          emptyDir: {}
-        - name: certs-legacy
           secret:
-            secretName: "collector-tls"
-            optional: true
-            items:
-              - key: "collector-cert.pem"
-                path: cert.pem
-              - key: "collector-key.pem"
-                path: key.pem
-              - key: ca.pem
-                path: ca.pem
-        - name: certs-new
-          secret:
-            secretName: "tls-cert-collector"
-            optional: true
+            secretName: tls-cert-collector
         - hostPath:
             path: /
           name: host-root-ro

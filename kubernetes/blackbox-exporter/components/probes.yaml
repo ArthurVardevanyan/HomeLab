@@ -37,16 +37,50 @@ spec:
   targets:
     staticConfig:
       static:
+        # Public DNS sanity
         - https://1.1.1.1/
         - https://1.0.0.1/
+        # OKD cluster
         - https://api.okd.homelab.arthurvardevanyan.com:6443/healthz
-        - https://console-openshift-console.apps.okd.homelab.arthurvardevanyan.com/
+        - https://console-openshift-console.apps.okd.homelab.arthurvardevanyan.com
+        # MicroShift / NAS
         - https://unifi.arthurvardevanyan.com/
         - https://unas.arthurvardevanyan.com/
         - https://console.minio.microshift.arthurvardevanyan.com/minio/health/live
         - https://minio.microshift.arthurvardevanyan.com/minio/health/live
         - http://metrics.microshift.arthurvardevanyan.com/health
         - https://registry.microshift.arthurvardevanyan.com/v2/
+        - https://technitium.arthurvardevanyan.com/
+        # HTTPRoute-backed internal apps (okd.homelab.arthurvardevanyan.com)
+        - https://argocd.okd.homelab.arthurvardevanyan.com/healthz
+        - https://argocd-apps.okd.homelab.arthurvardevanyan.com/healthz
+        - https://ceph.okd.homelab.arthurvardevanyan.com/
+        - https://central-stackrox.okd.homelab.arthurvardevanyan.com/v1/ping
+        - https://kfca.okd.homelab.arthurvardevanyan.com/readyz
+        - https://pgadmin.okd.homelab.arthurvardevanyan.com/misc/ping
+        - https://prometheus.okd.homelab.arthurvardevanyan.com/-/healthy
+        - https://prometheus-ceph.okd.homelab.arthurvardevanyan.com/-/healthy
+        - https://prometheus-nas.okd.homelab.arthurvardevanyan.com/-/healthy
+        - https://thanos-querier.okd.homelab.arthurvardevanyan.com/-/healthy
+        - https://technitium.okd.homelab.arthurvardevanyan.com/
+        # HTTPRoute-backed external apps (arthurvardevanyan.com)
+        - https://bitwarden.arthurvardevanyan.com/alive
+        - https://finance.arthurvardevanyan.com/
+        - https://git.arthurvardevanyan.com/api/healthz
+        - https://grafana.arthurvardevanyan.com/api/health
+        - https://heimdall.arthurvardevanyan.com/
+        - https://home.arthurvardevanyan.com/manifest.json
+        - https://photos.arthurvardevanyan.com/api/server/ping
+        - https://files.arthurvardevanyan.com/status.php
+        - https://registry.arthurvardevanyan.com/health/instance
+        - https://vault.arthurvardevanyan.com/v1/sys/health?standbyok=true&perfstandbyok=true
+        - https://zitadel.arthurvardevanyan.com/debug/healthz
+        - https://technitium.okd.homelab.arthurvardevanyan.com/
+        # MinIO on NAS (HTTPRoute)
+        - https://s3.unas.arthurvardevanyan.com/minio/health/live
+        - https://console.s3.unas.arthurvardevanyan.com/
+        - https://s3.ssd.unas.arthurvardevanyan.com/minio/health/live
+        - https://console.s3.ssd.unas.arthurvardevanyan.com/
 # ---
 # apiVersion: monitoring.coreos.com/v1
 # kind: Probe
@@ -72,8 +106,8 @@ metadata:
   namespace: blackbox-exporter
 spec:
   jobName: website
-  interval: 1800s
-  scrapeTimeout: 3s
+  interval: 60s
+  scrapeTimeout: 5s
   module: http_2xx
   prober:
     path: /probe
@@ -83,3 +117,22 @@ spec:
       static:
         - https://arthurvardevanyan.com
         - https://www.arthurvardevanyan.com
+---
+apiVersion: monitoring.coreos.com/v1
+kind: Probe
+metadata:
+  name: spotify
+  namespace: blackbox-exporter
+spec:
+  jobName: spotify
+  interval: 60s
+  scrapeTimeout: 5s
+  module: http_2xx
+  prober:
+    path: /probe
+    url: blackbox-exporter.blackbox-exporter.svc.cluster.local:9115
+  targets:
+    staticConfig:
+      static:
+        - https://spotify.arthurvardevanyan.com/health/
+        - https://analytics-for-spotify.arthurvardevanyan.com/health/

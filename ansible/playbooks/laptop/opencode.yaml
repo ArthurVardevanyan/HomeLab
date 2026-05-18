@@ -1,0 +1,53 @@
+---
+- name: Install opencode
+  hosts: lenovo
+  gather_facts: false
+  become: true
+  user: arthur
+  vars:
+    # renovate: datasource=github-releases depName=anomalyco/opencode
+    opencode_version: v1.15.4
+  tasks:
+    - name: Download opencode tarball
+      ansible.builtin.get_url:
+        url: "https://github.com/anomalyco/opencode/releases/download/{{ opencode_version }}/opencode-linux-arm64.tar.gz"
+        dest: /tmp/opencode.tar.gz
+        mode: "0644"
+      check_mode: false
+
+    - name: Ensure opencode extraction directory exists
+      ansible.builtin.file:
+        path: /tmp/opencode
+        state: directory
+        mode: "0755"
+      check_mode: false
+
+    - name: Extract opencode
+      ansible.builtin.unarchive:
+        src: /tmp/opencode.tar.gz
+        dest: /tmp/opencode
+        remote_src: true
+      check_mode: false
+
+    - name: Install opencode binary
+      ansible.builtin.copy:
+        src: /tmp/opencode/opencode
+        dest: /usr/local/bin/opencode
+        mode: "0755"
+        remote_src: true
+
+    - name: Ensure opencode config directory exists
+      ansible.builtin.file:
+        path: /home/arthur/.config/opencode
+        state: directory
+        owner: arthur
+        group: arthur
+        mode: "0755"
+
+    - name: Install global opencode config
+      ansible.builtin.copy:
+        src: "../../../machineConfigs/desktop/home/arthur/.config/opencode/opencode.json"
+        dest: /home/arthur/.config/opencode/opencode.json
+        owner: arthur
+        group: arthur
+        mode: "0644"

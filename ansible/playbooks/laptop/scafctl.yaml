@@ -1,0 +1,37 @@
+---
+- name: Install scafctl
+  hosts: lenovo
+  gather_facts: false
+  become: true
+  user: arthur
+  vars:
+    # renovate: datasource=github-releases depName=oakwood-commons/scafctl
+    scafctl_version: v0.16.0
+  tasks:
+    - name: Download scafctl tarball
+      ansible.builtin.get_url:
+        url: "https://github.com/oakwood-commons/scafctl/releases/download/{{ scafctl_version }}/scafctl_{{ scafctl_version | regex_replace('^v', '') }}_Linux_arm64.tar.gz"
+        dest: /tmp/scafctl.tar.gz
+        mode: "0644"
+      check_mode: false
+
+    - name: Ensure scafctl extraction directory exists
+      ansible.builtin.file:
+        path: /tmp/scafctl
+        state: directory
+        mode: "0755"
+      check_mode: false
+
+    - name: Extract scafctl
+      ansible.builtin.unarchive:
+        src: /tmp/scafctl.tar.gz
+        dest: /tmp/scafctl
+        remote_src: true
+      check_mode: false
+
+    - name: Install scafctl binary
+      ansible.builtin.copy:
+        src: /tmp/scafctl/scafctl
+        dest: /usr/local/bin/scafctl
+        mode: "0755"
+        remote_src: true
