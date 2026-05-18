@@ -10,7 +10,7 @@ terraform {
     }
     zitadel = {
       source  = "zitadel/zitadel"
-      version = "2.12.6"
+      version = "2.12.7"
 
     }
     http = {
