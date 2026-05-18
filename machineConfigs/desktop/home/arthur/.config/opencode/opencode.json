@@ -1,5 +1,38 @@
 {
   "$schema": "https://opencode.ai/config.json",
+  "provider": {
+    "nerdheroes": {
+      "npm": "@ai-sdk/openai-compatible",
+      "name": "NerdHeroes",
+      "options": {
+        "baseURL": "{env:NERDHEROES_BASE_URL}"
+      },
+      "models": {
+        "Qwen3.6-35B-A3B-UD-Q8_K_XL.gguf": {
+          "name": "Qwen3.6-35B-A3B (NerdHeroes)",
+          "limit": {
+            "context": 256000,
+            "output": 256000
+          }
+        },
+        "local.qwen3.6:27b-q8_0": {
+          "name": "Qwen3.6 27B (NerdHeroes)",
+          "limit": {
+            "context": 200000,
+            "output": 200000
+          }
+        },
+        "local.qwen3.5:35b-a3b-q8_0": {
+          "name": "Qwen3.5 35B (NerdHeroes)",
+          "limit": {
+            "context": 200000,
+            "output": 200000
+          }
+        }
+      }
+    }
+  },
+  "model": "nerdheroes/local.qwen3.6:27b-q8_0",
   "mcp": {
     "kubernetes-okd": {
       "type": "local",
