@@ -52,7 +52,7 @@ spec:
             #  https://api.github.com/users/homelab-okd[bot]
             - name: github-app-token
               image: registry.arthurvardevanyan.com/homelab/toolbox:not_latest
-              command: [ "bash", "-c" ]
+              command: ["bash", "-c"]
               args:
                 - |
                   set -euo pipefail
@@ -107,9 +107,9 @@ spec:
                   mountPath: /tmp/token
           containers:
             # renovate: datasource=docker depName=docker.io/renovate/renovate
-            - image: docker.io/renovate/renovate:43.160.4-full@sha256:e37d1e04b426ac100429db154df8389ade3521dbcedd3118292110cf6f5c541b
+            - image: docker.io/renovate/renovate:43.180.1-full@sha256:6c5dbd5c51dda82ab310d06186df0f2aaee3e9c74c62c5ae74c0fc1cfb0e6ea3
               name: renovate-bot
-              command: [ "sh", "-c" ]
+              command: ["sh", "-c"]
               args:
                 - |
                   export RENOVATE_TOKEN=$(cat /tmp/token/token) && renovate

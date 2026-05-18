@@ -127,6 +127,64 @@
         mode: "0755"
         remote_src: true
 
+    - name: Download tkn
+      ansible.builtin.get_url:
+        # renovate: custom-github-release depName=tektoncd/cli
+        url: https://github.com/tektoncd/cli/releases/download/v0.45.0/tkn_0.45.0_Linux_x86_64.tar.gz
+        dest: /tmp/tkn_Linux_x86_64.tar.gz
+        mode: "0644"
+      check_mode: false
+
+    - name: tkn Dir
+      ansible.builtin.file:
+        path: /tmp/tkn_Linux_x86_64
+        state: directory
+        mode: "0755"
+      check_mode: false
+
+    - name: Extract tkn
+      ansible.builtin.unarchive:
+        src: /tmp/tkn_Linux_x86_64.tar.gz
+        dest: /tmp/tkn_Linux_x86_64
+        remote_src: true
+      check_mode: false
+
+    - name: Copy tkn Binary To Bin
+      ansible.builtin.copy:
+        src: /tmp/tkn_Linux_x86_64/tkn
+        dest: /usr/local/bin/tkn
+        mode: "0755"
+        remote_src: true
+
+    - name: Download Helm
+      ansible.builtin.get_url:
+        # renovate: custom-github-release depName=helm/helm
+        url: https://get.helm.sh/helm-v3.16.3-linux-amd64.tar.gz
+        dest: /tmp/helm-linux-amd64.tar.gz
+        mode: "0644"
+      check_mode: false
+
+    - name: Helm Dir
+      ansible.builtin.file:
+        path: /tmp/helm-linux-amd64
+        state: directory
+        mode: "0755"
+      check_mode: false
+
+    - name: Extract Helm
+      ansible.builtin.unarchive:
+        src: /tmp/helm-linux-amd64.tar.gz
+        dest: /tmp/helm-linux-amd64
+        remote_src: true
+      check_mode: false
+
+    - name: Copy Helm Binary To Bin
+      ansible.builtin.copy:
+        src: /tmp/helm-linux-amd64/linux-amd64/helm
+        dest: /usr/local/bin/helm
+        mode: "0755"
+        remote_src: true
+
     - name: Create ~/.kube directory
       ansible.builtin.file:
         path: /home/arthur/.kube
