@@ -1,0 +1,39 @@
+---
+- name: Configure Copilot global MCP servers and agent skills
+  hosts: lenovo
+  gather_facts: false
+  become: true
+  user: arthur
+  tasks:
+    - name: Ensure VSCodium User config directory exists
+      ansible.builtin.file:
+        path: /home/arthur/.config/VSCodium/User
+        state: directory
+        owner: arthur
+        group: arthur
+        mode: "0755"
+
+    - name: Install global VSCodium MCP server config
+      ansible.builtin.copy:
+        src: "../../../machineConfigs/desktop/home/arthur/.config/VSCodium/User/mcp.json"
+        dest: /home/arthur/.config/VSCodium/User/mcp.json
+        owner: arthur
+        group: arthur
+        mode: "0644"
+
+    - name: Ensure global agent skills directory exists
+      ansible.builtin.file:
+        path: /home/arthur/.agents/skills
+        state: directory
+        owner: arthur
+        group: arthur
+        mode: "0755"
+
+    - name: Install global agent skill stubs
+      ansible.builtin.copy:
+        src: "../../../machineConfigs/desktop/home/arthur/.agents/skills/"
+        dest: /home/arthur/.agents/skills/
+        owner: arthur
+        group: arthur
+        mode: "0644"
+        directory_mode: "0755"
