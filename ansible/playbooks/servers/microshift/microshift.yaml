@@ -11,30 +11,37 @@
         dest: "/boot/cmdline.txt"
         mode: "0644"
 
-    - name: Install CentOS && OKD packages
-      ansible.builtin.dnf:
-        state: present
-        name:
-          # TODO: renovate: datasource=repology depName=almalinux_9/centos-release-openstack-zed
-          - centos-release-openstack-zed # 1-4.el9
-          # TODO: renovate: datasource=repology depName=almalinux_9/centos-release-okd-4.16
-          - centos-release-okd-4.16 # 1-1.el9
+    - name: CRI-O v1.35 repo
+      ansible.builtin.yum_repository:
+        name: cri-o
+        description: CRI-O
+        baseurl: https://download.opensuse.org/repositories/isv:/cri-o:/stable:/v1.35/rpm/
+        gpgcheck: true
+        gpgkey: https://download.opensuse.org/repositories/isv:/cri-o:/stable:/v1.35/rpm/repodata/repomd.xml.key
+        enabled: true
+        mode: "0644"
 
-    - name: Remove CentOS-OpenStack-zed.repo
-      ansible.builtin.file:
-        path: /etc/yum.repos.d/CentOS-OpenStack-zed.repo
-        state: absent
+    - name: Kubernetes v1.35 repo
+      ansible.builtin.yum_repository:
+        name: kubernetes
+        description: Kubernetes
+        baseurl: https://pkgs.k8s.io/core:/stable:/v1.35/rpm/
+        gpgcheck: true
+        gpgkey: https://pkgs.k8s.io/core:/stable:/v1.35/rpm/repodata/repomd.xml.key
+        enabled: true
+        mode: "0644"
 
     - name: Install CRI-O packages
       ansible.builtin.dnf:
-        state: present
+        state: latest
         name:
-          # renovate: datasource=rpm depName=cri-o registryUrl=https://mirror.stream.centos.org/SIGs/9-stream/cloud/aarch64/okd-4.16/
-          - cri-o # 1.29.5-1.el9s
-          # renovate: datasource=rpm depName=cri-tools registryUrl=https://mirror.stream.centos.org/SIGs/9-stream/cloud/aarch64/okd-4.16/
-          - cri-tools # 1.29.0-1.el9s
+          # renovate: datasource=rpm depName=cri-o registryUrl=https://download.opensuse.org/repositories/isv:/cri-o:/stable:/v1.35/rpm/
+          - cri-o
+          # renovate: datasource=rpm depName=cri-tools registryUrl=https://pkgs.k8s.io/core:/stable:/v1.35/rpm/
+          - cri-tools
           # TODO: renovate: datasource=repology depName=centos_stream_9/containernetworking-plugins
-          - containernetworking-plugins # 1:1.7.1-1.el9
+          - containernetworking-plugins
+      notify: Restart crio
     - name: Copy Pull Secret
       ansible.builtin.copy:
         src: "/tmp/pull_secret.json"
@@ -73,25 +80,31 @@
         dest: "/etc/microshift/ovn.yaml"
         mode: "0644"
 
-    - name: Enable project redhat-et/microshift-testing
-      ansible.builtin.yum_repository:
-        name: redhat-et
-        description: redhat-et/microshift-testing
-        baseurl: https://download.copr.fedorainfracloud.org/results/@redhat-et/microshift-testing/centos-stream-9-aarch64
-        gpgkey: https://download.copr.fedorainfracloud.org/results/@redhat-et/microshift-testing/pubkey.gpg
-        mode: "0644"
+    - name: Find MicroShift RPMs in /tmp
+      ansible.builtin.find:
+        paths: /tmp
+        patterns: "microshift-*.rpm"
+      register: microshift_rpms
 
-    - name: Install Microshift packages
+    - name: Install MicroShift RPMs (built from source)
       ansible.builtin.dnf:
         state: present
-        name:
-          # renovate: datasource=rpm depName=microshift registryUrl=https://download.copr.fedorainfracloud.org/results/@redhat-et/microshift-testing/centos-stream-9-aarch64/repodata
-          - microshift-4.12.0-2022_11_17_084702_untagged.el9
-          # renovate: datasource=rpm depName=microshift-networking registryUrl=https://download.copr.fedorainfracloud.org/results/@redhat-et/microshift-testing/centos-stream-9-aarch64/repodata
-          - microshift-networking-4.12.0-2022_11_17_084702_untagged.el9
-          #  - microshift-greenboot-4.16.0-202406111433.p0.g8966666.assembly.4.16.0.el9
-          # renovate: datasource=rpm depName=microshift-selinux registryUrl=https://download.copr.fedorainfracloud.org/results/@redhat-et/microshift-testing/centos-stream-9-aarch64/repodata
-          - microshift-selinux-4.12.0-2022_11_17_084702_untagged.el9
+        disable_gpg_check: true
+        name: "{{ microshift_rpms.files | map(attribute='path') | list }}"
+      when: microshift_rpms.matched > 0
+      notify: Restart MicroShift
+
+    - name: Remove stale ovn-k8s-cni-overlay binary
+      ansible.builtin.file:
+        path: /opt/cni/bin/ovn-k8s-cni-overlay
+        state: absent
+      notify: Restart MicroShift
+
+    - name: Remove stale OVN CNI config
+      ansible.builtin.file:
+        path: /etc/cni/net.d/10-ovn-kubernetes.conf
+        state: absent
+      notify: Restart MicroShift
 
     - name: Firewalld pod network
       ansible.posix.firewalld:
@@ -159,3 +172,14 @@
         group: arthur
       retries: 3
       delay: 3
+
+  handlers:
+    - name: Restart crio
+      ansible.builtin.systemd:
+        name: crio
+        state: restarted
+
+    - name: Restart MicroShift
+      ansible.builtin.systemd:
+        name: microshift
+        state: restarted
