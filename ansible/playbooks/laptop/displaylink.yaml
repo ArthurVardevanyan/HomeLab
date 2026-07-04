@@ -7,10 +7,15 @@
   become: true
   user: arthur
   tasks:
+    - name: Install DKMS (required by DisplayLink for kernel module builds)
+      ansible.builtin.dnf:
+        name: dkms
+        state: present
+
     - name: Install DisplayLink RPM
       ansible.builtin.dnf:
         # renovate: datasource=github-releases depName=displaylink-rpm/displaylink-rpm
-        name: https://github.com/displaylink-rpm/displaylink-rpm/releases/download/v6.2.0-1/fedora-44-displaylink-1.14.16-1.github_evdi.aarch64.rpm
+        name: https://github.com/displaylink-rpm/displaylink-rpm/releases/download/v6.3.0-1/fedora-44-displaylink-1.15.0-1.github_evdi.aarch64.rpm
         state: present
         disable_gpg_check: true
 
