@@ -317,7 +317,7 @@ Focus on platform maturity, DNS modernization, web application security, databas
 - **Security:** **Coraza WAF** (Feb 2026) for web application firewall, **Let's Encrypt** cert validity drop preparation.
 - **Database:** Migration from **Crunchy Postgres** to **CloudNative-PG** (Mar 2026) with monitoring and automated backups.
 - **Observability:** **Wire-Tap** (Mar 2026) inception for network traffic inspection.
-- **Platform:** OKD upgraded to **4.22** (Feb 2026) and through **4.22.0-okd-scos.0** GA (May 2026), **VPA** (Vertical Pod Autoscaler) inception, **Docker Registry** inception.
+- **Platform:** OKD upgraded to **4.22** (Feb 2026) and through **4.22.0** GA (May 2026), **VPA** (Vertical Pod Autoscaler) inception, **Docker Registry** inception.
 - **Lifecycle:** **InstallPlan Updater/Approver Functions** (Apr 2026) for automated OLM operator upgrades.
 - **Automation:** **Renovate** matured to **GitHub App** (Mar 2026), **Dependabot** removed (Apr 2026), IaC linting with **Checkov**, **ansible-lint**, and **yamllint**.
 - **GitOps:** ArgoCD **server-side apply**, **shallow clone**, and **instance inclusion list** optimizations.
@@ -348,6 +348,6 @@ Focus on platform maturity, DNS modernization, web application security, databas
 - **April 21, 2026**: **Gateway** re-encrypt certificate verification.
 - **May 7, 2026**: **ArgoCD instance inclusion list** for scoped application management.
 - **May 8, 2026**: **Knative** removed from the platform.
-- **May 11, 2026**: OKD upgrade to **4.22.0-okd-scos.0** (GA).
+- **May 11, 2026**: OKD upgrade to **4.22.0-okd-scos.6** (GA).
 - **May 12, 2026**: **Fedora Snapdragon laptop** inception (ARM laptop Ansible playbooks).
 - **May 18, 2026**: **AI agent skills** inception — `AGENTS.md`, HomeLab and Kubernetes `SKILL.md`, Copilot instructions, opencode playbooks.
