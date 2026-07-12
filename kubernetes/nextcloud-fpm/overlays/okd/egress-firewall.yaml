@@ -63,6 +63,12 @@ spec:
           port: 443
     - type: Allow
       to:
+        dnsName: updates.nextcloud.com
+      ports:
+        - protocol: TCP
+          port: 443
+    - type: Allow
+      to:
         dnsName: download.nextcloud.com
       ports:
         - protocol: TCP
@@ -93,9 +99,47 @@ spec:
           port: 465
     # GitHub Apis
     # https://api.github.com/meta
+    # GitHub core
+    - type: Allow
+      to:
+        dnsName: github.com
+      ports:
+        - protocol: TCP
+          port: 443
+
+    - type: Allow
+      to:
+        dnsName: api.github.com
+      ports:
+        - protocol: TCP
+          port: 443
+
+    - type: Allow
+      to:
+        dnsName: codeload.github.com
+      ports:
+        - protocol: TCP
+          port: 443
+
+    # GitHubusercontent endpoints commonly used for assets/download indirection
     - type: Allow
       to:
         dnsName: raw.githubusercontent.com
+      ports:
+        - protocol: TCP
+          port: 443
+
+    - type: Allow
+      to:
+        dnsName: objects.githubusercontent.com
+      ports:
+        - protocol: TCP
+          port: 443
+
+    # web CIDRs
+    - type: Allow
+      to:
+        cidrSelector: 192.30.252.0/22
       ports:
         - protocol: TCP
           port: 443
@@ -107,7 +151,254 @@ spec:
           port: 443
     - type: Allow
       to:
-        cidrSelector: 185.199.111.0/22
+        cidrSelector: 140.82.112.0/20
+      ports:
+        - protocol: TCP
+          port: 443
+    - type: Allow
+      to:
+        cidrSelector: 143.55.64.0/20
+      ports:
+        - protocol: TCP
+          port: 443
+    - type: Allow
+      to:
+        cidrSelector: 2a0a:a440::/29
+      ports:
+        - protocol: TCP
+          port: 443
+    - type: Allow
+      to:
+        cidrSelector: 2606:50c0::/32
+      ports:
+        - protocol: TCP
+          port: 443
+    - type: Allow
+      to:
+        cidrSelector: 20.201.28.151/32
+      ports:
+        - protocol: TCP
+          port: 443
+    - type: Allow
+      to:
+        cidrSelector: 20.205.243.166/32
+      ports:
+        - protocol: TCP
+          port: 443
+    - type: Allow
+      to:
+        cidrSelector: 20.87.245.0/32
+      ports:
+        - protocol: TCP
+          port: 443
+    - type: Allow
+      to:
+        cidrSelector: 4.237.22.38/32
+      ports:
+        - protocol: TCP
+          port: 443
+    - type: Allow
+      to:
+        cidrSelector: 4.228.31.150/32
+      ports:
+        - protocol: TCP
+          port: 443
+    - type: Allow
+      to:
+        cidrSelector: 20.207.73.82/32
+      ports:
+        - protocol: TCP
+          port: 443
+    - type: Allow
+      to:
+        cidrSelector: 20.27.177.113/32
+      ports:
+        - protocol: TCP
+          port: 443
+    - type: Allow
+      to:
+        cidrSelector: 20.200.245.247/32
+      ports:
+        - protocol: TCP
+          port: 443
+    - type: Allow
+      to:
+        cidrSelector: 20.175.192.147/32
+      ports:
+        - protocol: TCP
+          port: 443
+    - type: Allow
+      to:
+        cidrSelector: 20.233.83.145/32
+      ports:
+        - protocol: TCP
+          port: 443
+    - type: Allow
+      to:
+        cidrSelector: 20.29.134.23/32
+      ports:
+        - protocol: TCP
+          port: 443
+    - type: Allow
+      to:
+        cidrSelector: 20.199.39.232/32
+      ports:
+        - protocol: TCP
+          port: 443
+    - type: Allow
+      to:
+        cidrSelector: 20.217.135.5/32
+      ports:
+        - protocol: TCP
+          port: 443
+    - type: Allow
+      to:
+        cidrSelector: 4.225.11.194/32
+      ports:
+        - protocol: TCP
+          port: 443
+    - type: Allow
+      to:
+        cidrSelector: 4.208.26.197/32
+      ports:
+        - protocol: TCP
+          port: 443
+    - type: Allow
+      to:
+        cidrSelector: 20.26.156.215/32
+      ports:
+        - protocol: TCP
+          port: 443
+    # api CIDRs
+    - type: Allow
+      to:
+        cidrSelector: 192.30.252.0/22
+      ports:
+        - protocol: TCP
+          port: 443
+    - type: Allow
+      to:
+        cidrSelector: 185.199.108.0/22
+      ports:
+        - protocol: TCP
+          port: 443
+    - type: Allow
+      to:
+        cidrSelector: 140.82.112.0/20
+      ports:
+        - protocol: TCP
+          port: 443
+    - type: Allow
+      to:
+        cidrSelector: 143.55.64.0/20
+      ports:
+        - protocol: TCP
+          port: 443
+    - type: Allow
+      to:
+        cidrSelector: 2a0a:a440::/29
+      ports:
+        - protocol: TCP
+          port: 443
+    - type: Allow
+      to:
+        cidrSelector: 2606:50c0::/32
+      ports:
+        - protocol: TCP
+          port: 443
+    - type: Allow
+      to:
+        cidrSelector: 20.201.28.148/32
+      ports:
+        - protocol: TCP
+          port: 443
+    - type: Allow
+      to:
+        cidrSelector: 20.205.243.168/32
+      ports:
+        - protocol: TCP
+          port: 443
+    - type: Allow
+      to:
+        cidrSelector: 20.87.245.6/32
+      ports:
+        - protocol: TCP
+          port: 443
+    - type: Allow
+      to:
+        cidrSelector: 4.237.22.34/32
+      ports:
+        - protocol: TCP
+          port: 443
+    - type: Allow
+      to:
+        cidrSelector: 4.228.31.149/32
+      ports:
+        - protocol: TCP
+          port: 443
+    - type: Allow
+      to:
+        cidrSelector: 20.207.73.85/32
+      ports:
+        - protocol: TCP
+          port: 443
+    - type: Allow
+      to:
+        cidrSelector: 20.27.177.116/32
+      ports:
+        - protocol: TCP
+          port: 443
+    - type: Allow
+      to:
+        cidrSelector: 20.200.245.245/32
+      ports:
+        - protocol: TCP
+          port: 443
+    - type: Allow
+      to:
+        cidrSelector: 20.175.192.149/32
+      ports:
+        - protocol: TCP
+          port: 443
+    - type: Allow
+      to:
+        cidrSelector: 20.233.83.146/32
+      ports:
+        - protocol: TCP
+          port: 443
+    - type: Allow
+      to:
+        cidrSelector: 20.29.134.17/32
+      ports:
+        - protocol: TCP
+          port: 443
+    - type: Allow
+      to:
+        cidrSelector: 20.199.39.228/32
+      ports:
+        - protocol: TCP
+          port: 443
+    - type: Allow
+      to:
+        cidrSelector: 20.217.135.0/32
+      ports:
+        - protocol: TCP
+          port: 443
+    - type: Allow
+      to:
+        cidrSelector: 4.225.11.201/32
+      ports:
+        - protocol: TCP
+          port: 443
+    - type: Allow
+      to:
+        cidrSelector: 4.208.26.200/32
+      ports:
+        - protocol: TCP
+          port: 443
+    - type: Allow
+      to:
+        cidrSelector: 20.26.156.210/32
       ports:
         - protocol: TCP
           port: 443
