@@ -2,7 +2,7 @@
 apiVersion: external-secrets.io/v1
 kind: ExternalSecret
 metadata:
-  name: microshift
+  name: microshift-ca
   namespace: argocd
   annotations:
     argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
@@ -12,20 +12,9 @@ spec:
     name: vault
     kind: ClusterSecretStore
   target:
-    name: microshift
-    template:
-      type: Opaque
-      metadata:
-        labels:
-          argocd.argoproj.io/secret-type: cluster
-        annotations:
-          managed-by: argocd.argoproj.io
-      data:
-        name: microshift
-        server: https://microshift.arthurvardevanyan.com:6443
-        caData: "{{ .ca }}"
+    name: microshift-ca
   data:
-    - secretKey: ca
+    - secretKey: caData
       remoteRef: # checkov:skip=CKV_SECRET_6 PlaceHolder Values
         conversionStrategy: Default
         decodingStrategy: None

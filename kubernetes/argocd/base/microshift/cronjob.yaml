@@ -95,27 +95,38 @@ spec:
                     exit 1
                   fi
 
-                  echo "Retrieving CA data from microshift secret..."
-                  CA_DATA=$(kubectl get secret -n argocd microshift -o jsonpath='{.data.caData}' | base64 -d) || {
-                    echo "ERROR: Failed to retrieve caData from secret argocd/microshift" >&2
+                  echo "Retrieving CA data from microshift-ca secret..."
+                  CA_DATA=$(kubectl get secret -n argocd microshift-ca -o jsonpath='{.data.caData}' | base64 -d) || {
+                    echo "ERROR: Failed to retrieve caData from secret argocd/microshift-ca" >&2
                     exit 1
                   }
                   if [[ -z "${CA_DATA}" ]]; then
-                    echo "ERROR: caData is empty in secret argocd/microshift" >&2
+                    echo "ERROR: caData is empty in secret argocd/microshift-ca" >&2
                     exit 1
                   fi
 
-                  CONFIG_JSON=$(jq -n \
+                  CONFIG_JSON=$(jq -c -n \
                     --arg token "${TOKEN}" \
                     --arg ca "${CA_DATA}" \
-                    '{"bearerToken": $token, "tlsClientConfig": {"insecure": false, "caData": $ca}}')
+                    '{bearerToken: $token, tlsClientConfig: {insecure: false, caData: $ca}}')
 
-                  CONFIG_BASE64=$(echo -n "${CONFIG_JSON}" | base64 | tr -d '\n')
-
-                  echo "Patching microshift secret with rotated credentials..."
-                  kubectl patch secret microshift -n argocd \
-                    --type='merge' \
-                    -p="{\"data\": {\"config\": \"${CONFIG_BASE64}\"}}"
+                  echo "Applying microshift cluster secret with rotated credentials..."
+                  jq -n \
+                    --arg config "${CONFIG_JSON}" \
+                    --arg name "microshift" \
+                    --arg server "https://microshift.arthurvardevanyan.com:6443" \
+                    '{
+                      apiVersion: "v1",
+                      kind: "Secret",
+                      type: "Opaque",
+                      metadata: {
+                        name: "microshift",
+                        namespace: "argocd",
+                        labels: { "argocd.argoproj.io/secret-type": "cluster" },
+                        annotations: { "managed-by": "argocd.argoproj.io" }
+                      },
+                      stringData: { name: $name, server: $server, config: $config }
+                    }' | kubectl apply -n argocd -f -
                   echo "Credential rotation complete."
 
               volumeMounts:
