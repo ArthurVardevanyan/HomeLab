@@ -1,12 +1,12 @@
 # renovate: datasource=docker depName=quay.io/projectquay/clair-action
-FROM quay.io/projectquay/clair-action:v0.0.14@sha256:39ecc85e6d12118575dfa8162051912529629bf726a6d2482b451419a9e1c352 AS clair
+FROM quay.io/projectquay/clair-action:v0.0.15@sha256:b1030714db65f576c1af4212d6d3dbd116e4cdf2a64efa2a54b1c41ea6209ddf AS clair
 
 # renovate: datasource=docker depName=node
-FROM node:26.4.0-trixie@sha256:b46a10d964ad15136ebdf9012142131481caa0697d7a4d4eafe4bbabd818f876 AS node-tools
+FROM node:26.5.0-trixie@sha256:6aa7608b71e5bc3ca0e0cc95e52d7fcbbac54bf84660e0d8d2a59d134d529708 AS node-tools
 # renovate: datasource=npm depName=markdownlint-cli
-ENV MARKDOWNLINT_CLI_VERSION=0.47.0
+ENV MARKDOWNLINT_CLI_VERSION=0.49.1
 # renovate: datasource=npm depName=prettier
-ENV PRETTIER_CLI_VERSION=3.7.4
+ENV PRETTIER_CLI_VERSION=3.9.5
 RUN npm install -g \
   markdownlint-cli@${MARKDOWNLINT_CLI_VERSION} \
   prettier@${PRETTIER_CLI_VERSION}
@@ -15,27 +15,27 @@ FROM quay.io/centos/centos:stream10-minimal
 
 ENV \
   # renovate: datasource=github-releases depName=argoproj-labs/argocd-vault-plugin
-  ARGOCD_VAULT_VERSION=1.18.1 \
+  ARGOCD_VAULT_VERSION=1.18.2 \
   # renovate: custom-github-release depName=okd-project/okd versioning=loose
-  OKD_VERSION=4.22.0-okd-scos.6\
+  OKD_VERSION=4.22.0-okd-scos.7\
   # renovate: datasource=github-releases depName=opentofu/opentofu
-  OPENTOFU_VERSION=1.11.2 \
+  OPENTOFU_VERSION=1.12.4 \
   # renovate: datasource=github-releases depName=hashicorp/vault
-  VAULT_VERSION=1.21.1 \
+  VAULT_VERSION=2.0.3 \
   # renovate: custom-github-release depName=ko-build/ko
-  KO_VERSION=0.18.1 \
+  KO_VERSION=0.19.1 \
   # renovate: datasource=github-releases depName=cli/cli
-  GH_VERSION=2.83.2 \
+  GH_VERSION=2.96.0 \
   # renovate: custom-github-release depName=yannh/kubeconform
-  KUBECONFORM_VERSION=0.7.0 \
+  KUBECONFORM_VERSION=0.8.0 \
   # renovate: datasource=pypi depName=ansible
-  ANSIBLE_VERSION=13.1.0 \
+  ANSIBLE_VERSION=14.2.0 \
   # renovate: datasource=docker depName=google/cloud-sdk
-  GCLOUD_VERSION=550.0.0 \
+  GCLOUD_VERSION=576.0.0 \
   # renovate: datasource=golang-version depName=go
-  GO_VERSION=1.26.0 \
+  GO_VERSION=1.26.5 \
   # renovate: datasource=github-releases depName=golangci/golangci-lint
-  GOLANGCI_LINT_VERSION=2.7.2 \
+  GOLANGCI_LINT_VERSION=2.12.2 \
   LANG=en_US.UTF-8 \
   LC_ALL=en_US.UTF-8 \
   HOME=/tmp \
@@ -63,7 +63,7 @@ RUN rpm --import https://dl.fedoraproject.org/pub/epel/RPM-GPG-KEY-EPEL-10 && \
   curl -sSL https://github.com/cli/cli/releases/download/v${GH_VERSION}/gh_${GH_VERSION}_linux_amd64.tar.gz \
   | tar -xz --strip-components=2 -C /usr/local/bin "gh_${GH_VERSION}_linux_amd64/bin/gh" && \
   curl -L -o /usr/local/bin/argocd-vault-plugin \
-  "https://github.com/argoproj-labs/argocd-vault-plugin/releases/download/v${ARGOCD_VAULT_VERSION}/argocd-vault-plugin_${ARGOCD_VAULT_VERSION}_linux_amd64" && \
+  "https://github.com/ArthurVardevanyan/argocd-vault-plugin/releases/download/v${ARGOCD_VAULT_VERSION}/argocd-vault-plugin_${ARGOCD_VAULT_VERSION}_linux_amd64" && \
   chmod +x /usr/local/bin/argocd-vault-plugin && \
   curl -L -o /usr/local/bin/yq \
   "https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64" && chmod +x /usr/local/bin/yq && \
@@ -95,7 +95,13 @@ RUN rpm --import https://dl.fedoraproject.org/pub/epel/RPM-GPG-KEY-EPEL-10 && \
   curl -L -o go.tar.gz "https://go.dev/dl/go${GO_VERSION}.linux-amd64.tar.gz" && \
   tar -xzf go.tar.gz -C /usr/local --no-same-owner && rm -f go.tar.gz && \
   mkdir -p /go && \
-  curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b /usr/local/bin v${GOLANGCI_LINT_VERSION} && \
+  curl -fL --retry 5 --retry-all-errors --retry-delay 2 -o "golangci-lint-${GOLANGCI_LINT_VERSION}-linux-amd64.tar.gz" \
+  "https://github.com/golangci/golangci-lint/releases/download/v${GOLANGCI_LINT_VERSION}/golangci-lint-${GOLANGCI_LINT_VERSION}-linux-amd64.tar.gz" && \
+  curl -fL --retry 5 --retry-all-errors --retry-delay 2 -o golangci-lint-checksums.txt \
+  "https://github.com/golangci/golangci-lint/releases/download/v${GOLANGCI_LINT_VERSION}/golangci-lint-${GOLANGCI_LINT_VERSION}-checksums.txt" && \
+  grep -E "golangci-lint-${GOLANGCI_LINT_VERSION}-linux-amd64\.tar\.gz$" golangci-lint-checksums.txt | sha256sum -c - && \
+  tar -xzf "golangci-lint-${GOLANGCI_LINT_VERSION}-linux-amd64.tar.gz" --strip-components=1 -C /usr/local/bin "golangci-lint-${GOLANGCI_LINT_VERSION}-linux-amd64/golangci-lint" && \
+  chmod +x /usr/local/bin/golangci-lint && rm -f "golangci-lint-${GOLANGCI_LINT_VERSION}-linux-amd64.tar.gz" golangci-lint-checksums.txt && \
   GOOS=linux GOARCH=amd64 GOAMD64=v3 go build -v std && \
   GOOS=linux GOARCH=arm64 go build -v std && \
   rm -rf /usr/local/go/test /usr/local/go/doc /usr/local/go/api /usr/local/go/misc && \
