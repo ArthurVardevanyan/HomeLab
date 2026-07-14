@@ -1,13 +1,26 @@
 ---
-apiVersion: v1
-kind: Secret
+apiVersion: external-secrets.io/v1
+kind: ExternalSecret
 metadata:
   name: cloudflare-api-token-secret
   namespace: cert-manager
   annotations:
     argocd.argoproj.io/sync-wave: "0"
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
   labels:
     app.kubernetes.io/instance: certificate-manager
-type: Opaque
-stringData:
-  api-token: <path:secret/data/gitlab/cloudflare#api>
+spec:
+  refreshInterval: "1h"
+  secretStoreRef:
+    name: vault
+    kind: ClusterSecretStore
+  target:
+    name: cloudflare-api-token-secret
+  data:
+    - secretKey: api-token
+      remoteRef: # checkov:skip=CKV_SECRET_6 PlaceHolder Values
+        conversionStrategy: Default
+        decodingStrategy: None
+        key: gitlab/cloudflare
+        property: api
+        metadataPolicy: None
