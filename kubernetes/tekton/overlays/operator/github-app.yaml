@@ -1,13 +1,40 @@
 ---
-kind: Secret
-apiVersion: v1
+apiVersion: external-secrets.io/v1
+kind: ExternalSecret
 metadata:
   name: pipelines-as-code-secret
   namespace: openshift-pipelines
   annotations:
     argocd.argoproj.io/sync-wave: "2"
-stringData:
-  github-application-id: <path:secret/data/homelab/tekton#github_app>
-  github-private-key: <path:secret/data/homelab/tekton#github_pk>
-  webhook.secret: <path:secret/data/homelab/tekton#webhook>
-type: Opaque
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+spec:
+  refreshInterval: "1h"
+  secretStoreRef:
+    name: vault
+    kind: ClusterSecretStore
+  target:
+    name: pipelines-as-code-secret
+    template:
+      type: Opaque
+  data:
+    - secretKey: github-application-id
+      remoteRef: # checkov:skip=CKV_SECRET_6 PlaceHolder Values
+        conversionStrategy: Default
+        decodingStrategy: None
+        key: homelab/tekton
+        property: github_app
+        metadataPolicy: None
+    - secretKey: github-private-key
+      remoteRef: # checkov:skip=CKV_SECRET_6 PlaceHolder Values
+        conversionStrategy: Default
+        decodingStrategy: None
+        key: homelab/tekton
+        property: github_pk
+        metadataPolicy: None
+    - secretKey: webhook.secret
+      remoteRef: # checkov:skip=CKV_SECRET_6 PlaceHolder Values
+        conversionStrategy: Default
+        decodingStrategy: None
+        key: homelab/tekton
+        property: webhook
+        metadataPolicy: None
