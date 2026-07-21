@@ -11,6 +11,8 @@ metadata:
 spec:
   networkPolicy:
     enable: true
+    additionalNamespaces:
+      - openshift-netobserv-loki
   agent:
     ebpf:
       cacheActiveTimeout: 15s
@@ -28,10 +30,10 @@ spec:
       resources:
         limits:
           cpu: 45m
-          memory: 512Mi
+          memory: 256Mi
         requests:
           cpu: 15m
-          memory: 384Mi
+          memory: 128Mi
       sampling: 75 #50 # 35 # 5 # 0 # Send All Flows, 50 Default
       privileged: true
       features:
@@ -94,7 +96,7 @@ spec:
       requests:
         cpu: 5m
         memory: 32Mi
-  deploymentModel: Direct
+  deploymentModel: Service
   kafka:
     address: ""
     sasl:
@@ -102,27 +104,10 @@ spec:
     topic: ""
   loki:
     enable: false # true
+    mode: LokiStack
     lokiStack:
-      name: loki
-    manual:
-      authToken: Forward
-      ingesterUrl: https://netobserv-gateway-http.openshift-netobserv-loki.svc.cluster.local.:8080/api/logs/v1/network/
-      querierUrl: https://netobserv-gateway-http.openshift-netobserv-loki.svc.cluster.local.:8080/api/logs/v1/network/
-      statusUrl: https://netobserv-query-frontend-http.openshift-netobserv-loki.svc.cluster.local.:3100/
-      tenantID: netobserv
-      tls:
-        enable: true
-        insecureSkipVerify: true
-    microservices:
-      ingesterUrl: https://netobserv-distributor.openshift-netobserv-loki.svc.cluster.local.:3100/
-      querierUrl: https://netobserv-query-frontend.openshift-netobserv-loki.svc.cluster.local.:3100/
-      tenantID: netobserv
-    mode: Manual
-    monolithic:
-      tenantID: netobserv
-      tls:
-        insecureSkipVerify: true
-      url: http://loki.loki.svc.cluster.local.:3100/
+      name: loki-netobserv
+      namespace: openshift-netobserv-loki
     readTimeout: 30s
     writeBatchSize: 102760448
     writeBatchWait: 15s
@@ -131,6 +116,23 @@ spec:
   processor:
     clusterName: ""
     addZone: true
+    advanced:
+      scheduling:
+        affinity:
+          podAntiAffinity:
+            preferredDuringSchedulingIgnoredDuringExecution:
+              - weight: 100
+                podAffinityTerm:
+                  topologyKey: kubernetes.io/hostname
+                  labelSelector:
+                    matchLabels:
+                      app: flowlogs-pipeline
+              - weight: 50
+                podAffinityTerm:
+                  topologyKey: topology.kubernetes.io/zone
+                  labelSelector:
+                    matchLabels:
+                      app: flowlogs-pipeline
     imagePullPolicy: IfNotPresent
     kafkaConsumerAutoscaler:
       maxReplicas: 2
@@ -139,6 +141,7 @@ spec:
     kafkaConsumerBatchSize: 10485760
     kafkaConsumerQueueCapacity: 1000
     kafkaConsumerReplicas: 2
+    unmanagedReplicas: true
     logLevel: info
     logTypes: Flows
     metrics:
@@ -152,8 +155,8 @@ spec:
       enable: false
     resources:
       limits:
-        cpu: 150m
-        memory: 192Mi
+        cpu: 300m
+        memory: 384Mi
       requests:
-        cpu: 50m
-        memory: 128Mi
+        cpu: 100m
+        memory: 256Mi

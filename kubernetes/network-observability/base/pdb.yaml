@@ -1,0 +1,15 @@
+kind: PodDisruptionBudget
+apiVersion: policy/v1
+metadata:
+  name: flowlogs-pipeline
+  namespace: openshift-netobserv
+  annotations:
+    argocd.argoproj.io/sync-wave: "4"
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+  labels:
+    app.kubernetes.io/instance: network-observability
+spec:
+  maxUnavailable: 50%
+  selector:
+    matchLabels:
+      app: flowlogs-pipeline
