@@ -8,3 +8,10 @@ spec:
   myASN: 65000
   peerASN: 65000
   peerAddress: 10.101.10.1
+  # Sub-second failure detection so the router drops a dead announcer path
+  # quickly instead of blackholing an externalTrafficPolicy: Local VIP
+  # (e.g. 10.101.10.240 internal ingress) during a control-plane node roll.
+  bfdProfile: bgp-bfd
+  # Hold advertised routes across FRR-k8s speaker pod restarts to reduce
+  # route churn / withdrawals during upgrades and rollouts.
+  enableGracefulRestart: true

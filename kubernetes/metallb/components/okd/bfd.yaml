@@ -1,0 +1,14 @@
+---
+apiVersion: metallb.io/v1beta1
+kind: BFDProfile
+metadata:
+  name: bgp-bfd
+  namespace: metallb-system
+spec:
+  # ~900ms detection (300ms * 3). Conservative values chosen because the
+  # UniFi UDM SE FRR can be sensitive to aggressive BFD timers. If sessions
+  # flap on the router side, raise the intervals or drop BFD and rely on
+  # `maximum-paths` (ECMP) alone, which by itself eliminates the blackhole.
+  receiveInterval: 300
+  transmitInterval: 300
+  detectMultiplier: 3
