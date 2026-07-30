@@ -14,34 +14,6 @@ RUN npm install -g \
 FROM quay.io/centos/centos:stream10-minimal
 
 ENV \
-  # renovate: datasource=github-releases depName=argoproj-labs/argocd-vault-plugin
-  ARGOCD_VAULT_VERSION=1.18.2 \
-  # renovate: custom-github-release depName=okd-project/okd versioning=loose
-  OKD_VERSION=4.22.0-okd-scos.7\
-  # renovate: datasource=github-releases depName=opentofu/opentofu
-  OPENTOFU_VERSION=1.12.4 \
-  # renovate: datasource=github-releases depName=hashicorp/vault
-  VAULT_VERSION=2.0.3 \
-  # renovate: custom-github-release depName=ko-build/ko
-  KO_VERSION=0.19.1 \
-  # renovate: datasource=github-releases depName=cli/cli
-  GH_VERSION=2.96.0 \
-  # renovate: custom-github-release depName=yannh/kubeconform
-  KUBECONFORM_VERSION=0.8.0 \
-  # renovate: datasource=pypi depName=ansible
-  ANSIBLE_VERSION=14.2.0 \
-  # renovate: datasource=docker depName=google/cloud-sdk
-  GCLOUD_VERSION=576.0.0 \
-  # renovate: datasource=golang-version depName=go
-  GO_VERSION=1.26.5 \
-  # renovate: datasource=github-releases depName=golangci/golangci-lint
-  GOLANGCI_LINT_VERSION=2.12.2 \
-  # renovate: datasource=github-releases depName=goreleaser/goreleaser
-  GORELEASER_VERSION=2.17.1 \
-  # renovate: datasource=github-releases depName=orhun/git-cliff
-  GIT_CLIFF_VERSION=2.13.1 \
-  # renovate: datasource=github-releases depName=go-task/task
-  TASK_VERSION=3.52.0 \
   LANG=en_US.UTF-8 \
   LC_ALL=en_US.UTF-8 \
   HOME=/tmp \
@@ -55,6 +27,9 @@ COPY --from=clair /bin/clair-action /usr/local/bin/clair-action
 COPY --from=node-tools /usr/local/bin/ /usr/local/bin/
 COPY --from=node-tools /usr/local/lib/node_modules/ /usr/local/lib/node_modules/
 
+# OS packages
+# renovate: datasource=github-releases depName=opentofu/opentofu
+ENV OPENTOFU_VERSION=1.12.4
 RUN rpm --import https://dl.fedoraproject.org/pub/epel/RPM-GPG-KEY-EPEL-10 && \
   rpm -Uvh https://dl.fedoraproject.org/pub/epel/epel-release-latest-10.noarch.rpm && \
   rpm -Uvh https://download.postgresql.org/pub/repos/yum/reporpms/EL-10-x86_64/pgdg-redhat-repo-latest.noarch.rpm && \
@@ -64,9 +39,23 @@ RUN rpm --import https://dl.fedoraproject.org/pub/epel/RPM-GPG-KEY-EPEL-10 && \
   libpmem tcpdump sshpass rsync rclone git jq unzip tar make ShellCheck diffutils findutils gawk \
   fio postgresql18 python3 python3-pip procps libatomic iperf3 skopeo openssl gcc && \
   ln -sf /usr/bin/python3 /usr/local/bin/python && \
-  microdnf clean all && rm -rf /var/cache/*  && \
-  pip3 install --no-cache-dir ansible==${ANSIBLE_VERSION} && \
-  curl -sSL https://github.com/cli/cli/releases/download/v${GH_VERSION}/gh_${GH_VERSION}_linux_amd64.tar.gz \
+  microdnf clean all && rm -rf /var/cache/* && \
+  rm -rf /usr/share/doc/* /usr/share/man/* /usr/share/info/*
+
+# Ansible
+# renovate: datasource=pypi depName=ansible
+ENV ANSIBLE_VERSION=14.2.0
+RUN pip3 install --no-cache-dir ansible==${ANSIBLE_VERSION} && \
+  find /usr -name '*.pyc' -delete
+
+# gh, argocd-vault-plugin, yq, kubeconform, mc
+# renovate: datasource=github-releases depName=cli/cli
+ENV GH_VERSION=2.96.0
+# renovate: datasource=github-releases depName=argoproj-labs/argocd-vault-plugin
+ENV ARGOCD_VAULT_VERSION=1.18.2
+# renovate: custom-github-release depName=yannh/kubeconform
+ENV KUBECONFORM_VERSION=0.8.0
+RUN curl -sSL https://github.com/cli/cli/releases/download/v${GH_VERSION}/gh_${GH_VERSION}_linux_amd64.tar.gz \
   | tar -xz --strip-components=2 -C /usr/local/bin "gh_${GH_VERSION}_linux_amd64/bin/gh" && \
   curl -L -o /usr/local/bin/argocd-vault-plugin \
   "https://github.com/ArthurVardevanyan/argocd-vault-plugin/releases/download/v${ARGOCD_VAULT_VERSION}/argocd-vault-plugin_${ARGOCD_VAULT_VERSION}_linux_amd64" && \
@@ -76,8 +65,12 @@ RUN rpm --import https://dl.fedoraproject.org/pub/epel/RPM-GPG-KEY-EPEL-10 && \
   curl -L https://github.com/yannh/kubeconform/releases/download/v${KUBECONFORM_VERSION}/kubeconform-linux-amd64.tar.gz \
   | tar -xz -C /usr/local/bin kubeconform && chmod +x /usr/local/bin/kubeconform && \
   curl -L -o /usr/local/bin/mc \
-  "https://dl.min.io/client/mc/release/linux-amd64/mc" && chmod +x /usr/local/bin/mc && \
-  curl -L -o /tmp/google-cloud-cli.tar.gz \
+  "https://dl.min.io/client/mc/release/linux-amd64/mc" && chmod +x /usr/local/bin/mc
+
+# Google Cloud SDK
+# renovate: datasource=docker depName=google/cloud-sdk
+ENV GCLOUD_VERSION=576.0.0
+RUN curl -L -o /tmp/google-cloud-cli.tar.gz \
   "https://dl.google.com/dl/cloudsdk/channels/rapid/downloads/google-cloud-cli-${GCLOUD_VERSION}-linux-x86_64.tar.gz" && \
   tar -xzf /tmp/google-cloud-cli.tar.gz -C /usr/local && rm -f /tmp/google-cloud-cli.tar.gz && \
   /usr/local/google-cloud-sdk/install.sh \
@@ -98,26 +91,52 @@ RUN rpm --import https://dl.fedoraproject.org/pub/epel/RPM-GPG-KEY-EPEL-10 && \
   rm -rf /usr/local/.config/gcloud/ && \
   rm -rf ${HOME}/.config/gcloud && \
   mkdir -p ${HOME}/.config && \
-  curl -L -o go.tar.gz "https://go.dev/dl/go${GO_VERSION}.linux-amd64.tar.gz" && \
+  find /usr/local/google-cloud-sdk -name '*.pyc' -delete
+
+# Go toolchain
+# renovate: datasource=golang-version depName=go
+ENV GO_VERSION=1.26.5
+RUN curl -L -o go.tar.gz "https://go.dev/dl/go${GO_VERSION}.linux-amd64.tar.gz" && \
   tar -xzf go.tar.gz -C /usr/local --no-same-owner && rm -f go.tar.gz && \
   mkdir -p /go && \
-  curl -fL --retry 5 --retry-all-errors --retry-delay 2 -o "golangci-lint-${GOLANGCI_LINT_VERSION}-linux-amd64.tar.gz" \
+  GOOS=linux GOARCH=amd64 GOAMD64=v3 go build -v std && \
+  rm -rf /usr/local/go/test /usr/local/go/doc /usr/local/go/api /usr/local/go/misc && \
+  rm -rf /tmp/.cache /tmp/go-build*
+
+# golangci-lint
+# renovate: datasource=github-releases depName=golangci/golangci-lint
+ENV GOLANGCI_LINT_VERSION=2.12.2
+RUN curl -fL --retry 5 --retry-all-errors --retry-delay 2 -o "golangci-lint-${GOLANGCI_LINT_VERSION}-linux-amd64.tar.gz" \
   "https://github.com/golangci/golangci-lint/releases/download/v${GOLANGCI_LINT_VERSION}/golangci-lint-${GOLANGCI_LINT_VERSION}-linux-amd64.tar.gz" && \
   curl -fL --retry 5 --retry-all-errors --retry-delay 2 -o golangci-lint-checksums.txt \
   "https://github.com/golangci/golangci-lint/releases/download/v${GOLANGCI_LINT_VERSION}/golangci-lint-${GOLANGCI_LINT_VERSION}-checksums.txt" && \
   grep -E "golangci-lint-${GOLANGCI_LINT_VERSION}-linux-amd64\.tar\.gz$" golangci-lint-checksums.txt | sha256sum -c - && \
   tar -xzf "golangci-lint-${GOLANGCI_LINT_VERSION}-linux-amd64.tar.gz" --strip-components=1 -C /usr/local/bin "golangci-lint-${GOLANGCI_LINT_VERSION}-linux-amd64/golangci-lint" && \
-  chmod +x /usr/local/bin/golangci-lint && rm -f "golangci-lint-${GOLANGCI_LINT_VERSION}-linux-amd64.tar.gz" golangci-lint-checksums.txt && \
-  GOOS=linux GOARCH=amd64 GOAMD64=v3 go build -v std && \
-  GOOS=linux GOARCH=arm64 go build -v std && \
-  rm -rf /usr/local/go/test /usr/local/go/doc /usr/local/go/api /usr/local/go/misc && \
-  curl -L -o openshift-client-linux.tar.gz https://github.com/okd-project/okd/releases/download/${OKD_VERSION}/openshift-client-linux-${OKD_VERSION}.tar.gz && \
+  chmod +x /usr/local/bin/golangci-lint && rm -f "golangci-lint-${GOLANGCI_LINT_VERSION}-linux-amd64.tar.gz" golangci-lint-checksums.txt
+
+# oc/kubectl, ko, vault
+ENV \
+  # renovate: custom-github-release depName=okd-project/okd versioning=loose
+  OKD_VERSION=4.22.0-okd-scos.7\
+  # renovate: custom-github-release depName=ko-build/ko
+  KO_VERSION=0.19.1 \
+  # renovate: datasource=github-releases depName=hashicorp/vault
+  VAULT_VERSION=2.0.3
+RUN curl -L -o openshift-client-linux.tar.gz https://github.com/okd-project/okd/releases/download/${OKD_VERSION}/openshift-client-linux-${OKD_VERSION}.tar.gz && \
   tar -xzf openshift-client-linux.tar.gz && mv oc /usr/local/bin/oc && rm -f oc kubectl openshift-client-linux.tar.gz && ln -svf /usr/local/bin/oc /usr/local/bin/kubectl && \
   curl -L -o ko_Linux_x86_64.tar.gz https://github.com/ko-build/ko/releases/download/v${KO_VERSION}/ko_${KO_VERSION}_Linux_x86_64.tar.gz && \
   tar -xzf ko_Linux_x86_64.tar.gz && mv ko /usr/local/bin/ko && rm -f ko_Linux_x86_64.tar.gz && \
   curl -L -o vault_linux_amd64.zip https://releases.hashicorp.com/vault/${VAULT_VERSION}/vault_${VAULT_VERSION}_linux_amd64.zip && \
-  unzip vault_linux_amd64.zip && chmod +x vault && mv vault /usr/local/bin/ && rm -f vault_linux_amd64.zip && \
-  curl -fL --retry 5 --retry-all-errors --retry-delay 2 -o "goreleaser_Linux_x86_64.tar.gz" \
+  unzip vault_linux_amd64.zip && chmod +x vault && mv vault /usr/local/bin/ && rm -f vault_linux_amd64.zip
+
+# goreleaser, git-cliff, task
+# renovate: datasource=github-releases depName=goreleaser/goreleaser
+ENV GORELEASER_VERSION=2.17.1
+# renovate: datasource=github-releases depName=orhun/git-cliff
+ENV GIT_CLIFF_VERSION=2.13.1
+# renovate: datasource=github-releases depName=go-task/task
+ENV TASK_VERSION=3.52.0
+RUN curl -fL --retry 5 --retry-all-errors --retry-delay 2 -o "goreleaser_Linux_x86_64.tar.gz" \
   "https://github.com/goreleaser/goreleaser/releases/download/v${GORELEASER_VERSION}/goreleaser_Linux_x86_64.tar.gz" && \
   curl -fL --retry 5 --retry-all-errors --retry-delay 2 -o goreleaser-checksums.txt \
   "https://github.com/goreleaser/goreleaser/releases/download/v${GORELEASER_VERSION}/checksums.txt" && \
@@ -137,8 +156,7 @@ RUN rpm --import https://dl.fedoraproject.org/pub/epel/RPM-GPG-KEY-EPEL-10 && \
   "https://github.com/go-task/task/releases/download/v${TASK_VERSION}/task_checksums.txt" && \
   grep -E "task_linux_amd64\.tar\.gz$" task_checksums.txt | sha256sum -c - && \
   tar -xzf task_linux_amd64.tar.gz -C /usr/local/bin task && \
-  chmod +x /usr/local/bin/task && rm -f task_linux_amd64.tar.gz task_checksums.txt && \
-  rm -rf /usr/share/doc/* /usr/share/man/* /usr/share/info/* /tmp/* && find /usr -name '*.pyc' -delete
+  chmod +x /usr/local/bin/task && rm -f task_linux_amd64.tar.gz task_checksums.txt
 
 RUN golangci-lint --version
 CMD ["sleep", "infinity"]
