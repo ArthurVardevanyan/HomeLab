@@ -64,6 +64,12 @@ spec:
               value: "0.0.0.0"
             - name: OLLAMA_KEEP_ALIVE
               value: "24h"
+            - name: OLLAMA_CONTEXT_LENGTH
+              value: "49152"
+            - name: OLLAMA_FLASH_ATTENTION
+              value: "1"
+            - name: OLLAMA_KV_CACHE_TYPE
+              value: "q8_0"
           ports:
             - containerPort: 11434
               name: api
@@ -76,6 +82,7 @@ spec:
                   - "-c"
                   - |
                     sleep 5;
+                    ollama pull qwen3.5:9b;
                     ollama pull qwen3.6:27b;
                     ollama pull qwen3.6:35b;
                     ollama pull gemma4:e2b;
