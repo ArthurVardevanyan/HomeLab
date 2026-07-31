@@ -4,6 +4,8 @@ kind: CronJob
 metadata:
   name: renovate-bot
   namespace: renovate
+  annotations:
+    gitops-ci.k8s.io/exempt-image-checksum: "registry.arthurvardevanyan.com/homelab/toolbox:not_latest"
 spec:
   schedule: "0 13 * * 5"
   concurrencyPolicy: Forbid
@@ -93,6 +95,7 @@ spec:
                   memory: 64Mi
               securityContext:
                 runAsNonRoot: true
+                privileged: false
                 readOnlyRootFilesystem: true
                 allowPrivilegeEscalation: false
                 seccompProfile:
@@ -123,6 +126,7 @@ spec:
                   memory: 1Gi
               securityContext:
                 runAsNonRoot: true
+                privileged: false
                 readOnlyRootFilesystem: false
                 allowPrivilegeEscalation: false
                 seccompProfile:
