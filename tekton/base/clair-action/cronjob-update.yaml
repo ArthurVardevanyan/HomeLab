@@ -5,6 +5,7 @@ metadata:
   name: clair-action-update-db
   annotations:
     checkov.io/skip1: CKV_K8S_40=OpenShift Injects Random UID
+    gitops-ci.k8s.io/exempt-image-checksum: "registry.arthurvardevanyan.com/homelab/toolbox:not_latest"
   namespace: homelab
 spec:
   schedule: "0 */6 * * *"
@@ -19,6 +20,9 @@ spec:
         spec:
           serviceAccountName: pipeline
           automountServiceAccountToken: false
+          enableServiceLinks: false
+          schedulerName: default-scheduler
+          dnsPolicy: ClusterFirst
           securityContext:
             seccompProfile:
               type: RuntimeDefault
@@ -53,11 +57,11 @@ spec:
                 requests:
                   memory: "4Gi"
                   cpu: "50m"
-                  ephemeral-storage: 3Gi
+                  ephemeral-storage: 4Gi
                 limits:
                   memory: "8Gi"
                   cpu: "1000m"
-                  ephemeral-storage: 3Gi
+                  ephemeral-storage: 8Gi
               volumeMounts:
                 - name: tmp
                   mountPath: /tmp/

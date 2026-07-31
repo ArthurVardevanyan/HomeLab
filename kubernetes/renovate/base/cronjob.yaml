@@ -4,6 +4,8 @@ kind: CronJob
 metadata:
   name: renovate-bot
   namespace: renovate
+  annotations:
+    gitops-ci.k8s.io/exempt-image-checksum: "registry.arthurvardevanyan.com/homelab/toolbox:not_latest"
 spec:
   schedule: "0 13 * * 5"
   concurrencyPolicy: Forbid
@@ -93,6 +95,7 @@ spec:
                   memory: 64Mi
               securityContext:
                 runAsNonRoot: true
+                privileged: false
                 readOnlyRootFilesystem: true
                 allowPrivilegeEscalation: false
                 seccompProfile:
@@ -108,7 +111,7 @@ spec:
                   mountPath: /tmp/token
           containers:
             # renovate: datasource=docker depName=docker.io/renovate/renovate
-            - image: docker.io/renovate/renovate:43.268.0-full@sha256:a076c0e98b846c466b9bb47842bd1d44ca0aa9e3666ba4faa6007040fc8c10db
+            - image: docker.io/renovate/renovate:44.4.6-full@sha256:0f12fdde426f45a10d50a1bbffb592ecc5f73fa78ba59b1f723404c1a5b8b50d
               name: renovate-bot
               command: ["sh", "-c"]
               args:
@@ -123,6 +126,7 @@ spec:
                   memory: 1Gi
               securityContext:
                 runAsNonRoot: true
+                privileged: false
                 readOnlyRootFilesystem: false
                 allowPrivilegeEscalation: false
                 seccompProfile:
