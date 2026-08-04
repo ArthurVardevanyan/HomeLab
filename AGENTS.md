@@ -53,8 +53,10 @@ Confirm with the user before any `apply`, `delete`, `patch`, `scale`,
 - Layout per app: `kubernetes/<app>/{base,overlays/<cluster>}` with a
   `kustomization.yaml` at each level. Some apps add `components/` for
   reusable patches.
-- Active overlays: `okd`, `microshift`, `k3s` (legacy). Pick the one
-  matching the target cluster.
+- Active overlays: `okd`, `okd-sandbox`, `okd-unas`, `sandbox`, `sno`,
+  `microshift`, `microshift-unas`, `old`, `operator` (all OpenShift/OKD-based)
+  and `k3s` (legacy, the only non-OpenShift target). Pick the one matching
+  the target cluster.
 - Register new apps in [kubernetes/argocd/applications/](kubernetes/argocd/applications/)
   as `<app>.yaml` and include them in the local `kustomization.yaml`.
 - After editing any `kustomization.yaml`, run
@@ -91,6 +93,36 @@ load the `openshift-patterns` CRR reference when touching them.
   `ansible-playbook -i ansible/inventory --ask-become-pass --ask-pass ansible/<playbook>.yaml`
   (or `./main.bash ansible` for the default servers run).
 - `ansible-lint` runs in pre-commit; keep playbooks passing.
+
+### CI Validation (k8s-gitops-ci)
+
+- Real CI runs via `.tekton/gitops-ci.yaml`'s `gitops-ci` Task, invoking
+  `k8s-gitops-ci pipeline --dirs "kubernetes/,tekton/,.tekton/,okd/"` from
+  the sibling `../k8s-gitops-ci` repo.
+- **Working on a subset?** Scope validation to just that app/overlay instead
+  of a full sweep:
+  `../k8s-gitops-ci/bin/k8s-gitops-ci test-all --app kubernetes/<app> --cluster <cluster>`
+  (repeatable flags; `--app` alone validates every overlay of that app,
+  `--cluster` alone validates every app targeting that cluster).
+- Before pushing, confirm the full CI scope still passes:
+  `../k8s-gitops-ci/bin/k8s-gitops-ci test-all kubernetes tekton .tekton okd`
+  (mirrors real CI; defaults to reading local `test.sh` automatically — no
+  PR needed).
+- Avoid `test-all .` (full-repo scan) — includes ansible/, machineConfigs/,
+  notes/, sandbox/, which are outside CI's actual `--dirs` scope and
+  produces irrelevant noise.
+- After changing `../k8s-gitops-ci` source, rebuild before testing:
+  `cd ../k8s-gitops-ci && task build`.
+- Some fixes require changes in **both** repos (e.g., adjusting a check's
+  behavior, adding a new exemption mechanism) — check `../k8s-gitops-ci`'s
+  own `AGENTS.md`/`docs/` when validation behavior itself needs to change.
+- Exemptions: `test.sh` with `export EXEMPTIONS=(...)` at an app root or any
+  directory with non-Kubernetes YAML — see `okd/test.sh` for a working
+  example and `../k8s-gitops-ci/.agents/skills/exemptions/SKILL.md` for the
+  full reference.
+- ArgoCD sync-options: any resource whose API group isn't guaranteed present
+  at first ArgoCD sync (most CRD-backed operators/CNI/monitoring resources)
+  needs `argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true`.
 
 ### Shell, YAML, Markdown
 

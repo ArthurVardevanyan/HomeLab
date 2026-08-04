@@ -1,0 +1,10 @@
+#!/bin/bash
+
+export EXEMPTIONS=(
+  "check=kubeconform,file=install-config.yaml"
+  "check=kubeconform,file=vm-config.yaml"
+  "check=kubeconform,file=node-config/gpu-1.yaml"
+  "check=kubeconform,file=node-config/worker-1.yaml"
+  "check=kubeconform,file=node-config/worker-2.yaml"
+  "check=kubeconform,file=node-config/worker-3.yaml"
+)

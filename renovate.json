@@ -22,6 +22,20 @@
     },
     {
       "customType": "regex",
+      "description": "kubernetes-sigs/kustomize (monorepo tags prefixed with kustomize/vX.Y.Z)",
+      "managerFilePatterns": [
+        "/(^|/)Dockerfile$/",
+        "/(^|/)Containerfile$/",
+        "/(^|/)containerfile$/"
+      ],
+      "matchStrings": [
+        "# renovate: custom-github-release depName=(?<depName>kubernetes-sigs/kustomize)\\n\\s*ENV KUSTOMIZE_VERSION=(?<currentValue>[^\\s\\\\]+)"
+      ],
+      "datasourceTemplate": "github-releases",
+      "extractVersionTemplate": "^kustomize/v(?<version>.*)$"
+    },
+    {
+      "customType": "regex",
       "description": "Update vm-cluster.yaml clusterVersion",
       "managerFilePatterns": ["/vm-cluster\\.yaml$/"],
       "matchStrings": [
