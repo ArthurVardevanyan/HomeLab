@@ -4305,6 +4305,17 @@ metadata:
   annotations:
     checkov.io/skip1: CKV_K8S_155=Required
     checkov.io/skip2: CKV_K8S_158=Required
+    # The meta-operator manages arbitrary Tekton CRD kinds (TektonConfig,
+    # TektonAddon, TektonTrigger, ...) it can't enumerate in advance, so
+    # `resources: ["*"]` is required within its own tekton.dev/operator.tekton.dev/
+    # dashboard.tekton.dev API groups - matches the checkov.io/skip1-2 rationale
+    # above. NOTE: this annotation is not yet honored by the currently-released
+    # k8s-gitops-ci (named-ports/podspec-defaults/rbac-wildcards checks don't
+    # populate Finding.Value/Annotations yet - see ArthurVardevanyan/k8s-gitops-ci
+    # follow-up); kubernetes/tekton/test.sh carries the equivalent EXEMPTIONS
+    # selector as the functional bridge until that ships, and can be dropped once
+    # this annotation alone is honored.
+    gitops-ci.k8s.io/exempt-rbac-wildcards: "resources"
 rules:
   - apiGroups:
       - ""
@@ -5105,7 +5116,7 @@ spec:
     - name: http-metrics
       port: 9090
       protocol: TCP
-      targetPort: 9090
+      targetPort: http-metrics
   selector:
     app: openshift-pipelines-operator
     name: openshift-pipelines-operator
@@ -5124,7 +5135,7 @@ spec:
   ports:
     - name: https-webhook
       port: 443
-      targetPort: 8443
+      targetPort: https-webhook
   selector:
     app: tekton-operator
     name: tekton-operator-webhook
@@ -5221,6 +5232,9 @@ spec:
           image: ghcr.io/tektoncd/operator/operator-1d69a75f22dd094880847eac907fb2c1:v0.80.0@sha256:9efcf35bb0ac7038ecb6e065dffff909cd81016aab0ec07797ae8c864af27a72
           imagePullPolicy: IfNotPresent
           name: openshift-pipelines-operator-lifecycle
+          ports:
+            - containerPort: 9090
+              name: http-metrics
           resources:
             limits:
               cpu: 60m
@@ -5239,6 +5253,7 @@ spec:
             capabilities:
               drop:
                 - ALL
+            privileged: false
             readOnlyRootFilesystem: true
             seccompProfile:
               type: RuntimeDefault
@@ -5277,6 +5292,7 @@ spec:
             capabilities:
               drop:
                 - ALL
+            privileged: false
             readOnlyRootFilesystem: true
             seccompProfile:
               type: RuntimeDefault
@@ -5292,6 +5308,10 @@ spec:
               restartPolicy: NotRequired
             - resourceName: memory
               restartPolicy: NotRequired
+      automountServiceAccountToken: true
+      dnsPolicy: ClusterFirst
+      restartPolicy: Always
+      schedulerName: default-scheduler
       securityContext:
         runAsNonRoot: true
         seccompProfile:
@@ -5361,6 +5381,7 @@ spec:
             capabilities:
               drop:
                 - ALL
+            privileged: false
             readOnlyRootFilesystem: true
             seccompProfile:
               type: RuntimeDefault
@@ -5376,6 +5397,10 @@ spec:
               restartPolicy: NotRequired
             - resourceName: memory
               restartPolicy: NotRequired
+      automountServiceAccountToken: true
+      dnsPolicy: ClusterFirst
+      restartPolicy: Always
+      schedulerName: default-scheduler
       securityContext:
         runAsNonRoot: true
         seccompProfile:
