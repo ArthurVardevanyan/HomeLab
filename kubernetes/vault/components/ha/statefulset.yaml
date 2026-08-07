@@ -48,6 +48,10 @@ spec:
               app.kubernetes.io/name: vault
       terminationGracePeriodSeconds: 10
       serviceAccountName: vault-sa
+      automountServiceAccountToken: false
+      restartPolicy: Always
+      schedulerName: default-scheduler
+      dnsPolicy: ClusterFirst
       securityContext:
         runAsNonRoot: true
       hostNetwork: false
@@ -72,10 +76,12 @@ spec:
             secretName: vault-cert
         - name: home
           emptyDir: {}
+        - name: tmp
+          emptyDir: {}
       containers:
         - name: vault
           # renovate: datasource=docker depName=docker.io/hashicorp/vault
-          image: docker.io/hashicorp/vault:2.0.3@sha256:a296a888b118615dc01d5f1a6846e6d4a7277946caaed5b447008fff5fe06b54
+          image: docker.io/hashicorp/vault:2.0.4@sha256:5be49781ecf78bfe775c5309c6a4d9f4e9e040b6c885c99eb2b12fb69855e1a2
           imagePullPolicy: IfNotPresent
           command:
             - "/bin/sh"
@@ -104,6 +110,14 @@ spec:
               restartPolicy: NotRequired
           securityContext:
             allowPrivilegeEscalation: false
+            privileged: false
+            runAsNonRoot: true
+            readOnlyRootFilesystem: true
+            seccompProfile:
+              type: RuntimeDefault
+            capabilities:
+              drop:
+                - ALL
           env:
             - name: GOOGLE_APPLICATION_CREDENTIALS
               value: /var/run/secrets/google/credentials_config.json
@@ -151,6 +165,8 @@ spec:
 
             - name: home
               mountPath: /home/vault
+            - name: tmp
+              mountPath: /tmp
             - mountPath: /vault/cert
               name: vault-cert
             - name: gcp-credentials-request
@@ -186,7 +202,8 @@ spec:
             # from Consul (zombie services).
             preStop:
               exec:
-                command: ["/bin/sh", "-c", "sleep 5 && kill -SIGTERM $(pidof vault)"]
+                command:
+                  ["/bin/sh", "-c", "sleep 5 && kill -SIGTERM $(pidof vault)"]
 
       enableServiceLinks: false
   volumeClaimTemplates:
