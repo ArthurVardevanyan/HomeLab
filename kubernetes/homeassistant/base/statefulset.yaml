@@ -70,7 +70,7 @@ spec:
       containers:
         - name: homeassistant
           # renovate: datasource=docker depName=docker.io/homeassistant/home-assistant
-          image: docker.io/homeassistant/home-assistant:2026.7.4@sha256:5a531753cea96444200158fc2b0ac7ccd739291ec50414877b396de6e0bb29b3
+          image: docker.io/homeassistant/home-assistant:2026.8.0@sha256:a21689ef0510df9760ee11bab4d6b2fef3ed5c1a29ed9c3224271597a23729eb
           securityContext:
             allowPrivilegeEscalation: true
             seccompProfile:
@@ -89,6 +89,7 @@ spec:
           ports:
             # - hostPort: 8123
             - containerPort: 8123
+              name: http
               protocol: TCP
           resizePolicy:
             - resourceName: cpu
@@ -116,7 +117,7 @@ spec:
           livenessProbe:
             httpGet:
               path: /manifest.json
-              port: 8123
+              port: http
               scheme: HTTPS
             timeoutSeconds: 1
             periodSeconds: 10
@@ -125,7 +126,7 @@ spec:
           readinessProbe:
             httpGet:
               path: /manifest.json
-              port: 8123
+              port: http
               scheme: HTTPS
             timeoutSeconds: 1
             periodSeconds: 10
@@ -134,7 +135,7 @@ spec:
           startupProbe:
             httpGet:
               path: /manifest.json
-              port: 8123
+              port: http
               scheme: HTTPS
             timeoutSeconds: 1
             periodSeconds: 5
