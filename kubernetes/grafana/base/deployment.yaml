@@ -54,6 +54,8 @@ spec:
         # runAsUser: 11472
       hostname: grafana
       restartPolicy: Always
+      schedulerName: default-scheduler
+      dnsPolicy: ClusterFirst
       automountServiceAccountToken: false
       serviceAccountName: grafana-sa
       containers:
@@ -67,6 +69,7 @@ spec:
             runAsNonRoot: true
             readOnlyRootFilesystem: true
             allowPrivilegeEscalation: false
+            privileged: false
             seccompProfile:
               type: RuntimeDefault
             capabilities:
@@ -74,17 +77,18 @@ spec:
                 - ALL
           ports:
             - containerPort: 3000
+              name: http
           livenessProbe:
             failureThreshold: 10
             httpGet:
               path: /api/health
-              port: 3000
+              port: http
             initialDelaySeconds: 60
             timeoutSeconds: 30
           readinessProbe:
             httpGet:
               path: /api/health
-              port: 3000
+              port: http
           resizePolicy:
             - resourceName: cpu
               restartPolicy: NotRequired

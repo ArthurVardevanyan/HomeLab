@@ -89,6 +89,7 @@ spec:
           ports:
             # - hostPort: 8123
             - containerPort: 8123
+              name: http
               protocol: TCP
           resizePolicy:
             - resourceName: cpu
@@ -116,7 +117,7 @@ spec:
           livenessProbe:
             httpGet:
               path: /manifest.json
-              port: 8123
+              port: http
               scheme: HTTPS
             timeoutSeconds: 1
             periodSeconds: 10
@@ -125,7 +126,7 @@ spec:
           readinessProbe:
             httpGet:
               path: /manifest.json
-              port: 8123
+              port: http
               scheme: HTTPS
             timeoutSeconds: 1
             periodSeconds: 10
@@ -134,7 +135,7 @@ spec:
           startupProbe:
             httpGet:
               path: /manifest.json
-              port: 8123
+              port: http
               scheme: HTTPS
             timeoutSeconds: 1
             periodSeconds: 5

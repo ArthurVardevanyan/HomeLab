@@ -48,6 +48,10 @@ spec:
               app.kubernetes.io/name: vault
       terminationGracePeriodSeconds: 10
       serviceAccountName: vault-sa
+      automountServiceAccountToken: false
+      restartPolicy: Always
+      schedulerName: default-scheduler
+      dnsPolicy: ClusterFirst
       securityContext:
         runAsNonRoot: true
       hostNetwork: false
@@ -71,6 +75,8 @@ spec:
           secret:
             secretName: vault-cert
         - name: home
+          emptyDir: {}
+        - name: tmp
           emptyDir: {}
       containers:
         - name: vault
@@ -104,6 +110,14 @@ spec:
               restartPolicy: NotRequired
           securityContext:
             allowPrivilegeEscalation: false
+            privileged: false
+            runAsNonRoot: true
+            readOnlyRootFilesystem: true
+            seccompProfile:
+              type: RuntimeDefault
+            capabilities:
+              drop:
+                - ALL
           env:
             - name: GOOGLE_APPLICATION_CREDENTIALS
               value: /var/run/secrets/google/credentials_config.json
@@ -151,6 +165,8 @@ spec:
 
             - name: home
               mountPath: /home/vault
+            - name: tmp
+              mountPath: /tmp
             - mountPath: /vault/cert
               name: vault-cert
             - name: gcp-credentials-request
@@ -186,7 +202,8 @@ spec:
             # from Consul (zombie services).
             preStop:
               exec:
-                command: ["/bin/sh", "-c", "sleep 5 && kill -SIGTERM $(pidof vault)"]
+                command:
+                  ["/bin/sh", "-c", "sleep 5 && kill -SIGTERM $(pidof vault)"]
 
       enableServiceLinks: false
   volumeClaimTemplates:
