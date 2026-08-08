@@ -25,7 +25,8 @@
     {
       "matchUpdateTypes": ["major", "minor", "patch"],
       "matchFileNames": [".pre-commit-config.yaml"],
-      "groupName": "Pre-commit Hooks"
+      "groupName": "Pre-commit Hooks",
+      "separateMajorMinor": false
     },
     {
       "matchDatasources": ["docker"],
@@ -61,9 +62,21 @@
         "poetry",
         "pipenv"
       ],
-      "groupName": "Python Dependencies"
+      "groupName": "Python Dependencies",
+      "separateMajorMinor": false
     },
-
+    {
+      "matchManagers": ["custom.regex"],
+      "matchDatasources": ["pypi"],
+      "matchFileNames": [
+        "**/ansible/playbooks/**/*.yaml",
+        "**/Dockerfile",
+        "**/Containerfile",
+        "**/containerfile"
+      ],
+      "groupName": "Python Dependencies",
+      "separateMajorMinor": false
+    },
     {
       "matchManagers": ["cargo"],
       "groupName": "Rust Crates"
@@ -78,6 +91,21 @@
       "matchManagers": ["custom.regex"],
       "groupName": "Regex-Managed Releases",
       "separateMajorMinor": false
+    },
+    {
+      "matchDatasources": ["npm"],
+      "matchManagers": ["custom.regex"],
+      "matchFileNames": [
+        "**/Dockerfile",
+        "**/Containerfile",
+        "**/containerfile"
+      ],
+      "groupName": "Regex-Managed Releases",
+      "separateMajorMinor": false
+    },
+    {
+      "matchFileNames": ["**/vm-cluster.yaml"],
+      "groupName": "VictoriaMetrics Cluster Version"
     }
   ],
   "customManagers": [
@@ -136,9 +164,9 @@
       "description": "Update vm-cluster.yaml clusterVersion",
       "managerFilePatterns": ["/vm-cluster\\.yaml$/"],
       "matchStrings": [
-        "(?<comment>#\\s*renovate:\\s*datasource=(?<datasource>.*?) depName=(?<depName>.*?)(?: versioning=(?<versioning>.*?))?)\\s+clusterVersion:\\s+\"(?<currentValue>.*)-cluster\""
+        "#\\s*renovate:\\s*datasource=(?<datasource>.*?) depName=(?<depName>.*?)(?: versioning=(?<versioning>.*?))?\\s+clusterVersion:\\s+\"(?<currentValue>[^\"]+)\""
       ],
-      "autoReplaceStringTemplate": "{{{comment}}}\n  clusterVersion: \"{{{newVersion}}}-cluster\""
+      "extractVersionTemplate": "^v?(?<version>.*)-cluster$"
     },
     {
       "customType": "regex",
