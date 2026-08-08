@@ -25,7 +25,8 @@
     {
       "matchUpdateTypes": ["major", "minor", "patch"],
       "matchFileNames": [".pre-commit-config.yaml"],
-      "groupName": "Pre-commit Hooks"
+      "groupName": "Pre-commit Hooks",
+      "separateMajorMinor": false
     },
     {
       "matchDatasources": ["docker"],
@@ -61,9 +62,20 @@
         "poetry",
         "pipenv"
       ],
-      "groupName": "Python Dependencies"
+      "groupName": "Python Dependencies",
+      "separateMajorMinor": false
     },
-
+    {
+      "matchManagers": ["custom.regex"],
+      "matchDatasources": ["pypi"],
+      "matchFileNames": [
+        "**/Dockerfile",
+        "**/Containerfile",
+        "**/containerfile"
+      ],
+      "groupName": "Python Dependencies",
+      "separateMajorMinor": false
+    },
     {
       "matchManagers": ["cargo"],
       "groupName": "Rust Crates"
@@ -74,10 +86,26 @@
       "groupName": "External Secrets Operator"
     },
     {
-      "matchDatasources": ["github-releases"],
+      "matchDatasources": ["github-releases", "npm", "golang-version"],
       "matchManagers": ["custom.regex"],
+      "matchFileNames": [
+        "**/Dockerfile",
+        "**/Containerfile",
+        "**/containerfile"
+      ],
       "groupName": "Regex-Managed Releases",
       "separateMajorMinor": false
+    },
+    {
+      "matchDatasources": ["github-releases", "pypi", "golang-version"],
+      "matchManagers": ["custom.regex"],
+      "matchFileNames": ["**/ansible/playbooks/**/*.yaml"],
+      "groupName": "Ansible Binaries",
+      "separateMajorMinor": false
+    },
+    {
+      "matchFileNames": ["**/vm-cluster.yaml"],
+      "groupName": "VictoriaMetrics Cluster Version"
     }
   ],
   "customManagers": [
@@ -108,9 +136,10 @@
         "/(^|/)containerfile$/"
       ],
       "matchStrings": [
-        "# renovate: custom-github-release depName=(?<depName>[^\\s]+)(?: versioning=(?<versioning>[^\\s]+))?\\n\\s+url: .*?/releases/download/v?(?<currentValue>[^/]+)/",
-        "# renovate: custom-github-release depName=(?<depName>[^\\s]+).*?\\n\\s+url: .*?_(?<currentValue>[0-9]+\\.[0-9]+\\.[0-9]+)_",
-        "# renovate: custom-github-release depName=(?<depName>[^\\s]+).*?\\n\\s+url: .*?linux-(?:arm64-)?(?<currentValue>[\\w.-]+?)\\.tar\\.gz",
+        "# renovate: (?:custom-github-release|datasource=(?<datasource>[a-z0-9-]+)) depName=(?<depName>[^\\s]+)(?: versioning=(?<versioning>[^\\s]+))?\\n\\s+url: [^\\n]*?/releases/download/v?(?<currentValue>[^/]+)/",
+        "# renovate: (?:custom-github-release|datasource=(?<datasource>[a-z0-9-]+)) depName=(?<depName>[^\\s]+)(?: versioning=(?<versioning>[^\\s]+))?\\n\\s+url: [^\\n]*?_(?<currentValue>[0-9]+\\.[0-9]+\\.[0-9]+)_",
+        "# renovate: (?:custom-github-release|datasource=(?<datasource>[a-z0-9-]+)) depName=(?<depName>[^\\s]+)(?: versioning=(?<versioning>[^\\s]+))?\\n\\s+url: [^\\n]*?linux-(?:arm64-)?(?<currentValue>[\\w.-]+?)\\.tar\\.gz",
+        "# renovate: (?:custom-github-release|datasource=(?<datasource>[a-z0-9-]+)) depName=(?<depName>[^\\s]+)(?: versioning=(?<versioning>[^\\s]+))?\\n\\s+url: https://go\\.dev/dl/go(?<currentValue>[0-9]+\\.[0-9]+(?:\\.[0-9]+)?)\\.linux-",
         "# renovate: (?:custom-github-release|datasource=(?<datasource>[a-z0-9-]+)) depName=(?<depName>[^\\s]+)(?: versioning=(?<versioning>[^\\s]+))?\\n\\s*(?:ENV )?[A-Z][A-Z0-9_]*=(?<currentValue>[^\\s\\\\]+)",
         "# renovate: datasource=(?<datasource>pypi) depName=(?<depName>[^\\s]+)(?: versioning=(?<versioning>[^\\s]+))?\\n\\s+-\\s+.*?==(?<currentValue>[^\\s]+)"
       ],
@@ -136,9 +165,9 @@
       "description": "Update vm-cluster.yaml clusterVersion",
       "managerFilePatterns": ["/vm-cluster\\.yaml$/"],
       "matchStrings": [
-        "(?<comment>#\\s*renovate:\\s*datasource=(?<datasource>.*?) depName=(?<depName>.*?)(?: versioning=(?<versioning>.*?))?)\\s+clusterVersion:\\s+\"(?<currentValue>.*)-cluster\""
+        "#\\s*renovate:\\s*datasource=(?<datasource>.*?) depName=(?<depName>.*?)(?: versioning=(?<versioning>.*?))?\\s+clusterVersion:\\s+\"(?<currentValue>[^\"]+)\""
       ],
-      "autoReplaceStringTemplate": "{{{comment}}}\n  clusterVersion: \"{{{newVersion}}}-cluster\""
+      "extractVersionTemplate": "^v?(?<version>.*)-cluster$"
     },
     {
       "customType": "regex",
