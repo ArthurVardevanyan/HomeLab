@@ -28,6 +28,8 @@ spec:
         app.kubernetes.io/component: init
     spec:
       serviceAccountName: zitadel
+      schedulerName: default-scheduler
+      dnsPolicy: ClusterFirst
       securityContext:
         runAsNonRoot: true
         seccompProfile:
@@ -41,6 +43,7 @@ spec:
             runAsNonRoot: true
             readOnlyRootFilesystem: true
             allowPrivilegeEscalation: false
+            privileged: false
             seccompProfile:
               type: RuntimeDefault
             capabilities:
