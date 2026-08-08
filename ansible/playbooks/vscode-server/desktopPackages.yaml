@@ -95,7 +95,7 @@
     - name: Download YQ
       ansible.builtin.get_url:
         # renovate: custom-github-release depName=mikefarah/yq
-        url: https://github.com/mikefarah/yq/releases/download/v4.50.1/yq_linux_amd64
+        url: https://github.com/mikefarah/yq/releases/download/v4.53.3/yq_linux_amd64
         dest: /usr/local/bin/yq
         mode: "0755"
 
@@ -115,7 +115,7 @@
     - name: Download golang
       ansible.builtin.get_url:
         # renovate: datasource=golang-version depName=golang
-        url: https://go.dev/dl/go1.22.4.linux-amd64.tar.gz
+        url: https://go.dev/dl/go1.26.5.linux-amd64.tar.gz
         dest: /tmp/go.linux-amd64.tar.gz
         mode: "0644"
       check_mode: false
@@ -130,14 +130,14 @@
       ansible.builtin.pip:
         name:
           # renovate: datasource=pypi depName=jc
-          - jc==1.25.2
+          - jc==1.25.7
         state: present
 
     - name: Install pre-commit
       ansible.builtin.pip:
         name:
           # renovate: datasource=pypi depName=pre-commit
-          - pre-commit==3.7.1
+          - pre-commit==4.6.1
         state: present
     - name: Install global npm packages
       community.general.npm:
