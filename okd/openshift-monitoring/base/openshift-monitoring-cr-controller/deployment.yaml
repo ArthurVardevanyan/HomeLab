@@ -27,6 +27,9 @@ spec:
       labels:
         control-plane: controller-manager
     spec:
+      restartPolicy: Always
+      dnsPolicy: ClusterFirst
+      schedulerName: default-scheduler
       securityContext:
         seccompProfile:
           type: RuntimeDefault
@@ -64,6 +67,7 @@ spec:
             runAsNonRoot: true
             readOnlyRootFilesystem: true
             allowPrivilegeEscalation: false
+            privileged: false
             seccompProfile:
               type: RuntimeDefault
             capabilities:
