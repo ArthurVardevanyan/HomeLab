@@ -25,7 +25,8 @@
     {
       "matchUpdateTypes": ["major", "minor", "patch"],
       "matchFileNames": [".pre-commit-config.yaml"],
-      "groupName": "Pre-commit Hooks"
+      "groupName": "Pre-commit Hooks",
+      "separateMajorMinor": false
     },
     {
       "matchDatasources": ["docker"],
@@ -59,9 +60,12 @@
         "pip-compile",
         "pep621",
         "poetry",
-        "pipenv"
+        "pipenv",
+        "custom.regex"
       ],
-      "groupName": "Python Dependencies"
+      "matchDatasources": ["pypi"],
+      "groupName": "Python Dependencies",
+      "separateMajorMinor": false
     },
 
     {
@@ -74,7 +78,7 @@
       "groupName": "External Secrets Operator"
     },
     {
-      "matchDatasources": ["github-releases"],
+      "matchDatasources": ["github-releases", "npm"],
       "matchManagers": ["custom.regex"],
       "groupName": "Regex-Managed Releases",
       "separateMajorMinor": false
