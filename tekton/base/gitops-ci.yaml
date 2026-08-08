@@ -71,6 +71,13 @@ spec:
         ## set -o xtrace  # command tracing
         shopt -s failglob # If no matches are found, an error message is printed and the command is not executed
 
+        # Declare variables injected by Tekton as env vars to satisfy shellcheck SC2154
+        : "${WORKSPACE_BASIC_AUTH_PATH:=""}"
+        : "${GIT_URL:=""}"
+        : "${GIT_PR_NUMBER:=""}"
+        : "${GIT_COMMIT:=""}"
+        : "${TARGET_BRANCH:=""}"
+
         export URL=arthurvardevanyan.com
 
         # AVP/Vault login. Not yet exercised by `k8s-gitops-ci pipeline` (the

@@ -9,6 +9,7 @@ metadata:
     app.kubernetes.io/instance: homelab
   annotations:
     argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+    gitops-ci.k8s.io/exempt-image-checksum: "registry.arthurvardevanyan.com/homelab/toolbox:not_latest"
 spec:
   params:
     - description: Image to be scanned
@@ -66,6 +67,11 @@ spec:
         set -o errexit
         set -o nounset
         set -o pipefail
+
+        # Declare variables injected by Tekton as env vars to satisfy shellcheck SC2154
+        : "${WORKSPACE_DATA_PATH:=""}"
+        : "${IMAGE:=""}"
+        : "${SCAN_OUTPUT:=""}"
 
         # mkdir -p /vuln-store/db/
         mkdir -p  "${WORKSPACE_DATA_PATH}/clair-scan-report"

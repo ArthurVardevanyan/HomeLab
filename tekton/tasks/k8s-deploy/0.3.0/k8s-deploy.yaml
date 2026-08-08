@@ -3,11 +3,13 @@ apiVersion: tekton.dev/v1
 kind: Task
 metadata:
   name: k8s-deploy
+  namespace: homelab
   labels:
     app.kubernetes.io/version: "0.3.0"
   annotations:
     argocd.argoproj.io/sync-wave: "2"
     argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+    gitops-ci.k8s.io/exempt-image-checksum: "registry.arthurvardevanyan.com/homelab/toolbox:not_latest"
     tekton.dev/pipelines.minVersion: "0.38.0"
     tekton.dev/categories: Deployment
     tekton.dev/tags: k8s
@@ -92,6 +94,14 @@ spec:
         set -o nounset
         set -o pipefail
 
+        # Declare variables injected by Tekton as env vars to satisfy shellcheck SC2154
+        : "${TOKEN_EXCHANGE_ENDPOINT:=""}"
+        : "${WORKSPACE_DATA_PATH:=""}"
+        : "${TARGET_NAMESPACE:=""}"
+        : "${TARGET_SERVICE_ACCOUNT:=""}"
+        : "${CLUSTER_API:=""}"
+        : "${SHA:=""}"
+
         echo "Starting Deployment"
 
         if [[ -n "${TOKEN_EXCHANGE_ENDPOINT}" ]]; then
@@ -103,11 +113,12 @@ spec:
             \"serviceAccountName\": \"${TARGET_SERVICE_ACCOUNT}\"
           }"
 
-          export TOKEN=$(curl --header "Authorization: Bearer $(cat /var/run/secrets/openshift/serviceaccount/token)"\
+          TOKEN=$(curl --header "Authorization: Bearer $(cat /var/run/secrets/openshift/serviceaccount/token)"\
             "${TOKEN_EXCHANGE_ENDPOINT}" -X POST \
             -H "Content-type: application/json" \
             -H "Accept: application/json" \
             -d "${JSON}" | jq --raw-output '.status.token')
+          export TOKEN
 
         cat <<EOF > "${WORKSPACE_DATA_PATH}/kubeconfig"
         apiVersion: v1

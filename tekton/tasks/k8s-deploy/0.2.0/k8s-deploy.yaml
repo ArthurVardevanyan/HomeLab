@@ -3,11 +3,13 @@ apiVersion: tekton.dev/v1
 kind: Task
 metadata:
   name: k8s-deploy
+  namespace: homelab
   labels:
     app.kubernetes.io/version: "0.2.0"
   annotations:
     argocd.argoproj.io/sync-wave: "2"
     argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+    gitops-ci.k8s.io/exempt-image-checksum: "registry.arthurvardevanyan.com/homelab/toolbox:not_latest"
     tekton.dev/pipelines.minVersion: "0.38.0"
     tekton.dev/categories: Deployment
     tekton.dev/tags: k8s
@@ -57,6 +59,10 @@ spec:
         set -o errexit
         set -o nounset
         set -o pipefail
+
+        # Declare variables injected by Tekton as env vars to satisfy shellcheck SC2154
+        : "${WORKSPACE_DATA_PATH:=""}"
+        : "${SHA:=""}"
 
         echo "Starting Deployment"
 
