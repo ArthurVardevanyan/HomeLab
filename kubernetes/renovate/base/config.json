@@ -25,7 +25,8 @@
     {
       "matchUpdateTypes": ["major", "minor", "patch"],
       "matchFileNames": [".pre-commit-config.yaml"],
-      "groupName": "Pre-commit Hooks"
+      "groupName": "Pre-commit Hooks",
+      "separateMajorMinor": false
     },
     {
       "matchDatasources": ["docker"],
@@ -59,9 +60,12 @@
         "pip-compile",
         "pep621",
         "poetry",
-        "pipenv"
+        "pipenv",
+        "custom.regex"
       ],
-      "groupName": "Python Dependencies"
+      "matchDatasources": ["pypi"],
+      "groupName": "Python Dependencies",
+      "separateMajorMinor": false
     },
 
     {
@@ -74,10 +78,14 @@
       "groupName": "External Secrets Operator"
     },
     {
-      "matchDatasources": ["github-releases"],
+      "matchDatasources": ["github-releases", "npm"],
       "matchManagers": ["custom.regex"],
       "groupName": "Regex-Managed Releases",
       "separateMajorMinor": false
+    },
+    {
+      "matchFileNames": ["**/vm-cluster.yaml"],
+      "groupName": "VictoriaMetrics Cluster Version"
     }
   ],
   "customManagers": [
@@ -136,9 +144,9 @@
       "description": "Update vm-cluster.yaml clusterVersion",
       "managerFilePatterns": ["/vm-cluster\\.yaml$/"],
       "matchStrings": [
-        "(?<comment>#\\s*renovate:\\s*datasource=(?<datasource>.*?) depName=(?<depName>.*?)(?: versioning=(?<versioning>.*?))?)\\s+clusterVersion:\\s+\"(?<currentValue>.*)-cluster\""
+        "#\\s*renovate:\\s*datasource=(?<datasource>.*?) depName=(?<depName>.*?)(?: versioning=(?<versioning>.*?))?\\s+clusterVersion:\\s+\"(?<currentValue>[^\"]+)\""
       ],
-      "autoReplaceStringTemplate": "{{{comment}}}\n  clusterVersion: \"{{{newVersion}}}-cluster\""
+      "extractVersionTemplate": "^v?(?<version>.*)-cluster$"
     },
     {
       "customType": "regex",
