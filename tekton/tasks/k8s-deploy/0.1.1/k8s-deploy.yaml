@@ -3,11 +3,13 @@ apiVersion: tekton.dev/v1
 kind: Task
 metadata:
   name: k8s-deploy
+  namespace: homelab
   labels:
     app.kubernetes.io/version: "0.1.1"
   annotations:
     argocd.argoproj.io/sync-wave: "2"
     argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+    gitops-ci.k8s.io/exempt-image-checksum: "registry.arthurvardevanyan.com/homelab/toolbox:not_latest"
     tekton.dev/pipelines.minVersion: "0.38.0"
     tekton.dev/categories: Deployment
     tekton.dev/tags: k8s
