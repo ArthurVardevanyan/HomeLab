@@ -66,21 +66,33 @@ spec:
         set -o nounset
         set -o pipefail
 
+        # Declare variables injected by Tekton as env vars to satisfy shellcheck SC2154
+        : "${WORKSPACE_DATA_PATH:=""}"
+        : "${DRY_RUN:=""}"
+        : "${PLAYBOOKS:=""}"
+
         export URL=arthurvardevanyan.com
 
         kubectl get secret cockpit-cert -n homelab -o yaml > /tmp/cockpit-cert.yaml
         yq '.data."tls.crt"' /tmp/cockpit-cert.yaml | base64 -d > /tmp/cockpit.crt
         yq '.data."tls.key"' /tmp/cockpit-cert.yaml | base64 -d > /tmp/cockpit.key
 
-        export CI_JOB_JWT="$(cat /var/run/secrets/kubernetes.io/serviceaccount/token)"
+        CI_JOB_JWT="$(cat /var/run/secrets/kubernetes.io/serviceaccount/token)"
+        export CI_JOB_JWT
         export VAULT_ADDR=https://vault.${URL}
-        export VAULT_TOKEN="$(vault write -field=token auth/homelab/login role=homelab jwt=${CI_JOB_JWT})"
-        export SSH_KNOWN_HOSTS="$(vault kv get -field=known_hosts secret/gitlab/ssh)"
-        export SSH_PRIVATE_KEY="$(vault kv get -field=private_key secret/gitlab/ssh)"
-        export SUDO="$(vault kv get -field=sudo secret/gitlab/ssh)"
-        export PULL_SECRET="$(vault kv get -field=auth secret/docker)"
+        VAULT_TOKEN="$(vault write -field=token auth/homelab/login role=homelab jwt=${CI_JOB_JWT})"
+        export VAULT_TOKEN
+        SSH_KNOWN_HOSTS="$(vault kv get -field=known_hosts secret/gitlab/ssh)"
+        export SSH_KNOWN_HOSTS
+        SSH_PRIVATE_KEY="$(vault kv get -field=private_key secret/gitlab/ssh)"
+        export SSH_PRIVATE_KEY
+        SUDO="$(vault kv get -field=sudo secret/gitlab/ssh)"
+        export SUDO
+        PULL_SECRET="$(vault kv get -field=auth secret/docker)"
+        export PULL_SECRET
 
-        export DISCORD="$(vault kv get -field=webhook secret/gitlab/discord)"
+        DISCORD="$(vault kv get -field=webhook secret/gitlab/discord)"
+        export DISCORD
         sed -i "s,REPLACE_ME,${DISCORD},g" ${WORKSPACE_DATA_PATH}/machineConfigs/servers/server/home/arthur/discord/discord_bot.sh
         sed -i "s,REPLACE_ME,${URL},g" ${WORKSPACE_DATA_PATH}/machineConfigs/servers/kvm-1/etc/promtail/config.yml
         sed -i "s,REPLACE_ME,${URL},g" ${WORKSPACE_DATA_PATH}/machineConfigs/servers/kvm-2/etc/promtail/config.yml
@@ -92,7 +104,7 @@ spec:
         chmod 644 ~/.ssh/known_hosts
         echo "$SSH_PRIVATE_KEY" >> ~/.ssh/id_ed25519
         chmod 600 ~/.ssh/id_ed25519
-        eval $(ssh-agent) > /dev/null
+        eval "$(ssh-agent)" > /dev/null
         ssh-add ~/.ssh/id_ed25519
 
         echo "$PULL_SECRET" > /tmp/pull_secret.json

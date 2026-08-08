@@ -92,6 +92,14 @@ spec:
         set -o nounset
         set -o pipefail
 
+        # Declare variables injected by Tekton as env vars to satisfy shellcheck SC2154
+        : "${TOKEN_EXCHANGE_ENDPOINT:=""}"
+        : "${WORKSPACE_DATA_PATH:=""}"
+        : "${TARGET_NAMESPACE:=""}"
+        : "${TARGET_SERVICE_ACCOUNT:=""}"
+        : "${CLUSTER_API:=""}"
+        : "${SHA:=""}"
+
         echo "Starting Deployment"
 
         if [[ -n "${TOKEN_EXCHANGE_ENDPOINT}" ]]; then
@@ -103,11 +111,12 @@ spec:
             \"serviceAccountName\": \"${TARGET_SERVICE_ACCOUNT}\"
           }"
 
-          export TOKEN=$(curl --header "Authorization: Bearer $(cat /var/run/secrets/openshift/serviceaccount/token)"\
+          TOKEN=$(curl --header "Authorization: Bearer $(cat /var/run/secrets/openshift/serviceaccount/token)"\
             "${TOKEN_EXCHANGE_ENDPOINT}" -X POST \
             -H "Content-type: application/json" \
             -H "Accept: application/json" \
             -d "${JSON}" | jq --raw-output '.status.token')
+          export TOKEN
 
         cat <<EOF > "${WORKSPACE_DATA_PATH}/kubeconfig"
         apiVersion: v1

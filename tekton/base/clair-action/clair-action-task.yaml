@@ -67,6 +67,11 @@ spec:
         set -o nounset
         set -o pipefail
 
+        # Declare variables injected by Tekton as env vars to satisfy shellcheck SC2154
+        : "${WORKSPACE_DATA_PATH:=""}"
+        : "${IMAGE:=""}"
+        : "${SCAN_OUTPUT:=""}"
+
         # mkdir -p /vuln-store/db/
         mkdir -p  "${WORKSPACE_DATA_PATH}/clair-scan-report"
 

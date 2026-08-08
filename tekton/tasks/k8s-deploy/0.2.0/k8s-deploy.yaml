@@ -58,6 +58,10 @@ spec:
         set -o nounset
         set -o pipefail
 
+        # Declare variables injected by Tekton as env vars to satisfy shellcheck SC2154
+        : "${WORKSPACE_DATA_PATH:=""}"
+        : "${SHA:=""}"
+
         echo "Starting Deployment"
 
         kubectl kustomize ${WORKSPACE_DATA_PATH}/kubernetes/overlays/okd | \
