@@ -96,15 +96,26 @@ Both kubeconfigs grant **cluster-admin**. Caution rules:
 ### CI Validation (k8s-gitops-ci)
 
 - Real CI runs via `.tekton/gitops-ci.yaml`'s `gitops-ci` Task, invoking
-  `k8s-gitops-ci pipeline --dirs "kubernetes/,tekton/,.tekton/,okd/"` from
-  the sibling `../k8s-gitops-ci` repo.
+  `k8s-gitops-ci pipeline --dirs "kubernetes/,tekton/,.tekton/,okd/"
+--assume-openshift` from the sibling `../k8s-gitops-ci` repo (see
+  `tekton/base/gitops-ci.yaml`).
+- **Always pass `--assume-openshift`** when validating locally — it matches
+  real CI and tells the sync-options check that OpenShift/OKD built-in API
+  groups (`gateway.networking.k8s.io`, `monitoring.coreos.com`, `metal3.io`,
+  Routes, SCCs, ...) are guaranteed present at first sync, so those resources
+  do **not** need the `SkipDryRunOnMissingResource=true` annotation. Without
+  it you get spurious sync-options findings for cluster-native CRDs.
+- For local iteration also pass `--disable-checks avp` unless you have
+  `VAULT_ADDR`/`VAULT_TOKEN` exported — otherwise AVP placeholder resolution
+  fails the overlay build with unrelated "could not replace all placeholders"
+  noise.
 - **Working on a subset?** Scope validation to just that app/overlay instead
   of a full sweep:
-  `../k8s-gitops-ci/bin/k8s-gitops-ci test-all --app kubernetes/<app> --cluster <cluster>`
+  `../k8s-gitops-ci/bin/k8s-gitops-ci test-all --app kubernetes/<app> --cluster <cluster> --assume-openshift --disable-checks avp`
   (repeatable flags; `--app` alone validates every overlay of that app,
   `--cluster` alone validates every app targeting that cluster).
 - Before pushing, confirm the full CI scope still passes:
-  `../k8s-gitops-ci/bin/k8s-gitops-ci test-all kubernetes tekton .tekton okd`
+  `../k8s-gitops-ci/bin/k8s-gitops-ci test-all kubernetes tekton .tekton okd --assume-openshift --disable-checks avp`
   (mirrors real CI; defaults to reading local `test.sh` automatically — no
   PR needed).
 - Avoid `test-all .` (full-repo scan) — includes ansible/, machineConfigs/,
@@ -120,8 +131,11 @@ Both kubeconfigs grant **cluster-admin**. Caution rules:
   example and `../k8s-gitops-ci/.agents/skills/exemptions/SKILL.md` for the
   full reference.
 - ArgoCD sync-options: any resource whose API group isn't guaranteed present
-  at first ArgoCD sync (most CRD-backed operators/CNI/monitoring resources)
-  needs `argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true`.
+  at first ArgoCD sync needs
+  `argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true`. With
+  `--assume-openshift` (real CI), OpenShift/OKD built-in API groups count as
+  guaranteed-present, so only genuinely third-party CRDs (installed by
+  operators this cluster may not have yet) require the annotation.
 
 ### OKD provisioning
 
