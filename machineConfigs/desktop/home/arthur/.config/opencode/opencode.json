@@ -50,11 +50,47 @@
             "input": 40960,
             "output": 8192
           }
+        },
+        "qwen3-coder:30b": {
+          "name": "Qwen3-Coder-30B (Intel Arc B70)",
+          "limit": {
+            "context": 49152,
+            "input": 40960,
+            "output": 8192
+          }
+        }
+      }
+    },
+    "anthropic": {
+      "name": "Anthropic",
+      "options": {
+        "apiKey": "{env:ANTHROPIC_API_KEY}"
+      },
+      "models": {
+        "claude-opus-5": {
+          "name": "Claude Opus 5"
         }
       }
     }
   },
   "model": "nerdheroes/local.qwen3.6:27b-q8_0",
+  "agent": {
+    "plan": {
+      "description": "High-level architectural planning. Routed directly to Claude Opus 5 (Anthropic).",
+      "model": "anthropic/claude-opus-5",
+      "temperature": 0.2
+    },
+    "build": {
+      "description": "Token-heavy code generation. Routed to local Qwen3-Coder-30B on the single Intel Arc B70 via Ollama.",
+      "model": "ollama/qwen3-coder:30b",
+      "temperature": 0.1
+    },
+    "explore": {
+      "description": "Fast codebase scouting/diagnostics. On the single-GPU setup this shares the same local model as build.",
+      "model": "ollama/qwen3-coder:30b",
+      "temperature": 0.0
+    }
+  },
   "mcp": {
     "kubernetes-okd": {
       "type": "local",

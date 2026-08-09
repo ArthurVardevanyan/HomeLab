@@ -1,0 +1,62 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ollama-coder
+  namespace: ollama
+spec:
+  template:
+    spec:
+      # Intel Arc Pro B70 (xe KMD) — no nvidia runtime class.
+      runtimeClassName: null
+      nodeSelector:
+        # Built-in NFD label for an Intel (8086) display controller. Swap to
+        # feature.node.kubernetes.io/custom-intel.xe.gpu: "true" once the NFD
+        # NodeFeatureRule is deployed, if you prefer the xe-specific label.
+        nvidia.com/gpu.present: null
+        feature.node.kubernetes.io/pci-0300_8086.present: "true"
+      containers:
+        # renovate: datasource=docker depName=docker.io/intelanalytics/ipex-llm-inference-cpp-xpu
+        - name: ollama
+          image: docker.io/intelanalytics/ipex-llm-inference-cpp-xpu:2.2.0b20250101@sha256:f79afc7735ec02bba680cefcffa28a4946891079889adadd3249798184df1ae3
+          # IPEX-LLM image ships an ollama build for Intel XPU; launch it via the
+          # bundled start script rather than the stock ollama entrypoint.
+          command:
+            - /bin/bash
+            - "-c"
+            - |
+              set -eu
+              export OLLAMA_HOST=0.0.0.0:11434
+              export OLLAMA_MODELS=/.ollama/models
+              export OLLAMA_NUM_GPU=999
+              export ONEAPI_DEVICE_SELECTOR=level_zero:0
+              export ZES_ENABLE_SYSMAN=1
+              export SYCL_CACHE_PERSISTENT=1
+              mkdir -p "${OLLAMA_MODELS}"
+              /llm/scripts/start-ollama.sh &
+              sleep 8
+              ollama pull qwen3-coder:30b || true
+              wait
+          lifecycle:
+            postStart: null
+          env:
+            - name: OLLAMA_HOST
+              value: "0.0.0.0"
+            - name: OLLAMA_KEEP_ALIVE
+              value: "24h"
+            - name: OLLAMA_CONTEXT_LENGTH
+              value: "49152"
+            - name: OLLAMA_FLASH_ATTENTION
+              value: "1"
+            - name: OLLAMA_KV_CACHE_TYPE
+              value: "q8_0"
+          resources:
+            requests:
+              cpu: "4"
+              memory: 16Gi
+              ephemeral-storage: "256Mi"
+            limits:
+              cpu: "8"
+              memory: 24Gi
+              ephemeral-storage: "1Gi"
+              gpu.intel.com/xe: "1"

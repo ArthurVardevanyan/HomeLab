@@ -1,0 +1,24 @@
+---
+apiVersion: k8s.ovn.org/v1
+kind: EgressFirewall
+metadata:
+  name: default
+  namespace: intel-device-plugins-operator
+  annotations:
+    argocd.argoproj.io/sync-wave: "0"
+spec:
+  egress:
+    # Control Plane (kube-apiserver) — operator/controller reconcile traffic.
+    - type: Allow
+      to:
+        nodeSelector:
+          matchLabels:
+            node-role.kubernetes.io/control-plane: ""
+      ports:
+        - protocol: TCP
+          port: 6443
+    # Deny all other egress. Operator/plugin images are pulled by kubelet,
+    # not via pod egress, so no registry allowance is required here.
+    - type: Deny
+      to:
+        cidrSelector: 0.0.0.0/0

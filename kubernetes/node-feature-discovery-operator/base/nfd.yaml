@@ -36,3 +36,12 @@ spec:
                  loadedKMod: ["kvm", "kvm_intel"]
                - cpuId: ["SSE4", "SVM"]
                  loadedKMod: ["kvm", "kvm_amd"]
+           # Intel Arc Pro B70 (Battlemage/Xe2) using the xe KMD. Produces the
+           # label feature.node.kubernetes.io/custom-intel.xe.gpu=true which the
+           # local-llm-vulkan workload uses as a nodeSelector.
+           - name: "intel.xe.gpu"
+             matchOn:
+               - loadedKMod: ["xe"]
+                 pciId:
+                   class: ["0300", "0380"]
+                   vendor: ["8086"]

@@ -2,7 +2,7 @@
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: ollama
+  name: intel-device-plugins
   namespace: argocd
   annotations:
     argocd.argoproj.io/sync-wave: "1"
@@ -15,11 +15,11 @@ metadata:
     app.kubernetes.io/instance: argocd
 spec:
   destination:
-    namespace: ollama
+    namespace: intel-device-plugins-operator
     server: https://kubernetes.default.svc
   project: default
   source:
-    path: kubernetes/ollama/overlays/okd-intel
+    path: kubernetes/intel-device-plugins/overlays/okd
     repoURL: https://git.arthurvardevanyan.com/ArthurVardevanyan/HomeLab
     targetRevision: HEAD
   syncPolicy:

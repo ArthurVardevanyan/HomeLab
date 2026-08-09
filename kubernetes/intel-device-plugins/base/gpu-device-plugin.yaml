@@ -1,0 +1,31 @@
+---
+# GpuDevicePlugin custom resource consumed by the Intel Device Plugins Operator.
+# Advertises the Intel Arc Pro B70 (xe KMD) as the `gpu.intel.com/xe` resource.
+#
+# sharedDevNum: 2 -> fan-out sharing so the single B70 can be requested by two
+# containers simultaneously (LLM inference + video transcode). NOTE: this is
+# fan-out sharing WITHOUT hardware memory isolation; VRAM budgeting is enforced
+# in the workload (ollama context/KV-cache settings), not by the plugin.
+#
+# With the OLM-installed operator, the operator supplies the plugin/init images
+# for the DaemonSet it manages, so we do NOT pin them here.
+apiVersion: deviceplugin.intel.com/v1
+kind: GpuDevicePlugin
+metadata:
+  name: intel-gpu-plugin
+  namespace: intel-device-plugins-operator
+  annotations:
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+spec:
+  sharedDevNum: 2
+  preferredAllocationPolicy: none
+  logLevel: 2
+  # Run the plugin DaemonSet ONLY on the GPU node (gpu-1), not on every worker.
+  # Built-in NFD label for an Intel (8086) display controller.
+  nodeSelector:
+    node-role.kubernetes.io/gpu: "true"
+  # gpu-1 is tainted; neutralize the taint so the plugin can land there.
+  tolerations:
+    - key: node-role.kubernetes.io/gpu
+      operator: Exists
+      effect: NoSchedule
