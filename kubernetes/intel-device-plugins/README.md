@@ -141,3 +141,19 @@ If the `custom-intel.xe.gpu` label is absent, the `intel-xe-gpu`
 `NodeFeatureRule` did not match — check that the `xe` module is loaded and the
 Intel display-class PCI device is present (`lspci -nnk` on the node), then
 inspect the nfd-worker logs in the `openshift-nfd` namespace.
+
+## Re-rendering the chart
+
+After changing `values.yaml`, regenerate the manifest files:
+
+```bash
+helm template xpumd oci://ghcr.io/intel/xpumanager/charts/xpumd \
+  --version 2.0.1 --namespace intel-device-plugins-operator \
+  -f kubernetes/intel-device-plugins/values.yaml \
+  > /tmp/xpumd-rendered.yaml
+```
+
+Then apply post-render edits (namespace, sync-waves, PodSpec defaults,
+renovate annotations) to the individual YAML files under
+`base/xpumd/` and remove any resources not rendered for the active
+`gpuAccess` mode (e.g. `ResourceClaimTemplate` when `gpuAccess: plugin`).

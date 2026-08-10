@@ -28,9 +28,6 @@ spec:
         app.kubernetes.io/instance: xpumd
     spec:
       serviceAccountName: xpumd
-      resourceClaims:
-        - name: xpumd
-          resourceClaimTemplateName: xpumd
       automountServiceAccountToken: false
       enableServiceLinks: false
       restartPolicy: Always
@@ -43,7 +40,7 @@ spec:
       containers:
         - name: xpumd
           # renovate: datasource=docker depName=ghcr.io/intel/xpumanager/xpumd
-          image: "ghcr.io/intel/xpumanager/xpumd@sha256:61990529b71a461ea6607108c86a5c71aaab0677264d5ea91211d5dcd19d1dff"
+          image: "ghcr.io/intel/xpumanager/xpumd:v2.0.1"
           imagePullPolicy: Always
           args:
             - "--config=/etc/xpumd/config-receiver-crashlog.yaml"
@@ -77,9 +74,8 @@ spec:
               cpu: 10m
               memory: 128Mi
             # map all GPUs to container
-            claims:
-              - name: xpumd
             limits:
+              gpu.intel.com/monitoring: 1
               memory: 2Gi
           volumeMounts:
             - name: config
@@ -90,6 +86,12 @@ spec:
             - name: crashlog
               mountPath: /var/log/crashlog
               readOnly: true
+      nodeSelector:
+        feature.node.kubernetes.io/custom-intel.xe.gpu: "true"
+      tolerations:
+        - key: node-role.kubernetes.io/gpu
+          operator: Exists
+          effect: NoSchedule
       volumes:
         - name: config
           configMap:
