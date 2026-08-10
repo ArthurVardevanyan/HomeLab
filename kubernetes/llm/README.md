@@ -1,13 +1,11 @@
-# Local LLM (ollama app)
+# Local LLM
 
-GPU-backed local LLM serving for the homelab. Despite the app name, the
-**default (`overlays/okd`) backend is now llama.cpp (Vulkan)** running on the
-Intel Arc Pro B70 — not ollama. Ollama variants are preserved as swappable,
-dormant Kustomize components.
+GPU-backed local LLM serving for the homelab. The **default (`overlays/okd`)
+backend is llama.cpp (Vulkan)** running on the Intel Arc Pro B70.
 
 ## Table of Contents
 
-- [Local LLM (ollama app)](#local-llm-ollama-app)
+- [Local LLM](#local-llm)
   - [Table of Contents](#table-of-contents)
   - [Backends / Overlays](#backends--overlays)
   - [Default: llama.cpp Vulkan on the Intel Arc B70](#default-llamacpp-vulkan-on-the-intel-arc-b70)
@@ -22,21 +20,9 @@ dormant Kustomize components.
 
 ## Backends / Overlays
 
-| Overlay               | Backend                        | Hardware        | Notes                                      |
-| --------------------- | ------------------------------ | --------------- | ------------------------------------------ |
-| `overlays/okd`        | **llama.cpp Vulkan** (default) | Intel Arc B70   | Qwen3.6-35B-A3B, tracks mainline llama.cpp |
-| `overlays/okd-nvidia` | ollama (CUDA)                  | NVIDIA GPU node | Multi-model (qwen3.6, gemma4)              |
-
-Dormant components (not wired to any overlay, kept for fallback / A-B tests):
-
-| Component                | Backend                      | Why kept                                       |
-| ------------------------ | ---------------------------- | ---------------------------------------------- |
-| `components/nvidia`      | ollama CUDA                  | Enabled by `okd-nvidia`                        |
-| `components/ipex-ollama` | Intel IPEX-LLM ollama (SYCL) | Fallback; older fork, cannot run newest models |
-
-The base Deployment / Service / PVC intentionally keep the `ollama-coder`
-names so the LoadBalancer IP (`10.101.10.246:11434`), NetworkPolicies, and
-client config remain stable across backend swaps.
+| Overlay        | Backend                        | Hardware      | Notes                                      |
+| -------------- | ------------------------------ | ------------- | ------------------------------------------ |
+| `overlays/okd` | **llama.cpp Vulkan** (default) | Intel Arc B70 | Qwen3.6-35B-A3B, tracks mainline llama.cpp |
 
 ## Default: llama.cpp Vulkan on the Intel Arc B70
 
@@ -100,8 +86,8 @@ Confirm the fast path is active from inside the pod (or the monitor pod):
 
 ```bash
 export KUBECONFIG=$HOME/.kube/okd
-oc -n ollama scale deployment/ollama-coder --replicas=1
-oc -n ollama logs deploy/ollama-coder | grep -i "matrix cores"
+oc -n llm scale deployment/llm-server --replicas=1
+oc -n llm logs deploy/llm-server | grep -i "matrix cores"
 ```
 
 Notes:
@@ -114,39 +100,39 @@ Notes:
 ## GPU Monitoring (nvidia-smi equivalents)
 
 Live Intel GPU telemetry tools are packaged in a **separate** image
-(`containers/intel-gpu-monitor/`) deployed as a scaled-0 helper in the `ollama`
+(`containers/intel-gpu-monitor/`) deployed as a scaled-0 helper in the `llm`
 namespace (`kubernetes/intel-gpu-monitor/`). Scale it up on demand — it requests
 `gpu.intel.com/xe` so it sees `/dev/dri`:
 
 ```bash
 export KUBECONFIG=$HOME/.kube/okd
-oc -n ollama scale deployment/intel-gpu-monitor --replicas=1
-POD=$(oc -n ollama get pod -l app=intel-gpu-monitor -o name | head -1)
+oc -n llm scale deployment/intel-gpu-monitor --replicas=1
+POD=$(oc -n llm get pod -l app=intel-gpu-monitor -o name | head -1)
 
 # Confirm the Vulkan ICD + cooperative-matrix support (the whole point):
-oc -n ollama exec "$POD" -- sh -c 'vulkaninfo | grep -iE "deviceName|cooperativeMatrix"'
+oc -n llm exec "$POD" -- sh -c 'vulkaninfo | grep -iE "deviceName|cooperativeMatrix"'
 
 # Live utilization / VRAM / power / temp / freq (the nvidia-smi analog):
-oc -n ollama exec "$POD" -- xpu-smi discovery
-oc -n ollama exec "$POD" -- xpu-smi stats -d 0
-oc -n ollama exec "$POD" -- xpu-smi dump -d 0 -m 0,1,2,3,5
+oc -n llm exec "$POD" -- xpu-smi discovery
+oc -n llm exec "$POD" -- xpu-smi stats -d 0
+oc -n llm exec "$POD" -- xpu-smi dump -d 0 -m 0,1,2,3,5
 
 # Best-effort engine busy% (limited without CAP_PERFMON):
-oc -n ollama exec "$POD" -- intel_gpu_top -l
+oc -n llm exec "$POD" -- intel_gpu_top -l
 
 # OpenCL / VA-API sanity:
-oc -n ollama exec "$POD" -- clinfo | grep -i "Device Name"
+oc -n llm exec "$POD" -- clinfo | grep -i "Device Name"
 
 # Scale back down when done (frees the GPU share):
-oc -n ollama scale deployment/intel-gpu-monitor --replicas=0
+oc -n llm scale deployment/intel-gpu-monitor --replicas=0
 ```
 
 Workload-level metrics (llama.cpp exposes Prometheus metrics via `--metrics`):
 
 ```bash
-POD=$(oc -n ollama get pod -l app=ollama-coder -o name | head -1)
-oc -n ollama exec "$POD" -- sh -c 'wget -qO- http://localhost:11434/metrics | head'
-oc -n ollama exec "$POD" -- sh -c 'wget -qO- http://localhost:11434/v1/models'
+POD=$(oc -n llm get pod -l app=llm-server -o name | head -1)
+oc -n llm exec "$POD" -- sh -c 'wget -qO- http://localhost:11434/metrics | head'
+oc -n llm exec "$POD" -- sh -c 'wget -qO- http://localhost:11434/v1/models'
 ```
 
 Kubernetes capacity view (device-plugin advertised resource):
@@ -181,16 +167,16 @@ Run after setting `parallel = 1` and restarting the pod. First, an uncontended
 single-stream number:
 
 ```bash
-oc -n ollama rollout restart deploy/ollama-coder   # reload the preset
-POD=$(oc -n ollama get pod -l app=ollama-coder -o name | head -1)
+oc -n llm rollout restart deploy/llm-server   # reload the preset
+POD=$(oc -n llm get pod -l app=llm-server -o name | head -1)
 # one quiet request, then read tg (tokens/sec) — no other traffic:
-oc -n ollama logs "$POD" | grep -E "tg =|n_parallel|n_ctx_per_seq"
+oc -n llm logs "$POD" | grep -E "tg =|n_parallel|n_ctx_per_seq"
 ```
 
 Confirm full GPU offload + coopmat path (rules out CPU spill):
 
 ```bash
-oc -n ollama logs "$POD" | grep -iE "matrix cores|offloaded|CPU buffer|VRAM|not enough|n_gpu_layers"
+oc -n llm logs "$POD" | grep -iE "matrix cores|offloaded|CPU buffer|VRAM|not enough|n_gpu_layers"
 ```
 
 Check GPU clocks UNDER decode load (the throttle hypothesis) via the monitor
@@ -198,11 +184,11 @@ pod — if freq sits well below the ~2.4 GHz boost while decoding, the host is
 clock/power-limiting:
 
 ```bash
-oc -n ollama scale deploy/intel-gpu-monitor --replicas=1
-MON=$(oc -n ollama get pod -l app=intel-gpu-monitor -o name | head -1)
-oc -n ollama exec "$MON" -- xpu-smi stats -d 0     # freq, power, util, temp
-oc -n ollama exec "$MON" -- sh -c 'cat /sys/class/drm/card*/gt/gt0/rps_*_freq_mhz'
-oc -n ollama scale deploy/intel-gpu-monitor --replicas=0
+oc -n llm scale deploy/intel-gpu-monitor --replicas=1
+MON=$(oc -n llm get pod -l app=intel-gpu-monitor -o name | head -1)
+oc -n llm exec "$MON" -- xpu-smi stats -d 0     # freq, power, util, temp
+oc -n llm exec "$MON" -- sh -c 'cat /sys/class/drm/card*/gt/gt0/rps_*_freq_mhz'
+oc -n llm scale deploy/intel-gpu-monitor --replicas=0
 ```
 
 Interpretation:
@@ -219,22 +205,17 @@ Scaled to `0` by default to free the GPU. Scale up to load the model
 (first start downloads ~22 GB):
 
 ```bash
-oc -n ollama scale deployment/ollama-coder --replicas=1
-oc -n ollama logs -f deployment/ollama-coder   # watch model load + Vulkan device
+oc -n llm scale deployment/llm-server --replicas=1
+oc -n llm logs -f deployment/llm-server   # watch model load + Vulkan device
 ```
 
 ## Layout
 
 - `base/` — llama.cpp Vulkan Deployment + namespace, RBAC, network policies,
   PVC, service.
-- `components/nvidia/` — full `$patch: replace` to the NVIDIA ollama backend.
-- `components/ipex-ollama/` — full `$patch: replace` to the Intel IPEX ollama
-  backend (fallback).
 - `overlays/okd/` — default; base + HuggingFace egress firewall.
-- `overlays/okd-nvidia/` — base + `nvidia` component + ollama-registry egress.
 
 ## REF
 
 - <https://github.com/ggml-org/llama.cpp>
 - <https://huggingface.co/unsloth/Qwen3.6-35B-A3B-GGUF>
-- <https://github.com/ollama/ollama>

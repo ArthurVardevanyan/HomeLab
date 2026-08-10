@@ -3,7 +3,7 @@ apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
   name: deny-all
-  namespace: ollama
+  namespace: llm
   annotations:
     argocd.argoproj.io/sync-wave: "0"
 spec:
@@ -16,7 +16,7 @@ apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
   name: allow-dns-traffic
-  namespace: ollama
+  namespace: llm
   annotations:
     argocd.argoproj.io/sync-wave: "0"
 spec:
@@ -40,8 +40,8 @@ spec:
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
-  name: allow-ollama-api
-  namespace: ollama
+  name: allow-llm-api
+  namespace: llm
   annotations:
     argocd.argoproj.io/sync-wave: "0"
 spec:
@@ -58,7 +58,7 @@ spec:
     - from:
         - namespaceSelector:
             matchLabels:
-              kubernetes.io/metadata.name: ollama
+              kubernetes.io/metadata.name: llm
       ports:
         - protocol: TCP
           port: 11434
@@ -67,7 +67,7 @@ apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
   name: allow-openshift-monitoring
-  namespace: ollama
+  namespace: llm
   annotations:
     argocd.argoproj.io/sync-wave: "0"
 spec:
@@ -96,7 +96,7 @@ apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
   name: allow-external-egress
-  namespace: ollama
+  namespace: llm
   annotations:
     argocd.argoproj.io/sync-wave: "0"
 spec:

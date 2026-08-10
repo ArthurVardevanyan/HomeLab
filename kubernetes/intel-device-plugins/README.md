@@ -9,7 +9,7 @@ KMD) to the kubelet as the `gpu.intel.com/xe` extended resource.
 - [Scheduling](#scheduling)
 - [GPU Monitoring (nvidia-smi equivalents)](#gpu-monitoring-nvidia-smi-equivalents)
   - [From the host / a node debug shell](#from-the-host--a-node-debug-shell)
-  - [From inside the IPEX-LLM Ollama pod](#from-inside-the-ipex-llm-ollama-pod)
+  - [From inside the LLM pod](#from-inside-the-llm-pod)
   - [From Kubernetes (scheduling / capacity view)](#from-kubernetes-scheduling--capacity-view)
 - [Verify the plugin and node labels](#verify-the-plugin-and-node-labels)
 
@@ -74,30 +74,26 @@ cat /sys/class/drm/card*/gt/gt0/rps_max_freq_mhz 2>/dev/null
 cat /sys/class/drm/card*/device/hwmon/hwmon*/energy1_input 2>/dev/null
 ```
 
-### From inside the IPEX-LLM Ollama pod
-
-The `intelanalytics/ipex-llm-inference-cpp-xpu` image bundles Intel's oneAPI
-tools, including `xpu-smi` (the true `nvidia-smi` analog) and `sycl-ls`.
+### From inside the LLM pod
 
 ```bash
 export KUBECONFIG=$HOME/.kube/okd
 
 # Scale the workload up first (defaults to replicas: 0)
-oc -n ollama scale deployment/ollama-coder --replicas=1
+oc -n llm scale deployment/llm-server --replicas=1
 
-POD=$(oc -n ollama get pod -l app=ollama-coder -o name | head -1)
+POD=$(oc -n llm get pod -l app=llm-server -o name | head -1)
 
 # Enumerate SYCL / Level-Zero devices the runtime sees (like nvidia-smi -L)
-oc -n ollama exec "$POD" -- sycl-ls
+oc -n llm exec "$POD" -- sycl-ls
 
 # Full SMI dashboard: utilization, memory, power, temp, health
-oc -n ollama exec "$POD" -- xpu-smi discovery      # list devices + static info
-oc -n ollama exec "$POD" -- xpu-smi stats -d 0     # live stats for device 0
-oc -n ollama exec "$POD" -- xpu-smi dump -d 0 -m 0,1,2,3,18  # stream metrics
+oc -n llm exec "$POD" -- xpu-smi discovery      # list devices + static info
+oc -n llm exec "$POD" -- xpu-smi stats -d 0     # live stats for device 0
+oc -n llm exec "$POD" -- xpu-smi dump -d 0 -m 0,1,2,3,18  # stream metrics
 
-# What models is ollama serving (workload-level check)
-oc -n ollama exec "$POD" -- ollama ps
-oc -n ollama exec "$POD" -- ollama list
+# What models is the LLM serving (workload-level check)
+oc -n llm exec "$POD" -- wget -qO- http://localhost:11434/v1/models
 ```
 
 `xpu-smi stats -d 0` metric groups map roughly to `nvidia-smi` columns:

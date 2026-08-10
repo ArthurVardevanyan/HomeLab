@@ -1,8 +1,9 @@
+---
 kind: Service
 apiVersion: v1
 metadata:
-  name: ollama-coder-svc
-  namespace: ollama
+  name: llm-server-svc
+  namespace: llm
 spec:
   ipFamilies:
     - IPv4
@@ -16,13 +17,13 @@ spec:
   ipFamilyPolicy: SingleStack
   sessionAffinity: None
   selector:
-    app: ollama-coder
+    app: llm-server
 ---
 kind: Service
 apiVersion: v1
 metadata:
-  name: ollama-coder-lb
-  namespace: ollama
+  name: llm-server-lb
+  namespace: llm
   annotations:
     metallb.io/ip-allocated-from-pool: metallb-pool
     metallb.universe.tf/loadBalancerIPs: 10.101.10.246
@@ -43,4 +44,4 @@ spec:
   ipFamilyPolicy: SingleStack
   sessionAffinity: None
   selector:
-    app: ollama-coder
+    app: llm-server

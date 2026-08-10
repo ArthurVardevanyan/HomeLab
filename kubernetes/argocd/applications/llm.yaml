@@ -2,7 +2,7 @@
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: ollama
+  name: llm
   namespace: argocd
   annotations:
     argocd.argoproj.io/sync-wave: "1"
@@ -15,11 +15,11 @@ metadata:
     app.kubernetes.io/instance: argocd
 spec:
   destination:
-    namespace: ollama
+    namespace: llm
     server: https://kubernetes.default.svc
   project: default
   source:
-    path: kubernetes/ollama/overlays/okd
+    path: kubernetes/llm/overlays/okd
     repoURL: https://git.arthurvardevanyan.com/ArthurVardevanyan/HomeLab
     targetRevision: HEAD
   syncPolicy:

@@ -2,14 +2,15 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: ollama-coder
-  namespace: ollama
+  name: llm-server
+  namespace: llm
   labels:
-    app: ollama-coder
+    app: llm-server
   annotations:
     checkov.io/skip1: CKV_K8S_40=Upstream Image Runs as Root
     checkov.io/skip2: CKV_K8S_22=Model Cache Requires Writable Root FS
     checkov.io/skip3: CKV_K8S_43=Sha Changes Often
+    checkov.io/skip4: CKV_K8S_23=Upstream Image Requires Root
 spec:
   # Default scaled to 0 to free the GPU; scale to 1 to load the model.
   replicas: 0
@@ -19,18 +20,18 @@ spec:
     type: Recreate
   selector:
     matchLabels:
-      app: ollama-coder
+      app: llm-server
   template:
     metadata:
       labels:
-        app: ollama-coder
+        app: llm-server
     spec:
-      hostname: ollama-coder
+      hostname: llm-server
       restartPolicy: Always
       schedulerName: default-scheduler
       terminationGracePeriodSeconds: 30
       automountServiceAccountToken: false
-      serviceAccountName: ollama
+      serviceAccountName: llm-server
       enableServiceLinks: false
       dnsPolicy: ClusterFirst
       securityContext:
@@ -68,7 +69,7 @@ spec:
             - "-c"
             - |
               set -eu
-              MODELS=/.ollama/models
+              MODELS=/data/models
               mkdir -p "${MODELS}"
 
               dl() {
@@ -157,14 +158,14 @@ spec:
         # from the preset; --models-max 1 keeps only one resident in VRAM
         # (evicts on swap), --sleep-idle-seconds unloads it after idle. Per B70
         # benchmarking this Vulkan backend is the fastest on Battlemage and
-        # (unlike the IPEX ollama fork) tracks mainline for the newest models.
+        # (unlike the IPEX fork) tracks mainline for the newest models.
         #
         # Custom image = upstream server-vulkan + Mesa >= 26.1 (kisak PPA) for
         # the Battlemage cooperative-matrix path (~2x decode vs stock Mesa 26.0).
         # renovate: datasource=docker depName=registry.arthurvardevanyan.com/homelab/llama-cpp-vulkan
         - image: registry.arthurvardevanyan.com/homelab/llama-cpp-vulkan:not_latest
           imagePullPolicy: Always
-          name: ollama
+          name: llm
           args:
             - "--models-preset"
             - "/config/models.ini"
@@ -191,14 +192,14 @@ spec:
           env:
             # Model / HF cache lives on the PVC, not the root FS.
             - name: LLAMA_CACHE
-              value: /.ollama/cache
+              value: /data/cache
             - name: HOME
-              value: /.ollama
+              value: /data
             - name: GGML_VK_VISIBLE_DEVICES
               value: "0"
             # Mesa shader cache to a writable path under the arbitrary UID.
             - name: MESA_SHADER_CACHE_DIR
-              value: /.ollama/.mesa_cache
+              value: /data/.mesa_cache
           securityContext:
             runAsNonRoot: false # true
             readOnlyRootFilesystem: false
@@ -254,17 +255,17 @@ spec:
               ephemeral-storage: "1Gi"
               gpu.intel.com/xe: "1"
           volumeMounts:
-            - name: ollama-config
-              mountPath: /.ollama
+            - name: llm-config
+              mountPath: /data
             - name: router-preset
               mountPath: /config
               readOnly: true
           terminationMessagePath: /dev/termination-log
           terminationMessagePolicy: File
       volumes:
-        - name: ollama-config
+        - name: llm-config
           persistentVolumeClaim:
-            claimName: ollama-storage
+            claimName: llm-models
         - name: router-preset
           configMap:
             name: llama-router-preset

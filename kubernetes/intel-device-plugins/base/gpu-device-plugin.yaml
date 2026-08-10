@@ -5,7 +5,7 @@
 # sharedDevNum: 2 -> fan-out sharing so the single B70 can be requested by two
 # containers simultaneously (LLM inference + video transcode). NOTE: this is
 # fan-out sharing WITHOUT hardware memory isolation; VRAM budgeting is enforced
-# in the workload (ollama context/KV-cache settings), not by the plugin.
+# in the workload (llm-server context/KV-cache settings), not by the plugin.
 #
 # With the OLM-installed operator, the operator supplies the plugin/init images
 # for the DaemonSet it manages, so we do NOT pin them here.
@@ -21,7 +21,7 @@ spec:
   preferredAllocationPolicy: none
   logLevel: 2
   # Run the plugin DaemonSet ONLY on the GPU node (gpu-1), not on every worker.
-  # Keyed off the same NFD custom label the ollama Intel workload uses, produced
+  # Keyed off the same NFD custom label the llm-server Intel workload uses, produced
   # by the intel-xe-gpu NodeFeatureRule in the node-feature-discovery app.
   nodeSelector:
     feature.node.kubernetes.io/pci-0300_8086.present: "true"
