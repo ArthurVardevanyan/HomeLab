@@ -47,7 +47,7 @@ Both are reached on the one endpoint (`:11434`). Router behavior:
   request. No manual VRAM management needed.
 
 Global B70 tuning (in `[*]` of the preset): `n-gpu-layers 999`, `flash-attn on`,
-`cache-type-k/v f16`, `ubatch-size 2048`, `ctx-size 65536`,
+`cache-type-k/v f16`, `ubatch-size 2048`, `ctx-size 131072`,
 `reasoning-format none`.
 
 > **Probes:** `livenessProbe`/`startupProbe` hit `GET /models` (router-level,
@@ -64,7 +64,7 @@ Args in `base/deployment.yaml`, informed by B70 llama.cpp benchmarking:
   Battlemage (opposite of the well-known AMD "smaller ubatch" advice).
 - `--cache-type-k/v f16` — f16 KV holds decode speed far better than `q4_0`
   past ~16K context on this hardware.
-- `-c 65536` — 64K context.
+- `-c 131072` — 128K context (model natively supports 256K; hybrid DeltaNet attention keeps the KV cache small enough for 128K on a single 32GB card at f16).
 - `--reasoning-format none` — reasoning off server-side; clients opt in
   per-request.
 - Flash attention on, all layers offloaded (`-ngl 999`).
@@ -152,7 +152,7 @@ benchmark setup does not have:
 
 1. **Parallel slots (in our control).** Multiple llama.cpp slots split KV and
    contend for memory bandwidth, cutting per-stream decode. The router preset
-   sets `parallel = 1` so a single request gets the whole GPU + full 64K ctx.
+   sets `parallel = 1` so a single request gets the whole GPU + full 128K ctx.
    The bare-metal 76 t/s is an isolated single-stream number — compare only
    against an uncontended request.
 2. **Host `xe` KMD + GPU power/clock state (NOT in our control from the pod).**
