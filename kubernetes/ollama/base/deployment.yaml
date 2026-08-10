@@ -47,11 +47,22 @@ spec:
         feature.node.kubernetes.io/pci-0300_8086.present: "true"
       initContainers:
         # Pre-download both GGUFs into the PVC so first requests are fast and
-        # the router startup probe timing stays sane. Idempotent (skips files
-        # already present).
+        # the router startup probe timing stays sane.
+        #
+        # HuggingFace serves these files via Xet-backed CDN. A single curl
+        # stream is one TCP connection and badly underutilizes a fast link, so
+        # we split each file into parallel byte-range chunks (the CDN advertises
+        # `accept-ranges: bytes`) and reassemble. Idempotent: skips a file that
+        # already exists at the correct size.
         - image: ghcr.io/ggml-org/llama.cpp:server-vulkan@sha256:3dd0b326c9899cf7a7491fcafba51f54e78af2a366953769a847dd380a732420
           imagePullPolicy: IfNotPresent
           name: model-downloader
+          env:
+            # Number of parallel connections and chunk size per range request.
+            - name: PARALLEL
+              value: "16"
+            - name: CHUNK_BYTES
+              value: "268435456" # 256 MiB
           command:
             - /bin/sh
             - "-c"
@@ -59,17 +70,62 @@ spec:
               set -eu
               MODELS=/.ollama/models
               mkdir -p "${MODELS}"
+
               dl() {
-                f="${MODELS}/$1"
-                url="$2"
-                if [ -f "${f}" ]; then
-                  echo "Present: $1"; return 0
+                name="$1"; src="$2"
+                out="${MODELS}/${name}"
+
+                # Resolve the redirect to the signed CDN URL and its size.
+                cdn=$(curl -sIL "${src}" | awk 'BEGIN{IGNORECASE=1}/^location:/{u=$2}/^content-length:/{c=$2}END{print u}' | tr -d '\r')
+                [ -z "${cdn}" ] && cdn="${src}"
+                size=$(curl -sIL "${src}" | awk 'BEGIN{IGNORECASE=1}/^content-length:/{c=$2}END{print c}' | tr -d '\r')
+
+                if [ -f "${out}" ]; then
+                  have=$(wc -c < "${out}" | tr -d ' ')
+                  if [ -n "${size}" ] && [ "${have}" = "${size}" ]; then
+                    echo "Present (${have} bytes): ${name}"; return 0
+                  fi
+                  echo "Re-downloading ${name} (size mismatch: have ${have}, want ${size})"
+                  rm -f "${out}"
                 fi
-                echo "Downloading $1 ..."
-                curl -fSL --retry 5 --retry-delay 10 -o "${f}.part" "${url}"
-                mv "${f}.part" "${f}"
-                echo "Done: $1"
+
+                echo "Downloading ${name} (${size} bytes) with ${PARALLEL} parallel connections ..."
+                work="${MODELS}/.dl-${name}"
+                rm -rf "${work}"; mkdir -p "${work}"
+
+                offset=0; idx=0; pids=""; running=0
+                while [ "${offset}" -lt "${size}" ]; do
+                  end=$((offset + CHUNK_BYTES - 1))
+                  [ "${end}" -ge "${size}" ] && end=$((size - 1))
+                  part=$(printf '%s/part.%08d' "${work}" "${idx}")
+                  curl -fsS --retry 5 --retry-delay 5 -r "${offset}-${end}" -o "${part}" "${cdn}" &
+                  pids="${pids} $!"
+                  running=$((running + 1))
+                  if [ "${running}" -ge "${PARALLEL}" ]; then
+                    wait ${pids}; pids=""; running=0
+                  fi
+                  offset=$((end + 1)); idx=$((idx + 1))
+                done
+                [ -n "${pids}" ] && wait ${pids}
+
+                echo "Reassembling ${idx} chunks ..."
+                : > "${out}.part"
+                i=0
+                while [ "${i}" -lt "${idx}" ]; do
+                  cat "$(printf '%s/part.%08d' "${work}" "${i}")" >> "${out}.part"
+                  i=$((i + 1))
+                done
+                rm -rf "${work}"
+
+                got=$(wc -c < "${out}.part" | tr -d ' ')
+                if [ "${got}" != "${size}" ]; then
+                  echo "ERROR: ${name} size mismatch after reassembly (got ${got}, want ${size})" >&2
+                  rm -f "${out}.part"; return 1
+                fi
+                mv "${out}.part" "${out}"
+                echo "Done (${got} bytes): ${name}"
               }
+
               dl "Qwen3.6-35B-A3B-UD-Q4_K_M.gguf" \
                 "https://huggingface.co/unsloth/Qwen3.6-35B-A3B-GGUF/resolve/main/Qwen3.6-35B-A3B-UD-Q4_K_M.gguf?download=true"
               dl "Qwen3.6-27B-Q4_K_M.gguf" \
