@@ -21,9 +21,10 @@ spec:
   preferredAllocationPolicy: none
   logLevel: 2
   # Run the plugin DaemonSet ONLY on the GPU node (gpu-1), not on every worker.
-  # Built-in NFD label for an Intel (8086) display controller.
+  # Keyed off the same NFD custom label the ollama Intel workload uses, produced
+  # by the intel-xe-gpu NodeFeatureRule in the node-feature-discovery app.
   nodeSelector:
-    node-role.kubernetes.io/gpu: "true"
+    feature.node.kubernetes.io/custom-intel.xe.gpu: "true"
   # gpu-1 is tainted; neutralize the taint so the plugin can land there.
   tolerations:
     - key: node-role.kubernetes.io/gpu

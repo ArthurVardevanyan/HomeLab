@@ -1,0 +1,36 @@
+---
+# Labels the Intel Arc Pro B70 (Battlemage / Xe2) GPU node with
+# feature.node.kubernetes.io/custom-intel.xe.gpu=true, used as the nodeSelector
+# by the ollama (Intel) workload and the Intel GpuDevicePlugin.
+#
+# Uses the modern generic matchFeatures rule format. matchFeatures is a logical
+# AND: the xe KMD must be loaded AND an Intel (vendor 8086) display-class PCI
+# device must be present. matchAny ORs the two display classes (VGA 0300 and
+# "other display controller" 0380) since Battlemage may enumerate as either.
+apiVersion: nfd.k8s-sigs.io/v1alpha1
+kind: NodeFeatureRule
+metadata:
+  name: intel-xe-gpu
+  namespace: openshift-nfd
+  annotations:
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+spec:
+  rules:
+    - name: "intel.xe.gpu"
+      labels:
+        "feature.node.kubernetes.io/custom-intel.xe.gpu": "true"
+      matchFeatures:
+        - feature: kernel.loadedmodule
+          matchExpressions:
+            xe: { op: Exists }
+      matchAny:
+        - matchFeatures:
+            - feature: pci.device
+              matchExpressions:
+                vendor: { op: In, value: ["8086"] }
+                class: { op: In, value: ["0300"] }
+        - matchFeatures:
+            - feature: pci.device
+              matchExpressions:
+                vendor: { op: In, value: ["8086"] }
+                class: { op: In, value: ["0380"] }

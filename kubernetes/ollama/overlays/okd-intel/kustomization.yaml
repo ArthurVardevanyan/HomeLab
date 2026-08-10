@@ -4,13 +4,3 @@ kind: Kustomization
 resources:
   - ../../base
   - egress-firewall.yaml
-    # Remove the NVIDIA GPU resource limit inherited from base (strategic-merge
-    # cannot delete a map key by omission).
-patches:
-  - path: deployment-patch.yaml
-  - patch: |-
-      - op: remove
-        path: /spec/template/spec/containers/0/resources/limits/nvidia.com~1gpu
-    target:
-      kind: Deployment
-      name: ollama-coder

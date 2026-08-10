@@ -25,10 +25,14 @@ spec:
       labels:
         app: ollama-coder
     spec:
+      # Replace the entire pod spec inherited from the Intel base so no
+      # Intel-specific fields (command, xe resource, xe nodeSelector) leak in.
+      $patch: replace
       hostname: ollama-coder
       restartPolicy: Always
       schedulerName: default-scheduler
       terminationGracePeriodSeconds: 30
+      runtimeClassName: nvidia
       automountServiceAccountToken: false
       serviceAccountName: ollama
       enableServiceLinks: false
@@ -41,34 +45,13 @@ spec:
         - key: node-role.kubernetes.io/gpu
           operator: Exists
           effect: NoSchedule
-      # Intel Arc Pro B70 (xe KMD) GPU node (gpu-1), labeled by the NFD
-      # NodeFeatureRule in the node-feature-discovery-operator app.
       nodeSelector:
-        feature.node.kubernetes.io/custom-intel.xe.gpu: "true"
+        nvidia.com/gpu.present: "true"
       containers:
-        # IPEX-LLM image ships an Ollama build for Intel XPU.
-        # renovate: datasource=docker depName=docker.io/intelanalytics/ipex-llm-inference-cpp-xpu
-        - image: docker.io/intelanalytics/ipex-llm-inference-cpp-xpu:2.2.0b20250101@sha256:f79afc7735ec02bba680cefcffa28a4946891079889adadd3249798184df1ae3
-          imagePullPolicy: IfNotPresent
+        # renovate: datasource=docker depName=docker.io/ollama/ollama
+        - image: docker.io/ollama/ollama:0.32.6@sha256:b88c73ace3e115f8ec53dc8761ae1c0aabfa675406e3681786b98757ce050f42
+          imagePullPolicy: Always
           name: ollama
-          # Launch the bundled Intel XPU Ollama start script rather than the
-          # stock ollama entrypoint.
-          command:
-            - /bin/bash
-            - "-c"
-            - |
-              set -eu
-              export OLLAMA_HOST=0.0.0.0:11434
-              export OLLAMA_MODELS=/.ollama/models
-              export OLLAMA_NUM_GPU=999
-              export ONEAPI_DEVICE_SELECTOR=level_zero:0
-              export ZES_ENABLE_SYSMAN=1
-              export SYCL_CACHE_PERSISTENT=1
-              mkdir -p "${OLLAMA_MODELS}"
-              /llm/scripts/start-ollama.sh &
-              sleep 8
-              ollama pull qwen3-coder:30b || true
-              wait
           securityContext:
             runAsNonRoot: false # true
             readOnlyRootFilesystem: false
@@ -94,6 +77,19 @@ spec:
             - containerPort: 11434
               name: api
               protocol: TCP
+          lifecycle:
+            postStart:
+              exec:
+                command:
+                  - /bin/sh
+                  - "-c"
+                  - |
+                    sleep 5;
+                    ollama pull qwen3.5:9b;
+                    ollama pull qwen3.6:27b;
+                    ollama pull qwen3.6:35b;
+                    ollama pull gemma4:e2b;
+                    ollama pull gemma4:e4b;
           startupProbe:
             httpGet:
               path: /
@@ -123,14 +119,14 @@ spec:
               restartPolicy: NotRequired
           resources:
             requests:
-              cpu: "4"
-              memory: 16Gi
+              cpu: "8"
+              memory: 48Gi
               ephemeral-storage: "256Mi"
             limits:
-              cpu: "8"
-              memory: 24Gi
+              cpu: "10"
+              memory: 48Gi
               ephemeral-storage: "1Gi"
-              gpu.intel.com/xe: "1"
+              nvidia.com/gpu: "1"
           volumeMounts:
             - name: ollama-config
               mountPath: /.ollama
