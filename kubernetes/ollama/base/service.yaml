@@ -7,9 +7,10 @@ spec:
   ipFamilies:
     - IPv4
   ports:
-    - protocol: TCP
+    - name: api
+      protocol: TCP
       port: 11434
-      targetPort: 11434
+      targetPort: api
   internalTrafficPolicy: Cluster
   type: ClusterIP
   ipFamilyPolicy: SingleStack
@@ -33,7 +34,7 @@ spec:
     - name: api
       protocol: TCP
       port: 11434
-      targetPort: 11434
+      targetPort: api
       nodePort: 30334
   internalTrafficPolicy: Cluster
   allocateLoadBalancerNodePorts: true

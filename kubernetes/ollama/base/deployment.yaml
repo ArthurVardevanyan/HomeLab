@@ -14,7 +14,7 @@ spec:
   # Default scaled to 0 to free the GPU; scale to 1 to load the model.
   replicas: 0
   revisionHistoryLimit: 0
-  progressDeadlineSeconds: 1200
+  progressDeadlineSeconds: 1800
   strategy:
     type: Recreate
   selector:
@@ -45,48 +45,85 @@ spec:
       # Intel (8086) display-class PCI device.
       nodeSelector:
         feature.node.kubernetes.io/pci-0300_8086.present: "true"
+      initContainers:
+        # Pre-download both GGUFs into the PVC so first requests are fast and
+        # the router startup probe timing stays sane. Idempotent (skips files
+        # already present).
+        - image: ghcr.io/ggml-org/llama.cpp:server-vulkan@sha256:3dd0b326c9899cf7a7491fcafba51f54e78af2a366953769a847dd380a732420
+          imagePullPolicy: IfNotPresent
+          name: model-downloader
+          command:
+            - /bin/sh
+            - "-c"
+            - |
+              set -eu
+              MODELS=/.ollama/models
+              mkdir -p "${MODELS}"
+              dl() {
+                f="${MODELS}/$1"
+                url="$2"
+                if [ -f "${f}" ]; then
+                  echo "Present: $1"; return 0
+                fi
+                echo "Downloading $1 ..."
+                curl -fSL --retry 5 --retry-delay 10 -o "${f}.part" "${url}"
+                mv "${f}.part" "${f}"
+                echo "Done: $1"
+              }
+              dl "Qwen3.6-35B-A3B-UD-Q4_K_M.gguf" \
+                "https://huggingface.co/unsloth/Qwen3.6-35B-A3B-GGUF/resolve/main/Qwen3.6-35B-A3B-UD-Q4_K_M.gguf?download=true"
+              dl "Qwen3.6-27B-Q4_K_M.gguf" \
+                "https://huggingface.co/unsloth/Qwen3.6-27B-GGUF/resolve/main/Qwen3.6-27B-Q4_K_M.gguf?download=true"
+          securityContext:
+            runAsNonRoot: false # true
+            readOnlyRootFilesystem: true
+            allowPrivilegeEscalation: false
+            privileged: false
+            seccompProfile:
+              type: RuntimeDefault
+            capabilities:
+              drop:
+                - ALL
+          resources:
+            requests:
+              cpu: "2"
+              memory: 8Gi
+              ephemeral-storage: "256Mi"
+            limits:
+              cpu: "4"
+              memory: 16Gi
+              ephemeral-storage: "1Gi"
+          volumeMounts:
+            - name: ollama-config
+              mountPath: /.ollama
       containers:
-        # llama.cpp Vulkan server. Per B70 benchmarking this is the fastest
-        # backend on Battlemage with current Mesa, and (unlike the IPEX ollama
-        # fork) tracks mainline so it runs the newest models (Qwen3.6).
+        # llama.cpp Vulkan server in ROUTER mode. Serves both Qwen3.6 models
+        # from the preset; --models-max 1 keeps only one resident in VRAM
+        # (evicts on swap), --sleep-idle-seconds unloads it after idle. Per B70
+        # benchmarking this Vulkan backend is the fastest on Battlemage and
+        # (unlike the IPEX ollama fork) tracks mainline for the newest models.
         # renovate: datasource=docker depName=ghcr.io/ggml-org/llama.cpp
         - image: ghcr.io/ggml-org/llama.cpp:server-vulkan@sha256:3dd0b326c9899cf7a7491fcafba51f54e78af2a366953769a847dd380a732420
           imagePullPolicy: IfNotPresent
           name: ollama
           args:
-            # Model: Qwen3.6-35B-A3B (sparse MoE, ~3B active). On the bandwidth-
-            # bound B70 (608 GB/s) the sparse MoE decodes ~4x faster than the
-            # dense 27B. Unsloth UD quant patches the chat template.
-            - "-hf"
-            - "unsloth/Qwen3.6-35B-A3B-GGUF:UD-Q4_K_M"
+            - "--models-preset"
+            - "/config/models.ini"
+            # Only one model resident in VRAM at a time (both models cannot fit
+            # in 32GB); requesting the other evicts the current one.
+            - "--models-max"
+            - "1"
+            # Auto-unload the model (incl. KV cache) from VRAM after 15 min idle.
+            - "--sleep-idle-seconds"
+            - "900"
             - "--host"
             - "0.0.0.0"
             - "--port"
             - "11434"
-            - "--alias"
-            - "qwen3.6-35b-a3b"
-            # Offload all layers to the Intel GPU (Vulkan backend).
-            - "-ngl"
-            - "999"
-            # 64K context.
-            - "-c"
-            - "65536"
-            # B70 tuning: larger ubatch wins big on prefill (opposite of AMD).
-            - "--ubatch-size"
-            - "2048"
-            # f16 KV holds up far better than q4_0/q8_0 past ~16K on this HW.
-            - "--cache-type-k"
-            - "f16"
-            - "--cache-type-v"
-            - "f16"
-            - "--flash-attn"
-            - "on"
-            - "--jinja"
             - "--metrics"
-            - "--reasoning-format"
-            - "none"
+            - "--no-webui"
           env:
-            # Persist the -hf model download on the PVC (not the root FS).
+            # Model / HF cache lives on the PVC, not the root FS.
             - name: LLAMA_CACHE
               value: /.ollama/cache
             - name: HOME
@@ -107,17 +144,20 @@ spec:
             - containerPort: 11434
               name: api
               protocol: TCP
+          # startup/liveness use GET /models (router-level, stays HTTP 200 even
+          # while a sub-model loads/swaps). readiness uses /health (returns 503
+          # while a model loads) so the Service only routes when actually ready.
           startupProbe:
             httpGet:
-              path: /health
+              path: /models
               port: api
             initialDelaySeconds: 10
             periodSeconds: 10
-            failureThreshold: 120
+            failureThreshold: 60
             timeoutSeconds: 5
           livenessProbe:
             httpGet:
-              path: /health
+              path: /models
               port: api
             periodSeconds: 30
             timeoutSeconds: 10
@@ -136,20 +176,26 @@ spec:
               restartPolicy: NotRequired
           resources:
             requests:
-              cpu: "4"
+              cpu: "2"
               memory: 8Gi
               ephemeral-storage: "256Mi"
             limits:
-              cpu: "8"
+              cpu: "4"
               memory: 16Gi
               ephemeral-storage: "1Gi"
               gpu.intel.com/xe: "1"
           volumeMounts:
             - name: ollama-config
               mountPath: /.ollama
+            - name: router-preset
+              mountPath: /config
+              readOnly: true
           terminationMessagePath: /dev/termination-log
           terminationMessagePolicy: File
       volumes:
         - name: ollama-config
           persistentVolumeClaim:
             claimName: ollama-storage
+        - name: router-preset
+          configMap:
+            name: llama-router-preset

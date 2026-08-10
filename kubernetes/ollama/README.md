@@ -39,18 +39,33 @@ client config remain stable across backend swaps.
 
 ### Model
 
-`unsloth/Qwen3.6-35B-A3B-GGUF:UD-Q4_K_M` (~22 GB), auto-downloaded by
-llama.cpp's `-hf` flag into the PVC (`LLAMA_CACHE=/.ollama/cache`) and served
-under the alias `qwen3.6-35b-a3b` on the OpenAI-compatible API at `:11434`.
+Served via **llama-server router mode** — a single process hosts both models
+(preset `base/configmap.yaml` → `models.ini`), pre-downloaded to the PVC by an
+init container. Select the model by name in the client's `model` field:
 
-The **sparse MoE (35B, ~3B active)** is chosen deliberately over the dense
-27B: the B70 is memory-bandwidth-bound (608 GB/s), and dense decode reads all
-27 GB/token vs the MoE's ~3 GB/token — roughly 4x faster decode for the MoE on
-this hardware.
+| Model id          | Model                        | Trait                    |
+| ----------------- | ---------------------------- | ------------------------ |
+| `qwen3.6-35b-a3b` | Qwen3.6-35B-A3B (sparse MoE) | ~4x faster decode on B70 |
+| `qwen3.6-27b`     | Qwen3.6-27B (dense)          | higher quality, slower   |
 
-> **VRAM note:** ~22 GB weights + `f16` KV at 64K on a 35B MoE is tight on the
-> 32 GB card. If llama-server logs show an out-of-memory / device-allocation
-> failure, drop `--cache-type-k/v` to `q8_0` or lower `-c`.
+Both are reached on the one endpoint (`:11434`). Router behavior:
+
+- `--models-max 1` — only **one** model resident in VRAM at a time; requesting
+  the other evicts the current one (both cannot fit in 32 GB: ~22 GB MoE +
+  ~17 GB dense).
+- `--sleep-idle-seconds 900` — the resident model (incl. KV cache) is
+  **unloaded from VRAM after 15 min idle** and auto-reloads on the next
+  request. No manual VRAM management needed.
+
+Global B70 tuning (in `[*]` of the preset): `n-gpu-layers 999`, `flash-attn on`,
+`cache-type-k/v f16`, `ubatch-size 2048`, `ctx-size 65536`,
+`reasoning-format none`.
+
+> **Probes:** `livenessProbe`/`startupProbe` hit `GET /models` (router-level,
+> stays HTTP 200 during a model load/swap), while `readinessProbe` hits
+> `GET /health` (returns 503 while a model loads, keeping the pod out of the
+> Service until ready). Do **not** put liveness on `/health` — it flaps 503
+> during swaps and would kill the container mid-load.
 
 ### B70 tuning rationale
 
