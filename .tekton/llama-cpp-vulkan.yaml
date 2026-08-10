@@ -89,7 +89,7 @@ spec:
                 set -o errexit -o nounset -o pipefail
 
                 # The FROM tag is the single source of truth: server-vulkan-b<build> -> b<build>.
-                tags=( $(grep -oE '^FROM[^[:space:]]*:server-vulkan-b[0-9]+' "$(params.DOCKERFILE)" \
+                tags=( $(grep -oE '^FROM [^ ]*:server-vulkan-b[0-9]+' "$(params.DOCKERFILE)" \
                          | grep -oE 'b[0-9]+$' | sort -u || true) )
                 if [ "${#tags[@]}" -ne 1 ]; then
                   echo "ERROR: expected exactly 1 server-vulkan-b<build> tag in $(params.DOCKERFILE), got ${#tags[@]}" >&2
