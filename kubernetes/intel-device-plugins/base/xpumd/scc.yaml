@@ -9,10 +9,9 @@ metadata:
   name: intel-xpumd
   annotations:
     checkov.io/skip: >-
-      CKV_OPENSHIFT_7=hostPath for /run/xpumd and /var/log/crashlog;
       CKV_OPENSHIFT_4=SYS_ADMIN needed for engine utilization metrics
 allowPrivilegedContainer: false
-allowHostDirVolumePlugin: true
+allowHostDirVolumePlugin: false
 allowHostNetwork: false
 allowHostPorts: false
 allowHostPID: false
@@ -38,7 +37,6 @@ seccompProfiles:
 volumes:
   - configMap
   - emptyDir
-  - hostPath
   - projected
 users:
   - system:serviceaccount:intel-device-plugins-operator:xpumd

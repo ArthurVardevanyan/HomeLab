@@ -13,16 +13,6 @@ metadata:
     app.kubernetes.io/version: "v2.0.1"
     app.kubernetes.io/managed-by: Helm
 data:
-  # Default configuration for the Intel Crashlog receiver. Can be overridden
-  # in config.yaml (via .Values.config).
-  config-receiver-crashlog.yaml: |-
-    receivers:
-      intel_crashlog:
-        directory: /var/log/crashlog
-        glob: "*.bin"
-        ignore_older_than: 0s
-  # Default configuration for the Intel XPU status processor. Can be overridden
-  # in config.yaml (via .Values.config).
   config-processor-xpustatus.yaml: |-
     processors:
       intelxpustatus:
@@ -74,64 +64,14 @@ data:
               - state_name: "warning"
                 conditions:
                   - value: 85.0
-  # Default configuration for the Intel XPU info exporter. Can be overridden
-  # in config.yaml (via .Values.config).
-  config-exporter-xpuinfo.yaml: |-
-    exporters:
-      intelxpuinfo:
-        endpoint: "/run/xpumd/intelxpuinfo.sock"
-        hw_status_mappings:
-          - health_domain: "memory"
-            filters:
-              - key: hw.type
-                values: [memory]
-            state_mapping:
-              unknown:
-                severity: unknown
-              ok:
-                severity: ok
-              degraded:
-                severity: warning
-              critical:
-                severity: critical
-              replace:
-                severity: critical
-              "*":
-                severity: warning
-                message: "Unexpected memory health state, mapped to warning"
-          # Filter out (by using empty state_mapping) ECC states that are not indicative of device health
-          - health_domain: "gpu"
-            filters:
-              - key: hw.type
-                values: [gpu]
-              - key: hw.state
-                values: [ecc_disabled, ecc_enabled, ecc_available, ecc_unavailable]
-            state_mapping: {}
-          # Default mapping (empty filters matches any data point not matched above):
-          - health_domain: "{{ .hw_type }}"
-            state_mapping:
-              unknown:
-                severity: unknown
-              ok:
-                severity: ok
-              warning:
-                severity: warning
-              critical:
-                severity: critical
-              failed:
-                severity: failed
-              "*":
-                severity: warning
   config.yaml: |-
     exporters:
-      intelxpuinfo: {}
       prometheus:
         endpoint: 0.0.0.0:8080
     extensions: {}
     processors:
       intelxpustatus: {}
     receivers:
-      intel_crashlog: {}
       intelxpu:
         collection_interval: 5s
         initial_delay: 1s
@@ -140,15 +80,9 @@ data:
         timeout: 0
     service:
       pipelines:
-        logs:
-          exporters:
-          - intelxpuinfo
-          receivers:
-          - intelxpu
-          - intel_crashlog
         metrics:
           exporters:
-          - intelxpuinfo
+          - prometheus
           processors:
           - intelxpustatus
           receivers:

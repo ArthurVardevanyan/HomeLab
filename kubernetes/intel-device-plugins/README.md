@@ -9,7 +9,7 @@ KMD) to the kubelet as the `gpu.intel.com/xe` extended resource.
 - [Scheduling](#scheduling)
 - [GPU Monitoring (nvidia-smi equivalents)](#gpu-monitoring-nvidia-smi-equivalents)
   - [From the host / a node debug shell](#from-the-host--a-node-debug-shell)
-  - [From inside the LLM pod](#from-inside-the-llm-pod)
+  - [From inside a gpu-toolbox debug pod](#from-inside-a-gpu-toolbox-debug-pod)
   - [From Kubernetes (scheduling / capacity view)](#from-kubernetes-scheduling--capacity-view)
 - [Verify the plugin and node labels](#verify-the-plugin-and-node-labels)
 
@@ -74,30 +74,56 @@ cat /sys/class/drm/card*/gt/gt0/rps_max_freq_mhz 2>/dev/null
 cat /sys/class/drm/card*/device/hwmon/hwmon*/energy1_input 2>/dev/null
 ```
 
-### From inside the LLM pod
+### From inside a gpu-toolbox debug pod
+
+The `gpu-toolbox` image ships VA-API/FFmpeg and Intel diagnostics (`clinfo`,
+`xpu-smi`, `vainfo`, `intel-gpu-tools`). Run it as a debug pod with access to
+`/dev/dri/render` — the `render` supplementalGroup (`44`) is required for
+device access on OpenShift.
 
 ```bash
 export KUBECONFIG=$HOME/.kube/okd
 
-# Scale the workload up first (defaults to replicas: 0)
-oc -n llm scale deployment/llm-server --replicas=1
+# Option A: ephemeral container on the GPU node (preferred)
+oc debug node/gpu-1 -- chroot /host /bin/bash
+# Inside: clinfo -l, xpu-smi, vainfo, ffmpeg (no extra setup)
 
-POD=$(oc -n llm get pod -l app=llm-server -o name | head -1)
+# Option B: standalone pod
+oc run gpu-toolbox-debug --image=ghcr.io/arthurvardevanyan/gpu-toolbox:latest \
+  --restart=Never -it --rm \
+  --overrides='{"spec":{"supplementalGroups":[44],"volumes":[{"name":"dri","hostPath":{"path":"/dev/dri"}}],"containers":[{"name":"gpu-toolbox-debug","imagePullPolicy":"IfNotPresent","securityContext":{"runAsNonRoot":false},"volumeMounts":[{"name":"dri","mountPath":"/dev/dri"}]}]}}'
 
-# Enumerate SYCL / Level-Zero devices the runtime sees (like nvidia-smi -L)
-oc -n llm exec "$POD" -- sycl-ls
+POD=$(oc get pod -l run=gpu-toolbox-debug -o name --field-selector=status.phase=Running)
+```
 
-# Full SMI dashboard: utilization, memory, power, temp, health
-oc -n llm exec "$POD" -- xpu-smi discovery      # list devices + static info
-oc -n llm exec "$POD" -- xpu-smi stats -d 0     # live stats for device 0
-oc -n llm exec "$POD" -- xpu-smi dump -d 0 -m 0,1,2,3,18  # stream metrics
+Device enumeration and encoding verification:
 
-# What models is the LLM serving (workload-level check)
-oc -n llm exec "$POD" -- wget -qO- http://localhost:11434/v1/models
+```bash
+# OpenCL device enumeration (like nvidia-smi -L)
+oc exec "$POD" -- clinfo -l
+
+# SMI: list devices + static info
+oc exec "$POD" -- xpu-smi discovery
+# SMI: live stats for device 0
+oc exec "$POD" -- xpu-smi stats -d 0
+
+# VA-API: check for VAEntrypointEncSlice support
+oc exec "$POD" -- vainfo --display drm --device /dev/dri/renderD128
+
+# Hardware encode smoke test: 5s of 1080p30 → h264_vaapi → null
+oc exec "$POD" -- ffmpeg -y -hide_banner \
+  -init_hw_device vaapi=hw:/dev/dri/renderD128 \
+  -f lavfi -i testsrc=size=1920x1080:rate=30:duration=5 \
+  -vf format=nv12,hwupload \
+  -c:v h264_vaapi -f null -
 ```
 
 `xpu-smi stats -d 0` metric groups map roughly to `nvidia-smi` columns:
 GPU Utilization, GPU Memory Used, GPU Power, GPU Frequency, GPU Temperature.
+
+Note: `intel_gpu_top` may fail against the `xe` KMD — Ubuntu 24.04 ships
+`igt-gpu-tools` 1.28, but `xe` support requires 1.29+. Use the sysfs reads
+in the host section above as a fallback.
 
 ### From Kubernetes (scheduling / capacity view)
 
@@ -157,3 +183,12 @@ Then apply post-render edits (namespace, sync-waves, PodSpec defaults,
 renovate annotations) to the individual YAML files under
 `base/xpumd/` and remove any resources not rendered for the active
 `gpuAccess` mode (e.g. `ResourceClaimTemplate` when `gpuAccess: plugin`).
+
+The `intelxpuinfo` exporter, `intel_crashlog` receiver, and both hostPath
+volumes (`/run/xpumd`, `/var/log/crashlog`) are deleted post-render because
+the chart hard-codes them in the daemonset template. After any ConfigMap
+change, restart the DaemonSet so the rolling update picks up the new values:
+
+```bash
+oc -n intel-device-plugins-operator rollout restart ds/xpumd
+```
