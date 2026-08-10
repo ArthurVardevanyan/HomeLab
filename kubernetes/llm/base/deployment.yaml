@@ -9,11 +9,10 @@ metadata:
   annotations:
     checkov.io/skip1: CKV_K8S_40=Upstream Image Runs as Root
     checkov.io/skip2: CKV_K8S_22=Model Cache Requires Writable Root FS
-    checkov.io/skip3: CKV_K8S_43=Sha Changes Often
-    checkov.io/skip4: CKV_K8S_23=Upstream Image Requires Root
+    checkov.io/skip3: CKV_K8S_23=Upstream Image Requires Root
 spec:
-  # Default scaled to 0 to free the GPU; scale to 1 to load the model.
-  replicas: 0
+  # Scale to 0 to free the GPU when not needed.
+  # replicas: 0
   revisionHistoryLimit: 0
   progressDeadlineSeconds: 1800
   strategy:
@@ -56,7 +55,8 @@ spec:
         # we split each file into parallel byte-range chunks (the CDN advertises
         # `accept-ranges: bytes`) and reassemble. Idempotent: skips a file that
         # already exists at the correct size.
-        - image: ghcr.io/ggml-org/llama.cpp:server-vulkan@sha256:3dd0b326c9899cf7a7491fcafba51f54e78af2a366953769a847dd380a732420
+        # renovate: datasource=docker depName=ghcr.io/ggml-org/llama.cpp versioning=regex:^server-vulkan-b(?<major>\d+)$
+        - image: ghcr.io/ggml-org/llama.cpp:server-vulkan-b10331@sha256:3dd0b326c9899cf7a7491fcafba51f54e78af2a366953769a847dd380a732420
           imagePullPolicy: IfNotPresent
           name: model-downloader
           env:
@@ -144,16 +144,16 @@ spec:
                 - ALL
           resources:
             requests:
-              cpu: "2"
-              memory: 8Gi
+              cpu: "1"
+              memory: 16Gi
               ephemeral-storage: "256Mi"
             limits:
-              cpu: "4"
-              memory: 16Gi
+              cpu: "2"
+              memory: 32Gi
               ephemeral-storage: "1Gi"
           volumeMounts:
-            - name: ollama-config
-              mountPath: /.ollama
+            - name: llm-config
+              mountPath: /data
       containers:
         # llama.cpp Vulkan server in ROUTER mode. Serves both Qwen3.6 models
         # from the preset; --models-max 1 keeps only one resident in VRAM
@@ -163,9 +163,11 @@ spec:
         #
         # Custom image = upstream server-vulkan + Mesa >= 26.1 (kisak PPA) for
         # the Battlemage cooperative-matrix path (~2x decode vs stock Mesa 26.0).
-        # renovate: datasource=docker depName=registry.arthurvardevanyan.com/homelab/llama-cpp-vulkan
-        - image: registry.arthurvardevanyan.com/homelab/llama-cpp-vulkan:not_latest
-          imagePullPolicy: Always
+        # renovate: datasource=docker depName=registry.arthurvardevanyan.com/homelab/llama-cpp-vulkan versioning=loose
+        # Tag = upstream llama.cpp build number (e.g. b10331); pipeline derives from
+        # the FROM tag in the containerfile. Deployment tag+digest follows containerfile
+        # bump → PaC build → next Renovate run (up to ~1 week lag).
+        - image: registry.arthurvardevanyan.com/homelab/llama-cpp-vulkan:b10331@sha256:a03c9403a14158f756c93809f6a1ea9655aa9e8064df319a1bd1db819ab1d818
           name: llm
           args:
             - "--models-preset"

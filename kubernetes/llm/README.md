@@ -82,6 +82,18 @@ Mesa) lives **inside the container**, not on the RHCOS host. The upstream
 this app runs a **custom image** (`containers/llama-cpp-vulkan/`) that upgrades
 Mesa to >= 26.1 via the kisak-mesa PPA. No node/RHCOS change is required.
 
+### Image tag
+
+The custom image tag is the upstream llama.cpp build number
+(e.g. `b10331`). The pipeline extracts it from the containerfile's `FROM` tag
+(single source of truth — the same tag is pinned in the initContainer image).
+When Renovate proposes a bump in the containerfile (e.g. `b10331` →
+`b10335`), PaC builds and pushes the new tag. On the next Renovate run
+(weekly), the deployment is bumped to the new `tag@sha256:digest` reference.
+This means the deployment typically lags the containerfile by up to one
+Renovate cycle (~1 week). A containerfile-only rebuild under an unchanged tag
+no longer rolls immediately — it rolls when the digest changes in git.
+
 Confirm the fast path is active from inside the pod (or the monitor pod):
 
 ```bash
@@ -99,32 +111,48 @@ Notes:
 
 ## GPU Monitoring (nvidia-smi equivalents)
 
-Live Intel GPU telemetry tools are packaged in a **separate** image
-(`containers/intel-gpu-monitor/`) deployed as a scaled-0 helper in the `llm`
-namespace (`kubernetes/intel-gpu-monitor/`). Scale it up on demand — it requests
-`gpu.intel.com/xe` so it sees `/dev/dri`:
+Live Intel GPU telemetry tools are packaged in `containers/intel-gpu-monitor/`
+and can be run on-demand with `oc debug` — no persistent deployment needed:
 
 ```bash
 export KUBECONFIG=$HOME/.kube/okd
-oc -n llm scale deployment/intel-gpu-monitor --replicas=1
-POD=$(oc -n llm get pod -l app=intel-gpu-monitor -o name | head -1)
 
-# Confirm the Vulkan ICD + cooperative-matrix support (the whole point):
-oc -n llm exec "$POD" -- sh -c 'vulkaninfo | grep -iE "deviceName|cooperativeMatrix"'
+# On-demand debug pod with gpu.intel.com/xe request:
+oc run intel-gpu-debug --image=registry.arthurvardevanyan.com/homelab/intel-gpu-monitor \
+  -n llm --rm -i --restart=Never --overrides='
+{
+  "spec": {
+    "containers": [{
+      "name": "debug",
+      "image": "registry.arthurvardevanyan.com/homelab/intel-gpu-monitor:not_latest",
+      "args": ["sleep", "300"],
+      "resources": {
+        "requests": {"gpu.intel.com/xe": "1"},
+        "limits": {"gpu.intel.com/xe": "1"}
+      },
+      "stdin": true,
+      "tty": true,
+      "volumeMounts": [{
+        "name": "dri",
+        "mountPath": "/dev/dri"
+      }]
+    }],
+    "volumes": [{
+      "name": "dri",
+      "hostPath": {
+        "path": "/dev/dri"
+      }
+    }]
+  }
+}'
 
-# Live utilization / VRAM / power / temp / freq (the nvidia-smi analog):
-oc -n llm exec "$POD" -- xpu-smi discovery
-oc -n llm exec "$POD" -- xpu-smi stats -d 0
-oc -n llm exec "$POD" -- xpu-smi dump -d 0 -m 0,1,2,3,5
-
-# Best-effort engine busy% (limited without CAP_PERFMON):
-oc -n llm exec "$POD" -- intel_gpu_top -l
-
-# OpenCL / VA-API sanity:
-oc -n llm exec "$POD" -- clinfo | grep -i "Device Name"
-
-# Scale back down when done (frees the GPU share):
-oc -n llm scale deployment/intel-gpu-monitor --replicas=0
+# Once inside the debug pod:
+vulkaninfo | grep -iE "deviceName|cooperativeMatrix"
+xpu-smi discovery
+xpu-smi stats -d 0
+xpu-smi dump -d 0 -m 0,1,2,3,5
+intel_gpu_top -l
+clinfo | grep -i "Device Name"
 ```
 
 Workload-level metrics (llama.cpp exposes Prometheus metrics via `--metrics`):
@@ -179,16 +207,13 @@ Confirm full GPU offload + coopmat path (rules out CPU spill):
 oc -n llm logs "$POD" | grep -iE "matrix cores|offloaded|CPU buffer|VRAM|not enough|n_gpu_layers"
 ```
 
-Check GPU clocks UNDER decode load (the throttle hypothesis) via the monitor
-pod — if freq sits well below the ~2.4 GHz boost while decoding, the host is
-clock/power-limiting:
+Check GPU clocks UNDER decode load (the throttle hypothesis) — if freq sits
+well below the ~2.4 GHz boost while decoding, the host is clock/power-limiting:
 
 ```bash
-oc -n llm scale deploy/intel-gpu-monitor --replicas=1
-MON=$(oc -n llm get pod -l app=intel-gpu-monitor -o name | head -1)
-oc -n llm exec "$MON" -- xpu-smi stats -d 0     # freq, power, util, temp
-oc -n llm exec "$MON" -- sh -c 'cat /sys/class/drm/card*/gt/gt0/rps_*_freq_mhz'
-oc -n llm scale deploy/intel-gpu-monitor --replicas=0
+# xpu-smi stats -d 0 reports freq, power, util, temp in real-time
+# cat /sys/class/drm/card*/gt/gt0/rps_*_freq_mhz from a debug pod (see above)
+oc -n llm exec "$POD" -- xpu-smi stats -d 0
 ```
 
 Interpretation:
@@ -201,7 +226,7 @@ Interpretation:
 
 ## Scaling
 
-Scaled to `0` by default to free the GPU. Scale up to load the model
+Scale to 0 to free the GPU when not needed. Scale up to load the model
 (first start downloads ~22 GB):
 
 ```bash
