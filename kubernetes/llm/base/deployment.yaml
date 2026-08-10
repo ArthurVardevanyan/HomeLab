@@ -42,10 +42,11 @@ spec:
         - key: node-role.kubernetes.io/gpu
           operator: Exists
           effect: NoSchedule
-      # Intel Arc Pro B70 (xe KMD) GPU node (gpu-1). Built-in NFD label for an
-      # Intel (8086) display-class PCI device.
+      # Intel Arc Pro B70 (xe KMD) GPU node (gpu-1), identified by the
+      # intel-xe-gpu NodeFeatureRule that matches xe KMD + Intel display-class
+      # PCI hardware.
       nodeSelector:
-        feature.node.kubernetes.io/pci-8086.present: "true"
+        feature.node.kubernetes.io/custom-intel.xe.gpu: "true"
       initContainers:
         # Pre-download both GGUFs into the PVC so first requests are fast and
         # the router startup probe timing stays sane.

@@ -5,8 +5,11 @@
 #
 # Uses the modern generic matchFeatures rule format. matchFeatures is a logical
 # AND: the xe KMD must be loaded AND an Intel (vendor 8086) display-class PCI
-# device must be present. matchAny ORs the two display classes (VGA 0300 and
-# "other display controller" 0380) since Battlemage may enumerate as either.
+# device must be present. The `class` matchExpression uses `op: In` to OR the
+# two display classes (VGA 0300 and "other display controller" 0380) since
+# Battlemage may enumerate as either. This rule evaluates the raw
+# `pci.device` feature (unaffected by the `pci` source's deviceClassWhitelist
+# or deviceLabelFields settings).
 apiVersion: nfd.k8s-sigs.io/v1alpha1
 kind: NodeFeatureRule
 metadata:
@@ -23,14 +26,7 @@ spec:
         - feature: kernel.loadedmodule
           matchExpressions:
             xe: { op: Exists }
-      matchAny:
-        - matchFeatures:
-            - feature: pci.device
-              matchExpressions:
-                vendor: { op: In, value: ["8086"] }
-                class: { op: In, value: ["0300"] }
-        - matchFeatures:
-            - feature: pci.device
-              matchExpressions:
-                vendor: { op: In, value: ["8086"] }
-                class: { op: In, value: ["0380"] }
+        - feature: pci.device
+          matchExpressions:
+            vendor: { op: In, value: ["8086"] }
+            class: { op: In, value: ["0300", "0380"] }

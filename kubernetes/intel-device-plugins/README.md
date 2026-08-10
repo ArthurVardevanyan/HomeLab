@@ -134,7 +134,7 @@ oc -n intel-device-plugins-operator get pods -o wide
 
 # Confirm the NFD label that gates scheduling actually landed on gpu-1
 oc get node gpu-1 -o jsonpath='{.metadata.labels}' \
-  | tr ',' '\n' | grep -i 'custom-intel.xe.gpu\|pci-0300\|8086'
+  | tr ',' '\n' | grep -i 'custom-intel.xe.gpu'
 ```
 
 If the `custom-intel.xe.gpu` label is absent, the `intel-xe-gpu`
