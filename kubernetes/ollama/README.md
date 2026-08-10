@@ -11,7 +11,7 @@ dormant Kustomize components.
 - [Default: llama.cpp Vulkan on the Intel Arc B70](#default-llamacpp-vulkan-on-the-intel-arc-b70)
   - [Model](#model)
   - [B70 tuning rationale](#b70-tuning-rationale)
-  - [Mesa prerequisite (biggest perf lever)](#mesa-prerequisite-biggest-perf-lever)
+  - [Mesa 26.1 (biggest perf lever) — handled in the image](#mesa-261-biggest-perf-lever--handled-in-the-image)
 - [GPU Monitoring (nvidia-smi equivalents)](#gpu-monitoring-nvidia-smi-equivalents)
 - [Scaling](#scaling)
 - [Layout](#layout)
@@ -80,64 +80,71 @@ Args in `base/deployment.yaml`, informed by B70 llama.cpp benchmarking:
   per-request.
 - Flash attention on, all layers offloaded (`-ngl 999`).
 
-### Mesa prerequisite (biggest perf lever)
+### Mesa 26.1 (biggest perf lever) — handled in the image
 
-The single biggest throughput lever on the B70 is **not** the inference
-engine — it is the host **Mesa Vulkan driver**. Mesa 26.1 enabled a
-cooperative-matrix path for Intel ANV that roughly **doubles** Vulkan decode
-throughput. This lives on the RHCOS/OKD **node**, not in the container.
+The single biggest throughput lever on the B70 is **not** the inference engine
+— it is the **Mesa Vulkan driver**. Mesa 26.1 enabled a cooperative-matrix
+path for Intel ANV that roughly **doubles** Vulkan decode throughput on
+Battlemage.
 
-Verify on the GPU node before expecting full performance:
+Crucially, the Vulkan userspace (loader, `intel_icd.json`, `libvulkan_intel.so`,
+Mesa) lives **inside the container**, not on the RHCOS host. The upstream
+`ghcr.io/ggml-org/llama.cpp:server-vulkan` image ships Mesa 26.0.3 (too old), so
+this app runs a **custom image** (`containers/llama-cpp-vulkan/`) that upgrades
+Mesa to >= 26.1 via the kisak-mesa PPA. No node/RHCOS change is required.
 
-```bash
-export KUBECONFIG=$HOME/.kube/okd
-oc debug node/gpu-1 -- chroot /host sh -c '
-  rpm -q mesa-vulkan-drivers 2>/dev/null || true
-  vulkaninfo 2>/dev/null | grep -iE "driverName|driverInfo|coopmat" | head
-'
-```
-
-Notes:
-
-- Aim for **Mesa >= 26.1**. If RHCOS ships an older Mesa, decode is roughly
-  half speed; upgrading RHCOS userspace Mesa is a separate node-level effort.
-- Do **not** rely on llama.cpp's `matrix cores:` device line to confirm the
-  fast path — recent builds report `KHR_coopmat` on hardware that previously
-  reported `NV_coopmat2` at identical throughput.
-
-## GPU Monitoring (nvidia-smi equivalents)
-
-Intel GPUs do not use `nvidia-smi`. Equivalents:
+Confirm the fast path is active from inside the pod (or the monitor pod):
 
 ```bash
 export KUBECONFIG=$HOME/.kube/okd
 oc -n ollama scale deployment/ollama-coder --replicas=1
+oc -n ollama logs deploy/ollama-coder | grep -i "matrix cores"
+```
+
+Notes:
+
+- Do **not** rely solely on llama.cpp's `matrix cores:` device line to confirm
+  the fast path — recent builds report `KHR_coopmat` on hardware that
+  previously reported `NV_coopmat2` at identical throughput. Verify with actual
+  decode t/s (target ~76 t/s single-stream on Qwen3.6-35B-A3B).
+
+## GPU Monitoring (nvidia-smi equivalents)
+
+Live Intel GPU telemetry tools are packaged in a **separate** image
+(`containers/intel-gpu-monitor/`) deployed as a scaled-0 helper in the `ollama`
+namespace (`kubernetes/intel-gpu-monitor/`). Scale it up on demand — it requests
+`gpu.intel.com/xe` so it sees `/dev/dri`:
+
+```bash
+export KUBECONFIG=$HOME/.kube/okd
+oc -n ollama scale deployment/intel-gpu-monitor --replicas=1
+POD=$(oc -n ollama get pod -l app=intel-gpu-monitor -o name | head -1)
+
+# Confirm the Vulkan ICD + cooperative-matrix support (the whole point):
+oc -n ollama exec "$POD" -- sh -c 'vulkaninfo | grep -iE "deviceName|cooperativeMatrix"'
+
+# Live utilization / VRAM / power / temp / freq (the nvidia-smi analog):
+oc -n ollama exec "$POD" -- xpu-smi discovery
+oc -n ollama exec "$POD" -- xpu-smi stats -d 0
+oc -n ollama exec "$POD" -- xpu-smi dump -d 0 -m 0,1,2,3,5
+
+# Best-effort engine busy% (limited without CAP_PERFMON):
+oc -n ollama exec "$POD" -- intel_gpu_top -l
+
+# OpenCL / VA-API sanity:
+oc -n ollama exec "$POD" -- clinfo | grep -i "Device Name"
+
+# Scale back down when done (frees the GPU share):
+oc -n ollama scale deployment/intel-gpu-monitor --replicas=0
+```
+
+Workload-level metrics (llama.cpp exposes Prometheus metrics via `--metrics`):
+
+```bash
 POD=$(oc -n ollama get pod -l app=ollama-coder -o name | head -1)
-```
-
-From the host / a node debug shell:
-
-```bash
-oc debug node/gpu-1
-chroot /host
-# Live per-engine utilization / power / freq (closest to nvtop):
-intel_gpu_top
-# Driver binding + device nodes:
-lspci -nnk | grep -iA3 '8086'
-ls -l /dev/dri/
-# Sysfs frequency:
-cat /sys/class/drm/card*/gt/gt0/rps_cur_freq_mhz 2>/dev/null
-```
-
-Workload-level (llama.cpp exposes Prometheus metrics via `--metrics`):
-
-```bash
 oc -n ollama exec "$POD" -- sh -c 'wget -qO- http://localhost:11434/metrics | head'
 oc -n ollama exec "$POD" -- sh -c 'wget -qO- http://localhost:11434/v1/models'
 ```
-
-If using the `ipex-ollama` component instead, that image also bundles
-`xpu-smi` (the direct `nvidia-smi` analog) and `sycl-ls`.
 
 Kubernetes capacity view (device-plugin advertised resource):
 

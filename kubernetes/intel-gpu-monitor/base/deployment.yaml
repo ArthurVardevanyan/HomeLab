@@ -1,0 +1,91 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: intel-gpu-monitor
+  namespace: ollama
+  labels:
+    app: intel-gpu-monitor
+  annotations:
+    checkov.io/skip1: CKV_K8S_40=Monitor Tools Run as Root for GPU Access
+spec:
+  # Scaled to 0 by default; scale to 1 on demand to inspect the GPU.
+  # Requests gpu.intel.com/xe so /dev/dri is mounted and it lands on gpu-1.
+  # NOTE: with the plugin's sharedDevNum: 2, this shares the card with the
+  # inference pod -- run monitoring, then scale back to 0.
+  replicas: 0
+  revisionHistoryLimit: 0
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: intel-gpu-monitor
+  template:
+    metadata:
+      labels:
+        app: intel-gpu-monitor
+    spec:
+      hostname: intel-gpu-monitor
+      restartPolicy: Always
+      schedulerName: default-scheduler
+      terminationGracePeriodSeconds: 10
+      automountServiceAccountToken: false
+      serviceAccountName: intel-gpu-monitor
+      enableServiceLinks: false
+      dnsPolicy: ClusterFirst
+      securityContext:
+        seccompProfile:
+          type: RuntimeDefault
+        runAsNonRoot: false # true
+      tolerations:
+        - key: node-role.kubernetes.io/gpu
+          operator: Exists
+          effect: NoSchedule
+      nodeSelector:
+        feature.node.kubernetes.io/pci-0300_8086.present: "true"
+      containers:
+        # renovate: datasource=docker depName=registry.arthurvardevanyan.com/homelab/intel-gpu-monitor
+        - image: registry.arthurvardevanyan.com/homelab/intel-gpu-monitor:not_latest
+          imagePullPolicy: Always
+          name: monitor
+          command:
+            - /bin/sh
+            - "-c"
+            - "sleep infinity"
+          securityContext:
+            runAsNonRoot: false # true
+            readOnlyRootFilesystem: false
+            allowPrivilegeEscalation: false
+            privileged: false
+            seccompProfile:
+              type: RuntimeDefault
+            capabilities:
+              drop:
+                - ALL
+          env:
+            - name: XDG_CACHE_HOME
+              value: /tmp
+          resizePolicy:
+            - resourceName: cpu
+              restartPolicy: NotRequired
+            - resourceName: memory
+              restartPolicy: NotRequired
+          resources:
+            requests:
+              cpu: 50m
+              memory: 128Mi
+              ephemeral-storage: "128Mi"
+            limits:
+              cpu: "1"
+              memory: 512Mi
+              ephemeral-storage: "256Mi"
+              gpu.intel.com/xe: "1"
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+      volumes:
+        - name: tmp
+          emptyDir:
+            sizeLimit: 256Mi

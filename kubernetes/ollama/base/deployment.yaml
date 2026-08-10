@@ -158,9 +158,12 @@ spec:
         # (evicts on swap), --sleep-idle-seconds unloads it after idle. Per B70
         # benchmarking this Vulkan backend is the fastest on Battlemage and
         # (unlike the IPEX ollama fork) tracks mainline for the newest models.
-        # renovate: datasource=docker depName=ghcr.io/ggml-org/llama.cpp
-        - image: ghcr.io/ggml-org/llama.cpp:server-vulkan@sha256:3dd0b326c9899cf7a7491fcafba51f54e78af2a366953769a847dd380a732420
-          imagePullPolicy: IfNotPresent
+        #
+        # Custom image = upstream server-vulkan + Mesa >= 26.1 (kisak PPA) for
+        # the Battlemage cooperative-matrix path (~2x decode vs stock Mesa 26.0).
+        # renovate: datasource=docker depName=registry.arthurvardevanyan.com/homelab/llama-cpp-vulkan
+        - image: registry.arthurvardevanyan.com/homelab/llama-cpp-vulkan:not_latest
+          imagePullPolicy: Always
           name: ollama
           args:
             - "--models-preset"
@@ -186,6 +189,9 @@ spec:
               value: /.ollama
             - name: GGML_VK_VISIBLE_DEVICES
               value: "0"
+            # Mesa shader cache to a writable path under the arbitrary UID.
+            - name: MESA_SHADER_CACHE_DIR
+              value: /.ollama/.mesa_cache
           securityContext:
             runAsNonRoot: false # true
             readOnlyRootFilesystem: false

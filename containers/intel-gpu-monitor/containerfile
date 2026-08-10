@@ -1,0 +1,44 @@
+# Intel GPU monitoring toolbox for the Arc Pro B70 (Battlemage / Xe2).
+#
+# Provides the live-telemetry and capability-check tools that the lean
+# inference image intentionally omits:
+#   - xpu-smi          : live utilization / VRAM / power / temp / freq
+#                        (via Intel Level-Zero) -- the nvidia-smi analog
+#   - vulkaninfo       : confirm the Vulkan ICD + cooperative-matrix path
+#   - intel_gpu_top    : engine busy% (best-effort; full busy% needs CAP_PERFMON)
+#   - clinfo / vainfo  : OpenCL / VA-API sanity checks
+#
+# renovate: datasource=docker depName=ubuntu
+FROM ubuntu:24.04@sha256:561618e2c15bf2397621dd04f96926663a3b5616c189cf7e38db7e82f5c538ea
+
+LABEL org.opencontainers.image.source="https://github.com/ArthurVardevanyan/HomeLab" \
+  org.opencontainers.image.title="Intel GPU Monitor (Battlemage)" \
+  org.opencontainers.image.description="xpu-smi, vulkaninfo, intel_gpu_top, clinfo, vainfo for the Intel Arc Pro B70" \
+  org.opencontainers.image.licenses="MIT"
+
+USER 0
+
+RUN set -eux; \
+  apt-get update; \
+  apt-get install -y --no-install-recommends \
+  ca-certificates gnupg software-properties-common wget; \
+  # Mesa >= 26.1 (matches the serving image; needed for vulkaninfo coopmat)
+  add-apt-repository -y ppa:kisak/kisak-mesa; \
+  # Intel graphics repo for Level-Zero runtime + xpu-smi
+  wget -qO- https://repositories.intel.com/gpu/intel-graphics.key \
+  | gpg --dearmor -o /usr/share/keyrings/intel-graphics.gpg; \
+  echo "deb [arch=amd64 signed-by=/usr/share/keyrings/intel-graphics.gpg] https://repositories.intel.com/gpu/ubuntu noble unified" \
+  > /etc/apt/sources.list.d/intel-gpu.list; \
+  apt-get update; \
+  apt-get install -y --no-install-recommends \
+  vulkan-tools mesa-vulkan-drivers clinfo vainfo intel-gpu-tools \
+  intel-media-va-driver-non-free \
+  libze1 libze-intel-gpu1 xpu-smi; \
+  apt-get purge -y software-properties-common wget; \
+  apt-get autoremove -y; \
+  rm -rf /var/lib/apt/lists/* /tmp/*
+
+ENV XDG_CACHE_HOME=/tmp \
+  MESA_SHADER_CACHE_DIR=/tmp
+
+CMD ["sleep", "infinity"]
