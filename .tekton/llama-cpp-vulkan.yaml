@@ -37,15 +37,15 @@ spec:
         type: string
         default: ./Dockerfile
 
-        results:
-          - description: The common vulnerabilities and exposures (CVE) result
-            name: SCAN_OUTPUT
-            value: $(tasks.clair-action.results.SCAN_OUTPUT)
-            type: string
-          - description: Upstream llama.cpp build number (from FROM tag)
-            name: BUILD_TAG
-            value: $(tasks.base-image-tag.results.TAG)
-            type: string
+    results:
+      - description: The common vulnerabilities and exposures (CVE) result
+        name: SCAN_OUTPUT
+        value: $(tasks.clair-action.results.SCAN_OUTPUT)
+        type: string
+      - description: Upstream llama.cpp build number (from FROM tag)
+        name: BUILD_TAG
+        value: $(tasks.base-image-tag.results.TAG)
+        type: string
 
     workspaces:
       - name: data
@@ -89,7 +89,8 @@ spec:
                 set -o errexit -o nounset -o pipefail
 
                 # The FROM tag is the single source of truth: server-vulkan-b<build> -> b<build>.
-                tags=( $(grep -oE 'server-vulkan-b[0-9]+' "$(params.DOCKERFILE)" | sort -u) )
+                tags=( $(grep -oE '^FROM[^[:space:]]*:server-vulkan-b[0-9]+' "$(params.DOCKERFILE)" \
+                         | grep -oE 'b[0-9]+$' | sort -u || true) )
                 if [ "${#tags[@]}" -ne 1 ]; then
                   echo "ERROR: expected exactly 1 server-vulkan-b<build> tag in $(params.DOCKERFILE), got ${#tags[@]}" >&2
                   printf '%s\n' "${tags[@]:-<none>}" >&2
@@ -98,7 +99,9 @@ spec:
                 # Guard: the base must stay digest-pinned.
                 grep -qE '@sha256:[0-9a-f]{64}' "$(params.DOCKERFILE)" || {
                   echo "ERROR: base image is not digest-pinned" >&2; exit 1; }
-                echo "${tags[0]##*-}" | tee "$(results.TAG.path)"
+                tag="${tags[0]##*-}"
+                echo "Resolved build tag: ${tag}"
+                printf '%s' "${tag}" > "$(results.TAG.path)"
 
       - name: buildah
         runAfter:
