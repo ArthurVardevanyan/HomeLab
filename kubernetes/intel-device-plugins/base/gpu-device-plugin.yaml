@@ -13,11 +13,12 @@ apiVersion: deviceplugin.intel.com/v1
 kind: GpuDevicePlugin
 metadata:
   name: intel-gpu-plugin
-  namespace: intel-device-plugins-operator
   annotations:
     argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
 spec:
   sharedDevNum: 2
+  enableMonitoring: true
+  monitoringMode: single
   preferredAllocationPolicy: none
   logLevel: 2
   # Run the plugin DaemonSet ONLY on the GPU node (gpu-1), not on every worker.

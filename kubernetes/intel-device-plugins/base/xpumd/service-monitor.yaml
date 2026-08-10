@@ -1,0 +1,23 @@
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: xpumd
+  namespace: intel-device-plugins-operator
+  annotations:
+    argocd.argoproj.io/sync-wave: "2"
+  labels:
+    app.kubernetes.io/instance: xpumd
+spec:
+  namespaceSelector:
+    matchNames:
+      - intel-device-plugins-operator
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: xpumd
+      app.kubernetes.io/instance: xpumd
+  endpoints:
+    - port: http
+      scheme: http
+      path: /metrics
+      interval: 15s

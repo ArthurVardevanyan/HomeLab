@@ -21,6 +21,9 @@ spec:
     spec:
       nodeSelector:
         node-role.kubernetes.io/control-plane: ""
+      restartPolicy: Always
+      schedulerName: default-scheduler
+      dnsPolicy: ClusterFirst
       securityContext:
         seccompProfile:
           type: RuntimeDefault
@@ -77,7 +80,7 @@ spec:
           livenessProbe:
             httpGet:
               path: /livez
-              port: 8080
+              port: http
             initialDelaySeconds: 1
             timeoutSeconds: 1
             periodSeconds: 30
@@ -86,7 +89,7 @@ spec:
           readinessProbe:
             httpGet:
               path: /readyz
-              port: 8080
+              port: http
             initialDelaySeconds: 1
             timeoutSeconds: 5
             periodSeconds: 30
@@ -95,7 +98,7 @@ spec:
           startupProbe:
             httpGet:
               path: /startupz
-              port: 8080
+              port: http
             initialDelaySeconds: 2
             timeoutSeconds: 5
             periodSeconds: 1
@@ -112,6 +115,7 @@ spec:
             runAsNonRoot: true
             readOnlyRootFilesystem: true
             allowPrivilegeEscalation: false
+            privileged: false
             seccompProfile:
               type: RuntimeDefault
             capabilities:
