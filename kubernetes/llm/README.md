@@ -12,6 +12,10 @@ backend is llama.cpp (Vulkan)** running on the Intel Arc Pro B70.
     - [Model](#model)
     - [B70 tuning rationale](#b70-tuning-rationale)
     - [Mesa 26.1 (biggest perf lever) — handled in the image](#mesa-261-biggest-perf-lever--handled-in-the-image)
+  - [Open WebUI (chat front-end)](#open-webui-chat-front-end)
+    - [Deployment](#deployment)
+    - [OIDC / SSO](#oidc--sso)
+    - [Database](#database)
   - [GPU Monitoring (nvidia-smi equivalents)](#gpu-monitoring-nvidia-smi-equivalents)
   - [Performance: why decode may trail bare-metal benchmarks](#performance-why-decode-may-trail-bare-metal-benchmarks)
   - [Scaling](#scaling)
@@ -236,9 +240,70 @@ oc -n llm logs -f deployment/llm-server   # watch model load + Vulkan device
 
 ## Layout
 
-- `base/` — llama.cpp Vulkan Deployment + namespace, RBAC, network policies,
-  PVC, service.
-- `overlays/okd/` — default; base + HuggingFace egress firewall.
+- `base/` — namespace + shared NetworkPolicies (`deny-all`, `allow-dns-traffic`,
+  `allow-openshift-monitoring`).
+- `components/llama-cpp/` — llama.cpp Vulkan Deployment + init container,
+  ConfigMap (router preset), PVC, service, service account, network policies
+  (`allow-llm-api`, `allow-external-egress`), VPA.
+- `components/open-webui/` — Open WebUI chat front-end Deployment, service,
+  service account, ExternalSecret (WEBUI_SECRET_KEY + Zitadel OIDC creds),
+  network policy (egress to llama.cpp :11434 + CNPG :5432).
+- `components/open-webui/cnpg/` — CloudNativePG Postgres Cluster for Open WebUI
+  (1 instance, 2Gi, no backup — chat data is ephemeral).
+- `components/open-webui/openshift/gateway/` — HTTPRoute for
+  `ai.arthurvardevanyan.com` on the shared `https-gateway`, Certificate,
+  blackbox Probe. No BackendTLSPolicy (gateway terminates TLS, backend is
+  plain HTTP).
+- `overlays/okd/` — default; base + HuggingFace + Zitadel egress firewall.
+
+## Open WebUI (chat front-end)
+
+Open WebUI is deployed as a **component** alongside llama.cpp in the same
+`llm` namespace and ArgoCD Application. It connects to the llama.cpp server
+via the cluster-internal service (`llm-server-svc:11434`) and uses Zitadel
+OIDC for SSO.
+
+### Deployment
+
+| Resource | Value                                                                     |
+| -------- | ------------------------------------------------------------------------- |
+| Image    | `ghcr.io/open-webui/open-webui:v0.11.0` (pinned digest, Renovate-managed) |
+| Replicas | 1                                                                         |
+| Database | CloudNativePG Postgres (`open-webui` cluster, 1 instance, 2Gi)            |
+| Storage  | `/root/.local/share/open-webui` mounted from `emptyDir`                   |
+| Gateway  | `ai.arthurvardevanyan.com` on `https-gateway` (TLS Terminate)             |
+
+### OIDC / SSO
+
+Authentication is **Zitadel OIDC** from day one. The `ExternalSecret` pulls
+credentials from Vault at `secret/data/homelab/llm/open-webui/zitadel`
+(`client_id`, `client_secret`). Before deploying, create an OAuth 2.0 client
+in Zitadel with:
+
+- Callback URL: `https://ai.arthurvardevanyan.com/auth/oauth/callback`
+- Redirect URIs: `https://ai.arthurvardevanyan.com/auth/oauth/callback`
+- Logout URL: `https://ai.arthurvardevanyan.com/auth/logout`
+- Grant types: `Authorization Code`, `Refresh Token`
+- Token auth method: `Client Secret Post`
+
+> **Bootstrap:** the `ExternalSecret` targets `open-webui-config` which
+> supplies `WEBUI_SECRET_KEY`, `OAUTH_CLIENT_ID`, and `OAUTH_CLIENT_SECRET`.
+> The `OPENID_PROVIDER_URL` is set to `https://zitadel.arthurvardevanyan.com`
+> so Open WebUI auto-discovers the OIDC endpoints.
+
+### Database
+
+CloudNativePG creates a `openwebui` database with `postgres` user. The
+`DATABASE_URL` env var references the CNPG cluster-internal service:
+
+```
+postgresql://postgres:<password>@open-webui-rw.llm.svc.cluster.local:5432/postgres
+```
+
+> **Note:** chat history, user data, and settings are stored in Postgres.
+> No CNPG backup is configured — chat data is considered ephemeral. The
+> snapshot backupClassName (`csi-rbdplugin-snapclass`) is available but
+> not enabled to avoid snapshot overhead for low-value data.
 
 ## REF
 

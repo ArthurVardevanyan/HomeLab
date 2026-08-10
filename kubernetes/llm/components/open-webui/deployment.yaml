@@ -1,0 +1,136 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: open-webui
+  namespace: llm
+  labels:
+    app.kubernetes.io/name: open-webui
+    app.kubernetes.io/instance: open-webui
+spec:
+  replicas: 1
+  revisionHistoryLimit: 0
+  progressDeadlineSeconds: 1800
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: open-webui
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: open-webui
+        app.kubernetes.io/instance: open-webui
+    spec:
+      restartPolicy: Always
+      schedulerName: default-scheduler
+      terminationGracePeriodSeconds: 30
+      automountServiceAccountToken: false
+      serviceAccountName: open-webui
+      enableServiceLinks: false
+      dnsPolicy: ClusterFirst
+      securityContext:
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: open-webui
+          image: ghcr.io/open-webui/open-webui:v0.11.0@sha256:72c0ba641ba75e7aa52655cb242570906ececd09b1140fb736483038a22b3228
+          imagePullPolicy: IfNotPresent
+          args:
+            - bash
+            - -c
+            - /app/backend/start.sh
+          env:
+            # Point to the llama.cpp server on the cluster-internal service
+            - name: OPENAI_API_BASE_URL
+              value: http://llm-server-svc.llm.svc.cluster.local:11434/v1
+            # Secret key for session/cookie signing — managed by ExternalSecret
+            - name: WEBUI_SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: open-webui-config
+                  key: WEBUI_SECRET_KEY
+            # Public-facing URL (used for OAuth redirect URIs)
+            - name: WEBUI_URL
+              value: https://ai.arthurvardevanyan.com
+            # Enable OAuth2/OIDC login
+            - name: ENABLE_OAUTH
+              value: "true"
+            # OIDC client credentials — managed by ExternalSecret
+            - name: OAUTH_CLIENT_ID
+              valueFrom:
+                secretKeyRef:
+                  name: open-webui-config
+                  key: OAUTH_CLIENT_ID
+            - name: OAUTH_CLIENT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: open-webui-config
+                  key: OAUTH_CLIENT_SECRET
+            # Zitadel OIDC issuer (auto-discovers .well-known/openid-configuration)
+            - name: OPENID_PROVIDER_URL
+              value: https://zitadel.arthurvardevanyan.com
+            # Allow any logged-in user to sign up (no pre-provisioned accounts)
+            - name: ENABLE_OAUTH_SIGNUP
+              value: "true"
+            # Merge OIDC identity with existing user by email
+            - name: OAUTH_MERGE_ACCOUNTS_BY_EMAIL
+              value: "true"
+            # Use OpenID user info (name, email) on first login
+            - name: OAUTH_PROVIDERS
+              value: openid
+            # SQLite database — CNPG manages connection details via the
+            # postgres user secret; we construct DATABASE_URL from the
+            # cluster-internal host, port, and credentials.
+            - name: DATABASE_URL
+              value: postgresql://postgres:<password>@open-webui-rw.llm.svc.cluster.local:5432/postgres
+          securityContext:
+            runAsNonRoot: true
+            readOnlyRootFilesystem: true
+            allowPrivilegeEscalation: false
+            privileged: false
+            seccompProfile:
+              type: RuntimeDefault
+            capabilities:
+              drop:
+                - ALL
+          ports:
+            - containerPort: 8080
+              name: http
+              protocol: TCP
+          startupProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            failureThreshold: 30
+            timeoutSeconds: 5
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: http
+            periodSeconds: 30
+            timeoutSeconds: 5
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: http
+            periodSeconds: 15
+            timeoutSeconds: 5
+            failureThreshold: 3
+          resources:
+            requests:
+              cpu: "100m"
+              memory: 256Mi
+            limits:
+              cpu: "500m"
+              memory: 512Mi
+          volumeMounts:
+            - name: data
+              mountPath: /root/.local/share/open-webui
+              readOnly: false
+      volumes:
+        - name: data
+          emptyDir: {}
