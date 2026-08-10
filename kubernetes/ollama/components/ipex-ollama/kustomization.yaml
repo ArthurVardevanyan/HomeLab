@@ -1,0 +1,16 @@
+---
+# Component: run the ollama-coder Deployment on the Intel Arc B70 using the
+# Intel IPEX-LLM Ollama (XPU/SYCL) backend instead of the default llama.cpp
+# Vulkan base. Enable from an overlay's `components:` list.
+#
+# NOTE: This is a fallback path. Per B70 benchmarking, llama.cpp Vulkan (the
+# base) outperforms the IPEX SYCL ollama backend at every concurrency level on
+# current Mesa, and the IPEX ollama fork lags mainline (it cannot run the newest
+# models such as Qwen3.6). Kept for A/B testing and as a safety net.
+#
+# deployment.yaml holds the COMPLETE IPEX Deployment and uses `$patch: replace`
+# on the pod template so the llama.cpp base pod spec is fully overridden.
+apiVersion: kustomize.config.k8s.io/v1alpha1
+kind: Component
+patches:
+  - path: deployment.yaml

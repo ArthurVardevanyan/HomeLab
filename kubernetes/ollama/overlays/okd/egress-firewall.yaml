@@ -8,7 +8,7 @@ metadata:
     argocd.argoproj.io/sync-wave: "0"
 spec:
   egress:
-    # Control Plane
+    # Control Plane (kube-apiserver)
     - type: Allow
       to:
         nodeSelector:
@@ -17,95 +17,61 @@ spec:
       ports:
         - protocol: TCP
           port: 6443
-    # Ollama Hub/API (registry.ollama.ai - Cloudflare IPs)
+    # HuggingFace (llama.cpp -hf model download: API + LFS metadata)
     - type: Allow
       to:
-        dnsName: registry.ollama.ai
-      ports:
-        - protocol: TCP
-          port: 443
-    # Cloudflare IPv4 ranges (all)
-    - type: Allow
-      to:
-        cidrSelector: 173.245.48.0/20
+        dnsName: huggingface.co
       ports:
         - protocol: TCP
           port: 443
     - type: Allow
       to:
-        cidrSelector: 103.21.244.0/22
+        dnsName: cdn-lfs.huggingface.co
       ports:
         - protocol: TCP
           port: 443
     - type: Allow
       to:
-        cidrSelector: 103.22.200.0/22
+        dnsName: cdn-lfs-us-1.hf.co
+      ports:
+        - protocol: TCP
+          port: 443
+    # HuggingFace Xet / AWS CDN (the -hf resolve redirects here for blobs)
+    - type: Allow
+      to:
+        dnsName: us.aws.cdn.hf.co
+      ports:
+        - protocol: TCP
+          port: 443
+    # AWS CloudFront / S3 ranges backing the HF Xet CDN
+    - type: Allow
+      to:
+        cidrSelector: 13.32.0.0/15
       ports:
         - protocol: TCP
           port: 443
     - type: Allow
       to:
-        cidrSelector: 103.31.4.0/22
+        cidrSelector: 13.224.0.0/14
       ports:
         - protocol: TCP
           port: 443
     - type: Allow
       to:
-        cidrSelector: 141.101.64.0/18
+        cidrSelector: 52.84.0.0/15
       ports:
         - protocol: TCP
           port: 443
     - type: Allow
       to:
-        cidrSelector: 108.162.192.0/18
+        cidrSelector: 18.64.0.0/14
       ports:
         - protocol: TCP
           port: 443
-    - type: Allow
-      to:
-        cidrSelector: 190.93.240.0/20
-      ports:
-        - protocol: TCP
-          port: 443
-    - type: Allow
-      to:
-        cidrSelector: 188.114.96.0/20
-      ports:
-        - protocol: TCP
-          port: 443
-    - type: Allow
-      to:
-        cidrSelector: 197.234.240.0/22
-      ports:
-        - protocol: TCP
-          port: 443
-    - type: Allow
-      to:
-        cidrSelector: 198.41.128.0/17
-      ports:
-        - protocol: TCP
-          port: 443
-    - type: Allow
-      to:
-        cidrSelector: 162.158.0.0/15
-      ports:
-        - protocol: TCP
-          port: 443
+    # Cloudflare ranges (huggingface.co fronting)
     - type: Allow
       to:
         cidrSelector: 104.16.0.0/13
-      ports:
-        - protocol: TCP
-          port: 443
-    - type: Allow
-      to:
-        cidrSelector: 104.24.0.0/14
-      ports:
-        - protocol: TCP
-          port: 443
-    - type: Allow
-      to:
-        cidrSelector: 131.0.72.0/22
       ports:
         - protocol: TCP
           port: 443
@@ -115,7 +81,6 @@ spec:
       ports:
         - protocol: TCP
           port: 443
-
     # Deny all other egress
     - type: Deny
       to:

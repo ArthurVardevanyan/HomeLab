@@ -8,23 +8,13 @@ metadata:
     app: ollama-coder
   annotations:
     checkov.io/skip1: CKV_K8S_40=Upstream Image Runs as Root
-    checkov.io/skip2: CKV_K8S_22=Model Cache Requires Writable Root FS
+    checkov.io/skip2: CKV_K8S_22=Models Cache Requires Writable Root FS
     checkov.io/skip3: CKV_K8S_43=Sha Changes Often
 spec:
-  # Default scaled to 0 to free the GPU; scale to 1 to load the model.
-  replicas: 0
-  revisionHistoryLimit: 0
-  progressDeadlineSeconds: 1200
-  strategy:
-    type: Recreate
-  selector:
-    matchLabels:
-      app: ollama-coder
   template:
-    metadata:
-      labels:
-        app: ollama-coder
     spec:
+      # Replace the entire llama.cpp base pod spec.
+      $patch: replace
       hostname: ollama-coder
       restartPolicy: Always
       schedulerName: default-scheduler
@@ -41,58 +31,37 @@ spec:
         - key: node-role.kubernetes.io/gpu
           operator: Exists
           effect: NoSchedule
-      # Intel Arc Pro B70 (xe KMD) GPU node (gpu-1). Built-in NFD label for an
-      # Intel (8086) display-class PCI device.
       nodeSelector:
         feature.node.kubernetes.io/pci-0300_8086.present: "true"
       containers:
-        # llama.cpp Vulkan server. Per B70 benchmarking this is the fastest
-        # backend on Battlemage with current Mesa, and (unlike the IPEX ollama
-        # fork) tracks mainline so it runs the newest models (Qwen3.6).
-        # renovate: datasource=docker depName=ghcr.io/ggml-org/llama.cpp
-        - image: ghcr.io/ggml-org/llama.cpp:server-vulkan@sha256:3dd0b326c9899cf7a7491fcafba51f54e78af2a366953769a847dd380a732420
+        # IPEX-LLM image ships an Ollama build for Intel XPU.
+        # renovate: datasource=docker depName=docker.io/intelanalytics/ipex-llm-inference-cpp-xpu
+        - image: docker.io/intelanalytics/ipex-llm-inference-cpp-xpu:2.2.0b20250101@sha256:f79afc7735ec02bba680cefcffa28a4946891079889adadd3249798184df1ae3
           imagePullPolicy: IfNotPresent
           name: ollama
-          args:
-            # Model: Qwen3.6-35B-A3B (sparse MoE, ~3B active). On the bandwidth-
-            # bound B70 (608 GB/s) the sparse MoE decodes ~4x faster than the
-            # dense 27B. Unsloth UD quant patches the chat template.
-            - "-hf"
-            - "unsloth/Qwen3.6-35B-A3B-GGUF:UD-Q4_K_M"
-            - "--host"
-            - "0.0.0.0"
-            - "--port"
-            - "11434"
-            - "--alias"
-            - "qwen3.6-35b-a3b"
-            # Offload all layers to the Intel GPU (Vulkan backend).
-            - "-ngl"
-            - "999"
-            # 64K context.
+          # init-ollama (a pip console-script on PATH) symlinks the ollama
+          # binary into the CWD; /llm is root-owned so we work under the
+          # PVC-backed, fsGroup-writable /.ollama.
+          command:
+            - /bin/bash
             - "-c"
-            - "65536"
-            # B70 tuning: larger ubatch wins big on prefill (opposite of AMD).
-            - "--ubatch-size"
-            - "2048"
-            # f16 KV holds up far better than q4_0/q8_0 past ~16K on this HW.
-            - "--cache-type-k"
-            - "f16"
-            - "--cache-type-v"
-            - "f16"
-            - "--flash-attn"
-            - "on"
-            - "--jinja"
-            - "--metrics"
-            - "--reasoning-format"
-            - "none"
-          env:
-            # Persist the -hf model download on the PVC (not the root FS).
-            - name: LLAMA_CACHE
-              value: /.ollama/cache
-            - name: HOME
-              value: /.ollama
-            - name: GGML_VK_VISIBLE_DEVICES
-              value: "0"
+            - |
+              set -eu
+              export HOME=/.ollama
+              export OLLAMA_HOST=0.0.0.0:11434
+              export OLLAMA_MODELS=/.ollama/models
+              export OLLAMA_NUM_GPU=999
+              export ONEAPI_DEVICE_SELECTOR=level_zero:0
+              export ZES_ENABLE_SYSMAN=1
+              export SYCL_CACHE_PERSISTENT=1
+              export SYCL_CACHE_DIR=/.ollama/.sycl_cache
+              mkdir -p /.ollama/bin "${OLLAMA_MODELS}" "${SYCL_CACHE_DIR}"
+              cd /.ollama/bin
+              init-ollama
+              ./ollama serve &
+              sleep 8
+              ./ollama pull qwen3:32b || true
+              wait
           securityContext:
             runAsNonRoot: false # true
             readOnlyRootFilesystem: false
@@ -103,28 +72,39 @@ spec:
             capabilities:
               drop:
                 - ALL
+          env:
+            - name: OLLAMA_HOST
+              value: "0.0.0.0"
+            - name: OLLAMA_KEEP_ALIVE
+              value: "24h"
+            - name: OLLAMA_CONTEXT_LENGTH
+              value: "65536"
+            - name: OLLAMA_FLASH_ATTENTION
+              value: "1"
+            - name: OLLAMA_KV_CACHE_TYPE
+              value: "q8_0"
           ports:
             - containerPort: 11434
               name: api
               protocol: TCP
           startupProbe:
             httpGet:
-              path: /health
+              path: /
               port: api
-            initialDelaySeconds: 10
+            initialDelaySeconds: 5
             periodSeconds: 10
-            failureThreshold: 120
+            failureThreshold: 60
             timeoutSeconds: 5
           livenessProbe:
             httpGet:
-              path: /health
+              path: /
               port: api
             periodSeconds: 30
             timeoutSeconds: 10
             failureThreshold: 5
           readinessProbe:
             httpGet:
-              path: /health
+              path: /
               port: api
             periodSeconds: 15
             timeoutSeconds: 5
@@ -136,11 +116,11 @@ spec:
               restartPolicy: NotRequired
           resources:
             requests:
-              cpu: "4"
+              cpu: "2"
               memory: 8Gi
               ephemeral-storage: "256Mi"
             limits:
-              cpu: "8"
+              cpu: "4"
               memory: 16Gi
               ephemeral-storage: "1Gi"
               gpu.intel.com/xe: "1"
