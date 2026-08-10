@@ -7,15 +7,17 @@ dormant Kustomize components.
 
 ## Table of Contents
 
-- [Backends / Overlays](#backends--overlays)
-- [Default: llama.cpp Vulkan on the Intel Arc B70](#default-llamacpp-vulkan-on-the-intel-arc-b70)
-  - [Model](#model)
-  - [B70 tuning rationale](#b70-tuning-rationale)
-  - [Mesa 26.1 (biggest perf lever) — handled in the image](#mesa-261-biggest-perf-lever--handled-in-the-image)
-- [GPU Monitoring (nvidia-smi equivalents)](#gpu-monitoring-nvidia-smi-equivalents)
-- [Scaling](#scaling)
-- [Layout](#layout)
-- [REF](#ref)
+- [Local LLM (ollama app)](#local-llm-ollama-app)
+  - [Table of Contents](#table-of-contents)
+  - [Backends / Overlays](#backends--overlays)
+  - [Default: llama.cpp Vulkan on the Intel Arc B70](#default-llamacpp-vulkan-on-the-intel-arc-b70)
+    - [Model](#model)
+    - [B70 tuning rationale](#b70-tuning-rationale)
+    - [Mesa 26.1 (biggest perf lever) — handled in the image](#mesa-261-biggest-perf-lever--handled-in-the-image)
+  - [GPU Monitoring (nvidia-smi equivalents)](#gpu-monitoring-nvidia-smi-equivalents)
+  - [Scaling](#scaling)
+  - [Layout](#layout)
+  - [REF](#ref)
 
 ## Backends / Overlays
 
@@ -53,8 +55,8 @@ Both are reached on the one endpoint (`:11434`). Router behavior:
 - `--models-max 1` — only **one** model resident in VRAM at a time; requesting
   the other evicts the current one (both cannot fit in 32 GB: ~22 GB MoE +
   ~17 GB dense).
-- `--sleep-idle-seconds 900` — the resident model (incl. KV cache) is
-  **unloaded from VRAM after 15 min idle** and auto-reloads on the next
+- `--sleep-idle-seconds 28800` — the resident model (incl. KV cache) is
+  **unloaded from VRAM after 8 hour idle** and auto-reloads on the next
   request. No manual VRAM management needed.
 
 Global B70 tuning (in `[*]` of the preset): `n-gpu-layers 999`, `flash-attn on`,
