@@ -30,6 +30,16 @@ spec:
       terminationGracePeriodSeconds: 30
       automountServiceAccountToken: false
       enableServiceLinks: false
+      # Soft preference for the GPU node; never blocks scheduling elsewhere.
+      # Hard spread constraints below still take precedence for HA.
+      affinity:
+        nodeAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              preference:
+                matchExpressions:
+                  - key: node-role.kubernetes.io/gpu
+                    operator: Exists
       topologySpreadConstraints:
         - maxSkew: 1
           topologyKey: topology.kubernetes.io/zone

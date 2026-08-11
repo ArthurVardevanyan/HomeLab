@@ -11,7 +11,7 @@ backend is llama.cpp (Vulkan)** running on the Intel Arc Pro B70.
   - [Default: llama.cpp Vulkan on the Intel Arc B70](#default-llamacpp-vulkan-on-the-intel-arc-b70)
     - [Model](#model)
     - [B70 tuning rationale](#b70-tuning-rationale)
-    - [KV cache: f16 vs q8\_0](#kv-cache-f16-vs-q8_0)
+    - [KV cache: f16 vs q8_0](#kv-cache-f16-vs-q8_0)
     - [Why not `--mlock` / `--ngl all`](#why-not---mlock----ngl-all)
     - [Mesa 26.1 (biggest perf lever) — handled in the image](#mesa-261-biggest-perf-lever--handled-in-the-image)
     - [Image tag](#image-tag)
@@ -28,6 +28,11 @@ backend is llama.cpp (Vulkan)** running on the Intel Arc Pro B70.
     - [OIDC / SSO](#oidc--sso)
     - [Database \& Websockets](#database--websockets)
     - [Storage](#storage)
+    - [Document RAG](#document-rag)
+      - [Why embeddings run on CPU (not the B70)](#why-embeddings-run-on-cpu-not-the-b70)
+      - [RAG vs. web search](#rag-vs-web-search)
+      - [Freshness / staleness](#freshness--staleness)
+  - [Roadmap: connector auto-sync (Onyx)](#roadmap-connector-auto-sync-onyx)
   - [REF](#ref)
 
 ## Backends / Overlays
@@ -376,16 +381,26 @@ oc -n llm logs -f deployment/llm-server   # watch model load + Vulkan device
   (`allow-llm-api`, `allow-external-egress`), ServiceMonitor (Prometheus
   scraping of all 3 models with `autoload=false`), VPA. The init container
   also downloads the F16 mmproj files for the two vision-capable models.
+- `components/llama-cpp-embed/` — CPU-only llama.cpp `--embedding` Deployment
+  serving `nomic-embed-text-v1.5` on `llm-embed-svc:11435` for RAG, with its own
+  PVC, service account, and network policies (ingress from open-webui only).
 - `components/open-webui/` — Open WebUI chat front-end Deployment, service,
   service account, ExternalSecret (WEBUI_SECRET_KEY + Zitadel OIDC creds),
-  network policy (egress to llama.cpp :11434 + CNPG :5432).
-- `components/open-webui/cnpg/` — CloudNativePG Postgres Cluster for Open WebUI
-  (3 instances, 2Gi, no backup — chat data is ephemeral).
-- `components/open-webui/openshift/gateway/` — HTTPRoute for
+  PVC, PDB, VPA, and network policy (egress to llama.cpp :11434, CNPG :5432,
+  dragonfly :6379, searxng :8080, llm-embed :11435, + internet for web search).
+- `components/cnpg-open-webui/` — CloudNativePG Postgres Cluster for Open WebUI
+  (single instance, 2Gi, no backup — chat data is ephemeral). Also hosts the
+  **pgvector** store for RAG embeddings.
+- `components/dragonfly-open-webui/` — Dragonfly (Redis-compatible) for
+  multi-replica websocket state sharing.
+- `components/searxng/` — SearXNG meta-search engine backing Open WebUI web
+  search.
+- `components/open-webui-gateway/` — HTTPRoute for
   `ai.arthurvardevanyan.com` on the shared `https-gateway`, Certificate,
   blackbox Probe. No BackendTLSPolicy (gateway terminates TLS, backend is
   plain HTTP).
-- `overlays/okd/` — default; base + HuggingFace + Zitadel egress firewall.
+- `overlays/okd/` — default; base + all components + HuggingFace + Zitadel
+  egress firewall.
 
 ## Open WebUI (chat front-end)
 
@@ -442,7 +457,9 @@ stock image ships `/root` at `0700`, which blocks traversal for any non-root UID
 of volume `fsGroup`):
 
 - **`/app/backend/data`** — `rook-cephfs` PVC (ReadWriteMany, 5Gi) for persistent state:
-  uploads, Chroma `vector_db`, cache, and SQLite/audit tables.
+  uploads, cache, and SQLite/audit tables. (Vector embeddings are stored in
+  **pgvector** in the `open-webui` Postgres cluster, not on this PVC — see
+  [Document RAG](#document-rag).)
 - **`/app/backend/open_webui/static`** — `emptyDir` (64Mi) for ephemeral static assets
   (favicon, splash images, `loader.js`). These are recopied from the frontend build
   on every pod start, so no persistence is needed. This mount is a separate sibling
@@ -458,6 +475,83 @@ true` and no writable `/tmp` (Python falls through all built-in temp paths inclu
 > No CNPG backup is configured — chat data is considered ephemeral. The
 > snapshot backupClassName (`csi-rbdplugin-snapclass`) is available but
 > not enabled to avoid snapshot overhead for low-value data.
+
+### Document RAG
+
+Open WebUI supports **document retrieval-augmented generation (RAG)** — upload
+documents into a Knowledge collection and ask questions that are answered from,
+and cited to, that corpus. It is served by two additions on top of the model:
+
+- **Embeddings server (`llm-embed`)** — a separate, **CPU-only** llama.cpp
+  Deployment in `--embedding` mode serving `nomic-embed-text-v1.5` (768-dim) on
+  `llm-embed-svc:11435` (OpenAI-compatible `/v1/embeddings`). See
+  `components/llama-cpp-embed/`.
+- **pgvector** — the vector store lives in the **existing** `open-webui` CNPG
+  Postgres cluster. The `18.3-system-trixie` image already ships pgvector, and
+  `enableSuperuserAccess: true` lets Open WebUI run `CREATE EXTENSION vector`
+  automatically — **no new database or manifest needed**.
+
+The Open WebUI deployment (`components/open-webui/deployment.yaml`) wires these
+via RAG env vars: `RAG_EMBEDDING_ENGINE=openai`,
+`RAG_EMBEDDING_MODEL=nomic-embed-text-v1.5`,
+`RAG_OPENAI_API_BASE_URL=http://llm-embed-svc.llm.svc.cluster.local:11435/v1`,
+`VECTOR_DB=pgvector`, `ENABLE_RAG_HYBRID_SEARCH=true`, `RAG_TOP_K=4`.
+`ENABLE_PERSISTENT_CONFIG=false` keeps the config authoritative from env so Git
+remains the single source of truth (Open WebUI otherwise persists these to the
+DB after first boot and ignores the env afterwards).
+
+The NetworkPolicy `allow-llm-embed-ingress-from-open-webui` permits Open WebUI →
+`llm-embed:11435`; the pgvector `:5432` egress was already allowed.
+
+#### Why embeddings run on CPU (not the B70)
+
+The embedding model is tiny (~0.14 GiB Q8_0) and would fit in the ~5 GiB of
+free VRAM on the Intel Arc Pro B70, but it is intentionally kept on **CPU**:
+
+1. **Protect VRAM headroom.** The 5 GiB buffer absorbs KV-cache growth toward
+   128 K context and model-swap transients (rerquesting the 27 B / coder model
+   evicts and reloads the resident 35 B). Parking a persistent embedding model
+   there shrinks that safety margin at exactly those moments.
+2. **Avoid single-GPU device-plugin sharing.** `gpu.intel.com/xe` is an
+   allocatable count; sharing one Arc between two pods via the Intel device
+   plugin is fragile (unlike NVIDIA MPS / time-slicing). CPU sidesteps it.
+3. **Embeddings are latency-tolerant.** Embedding happens at ingest (once per
+   document) and at query time (one short question). Even a few extra ms on CPU
+   is invisible in the chat UX.
+
+#### RAG vs. web search
+
+- **RAG** answers from _your_ uploaded, curated corpus with citations — for
+  content the web doesn't have (private, internal, or specific documents).
+  Works air-gapped.
+- **SearXNG web search** answers from the live public internet — breadth and
+  freshness, but not grounded in a private corpus.
+
+Use both: RAG for stable reference material where "according to this document"
+matters; web search for anything public or fast-changing. They complement.
+
+#### Freshness / staleness
+
+The vector index is a **point-in-time snapshot** — it does not track source
+documents automatically. When an uploaded document changes, re-upload it so
+Open WebUI re-embeds the updated content; otherwise answers cite the old
+version. This is acceptable for stable reference material. Mitigations: hybrid
+search blends keyword + vector, and time-sensitive questions can fall back to
+web search. If staleness becomes an operational problem, the fix is an
+auto-syncing connector (see Roadmap).
+
+## Roadmap: connector auto-sync (Onyx)
+
+Manual-upload RAG covers private/citable docs, but Gemini Enterprise-class
+_connector_ parity — auto-syncing an organization's knowledge sources
+(Confluence, SharePoint, Jira, Slack, … as product categories) with permission
+mirroring — is the domain of a dedicated enterprise-search engine such as
+**Onyx**. A future `kubernetes/onyx` app would point its inference and
+embeddings at the existing `llm-server-svc`/`llm-embed` endpoints, run its own
+Postgres + vector store, and poll configured sources on a schedule so the index
+tracks the source. That removes the manual re-upload staleness gap at the cost
+of a larger footprint. This is the natural successor when a genuinely
+organizational corpus is needed.
 
 ## REF
 

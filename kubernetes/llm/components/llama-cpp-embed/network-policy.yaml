@@ -2,12 +2,16 @@
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
-  name: allow-llm-api
+  name: allow-llm-embed-ingress-from-open-webui
   namespace: llm
   annotations:
     argocd.argoproj.io/sync-wave: "0"
+  labels:
+    app.kubernetes.io/name: llm-embed
 spec:
-  podSelector: {}
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: llm-embed
   policyTypes:
     - Ingress
   ingress:
@@ -15,21 +19,28 @@ spec:
         - namespaceSelector:
             matchLabels:
               kubernetes.io/metadata.name: llm
+          podSelector:
+            matchLabels:
+              app.kubernetes.io/name: open-webui
       ports:
         - protocol: TCP
-          port: 11434
+          port: 11435
 ---
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
-  name: allow-external-egress
+  name: allow-llm-embed-internet-egress
   namespace: llm
   annotations:
     argocd.argoproj.io/sync-wave: "0"
+  labels:
+    app.kubernetes.io/name: llm-embed
 spec:
   policyTypes:
     - Egress
-  podSelector: {}
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: llm-embed
   egress:
     - to:
         - ipBlock:

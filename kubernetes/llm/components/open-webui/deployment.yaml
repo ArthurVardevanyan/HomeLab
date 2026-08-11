@@ -35,6 +35,16 @@ spec:
         - key: node-role.kubernetes.io/gpu
           operator: Exists
           effect: NoSchedule
+      # Soft preference for the GPU node; never blocks scheduling elsewhere.
+      # Hard spread constraints below still take precedence for HA.
+      affinity:
+        nodeAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              preference:
+                matchExpressions:
+                  - key: node-role.kubernetes.io/gpu
+                    operator: Exists
       topologySpreadConstraints:
         - maxSkew: 1
           topologyKey: topology.kubernetes.io/zone
@@ -132,6 +142,68 @@ spec:
               value: searxng
             - name: SEARXNG_QUERY_URL
               value: http://searxng.llm.svc.cluster.local.:8080/search
+            # Document RAG. Embeddings are served by the dedicated CPU-only
+            # llama.cpp --embedding server (llm-embed) on llm-embed-svc:11435;
+            # vectors are stored in pgvector in the open-webui CNPG cluster.
+            # Keep config authoritative from env (not persisted to the DB) so
+            # Git stays the single source of truth.
+            - name: ENABLE_PERSISTENT_CONFIG
+              value: "false"
+            # Open WebUI ships its own context compaction (auto history-summarization).
+            # Enabled here at 128K to match the OpenCode client's context cap, so long agent
+            # sessions get summarized rather than dropped. Threshold is a soft trigger for
+            # the summarization sub-request, not a hard cap. Authoritative because
+            # ENABLE_PERSISTENT_CONFIG=false.
+            #
+            # CAVEAT - threshold equal to the client cap: at 128K both OpenCode and
+            # Open WebUI are at their ceilings simultaneously. If history is already too
+            # large to summarise at that moment, the "too large to compact" error can still
+            # recur. Escape hatches if needed:
+            #   - Raise toward ~200K (below llama's 256K) so compaction only fires after
+            #     OpenCode has its own headroom, or
+            #   - Disable entirely (ENABLE_CONTEXT_COMPACTION=false) so OpenCode manages
+            #     context alone like the direct llama.cpp path.
+            - name: ENABLE_CONTEXT_COMPACTION
+              value: "true"
+            - name: CONTEXT_COMPACTION_TOKEN_THRESHOLD
+              value: "128000"
+            # API keys for external clients (e.g. the OpenCode provider pointing at
+            # /api). Must be set via env because ENABLE_PERSISTENT_CONFIG=false reverts
+            # admin-UI toggles back to env defaults on restart - without these, the
+            # "Enable API keys" feature flips off on every restart and existing keys
+            # start returning 403 (appears as the key "resetting"). The personal sk- keys
+            # themselves live in the api_key table (CNPG) and persist; this keeps the
+            # feature ON and allows non-admin users to create/use them.
+            - name: ENABLE_API_KEYS
+              value: "true"
+            - name: USER_PERMISSIONS_FEATURES_API_KEYS
+              value: "true"
+            - name: RAG_EMBEDDING_ENGINE
+              value: openai
+            - name: RAG_EMBEDDING_MODEL
+              value: nomic-embed-text-v1.5
+            - name: RAG_OPENAI_API_BASE_URL
+              value: http://llm-embed-svc.llm.svc.cluster.local:11435/v1
+            # llama.cpp ignores the key; a non-empty value is required.
+            - name: RAG_OPENAI_API_KEY
+              value: sk-noauth
+            - name: VECTOR_DB
+              value: pgvector
+            # Reuse DATABASE_URL (PGVECTOR_DB_URL defaults to it); superuser
+            # access lets Open WebUI run CREATE EXTENSION vector.
+            - name: PGVECTOR_CREATE_EXTENSION
+              value: "true"
+            # nomic-embed-text-v1.5 produces 768-dim vectors.
+            - name: PGVECTOR_INITIALIZE_MAX_VECTOR_LENGTH
+              value: "768"
+            - name: ENABLE_RAG_HYBRID_SEARCH
+              value: "true"
+            - name: RAG_TOP_K
+              value: "4"
+            - name: CHUNK_SIZE
+              value: "1000"
+            - name: CHUNK_OVERLAP
+              value: "100"
           securityContext:
             runAsNonRoot: true
             readOnlyRootFilesystem: true

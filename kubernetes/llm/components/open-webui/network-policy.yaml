@@ -66,6 +66,16 @@ spec:
     - to:
         - namespaceSelector:
             matchLabels:
+              kubernetes.io/metadata.name: llm
+          podSelector:
+            matchLabels:
+              app.kubernetes.io/name: llm-embed
+      ports:
+        - protocol: TCP
+          port: 11435
+    - to:
+        - namespaceSelector:
+            matchLabels:
               kubernetes.io/metadata.name: openshift-dns
           podSelector:
             matchLabels:
