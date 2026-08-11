@@ -390,10 +390,8 @@ end
 ### 4. Tooling (`/containers`, `main.bash`)
 
 - **Toolbox**: A custom container image (`containers/toolbox`) pre-loaded with CLI tools (`oc`, `kubectl`, `ansible`, `tofu`) for managing the environment.
-- **main.bash**: A wrapper script to execute common tasks like running Ansible playbooks, fixing Kustomize files, or managing VMs.
+- **main.bash**: A wrapper script to execute common tasks like running Ansible playbooks, managing VMs, and provisioning OKD clusters.
   - `ansible`: Runs the Ansible playbooks for server configuration.
-  - `kustomize_fix`: Fixes Kustomize files by running `kustomize edit fix`.
-  - `test_overlays`: Validates Kubernetes manifests using `kubeconform` and `argocd-vault-plugin`.
   - `stateful_workload_stop`: Suspends CronJobs and scales down monitoring/stateful workloads (useful for maintenance).
 
 ### 5. Virtualization & Cloud (`/vms`, `/terraform`)
