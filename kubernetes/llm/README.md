@@ -19,6 +19,7 @@ backend is llama.cpp (Vulkan)** running on the Intel Arc Pro B70.
   - [Metrics](#metrics)
     - [Prometheus metric names](#prometheus-metric-names)
     - [Example PromQL queries](#example-promql-queries)
+    - [TODO: Open WebUI metrics \& cluster OTEL](#todo-open-webui-metrics--cluster-otel)
   - [Performance: why decode may trail bare-metal benchmarks](#performance-why-decode-may-trail-bare-metal-benchmarks)
     - [Decisive diagnostics](#decisive-diagnostics)
   - [Scaling](#scaling)
@@ -306,6 +307,53 @@ Kubernetes capacity view (device-plugin advertised resource):
 ```bash
 oc get node gpu-1 -o jsonpath='{.status.allocatable.gpu\.intel\.com/xe}{"\n"}'
 ```
+
+### TODO: Open WebUI metrics & cluster OTEL
+
+Open WebUI **cannot** be scraped like llama.cpp. Verified against the pinned
+image (`open-webui:v0.11.0`,
+`backend/open_webui/utils/telemetry/metrics.py`): it exposes **no `/metrics`
+endpoint** — the source itself states it _pushes_ metrics and "WebUI does **not**
+expose [Prometheus `/metrics`] directly". The only knobs are OTLP env vars
+(`ENABLE_OTEL`, `ENABLE_OTEL_METRICS` + `OTEL_EXPORTER_OTLP_ENDPOINT`). There is
+**no `ENABLE_PROMETHEUS` flag**, so a `ServiceMonitor`/static scrape job aimed
+at `open-webui:8080` would simply hit nothing.
+
+This is future work (two parts); nothing is deployed yet.
+
+**TODO A — Enable OTEL in the cluster.** Stand up an OTLP metrics path for Open
+WebUI to push into. Either:
+
+- a hand-rolled collector in the `llm` namespace
+  (`otel/opentelemetry-collector-contrib` Deployment: `otlp` receiver on
+  `:4317`, prometheus exporter exposing `/metrics` on `:9464`), or
+- the existing `observability-operator`
+  (`kubernetes/observability-operator/`) `OpenTelemetryCollector` CRD.
+
+**TODO B — Wire Open WebUI → collector → Prometheus → Grafana.**
+
+1. Open WebUI env (env-set, since `ENABLE_PERSISTENT_CONFIG=false` reverts
+   admin-UI toggles):
+   `ENABLE_OTEL=true`, `ENABLE_OTEL_METRICS=true`,
+   `OTEL_EXPORTER_OTLP_ENDPOINT=http://otel-collector…:4317`,
+   `OTEL_EXPORTER_OTLP_INSECURE=true`, `OTEL_SERVICE_NAME=open-webui`.
+2. Add a `- job_name: 'open-webui'` `static_configs` job (target collector
+   `…:9464`, `metrics_path: /metrics`, `cluster: okd` relabel, keep-filter on
+   Open WebUI/HTTP metric names) to **both**
+   `kubernetes/prometheus/components/prometheus/config-map.yaml` **and**
+   `kubernetes/prometheus/components/prometheus-nas/config-map.yaml` so the two
+   instances stay in sync (regular + NAS).
+3. NetworkPolicy deltas: open-webui egress → collector `:4317`; collector
+   ingress `:9464` from the `prometheus` namespace (pod
+   `app: prometheus-server`) plus the existing OpenShift monitoring
+   namespaces.
+4. Grafana: author a minimal custom
+   `kubernetes/grafana/base/dashboards/open-webui.json` driven by the OTLP HTTP
+   request metrics (rate / latency / status by `http.route`) and register it in
+   the `configMapGenerator.files` list of
+   `kubernetes/grafana/base/kustomization.yaml`. Do **not** import a community
+   Open WebUI dashboard — those assume a scrapeable `/metrics` endpoint this
+   OTLP pipeline does not provide.
 
 ## Performance: why decode may trail bare-metal benchmarks
 
