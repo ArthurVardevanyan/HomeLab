@@ -11,7 +11,7 @@ mirrors the HomeLab skill at [SKILL.md](SKILL.md). Read both before acting.
 - Bare-metal and VM provisioning is via **Ansible** ([ansible/](ansible/)) and
   the **OKD agent-based installer** ([okd/](okd/)).
 - The wrapper script [main.bash](main.bash) is the primary developer entry
-  point for lint/validation tasks.
+  point for Ansible, VM provisioning, and OKD cluster management.
 - Kubernetes manifest, Helm, and Kustomize tasks must follow the
   [Kubernetes (KubeShark) skill](.agents/skills/kubernetes-skill/SKILL.md).
 
@@ -31,7 +31,7 @@ mirrors the HomeLab skill at [SKILL.md](SKILL.md). Read both before acting.
 | [scripts/](scripts/)                                               | One-off helper scripts                                                  |
 | [notes/](notes/)                                                   | Scratchpad and manual procedures — **not** authoritative                |
 | [sandbox/](sandbox/)                                               | Throwaway experiments                                                   |
-| [main.bash](main.bash)                                             | Wrapper for ansible, kustomize fixes, overlay validation                |
+| [main.bash](main.bash)                                             | Wrapper for Ansible, cluster state management, and OKD provisioning     |
 
 ## Cluster Authentication
 
@@ -60,8 +60,8 @@ Confirm with the user before any `apply`, `delete`, `patch`, `scale`,
 - Register new apps in [kubernetes/argocd/applications/](kubernetes/argocd/applications/)
   as `<app>.yaml` and include them in the local `kustomization.yaml`.
 - After editing any `kustomization.yaml`, run
-  `./main.bash kustomize_fix --dir kubernetes/<app>` (or `--all`) to apply
-  `kustomize edit fix`, prepend `---`, and prettier-format.
+  `k8s-gitops-ci kustomize-fix -dir kubernetes/<app>` (or `-all`) to normalize
+  field ordering.
 - Secrets: prefer **External Secrets Operator** (`ExternalSecret` pulling
   from Vault via the cluster `ClusterSecretStore` — see
   [kubernetes/external-secrets-operator/](kubernetes/external-secrets-operator/)).
@@ -69,9 +69,9 @@ Confirm with the user before any `apply`, `delete`, `patch`, `scale`,
   when ESO cannot express the requirement. Never commit plaintext secrets.
   Overlay validation still requires `VAULT_ADDR` and `VAULT_TOKEN` for AVP
   placeholders that remain.
-- Validation: `./main.bash test_overlays` runs `kubectl kustomize` →
-  `argocd-vault-plugin` → `kubeconform -strict` against a local
-  `../kubernetes-json-schema/` checkout.
+- Validation: `k8s-gitops-ci test-all --assume-openshift --disable-checks avp`
+  runs the full CI pipeline (kustomize build → AVP → kubeconform + static
+  checks). See "CI Validation (k8s-gitops-ci)" section for scoped validation.
 
 ### Manifest authoring rules
 
@@ -148,7 +148,7 @@ load the `openshift-patterns` CRR reference when touching them.
 - Shell scripts use `set -o errexit -o nounset -o pipefail` and
   `shopt -s failglob` (see [main.bash](main.bash) for the template).
 - YAML indent is 2 spaces; `---` document marker required at top of files
-  (enforced by `kustomize_fix`).
+  (enforced by `kustomize-fix`).
 - Commit messages must follow Conventional Commits (`feat:`, `fix:`,
   `chore:`, `build(deps):`, `docs:`, ...).
 
@@ -162,13 +162,18 @@ Helm/Kustomize inputs are kept up to date by Renovate. Preserve the
 
 - Add a Kubernetes app — see [README.md](README.md#deploying-a-new-app).
 - Run the central wrapper — `./main.bash <function>` (`ansible`,
-  `kustomize_fix`, `test_overlays`, `test_overlays_k3s`,
   `stateful_workload_stop`, ...).
-- Re-validate manifests — `./main.bash test_overlays` (requires Vault env).
+- Validate manifests — `k8s-gitops-ci test-all --assume-openshift --disable-checks avp`.
 - Drain a node — `oc adm drain <node> --delete-emptydir-data --ignore-daemonsets --force`
   (confirm with the user first).
 - Suspend stateful workloads for maintenance —
   `./main.bash stateful_workload_stop`.
+
+## Before Committing
+
+- Run `../k8s-gitops-ci/bin/k8s-gitops-ci test-all --assume-openshift --disable-checks avp` for full validation.
+- For individual file linting, run k8s-gitops-ci linters directly:
+  `k8s-gitops-ci markdownlint`, `k8s-gitops-ci prettier`, `k8s-gitops-ci shellcheck`, etc.
 
 ## Related Skills
 
