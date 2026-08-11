@@ -1,0 +1,25 @@
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: xpumd
+  namespace: intel-device-plugins-operator
+  annotations:
+    argocd.argoproj.io/sync-wave: "2"
+  labels:
+    helm.sh/chart: xpumd-2.0.1
+    app.kubernetes.io/name: xpumd
+    app.kubernetes.io/instance: xpumd
+    app.kubernetes.io/version: "v2.0.1"
+    app.kubernetes.io/managed-by: Helm
+spec:
+  selector:
+    app.kubernetes.io/name: xpumd
+    app.kubernetes.io/instance: xpumd
+  ports:
+    - name: http
+      port: 8080
+      targetPort: http
+      protocol: TCP
+  type: ClusterIP
+  sessionAffinity: None

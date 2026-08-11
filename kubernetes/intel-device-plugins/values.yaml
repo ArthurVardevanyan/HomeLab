@@ -1,0 +1,22 @@
+---
+gpuAccess: plugin
+prometheus:
+  monitor: true
+nodeSelector:
+  feature.node.kubernetes.io/custom-intel.xe.gpu: "true"
+tolerations:
+  - key: node-role.kubernetes.io/gpu
+    operator: Exists
+    effect: NoSchedule
+config:
+  receivers:
+    intel_crashlog: null
+  exporters:
+    intelxpuinfo: null
+  service:
+    pipelines:
+      logs: null
+      metrics:
+        receivers: [intelxpu]
+        processors: [intelxpustatus]
+        exporters: [prometheus]

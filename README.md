@@ -68,6 +68,7 @@ graph TD
         K8sDir --> HomeAuto[Home Automation]
         K8sDir --> DevTools[DevOps & Security]
         K8sDir --> Media[Media]
+        K8sDir --> AI[AI / LLM Inference]
     end
 ```
 
@@ -138,7 +139,7 @@ graph TD
 | worker-1   | MS-A1-A5870    | R7-8700G   | 16  | 32G  | 1x1TB NVME                        | 2x2.5GbE                | N/A                               | OpenShift/OKD  |
 | worker-2   | MS-A1-A5870    | R7-8700G   | 16  | 32G  | 1x1TB NVME                        | 2x2.5GbE                | N/A                               | OpenShift/OKD  |
 | worker-3   | MS-A1-A5870    | R7-8700G   | 16  | 32G  | 1x1TB NVME                        | 2x2.5GbE                | N/A                               | OpenShift/OKD  |
-| gpu-1      | N/A            | R5-3600    | 12  | 16G  | 2x1TB NVME                        | 1x2.5Gbe && 1x1GbE      | N/A                               | OpenShift/OKD  |
+| gpu-1      | N/A            | R5-3600    | 12  | 64G  | 2x1TB NVME                        | 1x2.5Gbe && 1x1GbE      | N/A                               | OpenShift/OKD  |
 | TrueNas    | unas-pro       | Arm Cortex | 4   | 8G   | N/A                               | 1x2.5Gbe && 1x1GbE      | 3x2TB RaidZ1 SSD                  | TrueNas        |
 | UNAS       | Hp ProDesk     | i5-6600    | 4   | 32G  | 120G SSD Boot Mirror              | 1x1Gbe && 1x10GbE       | 4x4TB Raid6 HDD / 3x2TB Raid5 SSD | UNAS           |
 | pfSense    | Hp t730        | RX-427BB   | 4   | 4G   | 16G SSD                           | 4x1GbE                  | N/A                               | Decommissioned |
@@ -153,6 +154,7 @@ graph TD
 | worker-1 | 35W |           |           |               |      | 3200        | Disabled |
 | worker-2 | 35W |           |           |               |      | 5200        | Disabled |
 | worker-3 | 35W |           |           |               |      | 5200        | Disabled |
+| gpu-1    | 45W |           |           |               | 1.20 | 2133        | Disabled |
 
 ##### Storage
 
@@ -198,32 +200,20 @@ graph TD
 
 ##### GPU
 
-```bash
-+-----------------------------------------------------------------------------------------+
-| NVIDIA-SMI 580.95.05              Driver Version: 580.95.05      CUDA Version: 13.0     |
-+-----------------------------------------+------------------------+----------------------+
-| GPU  Name                 Persistence-M | Bus-Id          Disp.A | Volatile Uncorr. ECC |
-| Fan  Temp   Perf          Pwr:Usage/Cap |           Memory-Usage | GPU-Util  Compute M. |
-|                                         |                        |               MIG M. |
-|=========================================+========================+======================|
-|   0  NVIDIA GeForce GTX 1080        Off |   00000000:2B:00.0 Off |                  N/A |
-| 27%   32C    P8             13W /  180W |       0MiB /   8192MiB |      0%      Default |
-|                                         |                        |                  N/A |
-+-----------------------------------------+------------------------+----------------------+
+| Attribute        | Value                                                                                  |
+| ---------------- | -------------------------------------------------------------------------------------- |
+| **Node**         | `gpu-1`                                                                                |
+| **Card**         | Intel® Arc™ Pro B70 Graphics (Battlemage / Xe2, discrete)                              |
+| **Memory**       | ~32 GB GDDR6                                                                           |
+| **PCI**          | Gen5 x16, `0000:2d:00.0`                                                               |
+| **KMD**          | `xe`                                                                                   |
+| **K8s Resource** | `gpu.intel.com/xe` — 5 allocatable (`sharedDevNum: 5` fan-out of single card)          |
+| **Workload**     | Transcoding (Plex/Immich, VA-API), LLM inference (llama.cpp Vulkan), AI/ML experiments |
 
-+-----------------------------------------------------------------------------------------+
-| Processes:                                                                              |
-|  GPU   GI   CI              PID   Type   Process name                        GPU Memory |
-|        ID   ID                                                               Usage      |
-|=========================================================================================|
-|  No running processes found                                                             |
-+-----------------------------------------------------------------------------------------+
-```
-
-- **Node**: `gpu-1`
-- **Card**: NVIDIA GeForce GTX 1080 (8GB)
-- **Driver**: 580.95.05 (CUDA 13.0)
-- **Workload**: Transcoding (Plex/Immich), AI/ML experiments.
+> Replaces the previous NVIDIA GeForce GTX 1080 (8GB). See
+> [kubernetes/intel-device-plugins](kubernetes/intel-device-plugins/README.md) for
+> `xpu-smi`/`intel_gpu_top` monitoring commands (the `nvidia-smi` equivalents), and
+> [kubernetes/llm](kubernetes/llm/README.md) for B70 LLM tuning.
 
 ## Network Architecture
 
@@ -366,6 +356,11 @@ end
   - **Rook-Ceph**: Block, Object, and File storage for the cluster.
   - **MinIO**: S3-compatible object storage for applications.
   - **CloudNative-PG**: Cloud-native PostgreSQL operator for database workloads.
+- **AI / LLM Inference**:
+  - **llama.cpp (Vulkan)**: Local LLM inference engine running on the Intel Arc GPU.
+  - **Open WebUI**: Chat frontend for local LLM inference.
+  - **Intel Device Plugins**: OLM operator exposing `gpu.intel.com/xe` GPU resources.
+  - **Node Feature Discovery**: Labels GPU-capable nodes (Intel `xe` KMD detection).
 - **Observability Stack**:
   - **VictoriaMetrics**: Long-term metrics storage (replaced Prometheus remote write).
   - **Prometheus & Grafana**: Metrics collection and visualization.

@@ -115,6 +115,8 @@ load the `openshift-patterns` CRR reference when touching them.
   `../k8s-gitops-ci/bin/k8s-gitops-ci test-all --app kubernetes/<app> --cluster <cluster> --assume-openshift --disable-checks avp`
   (repeatable flags; `--app` alone validates every overlay of that app,
   `--cluster` alone validates every app targeting that cluster).
+- **Just one app?** Skip `--cluster` to validate every overlay of that app:
+  `../k8s-gitops-ci/bin/k8s-gitops-ci test-all --app kubernetes/<app> --assume-openshift --disable-checks avp`
 - Before pushing, confirm the full CI scope still passes:
   `../k8s-gitops-ci/bin/k8s-gitops-ci test-all kubernetes tekton .tekton okd --assume-openshift --disable-checks avp`
   (mirrors real CI; defaults to reading local `test.sh` automatically — no

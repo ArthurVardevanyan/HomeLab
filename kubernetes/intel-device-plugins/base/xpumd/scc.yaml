@@ -1,0 +1,42 @@
+---
+# Minimal SCC for Intel XPU Manager Daemon.
+# Not privileged; SYS_ADMIN is required for engine utilization metrics
+# (upstream bug where PERFMON should suffice:
+#  https://github.com/intel/xpumanager/issues/XXX).
+kind: SecurityContextConstraints
+apiVersion: security.openshift.io/v1
+metadata:
+  name: intel-xpumd
+  annotations:
+    checkov.io/skip: >-
+      CKV_OPENSHIFT_4=SYS_ADMIN needed for engine utilization metrics
+allowPrivilegedContainer: false
+allowHostDirVolumePlugin: false
+allowHostNetwork: false
+allowHostPorts: false
+allowHostPID: false
+allowHostIPC: false
+allowPrivilegeEscalation: false
+priority: 0
+readOnlyRootFilesystem: false
+allowedCapabilities:
+  - SYS_ADMIN
+requiredDropCapabilities:
+  - ALL
+defaultAddCapabilities: []
+runAsUser:
+  type: RunAsAny
+seLinuxContext:
+  type: MustRunAs
+fsGroup:
+  type: RunAsAny
+supplementalGroups:
+  type: RunAsAny
+seccompProfiles:
+  - runtime/default
+volumes:
+  - configMap
+  - emptyDir
+  - projected
+users:
+  - system:serviceaccount:intel-device-plugins-operator:xpumd

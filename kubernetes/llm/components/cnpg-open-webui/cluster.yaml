@@ -1,0 +1,63 @@
+---
+apiVersion: postgresql.cnpg.io/v1
+kind: Cluster
+metadata:
+  name: open-webui
+  namespace: llm
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+  labels:
+    app.kubernetes.io/instance: open-webui
+spec:
+  enablePDB: true
+  imageName: "ghcr.io/cloudnative-pg/postgresql:18.3-system-trixie@sha256:006b7801eacd9706d6fb557520a414a7d938e4e71333da98695f6f03b20e4cee"
+  instances: 3
+  imagePullPolicy: IfNotPresent
+  logLevel: info
+  primaryUpdateMethod: restart
+  primaryUpdateStrategy: unsupervised
+  startDelay: 3600
+  stopDelay: 1800
+  smartShutdownTimeout: 180
+  switchoverDelay: 3600
+  failoverDelay: 0
+  postgresUID: 26
+  postgresGID: 26
+  affinity:
+    tolerations:
+      - key: node-role.kubernetes.io/gpu
+        operator: Exists
+        effect: NoSchedule
+  postgresql:
+    parameters:
+      shared_buffers: "128MB"
+    pg_hba:
+      - "host all all 0.0.0.0/0 trust"
+  bootstrap:
+    initdb:
+      database: openwebui
+      owner: postgres
+      postInitSQL:
+        - CREATE SCHEMA IF NOT EXISTS openwebui AUTHORIZATION postgres;
+  enableSuperuserAccess: true
+  monitoring:
+    enablePodMonitor: false
+  storage:
+    storageClass: rook-ceph-block
+    size: 2Gi
+  walStorage:
+    storageClass: rook-ceph-block
+    size: 1Gi
+  resources:
+    requests:
+      cpu: 25m
+      memory: 160Mi
+    limits:
+      cpu: 100m
+      memory: 480Mi
+  seccompProfile:
+    type: RuntimeDefault
+  backup:
+    volumeSnapshot:
+      className: csi-rbdplugin-snapclass

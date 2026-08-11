@@ -1,36 +1,71 @@
-## Builder: fetch prebuilt FFmpeg with NVENC support (Option A)
-FROM registry.access.redhat.com/ubi9 AS ffmpeg-fetch
+# gpu-toolbox: Intel Arc Pro B70 diagnostics + VA-API/FFmpeg toolbox
+#
+# Intel Arc Pro B70 (Battlemage / Xe2) diagnostics container with hardware-
+# accelerated FFmpeg (VA-API + oneVPL/QSV) for encoding/transcoding.
+#
+# FFmpeg: jellyfin-ffmpeg7 (Noble-native deb, self-contained libva+iHD)
+# Drivers: kobuk-team/intel-graphics PPA (official Intel compute runtime channel)
 
-# BtbN prebuilt FFmpeg (GPL) with NVENC enabled
-ARG FFMPEG_URL=https://github.com/BtbN/FFmpeg-Builds/releases/download/latest/ffmpeg-master-latest-linux64-gpl.tar.xz
+## Builder: download jellyfin-ffmpeg7 deb (self-contained, version-pinned)
+FROM ubuntu:24.04 AS builder
+
+# renovate: datasource=generic depName=jellyfin-ffmpeg7 versioning=semver
+ARG JELLYFIN_FFMPEG_VERSION=7.1.4-3
 
 RUN set -eux; \
-	dnf -y install --setopt=tsflags=nodocs xz tar ca-certificates \
-	&& update-ca-trust || true \
-	&& curl -fSL --retry 5 --retry-connrefused "$FFMPEG_URL" -o /tmp/ffmpeg.tar.xz \
-	&& mkdir -p /opt/ffmpeg /out \
-	&& tar -xJf /tmp/ffmpeg.tar.xz -C /opt/ffmpeg --strip-components=1 \
-	&& cp -f /opt/ffmpeg/bin/ffmpeg /out/ffmpeg \
-	&& cp -f /opt/ffmpeg/bin/ffprobe /out/ffprobe \
-	&& chmod 0755 /out/ffmpeg /out/ffprobe \
-	&& /out/ffmpeg -hide_banner -encoders | grep -E 'nvenc|h264_nvenc|hevc_nvenc' || true \
-	&& dnf -y remove xz tar || true \
-	&& dnf clean all && rm -rf /var/cache/* /var/log/dnf* /var/log/yum* /tmp/* /opt/ffmpeg /tmp/ffmpeg.tar.xz
+  apt-get update; \
+  apt-get install -y --no-install-recommends ca-certificates curl; \
+  curl -fSL -o /tmp/jellyfin-ffmpeg.deb \
+    "https://repo.jellyfin.org/files/ffmpeg/ubuntu/latest-7.x/amd64/jellyfin-ffmpeg7_${JELLYFIN_FFMPEG_VERSION}-noble_amd64.deb"; \
+  # Verify the deb contains the expected ffmpeg binary
+  dpkg-deb -c /tmp/jellyfin-ffmpeg.deb | grep -q '/usr/lib/jellyfin-ffmpeg/ffmpeg'; \
+  rm -rf /var/lib/apt/lists/*
 
-## Final: CUDA runtime with FFmpeg (NVENC-enabled)
-FROM nvcr.io/nvidia/cuda:13.3.1-runtime-ubi9
+## Final: Ubuntu 24.04 with Intel Arc Pro B70 drivers + FFmpeg
+FROM ubuntu:24.04
+
 LABEL org.opencontainers.image.source="https://github.com/ArthurVardevanyan/HomeLab" \
-	org.opencontainers.image.title="GPU Toolbox" \
-	org.opencontainers.image.description="CUDA runtime with FFmpeg (NVENC-enabled)" \
-	org.opencontainers.image.licenses="MIT"
+  org.opencontainers.image.title="GPU Toolbox (Intel Arc)" \
+  org.opencontainers.image.description="Intel Arc Pro B70 diagnostics + hardware-accelerated FFmpeg (VA-API/QSV)" \
+  org.opencontainers.image.licenses="MIT"
 
-ENV NVIDIA_VISIBLE_DEVICES=all \
-	NVIDIA_DRIVER_CAPABILITIES=all \
-	LD_LIBRARY_PATH=/usr/local/nvidia/lib64:/usr/local/nvidia/lib:/usr/local/cuda/lib64${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}
+ENV LIBVA_DRIVER_NAME=iHD \
+  LIBVA_DRIVERS_PATH=/usr/lib/x86_64-linux-gnu/dri \
+  XDG_CACHE_HOME=/tmp \
+  MESA_SHADER_CACHE_DIR=/tmp
 
-COPY --from=ffmpeg-fetch /out/ffmpeg /usr/local/bin/ffmpeg
-COPY --from=ffmpeg-fetch /out/ffprobe /usr/local/bin/ffprobe
-RUN chmod 0755 /usr/local/bin/ffmpeg /usr/local/bin/ffprobe \
-	&& /usr/local/bin/ffmpeg -hide_banner -encoders | grep -E "nvenc|cuvid" || true
+COPY --from=builder /tmp/jellyfin-ffmpeg.deb /tmp/jellyfin-ffmpeg.deb
+
+RUN set -eux; \
+  apt-get update; \
+  apt-get install -y --no-install-recommends \
+  ca-certificates curl gnupg software-properties-common; \
+  # kobuk-team PPA for Intel Xe/Battlemage compute runtime (official Intel channel)
+  add-apt-repository -y ppa:kobuk-team/intel-graphics; \
+  apt-get update; \
+  apt-get install -y --no-install-recommends \
+  # GPU diagnostics (stock Ubuntu)
+  clinfo \
+  intel-gpu-tools \
+  mesa-vulkan-drivers \
+  vulkan-tools \
+  # kobuk-team PPA — Intel Xe/Battlemage drivers + tools
+  intel-media-va-driver-non-free \
+  intel-opencl-icd \
+  libvpl2 \
+  libvpl-tools \
+  libze-intel-gpu1 \
+  libze1 \
+  vainfo \
+  xpu-smi; \
+  # Install jellyfin-ffmpeg7 (self-contained, no PPA dependency)
+  apt-get install -y --no-install-recommends /tmp/jellyfin-ffmpeg.deb; \
+  # Symlink ffmpeg/ffprobe into PATH
+  ln -sf /usr/lib/jellyfin-ffmpeg/ffmpeg /usr/local/bin/ffmpeg; \
+  ln -sf /usr/lib/jellyfin-ffmpeg/ffprobe /usr/local/bin/ffprobe; \
+  # Verify hardware encoders are available (hard failure — no || true)
+  ffmpeg -hide_banner -encoders 2>/dev/null | grep -qE 'h264_vaapi|hevc_vaapi|av1_vaapi'; \
+  # Cleanup
+  rm -rf /var/lib/apt/lists/* /tmp/* /var/cache/apt/*
 
 CMD ["sleep", "infinity"]

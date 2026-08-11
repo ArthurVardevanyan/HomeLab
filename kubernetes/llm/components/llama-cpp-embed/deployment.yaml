@@ -1,0 +1,182 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: llm-embed
+  namespace: llm
+  labels:
+    app.kubernetes.io/name: llm-embed
+    app.kubernetes.io/instance: llm-embed
+  annotations:
+    checkov.io/skip1: CKV_K8S_40=Upstream Image Runs as Root
+    checkov.io/skip2: CKV_K8S_22=Model Cache Requires Writable Root FS
+    checkov.io/skip3: CKV_K8S_23=Upstream Image Requires Root
+spec:
+  revisionHistoryLimit: 0
+  progressDeadlineSeconds: 1800
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: llm-embed
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: llm-embed
+        app.kubernetes.io/instance: llm-embed
+    spec:
+      hostname: llm-embed
+      restartPolicy: Always
+      schedulerName: default-scheduler
+      terminationGracePeriodSeconds: 30
+      automountServiceAccountToken: false
+      serviceAccountName: llm-embed
+      enableServiceLinks: false
+      dnsPolicy: ClusterFirst
+      tolerations:
+        - key: node-role.kubernetes.io/gpu
+          operator: Exists
+          effect: NoSchedule
+      # Soft preference for the GPU node; never blocks scheduling elsewhere.
+      affinity:
+        nodeAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              preference:
+                matchExpressions:
+                  - key: node-role.kubernetes.io/gpu
+                    operator: Exists
+      initContainers:
+        # renovate: datasource=docker depName=ghcr.io/ggml-org/llama.cpp versioning=regex:^server-vulkan-b(?<major>\d+)$
+        - image: ghcr.io/ggml-org/llama.cpp:server-vulkan-b10331@sha256:3dd0b326c9899cf7a7491fcafba51f54e78af2a366953769a847dd380a732420
+          imagePullPolicy: IfNotPresent
+          name: model-downloader
+          env:
+            - name: PARALLEL
+              value: "8"
+            - name: CHUNK_BYTES
+              value: "134217728"
+          command:
+            - /bin/sh
+            - "-c"
+            - |
+              set -eu
+              MODELS=/data/models
+              mkdir -p "${MODELS}"
+              # Idempotent: skip if present at the resolved size.
+              if [ -f "${MODELS}/nomic-embed-text-v1.5.Q8_0.gguf" ]; then
+                have=$(wc -c < "${MODELS}/nomic-embed-text-v1.5.Q8_0.gguf" | tr -d ' ')
+                want=$(
+                  curl -fsSKIL --connect-timeout 10 --max-time 30 \
+                  "https://huggingface.co/nomic-ai/nomic-embed-text-v1.5-GGUF/resolve/main/nomic-embed-text-v1.5.Q8_0.gguf" |
+                  awk 'BEGIN{IGNORECASE=1}/^content-length:/{c=$2}END{print c}' | tr -d '\r'
+                )
+                if [ -n "${want}" ] && [ "${have}" = "${want}" ]; then
+                  echo "Present (${have} bytes): nomic-embed-text-v1.5.Q8_0.gguf"
+                  exit 0
+                fi
+              fi
+              curl -fsSL --connect-timeout 10 --max-time 600 --retry 5 --retry-delay 5 \
+                -o "${MODELS}/nomic-embed-text-v1.5.Q8_0.gguf" \
+                "https://huggingface.co/nomic-ai/nomic-embed-text-v1.5-GGUF/resolve/main/nomic-embed-text-v1.5.Q8_0.gguf"
+              echo "Downloaded nomic-embed-text-v1.5.Q8_0.gguf"
+          securityContext:
+            runAsNonRoot: true
+            readOnlyRootFilesystem: true
+            allowPrivilegeEscalation: false
+            privileged: false
+            seccompProfile:
+              type: RuntimeDefault
+            capabilities:
+              drop:
+                - ALL
+          resources:
+            requests:
+              cpu: "100m"
+              memory: 256Mi
+              ephemeral-storage: "256Mi"
+            limits:
+              cpu: "500m"
+              memory: 1Gi
+              ephemeral-storage: "1Gi"
+          volumeMounts:
+            - name: llm-embed-config
+              mountPath: /data
+      containers:
+        # renovate: datasource=docker depName=ghcr.io/ggml-org/llama.cpp versioning=regex:^server-vulkan-b(?<major>\d+)$
+        - image: ghcr.io/ggml-org/llama.cpp:server-vulkan-b10331@sha256:3dd0b326c9899cf7a7491fcafba51f54e78af2a366953769a847dd380a732420
+          name: llm-embed
+          args:
+            - "--model"
+            - "/data/models/nomic-embed-text-v1.5.Q8_0.gguf"
+            - "--embedding"
+            - "--host"
+            - "0.0.0.0"
+            - "--port"
+            - "11435"
+            - "--ctx-size"
+            - "8192"
+            - "--batch-size"
+            - "512"
+            - "--ubatch-size"
+            - "512"
+            - "--threads"
+            - "8"
+            - "--no-webui"
+          env:
+            - name: LLAMA_CACHE
+              value: /data/cache
+            - name: HOME
+              value: /data
+          securityContext:
+            runAsNonRoot: true
+            readOnlyRootFilesystem: false
+            allowPrivilegeEscalation: false
+            privileged: false
+            seccompProfile:
+              type: RuntimeDefault
+            capabilities:
+              drop:
+                - ALL
+          ports:
+            - containerPort: 11435
+              name: api
+              protocol: TCP
+          startupProbe:
+            httpGet:
+              path: /health
+              port: api
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            failureThreshold: 30
+            timeoutSeconds: 5
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: api
+            periodSeconds: 30
+            timeoutSeconds: 10
+            failureThreshold: 5
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: api
+            periodSeconds: 15
+            timeoutSeconds: 5
+            failureThreshold: 3
+          resources:
+            requests:
+              cpu: "250m"
+              memory: 512Mi
+              ephemeral-storage: "128Mi"
+            limits:
+              cpu: "2"
+              memory: 2Gi
+              ephemeral-storage: "512Mi"
+          volumeMounts:
+            - name: llm-embed-config
+              mountPath: /data
+      volumes:
+        - name: llm-embed-config
+          persistentVolumeClaim:
+            claimName: llm-embed-models

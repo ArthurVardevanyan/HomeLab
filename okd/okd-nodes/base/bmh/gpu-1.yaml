@@ -1,0 +1,55 @@
+---
+apiVersion: metal3.io/v1alpha1
+kind: BareMetalHost
+metadata:
+  name: gpu-1
+  namespace: openshift-machine-api
+spec:
+  bmc:
+    address: redfish-virtualmedia+http://bmc-shim.bmc-shim.svc.cluster.local:8080/redfish/v1/Systems/7
+    credentialsName: "gpu-1-bmc-secret"
+  bootMACAddress: 2c:f0:5d:83:73:a2
+  automatedCleaningMode: metadata
+  bootMode: UEFI
+  externallyProvisioned: true
+  online: true
+  # userData:
+  #   name: worker-user-data
+  #   namespace: openshift-machine-api
+# Manually Patched Status for Discovery
+# status:
+#   hardware:
+#     nics:
+#       - ip: 10.101.10.107
+#         mac: 2c:f0:5d:83:73:a2
+#         name: bond0
+---
+apiVersion: external-secrets.io/v1
+kind: ExternalSecret
+metadata:
+  name: gpu-1-bmc-secret
+  namespace: openshift-machine-api
+  annotations:
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+spec:
+  refreshInterval: "1h"
+  secretStoreRef:
+    name: vault
+    kind: ClusterSecretStore
+  target:
+    name: gpu-1-bmc-secret
+  data:
+    - secretKey: username
+      remoteRef: # checkov:skip=CKV_SECRET_6 PlaceHolder Values
+        conversionStrategy: Default
+        decodingStrategy: None
+        key: homelab/bmc
+        property: username
+        metadataPolicy: None
+    - secretKey: password
+      remoteRef: # checkov:skip=CKV_SECRET_6 PlaceHolder Values
+        conversionStrategy: Default
+        decodingStrategy: None
+        key: homelab/bmc
+        property: password
+        metadataPolicy: None

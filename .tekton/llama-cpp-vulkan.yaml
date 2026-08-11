@@ -1,0 +1,150 @@
+---
+apiVersion: tekton.dev/v1
+kind: PipelineRun
+metadata:
+  name: llama-cpp-vulkan-image
+  annotations:
+    pipelinesascode.tekton.dev/max-keep-runs: "1"
+    pipelinesascode.tekton.dev/on-cel-expression: |
+      event == "pull_request" && target_branch == "main" && ("containers/llama-cpp-vulkan/containerfile".pathChanged() || ".tekton/llama-cpp-vulkan.yaml".pathChanged())
+    pipelinesascode.tekton.dev/target-namespace: "homelab"
+    pipelinesascode.tekton.dev/task: "https://raw.githubusercontent.com/ArthurVardevanyan/HomeLab/main/tekton/tasks/git-clone/0.9.1/git-clone.yaml"
+    pipelinesascode.tekton.dev/task-1: "tekton/tasks/buildah/0.7.1/buildah.yaml"
+    pipelinesascode.tekton.dev/task-2: "tekton/base/clair-action/clair-action-task.yaml"
+    gitops-ci.k8s.io/exempt-image-checksum: "registry.arthurvardevanyan.com/homelab/toolbox:not_latest"
+spec:
+  params:
+    - name: git-url
+      value: "{{ repo_url }}"
+    - name: git-commit
+      value: "{{ revision }}"
+    - name: DOCKERFILE
+      value: "./containers/llama-cpp-vulkan/containerfile"
+    - name: IMAGE
+      value: "registry.arthurvardevanyan.com/homelab/llama-cpp-vulkan"
+
+  pipelineSpec:
+    params:
+      - name: git-url
+        description: Repository URL to clone from.
+        type: string
+      - name: git-commit
+        type: string
+      - name: IMAGE
+        description: Reference of the image buildah will produce.
+      - name: DOCKERFILE
+        description: Path to the Dockerfile to build.
+        type: string
+        default: ./Dockerfile
+
+    results:
+      - description: The common vulnerabilities and exposures (CVE) result
+        name: SCAN_OUTPUT
+        value: $(tasks.clair-action.results.SCAN_OUTPUT)
+        type: string
+      - description: Upstream llama.cpp build number (from FROM tag)
+        name: BUILD_TAG
+        value: $(tasks.base-image-tag.results.TAG)
+        type: string
+
+    workspaces:
+      - name: data
+      - name: git_auth_secret
+
+    tasks:
+      - name: git-clone
+        taskRef:
+          name: git-clone
+          kind: Task
+        params:
+          - name: url
+            value: $(params.git-url)
+          - name: revision
+            value: $(params.git-commit)
+        workspaces:
+          - name: output
+            workspace: data
+          - name: basic-auth
+            workspace: git_auth_secret
+
+      - name: base-image-tag
+        runAfter:
+          - git-clone
+        workspaces:
+          - name: data
+            workspace: data
+        taskSpec:
+          results:
+            - description: Upstream llama.cpp build number (from FROM tag)
+              name: TAG
+              type: string
+          workspaces:
+            - name: data
+          steps:
+            - name: extract-tag
+              image: "registry.arthurvardevanyan.com/homelab/toolbox:not_latest"
+              workingDir: $(workspaces.data.path)
+              script: |
+                #!/usr/bin/env bash
+                set -o errexit -o nounset -o pipefail
+
+                # The FROM tag is the single source of truth: server-vulkan-b<build> -> b<build>.
+                tags=( $(grep -oE '^FROM [^ ]*:server-vulkan-b[0-9]+' "$(params.DOCKERFILE)" \
+                         | grep -oE 'b[0-9]+$' | sort -u || true) )
+                if [ "${#tags[@]}" -ne 1 ]; then
+                  echo "ERROR: expected exactly 1 server-vulkan-b<build> tag in $(params.DOCKERFILE), got ${#tags[@]}" >&2
+                  printf '%s\n' "${tags[@]:-<none>}" >&2
+                  exit 1
+                fi
+                # Guard: the base must stay digest-pinned.
+                grep -qE '@sha256:[0-9a-f]{64}' "$(params.DOCKERFILE)" || {
+                  echo "ERROR: base image is not digest-pinned" >&2; exit 1; }
+                tag="${tags[0]##*-}"
+                echo "Resolved build tag: ${tag}"
+                printf '%s' "${tag}" > "$(results.TAG.path)"
+
+      - name: buildah
+        runAfter:
+          - git-clone
+          - base-image-tag
+        taskRef:
+          name: buildah
+          kind: Task
+        params:
+          - name: IMAGE
+            value: "$(params.IMAGE):$(tasks.base-image-tag.results.TAG)"
+          - name: DOCKERFILE
+            value: $(params.DOCKERFILE)
+        workspaces:
+          - name: source
+            workspace: data
+
+      - name: clair-action
+        runAfter:
+          - buildah
+        taskRef:
+          name: clair-action
+          kind: Task
+        params:
+          - name: IMAGE
+            value: "$(params.IMAGE):$(tasks.base-image-tag.results.TAG)"
+
+  taskRunTemplate:
+    serviceAccountName: pipeline
+  workspaces:
+    - name: data
+      volumeClaimTemplate:
+        apiVersion: v1
+        kind: PersistentVolumeClaim
+        metadata:
+          name: data
+        spec:
+          accessModes:
+            - ReadWriteOnce
+          resources:
+            requests:
+              storage: "100Mi"
+          storageClassName: rook-ceph-block-ci
+    - name: git_auth_secret
+      secret:
+        secretName: "{{ git_auth_secret }}"

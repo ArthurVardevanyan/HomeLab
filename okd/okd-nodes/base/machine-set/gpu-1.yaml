@@ -1,0 +1,51 @@
+---
+apiVersion: machine.openshift.io/v1beta1
+kind: MachineSet
+metadata:
+  name: okd-4ww5p-gpu-1
+  namespace: openshift-machine-api
+  labels:
+    machine.openshift.io/cluster-api-cluster: okd-4ww5p
+    machine.openshift.io/cluster-api-machine-role: worker
+    machine.openshift.io/cluster-api-machine-type: worker
+spec:
+  selector:
+    matchLabels:
+      machine.openshift.io/cluster-api-cluster: okd-4ww5p
+      machine.openshift.io/cluster-api-machineset: okd-4ww5p-gpu-1
+  template:
+    metadata:
+      annotations:
+        metal3.io/BareMetalHost: openshift-machine-api/gpu-1
+      labels:
+        beta.kubernetes.io/instance-type: R5-3600
+        machine.openshift.io/cluster-api-cluster: okd-4ww5p
+        machine.openshift.io/cluster-api-machineset: okd-4ww5p-gpu-1
+        machine.openshift.io/cluster-api-machine-role: worker
+        machine.openshift.io/cluster-api-machine-type: worker
+        node-role.kubernetes.io/gpu: "true"
+        node-role.kubernetes.io/worker: ""
+    spec:
+      metadata:
+        labels:
+          beta.kubernetes.io/instance-type: R5-3600
+          node-role.kubernetes.io/gpu: "true"
+      taints:
+        - key: node-role.kubernetes.io/gpu
+          effect: NoSchedule
+      providerSpec:
+        value:
+          apiVersion: baremetal.cluster.k8s.io/v1alpha1
+          customDeploy:
+            method: install_coreos
+          hostSelector:
+            matchLabels:
+              kubernetes.io/hostname: gpu-1
+          image:
+            checksum: ""
+            url: ""
+          kind: BareMetalMachineProviderSpec
+          metadata:
+            creationTimestamp: null
+          userData:
+            name: worker-user-data-managed

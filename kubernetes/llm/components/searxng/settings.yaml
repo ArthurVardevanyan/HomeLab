@@ -1,0 +1,61 @@
+---
+use_default_settings:
+  engines:
+    remove:
+      - ahmia
+      - torch
+
+server:
+  bind_address: "0.0.0.0"
+  port: 8080
+  limit_referrer_to_origin: true
+  limiter: false
+  method: POST
+  secret_key: ""
+
+search:
+  safe_search: 0
+  default_lang: ""
+  formats:
+    - html
+    - json
+
+engine:
+  enabled: true
+  disable_parameters:
+    autocomplete: ""
+
+valkey:
+  url: redis://:@open-webui-dragonfly.llm.svc.cluster.local.:6379/0
+
+ui:
+  static_use_hash: true
+  default_locale: ""
+  query_in_title: false
+  default_theme: simple
+  center_results: false
+  enable_json: false
+  enable_search_bar: false
+  default_lang: ""
+  default_theme_mode: auto
+  theme_opts:
+    auto: []
+    simple:
+      style: "auto"
+  template_name: simple
+  static_hash: true
+
+general:
+  debug: false
+  instance_name: "SearXNG"
+  donation_url: ""
+  contact_url: ""
+  enable_metrics: true
+
+outgoing:
+  request_timeout: 6.0
+  max_request_timeout: 15.0
+  useragent_suffix: "(+https://ai.arthurvardevanyan.com)"
+  pool_connections: 100
+  pool_maxsize: 20
+  persistent: true

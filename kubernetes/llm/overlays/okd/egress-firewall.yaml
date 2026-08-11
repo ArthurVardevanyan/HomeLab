@@ -1,0 +1,296 @@
+---
+apiVersion: k8s.ovn.org/v1
+kind: EgressFirewall
+metadata:
+  name: default
+  namespace: llm
+  annotations:
+    argocd.argoproj.io/sync-wave: "0"
+spec:
+  egress:
+    # Control Plane (kube-apiserver)
+    - type: Allow
+      to:
+        nodeSelector:
+          matchLabels:
+            node-role.kubernetes.io/control-plane: ""
+      ports:
+        - protocol: TCP
+          port: 6443
+    # Zitadel (OIDC issuer - resolves to private IP, must stay explicit)
+    - type: Allow
+      to:
+        dnsName: zitadel.arthurvardevanyan.com
+      ports:
+        - protocol: TCP
+          port: 443
+    # OKD Wildcard DNS & Route VIPs (hairpin self-hosted app lookups / pasted URLs)
+    - type: Allow
+      to:
+        cidrSelector: 10.101.10.5/32
+      ports:
+        - protocol: TCP
+          port: 443
+        - protocol: TCP
+          port: 80
+    - type: Allow
+      to:
+        cidrSelector: 10.101.10.7/32
+      ports:
+        - protocol: TCP
+          port: 443
+        - protocol: TCP
+          port: 80
+    # Public internet (broad allow) - 31 deaggregated blocks excluding RFC1918
+    - type: Allow
+      to:
+        cidrSelector: 0.0.0.0/5
+      ports:
+        - protocol: TCP
+          port: 443
+        - protocol: TCP
+          port: 80
+    - type: Allow
+      to:
+        cidrSelector: 8.0.0.0/7
+      ports:
+        - protocol: TCP
+          port: 443
+        - protocol: TCP
+          port: 80
+    - type: Allow
+      to:
+        cidrSelector: 11.0.0.0/8
+      ports:
+        - protocol: TCP
+          port: 443
+        - protocol: TCP
+          port: 80
+    - type: Allow
+      to:
+        cidrSelector: 12.0.0.0/6
+      ports:
+        - protocol: TCP
+          port: 443
+        - protocol: TCP
+          port: 80
+    - type: Allow
+      to:
+        cidrSelector: 16.0.0.0/4
+      ports:
+        - protocol: TCP
+          port: 443
+        - protocol: TCP
+          port: 80
+    - type: Allow
+      to:
+        cidrSelector: 32.0.0.0/3
+      ports:
+        - protocol: TCP
+          port: 443
+        - protocol: TCP
+          port: 80
+    - type: Allow
+      to:
+        cidrSelector: 64.0.0.0/2
+      ports:
+        - protocol: TCP
+          port: 443
+        - protocol: TCP
+          port: 80
+    - type: Allow
+      to:
+        cidrSelector: 128.0.0.0/3
+      ports:
+        - protocol: TCP
+          port: 443
+        - protocol: TCP
+          port: 80
+    - type: Allow
+      to:
+        cidrSelector: 160.0.0.0/5
+      ports:
+        - protocol: TCP
+          port: 443
+        - protocol: TCP
+          port: 80
+    - type: Allow
+      to:
+        cidrSelector: 168.0.0.0/6
+      ports:
+        - protocol: TCP
+          port: 443
+        - protocol: TCP
+          port: 80
+    - type: Allow
+      to:
+        cidrSelector: 172.0.0.0/12
+      ports:
+        - protocol: TCP
+          port: 443
+        - protocol: TCP
+          port: 80
+    - type: Allow
+      to:
+        cidrSelector: 172.32.0.0/11
+      ports:
+        - protocol: TCP
+          port: 443
+        - protocol: TCP
+          port: 80
+    - type: Allow
+      to:
+        cidrSelector: 172.64.0.0/10
+      ports:
+        - protocol: TCP
+          port: 443
+        - protocol: TCP
+          port: 80
+    - type: Allow
+      to:
+        cidrSelector: 172.128.0.0/9
+      ports:
+        - protocol: TCP
+          port: 443
+        - protocol: TCP
+          port: 80
+    - type: Allow
+      to:
+        cidrSelector: 173.0.0.0/8
+      ports:
+        - protocol: TCP
+          port: 443
+        - protocol: TCP
+          port: 80
+    - type: Allow
+      to:
+        cidrSelector: 174.0.0.0/7
+      ports:
+        - protocol: TCP
+          port: 443
+        - protocol: TCP
+          port: 80
+    - type: Allow
+      to:
+        cidrSelector: 176.0.0.0/4
+      ports:
+        - protocol: TCP
+          port: 443
+        - protocol: TCP
+          port: 80
+    - type: Allow
+      to:
+        cidrSelector: 192.0.0.0/9
+      ports:
+        - protocol: TCP
+          port: 443
+        - protocol: TCP
+          port: 80
+    - type: Allow
+      to:
+        cidrSelector: 192.128.0.0/11
+      ports:
+        - protocol: TCP
+          port: 443
+        - protocol: TCP
+          port: 80
+    - type: Allow
+      to:
+        cidrSelector: 192.160.0.0/13
+      ports:
+        - protocol: TCP
+          port: 443
+        - protocol: TCP
+          port: 80
+    - type: Allow
+      to:
+        cidrSelector: 192.169.0.0/16
+      ports:
+        - protocol: TCP
+          port: 443
+        - protocol: TCP
+          port: 80
+    - type: Allow
+      to:
+        cidrSelector: 192.170.0.0/15
+      ports:
+        - protocol: TCP
+          port: 443
+        - protocol: TCP
+          port: 80
+    - type: Allow
+      to:
+        cidrSelector: 192.172.0.0/14
+      ports:
+        - protocol: TCP
+          port: 443
+        - protocol: TCP
+          port: 80
+    - type: Allow
+      to:
+        cidrSelector: 192.176.0.0/12
+      ports:
+        - protocol: TCP
+          port: 443
+        - protocol: TCP
+          port: 80
+    - type: Allow
+      to:
+        cidrSelector: 192.192.0.0/10
+      ports:
+        - protocol: TCP
+          port: 443
+        - protocol: TCP
+          port: 80
+    - type: Allow
+      to:
+        cidrSelector: 193.0.0.0/8
+      ports:
+        - protocol: TCP
+          port: 443
+        - protocol: TCP
+          port: 80
+    - type: Allow
+      to:
+        cidrSelector: 194.0.0.0/7
+      ports:
+        - protocol: TCP
+          port: 443
+        - protocol: TCP
+          port: 80
+    - type: Allow
+      to:
+        cidrSelector: 196.0.0.0/6
+      ports:
+        - protocol: TCP
+          port: 443
+        - protocol: TCP
+          port: 80
+    - type: Allow
+      to:
+        cidrSelector: 200.0.0.0/5
+      ports:
+        - protocol: TCP
+          port: 443
+        - protocol: TCP
+          port: 80
+    - type: Allow
+      to:
+        cidrSelector: 208.0.0.0/4
+      ports:
+        - protocol: TCP
+          port: 443
+        - protocol: TCP
+          port: 80
+    - type: Allow
+      to:
+        cidrSelector: 224.0.0.0/3
+      ports:
+        - protocol: TCP
+          port: 443
+        - protocol: TCP
+          port: 80
+    # Deny all other egress
+    - type: Deny
+      to:
+        cidrSelector: 0.0.0.0/0

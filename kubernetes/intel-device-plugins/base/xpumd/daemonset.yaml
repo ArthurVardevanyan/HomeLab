@@ -1,0 +1,88 @@
+---
+# renovate: datasource=docker depName=ghcr.io/intel/xpumanager/xpumd
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: xpumd
+  namespace: intel-device-plugins-operator
+  annotations:
+    argocd.argoproj.io/sync-wave: "2"
+  labels:
+    helm.sh/chart: xpumd-2.0.1
+    app.kubernetes.io/name: xpumd
+    app.kubernetes.io/instance: xpumd
+    app.kubernetes.io/version: "v2.0.1"
+    app.kubernetes.io/managed-by: Helm
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: xpumd
+      app.kubernetes.io/instance: xpumd
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: xpumd
+        app.kubernetes.io/instance: xpumd
+    spec:
+      serviceAccountName: xpumd
+      automountServiceAccountToken: false
+      enableServiceLinks: false
+      restartPolicy: Always
+      schedulerName: default-scheduler
+      dnsPolicy: ClusterFirst
+      securityContext:
+        seccompProfile:
+          type: RuntimeDefault
+        runAsNonRoot: false
+      containers:
+        - name: xpumd
+          # renovate: datasource=docker depName=ghcr.io/intel/xpumanager/xpumd
+          image: "ghcr.io/intel/xpumanager/xpumd@sha256:50945a310e3d24217cdb086811c2d613936346db9f90cbbc31b0eb2fc9040ab9"
+          imagePullPolicy: Always
+          args:
+            - "--config=/etc/xpumd/config-processor-xpustatus.yaml"
+            - "--config=/etc/xpumd/config.yaml"
+          securityContext:
+            privileged: false
+            readOnlyRootFilesystem: true
+            allowPrivilegeEscalation: false
+            runAsNonRoot: false
+            seccompProfile:
+              type: RuntimeDefault
+            # Required for GPU device access, unless container runtime allows device file owner override:
+            # - https://kubernetes.io/blog/2021/11/09/non-root-containers-and-devices/
+            # Required also for all other metrics than frequency, memory usage, power
+            runAsUser: 0
+            capabilities:
+              drop:
+                - ALL
+              add:
+                # required for engine utilization
+                # (bug in underlying layers, PERFMON should be enough)
+                - SYS_ADMIN
+          ports:
+            - name: http
+              containerPort: 8080
+              protocol: TCP
+          resources:
+            requests:
+              cpu: 10m
+              memory: 128Mi
+            # map all GPUs to container
+            limits:
+              gpu.intel.com/monitoring: 1
+              memory: 2Gi
+          volumeMounts:
+            - name: config
+              mountPath: /etc/xpumd
+              readOnly: true
+      nodeSelector:
+        feature.node.kubernetes.io/custom-intel.xe.gpu: "true"
+      tolerations:
+        - key: node-role.kubernetes.io/gpu
+          operator: Exists
+          effect: NoSchedule
+      volumes:
+        - name: config
+          configMap:
+            name: xpumd-config
