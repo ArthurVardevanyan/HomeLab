@@ -15,7 +15,7 @@ backend is llama.cpp (Vulkan)** running on the Intel Arc Pro B70.
   - [Open WebUI (chat front-end)](#open-webui-chat-front-end)
     - [Deployment](#deployment)
     - [OIDC / SSO](#oidc--sso)
-    - [Database](#database)
+    - [Database & Websockets](#database--websockets)
   - [GPU Monitoring (nvidia-smi equivalents)](#gpu-monitoring-nvidia-smi-equivalents)
   - [Performance: why decode may trail bare-metal benchmarks](#performance-why-decode-may-trail-bare-metal-benchmarks)
   - [Scaling](#scaling)
@@ -36,10 +36,11 @@ Served via **llama-server router mode** — a single process hosts both models
 (preset `base/configmap.yaml` → `models.ini`), pre-downloaded to the PVC by an
 init container. Select the model by name in the client's `model` field:
 
-| Model id          | Model                        | Trait                    |
-| ----------------- | ---------------------------- | ------------------------ |
-| `qwen3.6-35b-a3b` | Qwen3.6-35B-A3B (sparse MoE) | ~4x faster decode on B70 |
-| `qwen3.6-27b`     | Qwen3.6-27B (dense)          | higher quality, slower   |
+| Model id                | Model                                  | Trait                      |
+| ----------------------- | -------------------------------------- | -------------------------- |
+| `qwen3.6-35b-a3b`       | Qwen3.6-35B-A3B (sparse MoE)           | ~4x faster decode on B70   |
+| `qwen3.6-27b`           | Qwen3.6-27B (dense)                    | higher quality, slower     |
+| `qwen3.6-coder-30b-a3b` | Qwen3-Coder-30B-A3B-Instruct-Q4_0.gguf | Code-focused, high context |
 
 Both are reached on the one endpoint (`:11434`). Router behavior:
 
@@ -51,7 +52,7 @@ Both are reached on the one endpoint (`:11434`). Router behavior:
   request. No manual VRAM management needed.
 
 Global B70 tuning (in `[*]` of the preset): `n-gpu-layers 999`, `flash-attn on`,
-`cache-type-k/v f16`, `ubatch-size 2048`, `ctx-size 131072`,
+`cache-type-k/v q8_0`, `ubatch-size 2048`, `ctx-size 262144`,
 `reasoning-format none`.
 
 > **Probes:** `livenessProbe`/`startupProbe` hit `GET /models` (router-level,
@@ -66,7 +67,7 @@ Args in `base/deployment.yaml`, informed by B70 llama.cpp benchmarking:
 
 - `--ubatch-size 2048` — larger physical batch is a big prefill win on
   Battlemage (opposite of the well-known AMD "smaller ubatch" advice).
-- `--cache-type-k/v f16` — f16 KV holds decode speed far better than `q4_0`
+- `--cache-type-k/v q8_0` — q8_0 balances VRAM savings with decode speed for the 3-model router
   past ~16K context on this hardware.
 - `-c 131072` — 128K context (model natively supports 256K; hybrid DeltaNet attention keeps the KV cache small enough for 128K on a single 32GB card at f16).
 - `--reasoning-format none` — reasoning off server-side; clients opt in
@@ -163,8 +164,81 @@ Workload-level metrics (llama.cpp exposes Prometheus metrics via `--metrics`):
 
 ```bash
 POD=$(oc -n llm get pod -l app=llm-server -o name | head -1)
-oc -n llm exec "$POD" -- sh -c 'wget -qO- http://localhost:11434/metrics | head'
-oc -n llm exec "$POD" -- sh -c 'wget -qO- http://localhost:11434/v1/models'
+oc -n llm exec "$POD" -- curl -sS "http://localhost:11434/metrics?model=qwen3.6-35b-a3b"
+oc -n llm exec "$POD" -- curl -sS "http://localhost:11434/v1/models"
+```
+
+## Metrics
+
+llama.cpp is already started with `--metrics` (deployment.yaml). The Prometheus
+endpoint is `GET /metrics?model=<model_id>` — the `model` query param is **
+mandatory in router mode** (without it the server 400s with "model name is
+missing from the request").
+
+A `ServiceMonitor` (components/llama-cpp/service-monitor.yaml) scrapes all 3
+configured models with `autoload=false`. Because the router is configured with
+`--models-max 1`, only the currently-resident model's target scrapes
+successfully; the other two return 400 ("model is not loaded") and show as
+**down** in Prometheus. This is expected, not a bug — the router's
+`--models-autoload` defaults to enabled, so scraping without
+`autoload=false` would trigger a full model load/VRAM swap just to satisfy a
+metrics scrape.
+
+### Prometheus metric names
+
+All metrics use the `llamacpp:` prefix. The `model` label is added via
+ServiceMonitor relabeling so each model's series can be distinguished in
+PromQL/Grafana.
+
+| Metric                                                   | Type    | Description                                                      |
+| -------------------------------------------------------- | ------- | ---------------------------------------------------------------- |
+| `llamacpp:prompt_tokens_total`                           | Counter | Cumulative prompt tokens processed                               |
+| `llamacpp:prompt_seconds_total`                          | Counter | Total time spent on prompt evaluation (s)                        |
+| `llamacpp:prompt_tokens_seconds`                         | Gauge   | Average prompt throughput (tokens/s)                             |
+| `llamacpp:tokens_predicted_total`                        | Counter | Cumulative generated (decoded) tokens                            |
+| `llamacpp:tokens_predicted_seconds_total`                | Counter | Total generation time (s)                                        |
+| `llamacpp:predicted_tokens_seconds`                      | Gauge   | Average decode throughput (tokens/s)                             |
+| `llamacpp:requests_processing`                           | Gauge   | Number of requests currently being processed                     |
+| `llamacpp:requests_deferred`                             | Gauge   | Number of requests deferred (waiting in queue)                   |
+| `llamacpp:n_tokens_max`                                  | Counter | High watermark of the context size observed                      |
+| `llamacpp:n_decode_total`                                | Counter | Total number of `llama_decode()` calls                           |
+| `llamacpp:n_busy_slots_per_decode`                       | Gauge   | Average busy slots per `llama_decode()` call                     |
+| `llamacpp:spec_decode_num_draft_tokens_total`            | Counter | Total draft tokens generated (always `0` — spec-decode not used) |
+| `llamacpp:spec_decode_num_accepted_tokens_total`         | Counter | Draft tokens accepted by target model (always `0`)               |
+| `llamacpp:spec_decode_num_drafts_total`                  | Counter | Speculative-decode verification steps (always `0`)               |
+| `llamacpp:spec_decode_num_accepted_tokens_per_pos_total` | Counter | Accepted tokens per draft position (always `0`)                  |
+
+> **Note:** llama.cpp exposes only counters and gauges — **no histograms**.
+> Unlike vLLM/TGI it does not expose p95/p99 latency or inter-token latency
+> distributions. For latency visibility you need to measure from the client
+> side (Open WebUI response times, or an external probe).
+
+### Example PromQL queries
+
+```promql
+# Decode throughput per model (tokens/s)
+llamacpp:predicted_tokens_seconds{app="llm-server"}
+
+# Current queue depth (requests waiting for a free slot)
+llamacpp:requests_deferred{app="llm-server"}
+
+# How many requests are currently being served
+llamacpp:requests_processing{app="llm-server"}
+
+# Context-size high watermark over the lifetime of the current model instance
+llamacpp:n_tokens_max{app="llm-server"}
+
+# Prompt throughput (tokens/s) — useful for comparing prefill speed across models
+llamacpp:prompt_tokens_seconds{app="llm-server"}
+
+# Rate of total generated tokens over 5 minutes (per model)
+sum by (model) (rate(llamacpp:tokens_predicted_total{app="llm-server"}[5m]))
+```
+
+Kubernetes capacity view (device-plugin advertised resource):
+
+```bash
+oc get node gpu-1 -o jsonpath='{.status.allocatable.gpu\.intel\.com/xe}{"\n"}'
 ```
 
 Kubernetes capacity view (device-plugin advertised resource):
@@ -244,12 +318,13 @@ oc -n llm logs -f deployment/llm-server   # watch model load + Vulkan device
   `allow-openshift-monitoring`).
 - `components/llama-cpp/` — llama.cpp Vulkan Deployment + init container,
   ConfigMap (router preset), PVC, service, service account, network policies
-  (`allow-llm-api`, `allow-external-egress`), VPA.
+  (`allow-llm-api`, `allow-external-egress`), ServiceMonitor (Prometheus
+  scraping of all 3 models with `autoload=false`), VPA.
 - `components/open-webui/` — Open WebUI chat front-end Deployment, service,
   service account, ExternalSecret (WEBUI_SECRET_KEY + Zitadel OIDC creds),
   network policy (egress to llama.cpp :11434 + CNPG :5432).
 - `components/open-webui/cnpg/` — CloudNativePG Postgres Cluster for Open WebUI
-  (1 instance, 2Gi, no backup — chat data is ephemeral).
+  (3 instances, 2Gi, no backup — chat data is ephemeral).
 - `components/open-webui/openshift/gateway/` — HTTPRoute for
   `ai.arthurvardevanyan.com` on the shared `https-gateway`, Certificate,
   blackbox Probe. No BackendTLSPolicy (gateway terminates TLS, backend is
@@ -265,13 +340,13 @@ OIDC for SSO.
 
 ### Deployment
 
-| Resource | Value                                                                     |
-| -------- | ------------------------------------------------------------------------- |
-| Image    | `ghcr.io/open-webui/open-webui:v0.11.0` (pinned digest, Renovate-managed) |
-| Replicas | 1                                                                         |
-| Database | CloudNativePG Postgres (`open-webui` cluster, 1 instance, 2Gi)            |
-| Storage  | `/root/.local/share/open-webui` mounted from `emptyDir`                   |
-| Gateway  | `ai.arthurvardevanyan.com` on `https-gateway` (TLS Terminate)             |
+| Resource | Value                                                                                                 |
+| -------- | ----------------------------------------------------------------------------------------------------- |
+| Image    | `ghcr.io/open-webui/open-webui:v0.11.0` (pinned digest, Renovate-managed)                             |
+| Replicas | 2                                                                                                     |
+| Database | CloudNativePG Postgres (`open-webui` cluster, 3 instances, 2Gi)                                       |
+| Storage  | `/root/.local/share/open-webui` mounted from `rook-cephfs` (RWX, 5Gi) + Dragonfly for websocket state |
+| Gateway  | `ai.arthurvardevanyan.com` on `https-gateway` (TLS Terminate)                                         |
 
 ### OIDC / SSO
 
@@ -291,14 +366,25 @@ in Zitadel with:
 > The `OPENID_PROVIDER_URL` is set to `https://zitadel.arthurvardevanyan.com`
 > so Open WebUI auto-discovers the OIDC endpoints.
 
-### Database
+### Database & Websockets
 
 CloudNativePG creates a `openwebui` database with `postgres` user. The
 `DATABASE_URL` env var references the CNPG cluster-internal service:
 
-```
+```yaml
 postgresql://postgres:<password>@open-webui-rw.llm.svc.cluster.local:5432/postgres
 ```
+
+For multi-replica websocket state sharing, Open WebUI uses **Dragonfly** (a Redis-compatible
+in-memory data store) via `WEBSOCKET_MANAGER=redis`. The Dragonfly service is
+`open-webui-dragonfly.llm.svc.cluster.local.:6379`.
+
+### Storage
+
+Open WebUI's `/root/.local/share/open-webui` path is mounted from a `rook-cephfs` PVC
+(ReadWriteMany, 5Gi) to support multiple replicas. Within this path, `DATA_DIR` is set
+to `/root/.local/share/open-webui/data` and `STATIC_DIR` to `/root/.local/share/open-webui/static`
+to point write operations away from the read-only root filesystem.
 
 > **Note:** chat history, user data, and settings are stored in Postgres.
 > No CNPG backup is configured — chat data is considered ephemeral. The
