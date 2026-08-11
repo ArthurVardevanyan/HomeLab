@@ -1,0 +1,110 @@
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-internet-egress-searxng
+  namespace: llm
+  annotations:
+    argocd.argoproj.io/sync-wave: "0"
+  labels:
+    app.kubernetes.io/name: searxng
+spec:
+  policyTypes:
+    - Egress
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: searxng
+  egress:
+    - to:
+        - ipBlock:
+            cidr: 0.0.0.0/0
+            except:
+              - 10.0.0.0/8
+              - 172.16.0.0/12
+              - 192.168.0.0/16
+        - ipBlock:
+            cidr: 10.101.10.5/32 # OKD WildCard
+        - ipBlock:
+            cidr: 10.101.10.7/32 # OKD APP WildCard
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-to-openshift-ingress-searxng
+  namespace: llm
+  annotations:
+    argocd.argoproj.io/sync-wave: "0"
+  labels:
+    app.kubernetes.io/name: searxng
+spec:
+  policyTypes:
+    - Egress
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: searxng
+  egress:
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              network.openshift.io/policy-group: ingress
+      ports:
+        - protocol: TCP
+          port: 443
+        - protocol: TCP
+          port: 80
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-searxng-ingress-from-open-webui
+  namespace: llm
+  annotations:
+    argocd.argoproj.io/sync-wave: "0"
+  labels:
+    app.kubernetes.io/name: searxng
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: searxng
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: llm
+          podSelector:
+            matchLabels:
+              app.kubernetes.io/name: open-webui
+      ports:
+        - protocol: TCP
+          port: 8080
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-searxng-egress-to-dragonfly
+  namespace: llm
+  annotations:
+    argocd.argoproj.io/sync-wave: "0"
+  labels:
+    app.kubernetes.io/name: searxng
+spec:
+  policyTypes:
+    - Egress
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: searxng
+  egress:
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: llm
+          podSelector:
+            matchLabels:
+              app: open-webui-dragonfly
+              app.kubernetes.io/name: dragonfly
+              app.kubernetes.io/part-of: dragonfly
+      ports:
+        - protocol: TCP
+          port: 6379

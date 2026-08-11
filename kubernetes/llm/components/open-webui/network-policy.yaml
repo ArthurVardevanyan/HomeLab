@@ -56,6 +56,16 @@ spec:
     - to:
         - namespaceSelector:
             matchLabels:
+              kubernetes.io/metadata.name: llm
+          podSelector:
+            matchLabels:
+              app.kubernetes.io/name: searxng
+      ports:
+        - protocol: TCP
+          port: 8080
+    - to:
+        - namespaceSelector:
+            matchLabels:
               kubernetes.io/metadata.name: openshift-dns
           podSelector:
             matchLabels:

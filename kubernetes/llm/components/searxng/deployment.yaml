@@ -1,0 +1,118 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: searxng
+  namespace: llm
+  labels:
+    app.kubernetes.io/name: searxng
+    app.kubernetes.io/instance: searxng
+spec:
+  replicas: 2
+  revisionHistoryLimit: 0
+  progressDeadlineSeconds: 1800
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: searxng
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: searxng
+        app.kubernetes.io/instance: searxng
+    spec:
+      restartPolicy: Always
+      schedulerName: default-scheduler
+      terminationGracePeriodSeconds: 30
+      automountServiceAccountToken: false
+      enableServiceLinks: false
+      topologySpreadConstraints:
+        - maxSkew: 1
+          topologyKey: topology.kubernetes.io/zone
+          whenUnsatisfiable: DoNotSchedule
+          labelSelector:
+            matchLabels:
+              app.kubernetes.io/name: searxng
+        - maxSkew: 1
+          topologyKey: kubernetes.io/hostname
+          whenUnsatisfiable: DoNotSchedule
+          labelSelector:
+            matchLabels:
+              app.kubernetes.io/name: searxng
+      dnsPolicy: ClusterFirst
+      securityContext:
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: searxng
+          # renovate: datasource=docker depName=docker.io/searxng/searxng versioning=regex:^(?<major>\d+)\.(?<minor>\d+)\.(?<patch>\d+)-(?<compatibility>.*)$
+          image: docker.io/searxng/searxng:2026.8.10-0a118066d@sha256:cd22dbf7fac8b25d5e39e65af53a4b47009df5ad3162e270c477fd5b30ce03f2
+          imagePullPolicy: IfNotPresent
+          securityContext:
+            runAsNonRoot: true
+            readOnlyRootFilesystem: true
+            allowPrivilegeEscalation: false
+            privileged: false
+            seccompProfile:
+              type: RuntimeDefault
+            capabilities:
+              drop:
+                - ALL
+          ports:
+            - containerPort: 8080
+              name: http
+              protocol: TCP
+          startupProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 5
+            failureThreshold: 30
+            timeoutSeconds: 3
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 30
+            failureThreshold: 3
+            timeoutSeconds: 3
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            failureThreshold: 3
+            timeoutSeconds: 3
+          resources:
+            requests:
+              cpu: "100m"
+              memory: 256Mi
+            limits:
+              cpu: "500m"
+              memory: 512Mi
+          volumeMounts:
+            - name: searxng-config
+              mountPath: /etc/searxng
+              readOnly: true
+            - name: searxng-data
+              mountPath: /var/cache/searxng
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: searxng-config
+          configMap:
+            name: searxng-settings
+            items:
+              - key: settings.yaml
+                path: settings.yml
+        - name: searxng-data
+          emptyDir: {}
+        - name: tmp
+          emptyDir: {}

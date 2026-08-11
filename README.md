@@ -153,6 +153,7 @@ graph TD
 | worker-1 | 35W |           |           |               |      | 3200        | Disabled |
 | worker-2 | 35W |           |           |               |      | 5200        | Disabled |
 | worker-3 | 35W |           |           |               |      | 5200        | Disabled |
+| gpu-1    | 45W |           |           |               | 1.20 | 2133        | Disabled |
 
 ##### Storage
 

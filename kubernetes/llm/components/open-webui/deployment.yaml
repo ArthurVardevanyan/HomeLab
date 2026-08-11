@@ -125,6 +125,13 @@ spec:
             # cluster-internal host, port, and credentials.
             - name: DATABASE_URL
               value: postgresql://postgres:<password>@open-webui-rw.llm.svc.cluster.local:5432/postgres
+            # SearXNG instance for web search
+            - name: ENABLE_WEB_SEARCH
+              value: "true"
+            - name: WEB_SEARCH_ENGINE
+              value: searxng
+            - name: SEARXNG_QUERY_URL
+              value: http://searxng.llm.svc.cluster.local.:8080/search
           securityContext:
             runAsNonRoot: true
             readOnlyRootFilesystem: true

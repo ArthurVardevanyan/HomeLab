@@ -15,6 +15,31 @@ spec:
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
+  name: allow-prometheus-monitoring
+  namespace: llm
+  annotations:
+    argocd.argoproj.io/sync-wave: "0"
+spec:
+  policyTypes:
+    - Ingress
+  podSelector: {}
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: prometheus
+          podSelector:
+            matchLabels:
+              app: prometheus-server
+      ports:
+        - protocol: TCP
+          port: 11434
+        - protocol: TCP
+          port: 9187
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
   name: allow-dns-traffic
   namespace: llm
   annotations:
