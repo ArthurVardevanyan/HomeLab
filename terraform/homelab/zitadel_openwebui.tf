@@ -14,10 +14,10 @@ resource "zitadel_application_oidc" "openwebui" {
 
   name = "openwebui"
   redirect_uris = [
-    "https://ai.arthurvardevanyan.com/auth/oauth/callback",
+    "https://ai.arthurvardevanyan.com/oauth/oidc/callback",
   ]
   post_logout_redirect_uris = [
-    "https://ai.arthurvardevanyan.com/auth/logout",
+    "https://ai.arthurvardevanyan.com/auth",
   ]
   response_types              = ["OIDC_RESPONSE_TYPE_CODE"]
   grant_types                 = ["OIDC_GRANT_TYPE_AUTHORIZATION_CODE", "OIDC_GRANT_TYPE_REFRESH_TOKEN"]

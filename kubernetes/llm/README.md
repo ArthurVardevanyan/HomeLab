@@ -340,13 +340,13 @@ OIDC for SSO.
 
 ### Deployment
 
-| Resource | Value                                                                                                 |
-| -------- | ----------------------------------------------------------------------------------------------------- |
-| Image    | `ghcr.io/open-webui/open-webui:v0.11.0` (pinned digest, Renovate-managed)                             |
-| Replicas | 2                                                                                                     |
-| Database | CloudNativePG Postgres (`open-webui` cluster, 3 instances, 2Gi)                                       |
-| Storage  | `/root/.local/share/open-webui` mounted from `rook-cephfs` (RWX, 5Gi) + Dragonfly for websocket state |
-| Gateway  | `ai.arthurvardevanyan.com` on `https-gateway` (TLS Terminate)                                         |
+| Resource | Value                                                                                                                                                                 |
+| -------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Image    | `ghcr.io/open-webui/open-webui:v0.11.0` (pinned digest, Renovate-managed)                                                                                             |
+| Replicas | 2                                                                                                                                                                     |
+| Database | CloudNativePG Postgres (`open-webui` cluster, 3 instances, 2Gi)                                                                                                       |
+| Storage  | `/app/backend/data` → `rook-cephfs` PVC (RWX, 5Gi); `/app/backend/open_webui/static` → `emptyDir` (64Mi); `/tmp` → `emptyDir` (128Mi) + Dragonfly for websocket state |
+| Gateway  | `ai.arthurvardevanyan.com` on `https-gateway` (TLS Terminate)                                                                                                         |
 
 ### OIDC / SSO
 
@@ -381,10 +381,22 @@ in-memory data store) via `WEBSOCKET_MANAGER=redis`. The Dragonfly service is
 
 ### Storage
 
-Open WebUI's `/root/.local/share/open-webui` path is mounted from a `rook-cephfs` PVC
-(ReadWriteMany, 5Gi) to support multiple replicas. Within this path, `DATA_DIR` is set
-to `/root/.local/share/open-webui/data` and `STATIC_DIR` to `/root/.local/share/open-webui/static`
-to point write operations away from the read-only root filesystem.
+Open WebUI uses three separate mounts to avoid the `/root` permission issue on OKD (the
+stock image ships `/root` at `0700`, which blocks traversal for any non-root UID regardless
+of volume `fsGroup`):
+
+- **`/app/backend/data`** — `rook-cephfs` PVC (ReadWriteMany, 5Gi) for persistent state:
+  uploads, Chroma `vector_db`, cache, and SQLite/audit tables.
+- **`/app/backend/open_webui/static`** — `emptyDir` (64Mi) for ephemeral static assets
+  (favicon, splash images, `loader.js`). These are recopied from the frontend build
+  on every pod start, so no persistence is needed. This mount is a separate sibling
+  of `/app/backend/data` under `/app/backend` (they cannot share the PVC mount because
+  they are non-nested paths).
+- **`/tmp`** — `emptyDir` (128Mi) for the RAG stack — torch/dill/sentence-transformers
+  call `tempfile.gettempdir()` at import time, which fails with `readOnlyRootFilesystem:
+true` and no writable `/tmp` (Python falls through all built-in temp paths including
+  `/var/tmp` and `/usr/tmp` before giving up). `TMPDIR` is set to `/tmp` so all Python
+  libraries and downstream tools write to a consistent, bounded scratch space.
 
 > **Note:** chat history, user data, and settings are stored in Postgres.
 > No CNPG backup is configured — chat data is considered ephemeral. The

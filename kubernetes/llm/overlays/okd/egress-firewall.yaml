@@ -17,77 +17,279 @@ spec:
       ports:
         - protocol: TCP
           port: 6443
-    # HuggingFace (llama.cpp -hf model download: API + LFS metadata)
-    - type: Allow
-      to:
-        dnsName: huggingface.co
-      ports:
-        - protocol: TCP
-          port: 443
-    - type: Allow
-      to:
-        dnsName: cdn-lfs.huggingface.co
-      ports:
-        - protocol: TCP
-          port: 443
-    - type: Allow
-      to:
-        dnsName: cdn-lfs-us-1.hf.co
-      ports:
-        - protocol: TCP
-          port: 443
-    # Zitadel (OIDC issuer for Open WebUI SSO)
+    # Zitadel (OIDC issuer - resolves to private IP, must stay explicit)
     - type: Allow
       to:
         dnsName: zitadel.arthurvardevanyan.com
       ports:
         - protocol: TCP
           port: 443
-    # HuggingFace Xet / AWS CDN (the -hf resolve redirects here for blobs)
+    # OKD Wildcard DNS & Route VIPs (hairpin self-hosted app lookups / pasted URLs)
     - type: Allow
       to:
-        dnsName: us.aws.cdn.hf.co
+        cidrSelector: 10.101.10.5/32
       ports:
         - protocol: TCP
           port: 443
-    # AWS CloudFront / S3 ranges backing the HF Xet CDN
+        - protocol: TCP
+          port: 80
     - type: Allow
       to:
-        cidrSelector: 13.32.0.0/15
+        cidrSelector: 10.101.10.7/32
       ports:
         - protocol: TCP
           port: 443
+        - protocol: TCP
+          port: 80
+    # Public internet (broad allow) - 31 deaggregated blocks excluding RFC1918
     - type: Allow
       to:
-        cidrSelector: 13.224.0.0/14
+        cidrSelector: 0.0.0.0/5
       ports:
         - protocol: TCP
           port: 443
+        - protocol: TCP
+          port: 80
     - type: Allow
       to:
-        cidrSelector: 52.84.0.0/15
+        cidrSelector: 8.0.0.0/7
       ports:
         - protocol: TCP
           port: 443
+        - protocol: TCP
+          port: 80
     - type: Allow
       to:
-        cidrSelector: 18.64.0.0/14
+        cidrSelector: 11.0.0.0/8
       ports:
         - protocol: TCP
           port: 443
-    # Cloudflare ranges (huggingface.co fronting)
+        - protocol: TCP
+          port: 80
     - type: Allow
       to:
-        cidrSelector: 104.16.0.0/13
+        cidrSelector: 12.0.0.0/6
       ports:
         - protocol: TCP
           port: 443
+        - protocol: TCP
+          port: 80
     - type: Allow
       to:
-        cidrSelector: 172.64.0.0/13
+        cidrSelector: 16.0.0.0/4
       ports:
         - protocol: TCP
           port: 443
+        - protocol: TCP
+          port: 80
+    - type: Allow
+      to:
+        cidrSelector: 32.0.0.0/3
+      ports:
+        - protocol: TCP
+          port: 443
+        - protocol: TCP
+          port: 80
+    - type: Allow
+      to:
+        cidrSelector: 64.0.0.0/2
+      ports:
+        - protocol: TCP
+          port: 443
+        - protocol: TCP
+          port: 80
+    - type: Allow
+      to:
+        cidrSelector: 128.0.0.0/3
+      ports:
+        - protocol: TCP
+          port: 443
+        - protocol: TCP
+          port: 80
+    - type: Allow
+      to:
+        cidrSelector: 160.0.0.0/5
+      ports:
+        - protocol: TCP
+          port: 443
+        - protocol: TCP
+          port: 80
+    - type: Allow
+      to:
+        cidrSelector: 168.0.0.0/6
+      ports:
+        - protocol: TCP
+          port: 443
+        - protocol: TCP
+          port: 80
+    - type: Allow
+      to:
+        cidrSelector: 172.0.0.0/12
+      ports:
+        - protocol: TCP
+          port: 443
+        - protocol: TCP
+          port: 80
+    - type: Allow
+      to:
+        cidrSelector: 172.32.0.0/11
+      ports:
+        - protocol: TCP
+          port: 443
+        - protocol: TCP
+          port: 80
+    - type: Allow
+      to:
+        cidrSelector: 172.64.0.0/10
+      ports:
+        - protocol: TCP
+          port: 443
+        - protocol: TCP
+          port: 80
+    - type: Allow
+      to:
+        cidrSelector: 172.128.0.0/9
+      ports:
+        - protocol: TCP
+          port: 443
+        - protocol: TCP
+          port: 80
+    - type: Allow
+      to:
+        cidrSelector: 173.0.0.0/8
+      ports:
+        - protocol: TCP
+          port: 443
+        - protocol: TCP
+          port: 80
+    - type: Allow
+      to:
+        cidrSelector: 174.0.0.0/7
+      ports:
+        - protocol: TCP
+          port: 443
+        - protocol: TCP
+          port: 80
+    - type: Allow
+      to:
+        cidrSelector: 176.0.0.0/4
+      ports:
+        - protocol: TCP
+          port: 443
+        - protocol: TCP
+          port: 80
+    - type: Allow
+      to:
+        cidrSelector: 192.0.0.0/9
+      ports:
+        - protocol: TCP
+          port: 443
+        - protocol: TCP
+          port: 80
+    - type: Allow
+      to:
+        cidrSelector: 192.128.0.0/11
+      ports:
+        - protocol: TCP
+          port: 443
+        - protocol: TCP
+          port: 80
+    - type: Allow
+      to:
+        cidrSelector: 192.160.0.0/13
+      ports:
+        - protocol: TCP
+          port: 443
+        - protocol: TCP
+          port: 80
+    - type: Allow
+      to:
+        cidrSelector: 192.169.0.0/16
+      ports:
+        - protocol: TCP
+          port: 443
+        - protocol: TCP
+          port: 80
+    - type: Allow
+      to:
+        cidrSelector: 192.170.0.0/15
+      ports:
+        - protocol: TCP
+          port: 443
+        - protocol: TCP
+          port: 80
+    - type: Allow
+      to:
+        cidrSelector: 192.172.0.0/14
+      ports:
+        - protocol: TCP
+          port: 443
+        - protocol: TCP
+          port: 80
+    - type: Allow
+      to:
+        cidrSelector: 192.176.0.0/12
+      ports:
+        - protocol: TCP
+          port: 443
+        - protocol: TCP
+          port: 80
+    - type: Allow
+      to:
+        cidrSelector: 192.192.0.0/10
+      ports:
+        - protocol: TCP
+          port: 443
+        - protocol: TCP
+          port: 80
+    - type: Allow
+      to:
+        cidrSelector: 193.0.0.0/8
+      ports:
+        - protocol: TCP
+          port: 443
+        - protocol: TCP
+          port: 80
+    - type: Allow
+      to:
+        cidrSelector: 194.0.0.0/7
+      ports:
+        - protocol: TCP
+          port: 443
+        - protocol: TCP
+          port: 80
+    - type: Allow
+      to:
+        cidrSelector: 196.0.0.0/6
+      ports:
+        - protocol: TCP
+          port: 443
+        - protocol: TCP
+          port: 80
+    - type: Allow
+      to:
+        cidrSelector: 200.0.0.0/5
+      ports:
+        - protocol: TCP
+          port: 443
+        - protocol: TCP
+          port: 80
+    - type: Allow
+      to:
+        cidrSelector: 208.0.0.0/4
+      ports:
+        - protocol: TCP
+          port: 443
+        - protocol: TCP
+          port: 80
+    - type: Allow
+      to:
+        cidrSelector: 224.0.0.0/3
+      ports:
+        - protocol: TCP
+          port: 443
+        - protocol: TCP
+          port: 80
     # Deny all other egress
     - type: Deny
       to:

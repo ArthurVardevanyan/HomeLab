@@ -8,11 +8,14 @@ metadata:
     app.kubernetes.io/name: open-webui
     app.kubernetes.io/instance: open-webui
 spec:
-  replicas: 1
+  replicas: 2
   revisionHistoryLimit: 0
   progressDeadlineSeconds: 1800
   strategy:
-    type: Recreate
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 1
   selector:
     matchLabels:
       app.kubernetes.io/name: open-webui
@@ -28,6 +31,23 @@ spec:
       automountServiceAccountToken: false
       serviceAccountName: open-webui
       enableServiceLinks: false
+      tolerations:
+        - key: node-role.kubernetes.io/gpu
+          operator: Exists
+          effect: NoSchedule
+      topologySpreadConstraints:
+        - maxSkew: 1
+          topologyKey: topology.kubernetes.io/zone
+          whenUnsatisfiable: DoNotSchedule
+          labelSelector:
+            matchLabels:
+              app.kubernetes.io/name: open-webui
+        - maxSkew: 1
+          topologyKey: kubernetes.io/hostname
+          whenUnsatisfiable: DoNotSchedule
+          labelSelector:
+            matchLabels:
+              app.kubernetes.io/name: open-webui
       dnsPolicy: ClusterFirst
       securityContext:
         seccompProfile:
@@ -44,6 +64,22 @@ spec:
             # Point to the llama.cpp server on the cluster-internal service
             - name: OPENAI_API_BASE_URL
               value: http://llm-server-svc.llm.svc.cluster.local:11434/v1
+            # Writable paths for uploads and static assets (root FS is read-only)
+            # /app/backend/data → PVC (uploads, chroma, cache, sqlite, audit)
+            - name: DATA_DIR
+              value: /app/backend/data
+            # /app/backend/open_webui/static → emptyDir (favicon, splash, loader.js —
+            # recopied from the frontend build on every boot; can't share the data PVC
+            # because data and open_webui/static are non-nested siblings under /app/backend)
+            - name: STATIC_DIR
+              value: /app/backend/open_webui/static
+            # /tmp → emptyDir (required by RAG stack at import time: torch→dill→tempfile)
+            - name: TMPDIR
+              value: /tmp
+            # Disable huggingface_hub Xet protocol to use classic LFS HTTP
+            # (already allow-listed in EgressFirewall; Xet CAS domains are not)
+            - name: HF_HUB_DISABLE_XET
+              value: "true"
             # Secret key for session/cookie signing — managed by ExternalSecret
             - name: WEBUI_SECRET_KEY
               valueFrom:
@@ -67,9 +103,9 @@ spec:
                 secretKeyRef:
                   name: open-webui-config
                   key: OAUTH_CLIENT_SECRET
-            # Zitadel OIDC issuer (auto-discovers .well-known/openid-configuration)
+            # Zitadel OIDC discovery endpoint (authlib fetches this directly as JSON config)
             - name: OPENID_PROVIDER_URL
-              value: https://zitadel.arthurvardevanyan.com
+              value: https://zitadel.arthurvardevanyan.com/.well-known/openid-configuration
             # Allow any logged-in user to sign up (no pre-provisioned accounts)
             - name: ENABLE_OAUTH_SIGNUP
               value: "true"
@@ -79,6 +115,11 @@ spec:
             # Use OpenID user info (name, email) on first login
             - name: OAUTH_PROVIDERS
               value: openid
+            # WebSocket manager for multi-replica state sharing
+            - name: WEBSOCKET_MANAGER
+              value: "redis"
+            - name: WEBSOCKET_REDIS_URL
+              value: redis://open-webui-dragonfly.llm.svc.cluster.local.:6379
             # SQLite database — CNPG manages connection details via the
             # postgres user secret; we construct DATABASE_URL from the
             # cluster-internal host, port, and credentials.
@@ -123,14 +164,26 @@ spec:
           resources:
             requests:
               cpu: "100m"
-              memory: 256Mi
+              memory: 2Gi
             limits:
-              cpu: "500m"
-              memory: 512Mi
+              cpu: "1"
+              memory: 4Gi
           volumeMounts:
             - name: data
-              mountPath: /root/.local/share/open-webui
+              mountPath: /app/backend/data
               readOnly: false
+            - name: static
+              mountPath: /app/backend/open_webui/static
+              readOnly: false
+            - name: temp
+              mountPath: /tmp
       volumes:
         - name: data
-          emptyDir: {}
+          persistentVolumeClaim:
+            claimName: open-webui-data
+        - name: static
+          emptyDir:
+            sizeLimit: 64Mi
+        - name: temp
+          emptyDir:
+            sizeLimit: 128Mi
