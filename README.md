@@ -68,6 +68,7 @@ graph TD
         K8sDir --> HomeAuto[Home Automation]
         K8sDir --> DevTools[DevOps & Security]
         K8sDir --> Media[Media]
+        K8sDir --> AI[AI / LLM Inference]
     end
 ```
 
@@ -355,6 +356,11 @@ end
   - **Rook-Ceph**: Block, Object, and File storage for the cluster.
   - **MinIO**: S3-compatible object storage for applications.
   - **CloudNative-PG**: Cloud-native PostgreSQL operator for database workloads.
+- **AI / LLM Inference**:
+  - **llama.cpp (Vulkan)**: Local LLM inference engine running on the Intel Arc GPU.
+  - **Open WebUI**: Chat frontend for local LLM inference.
+  - **Intel Device Plugins**: OLM operator exposing `gpu.intel.com/xe` GPU resources.
+  - **Node Feature Discovery**: Labels GPU-capable nodes (Intel `xe` KMD detection).
 - **Observability Stack**:
   - **VictoriaMetrics**: Long-term metrics storage (replaced Prometheus remote write).
   - **Prometheus & Grafana**: Metrics collection and visualization.

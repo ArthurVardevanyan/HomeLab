@@ -34,6 +34,7 @@ spec:
       enableServiceLinks: false
       dnsPolicy: ClusterFirst
       securityContext:
+        fsGroupChangePolicy: "OnRootMismatch"
         seccompProfile:
           type: RuntimeDefault
         runAsNonRoot: true
@@ -113,6 +114,7 @@ spec:
               # dl_check; this function is idempotent for the named model.
               dl_fetch() {
                 name="$1"; size="$2"; cdn="$3"
+                out="${MODELS}/${name}"
 
                 echo "Downloading ${name} (${size} bytes) with ${PARALLEL} parallel connections ..."
                 work="${MODELS}/.dl-${name}"
@@ -188,8 +190,12 @@ spec:
               rm -rf "${CHECKS}"; mkdir -p "${CHECKS}"
               dl_check "Qwen3.6-35B-A3B-UD-Q4_K_M.gguf" \
                 "https://huggingface.co/unsloth/Qwen3.6-35B-A3B-GGUF/resolve/main/Qwen3.6-35B-A3B-UD-Q4_K_M.gguf?download=true" &
+              dl_check "Qwen3.6-35B-A3B-mmproj-F16.gguf" \
+                "https://huggingface.co/unsloth/Qwen3.6-35B-A3B-GGUF/resolve/main/mmproj-F16.gguf?download=true" &
               dl_check "Qwen3.6-27B-Q4_K_M.gguf" \
                 "https://huggingface.co/unsloth/Qwen3.6-27B-GGUF/resolve/main/Qwen3.6-27B-Q4_K_M.gguf?download=true" &
+              dl_check "Qwen3.6-27B-mmproj-F16.gguf" \
+                "https://huggingface.co/unsloth/Qwen3.6-27B-GGUF/resolve/main/mmproj-F16.gguf?download=true" &
               dl_check "Qwen3-Coder-30B-A3B-Instruct-Q4_0.gguf" \
                 "https://huggingface.co/unsloth/Qwen3-Coder-30B-A3B-Instruct-GGUF/resolve/main/Qwen3-Coder-30B-A3B-Instruct-Q4_0.gguf?download=true" &
               wait
@@ -197,12 +203,14 @@ spec:
               # Phase 2 -- sequential download for any flagged models.
               for name in \
                 "Qwen3.6-35B-A3B-UD-Q4_K_M.gguf" \
+                "Qwen3.6-35B-A3B-mmproj-F16.gguf" \
                 "Qwen3.6-27B-Q4_K_M.gguf" \
+                "Qwen3.6-27B-mmproj-F16.gguf" \
                 "Qwen3-Coder-30B-A3B-Instruct-Q4_0.gguf"; do
                 status=$(cat "${CHECKS}/${name}.status")
                 case "${status}" in
                   SKIP) echo "Skipping ${name} (up to date)"; continue ;;
-                  DOWNLOAD) size=$(printf '%s' "${status}" | cut -f2); cdn=$(printf '%s' "${status}" | cut -f3); dl_fetch "${name}" "${size}" "${cdn}" ;;
+                  DOWNLOAD*) size=$(printf '%s' "${status}" | cut -f2); cdn=$(printf '%s' "${status}" | cut -f3); dl_fetch "${name}" "${size}" "${cdn}" ;;
                   *) echo "ERROR: unknown status for ${name}: ${status}" >&2; exit 1 ;;
                 esac
               done
@@ -244,6 +252,7 @@ spec:
         # the FROM tag in the containerfile. Deployment tag+digest follows containerfile
         # bump → PaC build → next Renovate run (up to ~1 week lag).
         - image: registry.arthurvardevanyan.com/homelab/llama-cpp-vulkan:b10331@sha256:8e3adac2f7ec223ee4a9b6acb11f01d364f0025930f8808e3fba45bd0f0d56b3
+          imagePullPolicy: IfNotPresent
           name: llm
           args:
             - "--models-preset"

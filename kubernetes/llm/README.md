@@ -12,14 +12,20 @@ backend is llama.cpp (Vulkan)** running on the Intel Arc Pro B70.
     - [Model](#model)
     - [B70 tuning rationale](#b70-tuning-rationale)
     - [Mesa 26.1 (biggest perf lever) — handled in the image](#mesa-261-biggest-perf-lever--handled-in-the-image)
+    - [Image tag](#image-tag)
+  - [GPU Monitoring (nvidia-smi equivalents)](#gpu-monitoring-nvidia-smi-equivalents)
+  - [Metrics](#metrics)
+    - [Prometheus metric names](#prometheus-metric-names)
+    - [Example PromQL queries](#example-promql-queries)
+  - [Performance: why decode may trail bare-metal benchmarks](#performance-why-decode-may-trail-bare-metal-benchmarks)
+    - [Decisive diagnostics](#decisive-diagnostics)
+  - [Scaling](#scaling)
+  - [Layout](#layout)
   - [Open WebUI (chat front-end)](#open-webui-chat-front-end)
     - [Deployment](#deployment)
     - [OIDC / SSO](#oidc--sso)
-    - [Database & Websockets](#database--websockets)
-  - [GPU Monitoring (nvidia-smi equivalents)](#gpu-monitoring-nvidia-smi-equivalents)
-  - [Performance: why decode may trail bare-metal benchmarks](#performance-why-decode-may-trail-bare-metal-benchmarks)
-  - [Scaling](#scaling)
-  - [Layout](#layout)
+    - [Database \& Websockets](#database--websockets)
+    - [Storage](#storage)
   - [REF](#ref)
 
 ## Backends / Overlays
@@ -36,11 +42,11 @@ Served via **llama-server router mode** — a single process hosts both models
 (preset `base/configmap.yaml` → `models.ini`), pre-downloaded to the PVC by an
 init container. Select the model by name in the client's `model` field:
 
-| Model id                | Model                                  | Trait                      |
-| ----------------------- | -------------------------------------- | -------------------------- |
-| `qwen3.6-35b-a3b`       | Qwen3.6-35B-A3B (sparse MoE)           | ~4x faster decode on B70   |
-| `qwen3.6-27b`           | Qwen3.6-27B (dense)                    | higher quality, slower     |
-| `qwen3.6-coder-30b-a3b` | Qwen3-Coder-30B-A3B-Instruct-Q4_0.gguf | Code-focused, high context |
+| Model id                | Model                                  | Trait                      | Vision                                       |
+| ----------------------- | -------------------------------------- | -------------------------- | -------------------------------------------- |
+| `qwen3.6-35b-a3b`       | Qwen3.6-35B-A3B (sparse MoE)           | ~4x faster decode on B70   | Yes                                          |
+| `qwen3.6-27b`           | Qwen3.6-27B (dense)                    | higher quality, slower     | Yes                                          |
+| `qwen3.6-coder-30b-a3b` | Qwen3-Coder-30B-A3B-Instruct-Q4_0.gguf | Code-focused, high context | No (text-only; no mmproj published upstream) |
 
 Both are reached on the one endpoint (`:11434`). Router behavior:
 
@@ -52,7 +58,7 @@ Both are reached on the one endpoint (`:11434`). Router behavior:
   model (7.2 W), so unloading buys zero wattage.
 
 Global B70 tuning (in `[*]` of the preset): `n-gpu-layers 999`, `flash-attn on`,
-`cache-type-k/v q8_0`, `ubatch-size 2048`, `ctx-size 262144`,
+`cache-type-k/v f16`, `ubatch-size 2048`, `ctx-size 262144`,
 `reasoning-format none`.
 
 > **Probes:** `livenessProbe`/`startupProbe` hit `GET /models` (router-level,
@@ -67,8 +73,8 @@ Args in `base/deployment.yaml`, informed by B70 llama.cpp benchmarking:
 
 - `--ubatch-size 2048` — larger physical batch is a big prefill win on
   Battlemage (opposite of the well-known AMD "smaller ubatch" advice).
-- `--cache-type-k/v q8_0` — q8_0 balances VRAM savings with decode speed for the 3-model router
-  past ~16K context on this hardware.
+- `--cache-type-k/v q8_0` — q8_0 balances VRAM savings with decode speed for the 3-model router past ~16K context on this hardware
+- `--cache-type-k/v f16` — Reduce compression overhead if enough ram present for context.
 - `-c 131072` — 128K context (model natively supports 256K; hybrid DeltaNet attention keeps the KV cache small enough for 128K on a single 32GB card at f16).
 - `--reasoning-format none` — reasoning off server-side; clients opt in
   per-request.
@@ -319,7 +325,8 @@ oc -n llm logs -f deployment/llm-server   # watch model load + Vulkan device
 - `components/llama-cpp/` — llama.cpp Vulkan Deployment + init container,
   ConfigMap (router preset), PVC, service, service account, network policies
   (`allow-llm-api`, `allow-external-egress`), ServiceMonitor (Prometheus
-  scraping of all 3 models with `autoload=false`), VPA.
+  scraping of all 3 models with `autoload=false`), VPA. The init container
+  also downloads the F16 mmproj files for the two vision-capable models.
 - `components/open-webui/` — Open WebUI chat front-end Deployment, service,
   service account, ExternalSecret (WEBUI_SECRET_KEY + Zitadel OIDC creds),
   network policy (egress to llama.cpp :11434 + CNPG :5432).
