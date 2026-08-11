@@ -26,6 +26,7 @@ This document analyzes the git history of the HomeLab project, grouping changes 
 | **Bare Metal**      | Early 2025 | OKD IPI / SNO      | Agent Installer          | Tekton, Gitea          | Ceph, LVM         | Power Monitoring           | OVN-K8s                       | KFCA                |
 | **Accel**           | Late 2025  | OKD IPI            | Agent Installer          | Tekton, Gitea          | Ceph, LVM         | VictoriaMetrics, Dragonfly | Gateway API, Service Mesh     | NetworkPolicy       |
 | **Resilience**      | Early 2026 | OKD IPI            | Renovate (GitHub App)    | Tekton, Gitea          | Ceph, CNPG        | Wire-Tap                   | BGP, Gateway API              | Coraza WAF          |
+| **AI & Automation** | Mid 2026   | OKD IPI            | Renovate + gitops-ci     | Tekton, Gitea          | Ceph, CNPG        | VictoriaMetrics, Dragonfly | BGP, Gateway API              | NetworkPolicy, WAF  |
 
 - [Changelog](#changelog)
   - [Overview](#overview)
@@ -68,6 +69,9 @@ This document analyzes the git history of the HomeLab project, grouping changes 
   - [16. Platform Resilience \& Networking 2.0 (Early 2026)](#16-platform-resilience--networking-20-early-2026)
     - [Key Characteristics](#key-characteristics-10)
     - [Major Milestones](#major-milestones-10)
+  - [17. AI \& Automation (Mid 2026)](#17-ai--automation-mid-2026)
+    - [Key Characteristics](#key-characteristics-11)
+    - [Major Milestones](#major-milestones-11)
 
 ## 1. Windows Server (Early 2016)
 
@@ -351,3 +355,29 @@ Focus on platform maturity, DNS modernization, web application security, databas
 - **May 11, 2026**: OKD upgrade to **4.22.0-okd-scos.6** (GA).
 - **May 12, 2026**: **Fedora Snapdragon laptop** inception (ARM laptop Ansible playbooks).
 - **May 18, 2026**: **AI agent skills** inception — `AGENTS.md`, HomeLab and Kubernetes `SKILL.md`, Copilot instructions, opencode playbooks.
+
+## 17. AI & Automation (Mid 2026)
+
+Focus on AI hardware acceleration, CI pipeline modernization, and platform automation improvements.
+
+### Key Characteristics
+
+- **AI Hardware**: **Intel Arc B70** node onboarded with **LLM inference** migrated to llama.cpp Vulkan; **NVIDIA** GPU app removed from ArgoCD.
+- **CI/CD**: **gitops-ci** pipeline tool incepted for local and CI validation; **git-clift** semantic releaser incepted; CI process documented for agentic workflows.
+- **Platform**: OKD upgraded to **4.22.0-okd-scos.7**; switch to **stable channel**. OpenShift Logging re-inception; **spread-constraints** on monitoring; **toolbox multi-layer** support.
+- **Networking**: **BGP routing fix** for worker reachability to load balancer; **NetObserv** service-mode; Service Mesh removed (no longer required for Gateway APIs).
+- **Automation**: **OLM operator upgrades** automated; **Stackrox** cert rotation fixed.
+- **Renovate Overhaul**: Configuration rewritten with fixed packageRules, improved ansible URL extraction, github-release parsing, RE2 compatibility, captured datasource precedence, and global config consolidation.
+
+### Major Milestones
+
+- **July 12, 2026**: **Unifi** Native Support for Lets Encrypt Certificates
+- **July 14, 2026**: **ArgoCD-Vault-Plugin** uses forked repo; **ESO-AVP** converts objects to ESO; **MicroShift** ArgoCD creds fix; **NTP** common time overrides temporarily disabled.
+- **July 21, 2026**: **NetObserv** service-mode; **OpenShift Monitoring** spread-constraints.
+- **July 27, 2026**: **BGP routing attempted fix** for worker reachability
+- **July 29-30, 2026**: **Git-clift** semantic releaser incepted; **toolbox multi-layer** support; LLM updates; Service Mesh removed.
+- **July 31, 2026**: **gitops-ci** incepted; Renovate v44; ArgoCD openshift-authentication secret removal; operator upgrades.
+- **August 3-4, 2026**: OKD folder CI fixes; toolbox k8s-gitops-ci versioned tags; operator upgrades; **Tekton** upgrades.
+- **August 7-8, 2026**: **gitops-ci** resource compliance; **container updates**; **checkov** pre-commit hook updated; **Tekton** manifest cleanup and CI documentation; **shellcheck** fixes.
+- **August 8, 2026**: **Renovate** configuration overhaul — fixed packageRules, ansible URL extraction, github-release parsing, RE2 compatibility, captured datasource precedence, global config consolidation.
+- **August 11, 2026**: **Intel Arc B70** node onboarded with **LLM inference** migrated to llama.cpp Vulkan; **NVIDIA** ArgoCD application removed; opencode dependency update; **CI agentic flow** documentation.
