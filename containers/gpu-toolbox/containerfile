@@ -44,30 +44,25 @@ RUN set -eux; \
   add-apt-repository -y ppa:kobuk-team/intel-graphics; \
   apt-get update; \
   apt-get install -y --no-install-recommends \
-  # Media/VA-API drivers (kobuk PPA)
+  # GPU diagnostics (stock Ubuntu)
+  clinfo \
+  intel-gpu-tools \
+  mesa-vulkan-drivers \
+  vulkan-tools \
+  # kobuk-team PPA — Intel Xe/Battlemage drivers + tools
   intel-media-va-driver-non-free \
-  onevpl-intel-gpu \
+  intel-opencl-icd \
   libvpl2 \
   libvpl-tools \
-  libva-utils \
-  # OpenCL / Level Zero (kobuk PPA)
-  intel-opencl-icd \
   libze-intel-gpu1 \
   libze1 \
-  clinfo \
-  # GPU diagnostics (stock Ubuntu)
-  intel-gpu-tools \
-  # Vulkan (stock Ubuntu)
-  mesa-vulkan-drivers \
-  vulkan-tools; \
+  vainfo \
+  xpu-smi; \
   # Install jellyfin-ffmpeg7 (self-contained, no PPA dependency)
   apt-get install -y --no-install-recommends /tmp/jellyfin-ffmpeg.deb; \
   # Symlink ffmpeg/ffprobe into PATH
   ln -sf /usr/lib/jellyfin-ffmpeg/ffmpeg /usr/local/bin/ffmpeg; \
   ln -sf /usr/lib/jellyfin-ffmpeg/ffprobe /usr/local/bin/ffprobe; \
-  # SMI tools: xpu-smi preferred, fallback to xpumanager (kobuk PPA)
-  apt-get install -y --no-install-recommends xpu-smi || \
-  apt-get install -y --no-install-recommends xpumanager; \
   # Verify hardware encoders are available (hard failure — no || true)
   ffmpeg -hide_banner -encoders 2>/dev/null | grep -qE 'h264_vaapi|hevc_vaapi|av1_vaapi'; \
   # Cleanup

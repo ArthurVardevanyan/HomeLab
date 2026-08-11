@@ -11,6 +11,8 @@ backend is llama.cpp (Vulkan)** running on the Intel Arc Pro B70.
   - [Default: llama.cpp Vulkan on the Intel Arc B70](#default-llamacpp-vulkan-on-the-intel-arc-b70)
     - [Model](#model)
     - [B70 tuning rationale](#b70-tuning-rationale)
+    - [KV cache: f16 vs q8\_0](#kv-cache-f16-vs-q8_0)
+    - [Why not `--mlock` / `--ngl all`](#why-not---mlock----ngl-all)
     - [Mesa 26.1 (biggest perf lever) — handled in the image](#mesa-261-biggest-perf-lever--handled-in-the-image)
     - [Image tag](#image-tag)
   - [GPU Monitoring (nvidia-smi equivalents)](#gpu-monitoring-nvidia-smi-equivalents)
@@ -73,12 +75,54 @@ Args in `base/deployment.yaml`, informed by B70 llama.cpp benchmarking:
 
 - `--ubatch-size 2048` — larger physical batch is a big prefill win on
   Battlemage (opposite of the well-known AMD "smaller ubatch" advice).
-- `--cache-type-k/v q8_0` — q8_0 balances VRAM savings with decode speed for the 3-model router past ~16K context on this hardware
-- `--cache-type-k/v f16` — Reduce compression overhead if enough ram present for context.
-- `-c 131072` — 128K context (model natively supports 256K; hybrid DeltaNet attention keeps the KV cache small enough for 128K on a single 32GB card at f16).
+- `cache-type-k/v f16` — see [KV cache: f16 vs q8_0](#kv-cache-f16-vs-q8_0)
+  below. Chosen over q8_0 because the B70 is **latency/compute-bound, not
+  bandwidth-bound**, so the dequant-removal favors f16 at deep context.
+- `ctx-size 262144` — 256K total, split across 2 slots (~128K each). The model
+  natively supports 256K; hybrid DeltaNet attention keeps the KV small enough
+  that f16 only needs ~23 GB total (model + KV) on the 32 GB card.
 - `--reasoning-format none` — reasoning off server-side; clients opt in
   per-request.
 - Flash attention on, all layers offloaded (`-ngl 999`).
+
+### KV cache: f16 vs q8_0
+
+The B70 (measured on gpu-1) is **latency/compute-bound, not bandwidth-bound**:
+under dual-slot load the GPU used only ~11% of its 608 GiB/s memory bandwidth.
+The two KV types trade bandwidth for compute:
+
+|                       | f16                 | q8_0                              |
+| --------------------- | ------------------- | --------------------------------- |
+| KV bytes/token        | 2x                  | ~1/2                              |
+| Dequant compute/token | none                | extra ALU work                    |
+| Deep-context prefill  | removes dequant tax | pays the compounding dequant cost |
+
+Because the GPU has surplus bandwidth, q8_0's bandwidth saving is a **confirmed
+wash** (no measurable bandwidth-% change vs f16) while its dequant cost is
+concentrated exactly where the B70 hurts — **deep-context prefill** (prefill
+near 128K is dominated by the fundamental O(n²) attention, plus a q8
+dequant tax f16 removes). Decode speed is effectively identical either way
+(the ~22 GB model-weight stream dwarfs the ~1–2 GB KV read). f16 is used
+because the user routinely hits deep (50K–100K+) context, where f16's removal
+of dequant overhead is the one real, visible win.
+
+The fit at 256K f16 is **inferred from an observed ~23 GB** (model + KV) on the
+32 GB card, not measured headroom. **Rollback:** if the pod OOMs on model load
+or pushes VRAM over 32 GB, revert `cache-type-k`/`cache-type-v` to `q8_0`
+(one-line change) — the f16 fit is a judgement call, not a guarantee.
+
+### Why not `--mlock` / `--ngl all`
+
+- **`--mlock`** is intentionally NOT used. The model is fully GPU-resident
+  (`-ngl 999`), so decode reads weights from GDDR6, not host RAM — mlock would
+  pin ~22 GB of (capped, 36 GiB limit) host memory to protect pages that aren't
+  on the decode path, risks OOM of the pod, and requires the `IPC_LOCK`
+  capability the containers deliberately drop (`capabilities.drop: [ALL]`).
+- **`--ngl all` is already covered** by `n-gpu-layers = 999` in the preset.
+  999 is the idiomatic "offload all layers" value; setting it for all models via
+  the `[*]` section prevents the silent CPU/MoE spill that tanks Battlemage
+  decode. Confirm the `matrix cores` line / no `CPU buffer` offload in the pod
+  log if decode is ever unexpectedly slow.
 
 ### Mesa 26.1 (biggest perf lever) — handled in the image
 
@@ -96,14 +140,19 @@ Mesa to >= 26.1 via the kisak-mesa PPA. No node/RHCOS change is required.
 ### Image tag
 
 The custom image tag is the upstream llama.cpp build number
-(e.g. `b10331`). The pipeline extracts it from the containerfile's `FROM` tag
-(single source of truth — the same tag is pinned in the initContainer image).
+(now `b10362`, bumped from `b10331` to pick up upstream Battlemage/Vulkan
+decode improvements). The pipeline extracts it from the containerfile's `FROM`
+tag — the single source of truth and the **tag driver**. The deployment's
+**init container and main container both reference the same
+`registry.arthurvardevanyan.com/homelab/llama-cpp-vulkan` image** (one image
+cached on the node; identical userspace for the downloader and the server).
 When Renovate proposes a bump in the containerfile (e.g. `b10331` →
-`b10335`), PaC builds and pushes the new tag. On the next Renovate run
-(weekly), the deployment is bumped to the new `tag@sha256:digest` reference.
-This means the deployment typically lags the containerfile by up to one
-Renovate cycle (~1 week). A containerfile-only rebuild under an unchanged tag
-no longer rolls immediately — it rolls when the digest changes in git.
+`b10362`), PaC builds and pushes the new tag. On the next Renovate run
+(weekly), Renovate bumps **both** k8s `image:` lines to the new
+`tag@sha256:digest` reference. This means the deployment (init + main)
+typically lags the containerfile by up to one Renovate cycle (~1 week). A
+containerfile-only rebuild under an unchanged tag no longer rolls immediately
+— it rolls when the digest changes in git.
 
 Confirm the fast path is active from inside the pod (or the monitor pod):
 

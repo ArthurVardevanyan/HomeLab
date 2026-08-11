@@ -56,8 +56,8 @@ spec:
         # we split each file into parallel byte-range chunks (the CDN advertises
         # `accept-ranges: bytes`) and reassemble. Idempotent: skips a file that
         # already exists at the correct size.
-        # renovate: datasource=docker depName=ghcr.io/ggml-org/llama.cpp versioning=regex:^server-vulkan-b(?<major>\d+)$
-        - image: ghcr.io/ggml-org/llama.cpp:server-vulkan-b10331@sha256:3dd0b326c9899cf7a7491fcafba51f54e78af2a366953769a847dd380a732420
+        # renovate: datasource=docker depName=registry.arthurvardevanyan.com/homelab/llama-cpp-vulkan versioning=loose
+        - image: registry.arthurvardevanyan.com/homelab/llama-cpp-vulkan:b10331@sha256:2a897057ee43ccdb07c502743aec4986fb47680fad68f849068a09bc7b84d1e6
           imagePullPolicy: IfNotPresent
           name: model-downloader
           env:
@@ -233,7 +233,7 @@ spec:
               ephemeral-storage: "256Mi"
             limits:
               cpu: "2"
-              memory: 36Gi
+              memory: 48Gi
               ephemeral-storage: "1Gi"
           volumeMounts:
             - name: llm-config
@@ -251,7 +251,8 @@ spec:
         # Tag = upstream llama.cpp build number (e.g. b10331); pipeline derives from
         # the FROM tag in the containerfile. Deployment tag+digest follows containerfile
         # bump → PaC build → next Renovate run (up to ~1 week lag).
-        - image: registry.arthurvardevanyan.com/homelab/llama-cpp-vulkan:b10331@sha256:8e3adac2f7ec223ee4a9b6acb11f01d364f0025930f8808e3fba45bd0f0d56b3
+        # renovate: datasource=docker depName=registry.arthurvardevanyan.com/homelab/llama-cpp-vulkan versioning=loose
+        - image: registry.arthurvardevanyan.com/homelab/llama-cpp-vulkan:b10331@sha256:2a897057ee43ccdb07c502743aec4986fb47680fad68f849068a09bc7b84d1e6
           imagePullPolicy: IfNotPresent
           name: llm
           args:
@@ -352,7 +353,7 @@ spec:
               ephemeral-storage: "256Mi"
             limits:
               cpu: "2"
-              memory: 36Gi
+              memory: 48Gi
               ephemeral-storage: "1Gi"
               gpu.intel.com/xe: "1"
           volumeMounts:
