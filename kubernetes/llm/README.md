@@ -47,9 +47,9 @@ Both are reached on the one endpoint (`:11434`). Router behavior:
 - `--models-max 1` — only **one** model resident in VRAM at a time; requesting
   the other evicts the current one (both cannot fit in 32 GB: ~22 GB MoE +
   ~17 GB dense).
-- `--sleep-idle-seconds 28800` — the resident model (incl. KV cache) is
-  **unloaded from VRAM after 8 hour idle** and auto-reloads on the next
-  request. No manual VRAM management needed.
+- Model stays resident in VRAM 24/7. Real telemetry on gpu-1 shows idle card
+  power (6.8 W with model resident) is indistinguishable from idle with no
+  model (7.2 W), so unloading buys zero wattage.
 
 Global B70 tuning (in `[*]` of the preset): `n-gpu-layers 999`, `flash-attn on`,
 `cache-type-k/v q8_0`, `ubatch-size 2048`, `ctx-size 262144`,

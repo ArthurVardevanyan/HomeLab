@@ -36,7 +36,7 @@ spec:
       securityContext:
         seccompProfile:
           type: RuntimeDefault
-        runAsNonRoot: false # true
+        runAsNonRoot: true
       tolerations:
         - key: node-role.kubernetes.io/gpu
           operator: Exists
@@ -209,7 +209,7 @@ spec:
 
               rm -rf "${CHECKS}"
           securityContext:
-            runAsNonRoot: false # true
+            runAsNonRoot: true
             readOnlyRootFilesystem: true
             allowPrivilegeEscalation: false
             privileged: false
@@ -220,12 +220,12 @@ spec:
                 - ALL
           resources:
             requests:
-              cpu: "1"
+              cpu: "500m"
               memory: 12Gi
               ephemeral-storage: "256Mi"
             limits:
               cpu: "2"
-              memory: 24Gi
+              memory: 36Gi
               ephemeral-storage: "1Gi"
           volumeMounts:
             - name: llm-config
@@ -233,7 +233,7 @@ spec:
       containers:
         # llama.cpp Vulkan server in ROUTER mode. Serves both Qwen3.6 models
         # from the preset; --models-max 1 keeps only one resident in VRAM
-        # (evicts on swap), --sleep-idle-seconds unloads it after idle. Per B70
+        # (evicts on swap), stays resident 24/7 otherwise. Per B70
         # benchmarking this Vulkan backend is the fastest on Battlemage and
         # (unlike the IPEX fork) tracks mainline for the newest models.
         #
@@ -271,9 +271,10 @@ spec:
             # in 32GB); requesting the other evicts the current one.
             - "--models-max"
             - "1"
-            # Auto-unload the model (incl. KV cache) from VRAM after 8 hours idle.
-            - "--sleep-idle-seconds"
-            - "28800"
+            # Model stays resident in VRAM 24/7. Real telemetry on gpu-1 shows
+            # idle card power (6.8 W with model resident) is indistinguishable
+            # from idle with no model (7.2 W), so unloading buys zero wattage
+            # while adding reload latency and CVE surface.
             - "--host"
             - "0.0.0.0"
             - "--port"
@@ -292,7 +293,7 @@ spec:
             - name: MESA_SHADER_CACHE_DIR
               value: /data/.mesa_cache
           securityContext:
-            runAsNonRoot: false # true
+            runAsNonRoot: true
             readOnlyRootFilesystem: false
             allowPrivilegeEscalation: false
             privileged: false
@@ -337,12 +338,12 @@ spec:
               restartPolicy: NotRequired
           resources:
             requests:
-              cpu: "1"
+              cpu: "500m"
               memory: 12Gi
               ephemeral-storage: "256Mi"
             limits:
               cpu: "2"
-              memory: 24Gi
+              memory: 36Gi
               ephemeral-storage: "1Gi"
               gpu.intel.com/xe: "1"
           volumeMounts:

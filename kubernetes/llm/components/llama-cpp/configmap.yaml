@@ -8,8 +8,8 @@ data:
   # llama-server router preset. Global [*] section holds shared Intel Arc B70
   # tuning; each model section points at a local GGUF pre-downloaded by the
   # init container into /data/models. Keys are long CLI arg names without
-  # leading dashes. load-on-startup=0 so neither preloads (required for
-  # --sleep-idle-seconds to fully release VRAM).
+  # leading dashes. load-on-startup=0 so neither preloads until first
+  # request (--models-max 1 handles eviction on swap).
   models.ini: |
     version = 1
 
