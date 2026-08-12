@@ -51,6 +51,14 @@ spec:
         # Pre-download both GGUFs into the PVC so first requests are fast and
         # the router startup probe timing stays sane.
         #
+        # Warm-boot fast path: a validated size for each model is persisted on
+        # the PVC (${SIZES}/<name>). If a model file exists and matches that
+        # marker, it is skipped without any CDN call, so a fully-populated PVC
+        # boots with pure local `wc -c` checks (sub-second, zero network).
+        # Only missing/mismatched/unmarked models fall through to the remote
+        # HEAD re-validation below. FORCE_REVALIDATE=true disables this fast
+        # path for an occasional full integrity re-check.
+        #
         # HuggingFace serves these files via Xet-backed CDN. A single curl
         # stream is one TCP connection and badly underutilizes a fast link, so
         # we split each file into parallel byte-range chunks (the CDN advertises
@@ -66,6 +74,12 @@ spec:
               value: "32"
             - name: CHUNK_BYTES
               value: "134217728" # 128 MiB
+            # When true, skip the local fast path and force a remote HEAD
+            # re-validation against the CDN for every model (occasional on-demand
+            # integrity re-check). Default false: a confirmed-size model boots
+            # without any network round-trip.
+            - name: FORCE_REVALIDATE
+              value: "false"
           command:
             - /bin/sh
             - "-c"
@@ -73,7 +87,31 @@ spec:
               set -eu
               MODELS=/data/models
               CHECKS="${MODELS}/.checks"
+              # Persisted validated sizes (one file per model, value = byte count).
+              # Lives outside ${CHECKS} so it survives the ephemeral-status cleanup
+              # and drives the warm-boot fast path across restarts.
+              SIZES="${MODELS}/.sizes"
               mkdir -p "${MODELS}"
+
+              # Local fast path: skip a model whose on-disk file exists and whose
+              # size matches the persisted marker. Pure `wc -c` comparison, no
+              # network -- makes a fully-populated PVC boot in a moment. Only
+              # missing/mismatched/unmarked models fall through to the remote
+              # dl_check below. FORCE_REVALIDATE=true bypasses this entirely.
+              dl_local_check() {
+                name="$1"
+                [ "${FORCE_REVALIDATE}" = "true" ] && return 1
+                out="${MODELS}/${name}"
+                marker="${SIZES}/${name}"
+                if [ -f "${out}" ] && [ -f "${marker}" ]; then
+                  have=$(wc -c < "${out}" | tr -d ' ')
+                  [ "${have}" = "$(cat "${marker}" | tr -d ' ')" ] || return 1
+                  echo "Present (${have} bytes, local marker): ${name}"
+                  echo "SKIP" > "${CHECKS}/${name}.status"
+                  return 0
+                fi
+                return 1
+              }
 
               # Resolve CDN redirect + compare file size, write outcome to a small
               # status file (${CHECKS}/<name>.status) so the real download phase
@@ -99,6 +137,8 @@ spec:
                   have=$(wc -c < "${out}" | tr -d ' ')
                   if [ -n "${size}" ] && [ "${have}" = "${size}" ]; then
                     echo "Present (${have} bytes): ${name}"
+                    mkdir -p "${SIZES}"
+                    printf '%s' "${have}" > "${SIZES}/${name}"
                     echo "SKIP" > "${CHECKS}/${name}.status"
                     return 0
                   fi
@@ -183,20 +223,37 @@ spec:
                   rm -f "${out}.part"; return 1
                 fi
                 mv "${out}.part" "${out}"
+                mkdir -p "${SIZES}"
+                printf '%s' "${got}" > "${SIZES}/${name}"
                 echo "Done (${got} bytes): ${name}"
               }
 
-              # Phase 1 -- resolve all redirects concurrently.
+              # Phase 0 -- local fast path (no network). Skip any model already
+              # present under a persisted size marker so a fully-populated PVC
+              # boots without hitting the CDN.
               rm -rf "${CHECKS}"; mkdir -p "${CHECKS}"
-              dl_check "Qwen3.6-35B-A3B-UD-Q4_K_M.gguf" \
+              dl_local_check "Qwen3.6-35B-A3B-UD-Q4_K_M.gguf" || true
+              dl_local_check "Qwen3.6-35B-A3B-mmproj-F16.gguf" || true
+              dl_local_check "Qwen3.6-27B-Q4_K_M.gguf" || true
+              dl_local_check "Qwen3.6-27B-mmproj-F16.gguf" || true
+              dl_local_check "Qwen3-Coder-30B-A3B-Instruct-Q4_0.gguf" || true
+
+              # Phase 1 -- resolve remaining redirects concurrently (only for
+              # models not already marked SKIP by Phase 0).
+              [ -f "${CHECKS}/Qwen3.6-35B-A3B-UD-Q4_K_M.gguf.status" ] || \
+                dl_check "Qwen3.6-35B-A3B-UD-Q4_K_M.gguf" \
                 "https://huggingface.co/unsloth/Qwen3.6-35B-A3B-GGUF/resolve/main/Qwen3.6-35B-A3B-UD-Q4_K_M.gguf?download=true" &
-              dl_check "Qwen3.6-35B-A3B-mmproj-F16.gguf" \
+              [ -f "${CHECKS}/Qwen3.6-35B-A3B-mmproj-F16.gguf.status" ] || \
+                dl_check "Qwen3.6-35B-A3B-mmproj-F16.gguf" \
                 "https://huggingface.co/unsloth/Qwen3.6-35B-A3B-GGUF/resolve/main/mmproj-F16.gguf?download=true" &
-              dl_check "Qwen3.6-27B-Q4_K_M.gguf" \
+              [ -f "${CHECKS}/Qwen3.6-27B-Q4_K_M.gguf.status" ] || \
+                dl_check "Qwen3.6-27B-Q4_K_M.gguf" \
                 "https://huggingface.co/unsloth/Qwen3.6-27B-GGUF/resolve/main/Qwen3.6-27B-Q4_K_M.gguf?download=true" &
-              dl_check "Qwen3.6-27B-mmproj-F16.gguf" \
+              [ -f "${CHECKS}/Qwen3.6-27B-mmproj-F16.gguf.status" ] || \
+                dl_check "Qwen3.6-27B-mmproj-F16.gguf" \
                 "https://huggingface.co/unsloth/Qwen3.6-27B-GGUF/resolve/main/mmproj-F16.gguf?download=true" &
-              dl_check "Qwen3-Coder-30B-A3B-Instruct-Q4_0.gguf" \
+              [ -f "${CHECKS}/Qwen3-Coder-30B-A3B-Instruct-Q4_0.gguf.status" ] || \
+                dl_check "Qwen3-Coder-30B-A3B-Instruct-Q4_0.gguf" \
                 "https://huggingface.co/unsloth/Qwen3-Coder-30B-A3B-Instruct-GGUF/resolve/main/Qwen3-Coder-30B-A3B-Instruct-Q4_0.gguf?download=true" &
               wait
 
