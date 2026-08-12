@@ -175,7 +175,8 @@ with(select(.metadata.labels."app.kubernetes.io/instance" == "default");
 with(select(.kind == "ClusterRole" and .metadata.name == "tekton-operator");
   .metadata.annotations."checkov.io/skip1" = "CKV_K8S_155=Required" |
   .metadata.annotations."checkov.io/skip2" = "CKV_K8S_158=Required" |
-  .metadata.annotations."gitops-ci.k8s.io/exempt-rbac-wildcards" = "resources"
+  .metadata.annotations."gitops-ci.k8s.io/exempt-rbac-wildcards" = "resources" |
+  .metadata.annotations."gitops-ci.k8s.io/exempt-rbac-wildcards" style="double"
 ) |
 with(select(.kind == "ServiceMonitor");
   .spec.namespaceSelector.matchNames = ["openshift-pipelines-operator"]
