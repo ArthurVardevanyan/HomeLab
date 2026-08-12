@@ -490,3 +490,26 @@ data:
         relabel_configs:
         - target_label: cluster
           replacement: okd
+
+      # Open WebUI metrics via the OTEL collector bridge. Open WebUI v0.11.0
+      # has no /metrics endpoint; it pushes OTLP to the operator-managed
+      # collector (kubernetes/opentelemetry-operator), which re-exports
+      # Prometheus metrics on :9464 (namespaced "openwebui_").
+      - job_name: 'open-webui'
+        scrape_interval: 30s
+        scrape_timeout: 10s
+
+        static_configs:
+          - targets:
+            - open-webui-collector.llm.svc.cluster.local:9464
+        metrics_path: "/metrics"
+
+        metric_relabel_configs:
+        # Keep only Open WebUI (OTEL-exported) metrics.
+        - source_labels: [ __name__ ]
+          regex: 'openwebui_.+'
+          action: keep
+
+        relabel_configs:
+        - target_label: cluster
+          replacement: okd
