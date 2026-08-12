@@ -56,6 +56,13 @@ init container. Select the model by name in the client's `model` field:
 | `qwen3.6-27b`           | Qwen3.6-27B (dense)                    | higher quality, slower     | Yes                                          |
 | `qwen3.6-coder-30b-a3b` | Qwen3-Coder-30B-A3B-Instruct-Q4_0.gguf | Code-focused, high context | No (text-only; no mmproj published upstream) |
 
+> **27B context limit:** The dense 27B model's `ctx-size` is set to `131072`
+> (65K/slot at parallel=2) in `models.ini`, half the global 256K. The dense
+> weights (~16.7 GB) + f16 KV cache + compute graph exceed the 32 GB VRAM at
+> the full context, so this reduced budget keeps it under 32 GB while still
+> providing ample context for most workloads. The 35B-A3B and coder models
+> keep the full 256K.
+
 Both are reached on the one endpoint (`:11434`). Router behavior:
 
 - `--models-max 1` — only **one** model resident in VRAM at a time; requesting
