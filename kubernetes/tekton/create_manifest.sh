@@ -200,6 +200,7 @@ with(select(.metadata.namespace == "openshift-operators");
 .metadata.annotations."checkov.io/skip4" = "CKV_K8S_9=Not Provided" |
 .metadata.annotations."checkov.io/skip6" = "CKV_K8S_38=Operator Needs API Access" |
 .spec.template.metadata.annotations."openshift.io/required-scc" = "restricted-v2" |
+.spec.template.metadata.annotations."openshift.io/required-scc" style="double" |
 .spec.template.spec.automountServiceAccountToken = true |
 .spec.template.spec.dnsPolicy = "ClusterFirst" |
 .spec.template.spec.restartPolicy = "Always" |
@@ -208,7 +209,7 @@ with(select(.metadata.namespace == "openshift-operators");
 .spec.template.spec.securityContext = {"runAsNonRoot": true, "seccompProfile": {"type": "RuntimeDefault"}} |
 .spec.template.spec.containers[] |= (
   .securityContext = {"runAsNonRoot": true, "allowPrivilegeEscalation": false, "capabilities": {"drop": ["ALL"]}, "privileged": false, "readOnlyRootFilesystem": true, "seccompProfile": {"type": "RuntimeDefault"}} |
-  .imagePullPolicy = "IfNotPresent" |
+  with(select(.imagePullPolicy == "Always"); .imagePullPolicy = "IfNotPresent") |
   .resizePolicy = [{"resourceName": "cpu", "restartPolicy": "NotRequired"}, {"resourceName": "memory", "restartPolicy": "NotRequired"}]
 ) |
 with(select(.metadata.name == "openshift-pipelines-operator");
