@@ -1,0 +1,613 @@
+#!/usr/bin/env bash
+# kubernetes/tekton/create_manifest.sh
+#
+# Regenerates overlays/operator/operator.yaml and crds.yaml from upstream Tekton
+# operator release merged with local customizations (checkov skips, namespace,
+# securityContext, local-only CRDs).
+#
+# Usage:
+#   ./create_manifest.sh [VERSION] [--report] [--debug]
+#   ./create_manifest.sh 0.81.0          # specific version
+#   ./create_manifest.sh                 # latest release from GitHub API
+#   ./create_manifest.sh --report        # diff against current output (no write)
+#   ./create_manifest.sh --debug 0.81.0  # keep temp files for inspection
+
+set -o errexit -o nounset -o pipefail
+shopt -s failglob
+
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+OPERATOR_YAML="${SCRIPT_DIR}/overlays/operator/operator.yaml"
+
+# ── Argument parsing ───────────────────────────────────────────────
+# Flags (--report, --debug) may appear anywhere; the first non-flag argument is
+# the version. This keeps `./create_manifest.sh --report` from treating the
+# flag as a version.
+VERSION=""
+REPORT_MODE=false
+DEBUG_MODE=false
+for arg in "$@"; do
+  case "${arg}" in
+    --report) REPORT_MODE=true ;;
+    --debug) DEBUG_MODE=true ;;
+    -*) echo "Unknown option: ${arg}" >&2; exit 1 ;;
+    *)
+      if [[ -z "${VERSION}" ]]; then
+        VERSION="${arg}"
+      else
+        echo "Unexpected extra argument: ${arg}" >&2
+        exit 1
+      fi
+      ;;
+  esac
+done
+
+# ── Version resolution ──────────────────────────────────────────────
+if [[ -z "${VERSION}" ]]; then
+  # Fetch the latest release tag. `ltrimstr` is not supported by yq v4, so read
+  # the raw tag (including the "v" prefix) and strip it via bash below.
+  VERSION="$(curl -sL https://api.github.com/repos/tektoncd/operator/releases/latest \
+    | yq -r '.tag_name' || true)"
+  if [[ -z "${VERSION}" ]] || [[ "${VERSION}" = "null" ]]; then
+    echo "ERROR: Failed to detect latest upstream release from GitHub API" >&2
+    exit 1
+  fi
+  echo "Detected latest upstream version: ${VERSION}"
+fi
+
+# Normalize any leading "v" so both "0.81.0" and "v0.81.0" work.
+VERSION="${VERSION#v}"
+VERSION_TAG="v${VERSION}"
+UPSTREAM_URL="https://github.com/tektoncd/operator/releases/download/v${VERSION}/openshift-release.yaml"
+
+# ── Temporary workspace ─────────────────────────────────────────────
+# --debug keeps a stable, inspectable temp dir (no auto-cleanup) and prints its
+# path, mirroring the old create_manifest.debug.sh behavior. The default mode
+# uses a throwaway dir that is cleaned up on exit.
+if [[ "${DEBUG_MODE}" = true ]]; then
+  TEMP_DIR="$(mktemp -d "${TMPDIR:-/tmp}/tekton-manifest.XXXXXX")"
+  echo "Debug mode: temp files kept in ${TEMP_DIR}"
+else
+  TEMP_DIR="$(mktemp -d)"
+  trap 'rm -rf "${TEMP_DIR}"' EXIT
+fi
+
+SPLIT_DIR="${TEMP_DIR}/split"
+mkdir -p "${SPLIT_DIR}/local" "${SPLIT_DIR}/upstream"
+
+if [[ "${REPORT_MODE}" = true ]]; then
+  echo "Report mode: comparing new merged output against current operator.yaml + crds.yaml"
+fi
+
+# ── Download upstream ───────────────────────────────────────────────
+echo "Downloading ${UPSTREAM_URL}..."
+# -f fails on HTTP errors (404/503/...), which otherwise return an HTML error
+# page (non-empty) that would pass the empty-file check below.
+if ! curl -fsL "${UPSTREAM_URL}" -o "${TEMP_DIR}/upstream.yaml"; then
+  echo "ERROR: Failed to download upstream release" >&2
+  exit 1
+fi
+
+if [[ ! -s "${TEMP_DIR}/upstream.yaml" ]]; then
+  echo "ERROR: Downloaded upstream release is empty" >&2
+  exit 1
+fi
+
+# ── Split multi-doc YAML into individual files ──────────────────────
+# Flushes a document whenever a `---` separator or EOF is reached and there is
+# accumulated content. This is robust to an input file that does NOT begin with
+# `---` (e.g. the previously-prettier'd operator.yaml), which used to cause the
+# first two resources to be merged into a single split file and silently lose
+# the first resource's local overrides.
+split_yaml() {
+  local input_file="$1"
+  local output_dir="$2"
+  local n=0
+  local content=""
+
+  flush() {
+    if [[ -n "${content}" ]]; then
+      printf '%s\n' "${content}" > "${output_dir}/doc_$(printf '%02d' "${n}").yaml"
+      n=$((n + 1))
+      content=""
+    fi
+  }
+
+  while IFS= read -r line || [[ -n "${line}" ]]; do
+    if [[ "${line}" = "---" ]]; then
+      flush
+    else
+      content="${content}${line}"$'\n'
+    fi
+  done < "${input_file}"
+
+  # Save final document (no trailing separator before EOF)
+  flush
+}
+
+# Upstream release always starts with a `---`; rely on split_yaml's own
+# robustness rather than a mandatory leading marker.
+split_yaml "${TEMP_DIR}/upstream.yaml" "${SPLIT_DIR}/upstream"
+split_yaml "${OPERATOR_YAML}" "${SPLIT_DIR}/local"
+
+UPSTREAM_COUNT="$(find "${SPLIT_DIR}/upstream" -maxdepth 1 -name '*.yaml' | wc -l)"
+LOCAL_COUNT="$(find "${SPLIT_DIR}/local" -maxdepth 1 -name '*.yaml' | wc -l)"
+echo "Split upstream: ${UPSTREAM_COUNT} docs, local: ${LOCAL_COUNT} docs"
+
+# ── Build resource index ────────────────────────────────────────────
+# Index maps "kind|name" -> filename for each side
+declare -A UPSTREAM_INDEX
+declare -A LOCAL_INDEX
+
+for f in "${SPLIT_DIR}/upstream"/doc_*.yaml; do
+  kind="$(yq -r '.kind' "${f}")"
+  name="$(yq -r '.metadata.name' "${f}")"
+  if [[ -n "${kind}" ]] && [[ -n "${name}" ]] && [[ "${name}" != "null" ]]; then
+    UPSTREAM_INDEX["${kind}|${name}"]="$(basename "${f}")"
+  fi
+done
+
+for f in "${SPLIT_DIR}/local"/doc_*.yaml; do
+  kind="$(yq -r '.kind' "${f}")"
+  name="$(yq -r '.metadata.name' "${f}")"
+  if [[ -n "${kind}" ]] && [[ -n "${name}" ]] && [[ "${name}" != "null" ]]; then
+    LOCAL_INDEX["${kind}|${name}"]="$(basename "${f}")"
+  fi
+done
+
+echo "Indexed upstream: ${#UPSTREAM_INDEX[@]} resources, local: ${#LOCAL_INDEX[@]} resources"
+
+# ── Skip list ───────────────────────────────────────────────────────
+# Upstream resources to drop entirely from the merged output.
+#   Namespace|openshift-operators: the operator runs in a locally managed
+#     namespace (base/namespace.yaml) so upstream's default OLM namespace is not
+#     wanted. Other upstream CRDs are shipped verbatim.
+SKIP="Namespace|openshift-operators"
+
+# ── Version label fix ───────────────────────────────────────────────
+# Set operator.tekton.dev/release and version labels to the target version.
+fix_version_labels() {
+  local input_file="$1"
+  local output_file="$2"
+
+  yq eval "
+    .metadata.labels.\"operator.tekton.dev/release\" = \"${VERSION_TAG}\" |
+    .metadata.labels.version = \"${VERSION_TAG}\"
+  " "${input_file}" > "${output_file}"
+}
+
+# ── Merge and output ────────────────────────────────────────────────
+OUTPUT_FILE="${TEMP_DIR}/output.yaml"
+: > "${OUTPUT_FILE}"
+
+DOC_COUNT=0
+SKIPPED_COUNT=0
+declare -a ACTUALLY_SKIPPED=()
+
+echo "---" >> "${OUTPUT_FILE}"
+
+for f in "${SPLIT_DIR}/upstream"/doc_*.yaml; do
+  kind="$(yq -r '.kind' "${f}")"
+  name="$(yq -r '.metadata.name' "${f}")"
+  RID="${kind}|${name}"
+
+  # Check skip list
+  if echo "${SKIP}" | grep -qx "${RID}"; then
+    SKIPPED_COUNT=$((SKIPPED_COUNT + 1))
+    ACTUALLY_SKIPPED+=("${RID}")
+    continue
+  fi
+
+  # Check for local override
+  if [[ -n "${LOCAL_INDEX[${RID}]+x}" ]]; then
+    local_file="${SPLIT_DIR}/local/${LOCAL_INDEX[${RID}]}"
+    MERGED="${TEMP_DIR}/merged.yaml"
+
+    # Deep merge: local overrides upstream (checkov skips, namespace,
+    # securityContext, resources, ports, ... all local customizations win).
+    if [[ "${kind}" = "Deployment" ]]; then
+      # EXCEPTION: for Deployments, .image, .args and .env are always forced
+      # back to the upstream container (matched by container name) so that
+      # version bumps (new image digests, new controller flags, new env
+      # vars) are never masked by a stale local copy. Gated by kind (rather
+      # than a schema-agnostic expression) so non-Deployment resources
+      # (ServiceAccount, ClusterRole, ConfigMap, ...) are never auto-vivified
+      # with a spurious .spec.template.spec.containers path.
+      # yq (mikefarah, Go) has no if/then/else; "//" is avoided here because
+      # only .image/.args/.env are ever null/non-null (never boolean), so
+      # "upstream // local" is safe as the fallback for containers local-only
+      # (not present upstream).
+      # When upstream matched container lacks a field (e.g. the webhook has no
+      # .args), "..." // "..." evaluates to null which would write a spurious
+      # "args: null"/"env: null" key; with(select(...)) deletes those.
+      # shellcheck disable=SC2016
+      yq eval-all '
+        select(fileIndex == 0) as $local |
+        select(fileIndex == 1) as $upstream |
+        ($upstream * $local) |
+        .spec.template.spec.containers |= map(
+          . as $mc |
+          ($upstream.spec.template.spec.containers // [] |
+            map(select(.name == $mc.name)) | .[0] // {}) as $uc |
+          .image = ($uc.image // .image) |
+          .args = ($uc.args // .args) |
+          .env = ($uc.env // .env) |
+          with(select(.image == null); del(.image)) |
+          with(select(.args == null); del(.args)) |
+          with(select(.env == null); del(.env))
+        )
+      ' "${local_file}" "${f}" > "${MERGED}"
+    else
+      # shellcheck disable=SC2016
+      yq eval-all '
+        select(fileIndex == 0) as $left |
+        select(fileIndex == 1) |
+        . * $left
+      ' "${local_file}" "${f}" > "${MERGED}"
+    fi
+
+    # Apply version labels to merged resource, then append
+    fix_version_labels "${MERGED}" "${MERGED}.labeled"
+    cat "${MERGED}.labeled" >> "${OUTPUT_FILE}"
+  else
+    # No local override, use upstream as-is
+    cat "${f}" >> "${OUTPUT_FILE}"
+  fi
+
+  echo "---" >> "${OUTPUT_FILE}"
+  DOC_COUNT=$((DOC_COUNT + 1))
+done
+
+# ── Add local-only resources ────────────────────────────────────────
+LocalOnly_COUNT=0
+declare -a LOCAL_ONLY_LIST=()
+for rid in "${!LOCAL_INDEX[@]}"; do
+  if [[ -z "${UPSTREAM_INDEX[${rid}]+x}" ]]; then
+    local_file="${SPLIT_DIR}/local/${LOCAL_INDEX[${rid}]}"
+    cat "${local_file}" >> "${OUTPUT_FILE}"
+    echo "---" >> "${OUTPUT_FILE}"
+    DOC_COUNT=$((DOC_COUNT + 1))
+    LocalOnly_COUNT=$((LocalOnly_COUNT + 1))
+    LOCAL_ONLY_LIST+=("${rid}")
+  fi
+done
+
+# ── Strip trailing document separator ───────────────────────────────
+# The loop appends --- after every document, leaving one at the end.
+# Use perl to remove only the final --- (and trailing blank lines) at EOF.
+perl -0pe 's/\n+---\s*\z//' "${OUTPUT_FILE}" > "${TEMP_DIR}/output_clean.yaml"
+
+# ── Split output into CRDs and non-CRDs ─────────────────────────────
+# CRDs go into a dedicated file; everything else stays in operator.yaml.
+CRDS_FILE="${TEMP_DIR}/crds.yaml"
+OPERATOR_FILE="${TEMP_DIR}/operator.yaml"
+
+# CRD documents
+yq eval-all 'select(.kind == "CustomResourceDefinition" and .kind != null)' \
+  "${TEMP_DIR}/output_clean.yaml" > "${CRDS_FILE}" 2>/dev/null
+if ! grep -q '^kind: CustomResourceDefinition' "${CRDS_FILE}"; then
+  echo "---" > "${CRDS_FILE}"
+fi
+
+# Non-CRD documents
+yq eval-all 'select(.kind != "CustomResourceDefinition" and .kind != null and .kind != "")' \
+  "${TEMP_DIR}/output_clean.yaml" > "${OPERATOR_FILE}" 2>/dev/null
+if ! grep -q '^kind:' "${OPERATOR_FILE}"; then
+  echo "---" > "${OPERATOR_FILE}"
+fi
+
+# Count CRDs and non-CRDs by counting kind headers. grep -c returns non-zero
+# (and prints "0") on no matches, which under `set -o pipefail` would not trip
+# the `|| true`, but a trailing newline plus "0" is safe to collapse. Guard
+# against an empty/garbage stream with awk so the count is always a clean int.
+CRD_COUNT="$(grep -c '^kind: CustomResourceDefinition' "${CRDS_FILE}" 2>/dev/null | awk 'END{print (NR?$0:0)}' || true)"
+OPERATOR_COUNT="$(grep -c '^kind:' "${OPERATOR_FILE}" 2>/dev/null | awk 'END{print (NR?$0:0)}' || true)"
+
+# ── Report mode: compare old vs new and print report ────────────────
+if [[ "${REPORT_MODE}" = true ]]; then
+  # Save OLD operator.yaml baseline before splitting
+  cp "${OPERATOR_YAML}" "${TEMP_DIR}/old_operator.yaml"
+
+  # If OLD crds.yaml exists (from a previous split), save it too
+  OLD_CRDS_FILE=""
+  if [[ -f "${SCRIPT_DIR}/overlays/operator/crds.yaml" ]]; then
+    cp "${SCRIPT_DIR}/overlays/operator/crds.yaml" "${TEMP_DIR}/old_crds.yaml"
+    OLD_CRDS_FILE="${TEMP_DIR}/old_crds.yaml"
+  fi
+
+  # Combine old operator.yaml + old crds.yaml into one file to represent
+  # the full OLD baseline before splitting.  This ensures the OLD index
+  # and NEW index both contain the same resource types (no false "NEW" /
+  # "REMOVED" entries caused by the split).
+  OLD_MERGED="${TEMP_DIR}/old_merged.yaml"
+  { echo "---"; cat "${TEMP_DIR}/old_operator.yaml"; } > "${OLD_MERGED}"
+  if [[ -n "${OLD_CRDS_FILE}" ]] && [[ -s "${OLD_CRDS_FILE}" ]]; then
+    echo "---" >> "${OLD_MERGED}"
+    cat "${OLD_CRDS_FILE}" >> "${OLD_MERGED}"
+  fi
+
+  # Split OLD merged baseline
+  OLD_SPLIT="${TEMP_DIR}/old_split"
+  mkdir -p "${OLD_SPLIT}"
+  { echo "---"; cat "${OLD_MERGED}"; } | split_yaml /dev/stdin "${OLD_SPLIT}"
+
+  # Split NEW merged output into a temp dir for comparison
+  NEW_SPLIT_DIR="${TEMP_DIR}/new_split"
+  mkdir -p "${NEW_SPLIT_DIR}"
+  { echo "---"; cat "${TEMP_DIR}/output_clean.yaml"; } | split_yaml /dev/stdin "${NEW_SPLIT_DIR}"
+
+  # Build OLD index from combined baseline
+  declare -A OLD_INDEX
+  for f in "${OLD_SPLIT}"/doc_*.yaml; do
+    kind="$(yq -r '.kind' "${f}")"
+    name="$(yq -r '.metadata.name' "${f}")"
+    if [[ -n "${kind}" ]] && [[ -n "${name}" ]] && [[ "${name}" != "null" ]]; then
+      OLD_INDEX["${kind}|${name}"]="$(basename "${f}")"
+    fi
+  done
+
+  # Build NEW index from merged output (before split)
+  declare -A NEW_INDEX
+  for f in "${NEW_SPLIT_DIR}"/doc_*.yaml; do
+    kind="$(yq -r '.kind' "${f}")"
+    name="$(yq -r '.metadata.name' "${f}")"
+    if [[ -n "${kind}" ]] && [[ -n "${name}" ]] && [[ "${name}" != "null" ]]; then
+      NEW_INDEX["${kind}|${name}"]="$(basename "${f}")"
+    fi
+  done
+
+  # ── Field-level diff helper ───────────────────────────────────────
+  # For CRDs: strips spec.versions.*.schema.openAPIV3Schema (auto-generated, too deep)
+  # then flattens to sorted path-value pairs for semantic comparison.
+  # Skips version-label paths and limits output to first N diffs.
+  MAX_DIFFS=15
+  MAX_DEPTH=3
+
+  flatten_yaml() {
+    local file="$1"
+    local kind="$2"
+    local yaml_content
+    local depth_filter=""
+    if [[ "${kind}" = "CustomResourceDefinition" ]]; then
+      # CRDs embed the full OpenAPI v3 schema; strip it (auto-generated,
+      # not worth diffing) and cap remaining depth to avoid noise from any
+      # other deeply nested schema fields.
+      yaml_content="$(yq eval 'del(.spec.versions[].schema.openAPIV3Schema)' "${file}" 2>/dev/null)"
+      depth_filter="select(\$depth <= ${MAX_DEPTH}) | "
+    else
+      # Other kinds (Deployment, ...): no depth cap, since the fields that
+      # matter most for a version bump (container image/args/env) live well
+      # below depth 3 (spec.template.spec.containers.N.image = depth 6).
+      yaml_content="$(cat "${file}")"
+    fi
+    echo "${yaml_content}" | yq eval -r \
+      "[.. | select(tag != \"!!map\" and tag != \"!!seq\") | \
+        (path | length) as \$depth | \
+        ${depth_filter}\
+        select(\$depth > 0) | \
+        (path | join(\".\")) as \$p | \
+        select(\$p | test(\"^metadata\\.labels\\.(version|operator\\.tekton\\.dev/release)\") | not) | \
+        \$p + \"@@TAB@@\" + (. | tostring)] | sort | .[]" \
+      2>/dev/null | sed 's/@@TAB@@/\t/g'
+  }
+
+  diff_resources() {
+    local old_file="$1"
+    local new_file="$2"
+    local kind
+    local old_flat
+    local new_flat
+    kind="$(yq -r '.kind' "${old_file}" 2>/dev/null)"
+    old_flat="$(flatten_yaml "${old_file}" "${kind}")"
+    new_flat="$(flatten_yaml "${new_file}" "${kind}")"
+
+    local old_paths
+    local new_paths
+    old_paths="$(echo "${old_flat}" | cut -f1 | sort)"
+    new_paths="$(echo "${new_flat}" | cut -f1 | sort)"
+
+    # Removed paths (in old, not in new)
+    local removed_paths
+    removed_paths="$(comm -23 <(echo "${old_paths}") <(echo "${new_paths}"))"
+
+    # Added paths (in new, not in old)
+    local added_paths
+    added_paths="$(comm -13 <(echo "${old_paths}") <(echo "${new_paths}"))"
+
+    # Common paths with changed values
+    local common_paths
+    common_paths="$(comm -12 <(echo "${old_paths}") <(echo "${new_paths}"))"
+    while IFS= read -r path; do
+      [[ -z "${path}" ]] && continue
+      local old_val
+      local new_val
+      old_val="$(echo "${old_flat}" | grep -F "${path}" | head -1 | cut -f2-)"
+      new_val="$(echo "${new_flat}" | grep -F "${path}" | head -1 | cut -f2-)"
+      if [[ "${old_val}" != "${new_val}" ]]; then
+        echo "  → ${path}: ${old_val} → ${new_val}"
+      fi
+    done <<< "${common_paths}"
+
+    # Removed fields
+    while IFS= read -r path; do
+      [[ -z "${path}" ]] && continue
+      local val
+      val="$(echo "${old_flat}" | grep -F "${path}" | head -1 | cut -f2-)"
+      echo "  - ${path}: ${val}"
+    done <<< "${removed_paths}"
+
+    # Added fields (limited)
+    local added_count=0
+    while IFS= read -r path; do
+      [[ -z "${path}" ]] && continue
+      [[ "${added_count}" -ge "${MAX_DIFFS}" ]] && break
+      local val
+      val="$(echo "${new_flat}" | grep -F "${path}" | head -1 | cut -f2-)"
+      echo "  + ${path}: ${val}"
+      added_count=$((added_count + 1))
+    done <<< "${added_paths}"
+
+    local removed_count
+    local total_added
+    removed_count="$(echo "${removed_paths}" | grep -c '.' 2>/dev/null || true)"
+    total_added="$(echo "${added_paths}" | grep -c '.' 2>/dev/null || true)"
+    if [[ "${added_count}" -lt "${total_added}" ]] && [[ "${total_added}" -gt "${MAX_DIFFS}" ]]; then
+      echo "  ... and $((total_added - MAX_DIFFS)) more added fields"
+    fi
+    if [[ "${removed_count}" -gt 0 ]]; then
+      echo "  ... and ${removed_count} removed fields"
+    fi
+  }
+
+  # ── Compare indices ───────────────────────────────────────────────
+  NEW_COUNT=0
+  REMOVED_COUNT=0
+  CHANGED_COUNT=0
+  VERSION_LABEL_CHANGES=0
+
+  # Resources in NEW but not in OLD
+  declare -a NEW_RESOURCES=()
+  for rid in "${!NEW_INDEX[@]}"; do
+    if [[ -z "${OLD_INDEX[${rid}]+x}" ]]; then
+      NEW_RESOURCES+=("${rid}")
+      NEW_COUNT=$((NEW_COUNT + 1))
+    fi
+  done
+
+  # Resources in OLD but not in NEW
+  declare -a REMOVED_RESOURCES=()
+  for rid in "${!OLD_INDEX[@]}"; do
+    if [[ -z "${NEW_INDEX[${rid}]+x}" ]]; then
+      REMOVED_RESOURCES+=("${rid}")
+      REMOVED_COUNT=$((REMOVED_COUNT + 1))
+    fi
+  done
+
+  # Resources in both but with differences
+  declare -a CHANGED_RESOURCES=()
+  declare -A CHANGED_DIFFS=()
+  for rid in "${!NEW_INDEX[@]}"; do
+    if [[ -n "${OLD_INDEX[${rid}]+x}" ]]; then
+      old_file="${OLD_SPLIT}/${OLD_INDEX[${rid}]}"
+      new_file="${NEW_SPLIT_DIR}/${NEW_INDEX[${rid}]}"
+      diff_output="$(diff_resources "${old_file}" "${new_file}")"
+      if [[ -n "${diff_output}" ]]; then
+        # Check if the only difference is version labels
+        # Count lines in diff that are NOT version label changes
+        non_version_diffs="$(echo "${diff_output}" | grep -E '^[\+\-]' | grep -vcE 'version|operator\.tekton\.dev/release' 2>/dev/null || true)"
+        if [[ "${non_version_diffs}" -gt 0 ]]; then
+          CHANGED_RESOURCES+=("${rid}")
+          CHANGED_DIFFS["${rid}"]="${diff_output}"
+          CHANGED_COUNT=$((CHANGED_COUNT + 1))
+        else
+          # Only version labels differ — count them
+          version_diffs="$(echo "${diff_output}" | grep -E '^[\+\-]' | grep -cE 'version|operator\.tekton\.dev/release' 2>/dev/null || true)"
+          VERSION_LABEL_CHANGES=$((VERSION_LABEL_CHANGES + version_diffs))
+        fi
+      fi
+    fi
+  done
+
+  # ── Print report ──────────────────────────────────────────────────
+  echo ""
+  echo "=== DIFF REPORT ==="
+  echo "Version: v${VERSION} (upstream release)"
+  echo "File: ${OPERATOR_YAML}"
+  echo ""
+
+  # Skipped resources (explicit listing)
+  echo "SKIPPED (${SKIPPED_COUNT}):"
+  if [[ ${#ACTUALLY_SKIPPED[@]} -gt 0 ]]; then
+    printf '%s\n' "${ACTUALLY_SKIPPED[@]}" | sort | sed 's/^/  - /'
+  else
+    echo "  (none)"
+  fi
+  echo ""
+
+  # CRD-specific changes
+  echo "CRD Changes:"
+  CRD_NEW=0
+  CRD_REMOVED=0
+  for rid in "${!NEW_INDEX[@]}"; do
+    if [[ "${rid}" == CustomResourceDefinition* ]]; then
+      if [[ -z "${OLD_INDEX[${rid}]+x}" ]]; then
+        echo "  ADDED:"
+        echo "    - ${rid}"
+        CRD_NEW=$((CRD_NEW + 1))
+      fi
+    fi
+  done
+  for rid in "${!OLD_INDEX[@]}"; do
+    if [[ "${rid}" == CustomResourceDefinition* ]]; then
+      if [[ -z "${NEW_INDEX[${rid}]+x}" ]]; then
+        echo "  REMOVED:"
+        echo "    - ${rid}"
+        CRD_REMOVED=$((CRD_REMOVED + 1))
+      fi
+    fi
+  done
+  if [[ "${CRD_NEW}" -eq 0 ]] && [[ "${CRD_REMOVED}" -eq 0 ]]; then
+    echo "  (none)"
+  fi
+  echo ""
+
+  # NEW
+  echo "NEW: (${NEW_COUNT})"
+  if [[ ${#NEW_RESOURCES[@]} -gt 0 ]]; then
+    printf '%s\n' "${NEW_RESOURCES[@]}" | sort | sed 's/^/  /'
+  fi
+  echo ""
+
+  # CHANGED
+  echo "CHANGED: (${CHANGED_COUNT})"
+  if [[ ${#CHANGED_RESOURCES[@]} -gt 0 ]]; then
+    printf '%s\n' "${CHANGED_RESOURCES[@]}" | sort | while read -r rid; do
+      echo "  ${rid}"
+      echo "    ${CHANGED_DIFFS[${rid}]//$'\n'/$'\n'    }"
+      echo ""
+    done
+  fi
+  echo ""
+
+  # REMOVED
+  echo "REMOVED: (${REMOVED_COUNT})"
+  if [[ ${#REMOVED_RESOURCES[@]} -gt 0 ]]; then
+    printf '%s\n' "${REMOVED_RESOURCES[@]}" | sort | sed 's/^/  /'
+  fi
+  echo ""
+
+  # SUMMARY. DOC_COUNT is the number of resources in the merged output, which is
+  # exactly the upstream-derived resources (merged/kept) plus local-only ones.
+  # Skipped upstream resources are excluded from DOC_COUNT entirely, so report
+  # them as a separate informational figure rather than subtracting them.
+  Merged_COUNT=$((DOC_COUNT - LocalOnly_COUNT))
+  echo "SUMMARY"
+  echo "  Total in merged output: ${DOC_COUNT} (${Merged_COUNT} merged + ${LocalOnly_COUNT} local-only, ${SKIPPED_COUNT} skipped)"
+  echo "  CRDs: ${CRD_COUNT} | Other resources: ${OPERATOR_COUNT}"
+  echo "  NEW: ${NEW_COUNT} | CHANGED: ${CHANGED_COUNT} | REMOVED: ${REMOVED_COUNT}"
+  echo "  Version label changes: ${VERSION_LABEL_CHANGES} (excluded from diff)"
+  echo ""
+
+  if [[ "${NEW_COUNT}" -eq 0 ]] && [[ "${CHANGED_COUNT}" -eq 0 ]] && [[ "${REMOVED_COUNT}" -eq 0 ]]; then
+    echo "No differences detected."
+  else
+    echo "To accept changes, run: ./create_manifest.sh ${VERSION}"
+  fi
+
+  exit 0
+fi
+
+# ── Copy output ─────────────────────────────────────────────────────
+cp "${CRDS_FILE}" "${SCRIPT_DIR}/overlays/operator/crds.yaml"
+cp "${OPERATOR_FILE}" "${OPERATOR_YAML}"
+
+# Local policy: keep the IMAGE_ADDONS_OC env var disabled even though newer
+# upstream releases ship it active. The Deployment merge forces .env back to
+# upstream, so this active entry is re-added here and commented out (matching
+# the commented form kept in older checked-in manifests). The regex matches
+# only the active (uncommented) form, so re-running is idempotent.
+# shellcheck disable=SC2016
+perl -0pi -e 's/^([ \t]*)- name: IMAGE_ADDONS_OC\n([ \t]*)value: image-registry\.openshift-image-registry\.svc:5000\/openshift\/cli:latest/${1}# - name: IMAGE_ADDONS_OC\n${2}# value: image-registry.openshift-image-registry.svc:5000\/openshift\/cli:latest/m' "${OPERATOR_YAML}"
+
+npx prettier --write "${SCRIPT_DIR}/overlays/operator/crds.yaml"
+npx prettier --write "${OPERATOR_YAML}"
+echo "Generated ${OPERATOR_YAML} + crds.yaml (${CRD_COUNT} CRDs, ${OPERATOR_COUNT} other resources, ${SKIPPED_COUNT} skipped)"
