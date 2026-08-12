@@ -72,7 +72,7 @@ else
 fi
 
 SPLIT_DIR="${TEMP_DIR}/split"
-mkdir -p "${SPLIT_DIR}/local" "${SPLIT_DIR}/upstream"
+mkdir -p "${SPLIT_DIR}/upstream"
 
 if [[ "${REPORT_MODE}" = true ]]; then
   echo "Report mode: comparing new merged output against current operator.yaml + crds.yaml"
@@ -127,34 +127,9 @@ split_yaml() {
 # Upstream release always starts with a `---`; rely on split_yaml's own
 # robustness rather than a mandatory leading marker.
 split_yaml "${TEMP_DIR}/upstream.yaml" "${SPLIT_DIR}/upstream"
-split_yaml "${OPERATOR_YAML}" "${SPLIT_DIR}/local"
 
 UPSTREAM_COUNT="$(find "${SPLIT_DIR}/upstream" -maxdepth 1 -name '*.yaml' | wc -l)"
-LOCAL_COUNT="$(find "${SPLIT_DIR}/local" -maxdepth 1 -name '*.yaml' | wc -l)"
-echo "Split upstream: ${UPSTREAM_COUNT} docs, local: ${LOCAL_COUNT} docs"
-
-# ── Build resource index ────────────────────────────────────────────
-# Index maps "kind|name" -> filename for each side
-declare -A UPSTREAM_INDEX
-declare -A LOCAL_INDEX
-
-for f in "${SPLIT_DIR}/upstream"/doc_*.yaml; do
-  kind="$(yq -r '.kind' "${f}")"
-  name="$(yq -r '.metadata.name' "${f}")"
-  if [[ -n "${kind}" ]] && [[ -n "${name}" ]] && [[ "${name}" != "null" ]]; then
-    UPSTREAM_INDEX["${kind}|${name}"]="$(basename "${f}")"
-  fi
-done
-
-for f in "${SPLIT_DIR}/local"/doc_*.yaml; do
-  kind="$(yq -r '.kind' "${f}")"
-  name="$(yq -r '.metadata.name' "${f}")"
-  if [[ -n "${kind}" ]] && [[ -n "${name}" ]] && [[ "${name}" != "null" ]]; then
-    LOCAL_INDEX["${kind}|${name}"]="$(basename "${f}")"
-  fi
-done
-
-echo "Indexed upstream: ${#UPSTREAM_INDEX[@]} resources, local: ${#LOCAL_INDEX[@]} resources"
+echo "Split upstream: ${UPSTREAM_COUNT} docs"
 
 # ── Skip list ───────────────────────────────────────────────────────
 # Upstream resources to drop entirely from the merged output.
@@ -174,6 +149,69 @@ fix_version_labels() {
     .metadata.labels.version = \"${VERSION_TAG}\"
   " "${input_file}" > "${output_file}"
 }
+
+# ── Customization transforms ────────────────────────────────────────
+# Local policy is: the upstream release is the authoritative base; this script
+# pins a small, explicit set of deltas on top via yq transform files. It does
+# NOT merge stale full local copies back in, so upstream-owned content (RBAC
+# .rules, ConfigMap .data, Service .spec, new rules/resources added in newer
+# releases such as networkpolicies) always flows through verbatim.
+# NOTE: yq's expression-from-file flag is `--from-file` (NOT `-f`, which means
+# front-matter). These files live in TEMP_DIR and are consumed with
+# `yq eval --from-file`.
+
+# Standard (non-Deployment) resources: namespace relabel, subject namespace,
+# instance label, and the targeted annotation/port/named-port patches.
+cat > "${TEMP_DIR}/transform-standard.yq" <<'YQTF'
+with(select(.metadata.namespace == "openshift-operators");
+  .metadata.namespace = "openshift-pipelines-operator"
+) |
+with(select(.kind == "ClusterRoleBinding");
+  .subjects[] |= (with(select(.namespace == "openshift-operators"); .namespace = "openshift-pipelines-operator"))
+) |
+with(select(.metadata.labels."app.kubernetes.io/instance" == "default");
+  .metadata.labels."app.kubernetes.io/instance" = "tekton"
+) |
+with(select(.kind == "ClusterRole" and .metadata.name == "tekton-operator");
+  .metadata.annotations."checkov.io/skip1" = "CKV_K8S_155=Required" |
+  .metadata.annotations."checkov.io/skip2" = "CKV_K8S_158=Required" |
+  .metadata.annotations."gitops-ci.k8s.io/exempt-rbac-wildcards" = "resources"
+) |
+with(select(.kind == "ServiceMonitor");
+  .spec.namespaceSelector.matchNames = ["openshift-pipelines-operator"]
+) |
+with(select(.kind == "Service" and (.metadata.name == "tekton-operator" or .metadata.name == "tekton-operator-webhook"));
+  .spec.ports[] |= (.targetPort = .name)
+)
+YQTF
+
+# Deployment resources: upstream base for image/args/env (so version bumps are
+# never masked); local securityContext, resources, imagePullPolicy, resizePolicy,
+# and pod-level scheduling flags are layered on top. One upstream new container
+# arg (tektonhub) is upstream-owned and therefore preserved.
+cat > "${TEMP_DIR}/transform-deployment.yq" <<'YQTF'
+with(select(.metadata.namespace == "openshift-operators");
+  .metadata.namespace = "openshift-pipelines-operator"
+) |
+.spec.template.spec.automountServiceAccountToken = true |
+.spec.template.spec.dnsPolicy = "ClusterFirst" |
+.spec.template.spec.restartPolicy = "Always" |
+.spec.template.spec.schedulerName = "default-scheduler" |
+.spec.template.spec.enableServiceLinks = false |
+.spec.template.spec.securityContext = {"runAsNonRoot": true, "seccompProfile": {"type": "RuntimeDefault"}} |
+.spec.template.spec.containers[] |= (
+  .securityContext = {"runAsNonRoot": true, "allowPrivilegeEscalation": false, "capabilities": {"drop": ["ALL"]}, "privileged": false, "readOnlyRootFilesystem": true, "seccompProfile": {"type": "RuntimeDefault"}} |
+  .imagePullPolicy = "IfNotPresent" |
+  .resizePolicy = [{"resourceName": "cpu", "restartPolicy": "NotRequired"}, {"resourceName": "memory", "restartPolicy": "NotRequired"}]
+) |
+with(select(.metadata.name == "openshift-pipelines-operator");
+  .spec.template.spec.containers[] |= .resources = {"limits": {"cpu": "60m", "memory": "192Mi"}, "requests": {"cpu": "10m", "memory": "96Mi"}} |
+  (.spec.template.spec.containers[] | select(.name == "openshift-pipelines-operator-lifecycle") | .ports) = [{"containerPort": 9090, "name": "http-metrics"}]
+) |
+with(select(.metadata.name == "tekton-operator-webhook");
+  .spec.template.spec.containers[] |= .resources = {"limits": {"cpu": "60m", "memory": "64Mi"}, "requests": {"cpu": "10m", "memory": "32Mi"}}
+)
+YQTF
 
 # ── Merge and output ────────────────────────────────────────────────
 OUTPUT_FILE="${TEMP_DIR}/output.yaml"
@@ -197,79 +235,28 @@ for f in "${SPLIT_DIR}/upstream"/doc_*.yaml; do
     continue
   fi
 
-  # Check for local override
-  if [[ -n "${LOCAL_INDEX[${RID}]+x}" ]]; then
-    local_file="${SPLIT_DIR}/local/${LOCAL_INDEX[${RID}]}"
-    MERGED="${TEMP_DIR}/merged.yaml"
-
-    # Deep merge: local overrides upstream (checkov skips, namespace,
-    # securityContext, resources, ports, ... all local customizations win).
-    if [[ "${kind}" = "Deployment" ]]; then
-      # EXCEPTION: for Deployments, .image, .args and .env are always forced
-      # back to the upstream container (matched by container name) so that
-      # version bumps (new image digests, new controller flags, new env
-      # vars) are never masked by a stale local copy. Gated by kind (rather
-      # than a schema-agnostic expression) so non-Deployment resources
-      # (ServiceAccount, ClusterRole, ConfigMap, ...) are never auto-vivified
-      # with a spurious .spec.template.spec.containers path.
-      # yq (mikefarah, Go) has no if/then/else; "//" is avoided here because
-      # only .image/.args/.env are ever null/non-null (never boolean), so
-      # "upstream // local" is safe as the fallback for containers local-only
-      # (not present upstream).
-      # When upstream matched container lacks a field (e.g. the webhook has no
-      # .args), "..." // "..." evaluates to null which would write a spurious
-      # "args: null"/"env: null" key; with(select(...)) deletes those.
-      # shellcheck disable=SC2016
-      yq eval-all '
-        select(fileIndex == 0) as $local |
-        select(fileIndex == 1) as $upstream |
-        ($upstream * $local) |
-        .spec.template.spec.containers |= map(
-          . as $mc |
-          ($upstream.spec.template.spec.containers // [] |
-            map(select(.name == $mc.name)) | .[0] // {}) as $uc |
-          .image = ($uc.image // .image) |
-          .args = ($uc.args // .args) |
-          .env = ($uc.env // .env) |
-          with(select(.image == null); del(.image)) |
-          with(select(.args == null); del(.args)) |
-          with(select(.env == null); del(.env))
-        )
-      ' "${local_file}" "${f}" > "${MERGED}"
-    else
-      # shellcheck disable=SC2016
-      yq eval-all '
-        select(fileIndex == 0) as $left |
-        select(fileIndex == 1) |
-        . * $left
-      ' "${local_file}" "${f}" > "${MERGED}"
-    fi
-
-    # Apply version labels to merged resource, then append
-    fix_version_labels "${MERGED}" "${MERGED}.labeled"
-    cat "${MERGED}.labeled" >> "${OUTPUT_FILE}"
+  # Start from upstream and layer the pinned customizations on top.
+  if [[ "${kind}" = "Deployment" ]]; then
+    TF_FILE="${TEMP_DIR}/transform-deployment.yq"
   else
-    # No local override, use upstream as-is
-    cat "${f}" >> "${OUTPUT_FILE}"
+    TF_FILE="${TEMP_DIR}/transform-standard.yq"
   fi
+
+  # shellcheck disable=SC2016
+  yq eval --from-file "${TF_FILE}" "${f}" > "${TEMP_DIR}/transformed.yaml"
+  fix_version_labels "${TEMP_DIR}/transformed.yaml" "${TEMP_DIR}/transformed.labeled"
+  cat "${TEMP_DIR}/transformed.labeled" >> "${OUTPUT_FILE}"
 
   echo "---" >> "${OUTPUT_FILE}"
   DOC_COUNT=$((DOC_COUNT + 1))
 done
 
-# ── Add local-only resources ────────────────────────────────────────
+# NOTE: there are intentionally no "local-only" resources. The upstream release
+# is authoritative: if a resource is not in the release manifest (e.g. RBAC that
+# upstream dropped in a newer version, like tekton-multicluster-proxy-aae-role),
+# it is not carried forward. Any genuinely local resource belongs in its own
+# overlay file referenced by kustomization.yaml, not baked into operator.yaml.
 LocalOnly_COUNT=0
-declare -a LOCAL_ONLY_LIST=()
-for rid in "${!LOCAL_INDEX[@]}"; do
-  if [[ -z "${UPSTREAM_INDEX[${rid}]+x}" ]]; then
-    local_file="${SPLIT_DIR}/local/${LOCAL_INDEX[${rid}]}"
-    cat "${local_file}" >> "${OUTPUT_FILE}"
-    echo "---" >> "${OUTPUT_FILE}"
-    DOC_COUNT=$((DOC_COUNT + 1))
-    LocalOnly_COUNT=$((LocalOnly_COUNT + 1))
-    LOCAL_ONLY_LIST+=("${rid}")
-  fi
-done
 
 # ── Strip trailing document separator ───────────────────────────────
 # The loop appends --- after every document, leaving one at the end.
