@@ -3,10 +3,15 @@ apiVersion: kustomize.config.k8s.io/v1alpha1
 kind: Component
 resources:
   - deployment.yaml
-  - configmap.yaml
   - service.yaml
   - pvc.yaml
   - service-account.yaml
   - network-policy.yaml
   - service-monitor.yaml
   - vpa.yaml
+generatorOptions: {}
+configMapGenerator:
+  - name: llama-router-preset
+    files:
+      - models.ini
+    namespace: llm
