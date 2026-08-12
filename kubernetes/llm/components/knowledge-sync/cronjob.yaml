@@ -1,0 +1,98 @@
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: knowledge-sync
+  namespace: llm
+  labels:
+    app.kubernetes.io/name: knowledge-sync
+    app.kubernetes.io/instance: knowledge-sync
+spec:
+  # Daily at 04:17 — the site changes rarely.
+  schedule: "17 4 * * *"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 1
+  failedJobsHistoryLimit: 3
+  startingDeadlineSeconds: 300
+  jobTemplate:
+    spec:
+      backoffLimit: 2
+      activeDeadlineSeconds: 1800
+      template:
+        metadata:
+          labels:
+            app.kubernetes.io/name: knowledge-sync
+            app.kubernetes.io/instance: knowledge-sync
+        spec:
+          restartPolicy: Never
+          automountServiceAccountToken: false
+          serviceAccountName: knowledge-sync
+          enableServiceLinks: false
+          schedulerName: default-scheduler
+          dnsPolicy: ClusterFirst
+          securityContext:
+            seccompProfile:
+              type: RuntimeDefault
+          containers:
+            - name: knowledge-sync
+              # Repo toolbox image (curl + jq + bash already present). Private
+              # registry digest is not resolvable outside the homelab network,
+              # so a placeholder digest is pinned until the real one lands via
+              # Renovate / the toolbox build.
+              # renovate: datasource=docker depName=registry.arthurvardevanyan.com/homelab/toolbox versioning=loose
+              image: registry.arthurvardevanyan.com/homelab/toolbox:not_latest@sha256:0000000000000000000000000000000000000000000000000000000000000000
+              imagePullPolicy: IfNotPresent
+              command:
+                - bash
+                - /scripts/sync.sh
+              env:
+                - name: OPENWEBUI_URL
+                  value: http://open-webui.llm.svc.cluster.local:8080
+                - name: SITEMAP_URL
+                  valueFrom:
+                    configMapKeyRef:
+                      name: knowledge-sync-config
+                      key: SITEMAP_URL
+                - name: COLLECTION_NAME
+                  valueFrom:
+                    configMapKeyRef:
+                      name: knowledge-sync-config
+                      key: COLLECTION_NAME
+              envFrom:
+                - secretRef:
+                    name: knowledge-sync
+              securityContext:
+                runAsNonRoot: true
+                readOnlyRootFilesystem: true
+                allowPrivilegeEscalation: false
+                privileged: false
+                seccompProfile:
+                  type: RuntimeDefault
+                capabilities:
+                  drop:
+                    - ALL
+              resources:
+                requests:
+                  cpu: "50m"
+                  memory: 128Mi
+                  ephemeral-storage: "256Mi"
+                limits:
+                  cpu: "500m"
+                  memory: 512Mi
+                  ephemeral-storage: "1Gi"
+              volumeMounts:
+                - name: scripts
+                  mountPath: /scripts
+                  readOnly: true
+                - name: tmp
+                  mountPath: /tmp
+          volumes:
+            - name: scripts
+              configMap:
+                name: knowledge-sync-config
+                items:
+                  - key: sync.sh
+                    path: sync.sh
+            - name: tmp
+              emptyDir:
+                sizeLimit: 512Mi

@@ -1,0 +1,91 @@
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: agent-eval
+  namespace: llm
+  labels:
+    app.kubernetes.io/name: agent-eval
+    app.kubernetes.io/instance: agent-eval
+spec:
+  # Weekly regression eval (Sundays 05:00). Offline; no GPU cost when idle.
+  schedule: "0 5 * * 0"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  startingDeadlineSeconds: 600
+  jobTemplate:
+    spec:
+      backoffLimit: 1
+      activeDeadlineSeconds: 3600
+      template:
+        metadata:
+          labels:
+            app.kubernetes.io/name: agent-eval
+            app.kubernetes.io/instance: agent-eval
+        spec:
+          restartPolicy: Never
+          automountServiceAccountToken: false
+          serviceAccountName: agent-eval
+          enableServiceLinks: false
+          schedulerName: default-scheduler
+          dnsPolicy: ClusterFirst
+          securityContext:
+            seccompProfile:
+              type: RuntimeDefault
+          containers:
+            - name: agent-eval
+              # renovate: datasource=docker depName=ghcr.io/promptfoo/promptfoo
+              image: ghcr.io/promptfoo/promptfoo:0.75.1@sha256:c4120d3aa7278e41232559e78b0690fbdf0520cc7205e197bd3fa52023974116
+              imagePullPolicy: IfNotPresent
+              args:
+                - "eval"
+                - "--config"
+                - "/config/promptfooconfig.yaml"
+                - "--no-cache"
+                - "--output"
+                - "/tmp/results.json"
+              env:
+                # Grading model for llm-rubric assertions → local LLM.
+                - name: OPENAI_API_BASE_URL
+                  value: http://llm-server-svc.llm.svc.cluster.local:11434/v1
+                - name: OPENAI_API_KEY
+                  value: sk-noauth
+                - name: PROMPTFOO_DISABLE_TELEMETRY
+                  value: "1"
+                - name: PROMPTFOO_DISABLE_UPDATE
+                  value: "1"
+                - name: HOME
+                  value: /tmp
+              securityContext:
+                runAsNonRoot: true
+                readOnlyRootFilesystem: true
+                allowPrivilegeEscalation: false
+                privileged: false
+                seccompProfile:
+                  type: RuntimeDefault
+                capabilities:
+                  drop:
+                    - ALL
+              resources:
+                requests:
+                  cpu: "100m"
+                  memory: 256Mi
+                  ephemeral-storage: "256Mi"
+                limits:
+                  cpu: "1"
+                  memory: 1Gi
+                  ephemeral-storage: "1Gi"
+              volumeMounts:
+                - name: config
+                  mountPath: /config
+                  readOnly: true
+                - name: tmp
+                  mountPath: /tmp
+          volumes:
+            - name: config
+              configMap:
+                name: agent-eval-config
+            - name: tmp
+              emptyDir:
+                sizeLimit: 512Mi
