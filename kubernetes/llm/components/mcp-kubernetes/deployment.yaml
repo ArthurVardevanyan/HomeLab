@@ -1,0 +1,104 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mcp-kubernetes
+  namespace: llm
+  labels:
+    app.kubernetes.io/name: mcp-kubernetes
+    app.kubernetes.io/instance: mcp-kubernetes
+spec:
+  replicas: 1
+  revisionHistoryLimit: 0
+  progressDeadlineSeconds: 600
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: mcp-kubernetes
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: mcp-kubernetes
+        app.kubernetes.io/instance: mcp-kubernetes
+    spec:
+      restartPolicy: Always
+      schedulerName: default-scheduler
+      terminationGracePeriodSeconds: 30
+      # Token IS mounted here: the server authenticates to the in-cluster API
+      # server using this ServiceAccount, which is bound to a read-only
+      # ClusterRole (get/list/watch only). This is the safety boundary.
+      automountServiceAccountToken: true
+      serviceAccountName: mcp-kubernetes
+      enableServiceLinks: false
+      dnsPolicy: ClusterFirst
+      securityContext:
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: mcp-kubernetes
+          # renovate: datasource=docker depName=ghcr.io/containers/kubernetes-mcp-server
+          image: ghcr.io/containers/kubernetes-mcp-server:v0.0.66@sha256:6d650f4bd6ac303ad82713c997e73a2d001602f9bf17392c9b9a0e30e29c6423
+          imagePullPolicy: IfNotPresent
+          args:
+            # Streamable HTTP mode (path /mcp) + SSE (path /sse) on :8080.
+            - "--port"
+            - "8080"
+            # Reject all write operations at the server level (defence in depth
+            # on top of the read-only ClusterRole).
+            - "--read-only"
+            # Single in-cluster context; no kubeconfig / multi-cluster.
+            - "--cluster-provider"
+            - "in-cluster"
+            - "--disable-multi-cluster"
+            # Stateless: no change notifications (better for containers/LB).
+            - "--stateless"
+            # Only the core + config toolsets (Pods, resources, events, nodes).
+            - "--toolsets"
+            - "core,config"
+          securityContext:
+            runAsNonRoot: true
+            readOnlyRootFilesystem: true
+            allowPrivilegeEscalation: false
+            privileged: false
+            seccompProfile:
+              type: RuntimeDefault
+            capabilities:
+              drop:
+                - ALL
+          ports:
+            - containerPort: 8080
+              name: http
+              protocol: TCP
+          startupProbe:
+            httpGet:
+              path: /sse
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 5
+            failureThreshold: 12
+            timeoutSeconds: 5
+          livenessProbe:
+            tcpSocket:
+              port: http
+            periodSeconds: 30
+            timeoutSeconds: 5
+            failureThreshold: 3
+          readinessProbe:
+            tcpSocket:
+              port: http
+            periodSeconds: 15
+            timeoutSeconds: 5
+            failureThreshold: 3
+          resources:
+            requests:
+              cpu: "25m"
+              memory: 64Mi
+              ephemeral-storage: "64Mi"
+            limits:
+              cpu: "250m"
+              memory: 256Mi
+              ephemeral-storage: "256Mi"
