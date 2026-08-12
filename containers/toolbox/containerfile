@@ -170,14 +170,13 @@ RUN curl -fL --retry 5 --retry-all-errors --retry-delay 2 -o "goreleaser_Linux_x
   grep -E "task_linux_amd64\.tar\.gz$" task_checksums.txt | sha256sum -c - && \
   tar -xzf task_linux_amd64.tar.gz -C /usr/local/bin task && \
   chmod +x /usr/local/bin/task && rm -f task_linux_amd64.tar.gz task_checksums.txt && \
-  K8S_GITOPS_CI_FILE_VERSION="${K8S_GITOPS_CI_VERSION#v}" && \
-  curl -fL --retry 5 --retry-all-errors --retry-delay 2 -o "k8s-gitops-ci_${K8S_GITOPS_CI_FILE_VERSION}_linux_amd64.tar.gz" \
-  "https://github.com/ArthurVardevanyan/k8s-gitops-ci/releases/download/${K8S_GITOPS_CI_VERSION}/k8s-gitops-ci_${K8S_GITOPS_CI_FILE_VERSION}_linux_amd64.tar.gz" && \
+  curl -fL --retry 5 --retry-all-errors --retry-delay 2 -o "k8s-gitops-ci_${K8S_GITOPS_CI_VERSION}_linux_amd64.tar.gz" \
+  "https://github.com/ArthurVardevanyan/k8s-gitops-ci/releases/download/v${K8S_GITOPS_CI_VERSION}/k8s-gitops-ci_${K8S_GITOPS_CI_VERSION}_linux_amd64.tar.gz" && \
   curl -fL --retry 5 --retry-all-errors --retry-delay 2 -o k8s-gitops-ci_checksums.txt \
-  "https://github.com/ArthurVardevanyan/k8s-gitops-ci/releases/download/${K8S_GITOPS_CI_VERSION}/k8s-gitops-ci_${K8S_GITOPS_CI_FILE_VERSION}_checksums.txt" && \
-  grep -E "k8s-gitops-ci_${K8S_GITOPS_CI_FILE_VERSION}_linux_amd64\.tar\.gz$" k8s-gitops-ci_checksums.txt | sha256sum -c - && \
-  tar -xzf "k8s-gitops-ci_${K8S_GITOPS_CI_FILE_VERSION}_linux_amd64.tar.gz" --no-same-owner -C /usr/local/bin k8s-gitops-ci && \
-  chmod +x /usr/local/bin/k8s-gitops-ci && rm -f "k8s-gitops-ci_${K8S_GITOPS_CI_FILE_VERSION}_linux_amd64.tar.gz" k8s-gitops-ci_checksums.txt
+  "https://github.com/ArthurVardevanyan/k8s-gitops-ci/releases/download/v${K8S_GITOPS_CI_VERSION}/k8s-gitops-ci_${K8S_GITOPS_CI_VERSION}_checksums.txt" && \
+  grep -E "k8s-gitops-ci_${K8S_GITOPS_CI_VERSION}_linux_amd64\.tar\.gz$" k8s-gitops-ci_checksums.txt | sha256sum -c - && \
+  tar -xzf "k8s-gitops-ci_${K8S_GITOPS_CI_VERSION}_linux_amd64.tar.gz" --no-same-owner -C /usr/local/bin k8s-gitops-ci && \
+  chmod +x /usr/local/bin/k8s-gitops-ci && rm -f "k8s-gitops-ci_${K8S_GITOPS_CI_VERSION}_linux_amd64.tar.gz" k8s-gitops-ci_checksums.txt
 
 RUN golangci-lint --version
 CMD ["sleep", "infinity"]
