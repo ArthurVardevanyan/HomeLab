@@ -187,12 +187,19 @@ YQTF
 
 # Deployment resources: upstream base for image/args/env (so version bumps are
 # never masked); local securityContext, resources, imagePullPolicy, resizePolicy,
-# and pod-level scheduling flags are layered on top. One upstream new container
-# arg (tektonhub) is upstream-owned and therefore preserved.
+# pod-level scheduling flags, checkov skip annotations, and the required-scc pod
+# annotation are layered on top. One upstream container arg (tektonhub) that
+# upstream removed is upstream-owned and therefore not re-added.
 cat > "${TEMP_DIR}/transform-deployment.yq" <<'YQTF'
 with(select(.metadata.namespace == "openshift-operators");
   .metadata.namespace = "openshift-pipelines-operator"
 ) |
+.metadata.annotations."checkov.io/skip1" = "CKV_K8S_40=OpenShift Injects Random UID" |
+.metadata.annotations."checkov.io/skip2" = "CKV_K8S_23=https://github.com/tektoncd/operator/issues/1772" |
+.metadata.annotations."checkov.io/skip3" = "CKV_K8S_8=Not Provided" |
+.metadata.annotations."checkov.io/skip4" = "CKV_K8S_9=Not Provided" |
+.metadata.annotations."checkov.io/skip6" = "CKV_K8S_38=Operator Needs API Access" |
+.spec.template.metadata.annotations."openshift.io/required-scc" = "restricted-v2" |
 .spec.template.spec.automountServiceAccountToken = true |
 .spec.template.spec.dnsPolicy = "ClusterFirst" |
 .spec.template.spec.restartPolicy = "Always" |
@@ -594,6 +601,13 @@ cp "${OPERATOR_FILE}" "${OPERATOR_YAML}"
 # only the active (uncommented) form, so re-running is idempotent.
 # shellcheck disable=SC2016
 perl -0pi -e 's/^([ \t]*)- name: IMAGE_ADDONS_OC\n([ \t]*)value: image-registry\.openshift-image-registry\.svc:5000\/openshift\/cli:latest/${1}# - name: IMAGE_ADDONS_OC\n${2}# value: image-registry.openshift-image-registry.svc:5000\/openshift\/cli:latest/m' "${OPERATOR_YAML}"
+
+# Local policy: restore the rationale comment above the rbac-wildcards exemption
+# on the tekton-operator ClusterRole. yq sets the annotation value but cannot
+# emit the explanatory comment, so it is re-inserted here (idempotent: it only
+# adds the block when it is not already present immediately above the key).
+# shellcheck disable=SC2016
+perl -0pi -e 's/(?<!\n#)(^([ \t]*)gitops-ci\.k8s\.io\/exempt-rbac-wildcards: )/${2}# The meta-operator manages arbitrary Tekton CRD kinds (TektonConfig,\n${2}# TektonAddon, TektonTrigger, ...) it can'"'"'t enumerate in advance, so\n${2}# `resources: ["*"]` is required within its own tekton.dev\/operator.tekton.dev\/\n${2}# dashboard.tekton.dev API groups - matches the checkov.io\/skip1-2 rationale\n${2}# above. NOTE: this annotation is not yet honored by the currently-released\n${2}# k8s-gitops-ci (named-ports\/podspec-defaults\/rbac-wildcards checks don'"'"'t\n${2}# populate Finding.Value\/Annotations yet - see ArthurVardevanyan\/k8s-gitops-ci\n${2}# follow-up); kubernetes\/tekton\/test.sh carries the equivalent EXEMPTIONS\n${2}# selector as the functional bridge until that ships, and can be dropped once\n${2}# this annotation alone is honored.\n${1}/m' "${OPERATOR_YAML}"
 
 npx prettier --write "${SCRIPT_DIR}/overlays/operator/crds.yaml"
 npx prettier --write "${OPERATOR_YAML}"
