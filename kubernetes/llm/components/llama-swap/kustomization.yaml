@@ -5,12 +5,12 @@ resources:
   - deployment.yaml
   - service.yaml
   - service-account.yaml
-  - pvc.yaml
   - network-policy.yaml
+  - service-monitor.yaml
   - vpa.yaml
 
 configMapGenerator:
-  - name: llama-swap-config
-    namespace: llm
-    files:
+  - files:
       - llama-swap.yaml
+    name: llama-swap-config
+    namespace: llm

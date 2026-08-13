@@ -570,3 +570,49 @@ data:
           replacement: okd
         - target_label: model
           replacement: qwen3.6-coder-30b-a3b
+
+      # LiteLLM metrics
+      - job_name: 'litellm-metrics'
+        scrape_interval: 30s
+        scrape_timeout: 10s
+
+        static_configs:
+          - targets:
+            - litellm-svc.llm.svc.cluster.local:4000
+
+        metric_relabel_configs:
+        - source_labels: [ __name__ ]
+          regex: 'go_(.+)'
+          action: drop
+        - source_labels: [ __name__ ]
+          regex: 'process_(.+)'
+          action: drop
+
+        relabel_configs:
+        - target_label: cluster
+          replacement: okd
+        - target_label: app
+          replacement: litellm
+
+      # llama-swap metrics
+      - job_name: 'llama-swap-metrics'
+        scrape_interval: 30s
+        scrape_timeout: 10s
+
+        static_configs:
+          - targets:
+            - llama-swap-svc.llm.svc.cluster.local:8080
+
+        metric_relabel_configs:
+        - source_labels: [ __name__ ]
+          regex: 'go_(.+)'
+          action: drop
+        - source_labels: [ __name__ ]
+          regex: 'process_(.+)'
+          action: drop
+
+        relabel_configs:
+        - target_label: cluster
+          replacement: okd
+        - target_label: app
+          replacement: llama-swap

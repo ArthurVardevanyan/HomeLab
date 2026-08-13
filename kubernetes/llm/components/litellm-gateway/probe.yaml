@@ -1,0 +1,19 @@
+---
+apiVersion: monitoring.coreos.com/v1
+kind: Probe
+metadata:
+  name: litellm
+  namespace: llm
+  labels:
+    app.kubernetes.io/instance: litellm
+spec:
+  jobName: urls-static
+  interval: 30s
+  module: http_2xx
+  prober:
+    path: /probe
+    url: blackbox-exporter.blackbox-exporter.svc.cluster.local:9115
+  targets:
+    staticConfig:
+      static:
+        - https://litellm.arthurvardevanyan.com
