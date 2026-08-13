@@ -5,12 +5,10 @@ resources:
   - deployment.yaml
   - service.yaml
   - service-account.yaml
-  - network-policy.yaml
-  - service-monitor.yaml
   - vpa.yaml
-generatorOptions: {}
+
 configMapGenerator:
-  - files:
-      - models.ini
-    name: llama-router-preset
+  - name: litellm-config
     namespace: llm
+    files:
+      - litellm.yaml

@@ -1,0 +1,105 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: litellm
+  namespace: llm
+  labels:
+    app: litellm
+  annotations:
+    checkov.io/skip1: CKV_K8S_40=Upstream Image Runs as Root
+    checkov.io/skip2: CKV_K8S_22=Model Cache Requires Writable Root FS
+    checkov.io/skip3: CKV_K8S_23=Upstream Image Requires Root
+spec:
+  revisionHistoryLimit: 0
+  progressDeadlineSeconds: 1800
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: litellm
+  template:
+    metadata:
+      labels:
+        app: litellm
+    spec:
+      hostname: litellm
+      restartPolicy: Always
+      schedulerName: default-scheduler
+      terminationGracePeriodSeconds: 30
+      automountServiceAccountToken: false
+      serviceAccountName: litellm
+      enableServiceLinks: false
+      dnsPolicy: ClusterFirst
+      securityContext:
+        fsGroupChangePolicy: "OnRootMismatch"
+        seccompProfile:
+          type: RuntimeDefault
+        runAsNonRoot: true
+      tolerations:
+        - key: node-role.kubernetes.io/gpu
+          operator: Exists
+          effect: NoSchedule
+      nodeSelector:
+        feature.node.kubernetes.io/custom-intel.xe.gpu: "true"
+      containers:
+        # LiteLLM router: public model alias layer with session affinity,
+        # routes to llama-swap backend which manages llama-server instances.
+        # renovate: datasource=docker depName=ghcr.io/berriai/litellm versioning=loose
+        - image: ghcr.io/berriai/litellm:v1.96.2@sha256:154e23bb5f31b1f10e16392a8ef299bd2cde08de3a64a6849002cfcc25ce3c63
+          imagePullPolicy: IfNotPresent
+          name: litellm
+          args: ["--config", "/etc/litellm/litellm.yaml", "--port", "4000"]
+          ports:
+            - containerPort: 4000
+              name: http
+              protocol: TCP
+          securityContext:
+            runAsNonRoot: true
+            readOnlyRootFilesystem: false
+            allowPrivilegeEscalation: false
+            privileged: false
+            seccompProfile:
+              type: RuntimeDefault
+            capabilities:
+              drop:
+                - ALL
+          startupProbe:
+            httpGet:
+              path: /health/liveliness
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            failureThreshold: 60
+            timeoutSeconds: 5
+          livenessProbe:
+            httpGet:
+              path: /health/liveliness
+              port: http
+            periodSeconds: 30
+            timeoutSeconds: 10
+            failureThreshold: 5
+          readinessProbe:
+            httpGet:
+              path: /health/readiness
+              port: http
+            periodSeconds: 15
+            timeoutSeconds: 5
+            failureThreshold: 3
+          resources:
+            requests:
+              cpu: "250m"
+              memory: 1Gi
+              ephemeral-storage: "128Mi"
+            limits:
+              cpu: "1"
+              memory: 3Gi
+              ephemeral-storage: "512Mi"
+          volumeMounts:
+            - name: config
+              mountPath: /etc/litellm
+              readOnly: true
+      volumes:
+        - name: config
+          configMap:
+            name: litellm-config

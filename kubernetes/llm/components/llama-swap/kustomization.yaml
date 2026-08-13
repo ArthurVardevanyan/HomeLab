@@ -5,12 +5,12 @@ resources:
   - deployment.yaml
   - service.yaml
   - service-account.yaml
+  - pvc.yaml
   - network-policy.yaml
-  - service-monitor.yaml
   - vpa.yaml
-generatorOptions: {}
+
 configMapGenerator:
-  - files:
-      - models.ini
-    name: llama-router-preset
+  - name: llama-swap-config
     namespace: llm
+    files:
+      - llama-swap.yaml

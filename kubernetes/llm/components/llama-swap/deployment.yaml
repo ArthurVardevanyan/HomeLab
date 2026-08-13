@@ -1,0 +1,120 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: llama-swap
+  namespace: llm
+  labels:
+    app: llama-swap
+  annotations:
+    checkov.io/skip1: CKV_K8S_40=Upstream Image Runs as Root
+    checkov.io/skip2: CKV_K8S_22=Model Cache Requires Writable Root FS
+    checkov.io/skip3: CKV_K8S_23=Upstream Image Requires Root
+spec:
+  revisionHistoryLimit: 0
+  progressDeadlineSeconds: 1800
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: llama-swap
+  template:
+    metadata:
+      labels:
+        app: llama-swap
+    spec:
+      hostname: llama-swap
+      restartPolicy: Always
+      schedulerName: default-scheduler
+      terminationGracePeriodSeconds: 60
+      automountServiceAccountToken: false
+      serviceAccountName: llama-swap
+      enableServiceLinks: false
+      dnsPolicy: ClusterFirst
+      securityContext:
+        fsGroupChangePolicy: "OnRootMismatch"
+        seccompProfile:
+          type: RuntimeDefault
+        runAsNonRoot: true
+      tolerations:
+        - key: node-role.kubernetes.io/gpu
+          operator: Exists
+          effect: NoSchedule
+      nodeSelector:
+        feature.node.kubernetes.io/custom-intel.xe.gpu: "true"
+      containers:
+        # llama-swap orchestrator: manages llama-server process lifecycles,
+        # GPU binding, and VRAM lifecycle via configuration-driven matrix.
+        # renovate: datasource=docker depName=ghcr.io/mostlygeek/llama-swap versioning=loose
+        - image: ghcr.io/mostlygeek/llama-swap:v249-vulkan-b10380-non-root@sha256:48c2a9a04a06ffbcb3823e8213682a56dc1fbf48cacd763fb30029cf46c41333
+          imagePullPolicy: IfNotPresent
+          name: llama-swap
+          args: ["--config", "/etc/llama-swap/llama-swap.yaml"]
+          ports:
+            - containerPort: 8080
+              name: http
+              protocol: TCP
+          env:
+            # Model / HF cache lives on the PVC.
+            - name: LLAMA_CACHE
+              value: /cache
+          securityContext:
+            runAsNonRoot: true
+            readOnlyRootFilesystem: false
+            allowPrivilegeEscalation: false
+            privileged: false
+            seccompProfile:
+              type: RuntimeDefault
+            capabilities:
+              drop:
+                - ALL
+          startupProbe:
+            httpGet:
+              path: /
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            failureThreshold: 60
+            timeoutSeconds: 5
+          livenessProbe:
+            httpGet:
+              path: /
+              port: http
+            periodSeconds: 30
+            timeoutSeconds: 10
+            failureThreshold: 5
+          readinessProbe:
+            httpGet:
+              path: /
+              port: http
+            periodSeconds: 15
+            timeoutSeconds: 5
+            failureThreshold: 3
+          resources:
+            requests:
+              cpu: "500m"
+              memory: 12Gi
+              ephemeral-storage: "256Mi"
+              gpu.intel.com/xe: "2"
+            limits:
+              cpu: "3"
+              memory: 48Gi
+              ephemeral-storage: "1Gi"
+              gpu.intel.com/xe: "2"
+          volumeMounts:
+            - name: config
+              mountPath: /etc/llama-swap
+              readOnly: true
+            - name: model-storage
+              mountPath: /data
+            - name: cache-storage
+              mountPath: /cache
+      volumes:
+        - name: config
+          configMap:
+            name: llama-swap-config
+        - name: model-storage
+          persistentVolumeClaim:
+            claimName: llm-models
+        - name: cache-storage
+          emptyDir: {}

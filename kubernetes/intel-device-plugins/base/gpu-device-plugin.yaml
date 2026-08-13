@@ -1,11 +1,12 @@
 ---
 # GpuDevicePlugin custom resource consumed by the Intel Device Plugins Operator.
-# Advertises the Intel Arc Pro B70 (xe KMD) as the `gpu.intel.com/xe` resource.
+# Advertises each Intel Arc Pro B70 (xe KMD) as the `gpu.intel.com/xe` resource.
 #
-# sharedDevNum: 5 -> fan-out sharing so the single B70 can be requested by two
-# containers simultaneously (LLM inference + video transcode). NOTE: this is
-# fan-out sharing WITHOUT hardware memory isolation; VRAM budgeting is enforced
-# in the workload (llm-server context/KV-cache settings), not by the plugin.
+# sharedDevNum: 1 -> one real device per physical GPU (no fan-out sharing).
+# Each card is a single allocatable device: gpu-1 reports
+# `gpu.intel.com/xe: 2`. If fan-out is ever needed, bump this number (e.g.
+# `sharedDevNum: 3` gives 3 virtual indices per card, indices 0-2 = GPU 0,
+# 3-5 = GPU 1).
 #
 # With the OLM-installed operator, the operator supplies the plugin/init images
 # for the DaemonSet it manages, so we do NOT pin them here.
@@ -16,7 +17,7 @@ metadata:
   annotations:
     argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
 spec:
-  sharedDevNum: 5
+  sharedDevNum: 1
   enableMonitoring: true
   monitoringMode: single
   preferredAllocationPolicy: none

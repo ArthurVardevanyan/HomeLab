@@ -1,0 +1,83 @@
+---
+healthCheckTimeout: 120
+
+hooks:
+  on_startup:
+    preload:
+      - dual_35b
+
+macros:
+  # The unified base command for all single-card instances
+  cmd_base: "/app/llama-server --port ${PORT} --host 127.0.0.1 --parallel 2 --cont-batching --split-mode none --reasoning-format auto -ngl 99 --flash-attn on --cache-type-k f16 --cache-type-v f16 --ubatch-size 2048 --jinja"
+
+models:
+  # ==========================================
+  # 1. Qwen 3.6 35B (A3B)
+  # ==========================================
+  35b-gpu0:
+    cmd: ${cmd_base} -m /data/models/Qwen3.6-35B-A3B-UD-Q4_K_M.gguf --mmproj /data/models/Qwen3.6-35B-A3B-mmproj-F16.gguf
+    env:
+      - "GGML_VK_VISIBLE_DEVICES=0"
+    ttl: 300
+
+  35b-gpu1:
+    cmd: ${cmd_base} -m /data/models/Qwen3.6-35B-A3B-UD-Q4_K_M.gguf --mmproj /data/models/Qwen3.6-35B-A3B-mmproj-F16.gguf
+    env:
+      - "GGML_VK_VISIBLE_DEVICES=1"
+    ttl: 300
+
+  # ==========================================
+  # 2. Qwen 3.6 27B
+  # ==========================================
+  27b-gpu0:
+    cmd: ${cmd_base} --ctx-size 131072 -m /data/models/Qwen3.6-27B-Q4_K_M.gguf --mmproj /data/models/Qwen3.6-27B-mmproj-F16.gguf
+    env:
+      - "GGML_VK_VISIBLE_DEVICES=0"
+    ttl: 300
+
+  27b-gpu1:
+    cmd: ${cmd_base} --ctx-size 131072 -m /data/models/Qwen3.6-27B-Q4_K_M.gguf --mmproj /data/models/Qwen3.6-27B-mmproj-F16.gguf
+    env:
+      - "GGML_VK_VISIBLE_DEVICES=1"
+    ttl: 300
+
+  # ==========================================
+  # 3. Qwen 3 Coder 30B (A3B)
+  # ==========================================
+  coder30b-gpu0:
+    cmd: ${cmd_base} -m /data/models/Qwen3-Coder-30B-A3B-Instruct-Q4_0.gguf
+    env:
+      - "GGML_VK_VISIBLE_DEVICES=0"
+    ttl: 300
+
+  coder30b-gpu1:
+    cmd: ${cmd_base} -m /data/models/Qwen3-Coder-30B-A3B-Instruct-Q4_0.gguf
+    env:
+      - "GGML_VK_VISIBLE_DEVICES=1"
+    ttl: 300
+
+# The matrix dictates all valid VRAM combinations.
+# By explicitly pairing exactly one GPU 0 model with exactly one GPU 1 model,
+# you guarantee safe multi-tenant routing without thrashing.
+matrix:
+  vars:
+    M35-0: 35b-gpu0
+    M35-1: 35b-gpu1
+    M27-0: 27b-gpu0
+    M27-1: 27b-gpu1
+    C30-0: coder30b-gpu0
+    C30-1: coder30b-gpu1
+
+  sets:
+    # --- Data Parallel (Same model duplicated on both cards) ---
+    dual_35b: M35-0 & M35-1
+    dual_27b: M27-0 & M27-1
+    dual_coder: C30-0 & C30-1
+
+    # --- Mixed Workloads (Different models running side-by-side) ---
+    mix_1: M35-0 & M27-1
+    mix_2: M27-0 & M35-1
+    mix_3: M35-0 & C30-1
+    mix_4: C30-0 & M35-1
+    mix_5: M27-0 & C30-1
+    mix_6: C30-0 & M27-1

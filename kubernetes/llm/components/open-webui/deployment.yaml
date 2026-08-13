@@ -72,9 +72,9 @@ spec:
             - -c
             - /app/backend/start.sh
           env:
-            # Point to the llama.cpp server on the cluster-internal service
+            # Point to LiteLLM which routes to llama-swap managing llama-server instances
             - name: OPENAI_API_BASE_URL
-              value: http://llm-server-svc.llm.svc.cluster.local:11434/v1
+              value: http://litellm-svc.llm.svc.cluster.local:4000/v1
             # Writable paths for uploads and static assets (root FS is read-only)
             # /app/backend/data → PVC (uploads, chroma, cache, sqlite, audit)
             - name: DATA_DIR

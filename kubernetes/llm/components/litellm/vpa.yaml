@@ -2,28 +2,30 @@
 apiVersion: autoscaling.k8s.io/v1
 kind: VerticalPodAutoscaler
 metadata:
-  name: llm-server
+  name: litellm
   namespace: llm
   annotations:
     argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
   labels:
-    app.kubernetes.io/name: llm-server
+    app.kubernetes.io/name: litellm
 spec:
   targetRef:
     apiVersion: apps/v1
     kind: Deployment
-    name: llm-server
+    name: litellm
   updatePolicy:
     updateMode: "InPlaceOrRecreate"
   resourcePolicy:
     containerPolicies:
-      - containerName: llm
+      - containerName: litellm
         minAllowed:
-          cpu: "250m"
-          memory: 8Gi
+          cpu: 50m
+          memory: 256Mi
+          ephemeral-storage: 32Mi
         maxAllowed:
-          cpu: "2"
-          memory: 32Gi
+          cpu: "1"
+          memory: 2Gi
+          ephemeral-storage: 512Mi
         controlledResources:
           - cpu
           - memory

@@ -1,0 +1,11 @@
+apiVersion: machineconfiguration.openshift.io/v1
+kind: MachineConfig
+metadata:
+  labels:
+    machineconfiguration.openshift.io/role: gpu
+  name: 99-gpu-kernel-args
+spec:
+  kernelArguments:
+    - iommu=pt
+    - pcie_aspm=force
+    - pcie_aspm.policy=powersave

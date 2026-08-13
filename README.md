@@ -203,17 +203,21 @@ graph TD
 | Attribute        | Value                                                                                  |
 | ---------------- | -------------------------------------------------------------------------------------- |
 | **Node**         | `gpu-1`                                                                                |
-| **Card**         | Intel® Arc™ Pro B70 Graphics (Battlemage / Xe2, discrete)                              |
-| **Memory**       | ~32 GB GDDR6                                                                           |
-| **PCI**          | Gen5 x16, `0000:2d:00.0`                                                               |
+| **Card**         | 2x Intel® Arc™ Pro B70 Graphics (Battlemage / Xe2, discrete)                           |
+| **Memory**       | ~32 GB GDDR6 per card                                                                  |
+| **PCI Slot 1**   | Gen4 x4, `0000:06:00.0` (top slot, direct CPU lanes)                                   |
+| **PCI Slot 2**   | Gen3 x4, `0000:2d:00.0` (bottom slot, B550 chipset lanes)                              |
 | **KMD**          | `xe`                                                                                   |
-| **K8s Resource** | `gpu.intel.com/xe` — 5 allocatable (`sharedDevNum: 5` fan-out of single card)          |
+| **K8s Resource** | `gpu.intel.com/xe` — 2 allocatable (one per physical card, no fan-out)                 |
 | **Workload**     | Transcoding (Plex/Immich, VA-API), LLM inference (llama.cpp Vulkan), AI/ML experiments |
 
 > Replaces the previous NVIDIA GeForce GTX 1080 (8GB). See
 > [kubernetes/intel-device-plugins](kubernetes/intel-device-plugins/README.md) for
 > `xpu-smi`/`intel_gpu_top` monitoring commands (the `nvidia-smi` equivalents), and
 > [kubernetes/llm](kubernetes/llm/README.md) for B70 LLM tuning.
+>
+> For GPU hardware setup notes (PCIe/IOMMU BIOS tuning, XFS repair), see
+> [okd/README-GPU.md](okd/README-GPU.md).
 
 ## Network Architecture
 

@@ -427,6 +427,55 @@ oc -n llm scale deployment/llm-server --replicas=1
 oc -n llm logs -f deployment/llm-server   # watch model load + Vulkan device
 ```
 
+### Two-GPU concurrency (2x Intel Arc Pro B70)
+
+The node `gpu-1` has **two** Intel Arc Pro B70 GPUs (`sharedDevNum: 1` →
+`gpu.intel.com/xe: 2` allocatable). Two approaches to use the second GPU:
+
+**Option A: Split a single model across both GPUs** (`--split-mode layer`)
+
+Uncomment `--split-mode layer` in `components/llama-cpp/deployment.yaml` and
+keep the single-pod deployment. The model's layers are distributed across
+both cards (GPU 0: layers 0..N, GPU 1: N..M). Useful for models too large
+for 32 GB single-card VRAM (Q8_0, FP16 quantizations). The combined 64 GB
+VRAM pool holds larger models, but PCIe cross-talk adds latency.
+
+Verify which Vulkan device maps to which physical GPU:
+
+```bash
+# Inside the pod — check /dev/dri/by-path symlinks for PCIe bus assignment
+oc -n llm exec deploy/llm-server -- ls -l /dev/dri/by-path/
+
+# Confirm both devices are active (look for two "using device" lines)
+oc -n llm logs deploy/llm-server | grep -i "using device"
+```
+
+### Option B: Two separate pods (true concurrency)
+
+Deploy two replicas, each requesting `gpu.intel.com/xe: 1`. Each pod gets
+a full 32 GB card with no PCIe cross-talk. They share the same Service
+endpoint so clients use one address; Kubernetes load-balances requests
+between the pods. Each pod runs its own model instance with independent
+KV-cache — no context mapping issues.
+
+To deploy two pods:
+
+```bash
+# 1. Scale to 2 replicas (each pod gets 1 GPU)
+oc -n llm scale deployment/llm-server --replicas=2
+
+# 2. Verify each pod got a different GPU
+oc -n llm get pods -o wide
+oc -n llm exec deploy/llm-server -- sh -c "ls -l /dev/dri/by-path/"
+
+# 3. Each pod independently serves the same models on :11434
+# The Service load-balances requests between them
+```
+
+> **Note:** `--models-max 1` controls per-pod model residency — each pod
+> keeps one model in its own VRAM. With two pods, you effectively have
+> two independent model instances, each using up to 32 GB.
+
 ## Layout
 
 - `base/` — namespace + shared NetworkPolicies (`deny-all`, `allow-dns-traffic`,
