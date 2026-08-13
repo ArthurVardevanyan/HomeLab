@@ -9,33 +9,17 @@ metadata:
 spec:
   podSelector:
     matchLabels:
-      app: litellm
+      app: llama-swap
   policyTypes:
     - Ingress
   ingress:
     - from:
         - namespaceSelector:
             matchLabels:
-              kubernetes.io/metadata.name: llm
-          podSelector: {}
+              kubernetes.io/metadata.name: openshift-ingress
       ports:
         - protocol: TCP
-          port: 4000
----
-apiVersion: networking.k8s.io/v1
-kind: NetworkPolicy
-metadata:
-  name: allow-litellm-to-llama-swap
-  namespace: llm
-  annotations:
-    argocd.argoproj.io/sync-wave: "0"
-spec:
-  podSelector:
-    matchLabels:
-      app: llama-swap
-  policyTypes:
-    - Ingress
-  ingress:
+          port: 8080
     - from:
         - podSelector:
             matchLabels:
@@ -43,3 +27,57 @@ spec:
       ports:
         - protocol: TCP
           port: 8080
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-internet-egress-llama-swap
+  namespace: llm
+  annotations:
+    argocd.argoproj.io/sync-wave: "0"
+  labels:
+    app: llama-swap
+spec:
+  policyTypes:
+    - Egress
+  podSelector:
+    matchLabels:
+      app: llama-swap
+  egress:
+    - to:
+        - ipBlock:
+            cidr: 0.0.0.0/0
+            except:
+              - 10.0.0.0/8
+              - 172.16.0.0/12
+              - 192.168.0.0/16
+        - ipBlock:
+            cidr: 10.101.10.5/32
+        - ipBlock:
+            cidr: 10.101.10.7/32
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-to-openshift-ingress-llama-swap
+  namespace: llm
+  annotations:
+    argocd.argoproj.io/sync-wave: "0"
+  labels:
+    app: llama-swap
+spec:
+  policyTypes:
+    - Egress
+  podSelector:
+    matchLabels:
+      app: llama-swap
+  egress:
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              network.openshift.io/policy-group: ingress
+      ports:
+        - protocol: TCP
+          port: 443
+        - protocol: TCP
+          port: 80

@@ -8,14 +8,11 @@ metadata:
     app.kubernetes.io/name: open-webui
     app.kubernetes.io/instance: open-webui
 spec:
-  replicas: 2
+  replicas: 1
   revisionHistoryLimit: 0
   progressDeadlineSeconds: 1800
   strategy:
-    type: RollingUpdate
-    rollingUpdate:
-      maxUnavailable: 0
-      maxSurge: 1
+    type: Recreate
   selector:
     matchLabels:
       app.kubernetes.io/name: open-webui
@@ -35,29 +32,8 @@ spec:
         - key: node-role.kubernetes.io/gpu
           operator: Exists
           effect: NoSchedule
-      # Soft preference for the GPU node; never blocks scheduling elsewhere.
-      # Hard spread constraints below still take precedence for HA.
-      affinity:
-        nodeAffinity:
-          preferredDuringSchedulingIgnoredDuringExecution:
-            - weight: 100
-              preference:
-                matchExpressions:
-                  - key: node-role.kubernetes.io/gpu
-                    operator: Exists
-      topologySpreadConstraints:
-        - maxSkew: 1
-          topologyKey: topology.kubernetes.io/zone
-          whenUnsatisfiable: DoNotSchedule
-          labelSelector:
-            matchLabels:
-              app.kubernetes.io/name: open-webui
-        - maxSkew: 1
-          topologyKey: kubernetes.io/hostname
-          whenUnsatisfiable: DoNotSchedule
-          labelSelector:
-            matchLabels:
-              app.kubernetes.io/name: open-webui
+      nodeSelector:
+        node-role.kubernetes.io/gpu: "true"
       dnsPolicy: ClusterFirst
       securityContext:
         seccompProfile:

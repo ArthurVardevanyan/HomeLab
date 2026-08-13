@@ -50,6 +50,9 @@ spec:
           imagePullPolicy: IfNotPresent
           name: litellm
           args: ["--config", "/etc/litellm/litellm.yaml", "--port", "4000"]
+          env:
+            - name: ENABLE_PROMETHEUS
+              value: "true"
           ports:
             - containerPort: 4000
               name: http
