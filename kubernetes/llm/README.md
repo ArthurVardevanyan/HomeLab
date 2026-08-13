@@ -255,24 +255,24 @@ The llama-swap image defines these Prometheus scrape jobs (in
 
 Key metric families (llama-swap only, no llama-server sub-scrapes):
 
-| Metric family                        | Description                           |
-| ------------------------------------ | ------------------------------------- |
-| `llama_swap_model_slots`             | Currently loaded model slots (1 or 2) |
-| `llama_swap_model_load_duration`     | How long a model load took (s)        |
-| `llama_swap_model_unload_duration`   | How long a model unload took (s)      |
-| `llama_swap_request_duration`        | Per-request latency (s)               |
-| `llama_swap_request_tokens`          | Tokens generated per request          |
-| `llama_swap_request_input`           | Input tokens per request              |
-| `llama_swap_token_count`             | Cumulative token count                |
-| `llama_swap_prompt_tokens_count`     | Cumulative prompt/input tokens        |
-| `llama_swap_decode_tokens`           | Cumulative decode tokens              |
-| `llama_swap_gpu_mem_allocated_bytes` | Allocated GPU memory                  |
-| `llama_swap_gpu_mem_free_bytes`      | Free GPU memory                       |
-| `llama_swap_gpu_mem_used_bytes`      | Used GPU memory                       |
-| `llama_swap_gpu_memory_total_bytes`  | Total GPU memory                      |
-| `llama_swap_request_pending`         | Pending requests                      |
-| `llama_swap_request_inflight`        | In-flight requests                    |
-| `llama_swap_request_error_total`     | Total request errors                  |
+| Metric family                       | Description                           |
+| ----------------------------------- | ------------------------------------- |
+| `llamaswap_model_slots`             | Currently loaded model slots (1 or 2) |
+| `llamaswap_model_load_duration`     | How long a model load took (s)        |
+| `llamaswap_model_unload_duration`   | How long a model unload took (s)      |
+| `llamaswap_request_duration`        | Per-request latency (s)               |
+| `llamaswap_request_tokens`          | Tokens generated per request          |
+| `llamaswap_request_input`           | Input tokens per request              |
+| `llamaswap_token_count`             | Cumulative token count                |
+| `llamaswap_prompt_tokens_count`     | Cumulative prompt/input tokens        |
+| `llamaswap_decode_tokens`           | Cumulative decode tokens              |
+| `llamaswap_gpu_mem_allocated_bytes` | Allocated GPU memory                  |
+| `llamaswap_gpu_mem_free_bytes`      | Free GPU memory                       |
+| `llamaswap_gpu_mem_used_bytes`      | Used GPU memory                       |
+| `llamaswap_gpu_memory_total_bytes`  | Total GPU memory                      |
+| `llamaswap_request_pending`         | Pending requests                      |
+| `llamaswap_request_inflight`        | In-flight requests                    |
+| `llamaswap_request_error_total`     | Total request errors                  |
 
 llama-server (managed by llama-swap) exposes its own `/metrics` endpoint.
 llama-swap's `/metrics` **already includes** the llama-server metrics under
@@ -282,16 +282,16 @@ namespaced prefixes. No separate `llama_server` scrape job is needed.
 
 ```promql
 # Tokens per second (decode)
-rate(llama_swap_decode_tokens[5m])
+rate(llamaswap_decode_tokens[5m])
 
 # Request latency
-rate(llama_swap_request_duration[5m])
+rate(llamaswap_request_duration[5m])
 
 # GPU memory usage
-llama_swap_gpu_mem_used_bytes
+llamaswap_gpu_mem_used_bytes
 
 # Pending requests (backpressure signal)
-llama_swap_request_pending
+llamaswap_request_pending
 ```
 
 ### TODO: Open WebUI metrics & cluster OTEL
