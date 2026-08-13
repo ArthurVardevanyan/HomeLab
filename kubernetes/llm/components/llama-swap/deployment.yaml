@@ -114,6 +114,8 @@ spec:
               mountPath: /data
             - name: cache-storage
               mountPath: /cache
+            - name: store
+              mountPath: /var/lib/llama-swap
       volumes:
         - name: config
           configMap:
@@ -123,3 +125,6 @@ spec:
             claimName: llm-models
         - name: cache-storage
           emptyDir: {}
+        - name: store
+          persistentVolumeClaim:
+            claimName: llm-llama-swap-store
