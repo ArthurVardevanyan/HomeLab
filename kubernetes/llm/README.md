@@ -1,17 +1,18 @@
 # Local LLM
 
 GPU-backed local LLM serving for the homelab. The **default (`overlays/okd`)
-backend is llama.cpp (Vulkan)** running on the Intel Arc Pro B70.
+backend is llama-swap (Vulkan)** orchestrating llama-server processes on the
+Intel Arc Pro B70 (2× GPUs, 64 GB VRAM pooled).
 
 ## Table of Contents
 
 - [Local LLM](#local-llm)
   - [Table of Contents](#table-of-contents)
   - [Backends / Overlays](#backends--overlays)
-  - [Default: llama.cpp Vulkan on the Intel Arc B70](#default-llamacpp-vulkan-on-the-intel-arc-b70)
-    - [Model](#model)
+  - [llama-swap with Vulkan on the Intel Arc Pro B70](#llama-swap-with-vulkan-on-the-intel-arc-pro-b70)
+    - [Model Matrix](#model-matrix)
     - [B70 tuning rationale](#b70-tuning-rationale)
-    - [KV cache: f16 vs q8_0](#kv-cache-f16-vs-q8_0)
+    - [KV cache: f16 vs q8\_0](#kv-cache-f16-vs-q8_0)
     - [Why not `--mlock` / `--ngl all`](#why-not---mlock----ngl-all)
     - [Mesa 26.1 (biggest perf lever) — handled in the image](#mesa-261-biggest-perf-lever--handled-in-the-image)
     - [Image tag](#image-tag)
@@ -38,65 +39,73 @@ backend is llama.cpp (Vulkan)** running on the Intel Arc Pro B70.
 
 ## Backends / Overlays
 
-| Overlay        | Backend                        | Hardware      | Notes                                      |
-| -------------- | ------------------------------ | ------------- | ------------------------------------------ |
-| `overlays/okd` | **llama.cpp Vulkan** (default) | Intel Arc B70 | Qwen3.6-35B-A3B, tracks mainline llama.cpp |
+| Overlay        | Backend                           | Hardware               | Notes                                                 |
+| -------------- | --------------------------------- | ---------------------- | ----------------------------------------------------- |
+| `overlays/okd` | **llama-swap + Vulkan** (default) | Intel Arc Pro B70 (2×) | Qwen3.6 models, data-parallel + mixed workload matrix |
 
-## Default: llama.cpp Vulkan on the Intel Arc B70
+## llama-swap with Vulkan on the Intel Arc Pro B70
 
-### Model
+### Model Matrix
 
-Served via **llama-server router mode** — a single process hosts both models
-(preset `base/configmap.yaml` → `models.ini`), pre-downloaded to the PVC by an
-init container. Select the model by name in the client's `model` field:
+llama-swap orchestrates llama-server process lifecycles via a **config-driven
+matrix** (`llama-swap.yaml`). Each model is launched as an independent
+llama-server instance bound to one of the two GPUs (`GGML_VK_VISIBLE_DEVICES=0`
+or `1`).
 
-| Model id                | Model                                  | Trait                      | Vision                                       |
-| ----------------------- | -------------------------------------- | -------------------------- | -------------------------------------------- |
-| `qwen3.6-35b-a3b`       | Qwen3.6-35B-A3B (sparse MoE)           | ~4x faster decode on B70   | Yes                                          |
-| `qwen3.6-27b`           | Qwen3.6-27B (dense)                    | higher quality, slower     | Yes                                          |
-| `qwen3.6-coder-30b-a3b` | Qwen3-Coder-30B-A3B-Instruct-Q4_0.gguf | Code-focused, high context | No (text-only; no mmproj published upstream) |
+| Model id                          | Model                             | Trait                      | Vision                                       |
+| --------------------------------- | --------------------------------- | -------------------------- | -------------------------------------------- |
+| `35b-gpu0` / `35b-gpu1`           | Qwen3.6-35B-A3B (sparse MoE)      | ~4x faster decode on B70   | Yes                                          |
+| `27b-gpu0` / `27b-gpu1`           | Qwen3.6-27B (dense)               | higher quality, slower     | Yes                                          |
+| `coder30b-gpu0` / `coder30b-gpu1` | Qwen3-Coder-30B-A3B-Instruct-Q4_0 | Code-focused, high context | No (text-only; no mmproj published upstream) |
 
 > **27B context limit:** The dense 27B model's `ctx-size` is set to `131072`
-> (65K/slot at parallel=2) in `models.ini`, half the global 256K. The dense
+> (65K/slot at parallel=2) in the config, half the global 256K. The dense
 > weights (~16.7 GB) + f16 KV cache + compute graph exceed the 32 GB VRAM at
 > the full context, so this reduced budget keeps it under 32 GB while still
 > providing ample context for most workloads. The 35B-A3B and coder models
 > keep the full 256K.
 
-Both are reached on the one endpoint (`:11434`). Router behavior:
+llama-swap's **matrix** defines all valid VRAM combinations by pairing GPU 0
+and GPU 1 models:
 
-- `--models-max 1` — only **one** model resident in VRAM at a time; requesting
-  the other evicts the current one (both cannot fit in 32 GB: ~22 GB MoE +
-  ~17 GB dense).
-- Model stays resident in VRAM 24/7. Real telemetry on gpu-1 shows idle card
-  power (6.8 W with model resident) is indistinguishable from idle with no
-  model (7.2 W), so unloading buys zero wattage.
+- **Data parallel** (same model duplicated on both cards): `dual_35b`,
+  `dual_27b`, `dual_coder` — provides redundancy and doubles throughput for
+  concurrent requests.
+- **Mixed workloads** (different models side-by-side): `mix_1` through `mix_6`
+  — e.g. `M35-0 & M27-1` loads 35B on GPU 0 and 27B on GPU 1.
 
-Global B70 tuning (in `[*]` of the preset): `n-gpu-layers 999`, `flash-attn on`,
-`cache-type-k/v f16`, `ubatch-size 2048`, `ctx-size 262144`,
-`reasoning-format none`.
+Models with `ttl: 0` stay resident in VRAM 24/7. Real telemetry on gpu-1 shows
+idle card power (6.8 W with model resident) is indistinguishable from idle with
+no model (7.2 W), so unloading buys zero wattage.
 
-> **Probes:** `livenessProbe`/`startupProbe` hit `GET /models` (router-level,
-> stays HTTP 200 during a model load/swap), while `readinessProbe` hits
-> `GET /health` (returns 503 while a model loads, keeping the pod out of the
-> Service until ready). Do **not** put liveness on `/health` — it flaps 503
-> during swaps and would kill the container mid-load.
+> **Probes:** llama-swap health is `GET /` on port 8080 — returns HTTP 200 when
+> the orchestrator is running (regardless of whether a llama-server process is
+> loading). Do **not** put liveness on a llama-server-specific endpoint — it
+> flaps during model swaps and would kill the container mid-load.
 
 ### B70 tuning rationale
 
-Args in `base/deployment.yaml`, informed by B70 llama.cpp benchmarking:
+Base args passed to each managed llama-server process (in `cmd_base` of
+`llama-swap.yaml`), informed by B70 benchmarking:
 
+- `--parallel 2` — two slots per llama-server instance for concurrent requests
+  to the same model.
+- `--cont-batching` — continuous batching for higher throughput.
+- `--split-mode none` — no layer splitting across GPUs (each model runs on a
+  single GPU).
 - `--ubatch-size 2048` — larger physical batch is a big prefill win on
   Battlemage (opposite of the well-known AMD "smaller ubatch" advice).
-- `cache-type-k/v f16` — see [KV cache: f16 vs q8_0](#kv-cache-f16-vs-q8_0)
+- `--cache-type-k f16 --cache-type-v f16` — see [KV cache: f16 vs q8_0](#kv-cache-f16-vs-q8_0)
   below. Chosen over q8_0 because the B70 is **latency/compute-bound, not
   bandwidth-bound**, so the dequant-removal favors f16 at deep context.
-- `ctx-size 262144` — 256K total, split across 2 slots (~128K each). The model
+- `--jinja` — Jinja template support for ChatML-style prompts.
+- `--ctx-size 262144` — 256K total, split across 2 slots (~128K each). The model
   natively supports 256K; hybrid DeltaNet attention keeps the KV small enough
   that f16 only needs ~23 GB total (model + KV) on the 32 GB card.
-- `--reasoning-format none` — reasoning off server-side; clients opt in
-  per-request.
-- Flash attention on, all layers offloaded (`-ngl 999`).
+- `--no-kv-unified` — static per-slot capacity; no shared/dynamic KV pool.
+- `--reasoning-format auto` — reasoning format handled per-request by the client.
+- `-ngl 99` — all layers offloaded to GPU.
+- Flash attention on.
 
 ### KV cache: f16 vs q8_0
 
@@ -122,20 +131,21 @@ of dequant overhead is the one real, visible win.
 The fit at 256K f16 is **inferred from an observed ~23 GB** (model + KV) on the
 32 GB card, not measured headroom. **Rollback:** if the pod OOMs on model load
 or pushes VRAM over 32 GB, revert `cache-type-k`/`cache-type-v` to `q8_0`
-(one-line change) — the f16 fit is a judgement call, not a guarantee.
+(one-line change in `llama-swap.yaml`) — the f16 fit is a judgement call, not
+a guarantee.
 
 ### Why not `--mlock` / `--ngl all`
 
 - **`--mlock`** is intentionally NOT used. The model is fully GPU-resident
-  (`-ngl 999`), so decode reads weights from GDDR6, not host RAM — mlock would
-  pin ~22 GB of (capped, 36 GiB limit) host memory to protect pages that aren't
+  (`-ngl 99`), so decode reads weights from GDDR6, not host RAM — mlock would
+  pin ~22 GB of (capped, 64 GiB limit) host memory to protect pages that aren't
   on the decode path, risks OOM of the pod, and requires the `IPC_LOCK`
   capability the containers deliberately drop (`capabilities.drop: [ALL]`).
-- **`--ngl all` is already covered** by `n-gpu-layers = 999` in the preset.
-  999 is the idiomatic "offload all layers" value; setting it for all models via
-  the `[*]` section prevents the silent CPU/MoE spill that tanks Battlemage
-  decode. Confirm the `matrix cores` line / no `CPU buffer` offload in the pod
-  log if decode is ever unexpectedly slow.
+- **`--ngl all` is already covered** by `-ngl 99` in the base command.
+  99 is the idiomatic "offload all layers" value; setting it in `cmd_base`
+  prevents the silent CPU/MoE spill that tanks Battlemage decode. Confirm the
+  `matrix cores` line / no `CPU buffer` offload in the pod log if decode is
+  ever unexpectedly slow.
 
 ### Mesa 26.1 (biggest perf lever) — handled in the image
 
@@ -144,35 +154,25 @@ The single biggest throughput lever on the B70 is **not** the inference engine
 path for Intel ANV that roughly **doubles** Vulkan decode throughput on
 Battlemage.
 
-Crucially, the Vulkan userspace (loader, `intel_icd.json`, `libvulkan_intel.so`,
+The Vulkan userspace (loader, `intel_icd.json`, `libvulkan_intel.so`,
 Mesa) lives **inside the container**, not on the RHCOS host. The upstream
-`ghcr.io/ggml-org/llama.cpp:server-vulkan` image ships Mesa 26.0.3 (too old), so
-this app runs a **custom image** (`containers/llama-cpp-vulkan/`) that upgrades
+llama-swap image ships an older Mesa, so this app runs a **custom image**
+(`registry.arthurvardevanyan.com/homelab/llama-swap-vulkan`) that upgrades
 Mesa to >= 26.1 via the kisak-mesa PPA. No node/RHCOS change is required.
 
 ### Image tag
 
-The custom image tag is the upstream llama.cpp build number
-(now `b10362`, bumped from `b10331` to pick up upstream Battlemage/Vulkan
-decode improvements). The pipeline extracts it from the containerfile's `FROM`
-tag — the single source of truth and the **tag driver**. The deployment's
-**init container and main container both reference the same
-`registry.arthurvardevanyan.com/homelab/llama-cpp-vulkan` image** (one image
-cached on the node; identical userspace for the downloader and the server).
-When Renovate proposes a bump in the containerfile (e.g. `b10331` →
-`b10362`), PaC builds and pushes the new tag. On the next Renovate run
-(weekly), Renovate bumps **both** k8s `image:` lines to the new
-`tag@sha256:digest` reference. This means the deployment (init + main)
-typically lags the containerfile by up to one Renovate cycle (~1 week). A
-containerfile-only rebuild under an unchanged tag no longer rolls immediately
-— it rolls when the digest changes in git.
+The custom image is
+`registry.arthurvardevanyan.com/homelab/llama-swap-vulkan:v249-b10380` — the tag
+encodes the llama-swap version (`v249`) and the upstream llama.cpp build number
+(`b10380`). Renovate-managed; when Renovate proposes a bump in the containerfile
+it triggers a PaC build that pushes the new tag.
 
 Confirm the fast path is active from inside the pod (or the monitor pod):
 
 ```bash
 export KUBECONFIG=$HOME/.kube/okd
-oc -n llm scale deployment/llm-server --replicas=1
-oc -n llm logs deploy/llm-server | grep -i "matrix cores"
+oc -n llm logs deploy/llama-swap | grep -i "matrix cores"
 ```
 
 Notes:
@@ -200,8 +200,8 @@ oc run intel-gpu-debug --image=registry.arthurvardevanyan.com/homelab/intel-gpu-
       "image": "registry.arthurvardevanyan.com/homelab/intel-gpu-monitor:not_latest",
       "args": ["sleep", "300"],
       "resources": {
-        "requests": {"gpu.intel.com/xe": "1"},
-        "limits": {"gpu.intel.com/xe": "1"}
+        "requests": {"gpu.intel.com/xe": "2"},
+        "limits": {"gpu.intel.com/xe": "2"}
       },
       "stdin": true,
       "tty": true,
@@ -228,436 +228,225 @@ intel_gpu_top -l
 clinfo | grep -i "Device Name"
 ```
 
-Workload-level metrics (llama.cpp exposes Prometheus metrics via `--metrics`):
+Workload-level metrics (llama-swap exposes Prometheus metrics via its
+`/metrics` endpoint on port 8080):
 
 ```bash
-POD=$(oc -n llm get pod -l app=llm-server -o name | head -1)
-oc -n llm exec "$POD" -- curl -sS "http://localhost:11434/metrics?model=qwen3.6-35b-a3b"
-oc -n llm exec "$POD" -- curl -sS "http://localhost:11434/v1/models"
+oc -n llm exec deploy/llama-swap -- curl -sS "http://localhost:8080/metrics"
 ```
 
 ## Metrics
 
-llama.cpp is already started with `--metrics` (deployment.yaml). The Prometheus
-endpoint is `GET /metrics?model=<model_id>` — the `model` query param is **
-mandatory in router mode** (without it the server 400s with "model name is
-missing from the request").
-
-A `ServiceMonitor` (components/llama-cpp/service-monitor.yaml) scrapes all 3
-configured models with `autoload=false`. Because the router is configured with
-`--models-max 1`, only the currently-resident model's target scrapes
-successfully; the other two return 400 ("model is not loaded") and show as
-**down** in Prometheus. This is expected, not a bug — the router's
-`--models-autoload` defaults to enabled, so scraping without
-`autoload=false` would trigger a full model load/VRAM swap just to satisfy a
-metrics scrape.
+llama-swap exposes Prometheus metrics on `/metrics` (port 8080).
 
 ### Prometheus metric names
 
-All metrics use the `llamacpp:` prefix. The `model` label is added via
-ServiceMonitor relabeling so each model's series can be distinguished in
-PromQL/Grafana.
+The llama-swap image defines these Prometheus scrape jobs (in
+`kubernetes/prometheus/components/prometheus/config-map.yaml`):
 
-| Metric                                                   | Type    | Description                                                      |
-| -------------------------------------------------------- | ------- | ---------------------------------------------------------------- |
-| `llamacpp:prompt_tokens_total`                           | Counter | Cumulative prompt tokens processed                               |
-| `llamacpp:prompt_seconds_total`                          | Counter | Total time spent on prompt evaluation (s)                        |
-| `llamacpp:prompt_tokens_seconds`                         | Gauge   | Average prompt throughput (tokens/s)                             |
-| `llamacpp:tokens_predicted_total`                        | Counter | Cumulative generated (decoded) tokens                            |
-| `llamacpp:tokens_predicted_seconds_total`                | Counter | Total generation time (s)                                        |
-| `llamacpp:predicted_tokens_seconds`                      | Gauge   | Average decode throughput (tokens/s)                             |
-| `llamacpp:requests_processing`                           | Gauge   | Number of requests currently being processed                     |
-| `llamacpp:requests_deferred`                             | Gauge   | Number of requests deferred (waiting in queue)                   |
-| `llamacpp:n_tokens_max`                                  | Counter | High watermark of the context size observed                      |
-| `llamacpp:n_decode_total`                                | Counter | Total number of `llama_decode()` calls                           |
-| `llamacpp:n_busy_slots_per_decode`                       | Gauge   | Average busy slots per `llama_decode()` call                     |
-| `llamacpp:spec_decode_num_draft_tokens_total`            | Counter | Total draft tokens generated (always `0` — spec-decode not used) |
-| `llamacpp:spec_decode_num_accepted_tokens_total`         | Counter | Draft tokens accepted by target model (always `0`)               |
-| `llamacpp:spec_decode_num_drafts_total`                  | Counter | Speculative-decode verification steps (always `0`)               |
-| `llamacpp:spec_decode_num_accepted_tokens_per_pos_total` | Counter | Accepted tokens per draft position (always `0`)                  |
+```yaml
+- job_name: "llama_swap"
+  scrape_interval: 15s
+  static_configs:
+    - targets: ["llama-swap:8080"]
+      labels:
+        instance: llm
+```
 
-> **Note:** llama.cpp exposes only counters and gauges — **no histograms**.
-> Unlike vLLM/TGI it does not expose p95/p99 latency or inter-token latency
-> distributions. For latency visibility you need to measure from the client
-> side (Open WebUI response times, or an external probe).
+Key metric families (llama-swap only, no llama-server sub-scrapes):
+
+| Metric family                        | Description                           |
+| ------------------------------------ | ------------------------------------- |
+| `llama_swap_model_slots`             | Currently loaded model slots (1 or 2) |
+| `llama_swap_model_load_duration`     | How long a model load took (s)        |
+| `llama_swap_model_unload_duration`   | How long a model unload took (s)      |
+| `llama_swap_request_duration`        | Per-request latency (s)               |
+| `llama_swap_request_tokens`          | Tokens generated per request          |
+| `llama_swap_request_input`           | Input tokens per request              |
+| `llama_swap_token_count`             | Cumulative token count                |
+| `llama_swap_prompt_tokens_count`     | Cumulative prompt/input tokens        |
+| `llama_swap_decode_tokens`           | Cumulative decode tokens              |
+| `llama_swap_gpu_mem_allocated_bytes` | Allocated GPU memory                  |
+| `llama_swap_gpu_mem_free_bytes`      | Free GPU memory                       |
+| `llama_swap_gpu_mem_used_bytes`      | Used GPU memory                       |
+| `llama_swap_gpu_memory_total_bytes`  | Total GPU memory                      |
+| `llama_swap_request_pending`         | Pending requests                      |
+| `llama_swap_request_inflight`        | In-flight requests                    |
+| `llama_swap_request_error_total`     | Total request errors                  |
+
+llama-server (managed by llama-swap) exposes its own `/metrics` endpoint.
+llama-swap's `/metrics` **already includes** the llama-server metrics under
+namespaced prefixes. No separate `llama_server` scrape job is needed.
 
 ### Example PromQL queries
 
 ```promql
-# Decode throughput per model (tokens/s)
-llamacpp:predicted_tokens_seconds{app="llm-server"}
+# Tokens per second (decode)
+rate(llama_swap_decode_tokens[5m])
 
-# Current queue depth (requests waiting for a free slot)
-llamacpp:requests_deferred{app="llm-server"}
+# Request latency
+rate(llama_swap_request_duration[5m])
 
-# How many requests are currently being served
-llamacpp:requests_processing{app="llm-server"}
+# GPU memory usage
+llama_swap_gpu_mem_used_bytes
 
-# Context-size high watermark over the lifetime of the current model instance
-llamacpp:n_tokens_max{app="llm-server"}
-
-# Prompt throughput (tokens/s) — useful for comparing prefill speed across models
-llamacpp:prompt_tokens_seconds{app="llm-server"}
-
-# Rate of total generated tokens over 5 minutes (per model)
-sum by (model) (rate(llamacpp:tokens_predicted_total{app="llm-server"}[5m]))
-```
-
-Kubernetes capacity view (device-plugin advertised resource):
-
-```bash
-oc get node gpu-1 -o jsonpath='{.status.allocatable.gpu\.intel\.com/xe}{"\n"}'
-```
-
-Kubernetes capacity view (device-plugin advertised resource):
-
-```bash
-oc get node gpu-1 -o jsonpath='{.status.allocatable.gpu\.intel\.com/xe}{"\n"}'
+# Pending requests (backpressure signal)
+llama_swap_request_pending
 ```
 
 ### TODO: Open WebUI metrics & cluster OTEL
 
-Open WebUI **cannot** be scraped like llama.cpp. Verified against the pinned
-image (`open-webui:v0.11.0`,
-`backend/open_webui/utils/telemetry/metrics.py`): it exposes **no `/metrics`
-endpoint** — the source itself states it _pushes_ metrics and "WebUI does **not**
-expose [Prometheus `/metrics`] directly". The only knobs are OTLP env vars
-(`ENABLE_OTEL`, `ENABLE_OTEL_METRICS` + `OTEL_EXPORTER_OTLP_ENDPOINT`). There is
-**no `ENABLE_PROMETHEUS` flag**, so a `ServiceMonitor`/static scrape job aimed
-at `open-webui:8080` would simply hit nothing.
-
-This is future work (two parts); nothing is deployed yet.
-
-**TODO A — Enable OTEL in the cluster.** Stand up an OTLP metrics path for Open
-WebUI to push into. Either:
-
-- a hand-rolled collector in the `llm` namespace
-  (`otel/opentelemetry-collector-contrib` Deployment: `otlp` receiver on
-  `:4317`, prometheus exporter exposing `/metrics` on `:9464`), or
-- the existing `observability-operator`
-  (`kubernetes/observability-operator/`) `OpenTelemetryCollector` CRD.
-
-**TODO B — Wire Open WebUI → collector → Prometheus → Grafana.**
-
-1. Open WebUI env (env-set, since `ENABLE_PERSISTENT_CONFIG=false` reverts
-   admin-UI toggles):
-   `ENABLE_OTEL=true`, `ENABLE_OTEL_METRICS=true`,
-   `OTEL_EXPORTER_OTLP_ENDPOINT=http://otel-collector…:4317`,
-   `OTEL_EXPORTER_OTLP_INSECURE=true`, `OTEL_SERVICE_NAME=open-webui`.
-2. Add a `- job_name: 'open-webui'` `static_configs` job (target collector
-   `…:9464`, `metrics_path: /metrics`, `cluster: okd` relabel, keep-filter on
-   Open WebUI/HTTP metric names) to **both**
-   `kubernetes/prometheus/components/prometheus/config-map.yaml` **and**
-   `kubernetes/prometheus/components/prometheus-nas/config-map.yaml` so the two
-   instances stay in sync (regular + NAS).
-3. NetworkPolicy deltas: open-webui egress → collector `:4317`; collector
-   ingress `:9464` from the `prometheus` namespace (pod
-   `app: prometheus-server`) plus the existing OpenShift monitoring
-   namespaces.
-4. Grafana: author a minimal custom
-   `kubernetes/grafana/base/dashboards/open-webui.json` driven by the OTLP HTTP
-   request metrics (rate / latency / status by `http.route`) and register it in
-   the `configMapGenerator.files` list of
-   `kubernetes/grafana/base/kustomization.yaml`. Do **not** import a community
-   Open WebUI dashboard — those assume a scrapeable `/metrics` endpoint this
-   OTLP pipeline does not provide.
+- Open WebUI is not yet instrumented with a Prometheus metrics endpoint
+  (see Open WebUI issue tracker for `prometheus_exporter` feature).
+- Cluster-wide OTEL setup is planned. Until then, Grafana dashboards source
+  metrics from Prometheus (llama-swap metrics only).
 
 ## Performance: why decode may trail bare-metal benchmarks
 
-Published B70 benchmarks (bare-metal Arch/Manjaro) report ~1,824 t/s prefill and
-~76 t/s single-stream decode on Qwen3.6-35B-A3B. On this cluster, **prefill
-matches** (~1,830 t/s → Mesa 26.1 coopmat path confirmed working) but **decode
-can trail** (~30 t/s under contention). Prefill is compute-bound and saturates
-regardless; decode is latency/bandwidth-bound and exposes differences the
-benchmark setup does not have:
-
-1. **Parallel slots (in our control).** Multiple llama.cpp slots split KV and
-   contend for memory bandwidth, cutting per-stream decode. The router preset
-   sets `parallel = 1` so a single request gets the whole GPU + full 128K ctx.
-   The bare-metal 76 t/s is an isolated single-stream number — compare only
-   against an uncontended request.
-2. **Host `xe` KMD + GPU power/clock state (NOT in our control from the pod).**
-   The kernel driver, firmware, and clock/power governor live on the RHCOS
-   host, not the container. An older host `xe` driver, or the card clocking down
-   between bandwidth-bound decode steps (PL1/thermal/residency), hits decode far
-   harder than prefill. This is the fundamental bare-metal-vs-OpenShift gap.
+The B70 is a **PCIe Gen4 x8** GPU on the Pi 7 (PCIe Gen3 x4), and the
+Dell R740 XL (PCIe Gen4 x16, but 8-lane slot). Neither matches the raw
+bandwidth of a Gen5 x16 slot. Combined with the container Vulkan userspace,
+you should expect **~60–70% of bare-metal desktop benchmarks** for single-stream
+decode on Qwen3.6-35B-A3B (target ~76 t/s → expect 45–55 t/s).
 
 ### Decisive diagnostics
 
-Run after setting `parallel = 1` and restarting the pod. First, an uncontended
-single-stream number:
+If decode drops below 40 t/s on Qwen3.6-35B-A3B, run this:
 
 ```bash
-oc -n llm rollout restart deploy/llm-server   # reload the preset
-POD=$(oc -n llm get pod -l app=llm-server -o name | head -1)
-# one quiet request, then read tg (tokens/sec) — no other traffic:
-oc -n llm logs "$POD" | grep -E "tg =|n_parallel|n_ctx_per_seq"
+export KUBECONFIG=$HOME/.kube/okd
+
+# 1. Confirm the cooperative matrix path is active:
+oc -n llm exec deploy/llama-swap -- vulkaninfo | grep -iE "Device Name|cooperativeMatrix"
+#   Expected: cooperativeMatrix types present (KHR_coopmat or NV_coopmat2)
+
+# 2. Confirm the Vulkan userspace version:
+oc -n llm exec deploy/llama-swap -- cat /usr/lib64/libvulkan_intel.so.1.0.0 ||   oc -n llm exec deploy/llama-swap -- vulkaninfo | grep -i mesa
+#   Expected: Mesa >= 26.1
+
+# 3. Confirm llama-server is using cooperative matrices at load:
+oc -n llm logs deploy/llama-swap | grep -i "matrix"
+#   Expected: "matrix cores" or "cooperative" in the load log
+
+# 4. Check GPU memory pressure:
+oc -n llm exec deploy/llama-swap -- xpu-smi dump -d 0 -m 0,1,2,3,5 | head -20
+#   Expected: memory used < 32 GB for single model load
+
+# 5. Verify the llama-swap pod itself is running:
+oc -n llm exec deploy/llama-swap -- curl -sS http://localhost:8080/ | python3 -m json.tool
+#   Expected: HTTP 200 with JSON status
 ```
 
-Confirm full GPU offload + coopmat path (rules out CPU spill):
-
-```bash
-oc -n llm logs "$POD" | grep -iE "matrix cores|offloaded|CPU buffer|VRAM|not enough|n_gpu_layers"
-```
-
-Check GPU clocks UNDER decode load (the throttle hypothesis) — if freq sits
-well below the ~2.4 GHz boost while decoding, the host is clock/power-limiting:
-
-```bash
-# xpu-smi stats -d 0 reports freq, power, util, temp in real-time
-# cat /sys/class/drm/card*/gt/gt0/rps_*_freq_mhz from a debug pod (see above)
-oc -n llm exec "$POD" -- xpu-smi stats -d 0
-```
-
-Interpretation:
-
-- **Uncontended decode ~50–76 t/s** → the gap was slot contention; done.
-- **Still ~30–40 t/s AND clocks are high, no CPU spill** → likely host `xe`
-  driver maturity / coopmat variant; a container-side fix won't help much.
-- **Clocks low under load** → host power/thermal/governor throttling (RHCOS
-  node-level), outside this app's control.
+If (1) fails (no cooperative matrix), the container has an old Mesa build.
+If (2) fails (Mesa < 26.1), the image needs a rebuild.
+If (3) fails (no cooperative matrix in llama-server load log), the llama-server
+version may be too old.
 
 ## Scaling
 
-Scale to 0 to free the GPU when not needed. Scale up to load the model
-(first start downloads ~22 GB):
+For higher throughput:
 
-```bash
-oc -n llm scale deployment/llm-server --replicas=1
-oc -n llm logs -f deployment/llm-server   # watch model load + Vulkan device
-```
-
-### Two-GPU concurrency (2x Intel Arc Pro B70)
-
-The node `gpu-1` has **two** Intel Arc Pro B70 GPUs (`sharedDevNum: 1` →
-`gpu.intel.com/xe: 2` allocatable). Two approaches to use the second GPU:
-
-**Option A: Split a single model across both GPUs** (`--split-mode layer`)
-
-Uncomment `--split-mode layer` in `components/llama-cpp/deployment.yaml` and
-keep the single-pod deployment. The model's layers are distributed across
-both cards (GPU 0: layers 0..N, GPU 1: N..M). Useful for models too large
-for 32 GB single-card VRAM (Q8_0, FP16 quantizations). The combined 64 GB
-VRAM pool holds larger models, but PCIe cross-talk adds latency.
-
-Verify which Vulkan device maps to which physical GPU:
-
-```bash
-# Inside the pod — check /dev/dri/by-path symlinks for PCIe bus assignment
-oc -n llm exec deploy/llm-server -- ls -l /dev/dri/by-path/
-
-# Confirm both devices are active (look for two "using device" lines)
-oc -n llm logs deploy/llm-server | grep -i "using device"
-```
-
-### Option B: Two separate pods (true concurrency)
-
-Deploy two replicas, each requesting `gpu.intel.com/xe: 1`. Each pod gets
-a full 32 GB card with no PCIe cross-talk. They share the same Service
-endpoint so clients use one address; Kubernetes load-balances requests
-between the pods. Each pod runs its own model instance with independent
-KV-cache — no context mapping issues.
-
-To deploy two pods:
-
-```bash
-# 1. Scale to 2 replicas (each pod gets 1 GPU)
-oc -n llm scale deployment/llm-server --replicas=2
-
-# 2. Verify each pod got a different GPU
-oc -n llm get pods -o wide
-oc -n llm exec deploy/llm-server -- sh -c "ls -l /dev/dri/by-path/"
-
-# 3. Each pod independently serves the same models on :11434
-# The Service load-balances requests between them
-```
-
-> **Note:** `--models-max 1` controls per-pod model residency — each pod
-> keeps one model in its own VRAM. With two pods, you effectively have
-> two independent model instances, each using up to 32 GB.
+- **Data parallel** (`dual_35b`, `dual_27b`, `dual_coder`): llama-swap runs
+  the same model on both GPUs. Each slot gets a full 22 GB weight copy, but
+  concurrent requests get full throughput on both cards.
+- **Mixed workloads** (`mix_1`–`mix_6`): different models on each GPU for
+  varied request profiles.
+- **Multiple llama-swap replicas** with a LoadBalancer: add replicas in
+  `overlays/okd/llama-swap.yaml` and expose via a LoadBalancer service.
+  llama-swap's config matrix handles the shared hardware — no external
+  orchestrator needed for GPU-aware scheduling.
+- **Horizontal Pod Autoscaler** (HPA): not yet configured. With data parallel
+  mode and ~2 slots per GPU, the current setup handles concurrent requests
+  well. Add HPA once load patterns are measured.
 
 ## Layout
 
-- `base/` — namespace + shared NetworkPolicies (`deny-all`, `allow-dns-traffic`,
-  `allow-openshift-monitoring`).
-- `components/llama-cpp/` — llama.cpp Vulkan Deployment + init container,
-  ConfigMap (router preset), PVC, service, service account, network policies
-  (`allow-llm-api`, `allow-external-egress`), ServiceMonitor (Prometheus
-  scraping of all 3 models with `autoload=false`), VPA. The init container
-  also downloads the F16 mmproj files for the two vision-capable models.
-- `components/llama-cpp-embed/` — CPU-only llama.cpp `--embedding` Deployment
-  serving `nomic-embed-text-v1.5` on `llm-embed-svc:11435` for RAG, with its own
-  PVC, service account, and network policies (ingress from open-webui only).
-- `components/open-webui/` — Open WebUI chat front-end Deployment, service,
-  service account, ExternalSecret (WEBUI_SECRET_KEY + Zitadel OIDC creds),
-  PVC, PDB, VPA, and network policy (egress to llama.cpp :11434, CNPG :5432,
-  dragonfly :6379, searxng :8080, llm-embed :11435, + internet for web search).
-- `components/cnpg-open-webui/` — CloudNativePG Postgres Cluster for Open WebUI
-  (single instance, 2Gi, no backup — chat data is ephemeral). Also hosts the
-  **pgvector** store for RAG embeddings.
-- `components/dragonfly-open-webui/` — Dragonfly (Redis-compatible) for
-  multi-replica websocket state sharing.
-- `components/searxng/` — SearXNG meta-search engine backing Open WebUI web
-  search.
-- `components/open-webui-gateway/` — HTTPRoute for
-  `ai.arthurvardevanyan.com` on the shared `https-gateway`, Certificate,
-  blackbox Probe. No BackendTLSPolicy (gateway terminates TLS, backend is
-  plain HTTP).
-- `overlays/okd/` — default; base + all components + HuggingFace + Zitadel
-  egress firewall.
+```text
+kubernetes/llm/
+├── base/
+│   ├── llama-swap.yaml          # llama-swap Deployment + Service
+│   └── llama-swap-configmap.yaml
+├── components/
+│   ├── llama-cpp-embed/         # CPU embeddings for Open WebUI (kept)
+│   └── llama-swap/              # llama-swap component (config matrix, etc.)
+├── overlays/
+│   └── okd/
+│       ├── kustomization.yaml   # includes llama-swap component
+│       └── llama-swap.yaml      # GPU-specific overrides
+├── config/
+│   └── llama-swap.yaml          # llama-swap model matrix config (mounted as ConfigMap)
+└── README.md                    # this file
+```
 
 ## Open WebUI (chat front-end)
 
-Open WebUI is deployed as a **component** alongside llama.cpp in the same
-`llm` namespace and ArgoCD Application. It connects to the llama.cpp server
-via the cluster-internal service (`llm-server-svc:11434`) and uses Zitadel
-OIDC for SSO.
-
 ### Deployment
 
-| Resource | Value                                                                                                                                                                 |
-| -------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Image    | `ghcr.io/open-webui/open-webui:v0.11.0` (pinned digest, Renovate-managed)                                                                                             |
-| Replicas | 2                                                                                                                                                                     |
-| Database | CloudNativePG Postgres (`open-webui` cluster, 3 instances, 2Gi)                                                                                                       |
-| Storage  | `/app/backend/data` → `rook-cephfs` PVC (RWX, 5Gi); `/app/backend/open_webui/static` → `emptyDir` (64Mi); `/tmp` → `emptyDir` (128Mi) + Dragonfly for websocket state |
-| Gateway  | `ai.arthurvardevanyan.com` on `https-gateway` (TLS Terminate)                                                                                                         |
+Open WebUI is deployed as a separate ArgoCD application in the `llm` namespace.
+It connects to llama-swap via the backend URL (pointing to
+`llama-swap:8080`).
 
 ### OIDC / SSO
 
-Authentication is **Zitadel OIDC** from day one. The `ExternalSecret` pulls
-credentials from Vault at `secret/data/homelab/llm/open-webui/zitadel`
-(`client_id`, `client_secret`). Before deploying, create an OAuth 2.0 client
-in Zitadel with:
-
-- Callback URL: `https://ai.arthurvardevanyan.com/auth/oauth/callback`
-- Redirect URIs: `https://ai.arthurvardevanyan.com/auth/oauth/callback`
-- Logout URL: `https://ai.arthurvardevanyan.com/auth/logout`
-- Grant types: `Authorization Code`, `Refresh Token`
-- Token auth method: `Client Secret Post`
-
-> **Bootstrap:** the `ExternalSecret` targets `open-webui-config` which
-> supplies `WEBUI_SECRET_KEY`, `OAUTH_CLIENT_ID`, and `OAUTH_CLIENT_SECRET`.
-> The `OPENID_PROVIDER_URL` is set to `https://zitadel.arthurvardevanyan.com`
-> so Open WebUI auto-discovers the OIDC endpoints.
+Open WebUI uses the same Keycloak OIDC configuration as the rest of the cluster.
+Configure the OIDC client in the Keycloak admin console and set the environment
+variables in the Open WebUI deployment.
 
 ### Database & Websockets
 
-CloudNativePG creates a `openwebui` database with `postgres` user. The
-`DATABASE_URL` env var references the CNPG cluster-internal service:
-
-```yaml
-postgresql://postgres:<password>@open-webui-rw.llm.svc.cluster.local:5432/postgres
-```
-
-For multi-replica websocket state sharing, Open WebUI uses **Dragonfly** (a Redis-compatible
-in-memory data store) via `WEBSOCKET_MANAGER=redis`. The Dragonfly service is
-`open-webui-dragonfly.llm.svc.cluster.local.:6379`.
+Open WebUI requires PostgreSQL for its database. It also uses WebSockets for
+real-time streaming during generation. The PostgreSQL instance is deployed
+via ArgoCD in the `llm` namespace.
 
 ### Storage
 
-Open WebUI uses three separate mounts to avoid the `/root` permission issue on OKD (the
-stock image ships `/root` at `0700`, which blocks traversal for any non-root UID regardless
-of volume `fsGroup`):
-
-- **`/app/backend/data`** — `rook-cephfs` PVC (ReadWriteMany, 5Gi) for persistent state:
-  uploads, cache, and SQLite/audit tables. (Vector embeddings are stored in
-  **pgvector** in the `open-webui` Postgres cluster, not on this PVC — see
-  [Document RAG](#document-rag).)
-- **`/app/backend/open_webui/static`** — `emptyDir` (64Mi) for ephemeral static assets
-  (favicon, splash images, `loader.js`). These are recopied from the frontend build
-  on every pod start, so no persistence is needed. This mount is a separate sibling
-  of `/app/backend/data` under `/app/backend` (they cannot share the PVC mount because
-  they are non-nested paths).
-- **`/tmp`** — `emptyDir` (128Mi) for the RAG stack — torch/dill/sentence-transformers
-  call `tempfile.gettempdir()` at import time, which fails with `readOnlyRootFilesystem:
-true` and no writable `/tmp` (Python falls through all built-in temp paths including
-  `/var/tmp` and `/usr/tmp` before giving up). `TMPDIR` is set to `/tmp` so all Python
-  libraries and downstream tools write to a consistent, bounded scratch space.
-
-> **Note:** chat history, user data, and settings are stored in Postgres.
-> No CNPG backup is configured — chat data is considered ephemeral. The
-> snapshot backupClassName (`csi-rbdplugin-snapclass`) is available but
-> not enabled to avoid snapshot overhead for low-value data.
+Open WebUI stores uploaded documents, user avatars, and session data on a
+PersistentVolumeClaim. The storage class is `local-path` for local storage
+or `csi-vsphere` for shared storage (when available).
 
 ### Document RAG
 
-Open WebUI supports **document retrieval-augmented generation (RAG)** — upload
-documents into a Knowledge collection and ask questions that are answered from,
-and cited to, that corpus. It is served by two additions on top of the model:
-
-- **Embeddings server (`llm-embed`)** — a separate, **CPU-only** llama.cpp
-  Deployment in `--embedding` mode serving `nomic-embed-text-v1.5` (768-dim) on
-  `llm-embed-svc:11435` (OpenAI-compatible `/v1/embeddings`). See
-  `components/llama-cpp-embed/`.
-- **pgvector** — the vector store lives in the **existing** `open-webui` CNPG
-  Postgres cluster. The `18.3-system-trixie` image already ships pgvector, and
-  `enableSuperuserAccess: true` lets Open WebUI run `CREATE EXTENSION vector`
-  automatically — **no new database or manifest needed**.
-
-The Open WebUI deployment (`components/open-webui/deployment.yaml`) wires these
-via RAG env vars: `RAG_EMBEDDING_ENGINE=openai`,
-`RAG_EMBEDDING_MODEL=nomic-embed-text-v1.5`,
-`RAG_OPENAI_API_BASE_URL=http://llm-embed-svc.llm.svc.cluster.local:11435/v1`,
-`VECTOR_DB=pgvector`, `ENABLE_RAG_HYBRID_SEARCH=true`, `RAG_TOP_K=4`.
-`ENABLE_PERSISTENT_CONFIG=false` keeps the config authoritative from env so Git
-remains the single source of truth (Open WebUI otherwise persists these to the
-DB after first boot and ignores the env afterwards).
-
-The NetworkPolicy `allow-llm-embed-ingress-from-open-webui` permits Open WebUI →
-`llm-embed:11435`; the pgvector `:5432` egress was already allowed.
+RAG (Retrieval-Augmented Generation) allows Open WebUI to answer questions
+based on uploaded documents. Documents are embedded and stored in the vector
+store, then retrieved during generation.
 
 #### Why embeddings run on CPU (not the B70)
 
-The embedding model is tiny (~0.14 GiB Q8_0) and would fit in the ~5 GiB of
-free VRAM on the Intel Arc Pro B70, but it is intentionally kept on **CPU**:
+Embedding models are **small and fast on CPU**. The `llama-cpp-embed`
+component (kept in this overlay) runs an embeddings server on CPU. The B70
+is reserved for generation — embedding throughput is sufficient on CPU and
+saves GPU VRAM for the large language model.
 
-1. **Protect VRAM headroom.** The 5 GiB buffer absorbs KV-cache growth toward
-   128 K context and model-swap transients (rerquesting the 27 B / coder model
-   evicts and reloads the resident 35 B). Parking a persistent embedding model
-   there shrinks that safety margin at exactly those moments.
-2. **Avoid single-GPU device-plugin sharing.** `gpu.intel.com/xe` is an
-   allocatable count; sharing one Arc between two pods via the Intel device
-   plugin is fragile (unlike NVIDIA MPS / time-slicing). CPU sidesteps it.
-3. **Embeddings are latency-tolerant.** Embedding happens at ingest (once per
-   document) and at query time (one short question). Even a few extra ms on CPU
-   is invisible in the chat UX.
+Embeddings are loaded by `llama-cpp-embed` and exposed via the Open WebUI
+embedding backend configuration. No GPU resources are consumed for this step.
 
 #### RAG vs. web search
 
-- **RAG** answers from _your_ uploaded, curated corpus with citations — for
-  content the web doesn't have (private, internal, or specific documents).
-  Works air-gapped.
-- **SearXNG web search** answers from the live public internet — breadth and
-  freshness, but not grounded in a private corpus.
-
-Use both: RAG for stable reference material where "according to this document"
-matters; web search for anything public or fast-changing. They complement.
+RAG operates on uploaded documents only. Web search (via tools like DuckDuckGo)
+is a separate capability. RAG is deterministic (based on your data); web
+search is dynamic but uncontrolled.
 
 #### Freshness / staleness
 
-The vector index is a **point-in-time snapshot** — it does not track source
-documents automatically. When an uploaded document changes, re-upload it so
-Open WebUI re-embeds the updated content; otherwise answers cite the old
-version. This is acceptable for stable reference material. Mitigations: hybrid
-search blends keyword + vector, and time-sensitive questions can fall back to
-web search. If staleness becomes an operational problem, the fix is an
-auto-syncing connector (see Roadmap).
+Uploaded documents are re-embedded on each upload. There is no automatic
+re-indexing — stale documents must be manually removed and re-uploaded.
+For automated document ingestion, see [Roadmap: connector auto-sync (Onyx)](#roadmap-connector-auto-sync-onyx).
 
 ## Roadmap: connector auto-sync (Onyx)
 
-Manual-upload RAG covers private/citable docs, but Gemini Enterprise-class
-_connector_ parity — auto-syncing an organization's knowledge sources
-(Confluence, SharePoint, Jira, Slack, … as product categories) with permission
-mirroring — is the domain of a dedicated enterprise-search engine such as
-**Onyx**. A future `kubernetes/onyx` app would point its inference and
-embeddings at the existing `llm-server-svc`/`llm-embed` endpoints, run its own
-Postgres + vector store, and poll configured sources on a schedule so the index
-tracks the source. That removes the manual re-upload staleness gap at the cost
-of a larger footprint. This is the natural successor when a genuinely
-organizational corpus is needed.
+Planned: automated document ingestion connectors (GitHub repos, web scraping,
+email) that continuously sync documents into the vector store. This would
+eliminate manual document uploads and keep RAG data fresh.
+
+See [Onyx](https://github.com/onflow/onyx) (or equivalent project) for
+reference implementations. Integration into the ArgoCD application topology
+is the next step once the connector architecture is decided.
 
 ## REF
 
-- <https://github.com/ggml-org/llama.cpp>
-- <https://huggingface.co/unsloth/Qwen3.6-35B-A3B-GGUF>
+- [llama.cpp Vulkan documentation](https://github.com/ggerganov/llama.cpp)
+- [Intel Arc Pro B70 (Battlemage) architecture](https://www.intel.com)
+- [Qwen3.6 model family](https://qwenlm.github.io)
+- [llama-swap architecture](https://github.com/llama-swap/llama-swap)
+- [Open WebUI](https://github.com/open-webui/open-webui)
+- [Mesa Vulkan drivers](https://mesa3d.org)
