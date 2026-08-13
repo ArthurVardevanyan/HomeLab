@@ -45,8 +45,10 @@ spec:
       containers:
         # llama-swap orchestrator: manages llama-server process lifecycles,
         # GPU binding, and VRAM lifecycle via configuration-driven matrix.
-        # renovate: datasource=docker depName=ghcr.io/mostlygeek/llama-swap versioning=loose
-        - image: ghcr.io/mostlygeek/llama-swap:v249-vulkan-b10380-non-root@sha256:48c2a9a04a06ffbcb3823e8213682a56dc1fbf48cacd763fb30029cf46c41333
+        # Custom image = upstream llama-swap + Mesa >= 26.1 (kisak PPA) for
+        # the Battlemage cooperative-matrix path (~2x decode vs stock Mesa 26.0).
+        # renovate: datasource=docker depName=registry.arthurvardevanyan.com/homelab/llama-swap-vulkan versioning=loose
+        - image: registry.arthurvardevanyan.com/homelab/llama-swap-vulkan:v249-b10380@sha256:PLACEHOLDER
           imagePullPolicy: IfNotPresent
           name: llama-swap
           args: ["--config", "/etc/llama-swap/llama-swap.yaml"]
@@ -58,6 +60,9 @@ spec:
             # Model / HF cache lives on the PVC.
             - name: LLAMA_CACHE
               value: /cache
+            # Mesa shader cache to a writable path under the arbitrary UID.
+            - name: MESA_SHADER_CACHE_DIR
+              value: /tmp
           securityContext:
             runAsNonRoot: true
             readOnlyRootFilesystem: false
