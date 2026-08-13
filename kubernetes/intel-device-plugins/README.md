@@ -4,8 +4,78 @@ Installs the Intel Device Plugins Operator (via OLM) and a `GpuDevicePlugin`
 custom resource that advertises the Intel Arc Pro B70 (Battlemage / Xe2, `xe`
 KMD) to the kubelet as the `gpu.intel.com/xe` extended resource.
 
+## Hardware Setup
+
+Hardware configuration for the two PCIe devices on gpu-1 (Ryzen 5800X / MSI
+B550 MPG). The kernel args and MCP are in
+`okd/okd-configuration/components/gpu-kernel-args/mc.yaml` and
+`okd/okd-configuration/components/gpu-kernel-args/mcp.yaml`.
+
+### GPU — 2x Intel Arc Pro B70
+
+**PCIe & IOMMU boot lockups** (`AMD-Vi: Completion-Wait loop timed out`). The
+AMD IOMMU driver on the Ryzen platform struggles to negotiate page tables for
+two modern discrete GPUs simultaneously, causing an infinite loop during POST.
+Solved by adding `iommu=pt` to kernel arguments via the
+`99-gpu-kernel-args` MachineConfig, which forces pass-through mode for
+non-isolated host PCI devices.
+
+**Motherboard BIOS optimizations** — without these the board will deadlock
+during PCIe lane negotiation:
+
+- **Data Link Feature Exchange (DLFE):** Disabled — prevents dynamic PCIe link
+  negotiation deadlocks during early boot.
+- **PCIe Slot Speeds:** Hardcoded — Top Slot (`PCI_E1`, direct CPU lanes) to
+  **Gen4**, Bottom Slot (B550 chipset) to **Gen3** — stops auto-negotiation
+  failures.
+
+**Kernel args** in `okd/okd-configuration/components/gpu-kernel-args/mc.yaml`:
+
+```yaml
+kernelArguments:
+  - iommu=pt
+  - pcie_aspm=force
+  - pcie_aspm.policy=powersave
+```
+
+Applied to the `gpu` MachineConfigPool (`mc.yaml` in the same component).
+
+**Verify PCIe link status:**
+
+```bash
+# Check negotiated link speed and width (LnkSta = Link Status)
+sudo lspci -s 06:00.0 -vv | grep -i "LnkSta:"
+sudo lspci -s 2d:00.0 -vv | grep -i "LnkSta:"
+
+# Check control register settings (LnkCtl = Link Control)
+sudo lspci -s 06:00.0 -vv | grep -i "LnkCtl:"
+sudo lspci -s 2d:00.0 -vv | grep -i "LnkCtl:"
+```
+
+### NIC — Realtek (enp42s0)
+
+The Realtek NIC on `enp42s0` had auto-negotiation instability with the
+switch, dropping to 100M/1G or failing link entirely. The workaround
+applied was to force 2.5G on the switch side, but ASPM (Active State Power
+Management) interference from the host kernel args can contribute to
+negotiation loops on some Realtek controllers.
+
+The existing `pcie_aspm=force` in the
+`99-gpu-kernel-args` MachineConfig may need to be tuned (e.g. `pcie_aspm=off`
+or `pcie_aspm.policy=powersave` only) if NIC link instability persists. Any
+NIC-specific kernel args would go in the same MachineConfig.
+
+**Verify negotiated speed and EEE (Energy Efficient Ethernet):**
+
+```bash
+ethtool enp42s0
+```
+
 ## Table of Contents
 
+- [Hardware Setup](#hardware-setup)
+  - [GPU — 2x Intel Arc Pro B70](#gpu--2x-intel-arc-pro-b70)
+  - [NIC — Realtek (enp42s0)](#nic--realtek-enp42s0)
 - [Scheduling](#scheduling)
 - [GPU Monitoring (nvidia-smi equivalents)](#gpu-monitoring-nvidia-smi-equivalents)
   - [From the host / a node debug shell](#from-the-host--a-node-debug-shell)

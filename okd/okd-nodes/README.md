@@ -77,6 +77,25 @@ If you need to test scale-up/scale-down on a live node, always check `spec.onlin
 oc get bmh <node> -n openshift-machine-api -o jsonpath='online={.spec.online}{"\n"}poweredOn={.status.poweredOn}{"\n"}consumerRef={.spec.consumerRef}{"\n"}'
 ```
 
+## Node Maintenance & Troubleshooting
+
+### XFS Filesystem Corruption Repair (`nvme0n1p4`)
+
+**The Issue:** Force-power-cycling during initial GPU lockup troubleshooting caused metadata corruption on `/dev/nvme0n1p4` (the stateful `/var` partition on CentOS Stream CoreOS). This resulted in I/O hangs, causing Kubelet and CRI-O to crash and flap the node status (`Ready` $\leftrightarrow$ `NotReady`).
+
+**The Fix:**
+
+1. Interrupt dracut initramfs bootloader with `rd.break=pre-mount` to bypass OSTree's read-write overlayfs layer.
+2. Execute offline repair on the unmounted block device:
+
+```bash
+xfs_repair -L /dev/nvme0n1p4
+```
+
+### NIC Speed Negotiation
+
+Power save mode settings cause the NIC to negotiate at FE speeds. The workaround was forcing the switch-side port to 2.5G (auto-negotiation was unreliable; this is what worked).
+
 ## Adding a New Node
 
 1. Create `okd/okd-nodes/base/bmh/<hostname>.yaml` — BMH + ExternalSecret, following `worker-3.yaml`

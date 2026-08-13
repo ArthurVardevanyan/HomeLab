@@ -215,9 +215,6 @@ graph TD
 > [kubernetes/intel-device-plugins](kubernetes/intel-device-plugins/README.md) for
 > `xpu-smi`/`intel_gpu_top` monitoring commands (the `nvidia-smi` equivalents), and
 > [kubernetes/llm](kubernetes/llm/README.md) for B70 LLM tuning.
->
-> For GPU hardware setup notes (PCIe/IOMMU BIOS tuning, XFS repair), see
-> [okd/README-GPU.md](okd/README-GPU.md).
 
 ## Network Architecture
 
