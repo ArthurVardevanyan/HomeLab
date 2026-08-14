@@ -3,7 +3,7 @@
 # Intel Arc Pro B70 (Battlemage / Xe2) diagnostics container with hardware-
 # accelerated FFmpeg (VA-API + oneVPL/QSV) for encoding/transcoding.
 #
-# FFmpeg: jellyfin-ffmpeg7 (Noble-native deb, self-contained libva+iHD)
+# FFmpeg: jellyfin-ffmpeg7 (Resolute-native deb, self-contained libva+iHD)
 # Drivers: kobuk-team/intel-graphics PPA (official Intel compute runtime channel)
 
 ## Builder: download jellyfin-ffmpeg7 deb (self-contained, version-pinned)
@@ -16,7 +16,7 @@ RUN set -eux; \
   apt-get update; \
   apt-get install -y --no-install-recommends ca-certificates curl; \
   curl -fSL -o /tmp/jellyfin-ffmpeg.deb \
-  "https://repo.jellyfin.org/files/ffmpeg/ubuntu/latest-7.x/amd64/jellyfin-ffmpeg7_${JELLYFIN_FFMPEG_VERSION}-noble_amd64.deb"; \
+  "https://repo.jellyfin.org/files/ffmpeg/ubuntu/latest-7.x/amd64/jellyfin-ffmpeg7_${JELLYFIN_FFMPEG_VERSION}-resolute_amd64.deb"; \
   # Verify the deb contains the expected ffmpeg binary
   dpkg-deb -c /tmp/jellyfin-ffmpeg.deb | grep -q '/usr/lib/jellyfin-ffmpeg/ffmpeg'; \
   rm -rf /var/lib/apt/lists/*
