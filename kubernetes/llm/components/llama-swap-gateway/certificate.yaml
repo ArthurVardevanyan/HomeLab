@@ -1,0 +1,23 @@
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: llama-swap-cert
+  namespace: llm
+  annotations:
+    argocd.argoproj.io/sync-options: ServerSideApply=true,SkipDryRunOnMissingResource=true
+  labels:
+    app.kubernetes.io/instance: llama-swap
+spec:
+  secretName: llama-swap-cert
+  duration: 1080h # 45d
+  renewBeforePercentage: 50
+  privateKey:
+    rotationPolicy: Always
+    algorithm: ECDSA
+    size: 256
+  dnsNames:
+    - "llama.arthurvardevanyan.com"
+  issuerRef:
+    kind: ClusterIssuer
+    name: letsencrypt

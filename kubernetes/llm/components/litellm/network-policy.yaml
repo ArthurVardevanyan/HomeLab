@@ -1,0 +1,162 @@
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-litellm-ingress
+  namespace: llm
+  annotations:
+    argocd.argoproj.io/sync-wave: "0"
+spec:
+  podSelector:
+    matchLabels:
+      app: litellm
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: openshift-ingress
+      ports:
+        - protocol: TCP
+          port: 4000
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: llm
+          podSelector: {}
+      ports:
+        - protocol: TCP
+          port: 4000
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-litellm-egress-to-llama-swap
+  namespace: llm
+  annotations:
+    argocd.argoproj.io/sync-wave: "0"
+spec:
+  podSelector:
+    matchLabels:
+      app: litellm
+  policyTypes:
+    - Egress
+  egress:
+    - to:
+        - podSelector:
+            matchLabels:
+              app: llama-swap
+      ports:
+        - protocol: TCP
+          port: 8080
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-internet-egress-litellm
+  namespace: llm
+  annotations:
+    argocd.argoproj.io/sync-wave: "0"
+  labels:
+    app: litellm
+spec:
+  policyTypes:
+    - Egress
+  podSelector:
+    matchLabels:
+      app: litellm
+  egress:
+    - to:
+        - ipBlock:
+            cidr: 0.0.0.0/0
+            except:
+              - 10.0.0.0/8
+              - 172.16.0.0/12
+              - 192.168.0.0/16
+        - ipBlock:
+            cidr: 10.101.10.5/32
+        - ipBlock:
+            cidr: 10.101.10.7/32
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-to-openshift-ingress-litellm
+  namespace: llm
+  annotations:
+    argocd.argoproj.io/sync-wave: "0"
+  labels:
+    app: litellm
+spec:
+  policyTypes:
+    - Egress
+  podSelector:
+    matchLabels:
+      app: litellm
+  egress:
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              network.openshift.io/policy-group: ingress
+      ports:
+        - protocol: TCP
+          port: 443
+        - protocol: TCP
+          port: 80
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-litellm-egress-dns
+  namespace: llm
+  annotations:
+    argocd.argoproj.io/sync-wave: "0"
+  labels:
+    app: litellm
+spec:
+  policyTypes:
+    - Egress
+  podSelector:
+    matchLabels:
+      app: litellm
+  egress:
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: openshift-dns
+          podSelector:
+            matchLabels:
+              dns.operator.openshift.io/daemonset-dns: default
+      ports:
+        - protocol: UDP
+          port: 5353
+        - protocol: TCP
+          port: 5353
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-litellm-egress-to-cnpg
+  namespace: llm
+  annotations:
+    argocd.argoproj.io/sync-wave: "0"
+  labels:
+    app: litellm
+spec:
+  policyTypes:
+    - Egress
+  podSelector:
+    matchLabels:
+      app: litellm
+  egress:
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: llm
+          podSelector:
+            matchLabels:
+              cnpg.io/cluster: litellm
+      ports:
+        - protocol: TCP
+          port: 5432

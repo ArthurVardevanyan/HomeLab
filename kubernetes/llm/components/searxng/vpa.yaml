@@ -1,0 +1,30 @@
+---
+apiVersion: autoscaling.k8s.io/v1
+kind: VerticalPodAutoscaler
+metadata:
+  name: searxng
+  namespace: llm
+  annotations:
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+  labels:
+    app.kubernetes.io/name: searxng
+spec:
+  targetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: searxng
+  updatePolicy:
+    updateMode: "InPlaceOrRecreate"
+  resourcePolicy:
+    containerPolicies:
+      - containerName: searxng
+        minAllowed:
+          cpu: 50m
+          memory: 128Mi
+        maxAllowed:
+          cpu: "500m"
+          memory: 512Mi
+        controlledResources:
+          - cpu
+          - memory
+        controlledValues: RequestsOnly

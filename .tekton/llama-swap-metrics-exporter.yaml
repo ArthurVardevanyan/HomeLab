@@ -1,0 +1,138 @@
+---
+apiVersion: tekton.dev/v1
+kind: PipelineRun
+metadata:
+  name: llama-swap-metrics-exporter
+  annotations:
+    pipelinesascode.tekton.dev/max-keep-runs: "1"
+    pipelinesascode.tekton.dev/on-cel-expression: |
+      event == "pull_request" && target_branch == "main" && ("containers/llama-swap-metrics-exporter/***".pathChanged() || ".tekton/llama-swap-metrics-exporter.yaml".pathChanged())
+    pipelinesascode.tekton.dev/target-namespace: "homelab"
+    pipelinesascode.tekton.dev/task: "https://raw.githubusercontent.com/ArthurVardevanyan/HomeLab/main/tekton/tasks/git-clone/0.9.1/git-clone.yaml"
+    pipelinesascode.tekton.dev/task-1: "tekton/base/clair-action/clair-action-task.yaml"
+spec:
+  params:
+    - name: git-url
+      value: "{{ repo_url }}"
+    - name: git-commit
+      value: "{{ revision }}"
+
+  pipelineSpec:
+    params:
+      - name: git-url
+        description: Repository URL to clone from.
+        type: string
+      - name: git-commit
+        type: string
+
+    results:
+      - description: The common vulnerabilities and exposures (CVE) result
+        name: SCAN_OUTPUT
+        value: $(tasks.clair-action.results.SCAN_OUTPUT)
+        type: string
+
+    workspaces:
+      - name: data
+      - name: git_auth_secret
+
+    tasks:
+      - name: git-clone
+        taskRef:
+          name: git-clone
+          kind: Task
+        params:
+          - name: url
+            value: $(params.git-url)
+          - name: revision
+            value: $(params.git-commit)
+        workspaces:
+          - name: output
+            workspace: data
+          - name: basic-auth
+            workspace: git_auth_secret
+
+      - name: ko-build
+        runAfter:
+          - git-clone
+        workspaces:
+          - name: output
+            workspace: data
+        taskSpec:
+          results:
+            - name: IMAGE
+          workspaces:
+            - name: output
+          steps:
+            - name: ko-build
+              image: registry.arthurvardevanyan.com/homelab/toolbox:not_latest
+              workingDir: $(workspaces.output.path)/containers/llama-swap-metrics-exporter
+              computeResources:
+                requests:
+                  cpu: 250m
+                  memory: 256Mi
+                  ephemeral-storage: 1Gi
+                limits:
+                  cpu: "2"
+                  memory: 2Gi
+                  ephemeral-storage: 2Gi
+              securityContext:
+                privileged: false
+                readOnlyRootFilesystem: true
+                runAsNonRoot: true
+                allowPrivilegeEscalation: false
+                seccompProfile:
+                  type: RuntimeDefault
+                capabilities:
+                  drop:
+                    - ALL
+              env:
+                - name: WORKSPACE_RESULTS_PATH
+                  value: $(results.IMAGE.path)
+              volumeMounts:
+                - name: go
+                  mountPath: /go
+                - name: tmp
+                  mountPath: /tmp
+              script: |
+                #!/bin/bash
+                set -o errexit
+                set -o nounset
+                set -o pipefail
+
+                TAG="$(date -u +%Y.%m.%d.%H%M%S)"
+                make ko-build-pipeline TAG="${TAG}"
+          volumes:
+            - name: go
+              emptyDir: {}
+            - name: tmp
+              emptyDir: {}
+
+      - name: clair-action
+        runAfter:
+          - ko-build
+        taskRef:
+          name: clair-action
+          kind: Task
+        params:
+          - name: IMAGE
+            value: $(tasks.ko-build.results.IMAGE)
+
+  taskRunTemplate:
+    serviceAccountName: pipeline
+  workspaces:
+    - name: data
+      volumeClaimTemplate:
+        apiVersion: v1
+        kind: PersistentVolumeClaim
+        metadata:
+          name: data
+        spec:
+          accessModes:
+            - ReadWriteOnce
+          resources:
+            requests:
+              storage: "100Mi"
+          storageClassName: rook-ceph-block-ci
+    - name: git_auth_secret
+      secret:
+        secretName: "{{ git_auth_secret }}"

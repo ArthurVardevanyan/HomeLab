@@ -1,0 +1,21 @@
+---
+apiVersion: machineconfiguration.openshift.io/v1
+kind: MachineConfigPool
+metadata:
+  name: infra
+  labels:
+    app.kubernetes.io/instance: okd-configuration
+    pools.operator.machineconfiguration.openshift.io/infra: ""
+spec:
+  machineConfigSelector:
+    matchExpressions:
+      - key: machineconfiguration.openshift.io/role
+        operator: In
+        values:
+          - worker
+          - infra
+  maxUnavailable: 1
+  nodeSelector:
+    matchLabels:
+      node-role.kubernetes.io/infra: ""
+  paused: false

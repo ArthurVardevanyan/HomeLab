@@ -1,0 +1,40 @@
+---
+# llama-swap Prometheus metrics scraping.
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: llama-swap
+  namespace: llm
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+  labels:
+    app.kubernetes.io/name: llama-swap
+spec:
+  selector:
+    matchLabels:
+      app: llama-swap
+  endpoints:
+    - port: http
+      path: /metrics
+      interval: 30s
+    - port: metrics
+      path: /metrics
+      interval: 30s
+      metricRelabelings:
+        - sourceLabels: [__name__]
+          regex: "go_(.+)"
+          action: drop
+        - sourceLabels: [__name__]
+          regex: "process_(.+)"
+          action: drop
+        # llama-swap runs as a single-replica Deployment (no HPA/multi-replica
+        # scaling yet — see kubernetes/llm/README.md Scaling section).
+        # Kubernetes SD injects pod/instance labels that change on every pod
+        # restart, which otherwise fragments each model's series into a new
+        # lineage per restart (visible in Grafana as duplicate legend entries
+        # for the same model until the old series ages out). Dropping them
+        # keeps the model= label (plus job/namespace/service) as the stable
+        # series identity across restarts. Revisit if this ever scales to
+        # multiple replicas — you'd want pod/instance back to distinguish them.
+        - regex: "pod|instance"
+          action: labeldrop

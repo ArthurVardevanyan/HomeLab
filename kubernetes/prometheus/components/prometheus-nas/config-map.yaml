@@ -436,128 +436,42 @@ data:
         - target_label: cluster
           replacement: microshift
 
-      # intel-gpu exporter (Intel XPU Manager v2 Exporter) — xpumd DaemonSet
-      # in intel-device-plugins-operator namespace. Metrics prefix: hw_
-      # (frequency, temperature, power, energy, memory usage, memory/io bytes,
-      # GPU IO bytes, memory bandwidth utilization ratio, GPU info).
-      - job_name: 'intel-gpu'
-        scrape_interval: 120s
+      # Combined LLM-stack metrics:
+      # - intel-gpu: xpumd DaemonSet (Intel XPU Manager v2 Exporter) in the
+      #   intel-device-plugins-operator namespace. Metrics prefix: hw_
+      #   (frequency, temperature, power, energy, memory usage, memory/io
+      #   bytes, GPU IO bytes, memory bandwidth utilization ratio, GPU info).
+      #   Confirmed xpumd exposes only hw_* (no go_*/process_* noise), so the
+      #   shared drop-based filter below is equivalent to the previous
+      #   keep-only-hw_ allowlist.
+      # - litellm: LiteLLM gateway.
+      # - llama-swap: proxy metrics (port 8080) and llamacpp:* per-model
+      #   metrics via the metrics-exporter sidecar (port 9100), which
+      #   discovers active models on llama-swap's /running API and scrapes
+      #   each dynamically-assigned llama-server port.
+      - job_name: 'llm'
+        scrape_interval: 30s
         scrape_timeout: 10s
 
         static_configs:
           - targets:
             - xpumd.intel-device-plugins-operator.svc.cluster.local:8080
-        metrics_path: "/metrics"
-
-        metric_relabel_configs:
-        # Keep only intel-gpu metrics
-        - source_labels: [ __name__ ]
-          regex: 'hw_.+'
-          action: keep
-        # Drop unwanted node-exporter metrics that leak in via ServiceMonitor
-        - source_labels: [ __name__ ]
-          regex: 'go_(.+)'
-          action: drop
-        - source_labels: [ __name__ ]
-          regex: 'process_(.+)'
-          action: drop
-
-        relabel_configs:
-        - target_label: cluster
-          replacement: okd
-        # Node label from pod node name
-        - source_labels: [ __meta_kubernetes_pod_node_name ]
-          target_label: node
-
-      # llama.cpp metrics (router mode — metrics endpoint requires ?model=<id>&autoload=false)
-      # Only the currently-resident model scrapes successfully (200); the other
-      # two return 400 ("model is not loaded") and show as down in Prometheus.
-      # This is expected, not a bug. See kubernetes/llm/README.md:178-185.
-      # Metrics prefix: llamacpp: (counters + gauges, no histograms).
-
-      - job_name: 'llama-cpp-qwen3.6-35b-a3b'
-        scrape_interval: 30s
-        scrape_timeout: 10s
-
-        static_configs:
+            labels:
+              app: intel-gpu
           - targets:
-            - llm-server-svc.llm.svc.cluster.local:11434
-        metrics_path: "/metrics"
-        params:
-          model:
-            - qwen3.6-35b-a3b
-          autoload:
-            - "false"
-
-        metric_relabel_configs:
-        # Keep only llama.cpp metrics
-        - source_labels: [ __name__ ]
-          regex: 'llamacpp:.+'
-          action: keep
-        - source_labels: [ __name__ ]
-          regex: 'go_(.+)'
-          action: drop
-        - source_labels: [ __name__ ]
-          regex: 'process_(.+)'
-          action: drop
-
-        relabel_configs:
-        - target_label: cluster
-          replacement: okd
-        - target_label: model
-          replacement: qwen3.6-35b-a3b
-
-      - job_name: 'llama-cpp-qwen3.6-27b'
-        scrape_interval: 30s
-        scrape_timeout: 10s
-
-        static_configs:
+            - litellm-svc.llm.svc.cluster.local:4000
+            labels:
+              app: litellm
           - targets:
-            - llm-server-svc.llm.svc.cluster.local:11434
-        metrics_path: "/metrics"
-        params:
-          model:
-            - qwen3.6-27b
-          autoload:
-            - "false"
-
-        metric_relabel_configs:
-        # Keep only llama.cpp metrics
-        - source_labels: [ __name__ ]
-          regex: 'llamacpp:.+'
-          action: keep
-        - source_labels: [ __name__ ]
-          regex: 'go_(.+)'
-          action: drop
-        - source_labels: [ __name__ ]
-          regex: 'process_(.+)'
-          action: drop
-
-        relabel_configs:
-        - target_label: cluster
-          replacement: okd
-        - target_label: model
-          replacement: qwen3.6-27b
-
-      - job_name: 'llama-cpp-qwen3.6-coder-30b-a3b'
-        scrape_interval: 30s
-        scrape_timeout: 10s
-
-        static_configs:
+            - llama-swap-svc.llm.svc.cluster.local:8080
+            labels:
+              app: llama-swap
           - targets:
-            - llm-server-svc.llm.svc.cluster.local:11434
-        metrics_path: "/metrics"
-        params:
-          model:
-            - qwen3.6-coder-30b-a3b
-          autoload:
-            - "false"
+            - llama-swap-svc.llm.svc.cluster.local:9100
+            labels:
+              app: llama-swap
 
         metric_relabel_configs:
-        # Keep only llama.cpp metrics
-        - source_labels: [ __name__ ]
-          regex: 'llamacpp:.+'
-          action: keep
         - source_labels: [ __name__ ]
           regex: 'go_(.+)'
           action: drop
@@ -568,5 +482,3 @@ data:
         relabel_configs:
         - target_label: cluster
           replacement: okd
-        - target_label: model
-          replacement: qwen3.6-coder-30b-a3b

@@ -1,0 +1,220 @@
+---
+kind: CronJob
+apiVersion: batch/v1
+metadata:
+  name: model-downloader
+  namespace: llm
+  labels:
+    app: model-downloader
+  annotations:
+    gitops-ci.k8s.io/exempt-image-checksum: "registry.arthurvardevanyan.com/homelab/toolbox:not_latest"
+spec:
+  schedule: "0 3 * * 0"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 2
+  failedJobsHistoryLimit: 2
+  suspend: true
+  startingDeadlineSeconds: 300
+  jobTemplate:
+    spec:
+      backoffLimit: 0
+      activeDeadlineSeconds: 7200
+      completionMode: NonIndexed
+      template:
+        metadata:
+          labels:
+            app: model-downloader
+        spec:
+          restartPolicy: Never
+          schedulerName: default-scheduler
+          automountServiceAccountToken: false
+          enableServiceLinks: false
+          dnsPolicy: ClusterFirst
+          securityContext:
+            runAsNonRoot: true
+            seccompProfile:
+              type: RuntimeDefault
+          tolerations:
+            - key: node-role.kubernetes.io/gpu
+              operator: Exists
+              effect: NoSchedule
+          nodeSelector:
+            feature.node.kubernetes.io/custom-intel.xe.gpu: "true"
+          containers:
+            - name: model-downloader
+              image: registry.arthurvardevanyan.com/homelab/toolbox:not_latest
+              imagePullPolicy: IfNotPresent
+              command:
+                - /bin/sh
+                - "-c"
+                - |
+                  set -o errexit
+                  set -o nounset
+                  set -o pipefail
+
+                  MODELS=/data/models
+                  CHECKS="${MODELS}/.checks"
+                  mkdir -p "${MODELS}"
+
+                  PARALLEL=32
+                  CHUNK_BYTES=134217728  # 128 MiB
+                  FORCE_REVALIDATE="${FORCE_REVALIDATE:-false}"
+
+                  # Local fast path: skip a model whose file already exists on
+                  # the PVC. Pure `test -s` stat, no network.
+                  dl_local_check() {
+                    local name="$1"
+                    [ "${FORCE_REVALIDATE}" = "true" ] && return 1
+                    local out="${MODELS}/${name}"
+                    if [ -s "${out}" ]; then
+                      echo "Present: ${name}"
+                      echo "SKIP" > "${CHECKS}/${name}.status"
+                      return 0
+                    fi
+                    return 1
+                  }
+
+                  # Resolve CDN redirect + content-length, write outcome to a
+                  # small status file so the real download phase can reuse it.
+                  dl_check() {
+                    local name="$1" src="$2"
+                    local headers cdn size
+                    headers=$(curl -sIL --connect-timeout 10 --max-time 30 "${src}")
+                    cdn=$(printf '%s' "${headers}" | awk 'BEGIN{IGNORECASE=1}/^location:/{u=$2}END{print u}' | tr -d '\r')
+                    [ -z "${cdn}" ] && cdn="${src}"
+                    size=$(printf '%s' "${headers}" | awk 'BEGIN{IGNORECASE=1}/^content-length:/{c=$2}END{print c}' | tr -d '\r')
+                    printf 'DOWNLOAD\t%s\t%s\n' "${size}" "${cdn}" > "${CHECKS}/${name}.status"
+                  }
+
+                  # Download a single model using chunked byte-range parallelism.
+                  dl_fetch() {
+                    local name="$1" size="$2" cdn="$3"
+                    local out="${MODELS}/${name}"
+                    echo "Downloading ${name} (${size} bytes) with ${PARALLEL} parallel connections ..."
+                    local work="${MODELS}/.dl-${name}"
+                    rm -rf "${work}"; mkdir -p "${work}"
+
+                    local sem="${work}/.sem"
+                    mkfifo "${sem}"; exec 9<>"${sem}"; rm -f "${sem}"
+                    local i=0
+                    while [ "${i}" -lt "${PARALLEL}" ]; do printf 'x\n' >&9; i=$((i + 1)); done
+
+                    local offset=0 idx=0
+                    while [ "${offset}" -lt "${size}" ]; do
+                      if [ -f "${work}/.failed" ]; then
+                        echo "ERROR: aborting remaining chunks for ${name}" >&2
+                        break
+                      fi
+                      local end=$((offset + CHUNK_BYTES - 1))
+                      [ "${end}" -ge "${size}" ] && end=$((size - 1))
+                      local part=$(printf '%s/part.%08d' "${work}" "${idx}")
+                      read -r _ <&9
+                      (
+                        if ! curl -fsS --connect-timeout 10 --max-time 180 --retry 5 --retry-delay 5 \
+                          -r "${offset}-${end}" -o "${part}" "${cdn}"; then
+                          touch "${work}/.failed"
+                        fi
+                        printf 'x\n' >&9
+                      ) &
+                      offset=$((end + 1)); idx=$((idx + 1))
+                    done
+                    wait
+                    exec 9>&-
+
+                    if [ -f "${work}/.failed" ]; then
+                      echo "ERROR: one or more chunks failed for ${name}" >&2
+                      rm -rf "${work}"
+                      return 1
+                    fi
+
+                    echo "Reassembling ${idx} chunks ..."
+                    : > "${out}.part"
+                    i=0
+                    while [ "${i}" -lt "${idx}" ]; do
+                      cat "$(printf '%s/part.%08d' "${work}" "${i}")" >> "${out}.part"
+                      i=$((i + 1))
+                    done
+                    rm -rf "${work}"
+
+                    local got
+                    got=$(wc -c < "${out}.part" | tr -d ' ')
+                    if [ "${got}" != "${size}" ]; then
+                      echo "ERROR: ${name} size mismatch (got ${got}, want ${size})" >&2
+                      rm -f "${out}.part"; return 1
+                    fi
+                    mv "${out}.part" "${out}"
+                    echo "Done (${got} bytes): ${name}"
+                  }
+
+                  # Phase 0 -- local existence fast path (no network).
+                  rm -rf "${CHECKS}"; mkdir -p "${CHECKS}"
+                  dl_local_check "Qwen3.6-35B-A3B-UD-Q4_K_M.gguf" || true
+                  dl_local_check "Qwen3.6-35B-A3B-mmproj-F16.gguf" || true
+                  dl_local_check "Qwen3.6-27B-Q4_K_M.gguf" || true
+                  dl_local_check "Qwen3.6-27B-mmproj-F16.gguf" || true
+                  dl_local_check "Qwen3-Coder-30B-A3B-Instruct-Q4_0.gguf" || true
+
+                  # Phase 1 -- resolve remaining redirects concurrently.
+                  [ -f "${CHECKS}/Qwen3.6-35B-A3B-UD-Q4_K_M.gguf.status" ] || \
+                    dl_check "Qwen3.6-35B-A3B-UD-Q4_K_M.gguf" \
+                    "https://huggingface.co/unsloth/Qwen3.6-35B-A3B-GGUF/resolve/main/Qwen3.6-35B-A3B-UD-Q4_K_M.gguf?download=true" &
+                  [ -f "${CHECKS}/Qwen3.6-35B-A3B-mmproj-F16.gguf.status" ] || \
+                    dl_check "Qwen3.6-35B-A3B-mmproj-F16.gguf" \
+                    "https://huggingface.co/unsloth/Qwen3.6-35B-A3B-GGUF/resolve/main/mmproj-F16.gguf?download=true" &
+                  [ -f "${CHECKS}/Qwen3.6-27B-Q4_K_M.gguf.status" ] || \
+                    dl_check "Qwen3.6-27B-Q4_K_M.gguf" \
+                    "https://huggingface.co/unsloth/Qwen3.6-27B-GGUF/resolve/main/Qwen3.6-27B-Q4_K_M.gguf?download=true" &
+                  [ -f "${CHECKS}/Qwen3.6-27B-mmproj-F16.gguf.status" ] || \
+                    dl_check "Qwen3.6-27B-mmproj-F16.gguf" \
+                    "https://huggingface.co/unsloth/Qwen3.6-27B-GGUF/resolve/main/mmproj-F16.gguf?download=true" &
+                  [ -f "${CHECKS}/Qwen3-Coder-30B-A3B-Instruct-Q4_0.gguf.status" ] || \
+                    dl_check "Qwen3-Coder-30B-A3B-Instruct-Q4_0.gguf" \
+                    "https://huggingface.co/unsloth/Qwen3-Coder-30B-A3B-Instruct-GGUF/resolve/main/Qwen3-Coder-30B-A3B-Instruct-Q4_0.gguf?download=true" &
+                  wait
+
+                  # Phase 2 -- sequential download for any flagged models.
+                  for name in \
+                    "Qwen3.6-35B-A3B-UD-Q4_K_M.gguf" \
+                    "Qwen3.6-35B-A3B-mmproj-F16.gguf" \
+                    "Qwen3.6-27B-Q4_K_M.gguf" \
+                    "Qwen3.6-27B-mmproj-F16.gguf" \
+                    "Qwen3-Coder-30B-A3B-Instruct-Q4_0.gguf"; do
+                    status=$(cat "${CHECKS}/${name}.status")
+                    case "${status}" in
+                      SKIP) echo "Skipping ${name} (up to date)"; continue ;;
+                      DOWNLOAD*) size=$(printf '%s' "${status}" | cut -f2); cdn=$(printf '%s' "${status}" | cut -f3); dl_fetch "${name}" "${size}" "${cdn}" ;;
+                      *) echo "ERROR: unknown status for ${name}: ${status}" >&2; exit 1 ;;
+                    esac
+                  done
+
+                  rm -rf "${CHECKS}"
+              resources:
+                requests:
+                  cpu: "500m"
+                  memory: 12Gi
+                  ephemeral-storage: "256Mi"
+                limits:
+                  cpu: "2"
+                  memory: 48Gi
+                  ephemeral-storage: "1Gi"
+              env:
+                - name: FORCE_REVALIDATE
+                  value: "false"
+              securityContext:
+                runAsNonRoot: true
+                readOnlyRootFilesystem: false
+                allowPrivilegeEscalation: false
+                privileged: false
+                seccompProfile:
+                  type: RuntimeDefault
+                capabilities:
+                  drop:
+                    - ALL
+              volumeMounts:
+                - name: model-storage
+                  mountPath: /data
+          volumes:
+            - name: model-storage
+              persistentVolumeClaim:
+                claimName: llm-models
+      ttlSecondsAfterFinished: 3600

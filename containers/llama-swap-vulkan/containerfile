@@ -1,0 +1,38 @@
+# llama-swap orchestrator for the Intel Arc Pro B70 (Battlemage / Xe2), with
+# Mesa upgraded to >= 26.1 via the kisak-mesa PPA.
+#
+# Why: the upstream ghcr.io/mostlygeek/llama-swap:v249-vulkan-b10380 image ships
+# Mesa 26.0.3. Mesa 26.1 enabled the Intel ANV cooperative-matrix Vulkan path
+# that roughly DOUBLES llama.cpp decode throughput on Battlemage. Mesa is a
+# runtime driver, so we only swap it in on top of the prebuilt binary (no
+# recompilation).
+#
+# renovate: datasource=docker depName=ghcr.io/mostlygeek/llama-swap versioning=loose
+FROM ghcr.io/mostlygeek/llama-swap:v249-vulkan-b10380-non-root@sha256:48c2a9a04a06ffbcb3823e8213682a56dc1fbf48cacd763fb30029cf46c41333
+
+LABEL org.opencontainers.image.source="https://github.com/ArthurVardevanyan/HomeLab" \
+  org.opencontainers.image.title="llama-swap Vulkan (Mesa 26.1, Battlemage)" \
+  org.opencontainers.image.description="llama-swap orchestrator with Mesa >= 26.1 (kisak-mesa) for Intel Arc Pro B70 coopmat path" \
+  org.opencontainers.image.licenses="MIT"
+
+USER 0
+
+RUN set -eux; \
+  apt-get update; \
+  apt-get install -y --no-install-recommends \
+  ca-certificates gnupg software-properties-common; \
+  # kisak-mesa PPA -> Mesa 26.1.x (Battlemage coopmat path)
+  add-apt-repository -y ppa:kisak/kisak-mesa; \
+  apt-get update; \
+  apt-get install -y --only-upgrade \
+  mesa-vulkan-drivers libvulkan1 libgbm1 libgl1-mesa-dri libglx-mesa0; \
+  # trim build-only tooling
+  apt-get purge -y software-properties-common; \
+  apt-get autoremove -y; \
+  rm -rf /var/lib/apt/lists/* /tmp/*
+
+# Arbitrary-UID friendliness on OpenShift: Mesa shader cache + HF cache to /tmp.
+ENV XDG_CACHE_HOME=/tmp \
+  MESA_SHADER_CACHE_DIR=/tmp
+
+# Keep the upstream entrypoint (Go binary).

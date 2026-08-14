@@ -15,7 +15,7 @@ spec:
   revisionHistoryLimit: 0
   progressDeadlineSeconds: 1800
   strategy:
-    type: Recreate
+    type: RollingUpdate
   selector:
     matchLabels:
       app.kubernetes.io/name: llm-embed
@@ -37,15 +37,8 @@ spec:
         - key: node-role.kubernetes.io/gpu
           operator: Exists
           effect: NoSchedule
-      # Soft preference for the GPU node; never blocks scheduling elsewhere.
-      affinity:
-        nodeAffinity:
-          preferredDuringSchedulingIgnoredDuringExecution:
-            - weight: 100
-              preference:
-                matchExpressions:
-                  - key: node-role.kubernetes.io/gpu
-                    operator: Exists
+      nodeSelector:
+        node-role.kubernetes.io/gpu: ""
       initContainers:
         # renovate: datasource=docker depName=ghcr.io/ggml-org/llama.cpp versioning=regex:^server-vulkan-b(?<major>\d+)$
         - image: ghcr.io/ggml-org/llama.cpp:server-vulkan-b10331@sha256:3dd0b326c9899cf7a7491fcafba51f54e78af2a366953769a847dd380a732420

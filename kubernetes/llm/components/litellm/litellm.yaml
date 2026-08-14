@@ -1,0 +1,103 @@
+---
+model_list:
+  # --- Public Model Alias 1: Qwen 35B
+  - model_name: qwen3.6-35b-a3b
+    litellm_params:
+      model: openai/35b-gpu0
+      api_base: http://llama-swap-svc.llm.svc.cluster.local:8080/v1
+      api_key: "dummy"
+      input_cost_per_token: 0.00000186
+      output_cost_per_token: 0.00000124
+  - model_name: qwen3.6-35b-a3b
+    litellm_params:
+      model: openai/35b-gpu1
+      api_base: http://llama-swap-svc.llm.svc.cluster.local:8080/v1
+      api_key: "dummy"
+      input_cost_per_token: 0.00000186
+      output_cost_per_token: 0.00000124
+
+  # --- Public Model Alias 2: Qwen 27B
+  - model_name: qwen3.6-27b
+    litellm_params:
+      model: openai/27b-gpu1
+      api_base: http://llama-swap-svc.llm.svc.cluster.local:8080/v1
+      api_key: "dummy"
+      input_cost_per_token: 0.00000398
+      output_cost_per_token: 0.00000265
+  - model_name: qwen3.6-27b
+    litellm_params:
+      model: openai/27b-gpu0
+      api_base: http://llama-swap-svc.llm.svc.cluster.local:8080/v1
+      api_key: "dummy"
+      input_cost_per_token: 0.00000398
+      output_cost_per_token: 0.00000265
+
+  # --- Public Model Alias 3: Qwen Coder 30B
+  - model_name: qwen3.6-coder-30b-a3b
+    litellm_params:
+      model: openai/coder30b-gpu1
+      api_base: http://llama-swap-svc.llm.svc.cluster.local:8080/v1
+      api_key: "dummy"
+      input_cost_per_token: 0.00000431
+      output_cost_per_token: 0.00000287
+  - model_name: qwen3.6-coder-30b-a3b
+    litellm_params:
+      model: openai/coder30b-gpu0
+      api_base: http://llama-swap-svc.llm.svc.cluster.local:8080/v1
+      api_key: "dummy"
+      input_cost_per_token: 0.00000431
+      output_cost_per_token: 0.00000287
+
+general_settings:
+  health_check_interval: 300
+  store_model_in_db: false
+  store_prompts_in_spend_logs: true
+  user_header_mappings:
+    - header_name: X-OpenWebUI-User-Email
+      litellm_user_role: customer
+  user_api_key_cache_ttl: 300
+
+router_settings:
+  routing_strategy: least-busy
+  cache_responses: true
+  # llama-swap-aware routing plugin. For each request, narrows candidates
+  # using llama-swap ground truth instead of LiteLLM's own counter:
+  #   - nothing resident (cold start)      -> no narrowing, ordering above decides
+  #   - exactly one candidate resident     -> narrow to it (avoid an
+  #                                          unnecessary eviction of an
+  #                                          unrelated model on the other GPU)
+  #   - both candidates resident and ready -> poll llama.cpp's /slots via
+  #                                          llama-swap for actual busy-slot
+  #                                          counts, route to the less busy
+  #                                          one, round-robin on ties
+  # See llama_swap_affinity.py (mounted alongside this file at /etc/litellm)
+  # for the full rationale; resolved via the dotted-path convention
+  # documented at litellm.proxy.types_utils.utils.get_instance_fn. The
+  # /slots poll is proxied through llama-swap's upstream.ignorePaths guard
+  # (see llama-swap.yaml) so it can never itself trigger a model swap.
+  plugins:
+    - llama_swap_affinity.plugin
+  # Required by the plugin above: narrowing candidates to a resident
+  # deployment is only safe if LiteLLM can't simultaneously drop that same
+  # deployment from healthy_deployments via a failure-count cooldown (that
+  # combination raises "No deployments left after routing-plugin filtering"
+  # instead of falling back). All deployments here are one llama-swap pod on
+  # one node; llama-swap's own process state (ready/starting/...) - which the
+  # plugin already reads - is a more accurate health signal for a co-located
+  # local backend than LiteLLM's default 3-failures/5-second cooldown, which
+  # is designed for multi-provider failover and can false-positive on normal
+  # long-generation timeouts or client-aborted streams.
+  disable_cooldowns: true
+
+litellm_settings:
+  cache: true
+  cache_params:
+    type: redis
+    host: litellm-dragonfly.llm.svc.cluster.local
+    port: 6379
+    ttl: 3600
+    namespace: "litellm-proxy"
+  enable_redis_auth_cache: true
+  callbacks:
+    - prometheus
+  require_auth_for_metrics_endpoint: false

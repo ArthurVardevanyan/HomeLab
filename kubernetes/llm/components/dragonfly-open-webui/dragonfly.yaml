@@ -7,7 +7,7 @@ metadata:
   annotations:
     argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
 spec:
-  replicas: 2
+  replicas: 1
   skipFSGroup: true
   # renovate: datasource=docker depName=docker.dragonflydb.io/dragonflydb/dragonfly
   image: docker.dragonflydb.io/dragonflydb/dragonfly:v1.40.1@sha256:ebf3c6c213e82fb51b4521660cca13f06f3421dc5b1ed14f2f474c50b5e29986
@@ -15,6 +15,8 @@ spec:
     - key: node-role.kubernetes.io/gpu
       operator: Exists
       effect: NoSchedule
+  nodeSelector:
+    node-role.kubernetes.io/gpu: ""
   resources:
     limits:
       cpu: 75m
@@ -22,35 +24,3 @@ spec:
     requests:
       cpu: 15m
       memory: 64Mi
-  affinity:
-    # Soft preference for the GPU node; never blocks scheduling elsewhere.
-    nodeAffinity:
-      preferredDuringSchedulingIgnoredDuringExecution:
-        - weight: 100
-          preference:
-            matchExpressions:
-              - key: node-role.kubernetes.io/gpu
-                operator: Exists
-    podAntiAffinity:
-      preferredDuringSchedulingIgnoredDuringExecution:
-        - podAffinityTerm:
-            labelSelector:
-              matchLabels:
-                app.kubernetes.io/name: dragonfly
-            topologyKey: topology.kubernetes.io/zone
-          weight: 100
-      requiredDuringSchedulingIgnoredDuringExecution:
-        - labelSelector:
-            matchLabels:
-              app.kubernetes.io/name: dragonfly
-          topologyKey: kubernetes.io/hostname
-  # snapshot:
-  #   cron: "*/5 * * * *"
-  #   persistentVolumeClaimSpec:
-  #     storageClassName: rook-ceph-block
-
-  #     accessModes:
-  #       - ReadWriteOnce
-  #     resources:
-  #       requests:
-  #         storage: 1Gi

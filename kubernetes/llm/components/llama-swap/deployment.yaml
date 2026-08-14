@@ -1,0 +1,158 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: llama-swap
+  namespace: llm
+  labels:
+    app: llama-swap
+  annotations:
+    checkov.io/skip1: CKV_K8S_40=Upstream Image Runs as Root
+    checkov.io/skip2: CKV_K8S_22=Model Cache Requires Writable Root FS
+    checkov.io/skip3: CKV_K8S_23=Upstream Image Requires Root
+spec:
+  revisionHistoryLimit: 0
+  progressDeadlineSeconds: 1800
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: llama-swap
+  template:
+    metadata:
+      labels:
+        app: llama-swap
+    spec:
+      hostname: llama-swap
+      restartPolicy: Always
+      schedulerName: default-scheduler
+      terminationGracePeriodSeconds: 60
+      automountServiceAccountToken: false
+      serviceAccountName: llama-swap
+      enableServiceLinks: false
+      dnsPolicy: ClusterFirst
+      securityContext:
+        fsGroupChangePolicy: "OnRootMismatch"
+        seccompProfile:
+          type: RuntimeDefault
+        runAsNonRoot: true
+      tolerations:
+        - key: node-role.kubernetes.io/gpu
+          operator: Exists
+          effect: NoSchedule
+      nodeSelector:
+        feature.node.kubernetes.io/custom-intel.xe.gpu: "true"
+      containers:
+        # Custom image = upstream llama-swap + Mesa >= 26.1 (kisak PPA) for
+        # renovate: datasource=docker depName=registry.arthurvardevanyan.com/homelab/llama-swap-vulkan versioning=loose
+        - image: registry.arthurvardevanyan.com/homelab/llama-swap-vulkan:v249-b10380@sha256:72682ff93a7f3c0a3ef747911b2284b4bf6135e78cfb52179722f994beacc30a
+          imagePullPolicy: IfNotPresent
+          name: llama-swap
+          command: ["/app/llama-swap"]
+          args: ["--config", "/etc/llama-swap/llama-swap.yaml"]
+          ports:
+            - containerPort: 8080
+              name: http
+              protocol: TCP
+          env:
+            - name: LLAMA_CACHE
+              value: /cache
+            - name: MESA_SHADER_CACHE_DIR
+              value: /tmp
+          securityContext:
+            runAsNonRoot: true
+            readOnlyRootFilesystem: false
+            allowPrivilegeEscalation: false
+            privileged: false
+            seccompProfile:
+              type: RuntimeDefault
+            capabilities:
+              drop:
+                - ALL
+          startupProbe:
+            httpGet:
+              path: /
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            failureThreshold: 60
+            timeoutSeconds: 5
+          livenessProbe:
+            httpGet:
+              path: /
+              port: http
+            periodSeconds: 30
+            timeoutSeconds: 10
+            failureThreshold: 5
+          readinessProbe:
+            httpGet:
+              path: /
+              port: http
+            periodSeconds: 15
+            timeoutSeconds: 5
+            failureThreshold: 3
+          resources:
+            requests:
+              cpu: "1"
+              memory: 12Gi
+              ephemeral-storage: "256Mi"
+              gpu.intel.com/xe: "2"
+            limits:
+              cpu: "5"
+              memory: 64Gi
+              ephemeral-storage: "1Gi"
+              gpu.intel.com/xe: "2"
+          volumeMounts:
+            - name: config
+              mountPath: /etc/llama-swap
+              readOnly: true
+            - name: model-storage
+              mountPath: /data
+            - name: cache-storage
+              mountPath: /cache
+            - name: store
+              mountPath: /var/lib/llama-swap
+        # metrics-exporter sidecar: scrapes llama.cpp /metrics from each
+        # dynamically-assigned child process and exposes aggregated metrics
+        # renovate: datasource=docker depName=registry.arthurvardevanyan.com/homelab/llama-swap-metrics-exporter versioning=loose
+        - image: registry.arthurvardevanyan.com/homelab/llama-swap-metrics-exporter:2026.08.14.162459@sha256:e8a688773b0c081e051311524bb9eeb00c11e9bc36d2b1f1204ba66ea18de04d
+          imagePullPolicy: IfNotPresent
+          name: metrics-exporter
+          ports:
+            - containerPort: 9100
+              name: metrics
+              protocol: TCP
+          resources:
+            requests:
+              cpu: "50m"
+              memory: "64Mi"
+            limits:
+              cpu: "100m"
+              memory: "128Mi"
+          securityContext:
+            runAsNonRoot: true
+            readOnlyRootFilesystem: true
+            allowPrivilegeEscalation: false
+            privileged: false
+            seccompProfile:
+              type: RuntimeDefault
+            capabilities:
+              drop:
+                - ALL
+          volumeMounts:
+            - name: metrics-cache
+              mountPath: /tmp
+      volumes:
+        - name: config
+          configMap:
+            name: llama-swap-config
+        - name: model-storage
+          persistentVolumeClaim:
+            claimName: llm-models
+        - name: cache-storage
+          emptyDir: {}
+        - name: store
+          persistentVolumeClaim:
+            claimName: llm-llama-swap-store
+        - name: metrics-cache
+          emptyDir: {}

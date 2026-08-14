@@ -1,0 +1,44 @@
+---
+apiVersion: autoscaling.k8s.io/v1
+kind: VerticalPodAutoscaler
+metadata:
+  name: llama-swap
+  namespace: llm
+  annotations:
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+  labels:
+    app.kubernetes.io/name: llama-swap
+spec:
+  targetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: llama-swap
+  updatePolicy:
+    updateMode: "InPlaceOrRecreate"
+  resourcePolicy:
+    containerPolicies:
+      - containerName: llama-swap
+        minAllowed:
+          cpu: "1"
+          memory: 512Mi
+          ephemeral-storage: 32Mi
+        maxAllowed:
+          cpu: "2"
+          memory: 64Gi
+          ephemeral-storage: 1Gi
+        controlledResources:
+          - cpu
+          - memory
+          - ephemeral-storage
+        controlledValues: RequestsOnly
+      - containerName: metrics-exporter
+        minAllowed:
+          cpu: "10m"
+          memory: 32Mi
+        maxAllowed:
+          cpu: "250m"
+          memory: 256Mi
+        controlledResources:
+          - cpu
+          - memory
+        controlledValues: RequestsAndLimits

@@ -28,6 +28,16 @@ spec:
               kubernetes.io/metadata.name: llm
           podSelector:
             matchLabels:
+              app: litellm
+      ports:
+        - protocol: TCP
+          port: 4000
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: llm
+          podSelector:
+            matchLabels:
               app: llm-server
       ports:
         - protocol: TCP

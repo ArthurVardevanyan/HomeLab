@@ -112,13 +112,13 @@ load the `openshift-patterns` CRR reference when touching them.
   noise.
 - **Working on a subset?** Scope validation to just that app/overlay instead
   of a full sweep:
-  `../k8s-gitops-ci/bin/k8s-gitops-ci test-all --app kubernetes/<app> --cluster <cluster> --assume-openshift --disable-checks avp`
+  `k8s-gitops-ci test-all --app kubernetes/<app> --cluster <cluster> --assume-openshift --disable-checks avp`
   (repeatable flags; `--app` alone validates every overlay of that app,
   `--cluster` alone validates every app targeting that cluster).
 - **Just one app?** Skip `--cluster` to validate every overlay of that app:
-  `../k8s-gitops-ci/bin/k8s-gitops-ci test-all --app kubernetes/<app> --assume-openshift --disable-checks avp`
+  `k8s-gitops-ci test-all --app kubernetes/<app> --assume-openshift --disable-checks avp`
 - Before pushing, confirm the full CI scope still passes:
-  `../k8s-gitops-ci/bin/k8s-gitops-ci test-all kubernetes tekton .tekton okd --assume-openshift --disable-checks avp`
+  `k8s-gitops-ci test-all kubernetes tekton .tekton okd --assume-openshift --disable-checks avp`
   (mirrors real CI; defaults to reading local `test.sh` automatically — no
   PR needed).
 - Avoid `test-all .` (full-repo scan) — includes ansible/, machineConfigs/,
@@ -131,7 +131,7 @@ load the `openshift-patterns` CRR reference when touching them.
   own `AGENTS.md`/`docs/` when validation behavior itself needs to change.
 - Exemptions: `test.sh` with `export EXEMPTIONS=(...)` at an app root or any
   directory with non-Kubernetes YAML — see `okd/test.sh` for a working
-  example and `../k8s-gitops-ci/.agents/skills/exemptions/SKILL.md` for the
+  example and `http://raw.githubusercontent.com/ArthurVardevanyan/k8s-gitops-ci/refs/heads/main/.agents/skills/exemptions/SKILL.md` for the
   full reference.
 - ArgoCD sync-options: any resource whose API group isn't guaranteed present
   at first ArgoCD sync needs
@@ -171,7 +171,7 @@ Helm/Kustomize inputs are kept up to date by Renovate. Preserve the
 
 ## Before Committing
 
-- Run `../k8s-gitops-ci/bin/k8s-gitops-ci test-all --assume-openshift --disable-checks avp` for full validation.
+- Run `k8s-gitops-ci test-all --assume-openshift --disable-checks avp` for full validation.
 - For individual file linting, run k8s-gitops-ci linters directly:
   `k8s-gitops-ci markdownlint`, `k8s-gitops-ci prettier`, `k8s-gitops-ci shellcheck`, etc.
 
