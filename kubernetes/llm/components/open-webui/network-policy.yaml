@@ -21,6 +21,17 @@ spec:
       ports:
         - protocol: TCP
           port: 8080
+    # knowledge-sync CronJob → Knowledge API (connectors-lite ingestion).
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: llm
+          podSelector:
+            matchLabels:
+              app.kubernetes.io/name: knowledge-sync
+      ports:
+        - protocol: TCP
+          port: 8080
   egress:
     - to:
         - namespaceSelector:
@@ -83,6 +94,39 @@ spec:
       ports:
         - protocol: TCP
           port: 11435
+    # OTLP push to the OTEL collector (metrics bridge → Prometheus).
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: llm
+          podSelector:
+            matchLabels:
+              app.kubernetes.io/managed-by: opentelemetry-operator
+              app.kubernetes.io/instance: llm.open-webui
+      ports:
+        - protocol: TCP
+          port: 4317
+    # Read-only MCP tool servers (agentic tool calls via native loop).
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: llm
+          podSelector:
+            matchLabels:
+              app.kubernetes.io/name: mcp-kubernetes
+      ports:
+        - protocol: TCP
+          port: 8080
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: llm
+          podSelector:
+            matchLabels:
+              app.kubernetes.io/name: mcp-github
+      ports:
+        - protocol: TCP
+          port: 8080
     - to:
         - namespaceSelector:
             matchLabels:
