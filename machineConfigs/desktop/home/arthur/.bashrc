@@ -29,4 +29,4 @@ alias kubectl="kubecolor"
 
 
 # opencode, k8s-gitops-ci
-export PATH="$HOME/.opencode/bin:$HOME/k8s-gitops-ci/bin:$PATH"
+export PATH="$HOME/.opencode/bin:$HOME/Projects/k8s-gitops-ci/bin:$PATH"
