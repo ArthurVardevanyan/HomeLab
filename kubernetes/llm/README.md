@@ -255,24 +255,16 @@ The llama-swap image defines these Prometheus scrape jobs (in
 
 Key metric families (llama-swap only, no llama-server sub-scrapes):
 
-| Metric family                       | Description                           |
-| ----------------------------------- | ------------------------------------- |
-| `llamaswap_model_slots`             | Currently loaded model slots (1 or 2) |
-| `llamaswap_model_load_duration`     | How long a model load took (s)        |
-| `llamaswap_model_unload_duration`   | How long a model unload took (s)      |
-| `llamaswap_request_duration`        | Per-request latency (s)               |
-| `llamaswap_request_tokens`          | Tokens generated per request          |
-| `llamaswap_request_input`           | Input tokens per request              |
-| `llamaswap_token_count`             | Cumulative token count                |
-| `llamaswap_prompt_tokens_count`     | Cumulative prompt/input tokens        |
-| `llamaswap_decode_tokens`           | Cumulative decode tokens              |
-| `llamaswap_gpu_mem_allocated_bytes` | Allocated GPU memory                  |
-| `llamaswap_gpu_mem_free_bytes`      | Free GPU memory                       |
-| `llamaswap_gpu_mem_used_bytes`      | Used GPU memory                       |
-| `llamaswap_gpu_memory_total_bytes`  | Total GPU memory                      |
-| `llamaswap_request_pending`         | Pending requests                      |
-| `llamaswap_request_inflight`        | In-flight requests                    |
-| `llamaswap_request_error_total`     | Total request errors                  |
+| Metric family                   | Type    | Description                                              |
+| ------------------------------- | ------- | -------------------------------------------------------- |
+| `llamaswap_cpu_util_percent`    | Gauge   | CPU utilization per core (0–100)                         |
+| `llamaswap_memory_total_bytes`  | Gauge   | Total system memory (bytes)                              |
+| `llamaswap_memory_used_bytes`   | Gauge   | Used system memory (bytes)                               |
+| `llamaswap_memory_free_bytes`   | Gauge   | Free system memory (bytes)                               |
+| `llamaswap_swap_total_bytes`    | Gauge   | Total swap capacity (bytes)                              |
+| `llamaswap_swap_used_bytes`     | Gauge   | Used swap (bytes)                                        |
+| `llamaswap_load_average`        | Gauge   | Load average (labels: 1m, 5m, 15m)                       |
+| `llamaswap_network_bytes_total` | Counter | Network bytes transferred (labels: interface, direction) |
 
 llama-server (managed by llama-swap) exposes its own `/metrics` endpoint.
 llama-swap's `/metrics` **already includes** the llama-server metrics under
@@ -281,17 +273,27 @@ namespaced prefixes. No separate `llama_server` scrape job is needed.
 ### Example PromQL queries
 
 ```promql
-# Tokens per second (decode)
-rate(llamaswap_decode_tokens[5m])
+# Average CPU utilization across all cores
+avg(llamaswap_cpu_util_percent)
 
-# Request latency
-rate(llamaswap_request_duration[5m])
+# Memory usage percentage
+llamaswap_memory_used_bytes / llamaswap_memory_total_bytes * 100
 
-# GPU memory usage
-llamaswap_gpu_mem_used_bytes
+# Memory used vs free
+llamaswap_memory_used_bytes
+llamaswap_memory_free_bytes
 
-# Pending requests (backpressure signal)
-llamaswap_request_pending
+# CPU utilization per core
+llamaswap_cpu_util_percent
+
+# Load average
+llamaswap_load_average
+
+# Network throughput (bytes/sec)
+rate(llamaswap_network_bytes_total[5m])
+
+# Total network bytes transferred
+llamaswap_network_bytes_total
 ```
 
 ### TODO: Open WebUI metrics & cluster OTEL

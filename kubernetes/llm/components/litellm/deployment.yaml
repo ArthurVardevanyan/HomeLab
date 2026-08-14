@@ -56,16 +56,32 @@ spec:
             #     secretKeyRef:
             #       name: litellm-config
             #       key: LITELLM_MASTER_KEY
-            - name: UI_USERNAME
+            - name: HOME
+              value: /root
+            - name: GENERIC_CLIENT_ID
               valueFrom:
                 secretKeyRef:
                   name: litellm-config
-                  key: UI_USERNAME
-            - name: UI_PASSWORD
+                  key: GENERIC_CLIENT_ID
+            - name: GENERIC_CLIENT_SECRET
               valueFrom:
                 secretKeyRef:
                   name: litellm-config
-                  key: UI_PASSWORD
+                  key: GENERIC_CLIENT_SECRET
+            - name: GENERIC_AUTHORIZATION_ENDPOINT
+              value: "https://zitadel.arthurvardevanyan.com/oauth/v2/authorize"
+            - name: GENERIC_TOKEN_ENDPOINT
+              value: "https://zitadel.arthurvardevanyan.com/oauth/v2/token"
+            - name: GENERIC_USERINFO_ENDPOINT
+              value: "https://zitadel.arthurvardevanyan.com/oidc/v1/userinfo"
+            - name: PROXY_BASE_URL
+              value: "https://litellm.arthurvardevanyan.com"
+            - name: GENERIC_SCOPE
+              value: "openid profile email"
+            - name: GENERIC_USER_ID_ATTRIBUTE
+              value: "sub"
+            - name: GENERIC_USER_EMAIL_ATTRIBUTE
+              value: "email"
           ports:
             - containerPort: 4000
               name: http
