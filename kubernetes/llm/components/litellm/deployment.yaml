@@ -82,6 +82,10 @@ spec:
               value: "sub"
             - name: GENERIC_USER_EMAIL_ATTRIBUTE
               value: "email"
+            # PostgreSQL database for LiteLLM virtual keys, rate limiting, and teams.
+            # Trust auth via pg_hba (CNPG cluster allows all 0.0.0.0/0 trust).
+            - name: DATABASE_URL
+              value: postgresql://postgres@litellm-rw.llm.svc.cluster.local:5432/litellm
           ports:
             - containerPort: 4000
               name: http
@@ -131,12 +135,7 @@ spec:
             - name: config
               mountPath: /etc/litellm
               readOnly: true
-            - name: state
-              mountPath: /root/.litellm
       volumes:
         - name: config
           configMap:
             name: litellm-config
-        - name: state
-          persistentVolumeClaim:
-            claimName: llm-litellm-state
