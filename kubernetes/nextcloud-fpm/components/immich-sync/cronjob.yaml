@@ -44,9 +44,10 @@ spec:
             runAsNonRoot: true
             seccompProfile:
               type: RuntimeDefault
+          enableServiceLinks: false
           containers:
             - name: immich-cron
-              image: registry.arthurvardevanyan.com/homelab/toolbox:not_latest
+              image: registry.arthurvardevanyan.com/homelab/toolbox:not_latest@sha256:616f2ad41fca5effed6a0ab06a524e131d9112bc7848f4950e4eeaf0758e6bb2
               command: ["/bin/bash", "-c", "sh /tmp/immich/immich.sh"]
               resources:
                 limits:
@@ -70,6 +71,7 @@ spec:
                 runAsNonRoot: true
                 readOnlyRootFilesystem: true
                 allowPrivilegeEscalation: false
+                privileged: false
                 seccompProfile:
                   type: RuntimeDefault
                 capabilities:

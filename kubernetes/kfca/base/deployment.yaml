@@ -44,6 +44,16 @@ spec:
         # renovate: datasource=docker depName=registry.arthurvardevanyan.com/homelab/k8s-federated-credential-api versioning=loose
         - image: registry.arthurvardevanyan.com/homelab/k8s-federated-credential-api:v0.3.1@sha256:05114046b5ce5e4347ca6e0430f833f53d6d6da28844d822201a9c8d6d545487
           name: k8s-federated-credential-api
+          securityContext:
+            runAsNonRoot: true
+            readOnlyRootFilesystem: true
+            allowPrivilegeEscalation: false
+            seccompProfile:
+              type: RuntimeDefault
+            capabilities:
+              drop:
+                - ALL
+            privileged: false
           ports:
             - containerPort: 8088
               name: http
@@ -51,7 +61,7 @@ spec:
           livenessProbe:
             httpGet:
               path: /livez
-              port: 8088
+              port: http
             timeoutSeconds: 1
             periodSeconds: 30
             successThreshold: 1
@@ -59,7 +69,7 @@ spec:
           readinessProbe:
             httpGet:
               path: /readyz
-              port: 8088
+              port: http
             timeoutSeconds: 1
             periodSeconds: 30
             successThreshold: 1
@@ -76,16 +86,10 @@ spec:
               restartPolicy: NotRequired
             - resourceName: memory
               restartPolicy: NotRequired
-          securityContext:
-            runAsNonRoot: true
-            readOnlyRootFilesystem: true
-            allowPrivilegeEscalation: false
-            seccompProfile:
-              type: RuntimeDefault
-            capabilities:
-              drop:
-                - ALL
       serviceAccountName: k8s-federated-credential-api
       terminationGracePeriodSeconds: 10
       automountServiceAccountToken: true
       enableServiceLinks: false
+      restartPolicy: Always
+      schedulerName: default-scheduler
+      dnsPolicy: ClusterFirst

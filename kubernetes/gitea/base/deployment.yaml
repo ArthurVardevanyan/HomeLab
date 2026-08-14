@@ -83,7 +83,7 @@ spec:
         #       memory: 64Mi
         - name: init-app-ini
           # renovate: datasource=docker depName=docker.io/gitea/gitea
-          image: docker.io/gitea/gitea:1.27.1-rootless@sha256:36cce26be71609091e1236d5b5de2c66a81fb8a7d45756a5fd3b7a28c11733b7
+          image: docker.io/gitea/gitea:1.27.2-rootless@sha256:c7953964c6e8fe532cf7fc3f3efdea1d0b161d7859c47e04f5e05489d494dea0
           imagePullPolicy: IfNotPresent
           command: ["/usr/sbin/config_environment.sh"]
           env:
@@ -125,7 +125,7 @@ spec:
               memory: 64Mi
         - name: configure-gitea
           # renovate: datasource=docker depName=docker.io/gitea/gitea
-          image: docker.io/gitea/gitea:1.27.1-rootless@sha256:36cce26be71609091e1236d5b5de2c66a81fb8a7d45756a5fd3b7a28c11733b7
+          image: docker.io/gitea/gitea:1.27.2-rootless@sha256:c7953964c6e8fe532cf7fc3f3efdea1d0b161d7859c47e04f5e05489d494dea0
           command: ["/usr/sbin/configure_gitea.sh"]
           imagePullPolicy: IfNotPresent
           securityContext:
@@ -174,7 +174,7 @@ spec:
       containers:
         - name: gitea
           # renovate: datasource=docker depName=docker.io/gitea/gitea
-          image: docker.io/gitea/gitea:1.27.1-rootless@sha256:36cce26be71609091e1236d5b5de2c66a81fb8a7d45756a5fd3b7a28c11733b7
+          image: docker.io/gitea/gitea:1.27.2-rootless@sha256:c7953964c6e8fe532cf7fc3f3efdea1d0b161d7859c47e04f5e05489d494dea0
           imagePullPolicy: IfNotPresent
           env:
             # SSH Port values have to be set here as well for openssh configuration
@@ -267,3 +267,6 @@ spec:
           persistentVolumeClaim:
             claimName: gitea
       enableServiceLinks: false
+      restartPolicy: Always
+      schedulerName: default-scheduler
+      dnsPolicy: ClusterFirst

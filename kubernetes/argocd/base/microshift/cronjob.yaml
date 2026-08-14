@@ -33,9 +33,14 @@ spec:
             seccompProfile:
               type: RuntimeDefault
           serviceAccountName: argocd-creds
+          enableServiceLinks: false
+          restartPolicy: Never
+          schedulerName: default-scheduler
+          dnsPolicy: ClusterFirst
+          automountServiceAccountToken: false
           containers:
             - name: microshift-credential-rotation
-              image: registry.arthurvardevanyan.com/homelab/toolbox:not_latest
+              image: registry.arthurvardevanyan.com/homelab/toolbox:not_latest@sha256:616f2ad41fca5effed6a0ab06a524e131d9112bc7848f4950e4eeaf0758e6bb2
               securityContext:
                 runAsNonRoot: true
                 privileged: false

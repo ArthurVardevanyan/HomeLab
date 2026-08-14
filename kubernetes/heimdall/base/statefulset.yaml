@@ -39,13 +39,14 @@ spec:
         runAsNonRoot: false
       containers:
         # renovate: datasource=docker depName=docker.io/linuxserver/heimdall
-        - image: docker.io/linuxserver/heimdall:2.8.1
+        - image: docker.io/linuxserver/heimdall:2.8.2
           imagePullPolicy: Always # Temp
           name: heimdall
           securityContext:
             runAsNonRoot: false
             privileged: true
             allowPrivilegeEscalation: true
+            readOnlyRootFilesystem: true
             seccompProfile:
               type: RuntimeDefault
             capabilities:
@@ -75,26 +76,28 @@ spec:
               name: heimdall-pvc
           livenessProbe:
             tcpSocket:
-              port: 80
+              port: http-80
             initialDelaySeconds: 0
             failureThreshold: 3
             timeoutSeconds: 1
             periodSeconds: 10
           readinessProbe:
             tcpSocket:
-              port: 80
+              port: http-80
             initialDelaySeconds: 0
             failureThreshold: 3
             timeoutSeconds: 1
             periodSeconds: 10
           startupProbe:
             tcpSocket:
-              port: 80
+              port: http-80
             initialDelaySeconds: 0
             failureThreshold: 30
             timeoutSeconds: 1
             periodSeconds: 5
       hostname: heimdall
+      schedulerName: default-scheduler
+      dnsPolicy: ClusterFirst
       restartPolicy: Always
       volumes:
         - name: heimdall-pvc
