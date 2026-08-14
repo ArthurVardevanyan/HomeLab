@@ -72,13 +72,16 @@ general_settings:
   user_api_key_cache_ttl: 300
 
 router_settings:
-  # Packing strategy (current): least-busy ties resolve to the first-listed
-  # deployment per model_name group, so ordering above dictates which GPU
-  # each model prefers. Preserves prompt-cache locality per model and
-  # minimizes llama-swap matrix evictions - see GPU-preference comments on
-  # each model_list group. The plugin below is the primary defense; this
-  # ordering is now only a tie-break for the cold-start / nothing-else-loaded
-  # case where the plugin intentionally declines to narrow.
+  # Kept as a fallback only. LiteLLM's own in-flight counter proved
+  # unreliable in practice here: its tie-break (`if v < min_traffic` over an
+  # insertion-ordered dict) always resolves ties to the first-listed
+  # deployment, and the counter itself drifted, producing a persistent 3:1 /
+  # 5:1 skew toward one GPU even under sustained concurrent load with an
+  # idle sibling GPU available. The llama_swap_affinity plugin below is the
+  # primary defense and bypasses this counter entirely for every model group
+  # it covers; this setting (and the GPU-preference ordering in model_list
+  # above) now only matters for the cold-start case where the plugin
+  # intentionally declines to narrow (nothing resident yet to prefer).
   routing_strategy: least-busy
   # Spread alternative (not used): force a genuine 50/50 split across both
   # GPUs for 35B even under sequential (non-concurrent) load, e.g.:
@@ -87,15 +90,25 @@ router_settings:
   # Trade-off: loses 35b-gpu0 prompt-cache locality, and makes 27b/coder
   # collisions with a running 35B instance (forcing a matrix eviction)
   # roughly twice as likely, since either GPU is equally likely to be picked
-  # for a fresh 35B request.
+  # for a fresh 35B request. Superseded in practice by the plugin below,
+  # which already load-balances between resident deployments of the same
+  # model group without needing this.
   cache_responses: true
-  # llama-swap-aware routing plugin: narrows candidates to whichever
-  # deployment llama-swap already has resident when a *different* model
-  # family is also currently loaded, so LiteLLM never picks a GPU that would
-  # force a mid-request eviction of an unrelated model. See
-  # llama_swap_affinity.py (mounted alongside this file at /etc/litellm) for
-  # the full rationale; resolved via the dotted-path convention documented at
-  # litellm.proxy.types_utils.utils.get_instance_fn.
+  # llama-swap-aware routing plugin. For each request, narrows candidates
+  # using llama-swap ground truth instead of LiteLLM's own counter:
+  #   - nothing resident (cold start)      -> no narrowing, ordering above decides
+  #   - exactly one candidate resident     -> narrow to it (avoid an
+  #                                          unnecessary eviction of an
+  #                                          unrelated model on the other GPU)
+  #   - both candidates resident and ready -> poll llama.cpp's /slots via
+  #                                          llama-swap for actual busy-slot
+  #                                          counts, route to the less busy
+  #                                          one, round-robin on ties
+  # See llama_swap_affinity.py (mounted alongside this file at /etc/litellm)
+  # for the full rationale; resolved via the dotted-path convention
+  # documented at litellm.proxy.types_utils.utils.get_instance_fn. The
+  # /slots poll is proxied through llama-swap's upstream.ignorePaths guard
+  # (see llama-swap.yaml) so it can never itself trigger a model swap.
   plugins:
     - llama_swap_affinity.plugin
   # Required by the plugin above: narrowing candidates to a resident

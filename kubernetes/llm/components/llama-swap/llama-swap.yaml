@@ -4,6 +4,19 @@ healthCheckTimeout: 120
 store:
   path: /var/lib/llama-swap/llama-swap.db
 
+# Controls /upstream/<model>/<path> passthrough. The llama_swap_affinity
+# LiteLLM routing plugin (see litellm.yaml) polls /upstream/<model>/slots to
+# read per-instance llama.cpp slot occupancy for load-aware routing between
+# the two GPU copies of a model. Restating the built-in default pattern here
+# is required: specifying ignorePaths replaces it rather than merging with
+# it. Both entries prevent a request from ever triggering a swap; the plugin
+# only polls models it already knows are resident, but this is
+# defense-in-depth against a plugin bug doing otherwise.
+upstream:
+  ignorePaths:
+    - '.*\.(js|json|css|png|gif|jpg|jpeg|ico|txt)$' # llama-swap built-in default
+    - ^/slots$ # a /slots poll must never trigger a model load/swap
+
 hooks:
   on_startup:
     # preload takes model IDs (not matrix set names) - "dual_35b" here was a
