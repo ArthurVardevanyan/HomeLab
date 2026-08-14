@@ -110,7 +110,7 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "sum(litellm_total_api_spend)",
+          "expr": "sum(litellm_spend_metric_total)",
           "refId": "A"
         }
       ],
@@ -166,7 +166,7 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "count(litellm_model_info)",
+          "expr": "count(litellm_deployment_state)",
           "refId": "A"
         }
       ],
@@ -222,7 +222,7 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "sum(litellm_apicall_success) + sum(litellm_apicall_failed)",
+          "expr": "sum(litellm_deployment_success_responses_total) + sum(litellm_deployment_failure_responses_total)",
           "refId": "A"
         }
       ],
@@ -287,7 +287,7 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "sum(litellm_apicall_success) / (sum(litellm_apicall_success) + sum(litellm_apicall_failed))",
+          "expr": "sum(litellm_deployment_success_responses_total) / (sum(litellm_deployment_success_responses_total) + sum(litellm_deployment_failure_responses_total))",
           "refId": "A"
         }
       ],
@@ -386,7 +386,7 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "rate(litellm_apicall_success[5m])",
+          "expr": "rate(litellm_deployment_success_responses_total[5m])",
           "legendFormat": "{{model}}",
           "refId": "A"
         }
@@ -473,7 +473,7 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "rate(litellm_apicall_failed[5m])",
+          "expr": "rate(litellm_deployment_failure_responses_total[5m])",
           "legendFormat": "{{model}}",
           "refId": "A"
         }
@@ -574,7 +574,7 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "rate(litellm_input_tokens[5m])",
+          "expr": "rate(litellm_input_tokens_metric_total[5m])",
           "legendFormat": "{{model}} - input",
           "refId": "A"
         },
@@ -583,7 +583,7 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "rate(litellm_output_tokens[5m])",
+          "expr": "rate(litellm_output_tokens_metric_total[5m])",
           "legendFormat": "{{model}} - output",
           "refId": "B"
         }
@@ -671,7 +671,7 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "litellm_input_tokens",
+          "expr": "litellm_input_tokens_metric_total",
           "legendFormat": "{{model}} - input",
           "refId": "A"
         },
@@ -680,7 +680,7 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "litellm_output_tokens",
+          "expr": "litellm_output_tokens_metric_total",
           "legendFormat": "{{model}} - output",
           "refId": "B"
         }
@@ -781,7 +781,7 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "rate(litellm_total_cost[5m])",
+          "expr": "rate(litellm_spend_metric_total[5m])",
           "legendFormat": "{{model}}",
           "refId": "A"
         }
@@ -869,7 +869,7 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "litellm_total_api_spend",
+          "expr": "litellm_spend_metric_total",
           "legendFormat": "{{model}}",
           "refId": "A"
         }
@@ -969,7 +969,7 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "litellm_model_info",
+          "expr": "litellm_deployment_state",
           "legendFormat": "{{model}}",
           "refId": "A"
         }
@@ -982,7 +982,7 @@
         "type": "prometheus",
         "uid": "${datasource}"
       },
-      "description": "Total and successful calls per API key",
+      "description": "Total and successful calls per model",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -1056,12 +1056,12 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "litellm_api_keys_total_calls",
-          "legendFormat": "{{user}} - total",
+          "expr": "litellm_deployment_total_requests_total",
+          "legendFormat": "{{model}} - total",
           "refId": "A"
         }
       ],
-      "title": "Calls per API Key (User)",
+      "title": "Calls per Model",
       "type": "timeseries"
     }
   ],
