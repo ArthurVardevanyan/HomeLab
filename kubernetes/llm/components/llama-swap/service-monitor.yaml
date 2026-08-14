@@ -20,11 +20,6 @@ spec:
     - port: metrics
       path: /metrics
       interval: 30s
-      # The metrics-exporter is a Go binary using client_golang, which
-      # auto-registers the standard go_*/process_* collectors. Drop them to
-      # match the llama-swap-llamacpp-metrics static Prometheus job
-      # (kubernetes/prometheus/components/prometheus{,-nas}/config-map.yaml),
-      # which already filters this noise.
       metricRelabelings:
         - sourceLabels: [__name__]
           regex: "go_(.+)"

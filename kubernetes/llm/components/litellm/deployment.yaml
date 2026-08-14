@@ -44,8 +44,6 @@ spec:
       nodeSelector:
         feature.node.kubernetes.io/custom-intel.xe.gpu: "true"
       containers:
-        # LiteLLM router: public model alias layer with session affinity,
-        # routes to llama-swap backend which manages llama-server instances.
         # renovate: datasource=docker depName=ghcr.io/berriai/litellm versioning=loose
         - image: ghcr.io/berriai/litellm:v1.96.2@sha256:154e23bb5f31b1f10e16392a8ef299bd2cde08de3a64a6849002cfcc25ce3c63
           imagePullPolicy: IfNotPresent
@@ -87,8 +85,6 @@ spec:
               value: "sub"
             - name: GENERIC_USER_EMAIL_ATTRIBUTE
               value: "email"
-            # PostgreSQL database for LiteLLM virtual keys, rate limiting, and teams.
-            # Trust auth via pg_hba (CNPG cluster allows all 0.0.0.0/0 trust).
             - name: DATABASE_URL
               value: postgresql://postgres@litellm-rw.llm.svc.cluster.local:5432/litellm
             - name: SPEND_TRACKING

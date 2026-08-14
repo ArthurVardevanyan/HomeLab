@@ -1,11 +1,6 @@
 ---
 model_list:
-  # --- Public Model Alias 1: Qwen 35B (30 t/s avg decode, ~593W system w/ HVAC) ---
-  # gpu0 listed first (intentional): least-busy ties (equal in-flight count)
-  # resolve to the first-listed deployment, so sequential 35B traffic packs
-  # onto gpu0, preserving its prompt cache. gpu1 only takes 35B overflow when
-  # gpu0 already has a request in flight, and otherwise stays free for
-  # 27b-gpu1 / coder30b-gpu1 to load alongside it at zero eviction cost.
+  # --- Public Model Alias 1: Qwen 35B
   - model_name: qwen3.6-35b-a3b
     litellm_params:
       model: openai/35b-gpu0
@@ -21,11 +16,7 @@ model_list:
       input_cost_per_token: 0.00000186
       output_cost_per_token: 0.00000124
 
-  # --- Public Model Alias 2: Qwen 27B (~14 t/s avg decode, ~593W system w/ HVAC) ---
-  # gpu1 listed first: least-busy ties (equal in-flight count) resolve to the
-  # first-listed deployment, so this keeps 27B off GPU0 (the 35B primary) and
-  # lets llama-swap's matrix solver pack it alongside 35b-gpu0 at cost=0
-  # instead of evicting it. See the routing_strategy note below.
+  # --- Public Model Alias 2: Qwen 27B
   - model_name: qwen3.6-27b
     litellm_params:
       model: openai/27b-gpu1
@@ -41,8 +32,7 @@ model_list:
       input_cost_per_token: 0.00000398
       output_cost_per_token: 0.00000265
 
-  # --- Public Model Alias 3: Qwen Coder 30B (~13 t/s avg decode, ~593W system w/ HVAC) ---
-  # gpu1 listed first for the same reason as qwen3.6-27b above.
+  # --- Public Model Alias 3: Qwen Coder 30B
   - model_name: qwen3.6-coder-30b-a3b
     litellm_params:
       model: openai/coder30b-gpu1
@@ -60,10 +50,6 @@ model_list:
 
 general_settings:
   health_check_interval: 300
-  # No models/keys have ever been added via the admin UI (both
-  # LiteLLM_ModelTable and LiteLLM_ProxyModelTable are empty) - this file is
-  # the sole source of truth for model_list. Keep it that way so a DB entry
-  # can never silently shadow the GPU-preference ordering above.
   store_model_in_db: false
   store_prompts_in_spend_logs: true
   user_header_mappings:
@@ -72,27 +58,7 @@ general_settings:
   user_api_key_cache_ttl: 300
 
 router_settings:
-  # Kept as a fallback only. LiteLLM's own in-flight counter proved
-  # unreliable in practice here: its tie-break (`if v < min_traffic` over an
-  # insertion-ordered dict) always resolves ties to the first-listed
-  # deployment, and the counter itself drifted, producing a persistent 3:1 /
-  # 5:1 skew toward one GPU even under sustained concurrent load with an
-  # idle sibling GPU available. The llama_swap_affinity plugin below is the
-  # primary defense and bypasses this counter entirely for every model group
-  # it covers; this setting (and the GPU-preference ordering in model_list
-  # above) now only matters for the cold-start case where the plugin
-  # intentionally declines to narrow (nothing resident yet to prefer).
   routing_strategy: least-busy
-  # Spread alternative (not used): force a genuine 50/50 split across both
-  # GPUs for 35B even under sequential (non-concurrent) load, e.g.:
-  #   routing_strategy: simple-shuffle
-  #   + add `weight: 1` to both 35b-gpu0 and 35b-gpu1 litellm_params
-  # Trade-off: loses 35b-gpu0 prompt-cache locality, and makes 27b/coder
-  # collisions with a running 35B instance (forcing a matrix eviction)
-  # roughly twice as likely, since either GPU is equally likely to be picked
-  # for a fresh 35B request. Superseded in practice by the plugin below,
-  # which already load-balances between resident deployments of the same
-  # model group without needing this.
   cache_responses: true
   # llama-swap-aware routing plugin. For each request, narrows candidates
   # using llama-swap ground truth instead of LiteLLM's own counter:

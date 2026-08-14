@@ -26,41 +26,6 @@ hooks:
       - 35b-gpu1
 
 macros:
-  # The unified base command for all single-card instances
-  #
-  # Tuning additions (2026-08-14), informed by measured decode throughput
-  # (p50 ~20.6 t/s from /api/metrics/stats, n=778) far below the ~76 t/s
-  # single-stream ceiling — the GPU is idle most of each decode step, i.e.
-  # dispatch-bound, not bandwidth-bound, on this box's 6-core/12-thread
-  # Ryzen 5 3600:
-  #   --spec-type ngram-simple  - model-free speculative decoding: verifies
-  #     N drafted tokens per forward pass instead of N separate dispatch
-  #     rounds. No draft model / extra VRAM. Ideal for this workload's heavy
-  #     prompt/context reuse (25.17M cache tokens vs 5.17M input tokens).
-  #   --poll 0                  - stop the ggml threadpool spin-waiting;
-  #     with -ngl 99 it has almost no real work and was competing with the
-  #     Vulkan submit thread for the same physical cores.
-  #   -t 2 --threads-http 2     - was -1 (auto -> 6 threads) x 2 processes
-  #     on a 6-core CPU inside a 5-CPU pod quota that also runs LiteLLM,
-  #     Open WebUI, Dragonfly, and CNPG. Bound explicitly to stop threadpool
-  #     oversubscription/thrash.
-  #   --cache-reuse 256         - allow KV reuse via shifting when a prompt
-  #     changes mid-prefix (Open WebUI context compaction, RAG re-injection,
-  #     tool-result insertion all do this).
-  #   --load-mode none          - plain buffered reads, no mmap. After this
-  #     change, cgroup memory.stat shows active_file ~2 MB (was ~20.6 GiB)
-  #     and inactive_file ~23 GiB (page-cache-backed by buffered reads).
-  #     Working set dropped from ~32 GiB (oc adm top: 32,177 Mi) to ~4.7 GiB
-  #     (4,698 Mi) — well under the 16 GiB VPA floor. Confirmed via
-  #     `/proc/<pid>/maps` that the GGUF is not mmapped (0 matching entries).
-  #     Note: --load-mode dio was tried first but provably does not work on
-  #     this hardware + storage stack (gguf + rook-ceph-block-ci/RBD/ext4):
-  #     llama.cpp logged "read_raw_unsafe: Falling back to buffered IO due to
-  #     Bad address" (EFAULT from O_DIRECT on the unaligned path) and fell
-  #     back to plain buffered reads — which is what `none` requests
-  #     directly, without the failed attempt. Trade-off: `none` uses kernel
-  #     readahead on load but does not inflate the working set during decode.
-  #     Observed cold load time: 82.3s (page-cache-warm second load: 7.3s).
   cmd_base: "/app/llama-server --port ${PORT} --host 127.0.0.1 --parallel 2 --cont-batching --split-mode none --reasoning-format auto -ngl 99 --flash-attn on --cache-type-k f16 --cache-type-v f16 --ubatch-size 2048 --jinja --ctx-size 262144 --no-kv-unified --spec-type ngram-simple --poll 0 -t 2 --threads-http 2 --cache-reuse 256 --load-mode none --metrics"
 
 models:

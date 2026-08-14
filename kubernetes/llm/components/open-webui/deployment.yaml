@@ -48,44 +48,32 @@ spec:
             - -c
             - /app/backend/start.sh
           env:
-            # Point to LiteLLM which routes to llama-swap managing llama-server instances
             - name: OPENAI_API_BASE_URL
               value: http://litellm-svc.llm.svc.cluster.local:4000/v1
-            # API key that Open WebUI sends when calling LiteLLM
             - name: OPENAI_API_KEY
               valueFrom:
                 secretKeyRef:
                   name: litellm-config
                   key: LITELLM_MASTER_KEY
-            # Writable paths for uploads and static assets (root FS is read-only)
-            # /app/backend/data → PVC (uploads, chroma, cache, sqlite, audit)
             - name: DATA_DIR
               value: /app/backend/data
-            # /app/backend/open_webui/static → emptyDir (favicon, splash, loader.js —
-            # recopied from the frontend build on every boot; can't share the data PVC
-            # because data and open_webui/static are non-nested siblings under /app/backend)
             - name: STATIC_DIR
               value: /app/backend/open_webui/static
-            # /tmp → emptyDir (required by RAG stack at import time: torch→dill→tempfile)
             - name: TMPDIR
               value: /tmp
             # Disable huggingface_hub Xet protocol to use classic LFS HTTP
             # (already allow-listed in EgressFirewall; Xet CAS domains are not)
             - name: HF_HUB_DISABLE_XET
               value: "true"
-            # Secret key for session/cookie signing — managed by ExternalSecret
             - name: WEBUI_SECRET_KEY
               valueFrom:
                 secretKeyRef:
                   name: open-webui-config
                   key: WEBUI_SECRET_KEY
-            # Public-facing URL (used for OAuth redirect URIs)
             - name: WEBUI_URL
               value: https://ai.arthurvardevanyan.com
-            # Enable OAuth2/OIDC login
             - name: ENABLE_OAUTH
               value: "true"
-            # OIDC client credentials — managed by ExternalSecret
             - name: OAUTH_CLIENT_ID
               valueFrom:
                 secretKeyRef:
@@ -96,40 +84,27 @@ spec:
                 secretKeyRef:
                   name: open-webui-config
                   key: OAUTH_CLIENT_SECRET
-            # Zitadel OIDC discovery endpoint (authlib fetches this directly as JSON config)
             - name: OPENID_PROVIDER_URL
               value: https://zitadel.arthurvardevanyan.com/.well-known/openid-configuration
-            # Allow any logged-in user to sign up (no pre-provisioned accounts)
             - name: ENABLE_OAUTH_SIGNUP
               value: "true"
-            # Merge OIDC identity with existing user by email
             - name: OAUTH_MERGE_ACCOUNTS_BY_EMAIL
               value: "true"
-            # Use OpenID user info (name, email) on first login
             - name: OAUTH_PROVIDERS
               value: openid
-            # WebSocket manager for multi-replica state sharing
             - name: WEBSOCKET_MANAGER
               value: "redis"
             - name: WEBSOCKET_REDIS_URL
               value: redis://open-webui-dragonfly.llm.svc.cluster.local.:6379
-            # SQLite database — CNPG manages connection details via the
-            # postgres user secret; we construct DATABASE_URL from the
-            # cluster-internal host, port, and credentials.
             - name: DATABASE_URL
               value: postgresql://postgres:<password>@open-webui-rw.llm.svc.cluster.local:5432/postgres
-            # SearXNG instance for web search
             - name: ENABLE_WEB_SEARCH
               value: "true"
             - name: WEB_SEARCH_ENGINE
               value: searxng
             - name: SEARXNG_QUERY_URL
               value: http://searxng.llm.svc.cluster.local.:8080/search
-            # Document RAG. Embeddings are served by the dedicated CPU-only
-            # llama.cpp --embedding server (llm-embed) on llm-embed-svc:11435;
-            # vectors are stored in pgvector in the open-webui CNPG cluster.
-            # Keep config authoritative from env (not persisted to the DB) so
-            # Git stays the single source of truth.
+            # Web GUI Admin Settings Won't Stick, all configs should be in GIT
             - name: ENABLE_PERSISTENT_CONFIG
               value: "false"
             # Open WebUI ships its own context compaction (auto history-summarization).
@@ -150,13 +125,6 @@ spec:
               value: "true"
             - name: CONTEXT_COMPACTION_TOKEN_THRESHOLD
               value: "192000"
-            # API keys for external clients (e.g. the OpenCode provider pointing at
-            # /api). Must be set via env because ENABLE_PERSISTENT_CONFIG=false reverts
-            # admin-UI toggles back to env defaults on restart - without these, the
-            # "Enable API keys" feature flips off on every restart and existing keys
-            # start returning 403 (appears as the key "resetting"). The personal sk- keys
-            # themselves live in the api_key table (CNPG) and persist; this keeps the
-            # feature ON and allows non-admin users to create/use them.
             - name: ENABLE_API_KEYS
               value: "true"
             - name: USER_PERMISSIONS_FEATURES_API_KEYS
@@ -169,16 +137,12 @@ spec:
               value: nomic-embed-text-v1.5
             - name: RAG_OPENAI_API_BASE_URL
               value: http://llm-embed-svc.llm.svc.cluster.local:11435/v1
-            # llama.cpp ignores the key; a non-empty value is required.
             - name: RAG_OPENAI_API_KEY
               value: sk-noauth
             - name: VECTOR_DB
               value: pgvector
-            # Reuse DATABASE_URL (PGVECTOR_DB_URL defaults to it); superuser
-            # access lets Open WebUI run CREATE EXTENSION vector.
             - name: PGVECTOR_CREATE_EXTENSION
               value: "true"
-            # nomic-embed-text-v1.5 produces 768-dim vectors.
             - name: PGVECTOR_INITIALIZE_MAX_VECTOR_LENGTH
               value: "768"
             - name: ENABLE_RAG_HYBRID_SEARCH

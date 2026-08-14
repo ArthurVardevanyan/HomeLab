@@ -19,10 +19,6 @@ spec:
     containerPolicies:
       - containerName: llama-swap
         minAllowed:
-          # Raised from 100m to match the deployment's static cpu request
-          # (1 core) — otherwise VPA would recommend the request straight
-          # back down toward its prior ~584m observed target, undoing the
-          # CPU-priority fix in deployment.yaml.
           cpu: "1"
           memory: 512Mi
           ephemeral-storage: 32Mi
@@ -37,9 +33,6 @@ spec:
         controlledValues: RequestsOnly
       - containerName: metrics-exporter
         minAllowed:
-          # Matches the deployment's static request/limit (50m/64Mi,
-          # 100m/128Mi) — a lightweight sidecar with no meaningful load
-          # variance, so bound VPA tightly rather than letting it drift.
           cpu: "10m"
           memory: 32Mi
         maxAllowed:

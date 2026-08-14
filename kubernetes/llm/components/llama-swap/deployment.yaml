@@ -43,21 +43,11 @@ spec:
       nodeSelector:
         feature.node.kubernetes.io/custom-intel.xe.gpu: "true"
       containers:
-        # llama-swap orchestrator: manages llama-server process lifecycles,
-        # GPU binding, and VRAM lifecycle via configuration-driven matrix.
         # Custom image = upstream llama-swap + Mesa >= 26.1 (kisak PPA) for
-        # the Battlemage cooperative-matrix path (~2x decode vs stock Mesa 26.0).
         # renovate: datasource=docker depName=registry.arthurvardevanyan.com/homelab/llama-swap-vulkan versioning=loose
         - image: registry.arthurvardevanyan.com/homelab/llama-swap-vulkan:v249-b10380@sha256:72682ff93a7f3c0a3ef747911b2284b4bf6135e78cfb52179722f994beacc30a
           imagePullPolicy: IfNotPresent
           name: llama-swap
-          # Explicit command overrides the image's ENTRYPOINT (which defaults
-          # to "-config /app/config.yaml -watch-config"); without this, args
-          # below was appended after that default, so the process ran with
-          # a doubled/conflicting -config (last-wins, worked by accident) and
-          # a dead -watch-config. -watch-config is redundant anyway: the
-          # ConfigMap is hash-suffixed (configMapGenerator), so any content
-          # change already forces a new pod via a new volume reference.
           command: ["/app/llama-swap"]
           args: ["--config", "/etc/llama-swap/llama-swap.yaml"]
           ports:
@@ -65,10 +55,8 @@ spec:
               name: http
               protocol: TCP
           env:
-            # Model / HF cache lives on the PVC.
             - name: LLAMA_CACHE
               value: /cache
-            # Mesa shader cache to a writable path under the arbitrary UID.
             - name: MESA_SHADER_CACHE_DIR
               value: /tmp
           securityContext:
@@ -105,11 +93,6 @@ spec:
             failureThreshold: 3
           resources:
             requests:
-              # Raised from 500m: this is a latency-sensitive, dispatch-bound
-              # workload sharing a 6-core/12-thread node with CI, LiteLLM,
-              # Open WebUI, Dragonfly, and CNPG. A low CPU request gave it a
-              # low cgroup CPU weight, so it lost scheduling priority under
-              # contention exactly when responsiveness mattered most.
               cpu: "1"
               memory: 12Gi
               ephemeral-storage: "256Mi"
@@ -131,7 +114,6 @@ spec:
               mountPath: /var/lib/llama-swap
         # metrics-exporter sidecar: scrapes llama.cpp /metrics from each
         # dynamically-assigned child process and exposes aggregated metrics
-        # with model labels on :9100 for Prometheus ServiceMonitor.
         # renovate: datasource=docker depName=registry.arthurvardevanyan.com/homelab/llama-swap-metrics-exporter versioning=loose
         - image: registry.arthurvardevanyan.com/homelab/llama-swap-metrics-exporter:2026.08.14.162459@sha256:e8a688773b0c081e051311524bb9eeb00c11e9bc36d2b1f1204ba66ea18de04d
           imagePullPolicy: IfNotPresent
