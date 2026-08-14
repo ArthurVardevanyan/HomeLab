@@ -38,6 +38,7 @@ spec:
           name: gitops-admin-plugin
           ports:
             - containerPort: 9443
+              name: https
               protocol: TCP
           resources:
             requests:
@@ -62,6 +63,7 @@ spec:
             capabilities:
               drop:
                 - ALL
+            privileged: false
           terminationMessagePath: /dev/termination-log
           terminationMessagePolicy: File
           volumeMounts:
