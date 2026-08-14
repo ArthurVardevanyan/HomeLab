@@ -78,10 +78,19 @@ matrix:
   # make room for a new request (default: 1 for anything unlisted). The 35B
   # instances are the primary public model (highest traffic + longest
   # preload), so protect them preferentially over 27B/coder when a swap is
-  # unavoidable. Paired with the LiteLLM GPU-preference stagger in
-  # litellm.yaml, evictions of 35b should be rare in practice.
+  # unavoidable. Paired with the LiteLLM GPU-preference stagger and the
+  # llama-swap-affinity routing plugin (see litellm.yaml), evictions of 35b
+  # should be rare in practice.
+  #
+  # Asymmetric on purpose: from dual_35b (both copies loaded), a 27B/coder
+  # request must evict exactly one 35B copy. gpu1's copy is deliberately
+  # cheaper (10 vs 20) so that eviction is deterministic - it sacrifices the
+  # 35b-gpu1 overflow copy and keeps 35b-gpu0 (the GPU-preference-ordering
+  # primary in litellm.yaml, and the one most likely to hold live prompt
+  # cache) resident. A symmetric cost here would leave that choice to
+  # set-definition order instead, which is far more fragile to reason about.
   evict_costs:
-    M35-0: 10
+    M35-0: 20
     M35-1: 10
 
   sets:

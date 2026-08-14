@@ -76,7 +76,9 @@ router_settings:
   # deployment per model_name group, so ordering above dictates which GPU
   # each model prefers. Preserves prompt-cache locality per model and
   # minimizes llama-swap matrix evictions - see GPU-preference comments on
-  # each model_list group.
+  # each model_list group. The plugin below is the primary defense; this
+  # ordering is now only a tie-break for the cold-start / nothing-else-loaded
+  # case where the plugin intentionally declines to narrow.
   routing_strategy: least-busy
   # Spread alternative (not used): force a genuine 50/50 split across both
   # GPUs for 35B even under sequential (non-concurrent) load, e.g.:
@@ -87,6 +89,26 @@ router_settings:
   # roughly twice as likely, since either GPU is equally likely to be picked
   # for a fresh 35B request.
   cache_responses: true
+  # llama-swap-aware routing plugin: narrows candidates to whichever
+  # deployment llama-swap already has resident when a *different* model
+  # family is also currently loaded, so LiteLLM never picks a GPU that would
+  # force a mid-request eviction of an unrelated model. See
+  # llama_swap_affinity.py (mounted alongside this file at /etc/litellm) for
+  # the full rationale; resolved via the dotted-path convention documented at
+  # litellm.proxy.types_utils.utils.get_instance_fn.
+  plugins:
+    - llama_swap_affinity.plugin
+  # Required by the plugin above: narrowing candidates to a resident
+  # deployment is only safe if LiteLLM can't simultaneously drop that same
+  # deployment from healthy_deployments via a failure-count cooldown (that
+  # combination raises "No deployments left after routing-plugin filtering"
+  # instead of falling back). All deployments here are one llama-swap pod on
+  # one node; llama-swap's own process state (ready/starting/...) - which the
+  # plugin already reads - is a more accurate health signal for a co-located
+  # local backend than LiteLLM's default 3-failures/5-second cooldown, which
+  # is designed for multi-provider failover and can false-positive on normal
+  # long-generation timeouts or client-aborted streams.
+  disable_cooldowns: true
 
 litellm_settings:
   cache: true
