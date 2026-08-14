@@ -15,11 +15,12 @@ data:
     description: HomeLab agent-platform regression eval
 
     providers:
-      # Direct local LLM (OpenAI-compatible) — baseline behaviour.
+      # Local LLM via the LiteLLM gateway (OpenAI-compatible, model-alias
+      # routing to llama-swap). Auth falls back to the OPENAI_API_KEY env var
+      # set on the CronJob from the LITELLM_MASTER_KEY secret.
       - id: openai:chat:qwen3.6-coder-30b-a3b
         config:
-          apiBaseUrl: http://llm-server-svc.llm.svc.cluster.local:11434/v1
-          apiKey: sk-noauth
+          apiBaseUrl: http://litellm-svc.llm.svc.cluster.local:4000/v1
 
     prompts:
       - "{{prompt}}"

@@ -28,14 +28,14 @@ spec:
           port: 5353
         - protocol: TCP
           port: 5353
-    # Local LLM (baseline + rubric grader).
+    # Local LLM via the LiteLLM gateway (baseline + rubric grader).
     - to:
         - namespaceSelector:
             matchLabels:
               kubernetes.io/metadata.name: llm
           podSelector:
             matchLabels:
-              app: llm-server
+              app: litellm
       ports:
         - protocol: TCP
-          port: 11434
+          port: 4000
