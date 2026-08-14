@@ -7,7 +7,7 @@
 # Drivers: kobuk-team/intel-graphics PPA (official Intel compute runtime channel)
 
 ## Builder: download jellyfin-ffmpeg7 deb (self-contained, version-pinned)
-FROM ubuntu:24.04 AS builder
+FROM ubuntu:26.04 AS builder
 
 # renovate: datasource=generic depName=jellyfin-ffmpeg7 versioning=semver
 ARG JELLYFIN_FFMPEG_VERSION=7.1.4-3
@@ -22,7 +22,7 @@ RUN set -eux; \
   rm -rf /var/lib/apt/lists/*
 
 ## Final: Ubuntu 24.04 with Intel Arc Pro B70 drivers + FFmpeg
-FROM ubuntu:24.04
+FROM ubuntu:26.04
 
 LABEL org.opencontainers.image.source="https://github.com/ArthurVardevanyan/HomeLab" \
   org.opencontainers.image.title="GPU Toolbox (Intel Arc)" \
