@@ -16,7 +16,7 @@ RUN set -eux; \
   apt-get update; \
   apt-get install -y --no-install-recommends ca-certificates curl; \
   curl -fSL -o /tmp/jellyfin-ffmpeg.deb \
-    "https://repo.jellyfin.org/files/ffmpeg/ubuntu/latest-7.x/amd64/jellyfin-ffmpeg7_${JELLYFIN_FFMPEG_VERSION}-noble_amd64.deb"; \
+  "https://repo.jellyfin.org/files/ffmpeg/ubuntu/latest-7.x/amd64/jellyfin-ffmpeg7_${JELLYFIN_FFMPEG_VERSION}-noble_amd64.deb"; \
   # Verify the deb contains the expected ffmpeg binary
   dpkg-deb -c /tmp/jellyfin-ffmpeg.deb | grep -q '/usr/lib/jellyfin-ffmpeg/ffmpeg'; \
   rm -rf /var/lib/apt/lists/*
@@ -57,9 +57,9 @@ RUN set -eux; \
   libze-intel-gpu1 \
   libze1 \
   vainfo \
-  xpu-smi; \
-  # Install jellyfin-ffmpeg7 (self-contained, no PPA dependency)
-  apt-get install -y --no-install-recommends /tmp/jellyfin-ffmpeg.deb; \
+  xpu-smi \
+  # jellyfin-ffmpeg7 (pulls its own deps from Ubuntu repos)
+  /tmp/jellyfin-ffmpeg.deb; \
   # Symlink ffmpeg/ffprobe into PATH
   ln -sf /usr/lib/jellyfin-ffmpeg/ffmpeg /usr/local/bin/ffmpeg; \
   ln -sf /usr/lib/jellyfin-ffmpeg/ffprobe /usr/local/bin/ffprobe; \
