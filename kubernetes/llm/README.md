@@ -2,7 +2,10 @@
 
 GPU-backed local LLM serving for the homelab. The **default (`overlays/okd`)
 backend is llama-swap (Vulkan)** orchestrating llama-server processes on the
-Intel Arc Pro B70 (2× GPUs, 64 GB VRAM pooled).
+Intel Arc Pro B70 (2× GPUs, 64 GB VRAM pooled). The host (`gpu-1`) is a
+6-core/12-thread Ryzen 5 3600 with 82 GB RAM — not the Pi 7 or Dell R740 XL
+referenced in older notes; see [Performance](#performance-why-decode-may-trail-bare-metal-benchmarks)
+for the CPU-side implications this has on decode throughput.
 
 ## Table of Contents
 
@@ -32,9 +35,11 @@ Intel Arc Pro B70 (2× GPUs, 64 GB VRAM pooled).
     - [Storage](#storage)
     - [Document RAG](#document-rag)
       - [Why embeddings run on CPU (not the B70)](#why-embeddings-run-on-cpu-not-the-b70)
+      - [Task-model offload (deferred)](#task-model-offload-deferred)
       - [RAG vs. web search](#rag-vs-web-search)
       - [Freshness / staleness](#freshness--staleness)
   - [Roadmap: connector auto-sync (Onyx)](#roadmap-connector-auto-sync-onyx)
+  - [Future Work](#future-work)
   - [REF](#ref)
 
 ## Backends / Overlays
@@ -58,8 +63,8 @@ or `1`).
 | `27b-gpu0` / `27b-gpu1`           | Qwen3.6-27B (dense)               | higher quality, slower     | Yes                                          |
 | `coder30b-gpu0` / `coder30b-gpu1` | Qwen3-Coder-30B-A3B-Instruct-Q4_0 | Code-focused, high context | No (text-only; no mmproj published upstream) |
 
-> **27B context limit:** The dense 27B model's `ctx-size` is set to `131072`
-> (65K/slot at parallel=2) in the config, half the global 256K. The dense
+> **27B context limit:** The dense 27B model's `ctx-size` is set to `196608`
+> (98K/slot at parallel=2) in the config, 3/4 of the global 256K. The dense
 > weights (~16.7 GB) + f16 KV cache + compute graph exceed the 32 GB VRAM at
 > the full context, so this reduced budget keeps it under 32 GB while still
 > providing ample context for most workloads. The 35B-A3B and coder models
@@ -114,6 +119,43 @@ Base args passed to each managed llama-server process (in `cmd_base` of
 - `--reasoning-format auto` — reasoning format handled per-request by the client.
 - `-ngl 99` — all layers offloaded to GPU.
 - Flash attention on.
+- `--spec-type ngram-simple` — model-free (n-gram) speculative decoding.
+  Added 2026-08-14 after measured decode throughput (p50 ~20.6 t/s from
+  `/api/metrics/stats`, n=778) came in far below the ~76 t/s single-stream
+  ceiling: with `-ngl 99` and near-idle GPU bandwidth utilization during
+  decode, the bottleneck is per-token dispatch overhead on the host's
+  6-core/12-thread CPU, not GPU compute or memory bandwidth. Verifying N
+  drafted tokens in one forward pass collapses N dispatch rounds into 1, at
+  zero VRAM cost (no draft model). This workload's heavy prompt/context
+  reuse (25.17M cache tokens vs 5.17M input tokens in the same sample) is a
+  good match for n-gram lookup. `ngram-simple` is the conservative variant;
+  `ngram-mod` (more aggressive drafting) is a candidate follow-up A/B.
+- `--poll 0` — disables ggml threadpool spin-waiting (default: 50). With
+  `-ngl 99` the threadpool does almost no real work; spinning was competing
+  with the Vulkan submit thread for the same physical cores.
+- `-t 2 --threads-http 2` — was `-1` (auto → 6 threads) on each of 2
+  llama-server processes sharing a 6-core CPU inside the pod's 5-CPU quota,
+  which also runs LiteLLM, Open WebUI, Dragonfly, and CNPG. Bound explicitly
+  to stop threadpool oversubscription.
+- `--cache-reuse 256` — allows KV reuse via shifting when a prompt changes
+  mid-prefix (previously `0`/disabled). Matches how Open WebUI's context
+  compaction, RAG re-injection, and tool-result insertion mutate prompts.
+- `--load-mode none` — plain buffered reads, no mmap. After this change,
+  cgroup `memory.stat` shows `active_file` ~2 MB (was ~20.6 GiB) and
+  `inactive_file` ~23 GiB (page-cache-backed by buffered reads). Working set
+  dropped from ~32 GiB (`oc adm top`: 32,177 Mi) to ~4.7 GiB (4,698 Mi) —
+  well under the 16 GiB VPA floor. Confirmed via `/proc/<pid>/maps` that the
+  GGUF is not mmapped (0 matching entries). `--load-mode dio` was tried first
+  but provably does not work on this hardware + storage stack (gguf +
+  `rook-ceph-block-ci`/RBD/ext4): llama.cpp logged "read_raw_unsafe: Falling
+  back to buffered IO due to Bad address" (EFAULT from O_DIRECT on the
+  unaligned path) and fell back to plain buffered reads — which is what `none`
+  requests directly, without the failed-attempt overhead. Trade-off: `none`
+  uses kernel readahead on load but does not inflate the working set during
+  decode. Observed cold-load time: 82.3s (page-cache-warm second load: 7.3s).
+  `--load-mode` supersedes the deprecated `--mlock`/`--mmap`/`--no-mmap`
+  flags — see [Why not `--mlock`](#why-not---mlock----ngl-all) below, which
+  predates this flag's introduction.
 
 ### KV cache: f16 vs q8_0
 
@@ -131,10 +173,19 @@ Because the GPU has surplus bandwidth, q8_0's bandwidth saving is a **confirmed
 wash** (no measurable bandwidth-% change vs f16) while its dequant cost is
 concentrated exactly where the B70 hurts — **deep-context prefill** (prefill
 near 128K is dominated by the fundamental O(n²) attention, plus a q8
-dequant tax f16 removes). Decode speed is effectively identical either way
-(the ~22 GB model-weight stream dwarfs the ~1–2 GB KV read). f16 is used
-because the user routinely hits deep (50K–100K+) context, where f16's removal
-of dequant overhead is the one real, visible win.
+dequant tax f16 removes). f16 is used because the user routinely hits deep
+(50K–100K+) context, where f16's removal of dequant overhead is the one real,
+visible win, and because **repeated head-to-head testing on this hardware has
+consistently measured q8_0 as slower**, not faster.
+
+> Note: an earlier version of this doc justified identical decode speed
+> between f16/q8_0 by claiming "the ~22 GB model-weight stream dwarfs the
+> ~1–2 GB KV read." That argument doesn't hold for the A3B (sparse MoE)
+> models — only ~3B params activate per token, so the per-token weight
+> stream is closer to ~1.8 GB, the same order of magnitude as the KV read at
+> deep context, not an order of magnitude larger. The empirical result (f16
+> faster) stands; the bandwidth-dominance explanation for it does not. Keep
+> f16 on the strength of repeated measurement, not this arithmetic.
 
 The fit at 256K f16 is **inferred from an observed ~23 GB** (model + KV) on the
 32 GB card, not measured headroom. **Rollback:** if the pod OOMs on model load
@@ -144,16 +195,30 @@ a guarantee.
 
 ### Why not `--mlock` / `--ngl all`
 
-- **`--mlock`** is intentionally NOT used. The model is fully GPU-resident
-  (`-ngl 99`), so decode reads weights from GDDR6, not host RAM — mlock would
-  pin ~22 GB of (capped, 64 GiB limit) host memory to protect pages that aren't
-  on the decode path, risks OOM of the pod, and requires the `IPC_LOCK`
-  capability the containers deliberately drop (`capabilities.drop: [ALL]`).
+> `--mlock`, `--mmap`/`--no-mmap` are **deprecated** in current llama-server
+> builds in favor of the unified `-lm, --load-mode MODE` flag
+> (`auto|none|mmap|mlock|mmap+mlock|dio`). This app now sets
+> `--load-mode dio` in `cmd_base` — see [B70 tuning rationale](#b70-tuning-rationale)
+> above. The reasoning below (originally written against `--mlock`) still
+> applies to why `mlock`/`mmap+mlock` modes are avoided.
+
+- **`mlock` (via `--load-mode`) is intentionally NOT used.** The model is
+  fully GPU-resident (`-ngl 99`), so decode reads weights from GDDR6, not
+  host RAM — mlock would pin ~10+ GB of (capped, 64 GiB limit) host memory to
+  protect pages that aren't on the decode path, risks OOM of the pod, and
+  requires the `IPC_LOCK` capability the containers deliberately drop
+  (`capabilities.drop: [ALL]`).
+- **`dio` was chosen over `mmap`/`auto`** specifically to avoid mmap'd model
+  weights inflating the pod's page-cache-backed working set (`active_file`
+  in cgroup `memory.stat`) well past what VPA had sized the request/target
+  to. See the `--load-mode dio` entry above for the measured before/after.
 - **`--ngl all` is already covered** by `-ngl 99` in the base command.
   99 is the idiomatic "offload all layers" value; setting it in `cmd_base`
-  prevents the silent CPU/MoE spill that tanks Battlemage decode. Confirm the
-  `matrix cores` line / no `CPU buffer` offload in the pod log if decode is
-  ever unexpectedly slow.
+  prevents the silent CPU/MoE spill that tanks Battlemage decode. There is
+  currently no verified way to confirm offload via `oc logs` — llama-swap
+  does not forward child llama-server stdout into its own log stream. If
+  decode is ever unexpectedly slow, verify `-ngl 99` is set in the config
+  and check the running llama-server's process command line via `/proc/<pid>/cmdline`.
 
 ### Mesa 26.1 (biggest perf lever) — handled in the image
 
@@ -176,19 +241,32 @@ encodes the llama-swap version (`v249`) and the upstream llama.cpp build number
 (`b10380`). Renovate-managed; when Renovate proposes a bump in the containerfile
 it triggers a PaC build that pushes the new tag.
 
-Confirm the fast path is active from inside the pod (or the monitor pod):
+Confirm the fast path is active from inside the pod:
 
 ```bash
 export KUBECONFIG=$HOME/.kube/okd
-oc -n llm logs deploy/llama-swap | grep -i "matrix cores"
+oc -n llm exec deploy/llama-swap -- /app/llama-server --help 2>&1 | grep -i coopmat
+# or, from a debug pod with gpu.intel.com/xe request:
+vulkaninfo | grep -iE "Device Name|cooperativeMatrix"
 ```
+
+> **Note:** `oc -n llm logs deploy/llama-swap | grep -i "matrix cores"` does
+> not work — llama-swap does not forward child llama-server stdout into its own
+> log stream. Use a debug pod with the same container image and GPU request to
+> run `llama-server` directly if you need to inspect the cooperative-matrix
+> load log.
 
 Notes:
 
 - Do **not** rely solely on llama.cpp's `matrix cores:` device line to confirm
   the fast path — recent builds report `KHR_coopmat` on hardware that
   previously reported `NV_coopmat2` at identical throughput. Verify with actual
-  decode t/s (target ~76 t/s single-stream on Qwen3.6-35B-A3B).
+  decode t/s. **Measured baseline** (`/api/metrics/stats`, n=778 requests):
+  decode p50 **20.6 t/s**, p95 45.0 t/s, p99 70.2 t/s, max 76.7 t/s — i.e. the
+  76.7 t/s ceiling is real but rare; the median request runs at roughly a
+  quarter of it. See [Performance](#performance-why-decode-may-trail-bare-metal-benchmarks)
+  for why, and [B70 tuning rationale](#b70-tuning-rationale) for the
+  mitigations (`--spec-type`, thread/poll tuning) applied in response.
 
 ## GPU Monitoring (nvidia-smi equivalents)
 
@@ -261,6 +339,14 @@ The llama-swap image defines these Prometheus scrape jobs (in
         instance: llm
 ```
 
+> **Known double-scrape (accepted, not yet fixed):** the static job above
+> and `ServiceMonitor/llama-swap` (`components/llama-swap/service-monitor.yaml`)
+> both scrape the same `llama-swap:8080/metrics`. Harmless beyond a small
+> amount of duplicate Prometheus series/storage; deduplicating is low
+> priority and deferred until the `--metrics` / sidecar-exporter work in
+> `notes/llama-swap-metrics.md` lands, at which point the scrape config
+> needs revisiting anyway.
+
 Key metric families (llama-swap only, no llama-server sub-scrapes):
 
 | Metric family                   | Type    | Description                                              |
@@ -274,9 +360,24 @@ Key metric families (llama-swap only, no llama-server sub-scrapes):
 | `llamaswap_load_average`        | Gauge   | Load average (labels: 1m, 5m, 15m)                       |
 | `llamaswap_network_bytes_total` | Counter | Network bytes transferred (labels: interface, direction) |
 
-llama-server (managed by llama-swap) exposes its own `/metrics` endpoint.
-llama-swap's `/metrics` **already includes** the llama-server metrics under
-namespaced prefixes. No separate `llama_server` scrape job is needed.
+llama-server (managed by llama-swap) exposes its own `/metrics` endpoint when
+started with `--metrics` (currently **not** set in `cmd_base`, so it is
+disabled — confirmed via `GET /props` on a running llama-server instance:
+`"endpoint_metrics": false`).
+
+> **Correction:** an earlier version of this doc claimed llama-swap's
+> `/metrics` "already includes" llama-server's metrics under namespaced
+> prefixes. Verified false: llama-swap's `/metrics` exposes exactly the 8
+> host-level gauges/counter listed in the table above and nothing
+> model/token-throughput related. Getting real `llamacpp_*` metrics
+> (`predicted_tokens_seconds`, `kv_cache_usage_ratio`, etc.) requires both
+> enabling `--metrics` on the llama-server processes and solving llama-swap's
+> dynamic per-model port assignment for Prometheus scraping — see
+> `notes/llama-swap-metrics.md` for the designed (not yet implemented)
+> sidecar-exporter approach. Until then, `/api/metrics/stats` and
+> `/api/metrics/activity` on llama-swap's own API (not `/metrics`) are the
+> best available token-throughput signal — see
+> [Performance](#performance-why-decode-may-trail-bare-metal-benchmarks).
 
 ### Example PromQL queries
 
@@ -313,11 +414,32 @@ llamaswap_network_bytes_total
 
 ## Performance: why decode may trail bare-metal benchmarks
 
-The B70 is a **PCIe Gen4 x8** GPU on the Pi 7 (PCIe Gen3 x4), and the
-Dell R740 XL (PCIe Gen4 x16, but 8-lane slot). Neither matches the raw
-bandwidth of a Gen5 x16 slot. Combined with the container Vulkan userspace,
-you should expect **~60–70% of bare-metal desktop benchmarks** for single-stream
-decode on Qwen3.6-35B-A3B (target ~76 t/s → expect 45–55 t/s).
+> **Correction:** an earlier version of this doc attributed decode shortfall
+> mainly to PCIe lane width on hardware ("Pi 7", "Dell R740 XL") that this
+> overlay does not actually run on. The `gpu-1` node is a **6-core/12-thread
+> Ryzen 5 3600** with 82 GB RAM and 2× Intel Arc Pro B70. PCIe bandwidth is
+> still a factor (see below), but it is not the dominant one — see the
+> CPU-dispatch-bound analysis that follows.
+
+The B70 is a **PCIe Gen4 x8** GPU; the exact host slot bandwidth on `gpu-1`
+has not been re-verified since the hardware correction above, so treat any
+specific Gen/lane-count claim here with caution until it's re-measured. What
+**has** been measured directly (`/api/metrics/stats`, n=778 requests):
+decode p50 **20.6 t/s**, p95 45.0 t/s, p99 70.2 t/s, max 76.7 t/s — the
+median request runs at roughly a quarter of the observed ceiling.
+
+That gap, combined with the GPU using only ~11% of its 608 GiB/s memory
+bandwidth under dual-slot load (see [KV cache: f16 vs q8_0](#kv-cache-f16-vs-q8_0)),
+points at the decode loop being **CPU-dispatch-bound, not GPU-bandwidth- or
+GPU-compute-bound**: 2 llama-server processes each defaulting to `-1`
+(auto-detect-all-cores) threads, on a 6-core host also running LiteLLM, Open
+WebUI, Dragonfly, CNPG, and (opportunistically) Tekton CI builds, inside a
+5-CPU pod quota. The Vulkan submit thread was very plausibly starved of CPU
+time between GPU dispatches. Mitigations applied 2026-08-14 — `--spec-type
+ngram-simple`, `--poll 0`, `-t 2 --threads-http 2`, a `1`-core CPU
+request/VPA floor — are in [B70 tuning rationale](#b70-tuning-rationale)
+above. Re-measure `/api/metrics/stats` after rollout to confirm effect size;
+numbers above are the pre-change baseline, not yet superseded.
 
 ### Decisive diagnostics
 
@@ -334,9 +456,24 @@ oc -n llm exec deploy/llama-swap -- vulkaninfo | grep -iE "Device Name|cooperati
 oc -n llm exec deploy/llama-swap -- cat /usr/lib64/libvulkan_intel.so.1.0.0 ||   oc -n llm exec deploy/llama-swap -- vulkaninfo | grep -i mesa
 #   Expected: Mesa >= 26.1
 
-# 3. Confirm llama-server is using cooperative matrices at load:
-oc -n llm logs deploy/llama-swap | grep -i "matrix"
-#   Expected: "matrix cores" or "cooperative" in the load log
+# 3. Confirm cooperative matrix availability via vulkaninfo (load-time check
+#    requires running llama-server in a debug pod since llama-swap does not
+#    forward child stdout to its own log stream):
+oc run coopmat-check --image=registry.arthurvardevanyan.com/homelab/llama-swap-vulkan \
+  -n llm --rm -i --restart=Never --overrides='
+{
+  "spec": {
+    "containers": [{
+      "name": "check",
+      "image": "registry.arthurvardevanyan.com/homelab/llama-swap-vulkan:not_latest",
+      "args": ["/app/llama-server", "-m", "/dev/null"],
+      "resources": {"requests": {"gpu.intel.com/xe": "1"}, "limits": {"gpu.intel.com/xe": "1"}},
+      "stdin": true, "tty": true,
+      "volumeMounts": [{"name": "dri", "mountPath": "/dev/dri"}]
+    }],
+    "volumes": [{"name": "dri", "hostPath": {"path": "/dev/dri"}}]
+  }
+}' 2>&1 | grep -iE "matrix|cooperative"
 
 # 4. Check GPU memory pressure:
 oc -n llm exec deploy/llama-swap -- xpu-smi dump -d 0 -m 0,1,2,3,5 | head -20
@@ -345,12 +482,30 @@ oc -n llm exec deploy/llama-swap -- xpu-smi dump -d 0 -m 0,1,2,3,5 | head -20
 # 5. Verify the llama-swap pod itself is running:
 oc -n llm exec deploy/llama-swap -- curl -sS http://localhost:8080/ | python3 -m json.tool
 #   Expected: HTTP 200 with JSON status
+
+# 6. Check CPU contention on the node (dispatch-bound decode signature —
+#    see Performance section above). A buildah/Tekton pod, VPA under-sizing
+#    the llama-swap request, or another pod's limit burst can all starve the
+#    Vulkan submit thread of CPU time between GPU dispatches:
+oc adm top pods -n llm
+oc get pods -A --field-selector spec.nodeName=gpu-1,status.phase=Running \
+  -o custom-columns='NS:.metadata.namespace,NAME:.metadata.name,CPUREQ:.spec.containers[*].resources.requests.cpu,CPULIM:.spec.containers[*].resources.limits.cpu'
+#   Expected: llama-swap has cpu request >= 1 (see deployment.yaml); no
+#   large, currently-Running buildah/CI pod contending for the same 6 cores.
+
+# 7. Check cgroup memory.stat (relevant with --load-mode none or dio):
+oc -n llm exec deploy/llama-swap -- grep -E "^(anon|active_file|inactive_file) " /sys/fs/cgroup/memory.stat
+#   Expected with --load-mode none: active_file ~0–3 MB, inactive_file ~20–24 GB,
+#   working set ~4–5 GiB. If active_file is >10 GiB, the model is being mmapped
+#   (check the image tag — an outdated build may not support --load-mode correctly).
 ```
 
 If (1) fails (no cooperative matrix), the container has an old Mesa build.
 If (2) fails (Mesa < 26.1), the image needs a rebuild.
 If (3) fails (no cooperative matrix in llama-server load log), the llama-server
 version may be too old.
+If (6) shows CPU contention, that is now the primary suspect for decode
+below the measured 20.6 t/s p50 baseline — not the GPU/Vulkan path.
 
 ## Scaling
 
@@ -371,20 +526,33 @@ For higher throughput:
 
 ## Layout
 
+> **Correction:** an earlier version of this diagram described
+> `base/llama-swap.yaml`, `base/llama-swap-configmap.yaml`, and a top-level
+> `config/llama-swap.yaml` — none of these paths exist. The actual layout is
+> below.
+
 ```text
 kubernetes/llm/
 ├── base/
-│   ├── llama-swap.yaml          # llama-swap Deployment + Service
-│   └── llama-swap-configmap.yaml
-├── components/
+│   ├── namespace.yaml           # llm Namespace (PSS restricted, GPU toleration)
+│   └── network-policy.yaml
+├── components/                  # one directory per app, each a Kustomize Component
+│   ├── llama-swap/              # orchestrator: Deployment, Service, PVCs,
+│   │   │                        # llama-swap.yaml (model matrix, mounted via
+│   │   │                        # configMapGenerator — no separate config/ dir)
+│   │   └── llama-swap.yaml      # the actual model matrix config
 │   ├── llama-cpp-embed/         # CPU embeddings for Open WebUI (kept)
-│   └── llama-swap/              # llama-swap component (config matrix, etc.)
+│   ├── litellm/                 # gateway + llama_swap_affinity routing plugin
+│   ├── open-webui/               # chat front-end
+│   ├── searxng/                  # web-search backend for Open WebUI
+│   ├── model-downloader/         # CronJob (suspended) to (re)fetch GGUFs
+│   ├── dragonfly-litellm/, dragonfly-open-webui/  # Redis-compatible caches
+│   ├── cnpg-litellm/, cnpg-open-webui/            # CloudNativePG Postgres
+│   └── *-gateway/                # Gateway API HTTPRoute + Certificate per app
 ├── overlays/
 │   └── okd/
-│       ├── kustomization.yaml   # includes llama-swap component
-│       └── llama-swap.yaml      # GPU-specific overrides
-├── config/
-│   └── llama-swap.yaml          # llama-swap model matrix config (mounted as ConfigMap)
+│       ├── kustomization.yaml   # composes base + all components for this cluster
+│       └── egress-firewall.yaml
 └── README.md                    # this file
 ```
 
@@ -411,8 +579,8 @@ via ArgoCD in the `llm` namespace.
 ### Storage
 
 Open WebUI stores uploaded documents, user avatars, and session data on a
-PersistentVolumeClaim. The storage class is `local-path` for local storage
-or `csi-vsphere` for shared storage (when available).
+PersistentVolumeClaim (`open-webui-data`, `ReadWriteMany`, `rook-cephfs`, 5Gi
+— see `components/open-webui/pvc.yaml`).
 
 ### Document RAG
 
@@ -429,6 +597,27 @@ saves GPU VRAM for the large language model.
 
 Embeddings are loaded by `llama-cpp-embed` and exposed via the Open WebUI
 embedding backend configuration. No GPU resources are consumed for this step.
+
+> **Known oversubscription (not yet fixed):** `llama-cpp-embed` is started
+> with `--threads 8` but the container's `resources.limits.cpu` is `"2"` —
+> a 4× mismatch. Low priority given embeddings are small/fast regardless,
+> but worth aligning (`--threads 2` or raising the CPU limit) if `gpu-1`'s
+> CPU headroom becomes tighter after the llama-swap CPU-request increase
+> above.
+
+#### Task-model offload (deferred)
+
+Open WebUI has no `TASK_MODEL` / `TASK_MODEL_EXTERNAL` configured, so
+internal helper calls — chat title generation, tag generation, retrieval
+query rewriting, and follow-up suggestions — all run against the same
+public chat model (typically the 35B) as the user's actual request. The
+observed input:output token ratio (5.17M input / 326K output tokens,
+`/api/metrics/stats`) is consistent with meaningful task-call overhead
+riding on top of real generation. Pointing `TASK_MODEL` at a smaller model,
+or disabling individual features (`ENABLE_TAGS_GENERATION`,
+`ENABLE_FOLLOW_UP_GENERATION`, etc.) via env vars in
+`components/open-webui/deployment.yaml`, is a candidate follow-up — not yet
+implemented.
 
 #### RAG vs. web search
 
@@ -448,9 +637,33 @@ Planned: automated document ingestion connectors (GitHub repos, web scraping,
 email) that continuously sync documents into the vector store. This would
 eliminate manual document uploads and keep RAG data fresh.
 
-See [Onyx](https://github.com/onflow/onyx) (or equivalent project) for
+See [Onyx](https://github.com/onyx-dot-app/onyx) (or equivalent project) for
 reference implementations. Integration into the ArgoCD application topology
 is the next step once the connector architecture is decided.
+
+## Future Work
+
+Items identified during the 2026-08-14 performance review, deliberately not
+implemented yet:
+
+- **Model storage on node-local storage instead of `rook-ceph-block-ci`.**
+  `gpu-1` has ~900 GB free on its node filesystem; a local PV would cut the
+  ~20 GB cold-load time (82.3s observed off RBD; page-cache-warm second load
+  was 7.3s — readahead loss from `--load-mode none` is a real cost, though
+  the ~10× working-set reduction is the primary trade-off). Blocked on
+  installing a local-storage provisioner (no LVM Storage / Local Storage
+  Operator CSI driver is currently installed — only `rook-ceph.rbd`,
+  `rook-ceph.cephfs`, and `csi.spiffe.io` exist on this cluster). Out of
+  scope for a config-only tuning pass.
+- **`--spec-type ngram-mod` A/B against `ngram-simple`** (see
+  [B70 tuning rationale](#b70-tuning-rationale)) once enough post-change
+  `/api/metrics/stats` samples accumulate.
+- **Open WebUI `TASK_MODEL` offload** — see
+  [Task-model offload (deferred)](#task-model-offload-deferred).
+- **llama-swap `/metrics` → real `llamacpp_*` metrics** — designed in
+  `notes/llama-swap-metrics.md`, not implemented.
+- **`llm-embed` thread/CPU-limit mismatch** — see the note under
+  [Why embeddings run on CPU](#why-embeddings-run-on-cpu-not-the-b70).
 
 ## REF
 

@@ -51,6 +51,14 @@ spec:
         - image: registry.arthurvardevanyan.com/homelab/llama-swap-vulkan:v249-b10380@sha256:72682ff93a7f3c0a3ef747911b2284b4bf6135e78cfb52179722f994beacc30a
           imagePullPolicy: IfNotPresent
           name: llama-swap
+          # Explicit command overrides the image's ENTRYPOINT (which defaults
+          # to "-config /app/config.yaml -watch-config"); without this, args
+          # below was appended after that default, so the process ran with
+          # a doubled/conflicting -config (last-wins, worked by accident) and
+          # a dead -watch-config. -watch-config is redundant anyway: the
+          # ConfigMap is hash-suffixed (configMapGenerator), so any content
+          # change already forces a new pod via a new volume reference.
+          command: ["/app/llama-swap"]
           args: ["--config", "/etc/llama-swap/llama-swap.yaml"]
           ports:
             - containerPort: 8080
@@ -97,7 +105,12 @@ spec:
             failureThreshold: 3
           resources:
             requests:
-              cpu: "500m"
+              # Raised from 500m: this is a latency-sensitive, dispatch-bound
+              # workload sharing a 6-core/12-thread node with CI, LiteLLM,
+              # Open WebUI, Dragonfly, and CNPG. A low CPU request gave it a
+              # low cgroup CPU weight, so it lost scheduling priority under
+              # contention exactly when responsiveness mattered most.
+              cpu: "1"
               memory: 12Gi
               ephemeral-storage: "256Mi"
               gpu.intel.com/xe: "2"
