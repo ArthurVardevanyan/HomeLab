@@ -38,10 +38,11 @@ data:
         'map(select(.name == $n)) | (.[0].id // empty)')"
 
     if [[ -z "${kb_id}" ]]; then
+      body="$(jq -n --arg n "${COLLECTION_NAME}" \
+        '{name:$n, description:("Auto-synced: "+$n)}')"
       kb_id="$(curl -fsSL "${AUTH[@]}" "${JSON[@]}" \
         -X POST "${API}/knowledge/create" \
-        -d "$(jq -n --arg n "${COLLECTION_NAME}" \
-          '{name:$n, description:("Auto-synced: "+$n)}')" |
+        -d "${body}" |
         jq -r '.id')"
       echo "created collection id=${kb_id}"
     else
@@ -81,9 +82,10 @@ data:
         continue
       fi
 
+      attach_body="$(jq -n --arg fid "${file_id}" '{file_id:$fid}')"
       curl -fsSL "${AUTH[@]}" "${JSON[@]}" \
         -X POST "${API}/knowledge/${kb_id}/file/add" \
-        -d "$(jq -n --arg fid "${file_id}" '{file_id:$fid}')" \
+        -d "${attach_body}" \
         >/dev/null || echo "  ! attach failed (may already exist): ${url}"
 
       echo "  + ${url} -> file_id=${file_id}"
