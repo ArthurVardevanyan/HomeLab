@@ -6,8 +6,11 @@ store:
 
 hooks:
   on_startup:
+    # preload takes model IDs (not matrix set names) - "dual_35b" here was a
+    # silent no-op, forcing a ~23s cold start on the first 35b request.
     preload:
-      - dual_35b
+      - 35b-gpu0
+      - 35b-gpu1
 
 macros:
   # The unified base command for all single-card instances
@@ -70,6 +73,16 @@ matrix:
     M27-1: 27b-gpu1
     C30-0: coder30b-gpu0
     C30-1: coder30b-gpu1
+
+  # Relative cost of losing a running model when the solver must evict to
+  # make room for a new request (default: 1 for anything unlisted). The 35B
+  # instances are the primary public model (highest traffic + longest
+  # preload), so protect them preferentially over 27B/coder when a swap is
+  # unavoidable. Paired with the LiteLLM GPU-preference stagger in
+  # litellm.yaml, evictions of 35b should be rare in practice.
+  evict_costs:
+    M35-0: 10
+    M35-1: 10
 
   sets:
     # --- Data Parallel (Same model duplicated on both cards) ---
