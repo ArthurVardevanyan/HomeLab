@@ -115,5 +115,5 @@ Each node is mapped to an HA switch entity in `kubernetes/bmc-shim/base/configma
 bash main.bash kustomize_fix --dir okd/okd-nodes
 
 # CI validation (skip AVP — no Vault needed for these manifests)
-../k8s-gitops-ci/bin/k8s-gitops-ci test-all --app okd/okd-nodes --cluster okd --assume-openshift --disable-checks avp
+k8s-gitops-ci test-all --app okd/okd-nodes --cluster okd --assume-openshift --disable-checks avp
 ```

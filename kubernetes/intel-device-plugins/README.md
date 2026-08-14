@@ -4,6 +4,25 @@ Installs the Intel Device Plugins Operator (via OLM) and a `GpuDevicePlugin`
 custom resource that advertises the Intel Arc Pro B70 (Battlemage / Xe2, `xe`
 KMD) to the kubelet as the `gpu.intel.com/xe` extended resource.
 
+> **[WARNING] Intel MIG (fan-out sharing) is currently DISABLED.** The
+> `GpuDevicePlugin` CR (`sharedDevNum: 1`) exposes each physical Intel Arc Pro
+> B70 GPU as exactly 1 allocatable device (`gpu.intel.com/xe: 2` total on
+> `gpu-1`). No GPU partitioning or MIG-style slicing is active. This is
+> intentional for the current LLM workload, which requires full GPUs
+> (`gpu.intel.com/xe: "2"` per pod). If you need to run partitioned GPU
+> workloads (e.g. transcoding servers, multi-tenant inference), you must:
+>
+> 1. **Bump `sharedDevNum`** in
+>    `kubernetes/intel-device-plugins/base/gpu-device-plugin.yaml` (e.g.
+>    `sharedDevNum: 3` gives 3 virtual indices per card).
+> 2. **Update workload resource requests** to consume fractional indices
+>    (`gpu.intel.com/xe: "1"` for one slice, `"2"` for two slices, etc.).
+> 3. **Redeploy the device plugin** — the DaemonSet must roll to pick up the
+>    new CR spec (each card's `gpu.intel.com/xe` allocatable count will
+>    change from `2` to `sharedDevNum × 2`).
+> 4. **Verify** with `oc get node gpu-1 -o jsonpath='{.status.allocatable.gpu\.intel\.com/xe}'`
+>    before scheduling new workloads.
+
 ## Hardware Setup
 
 Hardware configuration for the two PCIe devices on gpu-1 (Ryzen 5800X / MSI
@@ -73,15 +92,18 @@ ethtool enp42s0
 
 ## Table of Contents
 
-- [Hardware Setup](#hardware-setup)
-  - [GPU — 2x Intel Arc Pro B70](#gpu--2x-intel-arc-pro-b70)
-  - [NIC — Realtek (enp42s0)](#nic--realtek-enp42s0)
-- [Scheduling](#scheduling)
-- [GPU Monitoring (nvidia-smi equivalents)](#gpu-monitoring-nvidia-smi-equivalents)
-  - [From the host / a node debug shell](#from-the-host--a-node-debug-shell)
-  - [From inside a gpu-toolbox debug pod](#from-inside-a-gpu-toolbox-debug-pod)
-  - [From Kubernetes (scheduling / capacity view)](#from-kubernetes-scheduling--capacity-view)
-- [Verify the plugin and node labels](#verify-the-plugin-and-node-labels)
+- [Intel Device Plugins (GPU)](#intel-device-plugins-gpu)
+  - [Hardware Setup](#hardware-setup)
+    - [GPU — 2x Intel Arc Pro B70](#gpu--2x-intel-arc-pro-b70)
+    - [NIC — Realtek (enp42s0)](#nic--realtek-enp42s0)
+  - [Table of Contents](#table-of-contents)
+  - [Scheduling](#scheduling)
+  - [GPU Monitoring (nvidia-smi equivalents)](#gpu-monitoring-nvidia-smi-equivalents)
+    - [From the host / a node debug shell](#from-the-host--a-node-debug-shell)
+    - [From inside a gpu-toolbox debug pod](#from-inside-a-gpu-toolbox-debug-pod)
+    - [From Kubernetes (scheduling / capacity view)](#from-kubernetes-scheduling--capacity-view)
+  - [Verify the plugin and node labels](#verify-the-plugin-and-node-labels)
+  - [Re-rendering the chart](#re-rendering-the-chart)
 
 ## Scheduling
 
