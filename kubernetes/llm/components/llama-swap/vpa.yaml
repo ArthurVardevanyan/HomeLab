@@ -35,3 +35,17 @@ spec:
           - memory
           - ephemeral-storage
         controlledValues: RequestsOnly
+      - containerName: metrics-exporter
+        minAllowed:
+          # Matches the deployment's static request/limit (50m/64Mi,
+          # 100m/128Mi) — a lightweight sidecar with no meaningful load
+          # variance, so bound VPA tightly rather than letting it drift.
+          cpu: "10m"
+          memory: 32Mi
+        maxAllowed:
+          cpu: "250m"
+          memory: 256Mi
+        controlledResources:
+          - cpu
+          - memory
+        controlledValues: RequestsAndLimits

@@ -31,11 +31,19 @@ spec:
           podSelector:
             matchLabels:
               app: prometheus-server
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: prometheus
+          podSelector:
+            matchLabels:
+              app: prometheus-nas
       ports:
         - protocol: TCP
           port: 4000
         - protocol: TCP
           port: 8080
+        - protocol: TCP
+          port: 9100
         - protocol: TCP
           port: 11434
         - protocol: TCP
@@ -96,6 +104,8 @@ spec:
           port: 4000
         - protocol: TCP
           port: 8080
+        - protocol: TCP
+          port: 9100
         - protocol: TCP
           port: 11434
         - protocol: TCP

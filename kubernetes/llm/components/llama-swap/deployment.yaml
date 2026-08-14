@@ -129,6 +129,37 @@ spec:
               mountPath: /cache
             - name: store
               mountPath: /var/lib/llama-swap
+        # metrics-exporter sidecar: scrapes llama.cpp /metrics from each
+        # dynamically-assigned child process and exposes aggregated metrics
+        # with model labels on :9100 for Prometheus ServiceMonitor.
+        # renovate: datasource=docker depName=registry.arthurvardevanyan.com/homelab/llama-swap-metrics-exporter versioning=loose
+        - image: registry.arthurvardevanyan.com/homelab/llama-swap-metrics-exporter:2026.08.14.162459@sha256:e8a688773b0c081e051311524bb9eeb00c11e9bc36d2b1f1204ba66ea18de04d
+          imagePullPolicy: IfNotPresent
+          name: metrics-exporter
+          ports:
+            - containerPort: 9100
+              name: metrics
+              protocol: TCP
+          resources:
+            requests:
+              cpu: "50m"
+              memory: "64Mi"
+            limits:
+              cpu: "100m"
+              memory: "128Mi"
+          securityContext:
+            runAsNonRoot: true
+            readOnlyRootFilesystem: true
+            allowPrivilegeEscalation: false
+            privileged: false
+            seccompProfile:
+              type: RuntimeDefault
+            capabilities:
+              drop:
+                - ALL
+          volumeMounts:
+            - name: metrics-cache
+              mountPath: /tmp
       volumes:
         - name: config
           configMap:
@@ -141,3 +172,5 @@ spec:
         - name: store
           persistentVolumeClaim:
             claimName: llm-llama-swap-store
+        - name: metrics-cache
+          emptyDir: {}

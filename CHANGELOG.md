@@ -26,8 +26,7 @@ This document analyzes the git history of the HomeLab project, grouping changes 
 | **Bare Metal**      | Early 2025 | OKD IPI / SNO      | Agent Installer          | Tekton, Gitea          | Ceph, LVM         | Power Monitoring           | OVN-K8s                       | KFCA                |
 | **Accel**           | Late 2025  | OKD IPI            | Agent Installer          | Tekton, Gitea          | Ceph, LVM         | VictoriaMetrics, Dragonfly | Gateway API, Service Mesh     | NetworkPolicy       |
 | **Resilience**      | Early 2026 | OKD IPI            | Renovate (GitHub App)    | Tekton, Gitea          | Ceph, CNPG        | Wire-Tap                   | BGP, Gateway API              | Coraza WAF          |
-| **AI & Automation** | Mid 2026   | OKD IPI            | Renovate + gitops-ci     | Tekton, Gitea          | Ceph, CNPG        | VictoriaMetrics, Dragonfly | BGP, Gateway API              | NetworkPolicy, WAF  |
-| **LLM & GPU**       | Late 2026  | OKD IPI            | Renovate + gitops-ci     | Tekton, Gitea          | Ceph, CNPG        | VictoriaMetrics, Dragonfly | BGP, Gateway API              | NetworkPolicy, WAF  |
+| **AI, LLM & GPU**   | Mid 2026   | OKD IPI            | Renovate + gitops-ci     | Tekton, Gitea          | Ceph, CNPG        | VictoriaMetrics, Dragonfly | BGP, Gateway API              | NetworkPolicy, WAF  |
 
 - [Changelog](#changelog)
   - [Overview](#overview)
@@ -70,12 +69,9 @@ This document analyzes the git history of the HomeLab project, grouping changes 
   - [16. Platform Resilience \& Networking 2.0 (Early 2026)](#16-platform-resilience--networking-20-early-2026)
     - [Key Characteristics](#key-characteristics-10)
     - [Major Milestones](#major-milestones-10)
-  - [17. AI \& Automation (Mid 2026)](#17-ai--automation-mid-2026)
+  - [17. AI, LLM \& GPU (Mid 2026)](#17-ai-llm--gpu-mid-2026)
     - [Key Characteristics](#key-characteristics-11)
     - [Major Milestones](#major-milestones-11)
-  - [18. LLM & GPU (Mid-Late 2026)](#18-llm--gpu-mid-late-2026)
-    - [Key Characteristics](#key-characteristics-12)
-    - [Major Milestones](#major-milestones-12)
 
 ## 1. Windows Server (Early 2016)
 
@@ -360,18 +356,25 @@ Focus on platform maturity, DNS modernization, web application security, databas
 - **May 12, 2026**: **Fedora Snapdragon laptop** inception (ARM laptop Ansible playbooks).
 - **May 18, 2026**: **AI agent skills** inception — `AGENTS.md`, HomeLab and Kubernetes `SKILL.md`, Copilot instructions, opencode playbooks.
 
-## 17. AI & Automation (Mid 2026)
+## 17. AI, LLM & GPU (Mid 2026)
 
-Focus on AI hardware acceleration, CI pipeline modernization, and platform automation improvements.
+Focus on AI hardware acceleration, LLM infrastructure, CI pipeline modernization, and platform automation improvements.
 
 ### Key Characteristics
 
-- **AI Hardware**: **Intel Arc B70** node onboarded with **LLM inference** migrated to llama.cpp Vulkan; **NVIDIA** GPU app removed from ArgoCD.
+- **AI Hardware**: **Dual Intel Arc Pro B70** (Battlemage / Xe2) on gpu-1 — slot 1 Gen4 x4 (`0000:06:00.0`, direct CPU lanes), slot 2 Gen3 x4 (`0000:2d:00.0`, B550 chipset lanes); K8s allocatable: 2x `gpu.intel.com/xe` (one per physical card). **Intel Arc B70** node onboarded with **LLM inference** migrated to llama.cpp Vulkan; **NVIDIA** GPU app removed from ArgoCD.
+- **LLM Stack**: **llama-swap** orchestrator migration (renamed from `llama-cpp-vulkan`), still includes Mesa 26.1 for Intel ANV cooperative-matrix path (~2x decode throughput on Battlemage). Standalone **llama-cpp** inference with dual-GPU model config, **llama-cpp-embed** embedding server with VPA.
+- **API Layer**: **LiteLLM** unified API proxy/router — Deployment with VPA, CloudNative-PG backend (`cnpg-litellm` component), Dragonfly Redis cache (`dragonfly-litellm` component), Gateway Route with TLS and custom probes, State PVC for proxy config persistence.
+- **Workloads**: **Open WebUI** with PDB and network policy, **SearXNG** search engine with VPA. **Model downloader** CronJob to periodically fetch LLM models.
 - **CI/CD**: **gitops-ci** pipeline tool incepted for local and CI validation; **git-clift** semantic releaser incepted; CI process documented for agentic workflows.
 - **Platform**: OKD upgraded to **4.22.0-okd-scos.7**; switch to **stable channel**. OpenShift Logging re-inception; **spread-constraints** on monitoring; **toolbox multi-layer** support.
-- **Networking**: **BGP routing fix** for worker reachability to load balancer; **NetObserv** service-mode; Service Mesh removed (no longer required for Gateway APIs).
+- **Infrastructure**: **gpu-kernel-args** component (kernel args, machineConfig, MachineConfigPool), updated **Intel device plugins** manifest (1 allocatable per card), updated gpu-1 MachineSet.
+- **Monitoring**: **Prometheus** LLM scrape targets on nas and main configs; **Grafana** LiteLLM dashboard (spend, throughput, tokens, success rate, model routing); updated llama-swap dashboard; removed obsolete llama-cpp dashboard.
+- **Networking**: **BGP routing fix** for worker reachability to load balancer; **NetObserv** service-mode; Service Mesh removed (no longer required for Gateway APIs); Renamed `llm` → `llm-open-webui` network policy; added `llm-lite-llm` for Dragonfly→LiteLLM egress.
 - **Automation**: **OLM operator upgrades** automated; **Stackrox** cert rotation fixed.
 - **Renovate Overhaul**: Configuration rewritten with fixed packageRules, improved ansible URL extraction, github-release parsing, RE2 compatibility, captured datasource precedence, and global config consolidation.
+- **Database**: CloudNative-PG **LiteLLM** pg_dump backup secret updated.
+- **Misc**: VSCode autocomplete additions (`Battlemage`, `iommu`, `litellm`, `Qwen`); Terraform Zitadel LiteLLM OAuth client; opencode config update.
 
 ### Major Milestones
 
@@ -384,25 +387,5 @@ Focus on AI hardware acceleration, CI pipeline modernization, and platform autom
 - **August 3-4, 2026**: OKD folder CI fixes; toolbox k8s-gitops-ci versioned tags; operator upgrades; **Tekton** upgrades.
 - **August 7-8, 2026**: **gitops-ci** resource compliance; **container updates**; **checkov** pre-commit hook updated; **Tekton** manifest cleanup and CI documentation; **shellcheck** fixes.
 - **August 8, 2026**: **Renovate** configuration overhaul — fixed packageRules, ansible URL extraction, github-release parsing, RE2 compatibility, captured datasource precedence, global config consolidation.
-
-## 18. LLM & GPU (Mid-Late 2026)
-
-Major LLM infrastructure upgrade with dual GPU support, LiteLLM API aggregation stack, and migration from llama.cpp server to llama-swap orchestrator.
-
-### Key Characteristics
-
-- **Hardware**: **Dual Intel Arc Pro B70** (Battlemage / Xe2) on gpu-1 — slot 1 Gen4 x4 (`0000:06:00.0`, direct CPU lanes), slot 2 Gen3 x4 (`0000:2d:00.0`, B550 chipset lanes); K8s allocatable: 2x `gpu.intel.com/xe` (one per physical card).
-- **LLM Stack**: **llama-swap** orchestrator migration (renamed from `llama-cpp-vulkan`), still includes Mesa 26.1 for Intel ANV cooperative-matrix path (~2x decode throughput on Battlemage).
-- **API Layer**: **LiteLLM** unified API proxy/router — Deployment with VPA, CloudNative-PG backend (`cnpg-litellm` component), Dragonfly Redis cache (`dragonfly-litellm` component), Gateway Route with TLS and custom probes, State PVC for proxy config persistence.
-- **Workloads**: Standalone **llama-cpp** inference with dual-GPU model config, **llama-cpp-embed** embedding server with VPA, **Open WebUI** with PDB and network policy, **SearXNG** search engine with VPA.
-- **Automation**: **Model downloader** CronJob to periodically fetch LLM models.
-- **Infrastructure**: **gpu-kernel-args** component (kernel args, machineConfig, MachineConfigPool), updated **Intel device plugins** manifest (1 allocatable per card), updated gpu-1 MachineSet.
-- **Monitoring**: **Prometheus** LLM scrape targets on nas and main configs; **Grafana** LiteLLM dashboard (spend, throughput, tokens, success rate, model routing); updated llama-swap dashboard; removed obsolete llama-cpp dashboard.
-- **Networking**: Renamed `llm` → `llm-open-webui` network policy; added `llm-lite-llm` for Dragonfly→LiteLLM egress.
-- **Database**: CloudNative-PG **LiteLLM** pg_dump backup secret updated.
-- **Misc**: VSCode autocomplete additions (`Battlemage`, `iommu`, `litellm`, `Qwen`); Terraform Zitadel LiteLLM OAuth client; opencode config update.
-
-### Major Milestones
-
 - **August 11, 2026**: **Intel Arc B70** node onboarded with **LLM inference** migrated to llama.cpp Vulkan; **NVIDIA** ArgoCD application removed; opencode dependency update; **CI agentic flow** documentation.
 - **August 13-14, 2026**: PR #624 merged — **Dual Intel Arc Pro B70** upgrade (gpu-1: 2x Xe2 Battlemage); **llama-swap** orchestrator migration; **LiteLLM** API proxy/router with VPA, CloudNative-PG, Dragonfly Redis; **SearXNG** search engine; **Model downloader** CronJob; **gpu-kernel-args** component; **Intel device plugins** updated for dual GPU; **Prometheus** LLM scrape targets; **Grafana** LiteLLM dashboard; **Open WebUI** PDB + network policy; llama-cpp-embed with VPA; Citadel LiteLLM OAuth; CNPG pg_dump backup secret.

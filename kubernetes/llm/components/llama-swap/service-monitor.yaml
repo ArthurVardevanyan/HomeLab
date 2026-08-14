@@ -17,3 +17,29 @@ spec:
     - port: http
       path: /metrics
       interval: 30s
+    - port: metrics
+      path: /metrics
+      interval: 30s
+      # The metrics-exporter is a Go binary using client_golang, which
+      # auto-registers the standard go_*/process_* collectors. Drop them to
+      # match the llama-swap-llamacpp-metrics static Prometheus job
+      # (kubernetes/prometheus/components/prometheus{,-nas}/config-map.yaml),
+      # which already filters this noise.
+      metricRelabelings:
+        - sourceLabels: [__name__]
+          regex: "go_(.+)"
+          action: drop
+        - sourceLabels: [__name__]
+          regex: "process_(.+)"
+          action: drop
+        # llama-swap runs as a single-replica Deployment (no HPA/multi-replica
+        # scaling yet — see kubernetes/llm/README.md Scaling section).
+        # Kubernetes SD injects pod/instance labels that change on every pod
+        # restart, which otherwise fragments each model's series into a new
+        # lineage per restart (visible in Grafana as duplicate legend entries
+        # for the same model until the old series ages out). Dropping them
+        # keeps the model= label (plus job/namespace/service) as the stable
+        # series identity across restarts. Revisit if this ever scales to
+        # multiple replicas — you'd want pod/instance back to distinguish them.
+        - regex: "pod|instance"
+          action: labeldrop
