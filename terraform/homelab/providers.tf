@@ -6,7 +6,7 @@ terraform {
     }
     vault = {
       source  = "hashicorp/vault"
-      version = "5.10.1"
+      version = "5.11.0"
     }
     zitadel = {
       source  = "zitadel/zitadel"
@@ -15,7 +15,7 @@ terraform {
     }
     http = {
       source  = "hashicorp/http"
-      version = "3.6.0"
+      version = "3.6.1"
     }
     # truenas = {
     #   source  = "dariusbakunas/truenas"
