@@ -14,7 +14,7 @@ spec:
   revisionHistoryLimit: 0
   progressDeadlineSeconds: 1800
   strategy:
-    type: Recreate
+    type: RollingUpdate
   selector:
     matchLabels:
       app: litellm
@@ -51,11 +51,13 @@ spec:
           name: litellm
           args: ["--config", "/etc/litellm/litellm.yaml", "--port", "4000"]
           env:
-            # - name: LITELLM_MASTER_KEY
-            #   valueFrom:
-            #     secretKeyRef:
-            #       name: litellm-config
-            #       key: LITELLM_MASTER_KEY
+            - name: LITELLM_MASTER_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: litellm-config
+                  key: LITELLM_MASTER_KEY
+            - name: STORE_MODEL_IN_DB
+              value: "false"
             - name: HOME
               value: /root
             - name: GENERIC_CLIENT_ID
@@ -86,6 +88,8 @@ spec:
             # Trust auth via pg_hba (CNPG cluster allows all 0.0.0.0/0 trust).
             - name: DATABASE_URL
               value: postgresql://postgres@litellm-rw.llm.svc.cluster.local:5432/litellm
+            - name: SPEND_TRACKING
+              value: "true"
           ports:
             - containerPort: 4000
               name: http

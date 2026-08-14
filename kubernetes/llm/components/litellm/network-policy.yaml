@@ -104,3 +104,59 @@ spec:
           port: 443
         - protocol: TCP
           port: 80
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-litellm-egress-dns
+  namespace: llm
+  annotations:
+    argocd.argoproj.io/sync-wave: "0"
+  labels:
+    app: litellm
+spec:
+  policyTypes:
+    - Egress
+  podSelector:
+    matchLabels:
+      app: litellm
+  egress:
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: openshift-dns
+          podSelector:
+            matchLabels:
+              dns.operator.openshift.io/daemonset-dns: default
+      ports:
+        - protocol: UDP
+          port: 5353
+        - protocol: TCP
+          port: 5353
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-litellm-egress-to-cnpg
+  namespace: llm
+  annotations:
+    argocd.argoproj.io/sync-wave: "0"
+  labels:
+    app: litellm
+spec:
+  policyTypes:
+    - Egress
+  podSelector:
+    matchLabels:
+      app: litellm
+  egress:
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: llm
+          podSelector:
+            matchLabels:
+              cnpg.io/cluster: litellm
+      ports:
+        - protocol: TCP
+          port: 5432

@@ -12,7 +12,7 @@ spec:
   revisionHistoryLimit: 0
   progressDeadlineSeconds: 1800
   strategy:
-    type: Recreate
+    type: RollingUpdate
   selector:
     matchLabels:
       app.kubernetes.io/name: open-webui
@@ -51,6 +51,12 @@ spec:
             # Point to LiteLLM which routes to llama-swap managing llama-server instances
             - name: OPENAI_API_BASE_URL
               value: http://litellm-svc.llm.svc.cluster.local:4000/v1
+            # API key that Open WebUI sends when calling LiteLLM
+            - name: OPENAI_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: litellm-config
+                  key: LITELLM_MASTER_KEY
             # Writable paths for uploads and static assets (root FS is read-only)
             # /app/backend/data → PVC (uploads, chroma, cache, sqlite, audit)
             - name: DATA_DIR
@@ -154,6 +160,8 @@ spec:
             - name: ENABLE_API_KEYS
               value: "true"
             - name: USER_PERMISSIONS_FEATURES_API_KEYS
+              value: "true"
+            - name: ENABLE_FORWARD_USER_INFO_HEADERS
               value: "true"
             - name: RAG_EMBEDDING_ENGINE
               value: openai

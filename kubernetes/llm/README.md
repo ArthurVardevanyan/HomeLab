@@ -82,6 +82,14 @@ no model (7.2 W), so unloading buys zero wattage.
 > the orchestrator is running (regardless of whether a llama-server process is
 > loading). Do **not** put liveness on a llama-server-specific endpoint — it
 > flaps during model swaps and would kill the container mid-load.
+>
+> **Session IDs:** llama-swap's Activity page can display per-session IDs when
+> clients send `X-Session-ID` or `X-Litellm-Session-Id` headers (the
+> defaults). This is **not currently configured** — the Open WebUI → LiteLLM
+> → llama-swap chain does not propagate session identifiers, so all requests
+> show a dash. Enabling it would require injecting the header at some point
+> in the request chain (e.g. via an Istio EnvoyFilter on the Open WebUI
+> pod, or a header-forwarding config on Open WebUI/LiteLLM).
 
 ### B70 tuning rationale
 
