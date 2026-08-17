@@ -24,9 +24,11 @@ hooks:
     preload:
       - 35b-gpu0
       - 35b-gpu1
+      - 35b-gpu0-dense
+      - 35b-gpu1-dense
 
 macros:
-  cmd_base: "/app/llama-server --port ${PORT} --host 127.0.0.1 --parallel 2 --cont-batching --split-mode none --reasoning-format auto -ngl 99 --flash-attn on --cache-type-k f16 --cache-type-v f16 --ubatch-size 2048 --jinja --ctx-size 262144 --no-kv-unified --spec-type ngram-simple --poll 0 -t 2 --threads-http 2 --cache-reuse 256 --load-mode none --metrics"
+  cmd_base: "/app/llama-server --port ${PORT} --host 127.0.0.1 --parallel 2 --cont-batching --split-mode none --reasoning-format auto -ngl 99 --flash-attn on --cache-type-k f16 --cache-type-v f16 --ubatch-size 2048 --jinja --ctx-size 393216 --no-kv-unified --spec-type ngram-simple --poll 0 -t 2 --threads-http 2 --cache-reuse 256 --load-mode none --metrics"
 
 models:
   # ==========================================
@@ -48,13 +50,13 @@ models:
   # 2. Qwen 3.6 27B
   # ==========================================
   27b-gpu0:
-    cmd: ${cmd_base} --ctx-size 196608 -m /data/models/Qwen3.6-27B-Q4_K_M.gguf --mmproj /data/models/Qwen3.6-27B-mmproj-F16.gguf --image-min-tokens 1024
+    cmd: ${cmd_base} --parallel 1 --ctx-size 196608 -m /data/models/Qwen3.8-27B-Q4_K_M.gguf --mmproj /data/models/Qwen3.8-27B-mmproj-F16.gguf --image-min-tokens 1024
     env:
       - "GGML_VK_VISIBLE_DEVICES=0"
     ttl: 0
 
   27b-gpu1:
-    cmd: ${cmd_base} --ctx-size 196608 -m /data/models/Qwen3.6-27B-Q4_K_M.gguf --mmproj /data/models/Qwen3.6-27B-mmproj-F16.gguf --image-min-tokens 1024
+    cmd: ${cmd_base} --parallel 1 --ctx-size 196608 -m /data/models/Qwen3.8-27B-Q4_K_M.gguf --mmproj /data/models/Qwen3.8-27B-mmproj-F16.gguf --image-min-tokens 1024
     env:
       - "GGML_VK_VISIBLE_DEVICES=1"
     ttl: 0
@@ -74,6 +76,45 @@ models:
       - "GGML_VK_VISIBLE_DEVICES=1"
     ttl: 0
 
+  35b-gpu0-dense:
+    cmd: ${cmd_base} --parallel 1 --ctx-size 393216 -m /data/models/Qwen3.6-35B-A3B-UD-Q4_K_M.gguf --mmproj /data/models/Qwen3.6-35B-A3B-mmproj-F16.gguf --image-min-tokens 1024
+    env:
+      - "GGML_VK_VISIBLE_DEVICES=0"
+    ttl: 0
+
+  35b-gpu1-dense:
+    cmd: ${cmd_base} --parallel 1 --ctx-size 393216 -m /data/models/Qwen3.6-35B-A3B-UD-Q4_K_M.gguf --mmproj /data/models/Qwen3.6-35B-A3B-mmproj-F16.gguf --image-min-tokens 1024
+    env:
+      - "GGML_VK_VISIBLE_DEVICES=1"
+    ttl: 0
+
+  # ==========================================
+  # 4. Qwen 3.6 35B (A3B) — Spread (both GPUs, 1M ctx, parallel 4)
+  # ==========================================
+  35b-spread:
+    cmd: ${cmd_base} --split-mode layer --tensor-split 1,1 --parallel 4 --ctx-size 1048576 -m /data/models/Qwen3.6-35B-A3B-UD-Q4_K_M.gguf --mmproj /data/models/Qwen3.6-35B-A3B-mmproj-F16.gguf --image-min-tokens 1024
+    env:
+      - "CUDA_VISIBLE_DEVICES=0,1"
+    ttl: 0
+
+  # ==========================================
+  # 5. Qwen 3.8 27B — Spread (both GPUs, 640K ctx, parallel 3)
+  # ==========================================
+  27b-spread:
+    cmd: ${cmd_base} --split-mode layer --tensor-split 1,1 --parallel 3 --ctx-size 655360 -m /data/models/Qwen3.8-27B-Q4_K_M.gguf --mmproj /data/models/Qwen3.8-27B-mmproj-F16.gguf --image-min-tokens 1024
+    env:
+      - "CUDA_VISIBLE_DEVICES=0,1"
+    ttl: 0
+
+  # ==========================================
+  # 6. Qwen 3 Coder 30B (A3B) — Spread (both GPUs, 768K ctx, parallel 3)
+  # ==========================================
+  coder30b-spread:
+    cmd: ${cmd_base} --split-mode layer --tensor-split 1,1 --parallel 3 --ctx-size 786432 -m /data/models/Qwen3-Coder-30B-A3B-Instruct-Q4_0.gguf
+    env:
+      - "CUDA_VISIBLE_DEVICES=0,1"
+    ttl: 0
+
 # The matrix dictates all valid VRAM combinations.
 # By explicitly pairing exactly one GPU 0 model with exactly one GPU 1 model,
 # you guarantee safe multi-tenant routing without thrashing.
@@ -85,6 +126,11 @@ matrix:
     M27-1: 27b-gpu1
     C30-0: coder30b-gpu0
     C30-1: coder30b-gpu1
+    S35: 35b-spread
+    S27: 27b-spread
+    SC30: coder30b-spread
+    D35-0: 35b-gpu0-dense
+    D35-1: 35b-gpu1-dense
 
   # Relative cost of losing a running model when the solver must evict to
   # make room for a new request (default: 1 for anything unlisted). The 35B
@@ -104,17 +150,27 @@ matrix:
   evict_costs:
     M35-0: 20
     M35-1: 10
+    S35: 25
+    S27: 25
+    SC30: 25
+    D35-0: 20
+    D35-1: 10
 
   sets:
     # --- Data Parallel (Same model duplicated on both cards) ---
-    dual_35b: M35-0 & M35-1
+    dual_35b: M35-0 & M35-1 & D35-0 & D35-1
     dual_27b: M27-0 & M27-1
     dual_coder: C30-0 & C30-1
 
     # --- Mixed Workloads (Different models running side-by-side) ---
-    mix_1: M35-0 & M27-1
-    mix_2: M27-0 & M35-1
-    mix_3: M35-0 & C30-1
-    mix_4: C30-0 & M35-1
+    mix_1: M35-0 & D35-0 & M27-1 & D35-1
+    mix_2: M27-0 & D35-0 & M35-1 & D35-1
+    mix_3: M35-0 & D35-0 & C30-1 & D35-1
+    mix_4: C30-0 & D35-0 & M35-1 & D35-1
     mix_5: M27-0 & C30-1
     mix_6: C30-0 & M27-1
+
+    # --- Spread (Single instance spanning both GPUs) ---
+    spread_35b: S35
+    spread_27b: S27
+    spread_coder: SC30

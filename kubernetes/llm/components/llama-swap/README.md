@@ -29,7 +29,7 @@ the two GPUs (`GGML_VK_VISIBLE_DEVICES=0` or `1`).
 | Model id                          | Model                             | Trait                      | Vision                                       |
 | --------------------------------- | --------------------------------- | -------------------------- | -------------------------------------------- |
 | `35b-gpu0` / `35b-gpu1`           | Qwen3.6-35B-A3B (sparse MoE)      | ~4x faster decode on B70   | Yes                                          |
-| `27b-gpu0` / `27b-gpu1`           | Qwen3.6-27B (dense)               | higher quality, slower     | Yes                                          |
+| `27b-gpu0` / `27b-gpu1`           | Qwen3.8-27B (dense)               | higher quality, slower     | Yes                                          |
 | `coder30b-gpu0` / `coder30b-gpu1` | Qwen3-Coder-30B-A3B-Instruct-Q4_0 | Code-focused, high context | No (text-only; no mmproj published upstream) |
 
 > **27B context limit:** The dense 27B model's `ctx-size` is set to `196608`
@@ -50,12 +50,12 @@ models:
 
 | Set     | GPU 0                                 | GPU 1                                 |
 | ------- | ------------------------------------- | ------------------------------------- |
-| `mix_1` | Qwen3.6-35B-A3B (`35b-gpu0`)          | Qwen3.6-27B (`27b-gpu1`)              |
-| `mix_2` | Qwen3.6-27B (`27b-gpu0`)              | Qwen3.6-35B-A3B (`35b-gpu1`)          |
+| `mix_1` | Qwen3.6-35B-A3B (`35b-gpu0`)          | Qwen3.8-27B (`27b-gpu1`)              |
+| `mix_2` | Qwen3.8-27B (`27b-gpu0`)              | Qwen3.6-35B-A3B (`35b-gpu1`)          |
 | `mix_3` | Qwen3.6-35B-A3B (`35b-gpu0`)          | Qwen3-Coder-30B-A3B (`coder30b-gpu1`) |
 | `mix_4` | Qwen3-Coder-30B-A3B (`coder30b-gpu0`) | Qwen3.6-35B-A3B (`35b-gpu1`)          |
-| `mix_5` | Qwen3.6-27B (`27b-gpu0`)              | Qwen3-Coder-30B-A3B (`coder30b-gpu1`) |
-| `mix_6` | Qwen3-Coder-30B-A3B (`coder30b-gpu0`) | Qwen3.6-27B (`27b-gpu1`)              |
+| `mix_5` | Qwen3.8-27B (`27b-gpu0`)              | Qwen3-Coder-30B-A3B (`coder30b-gpu1`) |
+| `mix_6` | Qwen3-Coder-30B-A3B (`coder30b-gpu0`) | Qwen3.8-27B (`27b-gpu1`)              |
 
 Models with `ttl: 0` stay resident in VRAM 24/7. Real telemetry on gpu-1 shows
 idle card power (6.8 W with model resident) is indistinguishable from idle with
