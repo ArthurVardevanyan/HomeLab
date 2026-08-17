@@ -79,11 +79,14 @@ spec:
                   dl_check() {
                     local name="$1" src="$2"
                     local headers cdn size
-                    headers=$(curl -sIL --connect-timeout 10 --max-time 30 "${src}")
+                    headers=$(curl -sIL --connect-timeout 10 --max-time 30 "${src}" || true)
                     cdn=$(printf '%s' "${headers}" | awk 'BEGIN{IGNORECASE=1}/^location:/{u=$2}END{print u}' | tr -d '\r')
                     [ -z "${cdn}" ] && cdn="${src}"
                     size=$(printf '%s' "${headers}" | awk 'BEGIN{IGNORECASE=1}/^content-length:/{c=$2}END{print c}' | tr -d '\r')
-                    printf 'DOWNLOAD\t%s\t%s\n' "${size}" "${cdn}" > "${CHECKS}/${name}.status"
+                    if [ -z "${size}" ]; then
+                        size=$(printf '%s' "${headers}" | awk 'BEGIN{IGNORECASE=1}/^x-linked-size:/{c=$2}END{print c}' | tr -d '\r')
+                    fi
+                    printf 'DOWNLOAD\t%s\t%s\t%s\n' "${size}" "${cdn}" "${src}" > "${CHECKS}/${name}.status"
                   }
 
                   # Download a single model using chunked byte-range parallelism.
@@ -150,8 +153,8 @@ spec:
                   rm -rf "${CHECKS}"; mkdir -p "${CHECKS}"
                   dl_local_check "Qwen3.6-35B-A3B-UD-Q4_K_M.gguf" || true
                   dl_local_check "Qwen3.6-35B-A3B-mmproj-F16.gguf" || true
-                  dl_local_check "Qwen3.6-27B-Q4_K_M.gguf" || true
-                  dl_local_check "Qwen3.6-27B-mmproj-F16.gguf" || true
+                  dl_local_check "Qwen3.8-27B-Q4_K_M.gguf" || true
+                  dl_local_check "Qwen3.8-27B-mmproj-F16.gguf" || true
                   dl_local_check "Qwen3-Coder-30B-A3B-Instruct-Q4_0.gguf" || true
 
                   # Phase 1 -- resolve remaining redirects concurrently.
@@ -161,12 +164,12 @@ spec:
                   [ -f "${CHECKS}/Qwen3.6-35B-A3B-mmproj-F16.gguf.status" ] || \
                     dl_check "Qwen3.6-35B-A3B-mmproj-F16.gguf" \
                     "https://huggingface.co/unsloth/Qwen3.6-35B-A3B-GGUF/resolve/main/mmproj-F16.gguf?download=true" &
-                  [ -f "${CHECKS}/Qwen3.6-27B-Q4_K_M.gguf.status" ] || \
-                    dl_check "Qwen3.6-27B-Q4_K_M.gguf" \
-                    "https://huggingface.co/unsloth/Qwen3.6-27B-GGUF/resolve/main/Qwen3.6-27B-Q4_K_M.gguf?download=true" &
-                  [ -f "${CHECKS}/Qwen3.6-27B-mmproj-F16.gguf.status" ] || \
-                    dl_check "Qwen3.6-27B-mmproj-F16.gguf" \
-                    "https://huggingface.co/unsloth/Qwen3.6-27B-GGUF/resolve/main/mmproj-F16.gguf?download=true" &
+                  [ -f "${CHECKS}/Qwen3.8-27B-Q4_K_M.gguf.status" ] || \
+                    dl_check "Qwen3.8-27B-Q4_K_M.gguf" \
+                    "https://huggingface.co/unsloth/Qwen3.8-27B-GGUF/resolve/main/Qwen3.8-27B-Q4_K_M.gguf?download=true" &
+                  [ -f "${CHECKS}/Qwen3.8-27B-mmproj-F16.gguf.status" ] || \
+                    dl_check "Qwen3.8-27B-mmproj-F16.gguf" \
+                    "https://huggingface.co/unsloth/Qwen3.8-27B-GGUF/resolve/main/mmproj-F16.gguf?download=true" &
                   [ -f "${CHECKS}/Qwen3-Coder-30B-A3B-Instruct-Q4_0.gguf.status" ] || \
                     dl_check "Qwen3-Coder-30B-A3B-Instruct-Q4_0.gguf" \
                     "https://huggingface.co/unsloth/Qwen3-Coder-30B-A3B-Instruct-GGUF/resolve/main/Qwen3-Coder-30B-A3B-Instruct-Q4_0.gguf?download=true" &
@@ -176,13 +179,29 @@ spec:
                   for name in \
                     "Qwen3.6-35B-A3B-UD-Q4_K_M.gguf" \
                     "Qwen3.6-35B-A3B-mmproj-F16.gguf" \
-                    "Qwen3.6-27B-Q4_K_M.gguf" \
-                    "Qwen3.6-27B-mmproj-F16.gguf" \
+                    "Qwen3.8-27B-Q4_K_M.gguf" \
+                    "Qwen3.8-27B-mmproj-F16.gguf" \
                     "Qwen3-Coder-30B-A3B-Instruct-Q4_0.gguf"; do
                     status=$(cat "${CHECKS}/${name}.status")
                     case "${status}" in
-                      SKIP) echo "Skipping ${name} (up to date)"; continue ;;
-                      DOWNLOAD*) size=$(printf '%s' "${status}" | cut -f2); cdn=$(printf '%s' "${status}" | cut -f3); dl_fetch "${name}" "${size}" "${cdn}" ;;
+                       SKIP) echo "Skipping ${name} (up to date)"; continue ;;
+                       DOWNLOAD*)
+                          size=$(printf '%s' "${status}" | cut -f2)
+                          cdn=$(printf '%s' "${status}" | cut -f3)
+                          orig_url=$(printf '%s' "${status}" | cut -f4)
+                          if ! [ "${size}" -gt 0 ] 2>/dev/null; then
+                              retry_src="${orig_url:-${cdn}}"
+                              echo "WARNING: unknown size for ${name}, re-fetching from ${retry_src} ..." >&2
+                              retry_headers=$(curl -sIL --connect-timeout 30 --max-time 120 "${retry_src}" 2>/dev/null || true)
+                              size=$(printf '%s' "${retry_headers}" | awk 'BEGIN{IGNORECASE=1}/^content-length:/{c=$2}END{print c}' | tr -d '\r')
+                              if [ -z "${size}" ]; then
+                                  size=$(printf '%s' "${retry_headers}" | awk 'BEGIN{IGNORECASE=1}/^x-linked-size:/{c=$2}END{print c}' | tr -d '\r')
+                              fi
+                          fi
+                          if ! [ "${size}" -gt 0 ] 2>/dev/null; then
+                              echo "ERROR: could not determine size for ${name}" >&2; exit 1
+                          fi
+                          dl_fetch "${name}" "${size}" "${cdn}" ;;
                       *) echo "ERROR: unknown status for ${name}: ${status}" >&2; exit 1 ;;
                     esac
                   done
