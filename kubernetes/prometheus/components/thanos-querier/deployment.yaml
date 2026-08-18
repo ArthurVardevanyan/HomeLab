@@ -44,6 +44,9 @@ spec:
         seccompProfile:
           type: RuntimeDefault
         runAsNonRoot: true
+      restartPolicy: Always
+      schedulerName: default-scheduler
+      dnsPolicy: ClusterFirst
       containers:
         - name: thanos-querier
           # renovate: datasource=docker depName=quay.io/thanos/thanos
@@ -54,6 +57,7 @@ spec:
             readOnlyRootFilesystem: true
             seccompProfile:
               type: RuntimeDefault
+            privileged: false
             capabilities:
               drop:
                 - ALL

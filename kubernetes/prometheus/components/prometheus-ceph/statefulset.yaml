@@ -28,19 +28,23 @@ spec:
         seccompProfile:
           type: RuntimeDefault
         runAsNonRoot: true
+      restartPolicy: Always
+      schedulerName: default-scheduler
+      dnsPolicy: ClusterFirst
       automountServiceAccountToken: true
       serviceAccountName: prometheus-sa
       containers:
         - name: prometheus
           imagePullPolicy: IfNotPresent
           # renovate: datasource=docker depName=docker.io/prom/prometheus
-          image: docker.io/prom/prometheus:v3.13.2@sha256:508729e0e2d18e11fd742a5a5ca70e557b940a93948c3c95fd0123a6fd538b69
+          image: docker.io/prom/prometheus:v3.14.0@sha256:5ce7540c3c00ef4ab0c9d2c995c6a5b9c421f44b4a115d97a2c7af3b1c21cbb0
           securityContext:
             runAsNonRoot: true
             allowPrivilegeEscalation: false
             readOnlyRootFilesystem: true
             seccompProfile:
               type: RuntimeDefault
+            privileged: false
             capabilities:
               drop:
                 - ALL
@@ -51,6 +55,7 @@ spec:
             - "--web.enable-admin-api"
           ports:
             - containerPort: 9090
+              name: metrics
           resources:
             requests:
               cpu: 10m
@@ -66,7 +71,7 @@ spec:
           readinessProbe:
             httpGet:
               path: /-/ready
-              port: 9090
+              port: metrics
               scheme: HTTP
             initialDelaySeconds: 30
             periodSeconds: 5
@@ -76,7 +81,7 @@ spec:
           livenessProbe:
             httpGet:
               path: /-/healthy
-              port: 9090
+              port: metrics
               scheme: HTTP
             initialDelaySeconds: 30
           volumeMounts:

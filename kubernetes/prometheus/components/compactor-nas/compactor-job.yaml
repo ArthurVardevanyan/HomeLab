@@ -21,6 +21,9 @@ spec:
       labels:
         app: thanos-compactor-nas
     spec:
+      restartPolicy: Always
+      schedulerName: default-scheduler
+      dnsPolicy: ClusterFirst
       automountServiceAccountToken: false
       securityContext:
         seccompProfile:
@@ -36,6 +39,7 @@ spec:
             readOnlyRootFilesystem: false
             seccompProfile:
               type: RuntimeDefault
+            privileged: false
             capabilities:
               drop:
                 - ALL
