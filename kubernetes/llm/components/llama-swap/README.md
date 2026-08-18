@@ -12,7 +12,7 @@ two GPUs (`ONEAPI_DEVICE_SELECTOR=level_zero:0` or `1`).
   - [Model Matrix](#model-matrix)
   - [B70 Tuning Rationale](#b70-tuning-rationale)
   - [GPU Backend: SYCL (not Vulkan)](#gpu-backend-sycl-not-vulkan)
-  - [KV cache: f16 vs q8\_0](#kv-cache-f16-vs-q8_0)
+  - [KV cache: f16 vs q8_0](#kv-cache-f16-vs-q8_0)
   - [Why not `--mlock` / `--ngl all`](#why-not---mlock----ngl-all)
   - [Scaling](#scaling)
   - [Metrics](#metrics)
@@ -26,39 +26,38 @@ Each model is launched as an independent llama-server instance bound to one of
 the two GPUs (`ONEAPI_DEVICE_SELECTOR=level_zero:0` or `1`). The matrix
 guarantees **exactly one model per GPU** per set — no stacking, no spillover.
 
-| Model id                            | Model                             | Trait                      | Vision                                       |
-| ----------------------------------- | --------------------------------- | -------------------------- | -------------------------------------------- |
-| `35b-gpu0` / `35b-gpu1`             | Qwen3.6-35B-A3B (sparse MoE)      | ~4x faster decode on B70   | Yes                                          |
-| `35b-gpu0-dense` / `35b-gpu1-dense` | Same, `--ctx-size 327680`         | Full context on single GPU | Yes                                          |
-| `27b-gpu0` / `27b-gpu1`             | Qwen3.8-27B (dense)               | higher quality, slower     | Yes                                          |
-| `coder30b-gpu0` / `coder30b-gpu1`   | Qwen3-Coder-30B-A3B-Instruct-Q4_0 | Code-focused, high context | No (text-only; no mmproj published upstream) |
-| `35b-spread`                        | Qwen3.6-35B-A3B, both GPUs        | 1M ctx, parallel 4         | Yes                                          |
-| `27b-spread`                        | Qwen3.8-27B, both GPUs            | 640K ctx, parallel 3       | Yes                                          |
-| `coder30b-spread`                   | Qwen3-Coder-30B-A3B, both GPUs    | 768K ctx, parallel 3       | No                                           |
+| Model id                            | Model                                    | Trait                             | Vision |
+| ----------------------------------- | ---------------------------------------- | --------------------------------- | ------ |
+| `35b-gpu0` / `35b-gpu1`             | Qwen3.6-35B-A3B (sparse MoE)             | ~4x faster decode on B70          | Yes    |
+| `35b-gpu0-dense` / `35b-gpu1-dense` | Same, `--ctx-size 262144`, 1 slot        | Full native context on single GPU | Yes    |
+| `27b-gpu0` / `27b-gpu1`             | Qwen3.8-27B (dense), `--ctx-size 262144` | higher quality, slower            | Yes    |
+| `35b-spread`                        | Qwen3.6-35B-A3B, both GPUs               | 1M ctx, parallel 4                | Yes    |
 
-> **27B context limit:** The dense 27B model's `ctx-size` is set to `128000`
-> (128K/slot) in the config, less than the 320K global default. The dense
-> weights (~16.7 GB) + f16 KV cache + compute graph exceed the 32 GB VRAM at
-> the full context, so this reduced budget keeps it under 32 GB while still
-> providing ample context for most workloads.
+> **27B context:** Set to `262144` (256K native max). Qwen3.8 uses a hybrid
+> architecture where only 16 of 64 layers use full attention — the other 48
+> use linear attention with no KV cache. This keeps the KV cache tiny
+> (~512 MB at full context), well under the 32 GB VRAM budget, so the full
+> context window is usable without risk.
 
 The **matrix** uses sets that pick exactly one model per GPU. The solver picks
 a set, guaranteeing at most one model per GPU:
 
 - **Dual** (same model on both GPUs): `dual_35b`, `dual_35b-d`,
-  `dual_35b-0d-1`, `dual_35b-0-1d`, `dual_27b`, `dual_coder` — provides
+  `dual_35b-0d-1`, `dual_35b-0-1d`, `dual_27b` — requires both GPUs,
+  provides
   redundancy and doubles throughput for concurrent requests.
-- **Single** (one model on either GPU): `single_35b-0`, `single_35b-1`,
-  `single_35b-d-0`, `single_35b-d-1`, `single_27b-0`, `single_27b-1`,
-  `single_coder-0`, `single_coder-1` — solver picks the GPU.
-- **Spread** (one model spanning both GPUs): `spread_35b`, `spread_27b`,
-  `spread_coder` — uses `--split-mode layer --tensor-split 1,1`.
+- **Mixed dual** (35B on one GPU + 27B on the other): `dual_35b0-27b1`,
+  `dual_35b0d-27b1`, `dual_27b0-35b1`, `dual_27b0-35b1d` — allows mixing
+  model families across GPUs for maximum flexibility.
+- **Spread** (one model spanning both GPUs): `spread_35b` — uses
+  `--split-mode layer --tensor-split 1,1`.
 
-| Set type   | Effect                                                                         |
-| ---------- | ------------------------------------------------------------------------------ |
-| `dual_*`   | One model per GPU, same family (e.g. `dual_35b` = 35B on GPU 0 + 35B on GPU 1) |
-| `single_*` | One model anywhere, solver picks GPU                                           |
-| `spread_*` | One instance using both GPUs                                                   |
+| Set type      | Effect                                                                   |
+| ------------- | ------------------------------------------------------------------------ |
+| `dual_*`      | Same family on both GPUs (e.g. `dual_35b` = 35B on GPU 0 + 35B on GPU 1) |
+| `dual_35b0-*` | 35B on GPU 0 + 27B on GPU 1                                              |
+| `dual_27b0-*` | 27B on GPU 0 + 35B on GPU 1                                              |
+| `spread_*`    | One instance using both GPUs                                             |
 
 Models with `ttl: 0` stay resident in VRAM 24/7. Real telemetry on gpu-1 shows
 idle card power (6.8 W with model resident) is indistinguishable from idle with
@@ -100,20 +99,18 @@ Base args passed to each managed llama-server process (in `cmd_base` of
 - `--reasoning-format auto` — reasoning format handled per-request by the client.
 - `-ngl 99` — all layers offloaded to GPU.
 - Flash attention on.
-- `--spec-type ngram-simple` — model-free (n-gram) speculative decoding.
-  Added 2026-08-14 after measured decode throughput (p50 ~20.6 t/s from
-  `/api/metrics/stats`, n=778) came in far below the ~76 t/s single-stream
-  ceiling: with `-ngl 99` and near-idle GPU bandwidth utilization during
-  decode, the bottleneck is per-token dispatch overhead on the host's
-  6-core/12-thread CPU, not GPU compute or memory bandwidth. Verifying N
-  drafted tokens in one forward pass collapses N dispatch rounds into 1, at
-  zero VRAM cost (no draft model). This workload's heavy prompt/context
-  reuse (25.17M cache tokens vs 5.17M input tokens in the same sample) is a
-  good match for n-gram lookup. `ngram-simple` is the conservative variant;
-  `ngram-mod` (more aggressive drafting) is a candidate follow-up A/B.
+- `--spec-type ngram-mod` — model-free (n-gram) speculative decoding.
+  Replaced `ngram-simple` to test more aggressive drafting (more tokens
+  drafted per forward pass). See README Future Work for planned A/B
+  measurement.
 - `--poll 0` — disables ggml threadpool spin-waiting (default: 50). With
   `-ngl 99` the threadpool does almost no real work; spinning was competing
   with the SYCL dispatch thread for the same physical cores.
+- `-t 12 --threads-http 4` — 12 inference threads to spread dispatch across
+  all 12 physical cores, spreading the pegged dispatch-thread bottleneck.
+- `SYCL_PI_LEVEL_ZERO_USE_IMMEDIATE_COMMANDLISTS=1` — enables parallel SYCL
+  command lists so each inference thread submits directly to the GPU instead
+  of funneling through a single dispatch queue.
 - `-t 2 --threads-http 8` — was `-1` (auto → 6 threads) on each of 2
   llama-server processes sharing a 6-core CPU inside the pod's 5-CPU quota,
   which also runs LiteLLM, Open WebUI, Dragonfly, and CNPG. Bound explicitly
@@ -238,13 +235,17 @@ clinfo | grep -i "Device Name"
 For higher throughput:
 
 - **Dual** (`dual_35b`, `dual_35b-d`, `dual_35b-0d-1`, `dual_35b-0-1d`,
-  `dual_27b`, `dual_coder`): one model per GPU, same family. Provides
+  `dual_27b`): one model per GPU, same family, both GPUs always required.
+  Provides
   redundancy and doubles throughput for concurrent requests.
-- **Single** (`single_35b-0`, `single_35b-1`, etc.): one model on either
-  GPU — solver picks the GPU to minimize contention.
-- **Spread** (`spread_35b`, `spread_27b`, `spread_coder`): one model
-  spanning both GPUs via `--split-mode layer --tensor-split 1,1` for
-  maximum context (1M, 640K, 768K respectively).
+- **Mixed dual** (`dual_35b0-27b1`, `dual_35b0d-27b1`, `dual_27b0-35b1`,
+  `dual_27b0-35b1d`): 35B on one GPU + 27B on the other, for maximum
+  flexibility without full-model loading.
+- **Dense 35B** (`dual_35b-d`, `dual_35b-0d-1`, `dual_35b-0-1d`): same 35B
+  model as dual but with `--ctx-size 262144` and 1 slot for maximum
+  per-request context.
+- **Spread** (`spread_35b`): one model spanning both GPUs via
+  `--split-mode layer --tensor-split 1,1` for maximum context (1M).
 - **Multiple llama-swap replicas** with a LoadBalancer: add replicas in
   `overlays/okd/llama-swap.yaml` and expose via a LoadBalancer service.
   llama-swap's config matrix handles the shared hardware — no external

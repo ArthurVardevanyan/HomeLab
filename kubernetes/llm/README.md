@@ -195,7 +195,7 @@ design writeup):
 | `llamacpp:n_busy_slots_per_decode`        | Gauge   | Average busy slots per decode       |
 
 All of these carry the exporter-added `model` label (e.g. `35b-gpu0`,
-`27b-gpu1`, `coder30b-gpu0`), so per-model dashboards/alerts use
+`27b-gpu1`), so per-model dashboards/alerts use
 `{model="..."}` or `{model=~"$model"}` selectors.
 
 Verify from inside the pod:
@@ -293,13 +293,15 @@ numbers above are the pre-change baseline, not yet superseded.
 
 For higher throughput:
 
-- **Data parallel** (`dual_35b`, `dual_27b`, `dual_coder`): llama-swap runs
-  the same model on both GPUs. Each slot gets a full 22 GB weight copy, but
-  concurrent requests get full throughput on both cards.
-- **Single** (`single_35b-0`, `single_27b-1`, `single_coder-0`, etc.): one
-  model on either GPU, solver picks the GPU.
-- **Spread** (`spread_35b`, `spread_27b`, `spread_coder`): one model
-  spanning both GPUs via `--split-mode layer --tensor-split 1,1`.
+- **Data parallel** (`dual_35b`, `dual_27b`): llama-swap runs the same model
+  on both GPUs. Each slot gets a full 22 GB weight copy, but concurrent
+  requests get full throughput on both cards, both GPUs always required.
+- **Mixed** (`dual_35b0-27b1`, `dual_35b0d-27b1`, `dual_27b0-35b1`,
+  `dual_27b0-35b1d`): 35B on one GPU + 27B on the other. The solver picks
+  the mixed set when a cross-family request arrives and the other GPU
+  already has a model, avoiding unnecessary eviction.
+- **Spread** (`spread_35b`): one model spanning both GPUs via
+  `--split-mode layer --tensor-split 1,1`.
 - **Multiple llama-swap replicas** with a LoadBalancer: add replicas in
   `overlays/okd/llama-swap.yaml` and expose via a LoadBalancer service.
   llama-swap's config matrix handles the shared hardware — no external
@@ -366,9 +368,7 @@ implemented yet:
   Operator CSI driver is currently installed — only `rook-ceph.rbd`,
   `rook-ceph.cephfs`, and `csi.spiffe.io` exist on this cluster). Out of
   scope for a config-only tuning pass.
-- **`--spec-type ngram-mod` A/B against `ngram-simple`** (see
-  [B70 tuning rationale](components/llama-swap/README.md#b70-tuning-rationale)) once enough post-change
-  `/api/metrics/stats` samples accumulate.
+- **Re-measure decode throughput** (`/api/metrics/stats`) after `ngram-mod` rollout to confirm effect size.
 - **Open WebUI `TASK_MODEL` offload** — see
   [Task-model offload (deferred)](components/open-webui/README.md#task-model-offload-deferred).
 - **`llm-embed` thread/CPU-limit mismatch** — see the note under
