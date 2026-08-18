@@ -4,7 +4,7 @@ copy is resident, which one is actually less busy.
 
 Problem this solves
 --------------------
-All qwen3.6-35b-a3b / qwen3.6-27b / qwen3.6-coder-30b-a3b deployments share
+All qwen3.6-35b-a3b / qwen3.6-27b deployments share
 one llama-swap pod with two GPUs. LiteLLM's `least-busy` routing_strategy
 tracks in-flight requests with its own per-deployment counter, which has two
 independent problems observed in production here:

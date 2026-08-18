@@ -19,98 +19,73 @@ upstream:
 
 hooks:
   on_startup:
-    # preload takes model IDs (not matrix set names) - "dual_35b" here was a
-    # silent no-op, forcing a ~23s cold start on the first 35b request.
+    # preload takes model IDs (not matrix set names) - 35B non-dense on GPU 0
+    # (primary slot, higher eviction cost) + 27B dense on GPU 1 gives useful
+    # work on both GPUs from boot rather than data-parallel redundancy.
     preload:
       - 35b-gpu0
-      - 35b-gpu1
+      - 27b-gpu1
 
 macros:
-  cmd_base: "/app/llama-server --port ${PORT} --host 127.0.0.1 --parallel 2 --cont-batching --split-mode none --reasoning-format auto -ngl 99 --flash-attn on --cache-type-k f16 --cache-type-v f16 --ubatch-size 2048 --jinja --ctx-size 327680 --no-kv-unified --spec-type ngram-simple --poll 0 -t 2 --threads-http 8 --cache-reuse 256 --load-mode none --metrics"
+  cmd_base: "/app/llama-server --port ${PORT} --host 127.0.0.1 --cont-batching --reasoning-format auto -ngl 99 --flash-attn on --cache-type-k f16 --cache-type-v f16 --ubatch-size 2048 --jinja --poll 0 -t 12 --threads-http 4 --cache-reuse 256 --load-mode none --metrics --spec-type ngram-mod"
 
 models:
   # ==========================================
   # 1. Qwen 3.6 35B (A3B)
   # ==========================================
   35b-gpu0:
-    cmd: ${cmd_base} -m /data/models/Qwen3.6-35B-A3B-UD-Q4_K_M.gguf --mmproj /data/models/Qwen3.6-35B-A3B-mmproj-F16.gguf --image-min-tokens 1024
+    cmd: ${cmd_base} --parallel 2 --ctx-size 393216 -m /data/models/Qwen3.6-35B-A3B-UD-Q4_K_M.gguf --mmproj /data/models/Qwen3.6-35B-A3B-mmproj-F16.gguf --image-min-tokens 1024
     env:
       - "ONEAPI_DEVICE_SELECTOR=level_zero:0"
+      - "SYCL_PI_LEVEL_ZERO_USE_IMMEDIATE_COMMANDLISTS=1"
     ttl: 0
 
   35b-gpu1:
-    cmd: ${cmd_base} -m /data/models/Qwen3.6-35B-A3B-UD-Q4_K_M.gguf --mmproj /data/models/Qwen3.6-35B-A3B-mmproj-F16.gguf --image-min-tokens 1024
+    cmd: ${cmd_base} --parallel 2 --ctx-size 393216 -m /data/models/Qwen3.6-35B-A3B-UD-Q4_K_M.gguf --mmproj /data/models/Qwen3.6-35B-A3B-mmproj-F16.gguf --image-min-tokens 1024
     env:
       - "ONEAPI_DEVICE_SELECTOR=level_zero:1"
+      - "SYCL_PI_LEVEL_ZERO_USE_IMMEDIATE_COMMANDLISTS=1"
     ttl: 0
 
   # ==========================================
   # 2. Qwen 3.6 27B
   # ==========================================
   27b-gpu0:
-    cmd: ${cmd_base} --parallel 1 --ctx-size 128000 -m /data/models/Qwen3.8-27B-Q4_K_M.gguf --mmproj /data/models/Qwen3.8-27B-mmproj-F16.gguf --image-min-tokens 1024
+    cmd: ${cmd_base} --parallel 1 --ctx-size 196608 -m /data/models/Qwen3.8-27B-Q4_K_M.gguf --mmproj /data/models/Qwen3.8-27B-mmproj-F16.gguf --image-min-tokens 1024
     env:
       - "ONEAPI_DEVICE_SELECTOR=level_zero:0"
+      - "SYCL_PI_LEVEL_ZERO_USE_IMMEDIATE_COMMANDLISTS=1"
     ttl: 0
 
   27b-gpu1:
-    cmd: ${cmd_base} --parallel 1 --ctx-size 128000 -m /data/models/Qwen3.8-27B-Q4_K_M.gguf --mmproj /data/models/Qwen3.8-27B-mmproj-F16.gguf --image-min-tokens 1024
+    cmd: ${cmd_base} --parallel 1 --ctx-size 196608 -m /data/models/Qwen3.8-27B-Q4_K_M.gguf --mmproj /data/models/Qwen3.8-27B-mmproj-F16.gguf --image-min-tokens 1024
     env:
       - "ONEAPI_DEVICE_SELECTOR=level_zero:1"
-    ttl: 0
-
-  # ==========================================
-  # 3. Qwen 3 Coder 30B (A3B)
-  # ==========================================
-  coder30b-gpu0:
-    cmd: ${cmd_base} -m /data/models/Qwen3-Coder-30B-A3B-Instruct-Q4_0.gguf
-    env:
-      - "ONEAPI_DEVICE_SELECTOR=level_zero:0"
-    ttl: 0
-
-  coder30b-gpu1:
-    cmd: ${cmd_base} -m /data/models/Qwen3-Coder-30B-A3B-Instruct-Q4_0.gguf
-    env:
-      - "ONEAPI_DEVICE_SELECTOR=level_zero:1"
+      - "SYCL_PI_LEVEL_ZERO_USE_IMMEDIATE_COMMANDLISTS=1"
     ttl: 0
 
   35b-gpu0-dense:
-    cmd: ${cmd_base} --parallel 1 --ctx-size 327680 -m /data/models/Qwen3.6-35B-A3B-UD-Q4_K_M.gguf --mmproj /data/models/Qwen3.6-35B-A3B-mmproj-F16.gguf --image-min-tokens 1024
+    cmd: ${cmd_base} --parallel 1 --ctx-size 262144 -m /data/models/Qwen3.6-35B-A3B-UD-Q4_K_M.gguf --mmproj /data/models/Qwen3.6-35B-A3B-mmproj-F16.gguf --image-min-tokens 1024
     env:
       - "ONEAPI_DEVICE_SELECTOR=level_zero:0"
+      - "SYCL_PI_LEVEL_ZERO_USE_IMMEDIATE_COMMANDLISTS=1"
     ttl: 0
 
   35b-gpu1-dense:
-    cmd: ${cmd_base} --parallel 1 --ctx-size 327680 -m /data/models/Qwen3.6-35B-A3B-UD-Q4_K_M.gguf --mmproj /data/models/Qwen3.6-35B-A3B-mmproj-F16.gguf --image-min-tokens 1024
+    cmd: ${cmd_base} --parallel 1 --ctx-size 262144 -m /data/models/Qwen3.6-35B-A3B-UD-Q4_K_M.gguf --mmproj /data/models/Qwen3.6-35B-A3B-mmproj-F16.gguf --image-min-tokens 1024
     env:
       - "ONEAPI_DEVICE_SELECTOR=level_zero:1"
+      - "SYCL_PI_LEVEL_ZERO_USE_IMMEDIATE_COMMANDLISTS=1"
     ttl: 0
 
   # ==========================================
   # 4. Qwen 3.6 35B (A3B) — Spread (both GPUs, 1M ctx, parallel 4)
   # ==========================================
   35b-spread:
-    cmd: ${cmd_base} --split-mode layer --tensor-split 1,1 --parallel 4 --ctx-size 1048576 -m /data/models/Qwen3.6-35B-A3B-UD-Q4_K_M.gguf --mmproj /data/models/Qwen3.6-35B-A3B-mmproj-F16.gguf --image-min-tokens 1024
+    cmd: ${cmd_base} --split-mode layer --tensor-split 1,1 --parallel 5 --ctx-size 1310720 -m /data/models/Qwen3.6-35B-A3B-UD-Q4_K_M.gguf --mmproj /data/models/Qwen3.6-35B-A3B-mmproj-F16.gguf --image-min-tokens 1024 --no-kv-unified
     env:
       - "ONEAPI_DEVICE_SELECTOR=level_zero:*"
-    ttl: 0
-
-  # ==========================================
-  # 5. Qwen 3.8 27B — Spread (both GPUs, 640K ctx, parallel 3)
-  # ==========================================
-  27b-spread:
-    cmd: ${cmd_base} --split-mode layer --tensor-split 1,1 --parallel 3 --ctx-size 655360 -m /data/models/Qwen3.8-27B-Q4_K_M.gguf --mmproj /data/models/Qwen3.8-27B-mmproj-F16.gguf --image-min-tokens 1024
-    env:
-      - "ONEAPI_DEVICE_SELECTOR=level_zero:*"
-    ttl: 0
-
-  # ==========================================
-  # 6. Qwen 3 Coder 30B (A3B) — Spread (both GPUs, 768K ctx, parallel 3)
-  # ==========================================
-  coder30b-spread:
-    cmd: ${cmd_base} --split-mode layer --tensor-split 1,1 --parallel 3 --ctx-size 786432 -m /data/models/Qwen3-Coder-30B-A3B-Instruct-Q4_0.gguf
-    env:
-      - "ONEAPI_DEVICE_SELECTOR=level_zero:*"
+      - "SYCL_PI_LEVEL_ZERO_USE_IMMEDIATE_COMMANDLISTS=1"
     ttl: 0
 
 # The matrix dictates all valid VRAM combinations.
@@ -123,31 +98,23 @@ matrix:
     M35-0: 35b-gpu0
     M35-0-d: 35b-gpu0-dense
     M27-0: 27b-gpu0
-    C30-0: coder30b-gpu0
     # GPU 1 models
     M35-1: 35b-gpu1
     M35-1-d: 35b-gpu1-dense
     M27-1: 27b-gpu1
-    C30-1: coder30b-gpu1
     # Spread models
     S35: 35b-spread
-    S27: 27b-spread
-    SC30: coder30b-spread
 
-  # Eviction cost: higher = harder to evict. Spread > 35B > 27B/coder.
+  # Eviction cost: higher = harder to evict. Spread > 35B > 27B.
   # GPU 0 35B costs more than GPU 1 so eviction is deterministic.
   evict_costs:
     S35: 25
-    S27: 25
-    SC30: 25
     M35-0: 20
     M35-0-d: 20
     M35-1: 10
     M35-1-d: 10
     M27-0: 15
     M27-1: 15
-    C30-0: 15
-    C30-1: 15
 
   sets:
     # --- Dual (one 35B variant per GPU, all combos) ---
@@ -159,24 +126,11 @@ matrix:
     # --- Dual (one 27B per GPU) ---
     dual_27b: M27-0 & M27-1
 
-    # --- Dual (one coder per GPU) ---
-    dual_coder: C30-0 & C30-1
-
-    # --- Single (one 35B on either GPU) ---
-    single_35b-0: M35-0
-    single_35b-1: M35-1
-    single_35b-d-0: M35-0-d
-    single_35b-d-1: M35-1-d
-
-    # --- Single (one 27B on either GPU) ---
-    single_27b-0: M27-0
-    single_27b-1: M27-1
-
-    # --- Single (one coder on either GPU) ---
-    single_coder-0: C30-0
-    single_coder-1: C30-1
+    # --- Dual (35B + 27B mixed, one per GPU) ---
+    dual_35b0-27b1: M35-0 & M27-1
+    dual_35b0d-27b1: M35-0-d & M27-1
+    dual_27b0-35b1: M27-0 & M35-1
+    dual_27b0-35b1d: M27-0 & M35-1-d
 
     # --- Spread (one instance spanning both GPUs) ---
     spread_35b: S35
-    spread_27b: S27
-    spread_coder: SC30

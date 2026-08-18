@@ -20,8 +20,8 @@
             "output": 0.00000124
           },
           "limit": {
-            "context": 163840,
-            "input": 153353,
+            "context": 196608,
+            "input": 189440,
             "output": 8192
           }
         },
@@ -32,23 +32,12 @@
             "output": 0.00000124
           },
           "limit": {
-            "context": 327680,
-            "input": 306707,
+            "context": 262144,
+            "input": 253952,
             "output": 8192
           }
         },
-        "qwen3.6-coder-30b-a3b": {
-          "name": "Qwen3.6 Coder 30B-A3B",
-          "cost": {
-            "input": 0.00000431,
-            "output": 0.00000287
-          },
-          "limit": {
-            "context": 128000,
-            "input": 119808,
-            "output": 8192
-          }
-        },
+
         "qwen3.8-27b": {
           "name": "Qwen3.8 27B Dense",
           "cost": {
@@ -56,8 +45,8 @@
             "output": 0.00000265
           },
           "limit": {
-            "context": 128000,
-            "input": 119808,
+            "context": 196608,
+            "input": 189440,
             "output": 8192
           }
         },
@@ -72,49 +61,25 @@
             "input": 260096,
             "output": 8192
           }
-        },
-        "qwen3.8-27b-spread": {
-          "name": "Qwen3.8 27B Spread",
-          "cost": {
-            "input": 0.00000398,
-            "output": 0.00000265
-          },
-          "limit": {
-            "context": 655360,
-            "input": 218453,
-            "output": 8192
-          }
-        },
-        "qwen3.6-coder-30b-a3b-spread": {
-          "name": "Qwen3.6 Coder 30B-A3B Spread",
-          "cost": {
-            "input": 0.00000431,
-            "output": 0.00000287
-          },
-          "limit": {
-            "context": 262144,
-            "input": 259413,
-            "output": 8192
-          }
         }
       }
     }
+  },
+  "agent": {
+    "plan": {
+      "description": "High-level architectural planning.",
+      "model": "llm/qwen3.6-35b-a3b",
+      "temperature": 0.2
+    },
+    "build": {
+      "description": "Code generation.",
+      "model": "llm/qwen3.6-35b-a3b",
+      "temperature": 0.1
+    },
+    "explore": {
+      "description": "Fast codebase scouting/diagnostics.",
+      "model": "llm/qwen3.6-35b-a3b",
+      "temperature": 0.55
+    }
   }
-  // "agent": {
-  //   "plan": {
-  //     "description": "High-level architectural planning. Routed local Qwen3.6 35B-A3B (MoE).",
-  //     "model": "llm/qwen3.6-35b-a3b",
-  //     "temperature": 0.2
-  //   },
-  //   "build": {
-  //     "description": "Token-heavy code generation. Routed to local Qwen3.8 27B Dense on the single Intel Arc B70 via Open WebUI.",
-  //     "model": "llm/qwen3.8-27b",
-  //     "temperature": 0.1
-  //   },
-  //   "explore": {
-  //     "description": "Fast codebase scouting/diagnostics. On the single-GPU setup this shares the same local model as build.",
-  //     "model": "llm/qwen3.6-35b-a3b",
-  //     "temperature": 0.0
-  //   }
-  // }
 }

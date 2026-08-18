@@ -12,6 +12,7 @@ metadata:
     checkov.io/skip1: CKV_K8S_40=OpenShift Injects Random UID
     checkov.io/skip2: CKV_K8S_23=System Wide Monitoring
     checkov.io/skip3: CKV_K8S_31=System Wide Monitoring
+    gitops-ci.k8s.io/exempt-podspec-defaults: seccompProfile
 spec:
   selector:
     matchLabels:
@@ -34,6 +35,12 @@ spec:
         runAsNonRoot: false
       # seccompProfile:
       #   type: RuntimeDefault
+      # node-exporter requires hostPath mounts to /sys and /host/root which
+      # are incompatible with the RuntimeDefault seccomp profile on all nodes
+      dnsPolicy: ClusterFirst
+      enableServiceLinks: false
+      restartPolicy: Always
+      schedulerName: default-scheduler
       serviceAccountName: node-exporter-sa
       automountServiceAccountToken: false
       containers:
@@ -53,6 +60,7 @@ spec:
             # runAsNonRoot: true
             readOnlyRootFilesystem: true
             allowPrivilegeEscalation: false
+            privileged: false
             runAsNonRoot: false
             # seccompProfile:
             #   type: RuntimeDefault
@@ -105,11 +113,12 @@ spec:
       tolerations:
         - key: node-role.kubernetes.io/control-plane
           effect: NoSchedule
-        - key: node-role.kubernetes.io/control-plane
-          effect: NoSchedule
         - key: node-role.kubernetes.io/infra
           effect: NoSchedule
           operator: Exists
+        - key: node-role.kubernetes.io/gpu
+          operator: Exists
+          effect: NoSchedule
       volumes:
         - hostPath:
             path: /sys
@@ -117,4 +126,3 @@ spec:
         - hostPath:
             path: /
           name: root
-      enableServiceLinks: false

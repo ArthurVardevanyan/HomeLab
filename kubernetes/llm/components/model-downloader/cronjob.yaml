@@ -155,8 +155,6 @@ spec:
                   dl_local_check "Qwen3.6-35B-A3B-mmproj-F16.gguf" || true
                   dl_local_check "Qwen3.8-27B-Q4_K_M.gguf" || true
                   dl_local_check "Qwen3.8-27B-mmproj-F16.gguf" || true
-                  dl_local_check "Qwen3-Coder-30B-A3B-Instruct-Q4_0.gguf" || true
-
                   # Phase 1 -- resolve remaining redirects concurrently.
                   [ -f "${CHECKS}/Qwen3.6-35B-A3B-UD-Q4_K_M.gguf.status" ] || \
                     dl_check "Qwen3.6-35B-A3B-UD-Q4_K_M.gguf" \
@@ -170,9 +168,6 @@ spec:
                   [ -f "${CHECKS}/Qwen3.8-27B-mmproj-F16.gguf.status" ] || \
                     dl_check "Qwen3.8-27B-mmproj-F16.gguf" \
                     "https://huggingface.co/unsloth/Qwen3.8-27B-GGUF/resolve/main/mmproj-F16.gguf?download=true" &
-                  [ -f "${CHECKS}/Qwen3-Coder-30B-A3B-Instruct-Q4_0.gguf.status" ] || \
-                    dl_check "Qwen3-Coder-30B-A3B-Instruct-Q4_0.gguf" \
-                    "https://huggingface.co/unsloth/Qwen3-Coder-30B-A3B-Instruct-GGUF/resolve/main/Qwen3-Coder-30B-A3B-Instruct-Q4_0.gguf?download=true" &
                   wait
 
                   # Phase 2 -- sequential download for any flagged models.
@@ -180,8 +175,7 @@ spec:
                     "Qwen3.6-35B-A3B-UD-Q4_K_M.gguf" \
                     "Qwen3.6-35B-A3B-mmproj-F16.gguf" \
                     "Qwen3.8-27B-Q4_K_M.gguf" \
-                    "Qwen3.8-27B-mmproj-F16.gguf" \
-                    "Qwen3-Coder-30B-A3B-Instruct-Q4_0.gguf"; do
+                    "Qwen3.8-27B-mmproj-F16.gguf"; do
                     status=$(cat "${CHECKS}/${name}.status")
                     case "${status}" in
                        SKIP) echo "Skipping ${name} (up to date)"; continue ;;
