@@ -46,6 +46,9 @@ spec:
         seccompProfile:
           type: RuntimeDefault
         runAsNonRoot: true
+      restartPolicy: Always
+      schedulerName: default-scheduler
+      dnsPolicy: ClusterFirst
       automountServiceAccountToken: true
       serviceAccountName: prometheus-sa
       containers:
@@ -64,6 +67,7 @@ spec:
             capabilities:
               drop:
                 - ALL
+            privileged: false
           args:
             - "--config.file=/etc/prometheus/prometheus.yml"
             - "--storage.tsdb.path=/prometheus_data/"
@@ -73,6 +77,7 @@ spec:
             - "--storage.tsdb.max-block-duration=2h"
           ports:
             - containerPort: 9090
+              name: metrics
           resources:
             requests:
               cpu: 50m
@@ -88,7 +93,7 @@ spec:
           readinessProbe:
             httpGet:
               path: /-/ready
-              port: 9090
+              port: metrics
               scheme: HTTP
             initialDelaySeconds: 30
             periodSeconds: 5
@@ -98,7 +103,7 @@ spec:
           livenessProbe:
             httpGet:
               path: /-/healthy
-              port: 9090
+              port: metrics
               scheme: HTTP
             initialDelaySeconds: 30
           volumeMounts:
@@ -119,6 +124,7 @@ spec:
             capabilities:
               drop:
                 - ALL
+            privileged: false
           resources:
             requests:
               cpu: 5m
@@ -146,11 +152,11 @@ spec:
               containerPort: 10903
           livenessProbe:
             httpGet:
-              port: 10904
+              port: http-sidecar
               path: /-/healthy
           readinessProbe:
             httpGet:
-              port: 10904
+              port: http-sidecar
               path: /-/ready
           volumeMounts:
             - name: prometheus-config-volume

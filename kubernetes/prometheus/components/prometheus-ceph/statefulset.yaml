@@ -28,6 +28,9 @@ spec:
         seccompProfile:
           type: RuntimeDefault
         runAsNonRoot: true
+      restartPolicy: Always
+      schedulerName: default-scheduler
+      dnsPolicy: ClusterFirst
       automountServiceAccountToken: true
       serviceAccountName: prometheus-sa
       containers:
@@ -41,6 +44,7 @@ spec:
             readOnlyRootFilesystem: true
             seccompProfile:
               type: RuntimeDefault
+            privileged: false
             capabilities:
               drop:
                 - ALL
@@ -51,6 +55,7 @@ spec:
             - "--web.enable-admin-api"
           ports:
             - containerPort: 9090
+              name: metrics
           resources:
             requests:
               cpu: 10m
@@ -66,7 +71,7 @@ spec:
           readinessProbe:
             httpGet:
               path: /-/ready
-              port: 9090
+              port: metrics
               scheme: HTTP
             initialDelaySeconds: 30
             periodSeconds: 5
@@ -76,7 +81,7 @@ spec:
           livenessProbe:
             httpGet:
               path: /-/healthy
-              port: 9090
+              port: metrics
               scheme: HTTP
             initialDelaySeconds: 30
           volumeMounts:

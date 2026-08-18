@@ -38,6 +38,9 @@ spec:
             matchLabels:
               app: thanos-store-gateway
       automountServiceAccountToken: false
+      restartPolicy: Always
+      schedulerName: default-scheduler
+      dnsPolicy: ClusterFirst
       securityContext:
         seccompProfile:
           type: RuntimeDefault
@@ -52,6 +55,7 @@ spec:
             readOnlyRootFilesystem: true
             seccompProfile:
               type: RuntimeDefault
+            privileged: false
             capabilities:
               drop:
                 - ALL
@@ -84,11 +88,11 @@ spec:
               containerPort: 10901
           livenessProbe:
             httpGet:
-              port: 10902
+              port: http
               path: /-/healthy
           readinessProbe:
             httpGet:
-              port: 10902
+              port: http
               path: /-/ready
           volumeMounts:
             - name: nas
