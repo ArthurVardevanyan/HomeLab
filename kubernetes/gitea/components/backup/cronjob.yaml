@@ -7,6 +7,7 @@ metadata:
   labels:
     app.kubernetes.io/instance: gitea
   annotations:
+    gitops-ci.k8s.io/exempt-image-checksum: "registry.arthurvardevanyan.com/homelab/toolbox:not_latest"
     checkov.io/skip1: CKV_K8S_40=OpenShift Injects Random UID
     checkov.io/skip3: CKV_K8S_43=Don't Mind Tag for This
 spec:
@@ -39,7 +40,7 @@ spec:
               type: RuntimeDefault
           containers:
             - name: s3-cron
-              image: registry.arthurvardevanyan.com/homelab/toolbox:not_latest@sha256:616f2ad41fca5effed6a0ab06a524e131d9112bc7848f4950e4eeaf0758e6bb2
+              image: registry.arthurvardevanyan.com/homelab/toolbox:not_latest
               command: ["/bin/bash", "-c", "sh /mnt/s3/s3.sh"]
               resources:
                 limits:

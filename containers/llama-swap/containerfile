@@ -1,0 +1,30 @@
+# llama-swap orchestrator for Intel Arc Pro B70 (Battlemage / Xe2) with SYCL
+#
+# Base: ghcr.io/mostlygeek/llama-swap:v250-intel-b10450
+#   - SYCL/Intel build of llama.cpp (b10450)
+#
+# renovate: datasource=docker depName=ghcr.io/mostlygeek/llama-swap versioning=loose
+FROM ghcr.io/mostlygeek/llama-swap:v250-intel-b10450@sha256:e423e716e91b726300ca743211e4bfba17aa1c7d0901cfa30e295e712366c9c2
+
+LABEL org.opencontainers.image.source="https://github.com/ArthurVardevanyan/HomeLab" \
+  org.opencontainers.image.title="llama-swap SYCL (Battlemage)" \
+  org.opencontainers.image.description="llama-swap orchestrator with SYCL/intel llama.cpp backend for Intel Arc Pro B70" \
+  org.opencontainers.image.licenses="MIT"
+
+USER 0
+
+# ca-certificates (intel-compute-runtime already included in the mostlygeek
+# intel base image)
+RUN set -eux; \
+  apt-get update; \
+  apt-get install -y --no-install-recommends ca-certificates; \
+  rm -rf /var/lib/apt/lists/* /tmp/*
+
+# Arbitrary-UID friendliness on OpenShift: HF cache to /tmp
+ENV XDG_CACHE_HOME=/tmp
+
+# Default SYCL env vars (per-model overrides apply at runtime)
+ENV ONEAPI_DEVICE_SELECTOR=level_zero:* \
+  SYCL_PI_LEVEL_ZERO_USE_IMMEDIATE_COMMANDLISTS=0 \
+  SYCL_DEVICE_FILTER=level_zero \
+  ZE_FLAT_DEVICE_HIERARCHY=COMPOSITE

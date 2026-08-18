@@ -5,6 +5,7 @@ metadata:
   name: immich-cron
   namespace: nextcloud-fpm
   annotations:
+    gitops-ci.k8s.io/exempt-image-checksum: "registry.arthurvardevanyan.com/homelab/toolbox:not_latest"
     checkov.io/skip1: CKV_K8S_40=OpenShift Injects Random UID
     argocd.argoproj.io/sync-wave: "4"
 spec:
@@ -47,7 +48,7 @@ spec:
           enableServiceLinks: false
           containers:
             - name: immich-cron
-              image: registry.arthurvardevanyan.com/homelab/toolbox:not_latest@sha256:616f2ad41fca5effed6a0ab06a524e131d9112bc7848f4950e4eeaf0758e6bb2
+              image: registry.arthurvardevanyan.com/homelab/toolbox:not_latest
               command: ["/bin/bash", "-c", "sh /tmp/immich/immich.sh"]
               resources:
                 limits:

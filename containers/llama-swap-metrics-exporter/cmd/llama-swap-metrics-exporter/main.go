@@ -27,7 +27,7 @@ const (
 	defaultListenAddr     = ":9100"
 	defaultScrapeInterval = 10 * time.Second
 	// llama-server's /metrics can be blocked for many seconds by its own
-	// HTTP thread pool (--threads-http 2) during heavy prefill/decode on
+	// HTTP thread pool (--threads-http 8) during heavy prefill/decode on
 	// long-context requests (observed: 100K+ token prompts). 15s gives
 	// genuinely busy-but-alive instances a fair chance to respond before
 	// we fall back to the cached value, without hanging the scrape cycle
