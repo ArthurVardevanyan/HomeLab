@@ -1,7 +1,7 @@
 # Local LLM
 
 GPU-backed local LLM serving for the homelab. The **default (`overlays/okd`)
-backend is llama-swap (Vulkan)** orchestrating llama-server processes on the
+backend is llama-swap (SYCL)** orchestrating llama-server processes on the
 Intel Arc Pro B70 (2× GPUs, 64 GB VRAM pooled). The host (`gpu-1`) is a
 6-core/12-thread Ryzen 5 3600 with 82 GB RAM — see [Performance](#performance-why-decode-may-trail-bare-metal-benchmarks) for the CPU-side implications this has on decode throughput.
 
@@ -28,17 +28,17 @@ For GPU provisioning, see [intel-device-plugins](../intel-device-plugins/README.
 
 ## Component READMEs
 
-| Component                                     | Description                                                                  |
-| --------------------------------------------- | ---------------------------------------------------------------------------- |
-| [llama-swap](components/llama-swap/README.md) | LLM orchestrator: model matrix, B70 tuning, Vulkan, metrics-exporter sidecar |
-| [LiteLLM](components/litellm/README.md)       | API gateway & GPU-aware routing plugin                                       |
-| [Open WebUI](components/open-webui/README.md) | Chat front-end: OIDC, RAG, embeddings, storage                               |
+| Component                                     | Description                                                                |
+| --------------------------------------------- | -------------------------------------------------------------------------- |
+| [llama-swap](components/llama-swap/README.md) | LLM orchestrator: model matrix, B70 tuning, SYCL, metrics-exporter sidecar |
+| [LiteLLM](components/litellm/README.md)       | API gateway & GPU-aware routing plugin                                     |
+| [Open WebUI](components/open-webui/README.md) | Chat front-end: OIDC, RAG, embeddings, storage                             |
 
 ## Backends / Overlays
 
-| Overlay        | Backend                           | Hardware               | Notes                                                 |
-| -------------- | --------------------------------- | ---------------------- | ----------------------------------------------------- |
-| `overlays/okd` | **llama-swap + Vulkan** (default) | Intel Arc Pro B70 (2×) | Qwen3.6 models, data-parallel + mixed workload matrix |
+| Overlay        | Backend                         | Hardware               | Notes                                          |
+| -------------- | ------------------------------- | ---------------------- | ---------------------------------------------- |
+| `overlays/okd` | **llama-swap + SYCL** (default) | Intel Arc Pro B70 (2×) | One model per GPU, data-parallel + spread sets |
 
 ## GPU Monitoring
 
@@ -78,7 +78,6 @@ oc run intel-gpu-debug --image=registry.arthurvardevanyan.com/homelab/intel-gpu-
 }
 
 # Once inside the debug pod:
-vulkaninfo | grep -iE "deviceName|cooperativeMatrix"
 xpu-smi discovery
 xpu-smi stats -d 0
 xpu-smi dump -d 0 -m 0,1,2,3,5
@@ -208,7 +207,7 @@ oc -n llm exec deploy/llama-swap -c metrics-exporter -- curl -sS localhost:9100/
 
 > **Known limitation: transient scrape gaps under heavy load.** llama-server's
 > `/metrics` endpoint shares the same small HTTP thread pool
-> (`--threads-http 2`, see [B70 tuning rationale](components/llama-swap/README.md#b70-tuning-rationale)) as
+> (`--threads-http 8`, see [B70 tuning rationale](components/llama-swap/README.md#b70-tuning-rationale)) as
 > the rest of its API. Observed directly: a 125K-token prompt on `35b-gpu0`
 > blocked its `/metrics` endpoint for several minutes (`context deadline
 exceeded` in the exporter logs) while the manual `curl` against the same
@@ -285,7 +284,7 @@ GPU-compute-bound**: 2 llama-server processes each defaulting to `-1`
 WebUI, Dragonfly, CNPG, and (opportunistically) Tekton CI builds, inside a
 5-CPU pod quota. The Vulkan submit thread was very plausibly starved of CPU
 time between GPU dispatches. Mitigations applied 2026-08-14 — `--spec-type
-ngram-simple`, `--poll 0`, `-t 2 --threads-http 2`, a `1`-core CPU
+ngram-simple`, `--poll 0`, `-t 2 --threads-http 8`, a `1`-core CPU
 request/VPA floor — are in [B70 tuning rationale](components/llama-swap/README.md#b70-tuning-rationale)
 above. Re-measure `/api/metrics/stats` after rollout to confirm effect size;
 numbers above are the pre-change baseline, not yet superseded.
@@ -297,8 +296,10 @@ For higher throughput:
 - **Data parallel** (`dual_35b`, `dual_27b`, `dual_coder`): llama-swap runs
   the same model on both GPUs. Each slot gets a full 22 GB weight copy, but
   concurrent requests get full throughput on both cards.
-- **Mixed workloads** (`mix_1`–`mix_6`): different models on each GPU for
-  varied request profiles.
+- **Single** (`single_35b-0`, `single_27b-1`, `single_coder-0`, etc.): one
+  model on either GPU, solver picks the GPU.
+- **Spread** (`spread_35b`, `spread_27b`, `spread_coder`): one model
+  spanning both GPUs via `--split-mode layer --tensor-split 1,1`.
 - **Multiple llama-swap replicas** with a LoadBalancer: add replicas in
   `overlays/okd/llama-swap.yaml` and expose via a LoadBalancer service.
   llama-swap's config matrix handles the shared hardware — no external
@@ -376,8 +377,10 @@ implemented yet:
 ## REF
 
 - [llama.cpp](https://github.com/ggerganov/llama.cpp)
-- [Intel Arc Pro B70 (Battlemage) architecture](https://www.intel.com)
+- [Intel Level Zero](https://github.com/oneapi-src/level-zero)
 - [Qwen3.6 model family](https://qwenlm.github.io)
 - [llama-swap](https://github.com/llama-swap/llama-swap)
 - [Open WebUI](https://github.com/open-webui/open-webui)
-- [Mesa Vulkan drivers](https://mesa3d.org)
+- [Intel Arc Pro B70 (Battlemage) architecture](https://www.intel.com)
+- [75 t/s on a single B70 (Reddit)](https://www.reddit.com/r/IntelArc/comments/1u3l4zx/qwen3635ba3b_at_75_tokens_per_second_on_a_single/)
+- [Intel Arc B70 context decay: the KV cache setting that fixes it](https://jonathanmann.tech/blog/intel-arc-b70-context-decay-kv-cache/)

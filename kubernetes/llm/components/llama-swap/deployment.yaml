@@ -43,9 +43,9 @@ spec:
       nodeSelector:
         feature.node.kubernetes.io/custom-intel.xe.gpu: "true"
       containers:
-        # Custom image = upstream llama-swap + Mesa >= 26.1 (kisak PPA) for
-        # renovate: datasource=docker depName=registry.arthurvardevanyan.com/homelab/llama-swap-vulkan versioning=loose
-        - image: registry.arthurvardevanyan.com/homelab/llama-swap-vulkan:v249-b10380@sha256:72682ff93a7f3c0a3ef747911b2284b4bf6135e78cfb52179722f994beacc30a
+        # Custom image = upstream llama-swap SYCL (b10450)
+        # renovate: datasource=docker depName=registry.arthurvardevanyan.com/homelab/llama-swap versioning=loose
+        - image: registry.arthurvardevanyan.com/homelab/llama-swap:v250-b10450@sha256:9f7b346b84dbdc9d04b2e30fe544083d381a0fee223ee9f011c88637841c8c06
           imagePullPolicy: IfNotPresent
           name: llama-swap
           command: ["/app/llama-swap"]
@@ -57,8 +57,6 @@ spec:
           env:
             - name: LLAMA_CACHE
               value: /cache
-            - name: MESA_SHADER_CACHE_DIR
-              value: /tmp
           securityContext:
             runAsNonRoot: true
             readOnlyRootFilesystem: false

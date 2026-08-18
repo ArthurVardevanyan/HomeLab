@@ -3,7 +3,7 @@
 llama-swap orchestrates llama-server process lifecycles on the **Intel Arc Pro
 B70 (2× GPUs, 64 GB VRAM pooled)** via a config-driven model matrix. Each
 model is launched as an independent llama-server instance bound to one of the
-two GPUs (`GGML_VK_VISIBLE_DEVICES=0` or `1`).
+two GPUs (`ONEAPI_DEVICE_SELECTOR=level_zero:0` or `1`).
 
 ## Table of Contents
 
@@ -11,10 +11,9 @@ two GPUs (`GGML_VK_VISIBLE_DEVICES=0` or `1`).
   - [Table of Contents](#table-of-contents)
   - [Model Matrix](#model-matrix)
   - [B70 Tuning Rationale](#b70-tuning-rationale)
+  - [GPU Backend: SYCL (not Vulkan)](#gpu-backend-sycl-not-vulkan)
   - [KV cache: f16 vs q8\_0](#kv-cache-f16-vs-q8_0)
   - [Why not `--mlock` / `--ngl all`](#why-not---mlock----ngl-all)
-  - [Mesa 26.1 (biggest perf lever) — handled in the image](#mesa-261-biggest-perf-lever--handled-in-the-image)
-    - [Image tag](#image-tag)
   - [Scaling](#scaling)
   - [Metrics](#metrics)
     - [Proxy metrics](#proxy-metrics)
@@ -24,38 +23,42 @@ two GPUs (`GGML_VK_VISIBLE_DEVICES=0` or `1`).
 ## Model Matrix
 
 Each model is launched as an independent llama-server instance bound to one of
-the two GPUs (`GGML_VK_VISIBLE_DEVICES=0` or `1`).
+the two GPUs (`ONEAPI_DEVICE_SELECTOR=level_zero:0` or `1`). The matrix
+guarantees **exactly one model per GPU** per set — no stacking, no spillover.
 
-| Model id                          | Model                             | Trait                      | Vision                                       |
-| --------------------------------- | --------------------------------- | -------------------------- | -------------------------------------------- |
-| `35b-gpu0` / `35b-gpu1`           | Qwen3.6-35B-A3B (sparse MoE)      | ~4x faster decode on B70   | Yes                                          |
-| `27b-gpu0` / `27b-gpu1`           | Qwen3.8-27B (dense)               | higher quality, slower     | Yes                                          |
-| `coder30b-gpu0` / `coder30b-gpu1` | Qwen3-Coder-30B-A3B-Instruct-Q4_0 | Code-focused, high context | No (text-only; no mmproj published upstream) |
+| Model id                            | Model                             | Trait                      | Vision                                       |
+| ----------------------------------- | --------------------------------- | -------------------------- | -------------------------------------------- |
+| `35b-gpu0` / `35b-gpu1`             | Qwen3.6-35B-A3B (sparse MoE)      | ~4x faster decode on B70   | Yes                                          |
+| `35b-gpu0-dense` / `35b-gpu1-dense` | Same, `--ctx-size 327680`         | Full context on single GPU | Yes                                          |
+| `27b-gpu0` / `27b-gpu1`             | Qwen3.8-27B (dense)               | higher quality, slower     | Yes                                          |
+| `coder30b-gpu0` / `coder30b-gpu1`   | Qwen3-Coder-30B-A3B-Instruct-Q4_0 | Code-focused, high context | No (text-only; no mmproj published upstream) |
+| `35b-spread`                        | Qwen3.6-35B-A3B, both GPUs        | 1M ctx, parallel 4         | Yes                                          |
+| `27b-spread`                        | Qwen3.8-27B, both GPUs            | 640K ctx, parallel 3       | Yes                                          |
+| `coder30b-spread`                   | Qwen3-Coder-30B-A3B, both GPUs    | 768K ctx, parallel 3       | No                                           |
 
-> **27B context limit:** The dense 27B model's `ctx-size` is set to `196608`
-> (98K/slot at parallel=2) in the config, 3/4 of the global 256K. The dense
+> **27B context limit:** The dense 27B model's `ctx-size` is set to `128000`
+> (128K/slot) in the config, less than the 320K global default. The dense
 > weights (~16.7 GB) + f16 KV cache + compute graph exceed the 32 GB VRAM at
 > the full context, so this reduced budget keeps it under 32 GB while still
-> providing ample context for most workloads. The 35B-A3B and coder models
-> keep the full 256K.
+> providing ample context for most workloads.
 
-The **matrix** defines all valid VRAM combinations by pairing GPU 0 and GPU 1
-models:
+The **matrix** uses sets that pick exactly one model per GPU. The solver picks
+a set, guaranteeing at most one model per GPU:
 
-- **Data parallel** (same model duplicated on both cards): `dual_35b`,
-  `dual_27b`, `dual_coder` — provides redundancy and doubles throughput for
-  concurrent requests.
-- **Mixed workloads** (different models side-by-side): `mix_1` through `mix_6`
-  — e.g. `M35-0 & M27-1` loads 35B on GPU 0 and 27B on GPU 1.
+- **Dual** (same model on both GPUs): `dual_35b`, `dual_35b-d`,
+  `dual_35b-0d-1`, `dual_35b-0-1d`, `dual_27b`, `dual_coder` — provides
+  redundancy and doubles throughput for concurrent requests.
+- **Single** (one model on either GPU): `single_35b-0`, `single_35b-1`,
+  `single_35b-d-0`, `single_35b-d-1`, `single_27b-0`, `single_27b-1`,
+  `single_coder-0`, `single_coder-1` — solver picks the GPU.
+- **Spread** (one model spanning both GPUs): `spread_35b`, `spread_27b`,
+  `spread_coder` — uses `--split-mode layer --tensor-split 1,1`.
 
-| Set     | GPU 0                                 | GPU 1                                 |
-| ------- | ------------------------------------- | ------------------------------------- |
-| `mix_1` | Qwen3.6-35B-A3B (`35b-gpu0`)          | Qwen3.8-27B (`27b-gpu1`)              |
-| `mix_2` | Qwen3.8-27B (`27b-gpu0`)              | Qwen3.6-35B-A3B (`35b-gpu1`)          |
-| `mix_3` | Qwen3.6-35B-A3B (`35b-gpu0`)          | Qwen3-Coder-30B-A3B (`coder30b-gpu1`) |
-| `mix_4` | Qwen3-Coder-30B-A3B (`coder30b-gpu0`) | Qwen3.6-35B-A3B (`35b-gpu1`)          |
-| `mix_5` | Qwen3.8-27B (`27b-gpu0`)              | Qwen3-Coder-30B-A3B (`coder30b-gpu1`) |
-| `mix_6` | Qwen3-Coder-30B-A3B (`coder30b-gpu0`) | Qwen3.8-27B (`27b-gpu1`)              |
+| Set type   | Effect                                                                         |
+| ---------- | ------------------------------------------------------------------------------ |
+| `dual_*`   | One model per GPU, same family (e.g. `dual_35b` = 35B on GPU 0 + 35B on GPU 1) |
+| `single_*` | One model anywhere, solver picks GPU                                           |
+| `spread_*` | One instance using both GPUs                                                   |
 
 Models with `ttl: 0` stay resident in VRAM 24/7. Real telemetry on gpu-1 shows
 idle card power (6.8 W with model resident) is indistinguishable from idle with
@@ -83,16 +86,16 @@ Base args passed to each managed llama-server process (in `cmd_base` of
   to the same model.
 - `--cont-batching` — continuous batching for higher throughput.
 - `--split-mode none` — no layer splitting across GPUs (each model runs on a
-  single GPU).
+  single GPU; spread models use `--split-mode layer` in their own command).
 - `--ubatch-size 2048` — larger physical batch is a big prefill win on
   Battlemage (opposite of the well-known AMD "smaller ubatch" advice).
 - `--cache-type-k f16 --cache-type-v f16` — see [KV cache: f16 vs q8_0](#kv-cache-f16-vs-q8_0)
   below. Chosen over q8_0 because the B70 is **latency/compute-bound, not
   bandwidth-bound**, so the dequant-removal favors f16 at deep context.
 - `--jinja` — Jinja template support for ChatML-style prompts.
-- `--ctx-size 262144` — 256K total, split across 2 slots (~128K each). The model
-  natively supports 256K; hybrid DeltaNet attention keeps the KV small enough
-  that f16 only needs ~23 GB total (model + KV) on the 32 GB card.
+- `--ctx-size 327680` — 320K default (overridden per-model in some sets).
+  The 35B-A3B models use 320K; the dense 27B models use 128K to fit within
+  32 GB VRAM. The spread models use 1M, 640K, and 768K respectively.
 - `--no-kv-unified` — static per-slot capacity; no shared/dynamic KV pool.
 - `--reasoning-format auto` — reasoning format handled per-request by the client.
 - `-ngl 99` — all layers offloaded to GPU.
@@ -110,8 +113,8 @@ Base args passed to each managed llama-server process (in `cmd_base` of
   `ngram-mod` (more aggressive drafting) is a candidate follow-up A/B.
 - `--poll 0` — disables ggml threadpool spin-waiting (default: 50). With
   `-ngl 99` the threadpool does almost no real work; spinning was competing
-  with the Vulkan submit thread for the same physical cores.
-- `-t 2 --threads-http 2` — was `-1` (auto → 6 threads) on each of 2
+  with the SYCL dispatch thread for the same physical cores.
+- `-t 2 --threads-http 8` — was `-1` (auto → 6 threads) on each of 2
   llama-server processes sharing a 6-core CPU inside the pod's 5-CPU quota,
   which also runs LiteLLM, Open WebUI, Dragonfly, and CNPG. Bound explicitly
   to stop threadpool oversubscription.
@@ -125,7 +128,7 @@ Base args passed to each managed llama-server process (in `cmd_base` of
   well under the 16 GiB VPA floor. Confirmed via `/proc/<pid>/maps` that the
   GGUF is not mmapped (0 matching entries). `--load-mode dio` was tried first
   but provably does not work on this hardware + storage stack (gguf +
-  `rook-ceph-block-ci`/RBD/ext4): llama.cpp logged "read_raw_unsafe: Falling
+  `rook-ceph_block_ci`/RBD/ext4): llama.cpp logged "read_raw_unsafe: Falling
   back to buffered IO due to Bad address" (EFAULT from O_DIRECT on the
   unaligned path) and fell back to plain buffered reads — which is what `none`
   requests directly, without the failed-attempt overhead. Trade-off: `none`
@@ -198,63 +201,50 @@ a guarantee.
   decode is ever unexpectedly slow, verify `-ngl 99` is set in the config
   and check the running llama-server's process command line via `/proc/<pid>/cmdline`.
 
-## Mesa 26.1 (biggest perf lever) — handled in the image
+## GPU Backend: SYCL (not Vulkan)
 
-The single biggest throughput lever on the B70 is **not** the inference engine
-— it is the **Mesa Vulkan driver**. Mesa 26.1 enabled a cooperative-matrix
-path for Intel ANV that roughly **doubles** Vulkan decode throughput on
-Battlemage.
+llama-swap uses Intel's SYCL/Level Zero backend (`ONEAPI_DEVICE_SELECTOR`
+env vars) rather than Vulkan. Each model in the matrix specifies its target
+GPU explicitly:
 
-The Vulkan userspace (loader, `intel_icd.json`, `libvulkan_intel.so`,
-Mesa) lives **inside the container**, not on the RHCOS host. The upstream
-llama-swap image ships an older Mesa, so this app runs a **custom image**
-(`registry.arthurvardevanyan.com/homelab/llama-swap-vulkan`) that upgrades
-Mesa to >= 26.1 via the kisak-mesa PPA. No node/RHCOS change is required.
+- `ONEAPI_DEVICE_SELECTOR=level_zero:0` — GPU 0
+- `ONEAPI_DEVICE_SELECTOR=level_zero:1` — GPU 1
+- `ONEAPI_DEVICE_SELECTOR=level_zero:*` — spread models (both GPUs)
+
+The base image is `ghcr.io/mostlygeek/llama-swap:v250-intel-b10450` which
+includes a SYCL-built `llama-server` binary. No Mesa/Vulkan userspace is
+needed.
 
 ### Image tag
 
 The custom image is
-`registry.arthurvardevanyan.com/homelab/llama-swap-vulkan:v249-b10380` — the tag
-encodes the llama-swap version (`v249`) and the upstream llama.cpp build number
-(`b10380`). Renovate-managed; when Renovate proposes a bump in the containerfile
-it triggers a PaC build that pushes the new tag.
+`registry.arthurvardevanyan.com/homelab/llama-swap:v250-b10450` — the tag
+encodes the llama-swap version (`v250`) and the upstream llama.cpp build
+number (`b10450`). Renovate-managed; when Renovate proposes a bump in the
+containerfile it triggers a PaC build that pushes the new tag.
 
-Confirm the fast path is active from inside the pod:
+Confirm the SYCL backend from inside the pod:
 
 ```bash
-export KUBECONFIG=$HOME/.kube/okd
-oc -n llm exec deploy/llama-swap -- /app/llama-server --help 2>&1 | grep -i coopmat
+export KUBECONFIG=$HOME.kube/okd
+oc -n llm exec deploy/llama-swap -- /app/llama-server --help 2>&1 | grep -iE "sycl|level.zero|ze"
 # or, from a debug pod with gpu.intel.com/xe request:
-vulkaninfo | grep -iE "Device Name|cooperativeMatrix"
+xpu-smi stats -d 0
+clinfo | grep -i "Device Name"
 ```
-
-> **Note:** `oc -n llm logs deploy/llama-swap | grep -i "matrix cores"` does
-> not work — llama-swap does not forward child llama-server stdout into its own
-> log stream. Use a debug pod with the same container image and GPU request to
-> run `llama-server` directly if you need to inspect the cooperative-matrix
-> load log.
-
-Notes:
-
-- Do **not** rely solely on llama.cpp's `matrix cores:` device line to confirm
-  the fast path — recent builds report `KHR_coopmat` on hardware that
-  previously reported `NV_coopmat2` at identical throughput. Verify with actual
-  decode t/s. **Measured baseline** (`/api/metrics/stats`, n=778 requests):
-  decode p50 **20.6 t/s**, p95 45.0 t/s, p99 70.2 t/s, max 76.7 t/s — i.e. the
-  76.7 t/s ceiling is real but rare; the median request runs at roughly a
-  quarter of it. See [Performance](../README.md#performance-why-decode-may-trail-bare-metal-benchmarks)
-  for why, and [B70 tuning rationale](#b70-tuning-rationale) for the
-  mitigations (`--spec-type`, thread/poll tuning) applied in response.
 
 ## Scaling
 
 For higher throughput:
 
-- **Data parallel** (`dual_35b`, `dual_27b`, `dual_coder`): llama-swap runs
-  the same model on both GPUs. Each slot gets a full 22 GB weight copy, but
-  concurrent requests get full throughput on both cards.
-- **Mixed workloads** (`mix_1`–`mix_6`): different models on each GPU for
-  varied request profiles.
+- **Dual** (`dual_35b`, `dual_35b-d`, `dual_35b-0d-1`, `dual_35b-0-1d`,
+  `dual_27b`, `dual_coder`): one model per GPU, same family. Provides
+  redundancy and doubles throughput for concurrent requests.
+- **Single** (`single_35b-0`, `single_35b-1`, etc.): one model on either
+  GPU — solver picks the GPU to minimize contention.
+- **Spread** (`spread_35b`, `spread_27b`, `spread_coder`): one model
+  spanning both GPUs via `--split-mode layer --tensor-split 1,1` for
+  maximum context (1M, 640K, 768K respectively).
 - **Multiple llama-swap replicas** with a LoadBalancer: add replicas in
   `overlays/okd/llama-swap.yaml` and expose via a LoadBalancer service.
   llama-swap's config matrix handles the shared hardware — no external
@@ -306,3 +296,7 @@ metric table.
 
 - [llama.cpp](https://github.com/ggerganov/llama.cpp)
 - [llama-swap](https://github.com/llama-swap/llama-swap)
+- [Intel Level Zero](https://github.com/oneapi-src/level-zero)
+- [SYCL on Intel Arc](https://www.intel.com/content/www/us/en/developer/tools/oneapi/toolkits.html)
+- [75 t/s on a single B70 (Reddit)](https://www.reddit.com/r/IntelArc/comments/1u3l4zx/qwen3635ba3b_at_75_tokens_per_second_on_a_single/)
+- [Intel Arc B70 context decay: the KV cache setting that fixes it](https://jonathanmann.tech/blog/intel-arc-b70-context-decay-kv-cache/)

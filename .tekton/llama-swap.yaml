@@ -2,11 +2,11 @@
 apiVersion: tekton.dev/v1
 kind: PipelineRun
 metadata:
-  name: llama-swap-vulkan-image
+  name: llama-swap-image
   annotations:
     pipelinesascode.tekton.dev/max-keep-runs: "1"
     pipelinesascode.tekton.dev/on-cel-expression: |
-      event == "pull_request" && target_branch == "main" && ("containers/llama-swap-vulkan/containerfile".pathChanged() || ".tekton/llama-swap-vulkan.yaml".pathChanged())
+      event == "pull_request" && target_branch == "main" && ("containers/llama-swap/containerfile".pathChanged() || ".tekton/llama-swap.yaml".pathChanged())
     pipelinesascode.tekton.dev/target-namespace: "homelab"
     pipelinesascode.tekton.dev/task: "https://raw.githubusercontent.com/ArthurVardevanyan/HomeLab/main/tekton/tasks/git-clone/0.9.1/git-clone.yaml"
     pipelinesascode.tekton.dev/task-1: "tekton/tasks/buildah/0.7.1/buildah.yaml"
@@ -19,9 +19,9 @@ spec:
     - name: git-commit
       value: "{{ revision }}"
     - name: DOCKERFILE
-      value: "./containers/llama-swap-vulkan/containerfile"
+      value: "./containers/llama-swap/containerfile"
     - name: IMAGE
-      value: "registry.arthurvardevanyan.com/homelab/llama-swap-vulkan"
+      value: "registry.arthurvardevanyan.com/homelab/llama-swap"
 
   pipelineSpec:
     params:
@@ -88,11 +88,11 @@ spec:
                 #!/usr/bin/env bash
                 set -o errexit -o nounset -o pipefail
 
-                # Match either server-vulkan-b<build> or v<version>-vulkan-b<build>.
-                tags=( $(grep -oE '[-a-z0-9]+-vulkan-b[0-9]+' "$(params.DOCKERFILE)" \
+                # Match either v<version>-intel-b<build>.
+                tags=( $(grep -oE '[-a-z0-9]+-intel-b[0-9]+' "$(params.DOCKERFILE)" \
                          | grep -oE 'b[0-9]+$' | sort -u || true) )
                 if [ "${#tags[@]}" -ne 1 ]; then
-                  echo "ERROR: expected exactly 1 vulkan-b<build> tag in $(params.DOCKERFILE), got ${#tags[@]}" >&2
+                  echo "ERROR: expected exactly 1 intel-b<build> tag in $(params.DOCKERFILE), got ${#tags[@]}" >&2
                   printf '%s\n' "${tags[@]:-<none>}" >&2
                   exit 1
                 fi

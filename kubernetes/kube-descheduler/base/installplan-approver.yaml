@@ -28,6 +28,7 @@ metadata:
   name: installplan-approver-kube-descheduler
   namespace: openshift-kube-descheduler-operator
   annotations:
+    gitops-ci.k8s.io/exempt-image-checksum: "registry.arthurvardevanyan.com/homelab/toolbox:not_latest"
     argocd.argoproj.io/hook: Sync
     argocd.argoproj.io/hook-delete-policy: HookSucceeded
     argocd.argoproj.io/sync-wave: "0"
@@ -62,7 +63,7 @@ spec:
       containers:
         - name: installplan-approver
           imagePullPolicy: IfNotPresent
-          image: registry.arthurvardevanyan.com/homelab/toolbox:not_latest@sha256:616f2ad41fca5effed6a0ab06a524e131d9112bc7848f4950e4eeaf0758e6bb2
+          image: registry.arthurvardevanyan.com/homelab/toolbox:not_latest
           env:
             - name: SUBSCRIPTION
               value: cluster-kube-descheduler-operator
