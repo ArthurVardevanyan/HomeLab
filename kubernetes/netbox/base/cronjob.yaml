@@ -38,6 +38,9 @@ spec:
         spec:
           serviceAccountName: netbox-sa
           automountServiceAccountToken: false
+          restartPolicy: OnFailure
+          schedulerName: default-scheduler
+          dnsPolicy: ClusterFirst
           securityContext:
             fsGroupChangePolicy: Always
             supplementalGroups: []
@@ -121,4 +124,3 @@ spec:
             - name: media
               emptyDir: {}
           enableServiceLinks: false
-          restartPolicy: OnFailure
