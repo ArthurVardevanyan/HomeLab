@@ -28,6 +28,8 @@ spec:
         app.kubernetes.io/name: machine-learning
         app.kubernetes.io/instance: immich
     spec:
+      restartPolicy: Always
+      schedulerName: default-scheduler
       securityContext:
         runAsNonRoot: true
         fsGroupChangePolicy: OnRootMismatch
@@ -198,6 +200,8 @@ spec:
       #   io.kubernetes.cri-o.TrySkipVolumeSELinuxLabel: "true"
     spec:
       # runtimeClassName: selinux
+      restartPolicy: Always
+      schedulerName: default-scheduler
       securityContext:
         runAsNonRoot: true
         fsGroupChangePolicy: OnRootMismatch
