@@ -8,7 +8,6 @@ metadata:
     checkov.io/skip1: CKV_K8S_38=Need to run Kubectl Commands
     checkov.io/skip2: CKV_K8S_40=OpenShift Injects Random UID
     checkov.io/skip3: CKV_K8S_43=Don't Mind Tag for This
-    gitops-ci.k8s.io/exempt-image-checksum: registry.k8s.io/kubectl:v1.36.3
 spec:
   schedule: "0 */8 * * *"
   suspend: false
@@ -42,7 +41,7 @@ spec:
             - name: rollout-restart
               imagePullPolicy: IfNotPresent
               # renovate: datasource=docker depName=registry.k8s.io/kubectl
-              image: registry.k8s.io/kubectl:v1.36.3
+              image: registry.k8s.io/kubectl:v1.36.3@sha256:7e2f380f535e076bfcd365257a57f7ed8cb50b1880c117e22effa74cc6dba11c
               env:
                 - name: NAMESPACE
                   valueFrom:
@@ -81,7 +80,7 @@ spec:
             - name: rollout
               imagePullPolicy: IfNotPresent
               # renovate: datasource=docker depName=registry.k8s.io/kubectl
-              image: registry.k8s.io/kubectl:v1.36.3
+              image: registry.k8s.io/kubectl:v1.36.3@sha256:7e2f380f535e076bfcd365257a57f7ed8cb50b1880c117e22effa74cc6dba11c
               env:
                 - name: NAMESPACE
                   valueFrom:
