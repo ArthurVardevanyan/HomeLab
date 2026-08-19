@@ -64,6 +64,7 @@ spec:
             - resourceName: memory
               restartPolicy: NotRequired
           securityContext:
+            privileged: false
             allowPrivilegeEscalation: false
             capabilities:
               drop:
@@ -76,6 +77,10 @@ spec:
           volumeMounts:
             - mountPath: /tmp
               name: tmp-dir
+      restartPolicy: Always
+      schedulerName: default-scheduler
+      dnsPolicy: ClusterFirst
+      automountServiceAccountToken: false
       nodeSelector:
         kubernetes.io/os: linux
       priorityClassName: system-cluster-critical
