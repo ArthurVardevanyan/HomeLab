@@ -1,5 +1,5 @@
 ---
-healthCheckTimeout: 120
+healthCheckTimeout: 300
 
 store:
   path: /var/lib/llama-swap/llama-swap.db
@@ -27,7 +27,7 @@ hooks:
       - 27b-gpu1
 
 macros:
-  cmd_base: "/app/llama-server --port ${PORT} --host 127.0.0.1 --cont-batching --reasoning-format auto -ngl 99 --flash-attn on --cache-type-k f16 --cache-type-v f16 --ubatch-size 2048 --jinja --poll 0 -t 12 --threads-http 4 --cache-reuse 256 --load-mode none --metrics --spec-type ngram-mod"
+  cmd_base: "/app/llama-server --port ${PORT} --host 127.0.0.1 --cont-batching --reasoning-format auto --reasoning-preserve -ngl 99 --flash-attn on --cache-type-k f16 --cache-type-v f16 --ubatch-size 2048 --jinja --poll 0 -t 12 --threads-http 4 --cache-reuse 256 --load-mode none --metrics --spec-type ngram-mod"
 
 models:
   # ==========================================
@@ -48,7 +48,7 @@ models:
     ttl: 0
 
   # ==========================================
-  # 2. Qwen 3.6 27B
+  # 2. Qwen 3.8 27B
   # ==========================================
   27b-gpu0:
     cmd: ${cmd_base} --parallel 1 --ctx-size 196608 -m /data/models/Qwen3.8-27B-Q4_K_M.gguf --mmproj /data/models/Qwen3.8-27B-mmproj-F16.gguf --image-min-tokens 1024
