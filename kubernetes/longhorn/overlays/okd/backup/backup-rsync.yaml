@@ -49,6 +49,7 @@ spec:
               type: RuntimeDefault
           containers:
             - name: longhorn-rsync
+              # Exemption: Image pinning - uses toolbox:not_latest for rsync tooling compatibility
               image: registry.arthurvardevanyan.com/homelab/toolbox:not_latest
               command:
                 - /bin/bash
@@ -73,6 +74,7 @@ spec:
                 - name: longhorn-data-backup
                   mountPath: /mnt/backup/longhorn
               securityContext:
+                privileged: false
                 runAsGroup: 65534
                 runAsUser: 65534
                 runAsNonRoot: true
@@ -86,12 +88,13 @@ spec:
               terminationMessagePath: /dev/termination-log
               terminationMessagePolicy: File
               imagePullPolicy: IfNotPresent
-          restartPolicy: Never
+          restartPolicy: OnFailure
           terminationGracePeriodSeconds: 30
           dnsPolicy: ClusterFirst
           serviceAccountName: longhorn-rsync-service-account
           automountServiceAccountToken: false
           hostname: longhorn-rsync
           schedulerName: default-scheduler
+          enableServiceLinks: false
   successfulJobsHistoryLimit: 1
   failedJobsHistoryLimit: 1

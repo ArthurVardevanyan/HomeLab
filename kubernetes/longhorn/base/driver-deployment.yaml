@@ -71,11 +71,22 @@ spec:
             limits:
               cpu: 20m
               memory: 32Mi
+          securityContext:
+            privileged: false
+            readOnlyRootFilesystem: true
+            runAsNonRoot: true
+            allowPrivilegeEscalation: false
+            seccompProfile:
+              type: RuntimeDefault
+            capabilities:
+              drop:
+                - ALL
       containers:
         - name: longhorn-driver-deployer
           image: docker.io/longhornio/longhorn-manager:v1.7.0@sha256:02a98fe2dce45d3bcd3a56955fa5f600f63abaf43debc2ef9a81b44ce47d5ec0
           imagePullPolicy: IfNotPresent
           securityContext:
+            privileged: false
             runAsGroup: 19500
             runAsUser: 19500
             runAsNonRoot: true
@@ -131,6 +142,9 @@ spec:
               value: "docker.io/longhornio/csi-snapshotter:v7.0.2@sha256:8a18278b21f36d4a1a4c1108d80c4aa7eca882179c48543053b56ed11e54e69e"
             - name: CSI_LIVENESS_PROBE_IMAGE
               value: "docker.io/longhornio/livenessprobe:v2.13.1@sha256:c2c8508a464fe7ba6def0edf1dd8498f2cfec14cd04ef7d925181fef3626645b"
+      dnsPolicy: ClusterFirst
+      restartPolicy: Always
+      schedulerName: default-scheduler
       priorityClassName: "longhorn-critical"
       serviceAccountName: longhorn-service-account
       automountServiceAccountToken: true

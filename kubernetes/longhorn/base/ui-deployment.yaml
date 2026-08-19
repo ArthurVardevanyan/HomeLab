@@ -65,6 +65,7 @@ spec:
                 topologyKey: kubernetes.io/hostname
       containers:
         - name: oauth-proxy
+          # Exemption: Image pinning - OKD origin-oauth-proxy requires tag-based versioning
           image: quay.io/openshift/origin-oauth-proxy:4.15
           imagePullPolicy: IfNotPresent
           resources:
@@ -82,6 +83,16 @@ spec:
           ports:
             - containerPort: 8443
               name: public
+          securityContext:
+            privileged: false
+            readOnlyRootFilesystem: true
+            runAsNonRoot: true
+            allowPrivilegeEscalation: false
+            seccompProfile:
+              type: RuntimeDefault
+            capabilities:
+              drop:
+                - ALL
           args:
             - --https-address=:8443
             - --provider=openshift
@@ -117,10 +128,16 @@ spec:
             - resourceName: memory
               restartPolicy: NotRequired
           securityContext:
+            privileged: false
             runAsUser: 0
             allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            runAsNonRoot: true
             seccompProfile:
               type: RuntimeDefault
+            capabilities:
+              drop:
+                - ALL
           ports:
             - containerPort: 8000
               name: http
@@ -139,5 +156,8 @@ spec:
           name: nginx-config
         - emptyDir: {}
           name: var-run
+      dnsPolicy: ClusterFirst
+      restartPolicy: Always
+      schedulerName: default-scheduler
       priorityClassName: "longhorn-critical"
       enableServiceLinks: false
