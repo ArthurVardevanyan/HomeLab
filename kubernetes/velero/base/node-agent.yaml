@@ -6,6 +6,7 @@ metadata:
   name: node-agent
   annotations:
     checkov.io/skip1: CKV_K8S_40=OpenShift Injects Random UID
+    gitops-ci.k8s.io/exempt-podspec-defaults: runAsNonRoot
   namespace: velero
   labels:
     app.kubernetes.io/name: velero
@@ -55,7 +56,6 @@ spec:
           image: "docker.io/velero/velero:v1.17.1@sha256:58f551f0d89a9ef1919771bdc7475c08bc1795a50a51a57b5f14316d68fc3baa"
           imagePullPolicy: IfNotPresent
           securityContext:
-            gitops-ci.k8s.io/exempt-run-as-non-root: "requires root for host path access"
             allowPrivilegeEscalation: false
             readOnlyRootFilesystem: true
             privileged: false
