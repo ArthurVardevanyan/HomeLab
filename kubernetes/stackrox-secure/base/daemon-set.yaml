@@ -62,6 +62,7 @@ spec:
       tolerations:
         - operator: Exists
       serviceAccountName: collector
+      automountServiceAccountToken: true
       containers:
         - name: collector
           image: quay.io/stackrox-io/collector:4.10.2@sha256:b40dcbbaabe19631c1b33a3b4fd980165b6ff4c00d6e4e2ea491bad41a680e7d
@@ -88,11 +89,15 @@ spec:
             - resourceName: memory
               restartPolicy: NotRequired
           securityContext:
+            allowPrivilegeEscalation: false
             capabilities:
               drop:
-                - NET_RAW
+                - ALL
             privileged: true
             readOnlyRootFilesystem: true
+            runAsNonRoot: false
+            seccompProfile:
+              type: RuntimeDefault
           volumeMounts:
             - mountPath: /host/proc
               name: proc-ro
@@ -174,8 +179,16 @@ spec:
             - resourceName: memory
               restartPolicy: NotRequired
           securityContext:
-            runAsUser: 0
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+            privileged: false
             readOnlyRootFilesystem: true
+            runAsNonRoot: false
+            runAsUser: 0
+            seccompProfile:
+              type: RuntimeDefault
             seLinuxOptions:
               type: container_runtime_t
           volumeMounts:
@@ -219,7 +232,15 @@ spec:
             - resourceName: memory
               restartPolicy: NotRequired
           securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
             privileged: true
+            readOnlyRootFilesystem: true
+            runAsNonRoot: false
+            seccompProfile:
+              type: RuntimeDefault
           env:
             - name: ROX_NODE_NAME
               valueFrom:
@@ -285,4 +306,7 @@ spec:
           configMap:
             name: collector-config
             optional: true
+      dnsPolicy: ClusterFirst
       enableServiceLinks: false
+      restartPolicy: Always
+      schedulerName: default-scheduler

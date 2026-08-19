@@ -71,6 +71,11 @@ spec:
                 topologyKey: kubernetes.io/hostname
               weight: 60
       serviceAccountName: admission-control
+      automountServiceAccountToken: true
+      dnsPolicy: ClusterFirst
+      enableServiceLinks: false
+      restartPolicy: Always
+      schedulerName: default-scheduler
       containers:
         - image: quay.io/stackrox-io/main:4.10.2@sha256:8f483d29437b6425475e9dd1d032ac01579904b7103fc765c25e71ee58071ec8
           imagePullPolicy: IfNotPresent
@@ -79,7 +84,7 @@ spec:
             httpGet:
               scheme: HTTPS
               path: /ready
-              port: 8443
+              port: webhook
             initialDelaySeconds: 5
             periodSeconds: 5
             failureThreshold: 1
@@ -102,8 +107,14 @@ spec:
               restartPolicy: NotRequired
           securityContext:
             allowPrivilegeEscalation: false
-            runAsNonRoot: true
+            capabilities:
+              drop:
+                - ALL
+            privileged: false
             readOnlyRootFilesystem: true
+            runAsNonRoot: true
+            seccompProfile:
+              type: RuntimeDefault
           env:
             - name: ROX_MEMLIMIT
               valueFrom:
@@ -259,6 +270,11 @@ spec:
                     operator: DoesNotExist
               weight: 100
       serviceAccountName: sensor
+      automountServiceAccountToken: true
+      dnsPolicy: ClusterFirst
+      enableServiceLinks: false
+      restartPolicy: Always
+      schedulerName: default-scheduler
       # initContainers: null
       containers:
         - image: quay.io/stackrox-io/main:4.10.2@sha256:8f483d29437b6425475e9dd1d032ac01579904b7103fc765c25e71ee58071ec8
@@ -268,7 +284,7 @@ spec:
             httpGet:
               scheme: HTTPS
               path: /ready
-              port: 9443
+              port: webhook
           ports:
             - containerPort: 8443
               name: api
@@ -294,8 +310,14 @@ spec:
               restartPolicy: NotRequired
           securityContext:
             allowPrivilegeEscalation: false
-            runAsNonRoot: true
+            capabilities:
+              drop:
+                - ALL
+            privileged: false
             readOnlyRootFilesystem: true
+            runAsNonRoot: true
+            seccompProfile:
+              type: RuntimeDefault
           env:
             - name: ROX_MEMLIMIT
               valueFrom:
