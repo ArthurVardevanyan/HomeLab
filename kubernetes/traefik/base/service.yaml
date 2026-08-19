@@ -12,9 +12,10 @@ metadata:
 spec:
   type: ClusterIP
   ports:
-    - protocol: TCP
+    - name: traefik
+      protocol: TCP
       port: 9000
-      targetPort: 9000
+      targetPort: traefik
   selector:
     app.kubernetes.io/name: traefik
     app.kubernetes.io/instance: traefik
@@ -42,8 +43,8 @@ spec:
     - name: web
       port: 80
       protocol: TCP
-      targetPort: 8000
+      targetPort: web
     - name: websecure
       port: 443
       protocol: TCP
-      targetPort: 8443
+      targetPort: websecure
