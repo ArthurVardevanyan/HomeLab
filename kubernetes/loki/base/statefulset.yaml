@@ -10,6 +10,7 @@ metadata:
   annotations:
     checkov.io/skip1: CKV_K8S_40=OpenShift Injects Random UID
     checkov.io/skip2: CKV_K8S_43=Digest not supported for this image
+    gitops-ci.k8s.io/exempt-image-checksum: docker.io/grafana/loki
 spec:
   replicas: 1
   podManagementPolicy: "Parallel"
@@ -25,6 +26,9 @@ spec:
         enable.version-checker.io/loki: "true"
     spec:
       automountServiceAccountToken: false
+      dnsPolicy: ClusterFirst
+      restartPolicy: Always
+      schedulerName: default-scheduler
       serviceAccountName: loki
       securityContext:
         runAsNonRoot: true
@@ -37,6 +41,7 @@ spec:
         # runAsUser: 10001
       containers:
         - name: loki
+          # renovate: docker.io/grafana/loki
           image: "docker.io/grafana/loki:2.9.15"
           imagePullPolicy: IfNotPresent
           args:
