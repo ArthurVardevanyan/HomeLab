@@ -14,9 +14,7 @@ metadata:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
-  annotations:
-    gitops-ci.k8s.io/exempt-rbac-wildcards: "verbs"
-    rbac.authorization.kubernetes.io/autoupdate: "true"
+  rbac.authorization.kubernetes.io/autoupdate: "true"
   name: system:kube-vip-cloud-controller-role
 rules:
   - apiGroups:
@@ -38,7 +36,12 @@ rules:
       - services/status
       - leases
     verbs:
-      - "*"
+      - get
+      - list
+      - watch
+      - create
+      - update
+      - patch
   - apiGroups:
       - ""
     resources:
