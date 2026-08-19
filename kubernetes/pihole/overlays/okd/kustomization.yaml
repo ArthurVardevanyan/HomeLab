@@ -1,9 +1,10 @@
 ---
+# - ./service.yaml
+# - ./probe.yaml
+# - op: remove
+#   path: /spec/template/spec/containers/0/ports/1/hostPort
 apiVersion: kustomize.config.k8s.io/v1beta1
-kind:
-  Kustomization
-  # - ./service.yaml
-  # - ./probe.yaml
+kind: Kustomization
 resources:
   - ../../base
   - ./ingress.yaml
@@ -14,20 +15,6 @@ resources:
 components:
   - ../../components/pihole
   - ../../components/metrics
-    # - op: remove
-    #   path: /spec/template/spec/containers/0/ports/1/hostPort
-    # - op: remove
-    #   path: /spec/template/spec/containers/0/ports/1/hostPort
-    # - op: remove
-    #   path: /spec/template/spec/containers/0/ports/1/hostPort
-    # - op: remove
-    #   path: /spec/template/spec/containers/0/ports/1/hostPort
-    # - op: remove
-    #   path: /spec/template/spec/containers/0/ports/1/hostPort
-    # - op: remove
-    #   path: /spec/template/spec/containers/0/ports/1/hostPort
-    # - op: remove
-    #   path: /spec/template/spec/containers/0/ports/1/hostPort
 patches:
   - patch: |-
       - op: replace
@@ -39,8 +26,6 @@ patches:
       - op: replace
         path: /spec/template/spec/containers/1/env/0/value
         value: pihole-okd
-      # - op: remove
-      #   path: /spec/template/spec/containers/0/ports/1/hostPort
     target:
       kind: StatefulSet
       name: pihole
