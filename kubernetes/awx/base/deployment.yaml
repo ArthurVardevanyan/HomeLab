@@ -21,6 +21,10 @@ spec:
       labels:
         control-plane: controller-manager
     spec:
+      schedulerName: default-scheduler
+      dnsPolicy: ClusterFirst
+      restartPolicy: Always
+      automountServiceAccountToken: false
       containers:
         - image: quay.io/ansible/awx-operator:2.19.1@sha256:7302e0c8e5a79c11275848b36c63c61d8e7487840164c109b7cda9aa93456901
           imagePullPolicy: IfNotPresent
@@ -50,7 +54,12 @@ spec:
               cpu: 50m
               memory: 512Mi
           securityContext:
+            privileged: false
+            runAsNonRoot: true
+            readOnlyRootFilesystem: true
             allowPrivilegeEscalation: false
+            seccompProfile:
+              type: RuntimeDefault
             capabilities:
               drop:
                 - ALL
