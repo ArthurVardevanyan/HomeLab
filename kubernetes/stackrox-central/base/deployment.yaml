@@ -721,6 +721,10 @@ spec:
         owner: stackrox
         openshift.io/required-scc: nonroot-v2
     spec:
+      automountServiceAccountToken: true
+      dnsPolicy: ClusterFirst
+      restartPolicy: Always
+      schedulerName: default-scheduler
       affinity:
         nodeAffinity:
           preferredDuringSchedulingIgnoredDuringExecution:
@@ -773,6 +777,13 @@ spec:
               readOnly: true
           securityContext:
             allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            privileged: false
+            runAsNonRoot: true
+            capabilities:
+              drop: ["ALL"]
+            seccompProfile:
+              type: RuntimeDefault
       containers:
         - name: db
           image: "quay.io/stackrox-io/scanner-db:4.10.1@sha256:3c43b6b8dce14526bb0eafb55823ad279e386933ce4b46ead659f260ee33f6bf"
@@ -796,6 +807,13 @@ spec:
               restartPolicy: RestartContainer
           securityContext:
             allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            privileged: false
+            runAsNonRoot: true
+            capabilities:
+              drop: ["ALL"]
+            seccompProfile:
+              type: RuntimeDefault
           volumeMounts:
             - name: scanner-db-data
               mountPath: /var/lib/postgresql/data
@@ -907,6 +925,10 @@ spec:
               weight: 100
       serviceAccountName: scanner-v4
       terminationGracePeriodSeconds: 120
+      restartPolicy: Always
+      schedulerName: default-scheduler
+      dnsPolicy: ClusterFirst
+      automountServiceAccountToken: true
       initContainers:
         - name: init-db
           image: "quay.io/stackrox-io/scanner-v4-db:4.10.1@sha256:d818e69fffd04ab7de6cf75c17389cb9ac4a266c1b7bdf0a77f84cfa357001b6"
@@ -928,6 +950,14 @@ spec:
               mountPath: /run/secrets/stackrox.io/secrets
               readOnly: true
           securityContext:
+            readOnlyRootFilesystem: true
+            privileged: false
+            runAsNonRoot: true
+            capabilities:
+              drop:
+                - ALL
+            seccompProfile:
+              type: RuntimeDefault
             allowPrivilegeEscalation: false
           resources:
             limits:
@@ -974,6 +1004,14 @@ spec:
             - resourceName: memory
               restartPolicy: RestartContainer
           securityContext:
+            readOnlyRootFilesystem: true
+            privileged: false
+            runAsNonRoot: true
+            capabilities:
+              drop:
+                - ALL
+            seccompProfile:
+              type: RuntimeDefault
             allowPrivilegeEscalation: false
           volumeMounts:
             - name: disk
@@ -1092,6 +1130,10 @@ spec:
                     app: scanner-v4-indexer
                 topologyKey: kubernetes.io/hostname
               weight: 100
+      restartPolicy: Always
+      schedulerName: default-scheduler
+      dnsPolicy: ClusterFirst
+      automountServiceAccountToken: true
       containers:
         - name: indexer
           image: "quay.io/stackrox-io/scanner-v4:4.10.1@sha256:caecf9e86dbb5a14b491dea75347e5773eeaee554bc08bf93342b231804ab57f"
