@@ -81,6 +81,10 @@ spec:
                     operator: DoesNotExist
               weight: 100
       serviceAccountName: central
+      automountServiceAccountToken: true
+      dnsPolicy: ClusterFirst
+      restartPolicy: Always
+      schedulerName: default-scheduler
       securityContext:
         fsGroup: 4000
         runAsUser: 4000
@@ -98,7 +102,7 @@ spec:
             httpGet:
               scheme: HTTPS
               path: /v1/ping
-              port: 8443
+              port: api
             timeoutSeconds: 3
           resizePolicy:
             - resourceName: cpu
@@ -116,7 +120,11 @@ spec:
             allowPrivilegeEscalation: false
             capabilities:
               drop: ["NET_RAW"]
+            privileged: false
             readOnlyRootFilesystem: true
+            runAsNonRoot: true
+            seccompProfile:
+              type: RuntimeDefault
           env:
             - name: ROX_MEMLIMIT
               valueFrom:
@@ -352,6 +360,10 @@ spec:
                     operator: DoesNotExist
               weight: 100
       serviceAccountName: config-controller
+      automountServiceAccountToken: true
+      dnsPolicy: ClusterFirst
+      restartPolicy: Always
+      schedulerName: default-scheduler
       containers:
         - name: manager
           image: "quay.io/stackrox-io/main:4.10.1@sha256:b2b5580fcbe28580be5ed98f785f25f6f36631aede6e7551f4c0856b09c7f525"
@@ -391,7 +403,11 @@ spec:
             capabilities:
               drop:
                 - "ALL"
+            privileged: false
             readOnlyRootFilesystem: true
+            runAsNonRoot: true
+            seccompProfile:
+              type: RuntimeDefault
           readinessProbe:
             httpGet:
               path: /readyz
@@ -511,6 +527,11 @@ spec:
                     app: scanner
                 topologyKey: kubernetes.io/hostname
               weight: 100
+      serviceAccountName: scanner
+      automountServiceAccountToken: true
+      dnsPolicy: ClusterFirst
+      restartPolicy: Always
+      schedulerName: default-scheduler
       containers:
         - name: scanner
 
@@ -561,12 +582,17 @@ spec:
             allowPrivilegeEscalation: false
             capabilities:
               drop: ["NET_RAW"]
+            privileged: false
+            readOnlyRootFilesystem: true
+            runAsNonRoot: true
             runAsUser: 65534
+            seccompProfile:
+              type: RuntimeDefault
           readinessProbe:
             httpGet:
               scheme: HTTPS
               path: /scanner/ping
-              port: 8080
+              port: https
             timeoutSeconds: 10
             periodSeconds: 10
             failureThreshold: 6
@@ -601,7 +627,6 @@ spec:
       securityContext:
         runAsNonRoot: true
         runAsUser: 65534
-      serviceAccountName: scanner
       volumes:
         - name: additional-ca-volume
           secret:
