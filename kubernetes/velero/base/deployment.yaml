@@ -43,15 +43,13 @@ spec:
       terminationGracePeriodSeconds: 3600
       containers:
         - name: velero
-          image:
-            "docker.io/velero/velero:v1.17.1@sha256:58f551f0d89a9ef1919771bdc7475c08\
-            bc1795a50a51a57b5f14316d68fc3baa"
+          image: "docker.io/velero/velero:v1.17.1@sha256:58f551f0d89a9ef1919771bdc7475c08bc1795a50a51a57b5f14316d68fc3baa"
           imagePullPolicy: IfNotPresent
           securityContext:
             allowPrivilegeEscalation: false
             readOnlyRootFilesystem: true
             privileged: false
-            runAsNonRoot: true
+            runAsNonRoot: false
             capabilities:
               drop:
                 - ALL
@@ -134,7 +132,7 @@ spec:
             allowPrivilegeEscalation: false
             readOnlyRootFilesystem: true
             privileged: false
-            runAsNonRoot: true
+            runAsNonRoot: false
             capabilities:
               drop:
                 - ALL
