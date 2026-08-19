@@ -52,7 +52,7 @@ spec:
           livenessProbe:
             httpGet:
               path: /readyz
-              port: 9443
+              port: webhook-server
               scheme: HTTPS
           name: manager
           resizePolicy:
@@ -70,7 +70,7 @@ spec:
           readinessProbe:
             httpGet:
               path: /readyz
-              port: 9443
+              port: webhook-server
               scheme: HTTPS
           resources:
             limits:
@@ -84,6 +84,7 @@ spec:
             capabilities:
               drop:
                 - ALL
+            privileged: false
             readOnlyRootFilesystem: true
             runAsNonRoot: true
             seccompProfile:
@@ -92,7 +93,7 @@ spec:
             failureThreshold: 6
             httpGet:
               path: /readyz
-              port: 9443
+              port: webhook-server
               scheme: HTTPS
             periodSeconds: 5
           volumeMounts:
@@ -100,7 +101,10 @@ spec:
               name: scratch-data
             - mountPath: /run/secrets/cnpg.io/webhook
               name: webhook-certificates
+      dnsPolicy: ClusterFirst
       enableServiceLinks: false
+      restartPolicy: Always
+      schedulerName: default-scheduler
       securityContext:
         runAsNonRoot: true
         seccompProfile:
