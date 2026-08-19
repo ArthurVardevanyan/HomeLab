@@ -49,6 +49,8 @@ spec:
             path: /var/lib/kubelet/plugins
         - name: scratch
           emptyDir: {}
+        - name: tmp
+          emptyDir: {}
       dnsPolicy: ClusterFirst
       containers:
         - name: node-agent
@@ -83,6 +85,8 @@ spec:
               mountPropagation: HostToContainer
             - name: scratch
               mountPath: /scratch
+            - name: tmp
+              mountPath: /tmp
           env:
             - name: VELERO_NAMESPACE
               valueFrom:
