@@ -3,9 +3,9 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind:
   Kustomization
   # - ./service.yaml
+  # - ./probe.yaml
 resources:
   - ../../base
-  # - ./probe.yaml
   - ./ingress.yaml
   - ./vpa.yaml
   - ./dns.yaml
@@ -14,6 +14,8 @@ resources:
 components:
   - ../../components/pihole
   - ../../components/metrics
+    # - op: remove
+    #   path: /spec/template/spec/containers/0/ports/1/hostPort
     # - op: remove
     #   path: /spec/template/spec/containers/0/ports/1/hostPort
     # - op: remove

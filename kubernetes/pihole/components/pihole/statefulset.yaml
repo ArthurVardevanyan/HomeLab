@@ -31,6 +31,8 @@ spec:
             "default-route": ["10.101.1.1"]
           }]
     spec:
+      restartPolicy: Always
+      schedulerName: default-scheduler
       hostname: pihole
       securityContext:
         seccompProfile:
@@ -173,7 +175,7 @@ spec:
           readinessProbe:
             httpGet:
               path: /metrics
-              port: 9617
+              port: metrics
             initialDelaySeconds: 5
             timeoutSeconds: 1
             periodSeconds: 30
@@ -182,7 +184,7 @@ spec:
           livenessProbe:
             httpGet:
               path: /metrics
-              port: 9617
+              port: metrics
             initialDelaySeconds: 5
             timeoutSeconds: 1
             periodSeconds: 30
