@@ -46,11 +46,26 @@ metadata:
     helm.sh/chart: velero-11.2.0
 rules:
   - apiGroups:
-      - "*"
+      - batch
+      - velero.io
     resources:
-      - "*"
+      - jobs
+      - pods
+      - pods/log
+      - backuprepositories
+      - backupstoragerequests
+      - deletebackuprequests
+      - downloadrequests
+      - restores
+      - schedules
     verbs:
-      - "*"
+      - get
+      - list
+      - watch
+      - create
+      - update
+      - patch
+      - delete
 ---
 # Source: velero/templates/rolebinding.yaml
 apiVersion: rbac.authorization.k8s.io/v1
