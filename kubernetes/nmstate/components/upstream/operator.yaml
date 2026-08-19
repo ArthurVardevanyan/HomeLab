@@ -23,6 +23,10 @@ spec:
         name: kubernetes-nmstate-operator
     spec:
       serviceAccountName: nmstate-operator
+      restartPolicy: ClusterFirst
+      schedulerName: default-scheduler
+      dnsPolicy: ClusterFirst
+      automountServiceAccountToken: false
       tolerations:
         - key: node-role.kubernetes.io/control-plane
           operator: Exists
@@ -59,6 +63,7 @@ spec:
             - manager
           securityContext:
             runAsNonRoot: true
+            privileged: false
             readOnlyRootFilesystem: true
             allowPrivilegeEscalation: false
             seccompProfile:
