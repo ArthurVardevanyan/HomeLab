@@ -27,6 +27,9 @@ spec:
         seccompProfile:
           type: RuntimeDefault
         runAsNonRoot: false
+      dnsPolicy: ClusterFirst
+      restartPolicy: Always
+      schedulerName: default-scheduler
       # affinity:
       #   nodeAffinity:
       #     requiredDuringSchedulingIgnoredDuringExecution:
@@ -103,6 +106,7 @@ spec:
             - resourceName: memory
               restartPolicy: NotRequired
           securityContext:
+            privileged: false
             runAsNonRoot: false
             readOnlyRootFilesystem: true
             allowPrivilegeEscalation: false
