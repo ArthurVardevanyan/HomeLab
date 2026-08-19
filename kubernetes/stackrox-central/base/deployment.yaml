@@ -1192,12 +1192,16 @@ spec:
             allowPrivilegeEscalation: false
             capabilities:
               drop: ["NET_RAW"]
+            readOnlyRootFilesystem: true
+            privileged: false
+            seccompProfile:
+              type: RuntimeDefault
             runAsNonRoot: true
           readinessProbe:
             httpGet:
               scheme: HTTPS
               path: /health/readiness
-              port: 9443
+              port: grpc
             timeoutSeconds: 10
             periodSeconds: 10
             failureThreshold: 5
@@ -1348,6 +1352,10 @@ spec:
                     app: scanner-v4-matcher
                 topologyKey: kubernetes.io/hostname
               weight: 100
+      restartPolicy: Always
+      schedulerName: default-scheduler
+      dnsPolicy: ClusterFirst
+      automountServiceAccountToken: true
       containers:
         - name: matcher
           image: "quay.io/stackrox-io/scanner-v4:4.10.1@sha256:caecf9e86dbb5a14b491dea75347e5773eeaee554bc08bf93342b231804ab57f"
@@ -1406,12 +1414,16 @@ spec:
             allowPrivilegeEscalation: false
             capabilities:
               drop: ["NET_RAW"]
+            readOnlyRootFilesystem: true
+            privileged: false
+            seccompProfile:
+              type: RuntimeDefault
             runAsNonRoot: true
           readinessProbe:
             httpGet:
               scheme: HTTPS
               path: /health/readiness
-              port: 9443
+              port: grpc
             timeoutSeconds: 10
             periodSeconds: 10
             failureThreshold: 5

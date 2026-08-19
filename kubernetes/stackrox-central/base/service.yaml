@@ -54,10 +54,10 @@ spec:
   ports:
     - name: https-scanner
       port: 8080
-      targetPort: 8080
+      targetPort: https
     - name: grpcs-scanner
       port: 8443
-      targetPort: 8443
+      targetPort: grpc
 
   selector:
     app: scanner
@@ -86,7 +86,7 @@ spec:
   ports:
     - name: tcp-db
       port: 5432
-      targetPort: 5432
+      targetPort: tcp-postgresql
   selector:
     app: scanner-db
   type: ClusterIP
@@ -115,7 +115,7 @@ spec:
   ports:
     - name: tcp-db
       port: 5432
-      targetPort: 5432
+      targetPort: tcp-postgresql
   selector:
     app: scanner-v4-db
 ---

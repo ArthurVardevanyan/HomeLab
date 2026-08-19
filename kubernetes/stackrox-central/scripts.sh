@@ -106,7 +106,7 @@ EOF
 
   openssl verify -CAfile "${WORKDIR}/ca.pem" "${WORKDIR}/${name}-cert.pem" >/dev/null \
     || err "generated ${name} cert failed CA verification"
-  ok "generated ${name} ($(openssl x509 -in "${WORKDIR}/${name}-cert.pem" -noout -enddate))"
+  ok "generated ${name} ($(openssl x509 -in "${WORKDIR}/${name}-cert.pem" -noout -enddate || true))"
 }
 
 function renew_scanner_v4 {
@@ -182,7 +182,7 @@ function renew_central {
   if ! openssl x509 -in "${WORKDIR}/central-cert.pem" -noout -checkend 0 >/dev/null 2>&1; then
     err "Live central-tls cert is expired; nothing renewed to push. Re-run with CENTRAL_TLS_FILE=<downloaded bundle> to apply the renewed cert first."
   fi
-  ok "Central leaf cert is valid ($(openssl x509 -in "${WORKDIR}/central-cert.pem" -noout -enddate))"
+  ok "Central leaf cert is valid ($(openssl x509 -in "${WORKDIR}/central-cert.pem" -noout -enddate || true))"
 
   log "Pushing Central CA into Vault (secret/homelab/stackrox/common)"
   vault kv patch secret/homelab/stackrox/common \
@@ -207,7 +207,7 @@ function sync_and_roll {
   log "Forcing ESO re-sync"
   for es in ${externalsecrets}; do
     kubectl -n "${NAMESPACE}" annotate externalsecret "${es}" \
-      force-sync="$(date +%s)" --overwrite >/dev/null
+      force-sync="$(date +%s)" --overwrite >/dev/null || true
   done
 
   # Wait for ESO to report the target ExternalSecrets as SecretSynced, so we do
