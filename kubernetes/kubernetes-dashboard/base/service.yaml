@@ -12,7 +12,7 @@ spec:
     - name: kube-websecure
       protocol: TCP
       port: 443
-      targetPort: 8443
+      targetPort: kube-websecure
   selector:
     k8s-app: kubernetes-dashboard
 ---
@@ -26,9 +26,10 @@ metadata:
     app.kubernetes.io/instance: kubernetes-dashboard
 spec:
   ports:
-    - protocol: TCP
+    - name: dashboard-http
+      protocol: TCP
       port: 8000
-      targetPort: 8000
+      targetPort: dashboard-http
   type: ClusterIP
   selector:
     k8s-app: kubernetes-dashboard

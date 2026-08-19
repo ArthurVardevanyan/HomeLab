@@ -64,7 +64,7 @@ spec:
           livenessProbe:
             httpGet:
               path: /
-              port: 8443
+              port: kube-websecure
               scheme: HTTPS
             initialDelaySeconds: 30
             timeoutSeconds: 30
@@ -74,7 +74,7 @@ spec:
           readinessProbe:
             httpGet:
               path: /
-              port: 8443
+              port: kube-websecure
               scheme: HTTPS
             initialDelaySeconds: 30
             timeoutSeconds: 30
@@ -85,6 +85,8 @@ spec:
           terminationMessagePolicy: File
           imagePullPolicy: IfNotPresent
           securityContext:
+            privileged: false
+            runAsNonRoot: true
             runAsUser: 11001
             runAsGroup: 12001
             readOnlyRootFilesystem: true
@@ -101,6 +103,7 @@ spec:
               name: unused-443
             - containerPort: 8000
               protocol: TCP
+              name: dashboard-http
           resources:
             limits:
               cpu: 20m
@@ -119,7 +122,7 @@ spec:
           livenessProbe:
             httpGet:
               path: /
-              port: 8000
+              port: dashboard-http
               scheme: HTTP
             initialDelaySeconds: 30
             timeoutSeconds: 30
@@ -129,7 +132,7 @@ spec:
           readinessProbe:
             httpGet:
               path: /
-              port: 8000
+              port: dashboard-http
               scheme: HTTP
             initialDelaySeconds: 30
             timeoutSeconds: 30
@@ -140,6 +143,8 @@ spec:
           terminationMessagePolicy: File
           imagePullPolicy: IfNotPresent
           securityContext:
+            privileged: false
+            runAsNonRoot: true
             runAsUser: 11001
             runAsGroup: 12001
             readOnlyRootFilesystem: true
