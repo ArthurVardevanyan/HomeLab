@@ -33,6 +33,8 @@ spec:
         app.kubernetes.io/part-of: kyverno
         app.kubernetes.io/version: v1.16.0
     spec:
+      restartPolicy: Always
+      schedulerName: default-scheduler
       securityContext:
         seccompProfile:
           type: RuntimeDefault
@@ -198,7 +200,7 @@ spec:
             failureThreshold: 20
             httpGet:
               path: /health/liveness
-              port: 9443
+              port: https
               scheme: HTTPS
             initialDelaySeconds: 2
             periodSeconds: 6
@@ -206,7 +208,7 @@ spec:
             failureThreshold: 2
             httpGet:
               path: /health/liveness
-              port: 9443
+              port: https
               scheme: HTTPS
             initialDelaySeconds: 15
             periodSeconds: 30
@@ -216,7 +218,7 @@ spec:
             failureThreshold: 6
             httpGet:
               path: /health/readiness
-              port: 9443
+              port: https
               scheme: HTTPS
             initialDelaySeconds: 5
             periodSeconds: 10
