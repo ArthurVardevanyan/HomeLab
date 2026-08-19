@@ -74,6 +74,7 @@ spec:
             # - hostPort: 8095
             - containerPort: 8095
               protocol: TCP
+              name: http
           resources:
             limits:
               cpu: 500m
@@ -86,14 +87,13 @@ spec:
               restartPolicy: NotRequired
             - resourceName: memory
               restartPolicy: NotRequired
-              memory: 1Gi
           env:
             - name: LOG_LEVEL
               value: "info"
           livenessProbe:
             httpGet:
               path: /
-              port: 8095
+              port: http
               scheme: HTTP
             timeoutSeconds: 1
             periodSeconds: 10
@@ -102,7 +102,7 @@ spec:
           readinessProbe:
             httpGet:
               path: /
-              port: 8095
+              port: http
               scheme: HTTP
             timeoutSeconds: 1
             periodSeconds: 10
@@ -111,7 +111,7 @@ spec:
           startupProbe:
             httpGet:
               path: /
-              port: 8095
+              port: http
               scheme: HTTP
             timeoutSeconds: 1
             periodSeconds: 5
