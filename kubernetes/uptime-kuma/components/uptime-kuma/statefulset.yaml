@@ -23,6 +23,8 @@ spec:
       annotations:
         enable.version-checker.io/uptime-kuma: "true"
     spec:
+      schedulerName: default-scheduler
+      dnsPolicy: ClusterFirst
       securityContext:
         runAsNonRoot: true
         seccompProfile:
@@ -45,8 +47,10 @@ spec:
             capabilities:
               drop:
                 - ALL
+            privileged: false
           ports:
-            - containerPort: 3001
+            - name: http
+              containerPort: 3001
           resizePolicy:
             - resourceName: cpu
               restartPolicy: NotRequired
@@ -73,7 +77,7 @@ spec:
           readinessProbe:
             httpGet:
               path: /
-              port: 3001
+              port: http
               scheme: HTTP
       volumes:
         - name: uptime-kuma-pvc
