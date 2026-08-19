@@ -4,6 +4,8 @@ kind: BFDProfile
 metadata:
   name: bgp-bfd
   namespace: metallb-system
+  annotations:
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
 spec:
   # ~900ms detection (300ms * 3). Conservative values chosen because the
   # UniFi UDM SE FRR can be sensitive to aggressive BFD timers. If sessions
