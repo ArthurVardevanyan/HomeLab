@@ -31,11 +31,14 @@ spec:
         app.kubernetes.io/version: "v1.2.0"
         app.kubernetes.io/managed-by: Helm
     spec:
+      restartPolicy: Always
+      schedulerName: default
       securityContext:
         seccompProfile:
           type: RuntimeDefault
       serviceAccountName: external-secrets-cert-controller
       automountServiceAccountToken: true
+      dnsPolicy: ClusterFirst
       hostNetwork: false
       containers:
         - name: cert-controller
@@ -44,6 +47,7 @@ spec:
             capabilities:
               drop:
                 - ALL
+            privileged: false
             readOnlyRootFilesystem: true
             runAsNonRoot: true
             seccompProfile:
@@ -65,9 +69,12 @@ spec:
             - containerPort: 8080
               protocol: TCP
               name: metrics
+            - containerPort: 8081
+              protocol: TCP
+              name: healthz
           readinessProbe:
             httpGet:
-              port: 8081
+              port: healthz
               path: /readyz
             initialDelaySeconds: 20
             periodSeconds: 5
@@ -117,11 +124,14 @@ spec:
         app.kubernetes.io/version: "v1.2.0"
         app.kubernetes.io/managed-by: Helm
     spec:
+      restartPolicy: Always
+      schedulerName: default
       securityContext:
         seccompProfile:
           type: RuntimeDefault
       serviceAccountName: external-secrets
       automountServiceAccountToken: true
+      dnsPolicy: ClusterFirst
       hostNetwork: false
       containers:
         - name: external-secrets
@@ -130,6 +140,7 @@ spec:
             capabilities:
               drop:
                 - ALL
+            privileged: false
             readOnlyRootFilesystem: true
             runAsNonRoot: true
             seccompProfile:
@@ -147,11 +158,14 @@ spec:
             - containerPort: 8080
               protocol: TCP
               name: metrics
+            - containerPort: 8082
+              protocol: TCP
+              name: live
           livenessProbe:
             failureThreshold: 5
             httpGet:
               path: /healthz
-              port: 8082
+              port: live
             initialDelaySeconds: 10
             periodSeconds: 10
             successThreshold: 1
@@ -168,7 +182,6 @@ spec:
             requests:
               cpu: 10m
               memory: 192Mi
-      dnsPolicy: ClusterFirst
       enableServiceLinks: false
 ---
 # Source: external-secrets/templates/webhook-deployment.yaml
@@ -203,9 +216,12 @@ spec:
         app.kubernetes.io/version: "v1.2.0"
         app.kubernetes.io/managed-by: Helm
     spec:
+      restartPolicy: Always
+      schedulerName: default
       securityContext:
         seccompProfile:
           type: RuntimeDefault
+      dnsPolicy: ClusterFirst
       hostNetwork: false
       serviceAccountName: external-secrets-webhook
       automountServiceAccountToken: true
@@ -216,6 +232,7 @@ spec:
             capabilities:
               drop:
                 - ALL
+            privileged: false
             readOnlyRootFilesystem: true
             runAsNonRoot: true
             seccompProfile:
@@ -239,9 +256,12 @@ spec:
             - containerPort: 10250
               protocol: TCP
               name: webhook
+            - containerPort: 8081
+              protocol: TCP
+              name: healthz
           readinessProbe:
             httpGet:
-              port: 8081
+              port: healthz
               path: /readyz
             initialDelaySeconds: 20
             periodSeconds: 5
