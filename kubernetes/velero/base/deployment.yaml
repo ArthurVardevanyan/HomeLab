@@ -6,7 +6,6 @@ metadata:
   name: velero
   annotations:
     checkov.io/skip1: CKV_K8S_40=OpenShift Injects Random UID
-    gitops-ci.k8s.io/exempt-podspec-defaults: runAsNonRoot
   namespace: velero
   labels:
     app.kubernetes.io/name: velero
@@ -154,6 +153,7 @@ spec:
         - image: quay.io/kubevirt/kubevirt-velero-plugin:v0.8.0@sha256:9169abc2e70ec53f5762ad8df27a1a8c4adedf8be45808e4d126c8d496f2046f
           name: velero-plugin-for-kubevirt
           securityContext:
+            runAsNonRoot: false
             allowPrivilegeEscalation: false
             readOnlyRootFilesystem: true
             privileged: false
