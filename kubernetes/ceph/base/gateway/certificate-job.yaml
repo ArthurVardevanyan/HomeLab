@@ -17,6 +17,10 @@ spec:
     spec:
       template:
         spec:
+          schedulerName: default-scheduler
+          dnsPolicy: ClusterFirst
+          automountServiceAccountToken: false
+          enableServiceLinks: false
           securityContext:
             runAsNonRoot: true
             seccompProfile:
@@ -34,6 +38,16 @@ spec:
               command: ["/usr/local/bin/toolbox.sh"]
               args: ["--skip-watch"]
               imagePullPolicy: IfNotPresent
+              securityContext:
+                privileged: false
+                runAsNonRoot: true
+                readOnlyRootFilesystem: true
+                allowPrivilegeEscalation: false
+                seccompProfile:
+                  type: RuntimeDefault
+                capabilities:
+                  drop:
+                    - ALL
               env:
                 - name: ROOK_CEPH_USERNAME
                   valueFrom:
