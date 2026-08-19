@@ -12,6 +12,7 @@ metadata:
     checkov.io/skip2: CKV_K8S_8=App doesn't have a health endpoint
     checkov.io/skip3: CKV_K8S_9=App doesn't have a health endpoint
     checkov.io/skip4: CKV_K8S_43=Don't Mind Tag for This
+    gitops-ci.k8s.io/exempt-image-checksum: registry.arthurvardevanyan.com/homelab/toolbox:not_latest
 spec:
   replicas: 0
   selector:
@@ -22,6 +23,7 @@ spec:
       labels:
         app: toolbox
     spec:
+      dnsPolicy: ClusterFirst
       securityContext:
         seccompProfile:
           type: RuntimeDefault
