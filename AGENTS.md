@@ -69,9 +69,9 @@ Confirm with the user before any `apply`, `delete`, `patch`, `scale`,
   when ESO cannot express the requirement. Never commit plaintext secrets.
   Overlay validation still requires `VAULT_ADDR` and `VAULT_TOKEN` for AVP
   placeholders that remain.
-- Validation: `k8s-gitops-ci test-all --assume-openshift --disable-checks avp`
-  runs the full CI pipeline (kustomize build → AVP → kubeconform + static
-  checks). See "CI Validation (k8s-gitops-ci)" section for scoped validation.
+- Validation: `k8s-gitops-ci test --assume-openshift --disable-checks avp`
+   validates changed files (working-tree diff by default). See
+   "CI Validation (k8s-gitops-ci)" section for scoped/full validation.
 
 ### Manifest authoring rules
 
@@ -97,9 +97,13 @@ load the `openshift-patterns` CRR reference when touching them.
 ### CI Validation (k8s-gitops-ci)
 
 - Real CI runs via `.tekton/gitops-ci.yaml`'s `gitops-ci` Task, invoking
-  `k8s-gitops-ci pipeline --dirs "kubernetes/,tekton/,.tekton/,okd/"
+   `k8s-gitops-ci pipeline --dirs "kubernetes/,tekton/,.tekton/,okd/"
 --assume-openshift` from the sibling `../k8s-gitops-ci` repo (see
-  `tekton/base/gitops-ci.yaml`).
+   `tekton/base/gitops-ci.yaml`).
+- **Local iteration** defaults to the working-tree git diff — only changed
+   files are validated. Use `--all` for a full repo scan, or `--dirs` to
+   scope to specific paths:
+   `k8s-gitops-ci test --dirs kubernetes/,tekton/,.tekton/,okd/ --assume-openshift --disable-checks avp`
 - **Always pass `--assume-openshift`** when validating locally — it matches
   real CI and tells the sync-options check that OpenShift/OKD built-in API
   groups (`gateway.networking.k8s.io`, `monitoring.coreos.com`, `metal3.io`,
@@ -111,19 +115,19 @@ load the `openshift-patterns` CRR reference when touching them.
   fails the overlay build with unrelated "could not replace all placeholders"
   noise.
 - **Working on a subset?** Scope validation to just that app/overlay instead
-  of a full sweep:
-  `k8s-gitops-ci test-all --app kubernetes/<app> --cluster <cluster> --assume-openshift --disable-checks avp`
-  (repeatable flags; `--app` alone validates every overlay of that app,
-  `--cluster` alone validates every app targeting that cluster).
+   of a full sweep:
+   `k8s-gitops-ci test --app kubernetes/<app> --cluster <cluster> --assume-openshift --disable-checks avp`
+   (repeatable flags; `--app` alone validates every overlay of that app,
+   `--cluster` alone validates every app targeting that cluster).
 - **Just one app?** Skip `--cluster` to validate every overlay of that app:
-  `k8s-gitops-ci test-all --app kubernetes/<app> --assume-openshift --disable-checks avp`
+   `k8s-gitops-ci test --app kubernetes/<app> --assume-openshift --disable-checks avp`
 - Before pushing, confirm the full CI scope still passes:
-  `k8s-gitops-ci test-all kubernetes tekton .tekton okd --assume-openshift --disable-checks avp`
-  (mirrors real CI; defaults to reading local `test.sh` automatically — no
-  PR needed).
-- Avoid `test-all .` (full-repo scan) — includes ansible/, machineConfigs/,
-  notes/, sandbox/, which are outside CI's actual `--dirs` scope and
-  produces irrelevant noise.
+   `k8s-gitops-ci test --dirs kubernetes/,tekton/,.tekton/,okd/ --assume-openshift --disable-checks avp`
+   (mirrors real CI; defaults to reading local `test.sh` automatically — no
+   PR needed).
+- Avoid `test --all` for full-repo scans that include ansible/,
+   machineConfigs/, notes/, sandbox/ — these are outside CI's actual
+   `--dirs` scope and produce irrelevant noise.
 - After changing `../k8s-gitops-ci` source, rebuild before testing:
   `cd ../k8s-gitops-ci && task build`.
 - Some fixes require changes in **both** repos (e.g., adjusting a check's
@@ -163,7 +167,7 @@ Helm/Kustomize inputs are kept up to date by Renovate. Preserve the
 - Add a Kubernetes app — see [README.md](README.md#deploying-a-new-app).
 - Run the central wrapper — `./main.bash <function>` (`ansible`,
   `stateful_workload_stop`, ...).
-- Validate manifests — `k8s-gitops-ci test-all --assume-openshift --disable-checks avp`.
+- Validate manifests — `k8s-gitops-ci test --assume-openshift --disable-checks avp`.
 - Drain a node — `oc adm drain <node> --delete-emptydir-data --ignore-daemonsets --force`
   (confirm with the user first).
 - Suspend stateful workloads for maintenance —
@@ -171,7 +175,7 @@ Helm/Kustomize inputs are kept up to date by Renovate. Preserve the
 
 ## Before Committing
 
-- Run `k8s-gitops-ci test-all --assume-openshift --disable-checks avp` for full validation.
+- Run `k8s-gitops-ci test --assume-openshift --disable-checks avp` for validation.
 - For individual file linting, run k8s-gitops-ci linters directly:
   `k8s-gitops-ci markdownlint`, `k8s-gitops-ci prettier`, `k8s-gitops-ci shellcheck`, etc.
 

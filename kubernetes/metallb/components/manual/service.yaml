@@ -6,10 +6,10 @@ metadata:
   namespace: metallb-system
 spec:
   ports:
-    - port: 443
-      targetPort: 9443
-  selector:
-    control-plane: controller-manager
+    - name: webhook
+      port: 443
+      targetPort: webhook-server
+      protocol: TCP
 ---
 apiVersion: v1
 kind: Service
@@ -18,7 +18,8 @@ metadata:
   namespace: metallb-system
 spec:
   ports:
-    - port: 443
-      targetPort: 9443
+    - name: webhook
+      port: 443
+      targetPort: webhook-server
   selector:
     component: webhook-server

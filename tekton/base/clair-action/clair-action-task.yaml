@@ -82,10 +82,10 @@ spec:
 
         echo "Running Clair Action"
         # --db-path=/vuln-store/db/matcher.db \
-        clair-action report --image-ref=${IMAGE} \
+        clair-action report --image-ref="${IMAGE}" \
             --db-path=/vuln-store/matcher.db \
-            --format=quay --docker-config-dir ${WORKSPACE_DATA_PATH} \
-            > ${WORKSPACE_DATA_PATH}/clair-scan-report/clair-result.json
+            --format=quay --docker-config-dir "${WORKSPACE_DATA_PATH}" \
+            > "${WORKSPACE_DATA_PATH}"/clair-scan-report/clair-result.json
 
         # https://www.redhat.com/en/blog/announcing-open-container-initiativereferrers-api-quayio-step-towards-enhanced-security-and-compliance
         # https://docs.openshift.com/pipelines/1.17/secure/setting-up-openshift-pipelines-to-view-software-supply-chain-security-elements.html#op-setting-up-openshift-pipelines-to-view-project-vulnerabilities_setting-up-openshift-pipelines-to-view-software-supply-chain-security-elements
@@ -94,9 +94,9 @@ spec:
           '{vulnerabilities:{critical: [.data.Layer.Features[].Vulnerabilities[] | select(.Severity == "Critical")] | length,
             high: [.data.Layer.Features[].Vulnerabilities[] | select(.Severity == "High")] | length,
             medium: [.data.Layer.Features[].Vulnerabilities[] | select(.Severity == "Medium")] | length,
-            low: [.data.Layer.Features[].Vulnerabilities[] | select(.Severity == "Low")] | length }}'  ${WORKSPACE_DATA_PATH}/clair-scan-report/clair-result.json | tee "${SCAN_OUTPUT}"
+            low: [.data.Layer.Features[].Vulnerabilities[] | select(.Severity == "Low")] | length }}'  "${WORKSPACE_DATA_PATH}"/clair-scan-report/clair-result.json | tee "${SCAN_OUTPUT}"
 
-        cat  ${WORKSPACE_DATA_PATH}/clair-scan-report/clair-result.json
+        cat  "${WORKSPACE_DATA_PATH}"/clair-scan-report/clair-result.json
 
   volumes:
     - name: tmp

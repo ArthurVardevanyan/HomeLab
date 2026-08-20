@@ -8,27 +8,27 @@ HOSTNAME=$(cat /etc/hostname)
 
 booted() {
   /home/arthur/discord/discord.sh/discord.sh \
-    --webhook-url="$UPTIME_WEBHOOK" \
-    --username "$HOSTNAME is up!" \
-    --title "$HOSTNAME is up!" \
+    --webhook-url="${UPTIME_WEBHOOK}" \
+    --username "${HOSTNAME} is up!" \
+    --title "${HOSTNAME} is up!" \
     --color "0x00FF00" \
     --timestamp
 }
 
 reboot() {
   /home/arthur/discord/discord.sh/discord.sh \
-    --webhook-url="$UPTIME_WEBHOOK" \
-    --username "$HOSTNAME is Rebooting!" \
-    --title "$HOSTNAME is Rebooting!" \
+    --webhook-url="${UPTIME_WEBHOOK}" \
+    --username "${HOSTNAME} is Rebooting!" \
+    --title "${HOSTNAME} is Rebooting!" \
     --color "0xeed202" \
     --timestamp
 }
 
 shutdown() {
   /home/arthur/discord/discord.sh/discord.sh \
-    --webhook-url="$UPTIME_WEBHOOK" \
-    --username "$HOSTNAME is Shutting Down!" \
-    --title "$HOSTNAME is Shutting Down!" \
+    --webhook-url="${UPTIME_WEBHOOK}" \
+    --username "${HOSTNAME} is Shutting Down!" \
+    --title "${HOSTNAME} is Shutting Down!" \
     --color "0xFF0000" \
     --timestamp
 }

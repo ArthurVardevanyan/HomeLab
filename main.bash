@@ -883,7 +883,7 @@ delete_okd_virt() {
   VM_NAMES=$(kubectl get vm -n okd-virt -o jsonpath='{.items[*].metadata.name}' 2>/dev/null)
   for VM in ${VM_NAMES}; do
     echo "Stopping VM: ${VM}"
-    virtctl stop "${VM}" -n okd-virt --ignore-not-found 2>/dev/null || true
+    virtctl stop "${VM}" -n okd-virt --ignore-not-found 2>/dev/null || { echo "Warning: VM ${VM} not found, skipping" >&2; }
   done
 
   echo -e "\n\n${BLUE}Waiting for VMs to Stop:${NC}"
@@ -1430,48 +1430,36 @@ install_addons_okd_virt() {
   kubectl kustomize "${HOMELAB}"/kubernetes/kyverno/overlays/okd/ | argocd-vault-plugin generate - | kubectl apply -f - --server-side
 
   echo -e "\n${BLUE}Cert Manager:${NC}"
-  # shellcheck disable=SC2317
-  cert_manager() {
-    kubectl kustomize "${HOMELAB}"/kubernetes/cert-manager/overlays/okd-sandbox | argocd-vault-plugin generate - | kubectl apply -f -
-  }
-  retry 5 cert_manager
+  local _cm
+  _cm=0
+  while [ $_cm -lt 5 ]; do
+    if kubectl kustomize "${HOMELAB}"/kubernetes/cert-manager/overlays/okd-sandbox | argocd-vault-plugin generate - | kubectl apply -f -; then
+      break
+    fi
+    _cm=$((_cm + 1))
+    sleep $((5 ** _cm))
+  done
 
   echo -e "\n${BLUE}Nmstate:${NC}"
-  # shellcheck disable=SC2317
-  nmstate() {
-    kubectl create ns openshift-nmstate
-    kubectl kustomize "${HOMELAB}"/kubernetes/nmstate/overlays/sandbox | kubectl apply -f -
-  }
-  retry 5 nmstate
+  kubectl create ns openshift-nmstate
+  kubectl kustomize "${HOMELAB}"/kubernetes/nmstate/overlays/sandbox | kubectl apply -f -
 
   echo -e "\n${BLUE}OKD Configuration:${NC}"
-  # shellcheck disable=SC2317
-  okd_configuration() {
-    kubectl kustomize "${HOMELAB}"/okd/okd-configuration/overlays/sandbox | argocd-vault-plugin generate - | kubectl apply -f -
-  }
+  kubectl kustomize "${HOMELAB}"/okd/okd-configuration/overlays/sandbox | argocd-vault-plugin generate - | kubectl apply -f -
 
   kubectl kustomize kubernetes/nmstate/overlays/sandbox | kubectl apply -f -
 
-  retry 5 okd_configuration
+  echo -e "\n${BLUE}Waiting for API Certificate to Generate:${NC}"
+  while [ "$(kubectl get certificate -n openshift-config api-certificate -o yaml | yq '.status.conditions[] | select(.type == "Ready") | .status')" == "False" ]; do
+    echo "Waiting for API Certificate to Generate"
+    sleep 30
+  done
 
-  cert_check() {
-
-    # shellcheck disable=SC2317
-    while [ "$(kubectl get certificate -n openshift-config api-certificate -o yaml | yq '.status.conditions[] | select(.type == "Ready") | .status')" == "False" ]; do
-      echo "Waiting for API Certificate to Generate"
-      sleep 30
-    done
-
-    # shellcheck disable=SC2317
-    while [ "$(kubectl get certificate -n openshift-ingress ingress-certificate -o yaml | yq '.status.conditions[] | select(.type == "Ready") | .status')" == "False" ]; do
-      echo "Waiting for Ingress Certificate to Generate"
-      sleep 30
-    done
-  }
-
-  sleep 30
-
-  retry 5 cert_check
+  echo -e "\n${BLUE}Waiting for Ingress Certificate to Generate:${NC}"
+  while [ "$(kubectl get certificate -n openshift-ingress ingress-certificate -o yaml | yq '.status.conditions[] | select(.type == "Ready") | .status')" == "False" ]; do
+    echo "Waiting for Ingress Certificate to Generate"
+    sleep 30
+  done
 
   sleep 120
 
@@ -1513,27 +1501,27 @@ install_addons_okd() {
   oc debug node/worker-0 -t -- chroot /host sudo mkfs.ext4 -L longhorn /dev/vdb
   oc debug node/worker-1 -t -- chroot /host sudo mkfs.ext4 -L longhorn /dev/vdb
   oc debug node/worker-2 -t -- chroot /host sudo mkfs.ext4 -L longhorn /dev/vdb
-  oc debug node/worker-3 -t -- chroot /host sudo mkfs.ext4 -L longhorn /dev/vdb || true
+  oc debug node/worker-3 -t -- chroot /host sudo mkfs.ext4 -L longhorn /dev/vdb
 
   kubectl label node worker-0 topology.kubernetes.io/zone="even" --overwrite
   kubectl label node worker-1 topology.kubernetes.io/zone="odd" --overwrite
   kubectl label node worker-2 topology.kubernetes.io/zone="even" --overwrite
-  kubectl label node worker-3 topology.kubernetes.io/zone="odd" --overwrite || true
+  kubectl label node worker-3 topology.kubernetes.io/zone="odd" --overwrite || { echo "Warning: kubectl label failed on worker-3" >&2; }
 
   kubectl annotate node "worker-0" node.longhorn.io/default-disks-config='[{"path":"/var/mnt/longhorn","allowScheduling":true}]' --overwrite
   kubectl annotate node "worker-1" node.longhorn.io/default-disks-config='[{"path":"/var/mnt/longhorn","allowScheduling":true}]' --overwrite
   kubectl annotate node "worker-2" node.longhorn.io/default-disks-config='[{"path":"/var/mnt/longhorn","allowScheduling":true}]' --overwrite
-  kubectl annotate node "worker-3" node.longhorn.io/default-disks-config='[{"path":"/var/mnt/longhorn","allowScheduling":true}]' --overwrite || true
+  kubectl annotate node "worker-3" node.longhorn.io/default-disks-config='[{"path":"/var/mnt/longhorn","allowScheduling":true}]' --overwrite || { echo "Warning: kubectl annotate failed on worker-3" >&2; }
 
   kubectl label node "worker-0" node.longhorn.io/create-default-disk=config --overwrite
   kubectl label node "worker-1" node.longhorn.io/create-default-disk=config --overwrite
   kubectl label node "worker-2" node.longhorn.io/create-default-disk=config --overwrite
-  kubectl label node "worker-3" node.longhorn.io/create-default-disk=config --overwrite || true
+  kubectl label node "worker-3" node.longhorn.io/create-default-disk=config --overwrite || { echo "Warning: kubectl label failed on worker-3" >&2; }
 
   kubectl label node "worker-0" node-role.kubernetes.io/infra="" --overwrite
   kubectl label node "worker-1" node-role.kubernetes.io/infra="" --overwrite
   kubectl label node "worker-2" node-role.kubernetes.io/infra="" --overwrite
-  kubectl label node "worker-3" node-role.kubernetes.io/infra="" --overwrite || true
+  kubectl label node "worker-3" node-role.kubernetes.io/infra="" --overwrite || { echo "Warning: kubectl label failed on worker-3" >&2; }
 
   kubectl apply -f "${HOMELAB}"/okd/okd-configuration/base/mcp.yaml
   yq '.spec.config.systemd.units[1].enabled=false' "${HOMELAB}"/okd/okd-configuration/overlays/sandbox/longhorn-mc.yaml | kubectl apply -f -
@@ -1545,11 +1533,15 @@ install_addons_okd() {
   done
 
   echo -e "\n${BLUE}Longhorn:${NC}"
-  # shellcheck disable=SC2317
-  longhorn() {
-    kubectl kustomize "${HOMELAB}"/kubernetes/longhorn/overlays/okd-sandbox | argocd-vault-plugin generate - | kubectl apply -f -
-  }
-  retry 5 longhorn
+  local _lh
+  _lh=0
+  while [ $_lh -lt 5 ]; do
+    if kubectl kustomize "${HOMELAB}"/kubernetes/longhorn/overlays/okd-sandbox | argocd-vault-plugin generate - | kubectl apply -f -; then
+      break
+    fi
+    _lh=$((_lh + 1))
+    sleep $((5 ** _lh))
+  done
 
   echo -e "\n${BLUE}Waiting for Longhorn to Boot:${NC}"
   while [ "$(kubectl get pods -n longhorn-system | grep -cv Running)" -ne 1 ]; do
@@ -1557,48 +1549,53 @@ install_addons_okd() {
   done
 
   echo -e "\n${BLUE}OKD Monitoring:${NC}"
-  # shellcheck disable=SC2317
-  okd_monitoring() {
-    kubectl kustomize "${HOMELAB}"/okd/openshift-monitoring/overlays/sandbox | argocd-vault-plugin generate - | kubectl apply -f -
-  }
-  retry 5 okd_monitoring
+  local _om
+  _om=0
+  while [ $_om -lt 5 ]; do
+    if kubectl kustomize "${HOMELAB}"/okd/openshift-monitoring/overlays/sandbox | argocd-vault-plugin generate - | kubectl apply -f -; then
+      break
+    fi
+    _om=$((_om + 1))
+    sleep $((5 ** _om))
+  done
 
   echo -e "\n${BLUE}Cert Manager:${NC}"
-  # shellcheck disable=SC2317
-  cert_manager() {
-    kubectl kustomize "${HOMELAB}"/kubernetes/cert-manager/overlays/okd-sandbox | argocd-vault-plugin generate - | kubectl apply -f -
-  }
-  retry 5 cert_manager
+  local _cm
+  _cm=0
+  while [ $_cm -lt 5 ]; do
+    if kubectl kustomize "${HOMELAB}"/kubernetes/cert-manager/overlays/okd-sandbox | argocd-vault-plugin generate - | kubectl apply -f -; then
+      break
+    fi
+    _cm=$((_cm + 1))
+    sleep $((5 ** _cm))
+  done
 
   echo -e "\n${BLUE}OKD Configuration:${NC}"
-  # shellcheck disable=SC2317
-  okd_configuration() {
-    kubectl kustomize "${HOMELAB}"/okd/okd-configuration/overlays/sandbox | argocd-vault-plugin generate - | kubectl apply -f -
-  }
-  retry 5 okd_configuration
+  local _oc
+  _oc=0
+  while [ $_oc -lt 5 ]; do
+    if kubectl kustomize "${HOMELAB}"/okd/okd-configuration/overlays/sandbox | argocd-vault-plugin generate - | kubectl apply -f -; then
+      break
+    fi
+    _oc=$((_oc + 1))
+    sleep $((5 ** _oc))
+  done
 
   oc patch --type=merge --patch='{"spec":{"paused":true}}' machineconfigpool/master
   oc patch --type=merge --patch='{"spec":{"paused":true}}' machineconfigpool/worker
   oc patch --type=merge --patch='{"spec":{"paused":true}}' machineconfigpool/infra
 
-  cert_check() {
+  echo -e "\n${BLUE}Waiting for API Certificate to Generate:${NC}"
+  while [ "$(kubectl get certificate -n openshift-config api-certificate -o yaml | yq '.status.conditions[] | select(.type == "Ready") | .status')" == "False" ]; do
+    echo "Waiting for API Certificate to Generate"
+    sleep 30
+  done
 
-    # shellcheck disable=SC2317
-    while [ "$(kubectl get certificate -n openshift-config api-certificate -o yaml | yq '.status.conditions[] | select(.type == "Ready") | .status')" == "False" ]; do
-      echo "Waiting for API Certificate to Generate"
-      sleep 30
-    done
-
-    # shellcheck disable=SC2317
-    while [ "$(kubectl get certificate -n openshift-ingress ingress-certificate -o yaml | yq '.status.conditions[] | select(.type == "Ready") | .status')" == "False" ]; do
-      echo "Waiting for Ingress Certificate to Generate"
-      sleep 30
-    done
-  }
-
-  sleep 30
-
-  retry 5 cert_check
+  echo -e "\n${BLUE}Waiting for Ingress Certificate to Generate:${NC}"
+  while [ "$(kubectl get certificate -n openshift-ingress ingress-certificate -o yaml | yq '.status.conditions[] | select(.type == "Ready") | .status')" == "False" ]; do
+    echo "Waiting for Ingress Certificate to Generate"
+    sleep 30
+  done
 
   sleep 120
 
@@ -1614,7 +1611,7 @@ approve_csr() {
   while true; do
     for csr in $(oc get csr 2>/dev/null | grep -w 'Pending' | awk '{print $1}'); do
       echo -n '  --> Approving CSR: '
-      oc adm certificate approve "$csr" 2>/dev/null || true
+      oc adm certificate approve "$csr" 2>/dev/null || { echo "Warning: CSR ${csr} not pending or already approved" >&2; }
     done
     sleep 5
   done
