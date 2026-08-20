@@ -105,7 +105,7 @@ spec:
         echo "${SSH_PRIVATE_KEY}" >> ~/.ssh/id_ed25519
         chmod 600 ~/.ssh/id_ed25519
         SSH_AGENT_ENV=$(ssh-agent) || { echo "Failed to start ssh-agent"; exit 1; }
-        eval "$SSH_AGENT_ENV"
+        eval "${SSH_AGENT_ENV}"
         ssh-add ~/.ssh/id_ed25519
 
         echo "${PULL_SECRET}" > /tmp/pull_secret.json

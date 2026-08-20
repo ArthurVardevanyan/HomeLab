@@ -26,7 +26,7 @@ function retry {
     exit=$?
     wait=$((15 + 5 ** count))
     count=$((count + 1))
-    if [ $count -lt "$retries" ]; then
+    if [[ $count -lt "$retries"  ]]; then
       echo "Retry $count/$retries exited $exit, retrying in $wait seconds..."
       sleep $wait
     else
@@ -481,7 +481,7 @@ reboot_cluster() {
   IP=${START_IP}
   for NODE in ${NODES}; do
     finished="0"
-    while [ "$finished" = "0" ]; do
+    while [[ "$finished" = "0" ]]; do
       sleep 1
       if nc -z 10.10.10.${IP} 22; then
         echo "${PREFIX}${NODE} is up."
@@ -506,7 +506,7 @@ delete_cluster() {
 
 ansible_sandbox() {
   echo -e "\n${BLUE}Running Ansible Playbooks:${NC}"
-  if [ -z "${PASSWORD}" ]; then
+  if [[ -z "${PASSWORD}"  ]]; then
     echo -n Password:
     read -r -s PASSWORD
     echo ""
@@ -529,10 +529,10 @@ label_vms() {
   echo -e "\n${BLUE}Labeling Nodes:${NC}"
   for NODE in ${NODES}; do
 
-    if [[ "${NODE}" =~ "master" || "${NODE}" =~ "server" ]]; then
+    if [[ "${NODE}" =~ "master" || "${NODE}" =~ "server"  ]]; then
       kubectl label nodes "${PREFIX}${NODE}" node-type=master --overwrite
       kubectl taint node "${PREFIX}${NODE}" node-role.kubernetes.io/control-plane:NoSchedule --overwrite
-    elif [[ "${NODE}" =~ "worker" || "${NODE}" =~ "agent" ]]; then
+    elif [[ "${NODE}" =~ "worker" || "${NODE}" =~ "agent"  ]]; then
       kubectl label node "${PREFIX}${NODE}" node-role.kubernetes.io/worker=true --overwrite
       ZONE="EVEN"
       if ((${NODE##*-} % 2)); then
@@ -553,7 +553,7 @@ load_kubeconfig() {
 uninstall_k3s() {
   echo -e "\n\n${BLUE}Uninstall k3s:${NC}"
 
-  if [ -z "${PASSWORD}" ]; then
+  if [[ -z "${PASSWORD}"  ]]; then
     echo -n Password:
     read -r -s PASSWORD
     echo ""
@@ -563,9 +563,9 @@ uninstall_k3s() {
   for NODE in ${NODES}; do
 
     echo "${PREFIX}${NODE}"
-    if [[ "${NODE}" =~ "master" || "${NODE}" =~ "server" ]]; then
+    if [[ "${NODE}" =~ "master" || "${NODE}" =~ "server"  ]]; then
       sshpass -p "${PASSWORD}" ssh -t 10.10.10.${IP} "echo ${PASSWORD}	| sudo -S /usr/local/bin/k3s-uninstall.sh"
-    elif [[ "${NODE}" =~ "worker" || "${NODE}" =~ "agent" ]]; then
+    elif [[ "${NODE}" =~ "worker" || "${NODE}" =~ "agent"  ]]; then
       sshpass -p "${PASSWORD}" ssh -t 10.10.10.${IP} "echo ${PASSWORD}	| sudo -S /usr/local/bin/k3s-agent-uninstall.sh"
     fi
     ((IP++))
@@ -576,7 +576,7 @@ install_k3s() {
   # Install & Setup k3s
   echo -e "\n\n${BLUE}Install & Setup k3s:${NC}"
 
-  if [ -z "${PASSWORD}" ]; then
+  if [[ -z "${PASSWORD}"  ]]; then
     echo -n Password:
     read -r -s PASSWORD
     echo ""
@@ -593,21 +593,21 @@ install_k3s() {
   IP=${START_IP}
   for NODE in ${NODES}; do
     KUBE=0
-    if [[ "${NODE}" =~ "master" || "${NODE}" =~ "server" ]]; then
-      if [ ${IP} -eq ${START_IP} ]; then
+    if [[ "${NODE}" =~ "master" || "${NODE}" =~ "server"  ]]; then
+      if [[ ${IP} -eq ${START_IP}  ]]; then
         CONFIG=${INSTALL}
         KUBE=1
       else
         CONFIG=${SERVER}
       fi
-    elif [[ "${NODE}" =~ "worker" || "${NODE}" =~ "agent" ]]; then
+    elif [[ "${NODE}" =~ "worker" || "${NODE}" =~ "agent"  ]]; then
       CONFIG=${WORKER}
     fi
 
     echo "${PREFIX}${NODE}"
     sshpass -p "${PASSWORD}" ssh -t 10.10.10.${IP} "${CONFIG}"
 
-    if [ ${KUBE} -eq 1 ]; then
+    if [[ ${KUBE} -eq 1  ]]; then
       CMD="echo ${PASSWORD} | sudo -S cp /etc/rancher/k3s/k3s.yaml /tmp; sudo chmod 777 /tmp/k3s.yaml"
       sshpass -p "${PASSWORD}" ssh -t 10.10.10.${START_IP} "${CMD}"
       sshpass -p "${PASSWORD}" scp 10.10.10.${START_IP}:/tmp/k3s.yaml "/mnt/storage/vm/${PREFIX}/${PREFIX}.yaml"
@@ -629,7 +629,7 @@ install_addons() {
   echo -e "\n${BLUE}Installing Cluster Addons:${NC}"
   echo -e "\n\n${BLUE}Get URL:${NC}"
   URL=${URL:-}
-  if [ -z "${URL}" ]; then
+  if [[ -z "${URL}"  ]]; then
     echo -n URL:
     read -r -s URL
     echo ""
@@ -661,7 +661,7 @@ install_addons() {
   kubectl patch daemonset -n longhorn-system longhorn-manager --type=json -p='[{"op": "remove", "path": "/spec/template/spec/tolerations"}]'
 
   echo -e "\n${BLUE}Waiting for Longhorn to Boot:${NC}"
-  while [ "$(kubectl get pods -n longhorn-system | grep -cv Running)" -ne 1 ]; do
+  while [[ "$(kubectl get pods -n longhorn-system | grep -cv Running)" -ne 1 ]]; do
     sleep 1
   done
 
@@ -747,11 +747,11 @@ install_cluster() {
   for NODE in ${NODES}; do
     echo -e "\n\n${BLUE}Creating: ${PREFIX}${NODE}${NC}"
 
-    if [[ "${NODE}" =~ "master" || "${NODE}" =~ "server" ]]; then
+    if [[ "${NODE}" =~ "master" || "${NODE}" =~ "server"  ]]; then
       CPU=3
       MEMORY=4096
       DISK=15
-    elif [[ "${NODE}" =~ "worker" || "${NODE}" =~ "agent" ]]; then
+    elif [[ "${NODE}" =~ "worker" || "${NODE}" =~ "agent"  ]]; then
       CPU=6
       MEMORY=8192
       DISK=30
@@ -786,9 +786,9 @@ install_cluster() {
   for NODE in ${NODES}; do
     # https://serverfault.com/a/386867
     finished="0"
-    while [ "$finished" = "0" ]; do
+    while [[ "$finished" = "0" ]]; do
       sleep 5
-      if [ "$(virsh list --all | grep 'running' | grep "${PREFIX}${NODE}" | wc -c)" -eq 0 ]; then
+      if [[ "$(virsh list --all | grep 'running' | grep "${PREFIX}${NODE}" | wc -c)" -eq 0 ]]; then
         echo "Starting vm ${PREFIX}${NODE}"
         sleep 1
         virsh start "${PREFIX}${NODE}"
@@ -802,7 +802,7 @@ install_cluster() {
   IP=${START_IP}
   for NODE in ${NODES}; do
     finished="0"
-    while [ "$finished" = "0" ]; do
+    while [[ "$finished" = "0" ]]; do
       sleep 1
       if nc -z 10.10.10.${IP} 22; then
         ssh-keygen -f "${HOME}/.ssh/known_hosts" -R "10.10.10.${IP}"
@@ -832,7 +832,7 @@ install_k3s_cluster() {
 
   export KUBECONFIG="/mnt/storage/vm/${PREFIX}/${PREFIX}.yaml"
 
-  while [ "$(kubectl get nodes | wc -l)" -le "$(echo "${NODES}" | wc -w)" ]; do
+  while [[ "$(kubectl get nodes | wc -l)" -le "$(echo "${NODES}" | wc -w)" ]]; do
     sleep 1
   done
 
@@ -891,7 +891,7 @@ delete_okd_virt() {
     echo -n "Waiting for ${VM}..."
     while true; do
       PHASE=$(kubectl get vm "${VM}" -n okd-virt -o jsonpath='{.status.printableStatus}' 2>/dev/null || echo "Deleted")
-      if [[ "${PHASE}" == "Stopped" || "${PHASE}" == "Deleted" ]]; then
+      if [[ "${PHASE}" == "Stopped" || "${PHASE}" == "Deleted"  ]]; then
         echo " done (${PHASE})"
         break
       fi
@@ -943,12 +943,12 @@ install_okd_prep() {
 
   export AVP_TYPE=vault
   export AVP_AUTH_TYPE=token
-  if [ -z "${VAULT_TOKEN}" ]; then
+  if [[ -z "${VAULT_TOKEN}"  ]]; then
     export VAULT_TOKEN
     VAULT_TOKEN=$(vault login --tls-skip-verify -address="${URL}" -method=userpass -token-only username=arthur)
   fi
 
-  if [ -z "${URL}" ]; then
+  if [[ -z "${URL}"  ]]; then
     echo -n URL:
     read -r -s URL
     echo ""
@@ -958,7 +958,7 @@ install_okd_prep() {
   echo -e "\n\n${BLUE}Get Registry URL:${NC}"
   export REGISTRY
   REGISTRY=${REGISTRY:-registry.arthurvardevanyan.com}
-  if [ -z "${REGISTRY}" ]; then
+  if [[ -z "${REGISTRY}"  ]]; then
     echo -n REGISTRY:
     read -r -s REGISTRY
     echo ""
@@ -969,29 +969,29 @@ install_okd_prep() {
   export OKD_VERSION=${OKD_VERSION:-""}
 
   # Auto-detect OCP vs OKD: OKD versions always contain "okd"
-  if [ -n "${OKD_VERSION}" ] && [[ "${OKD_VERSION}" != *"okd"* ]]; then
+  if [[ -n "${OKD_VERSION}" ]] && [[ "${OKD_VERSION}" != *"okd"* ]]; then
     OCP=true
   fi
   export OCP=${OCP:-false}
 
-  if [[ "${OCP}" == "true" ]]; then
+  if [[ "${OCP}" == "true"  ]]; then
     # OCP Official Releases: https://amd64.ocp.releases.ci.openshift.org/
     # Channels: 4-stable, 4-dev-preview
     export OCP_CHANNEL=${OCP_CHANNEL:-4-stable}
-    if [ -z "${OKD_VERSION}" ]; then
+    if [[ -z "${OKD_VERSION}"  ]]; then
       OKD_VERSION=$(curl -s "https://amd64.ocp.releases.ci.openshift.org/api/v1/releasestream/${OCP_CHANNEL}/latest" | jq -r '.name')
     fi
     echo "${OKD_VERSION}"
     export OKD_URL="quay.io/openshift-release-dev/ocp-release:${OKD_VERSION}-x86_64"
   else
     # OKD Releases: https://amd64.origin.releases.ci.openshift.org/
-    if [ -z "${OKD_VERSION}" ]; then
+    if [[ -z "${OKD_VERSION}"  ]]; then
       export OKD_CHANNEL=${OKD_CHANNEL:-4-scos-stable}
       # https://github.com/JaimeMagiera/oct/blob/3968059ca79d9b60245aaff659533f6090c9a722/helpers/okd-query-releases.sh#L137
       OKD_VERSION=$(curl -s "https://amd64.origin.releases.ci.openshift.org/releasestream/${OKD_CHANNEL}" | grep "Accepted" -B 1 | awk 'sub(/.*release\/ */,""){f=1} f{if ( sub(/ *".*/,"") ) f=0; print}' | head -n 1)
     fi
     echo "${OKD_VERSION}"
-    if [[ $OKD_VERSION == *"scos"* ]]; then
+    if [[ $OKD_VERSION == *"scos"*  ]]; then
       export OKD_URL="quay.io/okd/scos-release:${OKD_VERSION}"
       export OKD_URL_CI="registry.ci.openshift.org/origin/release-scos:${OKD_VERSION}"
     else
@@ -1001,14 +1001,14 @@ install_okd_prep() {
   fi
 
   mkdir -p "${OKD}"
-  if [ ! -f "${OKD}/openshift-install-linux-${OKD_VERSION}.tar.gz" ]; then
+  if [[ ! -f "${OKD}/openshift-install-linux-${OKD_VERSION}.tar.gz" ]]; then
     echo "Required tools not found. Downloading..."
     # Clean up tarballs and binaries from any previous version
     find "${OKD}" -maxdepth 1 -name 'openshift-install-linux-4*.tar.gz' -delete
     find "${OKD}" -maxdepth 1 -name 'openshift-client-linux-4*.tar.gz' -delete
     rm -f "${OKD}/oc" "${OKD}/openshift-install" "${OKD}/kubectl"
     if ! oc adm release extract --tools "${OKD_URL}" --to="${OKD}/"; then
-      if [[ "${OCP}" != "true" ]]; then
+      if [[ "${OCP}" != "true"  ]]; then
         echo -e "${BLUE}Trying CI Registry:${NC}"
         oc adm release extract --tools "${OKD_URL_CI}" --to="${OKD}/"
       else
@@ -1389,7 +1389,7 @@ install_addons_okd_virt() {
   echo -e "\n${BLUE}Installing Cluster Addons:${NC}"
   echo -e "\n\n${BLUE}Get URL:${NC}"
   URL=${URL:-virt.arthurvardevanyan.com}
-  if [ -z "${URL}" ]; then
+  if [[ -z "${URL}"  ]]; then
     echo -n URL:
     read -r -s URL
     echo ""
@@ -1398,7 +1398,7 @@ install_addons_okd_virt() {
 
   export AVP_TYPE=vault
   export AVP_AUTH_TYPE=token
-  if [ -z "${VAULT_TOKEN}" ]; then
+  if [[ -z "${VAULT_TOKEN}"  ]]; then
     export VAULT_TOKEN
     VAULT_TOKEN=$(vault login --tls-skip-verify -address="${URL}" -method=userpass -token-only username=arthur)
   fi
@@ -1422,7 +1422,7 @@ install_addons_okd_virt() {
 
   sleep 30s
   echo -e "\n${BLUE}Waiting for MarketPlace Pods to Boot:${NC}"
-  while [ "$(kubectl get pods -n openshift-marketplace | grep -v "Completed" | grep -cv Running)" -ne 1 ]; do
+  while [[ "$(kubectl get pods -n openshift-marketplace | grep -v "Completed" | grep -cv Running)" -ne 1 ]]; do
     sleep 1
   done
 
@@ -1432,7 +1432,7 @@ install_addons_okd_virt() {
   echo -e "\n${BLUE}Cert Manager:${NC}"
   local _cm
   _cm=0
-  while [ $_cm -lt 5 ]; do
+  while [[ $_cm -lt 5 ]]; do
     if kubectl kustomize "${HOMELAB}"/kubernetes/cert-manager/overlays/okd-sandbox | argocd-vault-plugin generate - | kubectl apply -f -; then
       break
     fi
@@ -1450,13 +1450,13 @@ install_addons_okd_virt() {
   kubectl kustomize kubernetes/nmstate/overlays/sandbox | kubectl apply -f -
 
   echo -e "\n${BLUE}Waiting for API Certificate to Generate:${NC}"
-  while [ "$(kubectl get certificate -n openshift-config api-certificate -o yaml | yq '.status.conditions[] | select(.type == "Ready") | .status')" == "False" ]; do
+  while [ "$(kubectl get certificate -n openshift-config api-certificate -o yaml | yq '.status.conditions[]] | select(.type == "Ready") | .status')" == "False" ]; do
     echo "Waiting for API Certificate to Generate"
     sleep 30
   done
 
   echo -e "\n${BLUE}Waiting for Ingress Certificate to Generate:${NC}"
-  while [ "$(kubectl get certificate -n openshift-ingress ingress-certificate -o yaml | yq '.status.conditions[] | select(.type == "Ready") | .status')" == "False" ]; do
+  while [ "$(kubectl get certificate -n openshift-ingress ingress-certificate -o yaml | yq '.status.conditions[]] | select(.type == "Ready") | .status')" == "False" ]; do
     echo "Waiting for Ingress Certificate to Generate"
     sleep 30
   done
@@ -1478,7 +1478,7 @@ install_addons_okd() {
   echo -e "\n${BLUE}Installing Cluster Addons:${NC}"
   echo -e "\n\n${BLUE}Get URL:${NC}"
   URL=${URL:-arthurvardevanyan.com}
-  if [ -z "${URL}" ]; then
+  if [[ -z "${URL}"  ]]; then
     echo -n URL:
     read -r -s URL
     echo ""
@@ -1487,7 +1487,7 @@ install_addons_okd() {
 
   export AVP_TYPE=vault
   export AVP_AUTH_TYPE=token
-  if [ -z "${VAULT_TOKEN}" ]; then
+  if [[ -z "${VAULT_TOKEN}"  ]]; then
     export VAULT_TOKEN
     VAULT_TOKEN=$(vault login --tls-skip-verify -address="${URL}" -method=userpass -token-only username=arthur)
   fi
@@ -1535,7 +1535,7 @@ install_addons_okd() {
   echo -e "\n${BLUE}Longhorn:${NC}"
   local _lh
   _lh=0
-  while [ $_lh -lt 5 ]; do
+  while [[ $_lh -lt 5 ]]; do
     if kubectl kustomize "${HOMELAB}"/kubernetes/longhorn/overlays/okd-sandbox | argocd-vault-plugin generate - | kubectl apply -f -; then
       break
     fi
@@ -1544,14 +1544,14 @@ install_addons_okd() {
   done
 
   echo -e "\n${BLUE}Waiting for Longhorn to Boot:${NC}"
-  while [ "$(kubectl get pods -n longhorn-system | grep -cv Running)" -ne 1 ]; do
+  while [[ "$(kubectl get pods -n longhorn-system | grep -cv Running)" -ne 1 ]]; do
     sleep 1
   done
 
   echo -e "\n${BLUE}OKD Monitoring:${NC}"
   local _om
   _om=0
-  while [ $_om -lt 5 ]; do
+  while [[ $_om -lt 5 ]]; do
     if kubectl kustomize "${HOMELAB}"/okd/openshift-monitoring/overlays/sandbox | argocd-vault-plugin generate - | kubectl apply -f -; then
       break
     fi
@@ -1562,7 +1562,7 @@ install_addons_okd() {
   echo -e "\n${BLUE}Cert Manager:${NC}"
   local _cm
   _cm=0
-  while [ $_cm -lt 5 ]; do
+  while [[ $_cm -lt 5 ]]; do
     if kubectl kustomize "${HOMELAB}"/kubernetes/cert-manager/overlays/okd-sandbox | argocd-vault-plugin generate - | kubectl apply -f -; then
       break
     fi
@@ -1573,7 +1573,7 @@ install_addons_okd() {
   echo -e "\n${BLUE}OKD Configuration:${NC}"
   local _oc
   _oc=0
-  while [ $_oc -lt 5 ]; do
+  while [[ $_oc -lt 5 ]]; do
     if kubectl kustomize "${HOMELAB}"/okd/okd-configuration/overlays/sandbox | argocd-vault-plugin generate - | kubectl apply -f -; then
       break
     fi
@@ -1586,13 +1586,13 @@ install_addons_okd() {
   oc patch --type=merge --patch='{"spec":{"paused":true}}' machineconfigpool/infra
 
   echo -e "\n${BLUE}Waiting for API Certificate to Generate:${NC}"
-  while [ "$(kubectl get certificate -n openshift-config api-certificate -o yaml | yq '.status.conditions[] | select(.type == "Ready") | .status')" == "False" ]; do
+  while [ "$(kubectl get certificate -n openshift-config api-certificate -o yaml | yq '.status.conditions[]] | select(.type == "Ready") | .status')" == "False" ]; do
     echo "Waiting for API Certificate to Generate"
     sleep 30
   done
 
   echo -e "\n${BLUE}Waiting for Ingress Certificate to Generate:${NC}"
-  while [ "$(kubectl get certificate -n openshift-ingress ingress-certificate -o yaml | yq '.status.conditions[] | select(.type == "Ready") | .status')" == "False" ]; do
+  while [ "$(kubectl get certificate -n openshift-ingress ingress-certificate -o yaml | yq '.status.conditions[]] | select(.type == "Ready") | .status')" == "False" ]; do
     echo "Waiting for Ingress Certificate to Generate"
     sleep 30
   done
@@ -1622,19 +1622,19 @@ update_install_plans() {
 
   PENDING=$(kubectl get installplan -A -o jsonpath='{range .items[?(@.spec.approved==false)]}{.metadata.namespace}{"\t"}{.spec.clusterServiceVersionNames[0]}{"\n"}{end}')
 
-  if [ -z "${PENDING}" ]; then
+  if [[ -z "${PENDING}"  ]]; then
     echo "No pending InstallPlans found."
     return 0
   fi
 
   while IFS=$'\t' read -r NAMESPACE CSV; do
-    [ -z "${NAMESPACE}" ] && continue
+    [[ -z "${NAMESPACE}" ]] && continue
     echo -e "\nPending: ${CSV} in ${NAMESPACE}"
 
     # Find the subscription file matching this namespace
     SUB_FILE=$(grep -rl "namespace: ${NAMESPACE}$" --include="subscription.yaml" kubernetes/ 2>/dev/null | head -1)
 
-    if [ -z "${SUB_FILE}" ]; then
+    if [[ -z "${SUB_FILE}"  ]]; then
       echo "  WARNING: No subscription file found for namespace '${NAMESPACE}'"
       continue
     fi
@@ -1642,7 +1642,7 @@ update_install_plans() {
     # Get current startingCSV from the file
     CURRENT_CSV=$(grep 'startingCSV:' "${SUB_FILE}" | sed 's/.*startingCSV:[[:space:]]*//' | tr -d '"' | tr -d "'" | awk '{print $1}')
 
-    if [ "${CURRENT_CSV}" == "${CSV}" ]; then
+    if [[ "${CURRENT_CSV}" == "${CSV}"  ]]; then
       echo "  Already up to date: ${SUB_FILE}"
       continue
     fi
@@ -1660,13 +1660,13 @@ approve_install_plans() {
 
   PENDING=$(kubectl get installplan -A -o jsonpath='{range .items[?(@.spec.approved==false)]}{.metadata.namespace}{"\t"}{.metadata.name}{"\t"}{.spec.clusterServiceVersionNames[0]}{"\n"}{end}')
 
-  if [ -z "${PENDING}" ]; then
+  if [[ -z "${PENDING}"  ]]; then
     echo "No pending InstallPlans found."
     return 0
   fi
 
   while IFS=$'\t' read -r NAMESPACE NAME CSV; do
-    [ -z "${NAMESPACE}" ] && continue
+    [[ -z "${NAMESPACE}" ]] && continue
     echo "  Approving ${NAME} (${CSV}) in ${NAMESPACE}"
     kubectl patch installplan "${NAME}" -n "${NAMESPACE}" --type merge --patch '{"spec":{"approved":true}}'
   done <<< "${PENDING}"

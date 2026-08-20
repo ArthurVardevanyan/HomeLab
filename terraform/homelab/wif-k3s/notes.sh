@@ -11,7 +11,8 @@ curl -sf --insecure --header "Authorization: Bearer ${DASHBOARD_TOKEN}" -H 'Cont
 curl -sf --insecure --header "Authorization: Bearer ${DASHBOARD_TOKEN}" -H 'Content-type: application/json' \
 	https://10.0.0.5:6443/openid/v1/jwks || { echo "Warning: endpoint unreachable" >&2; }
 
-curl -fsSL https://get.k3s.io | INSTALL_K3S_EXEC="server --cluster-init --disable traefik \
+SCRIPT=$(curl -fsSL https://get.k3s.io) || { echo "Error: failed to download k3s installer" >&2; exit 1; }
+echo "${SCRIPT}" | INSTALL_K3S_EXEC="server --cluster-init --disable traefik \
 	--kubelet-arg system-reserved=cpu=50m,memory=256Mi \
 	--kubelet-arg kube-reserved=cpu=150m,memory=512Mi \
 	--kube-apiserver-arg feature-gates=ServiceAccountIssuerDiscovery=true \
