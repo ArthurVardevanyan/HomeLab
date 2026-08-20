@@ -775,6 +775,10 @@ spec:
             - name: scanner-db-password
               mountPath: /run/secrets/stackrox.io/secrets
               readOnly: true
+            - name: run-postgresql
+              mountPath: /var/run/postgresql
+            - name: tmp
+              mountPath: /tmp
           securityContext:
             allowPrivilegeEscalation: false
             readOnlyRootFilesystem: true
@@ -820,6 +824,10 @@ spec:
             - name: certs
               mountPath: /run/secrets/stackrox.io/certs
               readOnly: true
+            - name: run-postgresql
+              mountPath: /var/run/postgresql
+            - name: tmp
+              mountPath: /tmp
       serviceAccountName: scanner
       securityContext:
         fsGroup: 70
@@ -842,6 +850,10 @@ spec:
               - key: ca.pem
                 path: root.crt
         - name: scanner-db-data
+          emptyDir: {}
+        - name: run-postgresql
+          emptyDir: {}
+        - name: tmp
           emptyDir: {}
         - name: scanner-db-password
           secret:
@@ -949,6 +961,10 @@ spec:
             - name: scanner-v4-db-password
               mountPath: /run/secrets/stackrox.io/secrets
               readOnly: true
+            - name: run-postgresql
+              mountPath: /var/run/postgresql
+            - name: tmp
+              mountPath: /tmp
           securityContext:
             readOnlyRootFilesystem: true
             privileged: false
@@ -1022,6 +1038,10 @@ spec:
               mountPath: /run/secrets/stackrox.io/certs
             - name: shared-memory
               mountPath: /dev/shm
+            - name: run-postgresql
+              mountPath: /var/run/postgresql
+            - name: tmp
+              mountPath: /tmp
       securityContext:
         fsGroup: 70
         runAsUser: 70
@@ -1049,6 +1069,10 @@ spec:
           emptyDir:
             medium: Memory
             sizeLimit: 750Mi
+        - name: run-postgresql
+          emptyDir: {}
+        - name: tmp
+          emptyDir: {}
         - name: scanner-v4-db-password
           secret:
             secretName: scanner-v4-db-password
