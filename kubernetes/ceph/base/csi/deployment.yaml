@@ -22,6 +22,10 @@ spec:
       labels:
         control-plane: ceph-csi-op-controller-manager
     spec:
+      schedulerName: default-scheduler
+      dnsPolicy: ClusterFirst
+      restartPolicy: Always
+      automountServiceAccountToken: true
       containers:
         - args:
             - --leader-elect
@@ -63,11 +67,15 @@ spec:
             - resourceName: memory
               restartPolicy: NotRequired
           securityContext:
+            privileged: false
+            runAsNonRoot: true
             allowPrivilegeEscalation: false
             capabilities:
               drop:
                 - ALL
             readOnlyRootFilesystem: true
+            seccompProfile:
+              type: RuntimeDefault
       securityContext:
         runAsNonRoot: true
       serviceAccountName: ceph-csi-controller-manager

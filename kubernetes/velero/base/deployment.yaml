@@ -37,14 +37,24 @@ spec:
         prometheus.io/scrape: "true"
     spec:
       restartPolicy: Always
+      schedulerName: default-scheduler
       serviceAccountName: velero-server
       automountServiceAccountToken: true
       terminationGracePeriodSeconds: 3600
       containers:
         - name: velero
-          image: "docker.io/velero/velero:v1.17.1@sha256:58f551f0d89a9ef1919771bdc7475c08\
-            bc1795a50a51a57b5f14316d68fc3baa"
+          image: "docker.io/velero/velero:v1.17.1@sha256:58f551f0d89a9ef1919771bdc7475c08bc1795a50a51a57b5f14316d68fc3baa"
           imagePullPolicy: IfNotPresent
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: false
+            privileged: false
+            runAsNonRoot: false
+            capabilities:
+              drop:
+                - ALL
+            seccompProfile:
+              type: RuntimeDefault
           ports:
             - name: http-monitoring
               containerPort: 8085
@@ -96,6 +106,8 @@ spec:
               mountPath: /credentials
             - name: scratch
               mountPath: /scratch
+            - name: tmp
+              mountPath: /tmp
           env:
             - name: VELERO_SCRATCH_DIR
               value: /scratch
@@ -118,6 +130,16 @@ spec:
       initContainers:
         - image: docker.io/velero/velero-plugin-for-aws:v1.13.1@sha256:472d0e486d5d5c23c782b1b123530c7df8645784523ec36ca661a326d47885ff
           name: velero-plugin-for-aws
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: false
+            privileged: false
+            runAsNonRoot: false
+            capabilities:
+              drop:
+                - ALL
+            seccompProfile:
+              type: RuntimeDefault
           resources:
             limits:
               cpu: 100m
@@ -130,6 +152,16 @@ spec:
               name: plugins
         - image: quay.io/kubevirt/kubevirt-velero-plugin:v0.8.0@sha256:9169abc2e70ec53f5762ad8df27a1a8c4adedf8be45808e4d126c8d496f2046f
           name: velero-plugin-for-kubevirt
+          securityContext:
+            runAsNonRoot: false
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: false
+            privileged: false
+            capabilities:
+              drop:
+                - ALL
+            seccompProfile:
+              type: RuntimeDefault
           resources:
             limits:
               cpu: 100m
@@ -152,5 +184,7 @@ spec:
         - name: plugins
           emptyDir: {}
         - name: scratch
+          emptyDir: {}
+        - name: tmp
           emptyDir: {}
       enableServiceLinks: false

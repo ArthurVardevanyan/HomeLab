@@ -39,6 +39,10 @@ spec:
         prometheus.io/scrape: "true"
         enable.version-checker.io/longhorn-manager: "true"
     spec:
+      securityContext:
+        runAsGroup: 19500
+        runAsNonRoot: true
+        runAsUser: 19500
       tolerations:
         - key: node-role.kubernetes.io/infra
           effect: NoSchedule
@@ -48,7 +52,15 @@ spec:
           image: docker.io/longhornio/longhorn-manager:v1.7.0@sha256:02a98fe2dce45d3bcd3a56955fa5f600f63abaf43debc2ef9a81b44ce47d5ec0
           imagePullPolicy: IfNotPresent
           securityContext:
-            privileged: true
+            privileged: false
+            readOnlyRootFilesystem: true
+            runAsNonRoot: true
+            allowPrivilegeEscalation: false
+            seccompProfile:
+              type: RuntimeDefault
+            capabilities:
+              drop:
+                - ALL
           resources:
             requests:
               cpu: 250m
@@ -92,7 +104,7 @@ spec:
           readinessProbe:
             httpGet:
               path: /v1/healthz
-              port: 9501
+              port: conversion-wh
               scheme: HTTPS
           volumeMounts:
             - name: dev
@@ -123,7 +135,26 @@ spec:
                   fieldPath: spec.nodeName
         - name: pre-pull-share-manager-image
           imagePullPolicy: IfNotPresent
-          image: docker.io/longhornio/longhorn-share-manager:v1.7.0@sha256:83973fb06f38e07b33be9d26139089684064919a98e9d733aeddf9c504f35c0a
+          image: docker.io/longhornio/longhorn-share-manager:v1.7.0@sha256:83973fb06f38e217d5ab2f7e782fe964859acefdbb30878b2175785195ea4691
+          resources:
+            requests:
+              cpu: 10m
+              memory: 16Mi
+            limits:
+              cpu: 20m
+              memory: 32Mi
+          securityContext:
+            privileged: false
+            runAsGroup: 65534
+            runAsNonRoot: true
+            runAsUser: 65534
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            seccompProfile:
+              type: RuntimeDefault
+            capabilities:
+              drop:
+                - ALL
           command:
             ["sh", "-c", "echo share-manager image pulled && sleep infinity"]
       volumes:
@@ -140,6 +171,9 @@ spec:
           secret:
             secretName: longhorn-grpc-tls
             optional: true
+      dnsPolicy: ClusterFirst
+      restartPolicy: Always
+      schedulerName: default-scheduler
       priorityClassName: "longhorn-critical"
       serviceAccountName: longhorn-service-account
       automountServiceAccountToken: true

@@ -30,6 +30,9 @@ spec:
         app.kubernetes.io/version: "v0.20.2"
         app.kubernetes.io/managed-by: Helm
     spec:
+      schedulerName: default-scheduler
+      dnsPolicy: ClusterFirst
+      restartPolicy: Always
       serviceAccountName: trust-manager
       automountServiceAccountToken: true
       # initContainers:
@@ -62,7 +65,8 @@ spec:
       #         memory: 72Mi
       containers:
         - name: trust-manager
-          image: "quay.io/jetstack/trust-manager:v0.20.2@sha256:c446258c1ac5bcd0558802dd8\
+          image:
+            "quay.io/jetstack/trust-manager:v0.20.2@sha256:c446258c1ac5bcd0558802dd8\
             db2ef490d6ecdaff4b9c9aa7e45ac73f35b20e5"
           imagePullPolicy: IfNotPresent
           resizePolicy:
@@ -75,9 +79,11 @@ spec:
               name: webhook # for the PodMonitor port field
             - containerPort: 9402
               name: metrics # for the PodMonitor port field
+            - containerPort: 6060
+              name: readyz
           readinessProbe:
             httpGet:
-              port: 6060
+              port: readyz
               path: /readyz
             initialDelaySeconds: 3
             periodSeconds: 7
@@ -113,6 +119,7 @@ spec:
               cpu: 10m
               memory: 48Mi
           securityContext:
+            privileged: false
             allowPrivilegeEscalation: false
             capabilities:
               drop:

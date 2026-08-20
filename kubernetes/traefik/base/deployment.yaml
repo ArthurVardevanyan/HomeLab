@@ -37,10 +37,13 @@ spec:
         helm.sh/chart: traefik-25.0.0
         app.kubernetes.io/managed-by: Helm
     spec:
+      schedulerName: default-scheduler
       serviceAccountName: traefik
       automountServiceAccountToken: true
       terminationGracePeriodSeconds: 60
       hostNetwork: false
+      dnsPolicy: ClusterFirst
+      restartPolicy: Always
       containers:
         - image: docker.io/traefik:v2.11.2@sha256:c6f6001dd1fc09fb0ae47ad2198102c40a8d9586c02d6040d561fd4fb7e91f45
           imagePullPolicy: IfNotPresent
@@ -60,7 +63,7 @@ spec:
           readinessProbe:
             httpGet:
               path: /ping
-              port: 8000
+              port: web
               scheme: HTTP
             failureThreshold: 1
             initialDelaySeconds: 2
@@ -70,7 +73,7 @@ spec:
           livenessProbe:
             httpGet:
               path: /ping
-              port: 8000
+              port: web
               scheme: HTTP
             failureThreshold: 3
             initialDelaySeconds: 2
@@ -91,6 +94,8 @@ spec:
               containerPort: 8443
               protocol: "TCP"
           securityContext:
+            privileged: false
+            runAsNonRoot: true
             allowPrivilegeEscalation: false
             readOnlyRootFilesystem: true
             runAsGroup: 65532

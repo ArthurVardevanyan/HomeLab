@@ -11,6 +11,8 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   name: system:controller:operator-lifecycle-manager
+  annotations:
+    gitops-ci.k8s.io/exempt-rbac-wildcards: "verbs,resources,apiGroups"
 rules:
   - apiGroups: ["*"]
     resources: ["*"]
@@ -28,7 +30,7 @@ rules:
         "bind",
       ]
   - nonResourceURLs: ["*"]
-    verbs: ["*"]
+    verbs: ["get", "list", "watch"]
   - apiGroups:
       - authentication.k8s.io
     resources:

@@ -36,11 +36,12 @@ spec:
             seccompProfile:
               type: RuntimeDefault
           dnsPolicy: ClusterFirst
+          schedulerName: default-scheduler
           initContainers:
             - name: rollout-restart
               imagePullPolicy: IfNotPresent
               # renovate: datasource=docker depName=registry.k8s.io/kubectl
-              image: registry.k8s.io/kubectl:v1.36.3
+              image: registry.k8s.io/kubectl:v1.36.3@sha256:7e2f380f535e076bfcd365257a57f7ed8cb50b1880c117e22effa74cc6dba11c
               env:
                 - name: NAMESPACE
                   valueFrom:
@@ -79,7 +80,7 @@ spec:
             - name: rollout
               imagePullPolicy: IfNotPresent
               # renovate: datasource=docker depName=registry.k8s.io/kubectl
-              image: registry.k8s.io/kubectl:v1.36.3
+              image: registry.k8s.io/kubectl:v1.36.3@sha256:7e2f380f535e076bfcd365257a57f7ed8cb50b1880c117e22effa74cc6dba11c
               env:
                 - name: NAMESPACE
                   valueFrom:

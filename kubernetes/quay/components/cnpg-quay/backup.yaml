@@ -4,6 +4,8 @@ kind: ScheduledBackup
 metadata:
   name: quay
   namespace: quay
+  annotations:
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
 spec:
   schedule: "0 30 3 * * *"
   backupOwnerReference: self

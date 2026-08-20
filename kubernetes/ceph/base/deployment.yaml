@@ -27,6 +27,10 @@ spec:
       labels:
         app: rook-ceph-operator
     spec:
+      schedulerName: default-scheduler
+      dnsPolicy: ClusterFirst
+      restartPolicy: Always
+      automountServiceAccountToken: true
       tolerations:
         - effect: NoExecute
           key: node.kubernetes.io/unreachable
@@ -37,12 +41,15 @@ spec:
       serviceAccountName: rook-ceph-system
       containers:
         - name: rook-ceph-operator
-          image: docker.io/rook/ceph:v1.19.4
+          image: docker.io/rook/ceph:v1.19.4@sha256:f0f307d7fce0ba2bc60d15e446b9fafddf1153492398fd653d10708f9874bf31
           args: ["ceph", "operator"]
           securityContext:
+            privileged: false
             runAsNonRoot: true
-            runAsUser: 2016
-            runAsGroup: 2016
+            readOnlyRootFilesystem: true
+            allowPrivilegeEscalation: false
+            seccompProfile:
+              type: RuntimeDefault
             capabilities:
               drop: ["ALL"]
           volumeMounts:

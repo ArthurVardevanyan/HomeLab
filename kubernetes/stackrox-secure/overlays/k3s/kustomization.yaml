@@ -15,33 +15,3 @@ patches:
     target:
       kind: Deployment
       name: sensor
-  - patch: |-
-      - op: replace
-        path: /data/admission-control-cert.pem
-        value: <path:secret/data/homelab/stackrox/k3s#admission-control-cert-pem | base64encode>
-      - op: replace
-        path: /data/admission-control-key.pem
-        value: <path:secret/data/homelab/stackrox/k3s#admission-control-key-pem | base64encode>
-    target:
-      kind: Secret
-      name: admission-control-tls
-  - patch: |-
-      - op: replace
-        path: /data/collector-cert.pem
-        value: <path:secret/data/homelab/stackrox/k3s#collector-cert-pem | base64encode>
-      - op: replace
-        path: /data/collector-key.pem
-        value: <path:secret/data/homelab/stackrox/k3s#collector-key-pem | base64encode>
-    target:
-      kind: Secret
-      name: collector-tls
-  - patch: |-
-      - op: replace
-        path: /data/sensor-cert.pem
-        value: <path:secret/data/homelab/stackrox/k3s#sensor-cert-pem | base64encode>
-      - op: replace
-        path: /data/sensor-key.pem
-        value: <path:secret/data/homelab/stackrox/k3s#sensor-key-pem | base64encode>
-    target:
-      kind: Secret
-      name: sensor-tls

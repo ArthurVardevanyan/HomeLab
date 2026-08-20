@@ -9,7 +9,6 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole # TODO Why is it cluster scoping the Operator
 metadata:
   name: awx-operator-awx-manager-role
-  namespace: awx
 rules:
   - apiGroups:
       - route.openshift.io
@@ -137,11 +136,17 @@ rules:
   - apiGroups:
       - awx.ansible.com
     resources:
-      - "*"
+      - awx
       - awxbackups
       - awxrestores
     verbs:
-      - "*"
+      - get
+      - list
+      - watch
+      - create
+      - update
+      - patch
+      - delete
   - apiGroups:
       - traefik.containo.us
       - traefik.io
@@ -230,7 +235,9 @@ rules:
   - apiGroups:
       - awx.ansible.com
     resources:
-      - "*"
+      - awx
+      - awxbackups
+      - awxrestores
     verbs:
       - "get"
       - "list"
@@ -240,7 +247,6 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding # TODO Why is it cluster scoping the Operator
 metadata:
   name: awx-operator-awx-manager-rolebinding
-  namespace: awx
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole # TODO Why is it cluster scoping the Operator

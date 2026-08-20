@@ -1,4 +1,11 @@
 ---
+# - patch: |-
+#     - op: replace
+#       path: /metadata/annotations/kube-vip.io~1loadbalancerIPs
+#       value: "10.102.3.2"
+#   target:
+#     kind: Service
+#     name: ntp-rootless-vlan3
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
@@ -11,10 +18,6 @@ patches:
       - op: replace
         path: /spec/replicas
         value: 1
-      # - op: remove
-      #   path:  /spec/template/metadata/annotations/k8s.v1.cni.cncf.io~1networks
-      # - op: remove
-      #   path:  /spec/template/spec/securityContext/sysctls
       - op: remove
         path:  /spec/template/spec/containers/0/securityContext/capabilities/add
       - op: replace
@@ -33,10 +36,3 @@ patches:
     target:
       kind: Service
       name: ntp-rootless
-  - patch: |-
-      - op: replace
-        path: /metadata/annotations/kube-vip.io~1loadbalancerIPs
-        value: "10.102.3.2"
-    target:
-      kind: Service
-      name: ntp-rootless-vlan3

@@ -25,6 +25,9 @@ spec:
     spec:
       automountServiceAccountToken: false
       serviceAccountName: registry
+      restartPolicy: Always
+      schedulerName: default-scheduler
+      dnsPolicy: ClusterFirst
       securityContext:
         runAsNonRoot: true
         fsGroupChangePolicy: "OnRootMismatch"
@@ -76,6 +79,7 @@ spec:
             runAsNonRoot: true
             readOnlyRootFilesystem: true
             allowPrivilegeEscalation: false
+            privileged: false
             seccompProfile:
               type: RuntimeDefault
             capabilities:

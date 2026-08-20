@@ -49,6 +49,7 @@ spec:
         #     "ips": ["10.101.1.5/24"]
         #   }]
     spec:
+      schedulerName: default-scheduler
       securityContext:
         runAsNonRoot: true
         seccompProfile:
@@ -58,6 +59,7 @@ spec:
             value: "0"
       hostname: technitium-dns
       restartPolicy: Always
+      dnsPolicy: ClusterFirst
       automountServiceAccountToken: false
       serviceAccountName: technitium-dns-sa
       containers:
@@ -66,6 +68,7 @@ spec:
           imagePullPolicy: IfNotPresent
           name: technitium-dns
           securityContext:
+            privileged: false
             runAsNonRoot: true
             readOnlyRootFilesystem: true
             allowPrivilegeEscalation: false
@@ -116,14 +119,14 @@ spec:
               mountPath: /tmp
           livenessProbe:
             tcpSocket:
-              port: 5380
+              port: http-console
             initialDelaySeconds: 15
             periodSeconds: 60
             timeoutSeconds: 10
           readinessProbe:
             httpGet:
               path: /
-              port: 5380
+              port: http-console
               scheme: HTTP
             initialDelaySeconds: 10
             periodSeconds: 10

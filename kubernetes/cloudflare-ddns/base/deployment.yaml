@@ -49,7 +49,9 @@ spec:
           type: RuntimeDefault
         runAsNonRoot: true
       hostname: cloudflare-ddns
+      schedulerName: default-scheduler
       restartPolicy: Always
+      dnsPolicy: ClusterFirst
       automountServiceAccountToken: false
       serviceAccountName: cloudflare-ddns
       containers:
@@ -63,6 +65,7 @@ spec:
             - resourceName: memory
               restartPolicy: NotRequired
           securityContext:
+            privileged: false
             runAsNonRoot: true
             readOnlyRootFilesystem: true
             allowPrivilegeEscalation: false

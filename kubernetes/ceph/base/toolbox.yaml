@@ -20,6 +20,9 @@ spec:
       labels:
         app: rook-ceph-tools
     spec:
+      schedulerName: default-scheduler
+      restartPolicy: Always
+      automountServiceAccountToken: false
       dnsPolicy: ClusterFirstWithHostNet
       serviceAccountName: rook-ceph-default
       containers:
@@ -106,9 +109,12 @@ spec:
               restartPolicy: NotRequired
           tty: true
           securityContext:
+            privileged: false
             runAsNonRoot: true
-            runAsUser: 2016
-            runAsGroup: 2016
+            readOnlyRootFilesystem: true
+            allowPrivilegeEscalation: false
+            seccompProfile:
+              type: RuntimeDefault
             capabilities:
               drop: ["ALL"]
           env:

@@ -17,6 +17,7 @@ metadata:
     checkov.io/skip6: CKV_K8S_16=Not Supported
     checkov.io/skip7: CKV_K8S_40=Not Supported
     checkov.io/skip8: CKV_K8S_43=Not Supported
+    gitops-ci.k8s.io/exempt-image-checksum: "docker.io/linuxserver/unifi-network-application"
 spec:
   serviceName: unifi-network-application
   replicas: 0
@@ -39,6 +40,9 @@ spec:
             "default-route": ["10.0.0.1"]
           }]
     spec:
+      restartPolicy: Always
+      schedulerName: default-scheduler
+      dnsPolicy: ClusterFirst
       securityContext:
         seccompProfile:
           type: RuntimeDefault
@@ -52,6 +56,7 @@ spec:
             runAsNonRoot: false
             privileged: true
             allowPrivilegeEscalation: true
+            readOnlyRootFilesystem: true
             seccompProfile:
               type: RuntimeDefault
             capabilities:
@@ -82,33 +87,33 @@ spec:
           ports:
             - containerPort: 8080
               protocol: TCP
-              name: devicecom
+              name: https
             - containerPort: 8443
               protocol: TCP
-              name: webapi
+              name: https-admin
             - containerPort: 8880
               protocol: TCP
-              name: httpredirects
+              name: http
             - containerPort: 8843
               protocol: TCP
-              name: httpsredirects
+              name: https-api
             - containerPort: 6789
               protocol: TCP
-              name: speedtest
+              name: apollo
             - containerPort: 10001
               protocol: UDP
-              name: apdiscovery
+              name: apollo-udp
             - containerPort: 3478
               protocol: TCP
-              name: stun
+              name: apollo-stun
           readinessProbe:
             tcpSocket:
-              port: 8080
+              port: https
             initialDelaySeconds: 5
             periodSeconds: 10
           livenessProbe:
             tcpSocket:
-              port: 8080
+              port: https
             initialDelaySeconds: 15
             periodSeconds: 20
           resources:

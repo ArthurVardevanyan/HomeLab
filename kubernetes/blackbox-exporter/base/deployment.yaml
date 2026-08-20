@@ -24,6 +24,9 @@ spec:
         seccompProfile:
           type: RuntimeDefault
         runAsNonRoot: true
+      schedulerName: default-scheduler
+      dnsPolicy: ClusterFirst
+      restartPolicy: Always
       tolerations:
         - key: node-role.kubernetes.io/control-plane
           effect: NoSchedule
@@ -62,6 +65,7 @@ spec:
               mountPath: /config
               readOnly: true
           securityContext:
+            privileged: false
             runAsNonRoot: true
             readOnlyRootFilesystem: true
             allowPrivilegeEscalation: false
@@ -77,11 +81,11 @@ spec:
           livenessProbe:
             httpGet:
               path: /
-              port: 9115
+              port: blackbox-port
           readinessProbe:
             httpGet:
               path: /
-              port: 9115
+              port: blackbox-port
           resources:
             limits:
               cpu: 30m

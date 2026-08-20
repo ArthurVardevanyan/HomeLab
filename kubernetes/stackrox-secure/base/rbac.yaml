@@ -143,9 +143,21 @@ rules:
   - apiGroups:
       - compliance.openshift.io
     resources:
-      - "*"
+      - compliancechecks
+      - compliancecheckresults
+      - compliancechecks/status
+      - complianceconfigs
+      - componentconfigs
+      - nodeanalysisruns
+      - nodeanalysisruns/status
     verbs:
-      - "*"
+      - get
+      - list
+      - watch
+      - create
+      - update
+      - patch
+      - delete
 ---
 # Source: stackrox-secured-cluster-services/templates/sensor-pod-security.yaml
 kind: ClusterRole
@@ -197,9 +209,47 @@ metadata:
     owner: stackrox
 rules:
   - apiGroups:
-      - "*"
+      - ""
+      - apps
+      - batch
+      - networking.k8s.io
+      - project.openshift.io
+      - image.openshift.io
+      - build.openshift.io
+      - template.openshift.io
+      - route.openshift.io
+      - console.openshift.io
+      - config.openshift.io
+      - operator.openshift.io
+      - authentication.k8s.io
+      - authorization.k8s.io
     resources:
-      - "*"
+      - pods
+      - services
+      - endpoints
+      - namespaces
+      - nodes
+      - configmaps
+      - secrets
+      - events
+      - deployments
+      - replicasets
+      - statefulsets
+      - daemonsets
+      - jobs
+      - cronjobs
+      - networkpolicies
+      - imagestreams
+      - builds
+      - templates
+      - routes
+      - consolelinks
+      - consoles
+      - clusteroperators
+      - authentication
+      - authorizations
+      - tokenreviews
+      - impersonation
     verbs:
       - get
       - watch
@@ -238,7 +288,7 @@ rules:
       - services
       - statefulsets
     apiGroups:
-      - "*"
+      - stackrox.io
     verbs:
       - update
       - patch
@@ -725,9 +775,21 @@ metadata:
     owner: stackrox
 rules:
   - apiGroups:
-      - "*"
+      - stackrox.io
     resources:
-      - "*"
+      - centraldeployments
+      - centraldeployments/scale
+      - centraldeployments/status
+      - componentconfigs
+      - componentconfigs/status
+      - configfetchers
+      - configfetchers/status
+      - configupdaters
+      - configupdaters/status
+      - nodeanalysisruns
+      - nodeanalysisruns/status
+      - sensorprofiles
+      - sensorprofiles/status
     verbs:
       - create
       - get

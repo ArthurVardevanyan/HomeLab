@@ -6,6 +6,7 @@ metadata:
   annotations:
     checkov.io/skip1: CKV_K8S_40=OpenShift Injects Random UID
     checkov.io/skip2: CKV_K8S_43=Don't Mind Tag for This
+    gitops-ci.k8s.io/exempt-image-checksum: "registry.arthurvardevanyan.com/homelab/toolbox:not_latest"
   namespace: unifi-network-application
   labels:
     app: unas-certificate-rotation
@@ -34,6 +35,10 @@ spec:
             runAsNonRoot: true
             seccompProfile:
               type: RuntimeDefault
+          schedulerName: default-scheduler
+          dnsPolicy: ClusterFirst
+          automountServiceAccountToken: false
+          enableServiceLinks: false
           containers:
             - name: unas-certificate-rotation
               image: registry.arthurvardevanyan.com/homelab/toolbox:not_latest

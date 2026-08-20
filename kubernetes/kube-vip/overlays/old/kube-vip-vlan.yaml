@@ -24,6 +24,9 @@ spec:
       labels:
         app: kube-vip-ds-vlan3
     spec:
+      schedulerName: default-scheduler
+      dnsPolicy: ClusterFirstWithHostNet
+      restartPolicy: Always
       securityContext:
         seccompProfile:
           type: RuntimeDefault
@@ -102,6 +105,7 @@ spec:
             - resourceName: memory
               restartPolicy: NotRequired
           securityContext:
+            privileged: false
             runAsNonRoot: false
             readOnlyRootFilesystem: true
             allowPrivilegeEscalation: false

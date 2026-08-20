@@ -17,6 +17,10 @@ spec:
     spec:
       template:
         spec:
+          schedulerName: default-scheduler
+          dnsPolicy: ClusterFirst
+          automountServiceAccountToken: false
+          enableServiceLinks: false
           securityContext:
             runAsNonRoot: true
             seccompProfile:
@@ -30,10 +34,20 @@ spec:
                 requests:
                   cpu: 10m
                   memory: 24Mi
-              image: docker.io/rook/ceph:v1.19.1
+              image: docker.io/rook/ceph:v1.19.4@sha256:f0f307d7fce0ba2bc60d15e446b9fafddf1153492398fd653d10708f9874bf31
               command: ["/usr/local/bin/toolbox.sh"]
               args: ["--skip-watch"]
               imagePullPolicy: IfNotPresent
+              securityContext:
+                privileged: false
+                runAsNonRoot: true
+                readOnlyRootFilesystem: true
+                allowPrivilegeEscalation: false
+                seccompProfile:
+                  type: RuntimeDefault
+                capabilities:
+                  drop:
+                    - ALL
               env:
                 - name: ROOK_CEPH_USERNAME
                   valueFrom:
@@ -49,7 +63,7 @@ spec:
                   mountPath: /var/lib/rook-ceph-mon
           containers:
             - name: script
-              image: docker.io/rook/ceph:v1.19.1
+              image: docker.io/rook/ceph:v1.19.4@sha256:f0f307d7fce0ba2bc60d15e446b9fafddf1153492398fd653d10708f9874bf31
               securityContext:
                 runAsNonRoot: true
                 privileged: false

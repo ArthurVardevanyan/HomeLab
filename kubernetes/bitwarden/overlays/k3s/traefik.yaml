@@ -4,6 +4,8 @@ kind: Middleware
 metadata:
   name: https-redirect
   namespace: bitwarden
+  annotations:
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
 spec:
   redirectScheme:
     scheme: https
@@ -14,6 +16,8 @@ kind: IngressRoute
 metadata:
   name: bitwarden
   namespace: bitwarden
+  annotations:
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
 spec:
   entryPoints:
     - web

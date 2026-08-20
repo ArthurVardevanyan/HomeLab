@@ -7,6 +7,8 @@ metadata:
     app.kubernetes.io/instance: kubernetes-dashboard
   name: kubernetes-dashboard-http
   namespace: kubernetes-dashboard
+  annotations:
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
 spec:
   entryPoints:
     - web
@@ -28,6 +30,8 @@ metadata:
     app.kubernetes.io/instance: kubernetes-dashboard
   name: kubernetes-dashboard-https
   namespace: kubernetes-dashboard
+  annotations:
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
 spec:
   entryPoints:
     - websecure
@@ -49,6 +53,8 @@ metadata:
   namespace: kubernetes-dashboard
   labels:
     app.kubernetes.io/instance: kubernetes-dashboard
+  annotations:
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
 spec:
   redirectScheme:
     scheme: https

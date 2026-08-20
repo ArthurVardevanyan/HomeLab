@@ -23,23 +23,23 @@ spec:
   ipFamilyPolicy: SingleStack
   ports:
     - port: 8080
-      targetPort: 8080
+      targetPort: https
       protocol: TCP
       name: devicecom
     - port: 8443
-      targetPort: 8443
+      targetPort: https-admin
       protocol: TCP
       name: webapi
     - port: 8880
-      targetPort: 8880
+      targetPort: http
       protocol: TCP
       name: httpredirects
     - port: 8843
-      targetPort: 8843
+      targetPort: https-api
       protocol: TCP
       name: httpsredirects
     - port: 6789
-      targetPort: 6789
+      targetPort: apollo
       protocol: TCP
       name: speedtest
   selector:
@@ -70,11 +70,11 @@ spec:
   ipFamilyPolicy: SingleStack
   ports:
     - port: 10001
-      targetPort: 10001
+      targetPort: apollo-udp
       protocol: UDP
       name: apdiscovery
     - port: 3478
-      targetPort: 3478
+      targetPort: apollo-stun
       protocol: UDP
       name: stun
   selector:

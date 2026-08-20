@@ -21,6 +21,10 @@ spec:
       labels:
         app: olm-operator
     spec:
+      restartPolicy: Always
+      schedulerName: default-scheduler
+      dnsPolicy: ClusterFirst
+      automountServiceAccountToken: true
       securityContext:
         runAsNonRoot: true
         seccompProfile:
@@ -32,6 +36,10 @@ spec:
       containers:
         - name: olm-operator
           securityContext:
+            runAsNonRoot: true
+            seccompProfile:
+              type: RuntimeDefault
+            privileged: false
             allowPrivilegeEscalation: false
             readOnlyRootFilesystem: true
             capabilities:
@@ -54,12 +62,12 @@ spec:
           livenessProbe:
             httpGet:
               path: /healthz
-              port: 8080
+              port: metrics
               scheme: HTTP
           readinessProbe:
             httpGet:
               path: /healthz
-              port: 8080
+              port: metrics
               scheme: HTTP
           terminationMessagePolicy: FallbackToLogsOnError
           env:
@@ -107,6 +115,10 @@ spec:
       labels:
         app: catalog-operator
     spec:
+      restartPolicy: Always
+      schedulerName: default-scheduler
+      dnsPolicy: ClusterFirst
+      automountServiceAccountToken: true
       securityContext:
         runAsNonRoot: true
         seccompProfile:
@@ -118,6 +130,10 @@ spec:
       containers:
         - name: catalog-operator
           securityContext:
+            runAsNonRoot: true
+            seccompProfile:
+              type: RuntimeDefault
+            privileged: false
             allowPrivilegeEscalation: false
             readOnlyRootFilesystem: true
             capabilities:
@@ -143,12 +159,12 @@ spec:
           livenessProbe:
             httpGet:
               path: /healthz
-              port: 8080
+              port: metrics
               scheme: HTTP
           readinessProbe:
             httpGet:
               path: /healthz
-              port: 8080
+              port: metrics
               scheme: HTTP
           terminationMessagePolicy: FallbackToLogsOnError
           resources:

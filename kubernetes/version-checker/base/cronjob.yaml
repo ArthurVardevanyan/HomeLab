@@ -29,6 +29,7 @@ spec:
             prometheus.io/scrape: "true"
             enable.version-checker.io/version-checker: "true"
         spec:
+          enableServiceLinks: false
           tolerations:
             - key: node-role.kubernetes.io/control-plane
               effect: NoSchedule
@@ -56,6 +57,7 @@ spec:
             - name: version-checker
               image: quay.io/jetstack/version-checker:v0.10.0@sha256:ea7a85422684479d0e51a41efc8edb12bed8f43aa89ab59dfea45aa92b2e8c8d
               securityContext:
+                privileged: false
                 # runAsGroup: 65554
                 # runAsUser: 65554
                 runAsNonRoot: true
@@ -70,6 +72,7 @@ spec:
                 - version-checker
               ports:
                 - containerPort: 8080
+                  name: http
                   protocol: TCP
               resources:
                 limits:

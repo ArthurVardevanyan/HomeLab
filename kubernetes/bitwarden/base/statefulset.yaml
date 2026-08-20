@@ -23,6 +23,9 @@ spec:
         enable.version-checker.io/bitwarden: "true"
     spec:
       hostname: bitwarden
+      schedulerName: default-scheduler
+      dnsPolicy: ClusterFirst
+      restartPolicy: Always
       securityContext:
         seccompProfile:
           type: RuntimeDefault
@@ -48,6 +51,7 @@ spec:
             - name: ROCKET_PORT
               value: "8080"
           securityContext:
+            privileged: false
             # runAsGroup: 11024
             # runAsUser: 11024
             runAsNonRoot: true

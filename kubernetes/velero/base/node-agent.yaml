@@ -30,6 +30,8 @@ spec:
         prometheus.io/port: "8085"
         prometheus.io/scrape: "true"
     spec:
+      restartPolicy: Always
+      schedulerName: default-scheduler
       serviceAccountName: velero-server
       automountServiceAccountToken: true
       securityContext:
@@ -47,11 +49,23 @@ spec:
             path: /var/lib/kubelet/plugins
         - name: scratch
           emptyDir: {}
+        - name: tmp
+          emptyDir: {}
       dnsPolicy: ClusterFirst
       containers:
         - name: node-agent
           image: "docker.io/velero/velero:v1.17.1@sha256:58f551f0d89a9ef1919771bdc7475c08bc1795a50a51a57b5f14316d68fc3baa"
           imagePullPolicy: IfNotPresent
+          securityContext:
+            runAsNonRoot: false
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            privileged: false
+            capabilities:
+              drop:
+                - ALL
+            seccompProfile:
+              type: RuntimeDefault
           ports:
             - name: http-monitoring
               containerPort: 8085
@@ -71,6 +85,8 @@ spec:
               mountPropagation: HostToContainer
             - name: scratch
               mountPath: /scratch
+            - name: tmp
+              mountPath: /tmp
           env:
             - name: VELERO_NAMESPACE
               valueFrom:

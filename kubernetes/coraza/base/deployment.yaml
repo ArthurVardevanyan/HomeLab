@@ -28,6 +28,9 @@ spec:
         app.kubernetes.io/instance: coraza-kubernetes-operator
         control-plane: coraza-controller-manager
     spec:
+      dnsPolicy: ClusterFirst
+      restartPolicy: Always
+      schedulerName: default-scheduler
       securityContext:
         runAsNonRoot: true
         fsGroupChangePolicy: OnRootMismatch
@@ -74,7 +77,7 @@ spec:
           startupProbe:
             httpGet:
               path: /healthz
-              port: 8081
+              port: health
             initialDelaySeconds: 0
             timeoutSeconds: 1
             periodSeconds: 10
@@ -83,7 +86,7 @@ spec:
           livenessProbe:
             httpGet:
               path: /healthz
-              port: 8081
+              port: health
             initialDelaySeconds: 15
             timeoutSeconds: 1
             periodSeconds: 20
@@ -92,12 +95,22 @@ spec:
           readinessProbe:
             httpGet:
               path: /readyz
-              port: 8081
+              port: health
             initialDelaySeconds: 5
             timeoutSeconds: 1
             periodSeconds: 10
             successThreshold: 1
             failureThreshold: 3
+          ports:
+            - containerPort: 18080
+              name: http-proxy
+              protocol: TCP
+            - containerPort: 8082
+              name: http
+              protocol: TCP
+            - containerPort: 8081
+              name: health
+              protocol: TCP
           resources:
             limits:
               cpu: 30m

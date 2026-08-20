@@ -36,6 +36,10 @@ spec:
         prometheus.io/scrape: "true"
         prometheus.io/port: "9402"
     spec:
+      schedulerName: default-scheduler
+      dnsPolicy: ClusterFirst
+      restartPolicy: Always
+      automountServiceAccountToken: true
       serviceAccountName: cert-manager-cainjector
       enableServiceLinks: false
       securityContext:
@@ -64,6 +68,8 @@ spec:
                 fieldRef:
                   fieldPath: metadata.namespace
           securityContext:
+            privileged: false
+            runAsNonRoot: true
             readOnlyRootFilesystem: true
             allowPrivilegeEscalation: false
             seccompProfile:
@@ -117,6 +123,10 @@ spec:
         prometheus.io/scrape: "true"
         prometheus.io/port: "9402"
     spec:
+      schedulerName: default-scheduler
+      dnsPolicy: ClusterFirst
+      restartPolicy: Always
+      automountServiceAccountToken: true
       serviceAccountName: cert-manager
       enableServiceLinks: false
       securityContext:
@@ -148,8 +158,12 @@ spec:
               name: http-healthz
               protocol: TCP
           securityContext:
+            privileged: false
+            runAsNonRoot: true
             readOnlyRootFilesystem: true
             allowPrivilegeEscalation: false
+            seccompProfile:
+              type: RuntimeDefault
             capabilities:
               drop:
                 - ALL
@@ -216,6 +230,10 @@ spec:
         prometheus.io/scrape: "true"
         prometheus.io/port: "9402"
     spec:
+      schedulerName: default-scheduler
+      dnsPolicy: ClusterFirst
+      restartPolicy: Always
+      automountServiceAccountToken: true
       tolerations:
         - key: node-role.kubernetes.io/master
       serviceAccountName: cert-manager-webhook
@@ -272,6 +290,8 @@ spec:
             successThreshold: 1
             failureThreshold: 3
           securityContext:
+            privileged: false
+            runAsNonRoot: true
             readOnlyRootFilesystem: true
             allowPrivilegeEscalation: false
             seccompProfile:
