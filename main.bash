@@ -26,12 +26,12 @@ function retry {
     exit=$?
     wait=$((15 + 5 ** count))
     count=$((count + 1))
-    if [[ $count -lt "$retries"  ]]; then
-      echo "Retry $count/$retries exited $exit, retrying in $wait seconds..."
-      sleep $wait
+    if [[ ${count} -lt "${retries}"  ]]; then
+      echo "Retry ${count}/${retries} exited ${exit}, retrying in ${wait} seconds..."
+      sleep "${wait}"
     else
-      echo "Retry $count/$retries exited $exit, no more retries left."
-      return $exit
+      echo "Retry ${count}/${retries} exited ${exit}, no more retries left."
+      return "${exit}"
     fi
   done
   return 0
@@ -481,7 +481,7 @@ reboot_cluster() {
   IP=${START_IP}
   for NODE in ${NODES}; do
     finished="0"
-    while [[ "$finished" = "0" ]]; do
+    while [[ "${finished}" = "0" ]]; do
       sleep 1
       if nc -z 10.10.10."${IP}" 22; then
         echo "${PREFIX}${NODE} is up."
@@ -661,7 +661,9 @@ install_addons() {
   kubectl patch daemonset -n longhorn-system longhorn-manager --type=json -p='[{"op": "remove", "path": "/spec/template/spec/tolerations"}]'
 
   echo -e "\n${BLUE}Waiting for Longhorn to Boot:${NC}"
-  while [[ "$(kubectl get pods -n longhorn-system | grep -cv Running)" -ne 1 ]]; do
+  local lh_count=0
+  lh_count=$(kubectl get pods -n longhorn-system | grep -cv Running) || { echo "Failed to get Longhorn pods count" >&2; return 1; }
+  while [[ "${lh_count}" -ne 1 ]]; do
     sleep 1
   done
 
@@ -711,8 +713,10 @@ get_dashboard_secret() {
   load_kubeconfig
   echo -e "\n${BLUE}Kubernetes Dashboard Secret:${NC}"
   # shellcheck disable=SC2046
+  local sa_name=""
+  sa_name=$(kubectl get serviceaccount admin-user -n kubernetes-dashboard -o jsonpath="{.secrets[0].name}") || { echo "Failed to get service account secret name" >&2; return 1; }
   kubectl get secret -n kubernetes-dashboard \
-    $(kubectl get serviceaccount admin-user -n kubernetes-dashboard -o jsonpath="{.secrets[0].name}") \
+    "${sa_name}" \
     -o jsonpath="{.data.token}" | base64 --decode
 }
 
@@ -726,7 +730,9 @@ preseed_server() {
   mkdir -p /tmp/preseed/
   cp machineConfigs/preseed.cfg /tmp/preseed//preseed.cfg
   mkpasswd -m md5 "${PASSWORD}"
-  sed -i "s,#d-i passwd/user-password-crypted password <HASH>,d-i passwd/user-password-crypted password $(mkpasswd -s -m md5 "${PASSWORD}"),g" "/tmp/preseed/preseed.cfg"
+  local preseed_hash=""
+  preseed_hash=$(mkpasswd -s -m md5 "${PASSWORD}") || { echo "Failed to generate password hash" >&2; return 1; }
+  sed -i "s,#d-i passwd/user-password-crypted password <HASH>,d-i passwd/user-password-crypted password ${preseed_hash},g" "/tmp/preseed/preseed.cfg"
   python3 -m http.server --directory /tmp/preseed/
 }
 
@@ -786,9 +792,11 @@ install_cluster() {
   for NODE in ${NODES}; do
     # https://serverfault.com/a/386867
     finished="0"
-    while [[ "$finished" = "0" ]]; do
+    while [[ "${finished}" = "0" ]]; do
       sleep 5
-      if [[ "$(virsh list --all | grep 'running' | grep "${PREFIX}${NODE}" | wc -c)" -eq 0 ]]; then
+      local running=0
+      running=$(virsh list --all | grep "running" | grep "${PREFIX}${NODE}" | wc -c) || { echo "Failed to check VM ${NODE} status" >&2; return 1; }
+      if [[ "${running}" -eq 0 ]]; then
         echo "Starting vm ${PREFIX}${NODE}"
         sleep 1
         virsh start "${PREFIX}${NODE}"
@@ -802,7 +810,7 @@ install_cluster() {
   IP=${START_IP}
   for NODE in ${NODES}; do
     finished="0"
-    while [[ "$finished" = "0" ]]; do
+    while [[ "${finished}" = "0" ]]; do
       sleep 1
       if nc -z 10.10.10."${IP}" 22; then
         ssh-keygen -f "${HOME}/.ssh/known_hosts" -R "10.10.10.${IP}"
@@ -832,7 +840,11 @@ install_k3s_cluster() {
 
   export KUBECONFIG="/mnt/storage/vm/${PREFIX}/${PREFIX}.yaml"
 
-  while [[ "$(kubectl get nodes | wc -l)" -le "$(echo "${NODES}" | wc -w)" ]]; do
+  local node_count=0
+  node_count=$(kubectl get nodes | wc -l) || { echo "Failed to get node count" >&2; return 1; }
+  local expected=0
+  expected=$(echo "${NODES}" | wc -w) || { echo "Failed to count expected nodes" >&2; return 1; }
+  while [[ "${node_count}" -le "${expected}" ]]; do
     sleep 1
   done
 
@@ -870,10 +882,10 @@ delete_okd_virt() {
 
   echo -e "\n\n${BLUE}Delete All Existing Data:${NC}"
   rm -rf \
-    ${OKD}/oc \
-    ${OKD}/kubectl \
-    ${OKD}/openshift-install \
-    ${OKD}/okd
+    "${OKD}/oc" \
+    "${OKD}/kubectl" \
+    "${OKD}/openshift-install" \
+    "${OKD}/okd"
 
   # "${HOME}/.cache/agent" \
   # ${OKD}/openshift-install-linux* \
@@ -910,10 +922,10 @@ delete_okd_bm() {
 
   echo -e "\n\n${BLUE}Delete All Existing Data:${NC}"
   rm -rf \
-    ${OKD}/oc \
-    ${OKD}/kubectl \
-    ${OKD}/openshift-install \
-    ${OKD}/okd
+    "${OKD}/oc" \
+    "${OKD}/kubectl" \
+    "${OKD}/openshift-install" \
+    "${OKD}/okd"
 
   #     "${HOME}/.cache/agent" \
   # ${OKD}/openshift-install-linux* \
@@ -936,7 +948,7 @@ okd_bm_worker_startup() {
 install_okd_prep() {
 
   sudo mount -o remount,size=8G,noatime /tmp
-  sudo setquota -u "$(whoami)" 0 0 0 0 /tmp
+  sudo setquota -u "$(whoami)" 0 0 0 0 /tmp || true
 
   export XDG_CACHE_HOME="/tmp/cache"
   mkdir -p "${XDG_CACHE_HOME}"
@@ -945,7 +957,7 @@ install_okd_prep() {
   export AVP_AUTH_TYPE=token
   if [[ -z "${VAULT_TOKEN}"  ]]; then
     export VAULT_TOKEN
-    VAULT_TOKEN=$(vault login --tls-skip-verify -address="${URL}" -method=userpass -token-only username=arthur) || { echo "Failed to login to vault" >&2; return 1; } || { echo "Failed to login to vault" >&2; return 1; }
+    VAULT_TOKEN=$(vault login --tls-skip-verify -address="${URL}" -method=userpass -token-only username=arthur) || { echo "Failed to login to vault" >&2; return 1; } || { echo "Failed to login to vault" >&2; return 1; } || { echo "Failed to login to vault" >&2; return 1; }
   fi
 
   if [[ -z "${URL}"  ]]; then
@@ -991,7 +1003,7 @@ install_okd_prep() {
       OKD_VERSION=$(curl -s "https://amd64.origin.releases.ci.openshift.org/releasestream/${OKD_CHANNEL}" | grep "Accepted" -B 1 | awk 'sub(/.*release\/ */,""){f=1} f{if ( sub(/ *".*/,"") ) f=0; print}' | head -n 1)
     fi
     echo "${OKD_VERSION}"
-    if [[ $OKD_VERSION == *"scos"*  ]]; then
+    if [[ ${OKD_VERSION} == *"scos"*  ]]; then
       export OKD_URL="quay.io/okd/scos-release:${OKD_VERSION}"
       export OKD_URL_CI="registry.ci.openshift.org/origin/release-scos:${OKD_VERSION}"
     else
@@ -1038,7 +1050,9 @@ install_okd_prep() {
   sed -i "s/<REGISTRY>/${REGISTRY}/g" "${OKD}/okd/install-config.yaml"
   sed -i "s/<CONTROL_PLANE>/${TF_VAR_control_plane_count:-${CONTROL_PLANE_COUNT}}/g" "${OKD}/okd/install-config.yaml"
   sed -i "s/<WORKERS>/${TF_VAR_worker_count:-${WORKER_COUNT}}/g" "${OKD}/okd/install-config.yaml"
-  sed -i "s/<PULL_SECRET>/\'$(printf '%s\n' "${PULL_SECRET}'" | sed 's/[&/\]/\\&/g')/g" "${OKD}/okd/install-config.yaml"
+  local pull_secret=""
+  pull_secret=$(printf '%s\n' "${PULL_SECRET}" | sed 's/[&\/]/\&/g') || { echo "Failed to escape pull secret" >&2; return 1; }
+  sed -i "s/<PULL_SECRET>/\x27${pull_secret}/g" "${OKD}/okd/install-config.yaml"
   cp "${OKD}/okd/install-config.yaml" "${OKD}/okd/install-config_backup.yaml"
 
   # export OPENSHIFT_INSTALL_OS_IMAGE_OVERRIDE=${OPENSHIFT_INSTALL_OS_IMAGE_OVERRIDE:-"https://mirror.openshift.com/pub/openshift-v4/x86_64/dependencies/rhcos/pre-release/latest/rhcos-live-iso.x86_64.iso"}
@@ -1281,13 +1295,13 @@ install_okd() {
   # Create the ignition files
   "${OKD}/openshift-install" create ignition-configs --dir="${OKD}/okd"
 
-  chown -R arthur:arthur ${OKD}
-  chmod 777 -R ${OKD}
+  chown -R arthur:arthur "${OKD}"
+  chmod 777 -R "${OKD}"
 
   echo -e "\n\n${BLUE}Start OKD Install:${NC}"
   echo -e "\n\n${BLUE}Setup libvirt and Masters:${NC}"
   cd "${HOMELAB}/terraform/sandbox/cluster"
-  mkdir -p ${OKD}/terraform/cluster
+  mkdir -p "${OKD}/terraform/cluster"
   terraform init
   terraform apply -auto-approve
   export TF_VAR_base_volume_id
@@ -1297,30 +1311,30 @@ install_okd() {
 
   echo -e "\n\n${BLUE}Initialize Bootstrap:${NC}"
   cd "${HOMELAB}/terraform/sandbox/bootstrap"
-  mkdir -p ${OKD}/terraform/bootstrap
+  mkdir -p "${OKD}/terraform/bootstrap"
   terraform init
   terraform apply -auto-approve
 
   echo -e "\n\n${BLUE}Waiting For Bootstrap:${NC}"
-  ${OKD}/openshift-install --dir=${OKD}/okd wait-for bootstrap-complete --log-level debug
+  "${OKD}/openshift-install" --dir="${OKD}/okd" wait-for bootstrap-complete --log-level debug
 
   echo -e "\n\n${BLUE}Destroy Bootstrap:${NC}"
   cd "${HOMELAB}/terraform/sandbox/bootstrap"
-  mkdir -p ${OKD}/terraform/bootstrap
+  mkdir -p "${OKD}/terraform/bootstrap"
   terraform destroy -auto-approve
 
   echo -e "\n\n${BLUE}Initialize Workers:${NC}"
   cd "${HOMELAB}/terraform/sandbox/workers"
-  mkdir -p ${OKD}/terraform/workers
+  mkdir -p "${OKD}/terraform/workers"
   terraform init
   terraform apply -auto-approve
 
   echo -e "\n\n${BLUE}Wait for Install To Complete:${NC}"
   #${OKD}/oc apply -f "${HOMELAB}/okd/okd-configuration/overlays/sandbox/ingress-controller.yaml"
-  ${OKD}/openshift-install --dir=${OKD}/okd wait-for install-complete --log-level debug
+  "${OKD}/openshift-install" --dir="${OKD}/okd" wait-for install-complete --log-level debug
 
-  ${OKD}/oc apply -f "${HOMELAB}/okd/okd-configuration/base/operator-hub.yaml"
-  ${OKD}/oc apply -f "${HOMELAB}/okd/okd-configuration/base/operators"
+  "${OKD}/oc" apply -f "${HOMELAB}/okd/okd-configuration/base/operator-hub.yaml"
+  "${OKD}/oc" apply -f "${HOMELAB}/okd/okd-configuration/base/operators"
 
   echo -e "\n\n${BLUE}Setup Image Mirroring:${NC}"
   #sed 's/AllowContactingSource/NeverContactSource/' "${HOMELAB}"/okd/okd-configuration/base/image-mirror-set.yaml | kubectl apply -f -
@@ -1328,7 +1342,9 @@ install_okd() {
 
   echo -e "\n\n${BLUE}Install Complete:${NC}"
   echo "export KUBECONFIG=${OKD}/okd/auth/kubeconfig"
-  echo "Kubeadmin Password: $(cat ${OKD}/okd/auth/kubeadmin-password)"
+  local kadmin_pass=""
+  kadmin_pass=$(cat "${OKD}/okd/auth/kubeadmin-password") || { echo "Failed to read kubeadmin password" >&2; return 1; }
+  echo "Kubeadmin Password: ${kadmin_pass}"
 
   #single_server
 }
@@ -1348,13 +1364,13 @@ install_okd_agent() {
   "${OKD}/openshift-install" agent create cluster-manifests --dir "${OKD}/okd/"
   "${OKD}/openshift-install" agent create image --dir "${OKD}/okd/"
 
-  chown -R arthur:arthur ${OKD}
-  chmod 777 -R ${OKD}
+  chown -R arthur:arthur "${OKD}"
+  chmod 777 -R "${OKD}"
 
   echo -e "\n\n${BLUE}Start OKD Install:${NC}"
   echo -e "\n\n${BLUE}Setup libvirt and Masters:${NC}"
   cd "${HOMELAB}/terraform/agent"
-  mkdir -p ${OKD}/terraform/agent
+  mkdir -p "${OKD}/terraform/agent"
   terraform init
   terraform apply -auto-approve
 
@@ -1400,7 +1416,7 @@ install_addons_okd_virt() {
   export AVP_AUTH_TYPE=token
   if [[ -z "${VAULT_TOKEN}"  ]]; then
     export VAULT_TOKEN
-    VAULT_TOKEN=$(vault login --tls-skip-verify -address="${URL}" -method=userpass -token-only username=arthur)
+    VAULT_TOKEN=$(vault login --tls-skip-verify -address="${URL}" -method=userpass -token-only username=arthur) || { echo "Failed to login to vault" >&2; return 1; }
   fi
 
   kubectl config set-cluster okd --insecure-skip-tls-verify=true
@@ -1414,7 +1430,7 @@ install_addons_okd_virt() {
   sleep 30s
   local mcp_master_status=""
   mcp_master_status=$(kubectl get mcp master -o yaml | yq '.status.conditions[] | select(.type == "Updating") | .status') || { echo "Failed to get MCP master status" >&2; return 1; }
-  while [[ "$mcp_master_status" == "True" ]]; do
+  while [[ "${mcp_master_status}" == "True" ]]; do
     echo "Waiting for MCPs"
     sleep 30s
   done
@@ -1424,7 +1440,9 @@ install_addons_okd_virt() {
 
   sleep 30s
   echo -e "\n${BLUE}Waiting for MarketPlace Pods to Boot:${NC}"
-  while [[ "$(kubectl get pods -n openshift-marketplace | grep -v "Completed" | grep -cv Running)" -ne 1 ]]; do
+  local mp_count=0
+  mp_count=$(kubectl get pods -n openshift-marketplace | grep -v "Completed" | grep -cv Running) || { echo "Failed to get Marketplace pods count" >&2; return 1; }
+  while [[ "${mp_count}" -ne 1 ]]; do
     sleep 1
   done
 
@@ -1434,7 +1452,7 @@ install_addons_okd_virt() {
   echo -e "\n${BLUE}Cert Manager:${NC}"
   local _cm
   _cm=0
-  while [[ $_cm -lt 5 ]]; do
+  while [[ ${_cm} -lt 5 ]]; do
     if kubectl kustomize "${HOMELAB}"/kubernetes/cert-manager/overlays/okd-sandbox | argocd-vault-plugin generate - | kubectl apply -f -; then
       break
     fi
@@ -1454,7 +1472,7 @@ install_addons_okd_virt() {
   echo -e "\n${BLUE}Waiting for API Certificate to Generate:${NC}"
   local api_cert_ready=""
   api_cert_ready=$(kubectl get certificate -n openshift-config api-certificate -o yaml | yq '.status.conditions[] | select(.type == "Ready") | .status') || { echo "Failed to get API certificate ready status" >&2; return 1; }
-  while [[ "$api_cert_ready" == "False" ]]; do
+  while [[ "${api_cert_ready}" == "False" ]]; do
     echo "Waiting for API Certificate to Generate"
     sleep 30
   done
@@ -1462,7 +1480,7 @@ install_addons_okd_virt() {
   echo -e "\n${BLUE}Waiting for Ingress Certificate to Generate:${NC}"
   local ingress_cert_ready=""
   ingress_cert_ready=$(kubectl get certificate -n openshift-ingress ingress-certificate -o yaml | yq '.status.conditions[] | select(.type == "Ready") | .status') || { echo "Failed to get Ingress certificate ready status" >&2; return 1; }
-  while [[ "$ingress_cert_ready" == "False" ]]; do
+  while [[ "${ingress_cert_ready}" == "False" ]]; do
     echo "Waiting for Ingress Certificate to Generate"
     sleep 30
   done
@@ -1501,7 +1519,7 @@ install_addons_okd() {
   sleep 15s
   local mcp_worker_status=""
   mcp_worker_status=$(kubectl get mcp worker -o yaml | yq '.status.conditions[] | select(.type == "Updating") | .status') || { echo "Failed to get MCP worker status" >&2; return 1; }
-  while [[ "$mcp_worker_status" == "True" ]]; do
+  while [[ "${mcp_worker_status}" == "True" ]]; do
     echo "Waiting for MCPs"
     sleep 30s
   done
@@ -1537,7 +1555,7 @@ install_addons_okd() {
   sleep 15s
   local mcp_infra_status=""
   mcp_infra_status=$(kubectl get mcp infra -o yaml | yq '.status.conditions[] | select(.type == "Updating") | .status') || { echo "Failed to get MCP infra status" >&2; return 1; }
-  while [[ "$mcp_infra_status" == "True" ]]; do
+  while [[ "${mcp_infra_status}" == "True" ]]; do
     echo "Waiting for MCPs"
     sleep 30s
   done
@@ -1545,7 +1563,7 @@ install_addons_okd() {
   echo -e "\n${BLUE}Longhorn:${NC}"
   local _lh
   _lh=0
-  while [[ $_lh -lt 5 ]]; do
+  while [[ ${_lh} -lt 5 ]]; do
     if kubectl kustomize "${HOMELAB}"/kubernetes/longhorn/overlays/okd-sandbox | argocd-vault-plugin generate - | kubectl apply -f -; then
       break
     fi
@@ -1554,15 +1572,19 @@ install_addons_okd() {
   done
 
   echo -e "\n${BLUE}Waiting for Longhorn to Boot:${NC}"
-  while [[ "$(kubectl get pods -n longhorn-system | grep -cv Running)" -ne 1 ]]; do
+  local lh_count2=0
+  lh_count2=$(kubectl get pods -n longhorn-system | grep -cv Running) || { echo "Failed to get Longhorn pods count" >&2; return 1; }
+  while [[ "${lh_count2}" -ne 1 ]]; do
     sleep 1
   done
 
   echo -e "\n${BLUE}OKD Monitoring:${NC}"
   local _om
   _om=0
-  while [[ $_om -lt 5 ]]; do
-    if kubectl kustomize "${HOMELAB}"/okd/openshift-monitoring/overlays/sandbox | argocd-vault-plugin generate - | kubectl apply -f -; then
+  while [[ ${_om} -lt 5 ]]; do
+    local _okm
+    _okm=$(kubectl kustomize "${HOMELAB}"/okd/openshift-monitoring/overlays/sandbox | argocd-vault-plugin generate - | kubectl apply -f -) || { echo "Failed to apply monitoring" >&2; return 1; }
+    if [[ "${_okm}" == "0" ]]; then
       break
     fi
     _om=$((_om + 1))
@@ -1572,7 +1594,7 @@ install_addons_okd() {
   echo -e "\n${BLUE}Cert Manager:${NC}"
   local _cm
   _cm=0
-  while [[ $_cm -lt 5 ]]; do
+  while [[ ${_cm} -lt 5 ]]; do
     if kubectl kustomize "${HOMELAB}"/kubernetes/cert-manager/overlays/okd-sandbox | argocd-vault-plugin generate - | kubectl apply -f -; then
       break
     fi
@@ -1583,7 +1605,7 @@ install_addons_okd() {
   echo -e "\n${BLUE}OKD Configuration:${NC}"
   local _oc
   _oc=0
-  while [[ $_oc -lt 5 ]]; do
+  while [[ ${_oc} -lt 5 ]]; do
     if kubectl kustomize "${HOMELAB}"/okd/okd-configuration/overlays/sandbox | argocd-vault-plugin generate - | kubectl apply -f -; then
       break
     fi
@@ -1598,7 +1620,7 @@ install_addons_okd() {
   echo -e "\n${BLUE}Waiting for API Certificate to Generate:${NC}"
   local api_cert_status=""
   api_cert_status=$(kubectl get certificate -n openshift-config api-certificate -o yaml | yq '.status.conditions[] | select(.type == "Ready") | .status') || { echo "Failed to get API certificate status" >&2; return 1; }
-  while [[ "$api_cert_status" == "False" ]]; do
+  while [[ "${api_cert_status}" == "False" ]]; do
     echo "Waiting for API Certificate to Generate"
     sleep 30
   done
@@ -1606,7 +1628,7 @@ install_addons_okd() {
   echo -e "\n${BLUE}Waiting for Ingress Certificate to Generate:${NC}"
   local ingress_cert_status=""
   ingress_cert_status=$(kubectl get certificate -n openshift-ingress ingress-certificate -o yaml | yq '.status.conditions[] | select(.type == "Ready") | .status') || { echo "Failed to get Ingress certificate status" >&2; return 1; }
-  while [[ "$ingress_cert_status" == "False" ]]; do
+  while [[ "${ingress_cert_status}" == "False" ]]; do
     echo "Waiting for Ingress Certificate to Generate"
     sleep 30
   done
@@ -1625,7 +1647,7 @@ approve_csr() {
   while true; do
     for csr in $(oc get csr 2>/dev/null | grep -w 'Pending' | awk '{print $1}'); do
       echo -n '  --> Approving CSR: '
-      oc adm certificate approve "$csr" 2>/dev/null || { echo "Warning: CSR ${csr} not pending or already approved" >&2; }
+      oc adm certificate approve "${csr}" 2>/dev/null || { echo "Warning: CSR ${csr} not pending or already approved" >&2; }
     done
     sleep 5
   done

@@ -4,7 +4,7 @@ kind: PipelineRun
 metadata:
   name: llama-swap-metrics-exporter
   annotations:
-    ci.k8s-gitops.io/image-digest-pin: "registry.arthurvardevanyan.com/homelab/toolbox:not_latest"
+    gitops-ci.k8s.io/exempt-image-checksum: "registry.arthurvardevanyan.com/homelab/toolbox:not_latest"
     pipelinesascode.tekton.dev/max-keep-runs: "1"
     pipelinesascode.tekton.dev/on-cel-expression: |
       event == "pull_request" && target_branch == "main" && ("containers/llama-swap-metrics-exporter/***".pathChanged() || ".tekton/llama-swap-metrics-exporter.yaml".pathChanged())
