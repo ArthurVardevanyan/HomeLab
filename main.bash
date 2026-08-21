@@ -483,7 +483,7 @@ reboot_cluster() {
     finished="0"
     while [[ "$finished" = "0" ]]; do
       sleep 1
-      if nc -z 10.10.10.${IP} 22; then
+      if nc -z 10.10.10."${IP}" 22; then
         echo "${PREFIX}${NODE} is up."
         finished=1
       fi
@@ -564,9 +564,9 @@ uninstall_k3s() {
 
     echo "${PREFIX}${NODE}"
     if [[ "${NODE}" =~ "master" || "${NODE}" =~ "server"  ]]; then
-      sshpass -p "${PASSWORD}" ssh -t 10.10.10.${IP} "echo ${PASSWORD}	| sudo -S /usr/local/bin/k3s-uninstall.sh"
+      sshpass -p "${PASSWORD}" ssh -t 10.10.10."${IP}" "echo ${PASSWORD}	| sudo -S /usr/local/bin/k3s-uninstall.sh"
     elif [[ "${NODE}" =~ "worker" || "${NODE}" =~ "agent"  ]]; then
-      sshpass -p "${PASSWORD}" ssh -t 10.10.10.${IP} "echo ${PASSWORD}	| sudo -S /usr/local/bin/k3s-agent-uninstall.sh"
+      sshpass -p "${PASSWORD}" ssh -t 10.10.10."${IP}" "echo ${PASSWORD}	| sudo -S /usr/local/bin/k3s-agent-uninstall.sh"
     fi
     ((IP++))
   done
@@ -605,12 +605,12 @@ install_k3s() {
     fi
 
     echo "${PREFIX}${NODE}"
-    sshpass -p "${PASSWORD}" ssh -t 10.10.10.${IP} "${CONFIG}"
+    sshpass -p "${PASSWORD}" ssh -t 10.10.10."${IP}" "${CONFIG}"
 
     if [[ ${KUBE} -eq 1  ]]; then
       CMD="echo ${PASSWORD} | sudo -S cp /etc/rancher/k3s/k3s.yaml /tmp; sudo chmod 777 /tmp/k3s.yaml"
-      sshpass -p "${PASSWORD}" ssh -t 10.10.10.${START_IP} "${CMD}"
-      sshpass -p "${PASSWORD}" scp 10.10.10.${START_IP}:/tmp/k3s.yaml "/mnt/storage/vm/${PREFIX}/${PREFIX}.yaml"
+      sshpass -p "${PASSWORD}" ssh -t 10.10.10."${START_IP}" "${CMD}"
+      sshpass -p "${PASSWORD}" scp 10.10.10."${START_IP}":/tmp/k3s.yaml "/mnt/storage/vm/${PREFIX}/${PREFIX}.yaml"
       sed -i "s,127.0.0.1,10.10.10.1,g" "/mnt/storage/vm/${PREFIX}/${PREFIX}.yaml"
     fi
     ((IP++))
@@ -804,9 +804,9 @@ install_cluster() {
     finished="0"
     while [[ "$finished" = "0" ]]; do
       sleep 1
-      if nc -z 10.10.10.${IP} 22; then
+      if nc -z 10.10.10."${IP}" 22; then
         ssh-keygen -f "${HOME}/.ssh/known_hosts" -R "10.10.10.${IP}"
-        ssh-keyscan 10.10.10.${IP} >>"${HOME}/.ssh/known_hosts"
+        ssh-keyscan 10.10.10."${IP}" >>"${HOME}/.ssh/known_hosts"
         finished=1
       fi
     done
@@ -945,7 +945,7 @@ install_okd_prep() {
   export AVP_AUTH_TYPE=token
   if [[ -z "${VAULT_TOKEN}"  ]]; then
     export VAULT_TOKEN
-    VAULT_TOKEN=$(vault login --tls-skip-verify -address="${URL}" -method=userpass -token-only username=arthur)
+    VAULT_TOKEN=$(vault login --tls-skip-verify -address="${URL}" -method=userpass -token-only username=arthur) || { echo "Failed to login to vault" >&2; return 1; } || { echo "Failed to login to vault" >&2; return 1; }
   fi
 
   if [[ -z "${URL}"  ]]; then
@@ -1412,7 +1412,9 @@ install_addons_okd_virt() {
   echo -e "\n${BLUE}Pull Secret:${NC}"
   argocd-vault-plugin generate "${HOMELAB}"/okd/okd-configuration/base/pull-secret.yaml | kubectl apply -f -
   sleep 30s
-  while [ "$(kubectl get mcp master -o yaml | yq '.status.conditions[] | select(.type == "Updating") | .status')" == "True" ]; do
+  local mcp_master_status=""
+  mcp_master_status=$(kubectl get mcp master -o yaml | yq '.status.conditions[] | select(.type == "Updating") | .status') || { echo "Failed to get MCP master status" >&2; return 1; }
+  while [[ "$mcp_master_status" == "True" ]]; do
     echo "Waiting for MCPs"
     sleep 30s
   done
@@ -1450,13 +1452,17 @@ install_addons_okd_virt() {
   kubectl kustomize kubernetes/nmstate/overlays/sandbox | kubectl apply -f -
 
   echo -e "\n${BLUE}Waiting for API Certificate to Generate:${NC}"
-  while [ "$(kubectl get certificate -n openshift-config api-certificate -o yaml | yq '.status.conditions[]] | select(.type == "Ready") | .status')" == "False" ]; do
+  local api_cert_ready=""
+  api_cert_ready=$(kubectl get certificate -n openshift-config api-certificate -o yaml | yq '.status.conditions[] | select(.type == "Ready") | .status') || { echo "Failed to get API certificate ready status" >&2; return 1; }
+  while [[ "$api_cert_ready" == "False" ]]; do
     echo "Waiting for API Certificate to Generate"
     sleep 30
   done
 
   echo -e "\n${BLUE}Waiting for Ingress Certificate to Generate:${NC}"
-  while [ "$(kubectl get certificate -n openshift-ingress ingress-certificate -o yaml | yq '.status.conditions[]] | select(.type == "Ready") | .status')" == "False" ]; do
+  local ingress_cert_ready=""
+  ingress_cert_ready=$(kubectl get certificate -n openshift-ingress ingress-certificate -o yaml | yq '.status.conditions[] | select(.type == "Ready") | .status') || { echo "Failed to get Ingress certificate ready status" >&2; return 1; }
+  while [[ "$ingress_cert_ready" == "False" ]]; do
     echo "Waiting for Ingress Certificate to Generate"
     sleep 30
   done
@@ -1493,7 +1499,9 @@ install_addons_okd() {
   fi
 
   sleep 15s
-  while [ "$(kubectl get mcp worker -o yaml | yq '.status.conditions[] | select(.type == "Updating") | .status')" == "True" ]; do
+  local mcp_worker_status=""
+  mcp_worker_status=$(kubectl get mcp worker -o yaml | yq '.status.conditions[] | select(.type == "Updating") | .status') || { echo "Failed to get MCP worker status" >&2; return 1; }
+  while [[ "$mcp_worker_status" == "True" ]]; do
     echo "Waiting for MCPs"
     sleep 30s
   done
@@ -1527,7 +1535,9 @@ install_addons_okd() {
   yq '.spec.config.systemd.units[1].enabled=false' "${HOMELAB}"/okd/okd-configuration/overlays/sandbox/longhorn-mc.yaml | kubectl apply -f -
 
   sleep 15s
-  while [ "$(kubectl get mcp infra -o yaml | yq '.status.conditions[] | select(.type == "Updating") | .status')" == "True" ]; do
+  local mcp_infra_status=""
+  mcp_infra_status=$(kubectl get mcp infra -o yaml | yq '.status.conditions[] | select(.type == "Updating") | .status') || { echo "Failed to get MCP infra status" >&2; return 1; }
+  while [[ "$mcp_infra_status" == "True" ]]; do
     echo "Waiting for MCPs"
     sleep 30s
   done
@@ -1586,13 +1596,17 @@ install_addons_okd() {
   oc patch --type=merge --patch='{"spec":{"paused":true}}' machineconfigpool/infra
 
   echo -e "\n${BLUE}Waiting for API Certificate to Generate:${NC}"
-  while [ "$(kubectl get certificate -n openshift-config api-certificate -o yaml | yq '.status.conditions[]] | select(.type == "Ready") | .status')" == "False" ]; do
+  local api_cert_status=""
+  api_cert_status=$(kubectl get certificate -n openshift-config api-certificate -o yaml | yq '.status.conditions[] | select(.type == "Ready") | .status') || { echo "Failed to get API certificate status" >&2; return 1; }
+  while [[ "$api_cert_status" == "False" ]]; do
     echo "Waiting for API Certificate to Generate"
     sleep 30
   done
 
   echo -e "\n${BLUE}Waiting for Ingress Certificate to Generate:${NC}"
-  while [ "$(kubectl get certificate -n openshift-ingress ingress-certificate -o yaml | yq '.status.conditions[]] | select(.type == "Ready") | .status')" == "False" ]; do
+  local ingress_cert_status=""
+  ingress_cert_status=$(kubectl get certificate -n openshift-ingress ingress-certificate -o yaml | yq '.status.conditions[] | select(.type == "Ready") | .status') || { echo "Failed to get Ingress certificate status" >&2; return 1; }
+  while [[ "$ingress_cert_status" == "False" ]]; do
     echo "Waiting for Ingress Certificate to Generate"
     sleep 30
   done
