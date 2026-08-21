@@ -6,8 +6,39 @@
   user: arthur
   vars:
     # renovate: datasource=github-releases depName=anomalyco/opencode
-    opencode_version: v1.18.20
+    opencode_version: v1.18.18
+    # renovate: datasource=github-releases depName=edouard-claude/snip
+    snip_version: v0.24.1
   tasks:
+    - name: Download snip tarball
+      ansible.builtin.get_url:
+        # renovate: datasource=github-releases depName=edouard-claude/snip
+        url: "https://github.com/edouard-claude/snip/releases/download/{{ snip_version }}/snip_{{ snip_version | regex_replace('^v', '') }}_linux_arm64.tar.gz"
+        dest: /tmp/snip.tar.gz
+        mode: "0644"
+      check_mode: false
+
+    - name: Ensure snip extraction directory exists
+      ansible.builtin.file:
+        path: /tmp/snip
+        state: directory
+        mode: "0755"
+      check_mode: false
+
+    - name: Extract snip
+      ansible.builtin.unarchive:
+        src: /tmp/snip.tar.gz
+        dest: /tmp/snip
+        remote_src: true
+      check_mode: false
+
+    - name: Install snip binary
+      ansible.builtin.copy:
+        src: /tmp/snip/snip
+        dest: /usr/local/bin/snip
+        mode: "0755"
+        remote_src: true
+
     - name: Download opencode tarball
       ansible.builtin.get_url:
         url: "https://github.com/anomalyco/opencode/releases/download/{{ opencode_version }}/opencode-linux-arm64.tar.gz"
