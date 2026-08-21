@@ -1,4 +1,5 @@
 #!/bin/bash
+set -euo pipefail
 
 # Server 1
 ssh fedora@10.0.0.140
