@@ -138,3 +138,210 @@ spec:
           - cpu
           - memory
         controlledValues: RequestsAndLimits
+---
+apiVersion: autoscaling.k8s.io/v1
+kind: VerticalPodAutoscaler
+metadata:
+  name: netobserv-distributor
+  namespace: openshift-netobserv-loki
+  annotations:
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+spec:
+  targetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: netobserv-distributor
+  updatePolicy:
+    updateMode: "InPlaceOrRecreate"
+  resourcePolicy:
+    containerPolicies:
+      - containerName: loki-distributor
+        minAllowed:
+          cpu: 5m
+          memory: 32Mi
+        maxAllowed:
+          cpu: 200m
+          memory: 512Mi
+        controlledResources:
+          - cpu
+          - memory
+        controlledValues: RequestsOnly
+---
+apiVersion: autoscaling.k8s.io/v1
+kind: VerticalPodAutoscaler
+metadata:
+  name: netobserv-gateway
+  namespace: openshift-netobserv-loki
+  annotations:
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+spec:
+  targetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: netobserv-gateway
+  updatePolicy:
+    updateMode: "InPlaceOrRecreate"
+  resourcePolicy:
+    containerPolicies:
+      - containerName: gateway
+        minAllowed:
+          cpu: 5m
+          memory: 16Mi
+        maxAllowed:
+          cpu: 100m
+          memory: 256Mi
+        controlledResources:
+          - cpu
+          - memory
+        controlledValues: RequestsOnly
+      - containerName: opa
+        minAllowed:
+          cpu: 5m
+          memory: 16Mi
+        maxAllowed:
+          cpu: 100m
+          memory: 128Mi
+        controlledResources:
+          - cpu
+          - memory
+        controlledValues: RequestsOnly
+---
+apiVersion: autoscaling.k8s.io/v1
+kind: VerticalPodAutoscaler
+metadata:
+  name: netobserv-querier
+  namespace: openshift-netobserv-loki
+  annotations:
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+spec:
+  targetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: netobserv-querier
+  updatePolicy:
+    updateMode: "InPlaceOrRecreate"
+  resourcePolicy:
+    containerPolicies:
+      - containerName: loki-querier
+        minAllowed:
+          cpu: 5m
+          memory: 32Mi
+        maxAllowed:
+          cpu: 200m
+          memory: 512Mi
+        controlledResources:
+          - cpu
+          - memory
+        controlledValues: RequestsOnly
+---
+apiVersion: autoscaling.k8s.io/v1
+kind: VerticalPodAutoscaler
+metadata:
+  name: netobserv-query-frontend
+  namespace: openshift-netobserv-loki
+  annotations:
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+spec:
+  targetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: netobserv-query-frontend
+  updatePolicy:
+    updateMode: "InPlaceOrRecreate"
+  resourcePolicy:
+    containerPolicies:
+      - containerName: loki-query-frontend
+        minAllowed:
+          cpu: 5m
+          memory: 16Mi
+        maxAllowed:
+          cpu: 150m
+          memory: 256Mi
+        controlledResources:
+          - cpu
+          - memory
+        controlledValues: RequestsOnly
+---
+apiVersion: autoscaling.k8s.io/v1
+kind: VerticalPodAutoscaler
+metadata:
+  name: netobserv-compactor
+  namespace: openshift-netobserv-loki
+  annotations:
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+spec:
+  targetRef:
+    apiVersion: apps/v1
+    kind: StatefulSet
+    name: netobserv-compactor
+  updatePolicy:
+    updateMode: "InPlaceOrRecreate"
+  resourcePolicy:
+    containerPolicies:
+      - containerName: loki-compactor
+        minAllowed:
+          cpu: 5m
+          memory: 32Mi
+        maxAllowed:
+          cpu: 200m
+          memory: 512Mi
+        controlledResources:
+          - cpu
+          - memory
+        controlledValues: RequestsOnly
+---
+apiVersion: autoscaling.k8s.io/v1
+kind: VerticalPodAutoscaler
+metadata:
+  name: netobserv-index-gateway
+  namespace: openshift-netobserv-loki
+  annotations:
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+spec:
+  targetRef:
+    apiVersion: apps/v1
+    kind: StatefulSet
+    name: netobserv-index-gateway
+  updatePolicy:
+    updateMode: "InPlaceOrRecreate"
+  resourcePolicy:
+    containerPolicies:
+      - containerName: loki-index-gateway
+        minAllowed:
+          cpu: 5m
+          memory: 16Mi
+        maxAllowed:
+          cpu: 150m
+          memory: 256Mi
+        controlledResources:
+          - cpu
+          - memory
+        controlledValues: RequestsOnly
+---
+apiVersion: autoscaling.k8s.io/v1
+kind: VerticalPodAutoscaler
+metadata:
+  name: netobserv-ingester
+  namespace: openshift-netobserv-loki
+  annotations:
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+spec:
+  targetRef:
+    apiVersion: apps/v1
+    kind: StatefulSet
+    name: netobserv-ingester
+  updatePolicy:
+    updateMode: "InPlaceOrRecreate"
+  resourcePolicy:
+    containerPolicies:
+      - containerName: loki-ingester
+        minAllowed:
+          cpu: 5m
+          memory: 32Mi
+        maxAllowed:
+          cpu: 200m
+          memory: 512Mi
+        controlledResources:
+          - cpu
+          - memory
+        controlledValues: RequestsOnly

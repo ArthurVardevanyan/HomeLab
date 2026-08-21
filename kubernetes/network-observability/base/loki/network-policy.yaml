@@ -133,7 +133,7 @@ spec:
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
-  name: allow-egress-loki
+  name: allow-ingress-from-operator
   namespace: openshift-netobserv-loki
 spec:
   policyTypes:
@@ -144,6 +144,35 @@ spec:
         - namespaceSelector:
             matchLabels:
               kubernetes.io/metadata.name: openshift-netobserv-operator
+      ports:
+        - protocol: TCP
+          port: 3100
+        - protocol: TCP
+          port: 8081
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-ingress-from-netobserv
+  namespace: openshift-netobserv-loki
+spec:
+  policyTypes:
+    - Ingress
+  podSelector: {}
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: openshift-netobserv
+      ports:
+        - protocol: TCP
+          port: 8080
+        - protocol: TCP
+          port: 3100
+        - protocol: TCP
+          port: 8083
+        - protocol: TCP
+          port: 8081
 ---
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
