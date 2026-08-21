@@ -29,7 +29,7 @@ COPY --from=node-tools /usr/local/lib/node_modules/ /usr/local/lib/node_modules/
 
 # OS packages
 # renovate: datasource=github-releases depName=opentofu/opentofu
-ENV OPENTOFU_VERSION=1.12.5
+ENV OPENTOFU_VERSION=1.12.6
 RUN rpm --import https://dl.fedoraproject.org/pub/epel/RPM-GPG-KEY-EPEL-10 && \
   rpm -Uvh https://dl.fedoraproject.org/pub/epel/epel-release-latest-10.noarch.rpm && \
   rpm -Uvh https://download.postgresql.org/pub/repos/yum/reporpms/EL-10-x86_64/pgdg-redhat-repo-latest.noarch.rpm && \
@@ -50,7 +50,7 @@ RUN pip3 install --no-cache-dir ansible==${ANSIBLE_VERSION} && \
 
 # gh, argocd-vault-plugin, yq, kubeconform, mc
 # renovate: datasource=github-releases depName=cli/cli
-ENV GH_VERSION=2.97.0
+ENV GH_VERSION=2.98.0
 # renovate: datasource=github-releases depName=argoproj-labs/argocd-vault-plugin
 ENV ARGOCD_VAULT_VERSION=1.18.2
 # renovate: custom-github-release depName=yannh/kubeconform
@@ -95,7 +95,7 @@ RUN curl -L -o /tmp/google-cloud-cli.tar.gz \
 
 # Go toolchain
 # renovate: datasource=golang-version depName=go
-ENV GO_VERSION=1.26.6
+ENV GO_VERSION=1.27.0
 RUN curl -L -o go.tar.gz "https://go.dev/dl/go${GO_VERSION}.linux-amd64.tar.gz" && \
   tar -xzf go.tar.gz -C /usr/local --no-same-owner && rm -f go.tar.gz && \
   mkdir -p /go && \
@@ -105,7 +105,7 @@ RUN curl -L -o go.tar.gz "https://go.dev/dl/go${GO_VERSION}.linux-amd64.tar.gz" 
 
 # golangci-lint
 # renovate: datasource=github-releases depName=golangci/golangci-lint
-ENV GOLANGCI_LINT_VERSION=2.12.2
+ENV GOLANGCI_LINT_VERSION=2.13.1
 RUN curl -fL --retry 5 --retry-all-errors --retry-delay 2 -o "golangci-lint-${GOLANGCI_LINT_VERSION}-linux-amd64.tar.gz" \
   "https://github.com/golangci/golangci-lint/releases/download/v${GOLANGCI_LINT_VERSION}/golangci-lint-${GOLANGCI_LINT_VERSION}-linux-amd64.tar.gz" && \
   curl -fL --retry 5 --retry-all-errors --retry-delay 2 -o golangci-lint-checksums.txt \
@@ -117,7 +117,7 @@ RUN curl -fL --retry 5 --retry-all-errors --retry-delay 2 -o "golangci-lint-${GO
 # oc/kubectl, ko, vault
 ENV \
   # renovate: custom-github-release depName=okd-project/okd versioning=loose
-  OKD_VERSION=4.22.0-okd-scos.7\
+  OKD_VERSION=4.22.0-okd-scos.8\
   # renovate: custom-github-release depName=ko-build/ko
   KO_VERSION=0.19.1 \
   # renovate: datasource=github-releases depName=hashicorp/vault
@@ -146,7 +146,7 @@ ENV GORELEASER_VERSION=2.17.1
 # renovate: datasource=github-releases depName=orhun/git-cliff
 ENV GIT_CLIFF_VERSION=2.13.1
 # renovate: datasource=github-releases depName=go-task/task
-ENV TASK_VERSION=3.52.0
+ENV TASK_VERSION=3.53.1
 # renovate: datasource=github-releases depName=ArthurVardevanyan/k8s-gitops-ci
 ENV K8S_GITOPS_CI_VERSION=0.57.4
 RUN curl -fL --retry 5 --retry-all-errors --retry-delay 2 -o "goreleaser_Linux_x86_64.tar.gz" \
