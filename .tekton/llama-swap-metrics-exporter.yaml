@@ -102,6 +102,8 @@ spec:
 
                 TAG="$(date -u +%Y.%m.%d.%H%M%S)"
                 make ko-build-pipeline TAG="${TAG}"
+                IMAGE="$(cat "${WORKSPACE_RESULTS_PATH}" | tr -d '[:space:]')"
+                echo -n "${IMAGE}" > "${WORKSPACE_RESULTS_PATH}"
           volumes:
             - name: go
               emptyDir: {}
