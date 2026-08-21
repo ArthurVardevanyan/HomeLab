@@ -1,0 +1,40 @@
+---
+# https://github.com/netobserv/netobserv-operator/issues/2889
+kind: ClusterRoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: netobserv-informers-flp-custom
+subjects:
+  - kind: ServiceAccount
+    name: flowlogs-pipeline
+    namespace: openshift-netobserv
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: netobserv-informers
+---
+kind: ClusterRoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: netobserv-loki-writer-flp-custom
+subjects:
+  - kind: ServiceAccount
+    name: flowlogs-pipeline
+    namespace: openshift-netobserv
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: netobserv-loki-writer
+---
+kind: ClusterRoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: netobserv-token-review-plugin-custom
+subjects:
+  - kind: ServiceAccount
+    name: netobserv-plugin
+    namespace: openshift-netobserv
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: netobserv-token-review

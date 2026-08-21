@@ -36,12 +36,13 @@ spec:
       adminGroups:
         - cluster-admins
   replication:
-    factor: 2
-    zones:
-      - maxSkew: 1
-        topologyKey: topology.kubernetes.io/zone
-      - maxSkew: 1
-        topologyKey: kubernetes.io/hostname
+    factor: 1
+    # https://github.com/grafana/loki/issues/24143
+    # zones:
+    #   - maxSkew: 1
+    #     topologyKey: topology.kubernetes.io/zone
+    #   - maxSkew: 1
+    #     topologyKey: kubernetes.io/hostname
   template:
     distributor:
       replicas: 2

@@ -41,6 +41,8 @@ Always set `KUBECONFIG` explicitly before any `kubectl`, `oc`, `helm`, or
 - OKD: `export KUBECONFIG=$HOME/.kube/okd`
 - MicroShift: `export KUBECONFIG=$HOME/.kube/microshift`
 
+Default to `kubectl`; use `oc` only for `oc adm` and `oc debug node/`.
+
 Both kubeconfigs grant **cluster-admin**. Default to read-only commands
 (`get`, `describe`, `--dry-run=client`, `kustomize build`) when exploring.
 Confirm with the user before any `apply`, `delete`, `patch`, `scale`,
