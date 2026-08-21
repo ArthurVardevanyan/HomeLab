@@ -49,6 +49,8 @@ TOKEN=$(curl --silent -L -X GET -H "Authorization: Basic ${CREDS}" \
 ###################
 ### config.json ###
 ###################
+CREATED_TIMESTAMP=$(date -u +'%Y-%m-%dT%H:%M:%SZ') || { echo "Error: Failed to get timestamp" >&2; exit 1; }
+
 cat > "${CONFIG}" <<EOF
 {
   "architecture": "amd64",
@@ -61,7 +63,7 @@ cat > "${CONFIG}" <<EOF
   },
   "history": [
     {
-      "created": "$(date -u +'%Y-%m-%dT%H:%M:%SZ')",
+      "created": "${CREATED_TIMESTAMP}",
       "comment": "clair vulnerability DB layer"
     }
   ]
