@@ -461,7 +461,6 @@ metadata:
   labels:
     app: metallb
   name: metallb-system:kube-rbac-proxy
-  namespace: metallb-system
 rules:
   - apiGroups:
       - authentication.k8s.io
@@ -710,7 +709,12 @@ rules:
       - servicel2statuses
       - servicel2statuses/status
     verbs:
-      - "*"
+      - get
+      - list
+      - watch
+      - create
+      - update
+      - patch
   - apiGroups:
       - ""
     resources:
@@ -833,7 +837,6 @@ metadata:
   labels:
     app: metallb
   name: kube-rbac-proxy
-  namespace: metallb-system
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole

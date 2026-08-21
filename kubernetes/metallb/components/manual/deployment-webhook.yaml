@@ -23,6 +23,10 @@ spec:
         app: metallb
         component: webhook-server
     spec:
+      automountServiceAccountToken: false
+      dnsPolicy: ClusterFirst
+      restartPolicy: Always
+      schedulerName: default-scheduler
       containers:
         - args:
             - --webhook-mode=onlywebhook
@@ -72,6 +76,7 @@ spec:
               memory: "384Mi"
               cpu: "100m"
           securityContext:
+            privileged: false
             runAsNonRoot: true
             readOnlyRootFilesystem: true
             allowPrivilegeEscalation: false

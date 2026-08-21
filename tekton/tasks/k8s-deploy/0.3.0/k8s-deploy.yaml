@@ -113,7 +113,8 @@ spec:
             \"serviceAccountName\": \"${TARGET_SERVICE_ACCOUNT}\"
           }"
 
-          TOKEN=$(curl --header "Authorization: Bearer $(cat /var/run/secrets/openshift/serviceaccount/token)"\
+          SA_TOKEN=$(cat /var/run/secrets/openshift/serviceaccount/token) || { echo "Failed to read service account token"; exit 1; }
+          TOKEN=$(curl --header "Authorization: Bearer ${SA_TOKEN}" \
             "${TOKEN_EXCHANGE_ENDPOINT}" -X POST \
             -H "Content-type: application/json" \
             -H "Accept: application/json" \
@@ -140,5 +141,5 @@ spec:
         EOF
         fi
 
-        kubectl kustomize ${WORKSPACE_DATA_PATH}/kubernetes/overlays/okd | \
+        kubectl kustomize "${WORKSPACE_DATA_PATH}"/kubernetes/overlays/okd | \
           sed "s/<VERSION>/${SHA}/g" | kubectl apply -f - --server-side --force-conflicts

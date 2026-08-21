@@ -18,6 +18,10 @@ spec:
       labels:
         control-plane: controller-manager
     spec:
+      automountServiceAccountToken: false
+      dnsPolicy: ClusterFirst
+      restartPolicy: Always
+      schedulerName: default-scheduler
       containers:
         - args:
             - --enable-leader-election
@@ -52,11 +56,14 @@ spec:
             - containerPort: 9443
               name: webhook-server
               protocol: TCP
+            - containerPort: 8080
+              name: metrics
+              protocol: TCP
           readinessProbe:
             failureThreshold: 3
             httpGet:
               path: /readyz
-              port: 8080
+              port: metrics
             initialDelaySeconds: 30
             periodSeconds: 10
             successThreshold: 1
@@ -76,6 +83,7 @@ spec:
               memory: "256Mi"
               cpu: "100m"
           securityContext:
+            privileged: false
             runAsNonRoot: true
             readOnlyRootFilesystem: true
             allowPrivilegeEscalation: false
