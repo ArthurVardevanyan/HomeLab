@@ -1212,6 +1212,9 @@ spec:
 
             - containerPort: 9091
               name: monitoring-tls
+
+            - containerPort: 9443
+              name: grpc-https
           securityContext:
             allowPrivilegeEscalation: false
             capabilities:
@@ -1225,7 +1228,7 @@ spec:
             httpGet:
               scheme: HTTPS
               path: /health/readiness
-              port: grpc
+              port: grpc-https
             timeoutSeconds: 10
             periodSeconds: 10
             failureThreshold: 5
@@ -1434,6 +1437,9 @@ spec:
 
             - containerPort: 9091
               name: monitoring-tls
+
+            - containerPort: 9443
+              name: grpc-https
           securityContext:
             allowPrivilegeEscalation: false
             capabilities:
@@ -1447,7 +1453,7 @@ spec:
             httpGet:
               scheme: HTTPS
               path: /health/readiness
-              port: grpc
+              port: grpc-https
             timeoutSeconds: 10
             periodSeconds: 10
             failureThreshold: 5
