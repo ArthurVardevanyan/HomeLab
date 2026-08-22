@@ -1958,7 +1958,73 @@
         "type": "prometheus",
         "uid": "${datasource}"
       },
-      "description": "rate(llamacpp:tokens_predicted_total[interval]) / rate(llamacpp:n_decode_total[interval])",
+      "description": "Estimated KV cache hit ratio: 1 - (llamacpp prompt tokens / LiteLLM input tokens). Approximation because LiteLLM counts all API input tokens including system messages.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "red",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 50
+              },
+              {
+                "color": "green",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "percent"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 8,
+        "x": 0,
+        "y": 59
+      },
+      "id": 214,
+      "options": {
+        "colorMode": "background",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "openInEditor": false,
+        "text": {
+          "valueSize": 48
+        },
+        "textMode": "auto"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "editorMode": "code",
+          "expr": "100 * (1 - rate(llamacpp:prompt_tokens_total{model=~\"$model\"}[5m]) / rate(litellm_input_tokens_metric_total{model=~\"$model\"}[5m]))",
+          "legendFormat": "{{model}}",
+          "range": true,
+          "refId": "A"
+        }
+      ],
+      "title": "KV Cache Hit Ratio %",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
+      },
+      "description": "KV cache hit ratio over time. Higher = more tokens served from KV cache.",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -1968,11 +2034,110 @@
             "axisBorderShow": false,
             "axisCenteredZero": false,
             "axisColorMode": "text",
-            "axisLabel": "tokens/decode",
+            "axisLabel": "%",
             "axisPlacement": "auto",
             "barAlignment": 0,
             "barWidthFactor": 0.6,
             "drawStyle": "line",
+            "fillOpacity": 20,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "smooth",
+            "lineWidth": 2,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "showValues": false,
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "percent"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 8,
+        "x": 8,
+        "y": 59
+      },
+      "id": 215,
+      "options": {
+        "legend": {
+          "calcs": ["lastNotNull", "mean"],
+          "displayMode": "table",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "hideZeros": false,
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "editorMode": "code",
+          "expr": "100 * (1 - rate(llamacpp:prompt_tokens_total{model=~\"$model\"}[5m]) / rate(litellm_input_tokens_metric_total{model=~\"$model\"}[5m]))",
+          "legendFormat": "{{model}}",
+          "range": true,
+          "refId": "A"
+        }
+      ],
+      "title": "KV Cache Hit Ratio Over Time",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
+      },
+      "description": "Estimated tokens served from KV cache per second: input_tokens - prompt_tokens_processed.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "tokens/s",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "barWidthFactor": 0.6,
+            "draw_style": "line",
             "fillOpacity": 15,
             "gradientMode": "none",
             "hideFrom": {
@@ -2004,7 +2169,7 @@
             "steps": [
               {
                 "color": "green",
-                "value": 0
+                "value": null
               }
             ]
           }
@@ -2012,201 +2177,9 @@
         "overrides": []
       },
       "gridPos": {
-        "h": 8,
-        "w": 6,
-        "x": 0,
-        "y": 59
-      },
-      "id": 214,
-      "options": {
-        "legend": {
-          "calcs": ["lastNotNull", "mean", "max"],
-          "displayMode": "table",
-          "placement": "bottom",
-          "showLegend": true
-        },
-        "tooltip": {
-          "hideZeros": false,
-          "mode": "multi",
-          "sort": "desc"
-        }
-      },
-      "pluginVersion": "12.4.2",
-      "targets": [
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "${datasource}"
-          },
-          "editorMode": "code",
-          "expr": "rate(llamacpp:tokens_predicted_total{model=~\"$model\"}[$__rate_interval]) / rate(llamacpp:n_decode_total{model=~\"$model\"}[$__rate_interval])",
-          "legendFormat": "{{model}} Tokens per decode",
-          "range": true,
-          "refId": "A"
-        }
-      ],
-      "title": "Tokens per Decode",
-      "type": "timeseries"
-    },
-    {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "${datasource}"
-      },
-      "description": "rate(llamacpp:n_decode_total[interval])",
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "palette-classic"
-          },
-          "custom": {
-            "axisBorderShow": false,
-            "axisCenteredZero": false,
-            "axisColorMode": "text",
-            "axisLabel": "calls/s",
-            "axisPlacement": "auto",
-            "barAlignment": 0,
-            "barWidthFactor": 0.6,
-            "drawStyle": "line",
-            "fillOpacity": 15,
-            "gradientMode": "none",
-            "hideFrom": {
-              "legend": false,
-              "tooltip": false,
-              "viz": false
-            },
-            "insertNulls": false,
-            "lineInterpolation": "smooth",
-            "lineWidth": 2,
-            "pointSize": 5,
-            "scaleDistribution": {
-              "type": "linear"
-            },
-            "showPoints": "never",
-            "showValues": false,
-            "spanNulls": false,
-            "stacking": {
-              "group": "A",
-              "mode": "none"
-            },
-            "thresholdsStyle": {
-              "mode": "off"
-            }
-          },
-          "mappings": [],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": 0
-              }
-            ]
-          },
-          "unit": "ops/sec"
-        },
-        "overrides": []
-      },
-      "gridPos": {
-        "h": 8,
-        "w": 6,
-        "x": 6,
-        "y": 59
-      },
-      "id": 215,
-      "options": {
-        "legend": {
-          "calcs": ["lastNotNull", "mean", "max"],
-          "displayMode": "table",
-          "placement": "bottom",
-          "showLegend": true
-        },
-        "tooltip": {
-          "hideZeros": false,
-          "mode": "multi",
-          "sort": "desc"
-        }
-      },
-      "pluginVersion": "12.4.2",
-      "targets": [
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "${datasource}"
-          },
-          "editorMode": "code",
-          "expr": "rate(llamacpp:n_decode_total{model=~\"$model\"}[$__rate_interval])",
-          "legendFormat": "{{model}} Decode calls",
-          "range": true,
-          "refId": "A"
-        }
-      ],
-      "title": "Decode Calls/sec",
-      "type": "timeseries"
-    },
-    {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "${datasource}"
-      },
-      "description": "1000 * rate(llamacpp:prompt_seconds_total[interval]) / rate(llamacpp:prompt_tokens_total[interval])",
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "palette-classic"
-          },
-          "custom": {
-            "axisBorderShow": false,
-            "axisCenteredZero": false,
-            "axisColorMode": "text",
-            "axisLabel": "ms/token",
-            "axisPlacement": "auto",
-            "barAlignment": 0,
-            "barWidthFactor": 0.6,
-            "drawStyle": "line",
-            "fillOpacity": 15,
-            "gradientMode": "none",
-            "hideFrom": {
-              "legend": false,
-              "tooltip": false,
-              "viz": false
-            },
-            "insertNulls": false,
-            "lineInterpolation": "smooth",
-            "lineWidth": 2,
-            "pointSize": 5,
-            "scaleDistribution": {
-              "type": "linear"
-            },
-            "showPoints": "never",
-            "showValues": false,
-            "spanNulls": false,
-            "stacking": {
-              "group": "A",
-              "mode": "none"
-            },
-            "thresholdsStyle": {
-              "mode": "off"
-            }
-          },
-          "mappings": [],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": 0
-              }
-            ]
-          },
-          "unit": "ms"
-        },
-        "overrides": []
-      },
-      "gridPos": {
-        "h": 8,
-        "w": 6,
-        "x": 12,
+        "h": 4,
+        "w": 8,
+        "x": 16,
         "y": 59
       },
       "id": 216,
@@ -2223,7 +2196,6 @@
           "sort": "desc"
         }
       },
-      "pluginVersion": "12.4.2",
       "targets": [
         {
           "datasource": {
@@ -2231,13 +2203,13 @@
             "uid": "${datasource}"
           },
           "editorMode": "code",
-          "expr": "1000 * rate(llamacpp:prompt_seconds_total{model=~\"$model\"}[$__rate_interval]) / rate(llamacpp:prompt_tokens_total{model=~\"$model\"}[$__rate_interval])",
-          "legendFormat": "{{model}} Prompt latency/token",
+          "expr": "rate(litellm_input_tokens_metric_total{model=~\"$model\"}[5m]) - rate(llamacpp:prompt_tokens_total{model=~\"$model\"}[5m])",
+          "legendFormat": "{{model}}",
           "range": true,
           "refId": "A"
         }
       ],
-      "title": "Prompt Latency",
+      "title": "KV Cache Reused Tokens",
       "type": "timeseries"
     },
     {
@@ -2245,7 +2217,7 @@
         "type": "prometheus",
         "uid": "${datasource}"
       },
-      "description": "1000 * rate(llamacpp:tokens_predicted_seconds_total[interval]) / rate(llamacpp:tokens_predicted_total[interval])",
+      "description": "Ratio of llama.cpp prompt tokens to LiteLLM input tokens. Lower ratio = more cache reuse (tokens not re-processed by model).",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -2255,7 +2227,7 @@
             "axisBorderShow": false,
             "axisCenteredZero": false,
             "axisColorMode": "text",
-            "axisLabel": "ms/token",
+            "axisLabel": "ratio",
             "axisPlacement": "auto",
             "barAlignment": 0,
             "barWidthFactor": 0.6,
@@ -2291,24 +2263,23 @@
             "steps": [
               {
                 "color": "green",
-                "value": 0
+                "value": null
               }
             ]
-          },
-          "unit": "ms"
+          }
         },
         "overrides": []
       },
       "gridPos": {
-        "h": 8,
-        "w": 6,
-        "x": 18,
-        "y": 59
+        "h": 4,
+        "w": 8,
+        "x": 0,
+        "y": 63
       },
       "id": 217,
       "options": {
         "legend": {
-          "calcs": ["lastNotNull", "mean", "max"],
+          "calcs": ["lastNotNull", "mean"],
           "displayMode": "table",
           "placement": "bottom",
           "showLegend": true
@@ -2319,7 +2290,6 @@
           "sort": "desc"
         }
       },
-      "pluginVersion": "12.4.2",
       "targets": [
         {
           "datasource": {
@@ -2327,13 +2297,13 @@
             "uid": "${datasource}"
           },
           "editorMode": "code",
-          "expr": "1000 * rate(llamacpp:tokens_predicted_seconds_total{model=~\"$model\"}[$__rate_interval]) / rate(llamacpp:tokens_predicted_total{model=~\"$model\"}[$__rate_interval])",
-          "legendFormat": "{{model}} Generation latency/token",
+          "expr": "rate(llamacpp:prompt_tokens_total{model=~\"$model\"}[5m]) / rate(litellm_input_tokens_metric_total{model=~\"$model\"}[5m])",
+          "legendFormat": "{{model}}",
           "range": true,
           "refId": "A"
         }
       ],
-      "title": "Generation Latency",
+      "title": "Prompt Processing Ratio",
       "type": "timeseries"
     },
     {
@@ -3517,5 +3487,5 @@
   "timezone": "",
   "title": "llama-swap",
   "uid": "llama-swap",
-  "version": 4
+  "version": 5
 }

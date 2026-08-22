@@ -67,6 +67,7 @@ disabled globally.
 from __future__ import annotations
 
 import asyncio
+import hashlib
 import os
 import time
 from typing import Final
@@ -102,6 +103,13 @@ _SLOTS_CACHE_TTL_SECONDS: Final = 0.25
 # far as residency data allows) so a llama-swap hiccup never blocks routing.
 _REQUEST_TIMEOUT_SECONDS: Final = 1.0
 
+# Session-stickiness: content-fingerprint pin map.
+# Maps sha256(fingerprint) -> (deployment_model, expiry_timestamp).
+# TTL of 1h balances KV-cache retention against memory churn when models
+# rotate frequently. Cap of 10k pins prevents unbounded growth.
+_PIN_TTL_SECONDS: Final = 3600.0
+_PIN_MAP_MAX: Final = 10000
+
 
 def _strip_provider_prefix(model: str) -> str:
     """`openai/35b-gpu0` -> `35b-gpu0` to match llama-swap's model IDs."""
@@ -118,6 +126,9 @@ class LlamaSwapAffinityPlugin:
         self._running_cache_expires_at: float = 0.0
         self._slots_cache: dict[str, tuple[int, float]] = {}
         self._round_robin_counter: int = 0
+        # Session-stickiness pin map: fingerprint -> (deployment_model, expiry)
+        self._pin_map: dict[str, tuple[str, float]] = {}
+        self._pin_order: list[str] = []  # LRU tracking (insertion order)
 
     def _get_client(self) -> httpx.AsyncClient:
         # Built lazily inside `run()`, never at import time: this module is
@@ -188,6 +199,84 @@ class LlamaSwapAffinityPlugin:
         self._round_robin_counter += 1
         return winner
 
+    def _compute_fingerprint(self, context: RoutingContext) -> str | None:
+        """Compute a sha256 fingerprint for session stickiness.
+
+        Uses the model name and the content of the first user message.
+        Truncated to 500 chars to keep the fingerprint deterministic but
+        bounded. Returns None if no user message can be found.
+        """
+        if not context.structured_messages:
+            return None
+
+        for msg in context.structured_messages:
+            if msg.get("role") != "user":
+                continue
+            content = msg.get("content", "")
+            if isinstance(content, str):
+                text = content[:500]
+            elif isinstance(content, list):
+                # OpenAI multi-modal format: extract text blocks
+                text_parts = [
+                    block.get("text", "")
+                    for block in content
+                    if isinstance(block, dict) and block.get("type") == "text"
+                ]
+                text = " ".join(text_parts)[:500]
+            else:
+                text = str(content)[:500]
+
+            if not text.strip():
+                continue
+
+            # Use the canonical model name (strip provider prefix)
+            canonical_model = _strip_provider_prefix(
+                context.candidate_models[0] if context.candidate_models else "unknown"
+            )
+            raw = f"{canonical_model}:{text}"
+            return hashlib.sha256(raw.encode()).hexdigest()
+
+        return None
+
+    def _get_pinned_deployment(self, fingerprint: str) -> str | None:
+        """Return the pinned deployment model if the pin is valid and not expired."""
+        entry = self._pin_map.get(fingerprint)
+        if entry is None:
+            return None
+        model, expiry = entry
+        if time.monotonic() > expiry:
+            # Expired: remove from pin map and LRU tracking
+            self._pin_map.pop(fingerprint, None)
+            try:
+                self._pin_order.remove(fingerprint)
+            except ValueError:
+                pass
+            return None
+        # Move to end of LRU order (most recently used)
+        try:
+            self._pin_order.remove(fingerprint)
+        except ValueError:
+            pass
+        self._pin_order.append(fingerprint)
+        return model
+
+    def _set_pin(self, fingerprint: str, deployment_model: str) -> None:
+        """Create or update a pin for this fingerprint."""
+        expiry = time.monotonic() + _PIN_TTL_SECONDS
+        self._pin_map[fingerprint] = (deployment_model, expiry)
+
+        # Track LRU order
+        try:
+            self._pin_order.remove(fingerprint)
+        except ValueError:
+            pass
+        self._pin_order.append(fingerprint)
+
+        # Evict oldest entries if over cap
+        while len(self._pin_map) > _PIN_MAP_MAX:
+            oldest = self._pin_order.pop(0)
+            self._pin_map.pop(oldest, None)
+
     async def run(self, context: RoutingContext) -> RoutingContext:
         try:
             candidates = context.candidate_models
@@ -229,9 +318,28 @@ class LlamaSwapAffinityPlugin:
 
             # Both candidates are loaded and ready: route by actual
             # llama.cpp slot occupancy instead of LiteLLM's own counter.
+            # First check for session stickiness.
+            fingerprint = self._compute_fingerprint(context)
+            if fingerprint is not None:
+                pinned = self._get_pinned_deployment(fingerprint)
+                if pinned and pinned in ready_candidates:
+                    context.candidate_models = [pinned]
+                    context.signals["llama_swap_affinity"] = "sticky_to_pinned"
+                    return context
+                elif pinned:
+                    # Pinned GPU is not ready (starting/stopping) - fall
+                    # through to least-busy and create a new pin below.
+                    pass
+
             winner = await self._pick_least_busy(ready_candidates, candidate_ids)
             context.candidate_models = [winner]
             context.signals["llama_swap_affinity"] = "narrowed_to_least_busy_slot"
+
+            # Establish a new pin if we have a fingerprint and this GPU is
+            # ready (not starting).
+            if fingerprint is not None and running.get(candidate_ids[winner]) == "ready":
+                self._set_pin(fingerprint, winner)
+
             return context
         except Exception:
             # Fail open: routing must never break because llama-swap is
