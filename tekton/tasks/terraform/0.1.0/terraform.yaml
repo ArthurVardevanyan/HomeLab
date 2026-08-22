@@ -184,19 +184,23 @@ spec:
         tofu init -no-color -backend-config=backend.conf
         if [[ "${TERRAFORM_ACTION}" = "plan" ]]; then
           echo "Running Tofu Plan"
-          if [[ "${TERRAFORM_OUTPUT_JSON}" == "true" ]]; then
-           tofu plan -no-color -out=tfplan "${TERRAFORM_VARS}"
-              tofu show -json tfplan > "$(results.terraform_json.path)"
-           else
-              tofu plan -no-color "${TERRAFORM_VARS}"
-           fi
+             if [[ "${TERRAFORM_OUTPUT_JSON}" == "true" ]]; then
+               read -ra VARS <<< "${TERRAFORM_VARS}"
+               tofu plan -no-color -out=tfplan "${VARS[@]}"
+               tofu show -json tfplan > "$(results.terraform_json.path)"
+            else
+               read -ra VARS <<< "${TERRAFORM_VARS}"
+               tofu plan -no-color "${VARS[@]}"
+            fi
          elif [[ "${TERRAFORM_ACTION}" = "apply" ]]; then
-           echo "Running Tofu Apply"
-           if [[ "${TERRAFORM_OUTPUT_JSON}" == "true" ]]; then
-              tofu apply -no-color -auto-approve -json "${TERRAFORM_VARS}" > "$(results.terraform_json.path)"
-           else
-              tofu apply -no-color -auto-approve "${TERRAFORM_VARS}"
-          fi
+             echo "Running Tofu Apply"
+              if [[ "${TERRAFORM_OUTPUT_JSON}" == "true" ]]; then
+               read -ra VARS <<< "${TERRAFORM_VARS}"
+               tofu apply -no-color -auto-approve -json "${VARS[@]}" > "$(results.terraform_json.path)"
+              else
+               read -ra VARS <<< "${TERRAFORM_VARS}"
+               tofu apply -no-color -auto-approve "${VARS[@]}"
+            fi
         fi
 
   volumes:
