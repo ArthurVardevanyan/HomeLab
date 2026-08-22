@@ -1,0 +1,15 @@
+---
+# All-namespaces watch (no spec.targetNamespaces) so the OpenTelemetryCollector
+# CR can live in the llm namespace next to Open WebUI.
+apiVersion: operators.coreos.com/v1
+kind: OperatorGroup
+metadata:
+  name: opentelemetry-operator
+  namespace: opentelemetry-operator
+  annotations:
+    operatorframework.io/bundle-unpack-min-retry-interval: 30m
+    argocd.argoproj.io/sync-wave: "0"
+  labels:
+    app.kubernetes.io/instance: opentelemetry-operator
+spec:
+  upgradeStrategy: Default

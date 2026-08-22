@@ -153,6 +153,7 @@ spec:
               value: "1000"
             - name: CHUNK_OVERLAP
               value: "100"
+            # ---- Sub-agents (main, LiteLLM stack) ----
             - name: ENABLE_SUBAGENTS
               value: "true"
             - name: SUBAGENTS_MAX_CONCURRENT
@@ -161,6 +162,80 @@ spec:
               value: "15"
             - name: SUBAGENTS_MAX_OUTPUT
               value: "8000"
+            # ---- Observability (Phase 0) ----
+            # Open WebUI v0.11.0 has NO scrapeable /metrics endpoint; it only
+            # PUSHES OTLP. Point it at the in-namespace OTEL collector, which
+            # re-exports a Prometheus /metrics endpoint on :9464 for the
+            # hand-rolled Prometheus (static_configs) to scrape.
+            - name: ENABLE_OTEL
+              value: "true"
+            - name: ENABLE_OTEL_METRICS
+              value: "true"
+            - name: OTEL_EXPORTER_OTLP_ENDPOINT
+              value: http://open-webui-collector.llm.svc.cluster.local:4317
+            - name: OTEL_EXPORTER_OTLP_INSECURE
+              value: "true"
+            - name: OTEL_SERVICE_NAME
+              value: open-webui
+            # Audit trail → stdout (collected by the cluster log stack /
+            # Loki / VictoriaLogs). ENABLE_AUDIT_LOGS_FILE defaults on but
+            # AUDIT_LOG_LEVEL defaults to NONE, so nothing is emitted until
+            # the level is raised here.
+            - name: ENABLE_AUDIT_STDOUT
+              value: "true"
+            - name: AUDIT_LOG_LEVEL
+              value: REQUEST_RESPONSE
+            # ---- Code interpreter (Phase 2) ----
+            # Pyodide runs Python in-browser (WASM): no backend, no cluster
+            # access, sandboxed. Covers pandas/numpy/matplotlib/regex/json —
+            # i.e. data analysis, math, transforms — the interactive-analysis
+            # upgrade. Cluster access comes from the MCP tool servers, NOT here.
+            - name: ENABLE_CODE_INTERPRETER
+              value: "true"
+            - name: CODE_INTERPRETER_ENGINE
+              value: pyodide
+            - name: USER_PERMISSIONS_FEATURES_CODE_INTERPRETER
+              value: "true"
+            # ---- Long-term memory (Phase 2) ----
+            # Persistent cross-session user memory (stored in CNPG). Background
+            # review lets the model distil durable facts from conversations.
+            - name: ENABLE_MEMORY_SYSTEM_CONTEXT
+              value: "true"
+            - name: ENABLE_MEMORY_BACKGROUND_REVIEW
+              value: "true"
+            - name: USER_PERMISSIONS_FEATURES_MEMORIES
+              value: "true"
+            # ---- Governance / RBAC (Phase 2) ----
+            # Stop open self-signup: new OIDC users land in "pending" until an
+            # admin (or a mapped Zitadel role) promotes them. Roles are mapped
+            # from the Zitadel "roles" claim — configure the claim in the
+            # Zitadel app for this to take effect.
+            - name: DEFAULT_USER_ROLE
+              value: pending
+            - name: ENABLE_OAUTH_ROLE_MANAGEMENT
+              value: "true"
+            - name: OAUTH_ROLES_CLAIM
+              value: roles
+            - name: OAUTH_ALLOWED_ROLES
+              value: user,admin
+            - name: OAUTH_ADMIN_ROLES
+              value: admin
+            # ---- Evaluation (Phase 2) ----
+            # Side-by-side model arena for interactive quality comparison.
+            - name: ENABLE_EVALUATION_ARENA_MODELS
+              value: "true"
+            # ---- Tool servers (Phase 1) ----
+            # Registers the read-only MCP tool servers (Kubernetes + GitHub).
+            # Sourced from the open-webui-config secret because the GitHub
+            # connection embeds the read-only PAT as a bearer key (templated by
+            # ESO from Vault). Open WebUI's native agentic loop calls these MCP
+            # servers directly — no separate orchestration service. Admin-managed
+            # only (USER_PERMISSIONS_FEATURES_DIRECT_TOOL_SERVERS left false).
+            - name: TOOL_SERVER_CONNECTIONS
+              valueFrom:
+                secretKeyRef:
+                  name: open-webui-config
+                  key: TOOL_SERVER_CONNECTIONS
           securityContext:
             runAsNonRoot: true
             readOnlyRootFilesystem: true

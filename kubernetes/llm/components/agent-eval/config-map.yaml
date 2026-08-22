@@ -1,0 +1,43 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: agent-eval-config
+  namespace: llm
+  labels:
+    app.kubernetes.io/name: agent-eval
+    app.kubernetes.io/instance: agent-eval
+data:
+  # promptfoo eval config: scores the local LLM against a small fixture set to
+  # catch regressions (tool-call correctness, groundedness). Runs offline as a
+  # Job — no live traffic, no GPU cost when idle.
+  promptfooconfig.yaml: |-
+    description: HomeLab agent-platform regression eval
+
+    providers:
+      # Local LLM via the LiteLLM gateway (OpenAI-compatible, model-alias
+      # routing to llama-swap). Auth falls back to the OPENAI_API_KEY env var
+      # set on the CronJob from the LITELLM_MASTER_KEY secret.
+      - id: openai:chat:qwen3.6-coder-30b-a3b
+        config:
+          apiBaseUrl: http://litellm-svc.llm.svc.cluster.local:4000/v1
+
+    prompts:
+      - "{{prompt}}"
+
+    tests:
+      - vars:
+          prompt: "Reply with exactly the word READY and nothing else."
+        assert:
+          - type: icontains
+            value: READY
+      - vars:
+          prompt: "What is 17 * 23? Answer with only the number."
+        assert:
+          - type: contains
+            value: "391"
+      - vars:
+          prompt: "In one sentence, what does a Kubernetes Deployment do?"
+        assert:
+          - type: llm-rubric
+            value: mentions managing/replicas/pods without hallucinating APIs
