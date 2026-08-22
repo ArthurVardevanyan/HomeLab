@@ -13,8 +13,8 @@ spec:
       retention:
         days: 5
       ingestion:
-        perStreamRateLimit: 5
-        perStreamRateLimitBurst: 20
+        perStreamRateLimit: 5000
+        perStreamRateLimitBurst: 25000
         ingestionBurstSize: 50000
         ingestionRate: 50000
         maxGlobalStreamsPerTenant: 50000000
@@ -36,11 +36,12 @@ spec:
     mode: openshift-logging
   replication:
     factor: 2
-    zones:
-      - maxSkew: 1
-        topologyKey: topology.kubernetes.io/zone
-      - maxSkew: 1
-        topologyKey: kubernetes.io/hostname
+    # https://github.com/grafana/loki/issues/24143
+    # zones:
+    #   - maxSkew: 1
+    #     topologyKey: topology.kubernetes.io/zone
+    #   - maxSkew: 1
+    #     topologyKey: kubernetes.io/hostname
   template:
     distributor:
       replicas: 2

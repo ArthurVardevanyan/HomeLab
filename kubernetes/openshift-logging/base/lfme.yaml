@@ -11,7 +11,14 @@ spec:
   resources:
     limits:
       cpu: 50m
-      memory: 48Mi
+      memory: 64Mi
     requests:
       cpu: 10m
       memory: 12Mi
+  tolerations:
+    - effect: NoSchedule
+      key: node-role.kubernetes.io/infra
+      operator: Exists
+    - effect: NoSchedule
+      key: node-role.kubernetes.io/gpu
+      operator: Exists
