@@ -111,11 +111,22 @@ candidate list using llama-swap's ground truth:
 2. **One resident**: narrow to it. Every model runs with `ttl: 0` (never expires),
    so if only one copy is loaded, the other GPU is almost certainly serving a
    different model — routing there would force an unnecessary eviction.
-3. **Both ready**: poll llama.cpp's per-instance `/slots` endpoint (proxied
-   through `llama-swap-svc:8080/upstream/<model>/slots`) for actual busy-slot
-   counts, route to whichever has fewer busy slots. Ties are broken with a
-   round-robin counter — this is what fixes the observed skew where LiteLLM's
-   built-in counter always chose the first-listed deployment.
+3. **Both ready**: check for session stickiness first, then fall back to
+   least-busy slot selection:
+
+   - **Session stickiness**: the plugin computes a sha256 fingerprint from the
+     model name and the first user message content (truncated to 500 chars), then
+     looks up an in-memory pin map. If a valid pin (not expired, 1h TTL) exists
+     and the pinned GPU is ready, the request is routed there to keep the
+     conversation's KV cache hot. If the pinned GPU is not ready, it falls back
+     to least-busy and creates a new pin. The pin map has an LRU eviction cap of
+     10,000 entries.
+
+   - **Least-busy**: when no pin applies, poll llama.cpp's per-instance `/slots`
+     endpoint (proxied through `llama-swap-svc:8080/upstream/<model>/slots`) for
+     actual busy-slot counts, route to whichever has fewer busy slots. Ties are
+     broken with a round-robin counter — this is what fixes the observed skew
+     where LiteLLM's built-in counter always chose the first-listed deployment.
 
 The plugin caches `/running` (1s TTL) and `/slots` (0.25s TTL) to avoid
 hammering llama-swap during request bursts. HTTP calls use a 1s timeout; on
@@ -125,6 +136,28 @@ hiccup never blocks routing.
 The `/slots` poll is proxied through llama-swap's `upstream.ignorePaths` guard
 (see `llama-swap.yaml`) which prevents the path from ever triggering a model
 load/swap — defense-in-depth against a bug in the plugin doing otherwise.
+
+#### KV cache efficiency
+
+Session stickiness preserves llama.cpp's per-instance KV cache across consecutive
+turns in the same conversation. Without it, the round-robin tie-break caused each
+turn to alternate GPUs, evicting and rebuilding the KV cache on every request.
+
+The llama-swap Grafana dashboard's **Efficiency** row now includes panels for:
+
+- **KV Cache Hit Ratio %**: estimated as `1 - (llamacpp:prompt_tokens_total /
+litellm_input_tokens_metric_total)` — the fraction of input tokens served from
+  KV cache rather than re-processed by the model.
+- **KV Cache Reused Tokens**: estimated rate of tokens served from cache
+  (input_tokens − prompt_tokens_processed).
+- **Prompt Processing Ratio**: ratio of llama.cpp prompt tokens to LiteLLM input
+  tokens. A lower ratio indicates more cache reuse.
+
+Note: these are estimates because LiteLLM counts all API input tokens
+(system messages, tool calls, etc.) while llama.cpp only counts tokens actually
+processed by the model. Direct `cached_tokens` metrics from llama.cpp's
+`usage.prompt_tokens_details.cached_tokens` are not exposed via the
+llama-cpp-exporter's Prometheus metrics endpoint.
 
 ## Deployment
 
