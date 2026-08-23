@@ -1,0 +1,23 @@
+---
+apiVersion: tuned.openshift.io/v1
+kind: Tuned
+metadata:
+  name: collector-inotify-fix
+  namespace: openshift-cluster-node-tuning-operator
+spec:
+  profile:
+    - data: |
+        [main]
+        include=openshift-node
+        [sysctl]
+        fs.inotify.max_user_watches=524288
+        fs.inotify.max_user_instances=16384
+      name: collector-inotify-fix
+  recommend:
+    - profile: collector-inotify-fix
+      priority: 30
+      operand:
+        tunedConfig:
+          reapply_sysctl: false
+      match:
+        - label: node-role.kubernetes.io/gpu

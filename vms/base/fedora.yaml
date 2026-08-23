@@ -2,10 +2,10 @@
 apiVersion: kubevirt.io/v1
 kind: VirtualMachine
 metadata:
-  name: fedora
-  namespace: arthurvardevanyan
   annotations:
     argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+  name: fedora
+  namespace: arthurvardevanyan
   labels:
     app: fedora
     vm.kubevirt.io/template: fedora-server-small
@@ -63,11 +63,11 @@ spec:
         architecture: amd64
       domain:
         cpu:
-          model: host-passthrough
+          cores: 8
           features:
             - name: svm
               policy: require
-          cores: 8
+          model: host-passthrough
           sockets: 1
           threads: 1
         devices:
@@ -113,11 +113,11 @@ spec:
           maxGuest: 32Gi
         resources:
           limits:
-            memory: 16Gi
             cpu: "8"
+            memory: 16Gi
           requests:
+            cpu: 150m
             memory: 12Gi
-            cpu: 20m
       evictionStrategy: LiveMigrate
       networks:
         - name: default

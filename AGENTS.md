@@ -146,6 +146,21 @@ load the `openshift-patterns` CRR reference when touching them.
   (enforced by `kustomize-fix`).
 - Commit messages must follow Conventional Commits (`feat:`, `fix:`,
   `chore:`, `build(deps):`, `docs:`, ...).
+- **All markdown files must use spaces** (not tabs) for indentation.
+- **Markdown files with multiple headings must include a Table of Contents**
+  under `## Table of Contents` immediately after the file title and before
+  any other content. This is generated and maintained automatically by the
+  VS Code extension [Markdown All in One](https://marketplace.visualstudio.com/items?itemName=yzhang.markdown-all-in-one)
+  (`yzhang.markdown-all-in-one`). The initial structure looks like:
+
+  ```markdown
+  ## Table of Contents
+
+  - [File Title](#file-title)
+    - [Table of Contents](#table-of-contents)
+    - [Section One](#section-one)
+    - [Section Two](#section-two)
+  ```
 
 ### Renovate
 
