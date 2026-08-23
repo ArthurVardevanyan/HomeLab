@@ -696,19 +696,25 @@ spec:
       - BackupStorageLocation
       - Schedule
     - apiGroups:
+      - kubevirt.io
+      clusters:
+      - '*'
+      kinds:
+      - VirtualMachine
+    - apiGroups:
       - waf.k8s.coraza.io
       clusters:
       - '*'
       kinds:
       - Engine
       - RuleSet
-  resourceExclusions: |
     - apiGroups:
-      - kubevirt.io
+      - tuned.openshift.io
       clusters:
       - '*'
       kinds:
-      - VirtualMachine
+      - Tuned
+  resourceExclusions: |
     - apiGroups:
       - tekton.dev
       clusters:
