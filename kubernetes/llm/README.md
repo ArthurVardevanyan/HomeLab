@@ -23,9 +23,13 @@ For GPU provisioning, see [intel-device-plugins](../intel-device-plugins/README.
   - [Performance: why decode may trail bare-metal benchmarks](#performance-why-decode-may-trail-bare-metal-benchmarks)
   - [Scaling](#scaling)
   - [Layout](#layout)
-  - [Roadmap: connector auto-sync (Onyx)](#roadmap-connector-auto-sync-onyx)
+  - [Knowledge sync status](#knowledge-sync-status)
   - [Future Work](#future-work)
   - [Agent Platform](#agent-platform)
+    - [Prerequisites](#prerequisites)
+    - [Tools / MCP (`components/mcp-kubernetes`, `components/mcp-github`)](#tools--mcp-componentsmcp-kubernetes-componentsmcp-github)
+    - [Knowledge sync (`components/oikb`)](#knowledge-sync-componentsoikb)
+    - [Code interpreter, memory, RBAC, eval (Open WebUI config)](#code-interpreter-memory-rbac-eval-open-webui-config)
   - [REF](#ref)
 
 ## Component READMEs
@@ -381,7 +385,7 @@ kubernetes/llm/
 │   ├── otel-collector/           # OpenTelemetryCollector CR (OTLP → Prometheus)
 │   ├── mcp-kubernetes/           # read-only Kubernetes MCP tool server
 │   ├── mcp-github/               # read-only GitHub MCP tool server (http mode)
-│   ├── knowledge-sync/           # connectors-lite RAG ingestion CronJob
+│   ├── oikb/                     # oikb daemon: multi-source KB sync
 │   └── agent-eval/               # weekly promptfoo regression eval CronJob
 ├── overlays/
 │   └── okd/
@@ -390,15 +394,13 @@ kubernetes/llm/
 └── README.md                    # this file
 ```
 
-## Roadmap: connector auto-sync (Onyx)
+## Knowledge sync status
 
-Planned: automated document ingestion connectors (GitHub repos, web scraping,
-email) that continuously sync documents into the vector store. This would
-eliminate manual document uploads and keep RAG data fresh.
-
-See [Onyx](https://github.com/onyx-dot-app/onyx) (or equivalent project) for
-reference implementations. Integration into the ArgoCD application topology
-is the next step once the connector architecture is decided.
+Automated document ingestion into Open WebUI Knowledge Bases is implemented via
+the oikb daemon (see [Knowledge sync (`components/oikb`)](#knowledge-sync-componentsoikb)).
+It continuously syncs GitHub repos and web/sitemap content, eliminating manual
+uploads and keeping RAG data fresh, with per-source Knowledge Bases and
+Prometheus metrics.
 
 ## Future Work
 
@@ -434,9 +436,10 @@ GitOps-delivered.
   installed (the CR carries `SkipDryRunOnMissingResource=true`).
 - **Vault secrets** (operators must create these before first sync):
   - `secret/data/homelab/llm/mcp-github` — `token` = fine-grained read-only
-    GitHub PAT (for the GitHub MCP server).
-  - `secret/data/homelab/llm/knowledge-sync` — `api_key` = an Open WebUI `sk-`
-    API key (for the connectors-lite CronJob).
+    GitHub PAT (for the GitHub MCP server + oikb GitHub source).
+  - `components/oikb/secret.yaml` reads from `secret/data/homelab/llm/oikb`
+    (`daemon_key`), `secret/data/homelab/llm/open-webui` (`arthur_api_key`),
+    and `secret/data/homelab/github` (`read-only`).
 
 ### Tools / MCP (`components/mcp-kubernetes`, `components/mcp-github`)
 
@@ -484,19 +487,15 @@ service for marginal benefit over native tool-calling. The pattern remains
 supervisor-style (one model orchestrating MCP tools); it just lives inside Open
 WebUI instead of a bespoke runtime.
 
-### Connectors-lite (`components/knowledge-sync`)
+### Knowledge sync (`components/oikb`)
 
-Scheduled RAG ingestion (not Onyx): a `bash`+`curl`+`jq` CronJob running on the
-repo `toolbox` image (no custom image) that crawls a source and pushes text into
-an Open WebUI Knowledge collection via the Knowledge API, reusing the existing
-`llm-embed` + pgvector stack. The crawler (`sync.sh`, mounted from
-`knowledge-sync-config`) gets-or-creates the collection, walks the sitemap, and
-per URL uploads stripped page text (`POST /api/v1/files/` →
-`POST /api/v1/knowledge/{id}/file/add`). Reference source: the personal site
-(`SITEMAP_URL` → `personal-site` collection). Needs an Open WebUI `sk-` API key
-in Vault at `secret/data/homelab/llm/knowledge-sync` (`api_key`). Onyx is
-intentionally skipped — for a single user, live MCP agents beat a stale
-connector index.
+An [oikb](https://github.com/open-webui/oikb) daemon (see
+[Knowledge Base Sync (oikb)](components/open-webui/README.md#knowledge-base-sync-oikb))
+replaces the old sitemap CronJob, syncing GitHub repos and web/sitemap content
+into Open WebUI Knowledge Bases with SHA-256 incremental diffing. Additional
+sources (Nextcloud, Jira, Discord, Slack, Zotero, Gmail) are scaffolded in
+`components/oikb/oikb.yaml` but disabled until their Vault credentials are
+provisioned.
 
 ### Eval harness (`components/agent-eval`)
 
