@@ -38,29 +38,29 @@ spec:
       labels:
         kubevirt.io/domain: fedora
         kubevirt.io/size: small
-      spec:
-        tolerations:
-          - key: node-role.kubernetes.io/gpu
-            operator: Exists
-            effect: NoSchedule
-        affinity:
-          nodeAffinity:
-            preferredDuringSchedulingIgnoredDuringExecution:
-              - weight: 100
-                preference:
-                  matchExpressions:
-                    - key: node-role.kubernetes.io/gpu
-                      operator: In
-                      values:
-                        - "true"
-        # accessCredentials:
-        #   - sshPublicKey:
-        #       propagationMethod:
-        #         noCloud: {}
-        #       source:
-        #         secret:
-        #           secretName: ryzen-orange-rodent-83
-        architecture: amd64
+    spec:
+      tolerations:
+        - key: node-role.kubernetes.io/gpu
+          operator: Exists
+          effect: NoSchedule
+      affinity:
+        nodeAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              preference:
+                matchExpressions:
+                  - key: node-role.kubernetes.io/gpu
+                    operator: In
+                    values:
+                      - "true"
+      # accessCredentials:
+      #   - sshPublicKey:
+      #       propagationMethod:
+      #         noCloud: {}
+      #       source:
+      #         secret:
+      #           secretName: ryzen-orange-rodent-83
+      architecture: amd64
       domain:
         cpu:
           cores: 8
