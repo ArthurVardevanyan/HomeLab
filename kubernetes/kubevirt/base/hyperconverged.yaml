@@ -1,5 +1,5 @@
 ---
-apiVersion: hco.kubevirt.io/v1beta1
+apiVersion: hco.kubevirt.io/v1
 kind: HyperConverged
 metadata:
   annotations:
@@ -12,50 +12,67 @@ metadata:
     app: kubevirt-hyperconverged
     argocd.argoproj.io/instance: kubevirt
 spec:
-  virtualMachineOptions:
-    disableFreePageReporting: false
-    disableSerialConsoleLog: true
-  higherWorkloadDensity:
-    memoryOvercommitPercentage: 100
-  liveMigrationConfig:
-    network: live-migrate
-    allowAutoConverge: false
-    bandwidthPerMigration: 2Gi
-    allowPostCopy: false
-    completionTimeoutPerGiB: 800
-    parallelMigrationsPerCluster: 5
-    parallelOutboundMigrationsPerNode: 2
-    progressTimeout: 150
-  certConfig:
-    ca:
-      duration: 48h0m0s
-      renewBefore: 24h0m0s
-    server:
-      duration: 24h0m0s
-      renewBefore: 12h0m0s
-  infra: {}
-  evictionStrategy: LiveMigrate
+  deployment:
+    nodePlacements:
+      workload:
+        tolerations:
+          - key: node-role.kubernetes.io/gpu
+            operator: Exists
+            effect: NoSchedule
+    uninstallStrategy: BlockUninstallIfWorkloadsExist
   featureGates:
-    downwardMetrics: false
-    disableMDevConfiguration: false
-    deployKubeSecondaryDNS: false
-    alignCPUs: false
-    persistentReservation: false
-    autoResourceLimits: false
-  workloadUpdateStrategy:
-    batchEvictionInterval: 1m0s
-    batchEvictionSize: 10
-    workloadUpdateMethods:
-      - LiveMigrate
-  uninstallStrategy: BlockUninstallIfWorkloadsExist
-  workloads: {}
-  scratchSpaceStorageClass: rook-ceph-block-virtualization-ci
-  resourceRequirements:
-    storageWorkloads:
+    - name: decentralizedLiveMigration
+      state: Enabled
+    - name: downwardMetrics
+      state: Disabled
+    - name: disableMDevConfiguration
+      state: Disabled
+    - name: deployKubeSecondaryDNS
+      state: Disabled
+    - name: alignCPUs
+      state: Disabled
+    - name: persistentReservation
+      state: Disabled
+    - name: autoResourceLimits
+      state: Disabled
+  security:
+    certConfig:
+      ca:
+        duration: 48h0m0s
+        renewBefore: 24h0m0s
+      server:
+        duration: 24h0m0s
+        renewBefore: 12h0m0s
+  storage:
+    scratchSpaceStorageClass: rook-ceph-block-virtualization-ci
+    workloadResourceRequirements:
       limits:
         cpu: 750m
         memory: 2Gi
       requests:
         cpu: 100m
         memory: 500m
+  virtualization:
+    evictionStrategy: LiveMigrate
+    higherWorkloadDensity:
+      memoryOvercommitPercentage: 100
+    liveMigrationConfig:
+      allowAutoConverge: false
+      allowPostCopy: false
+      bandwidthPerMigration: 2Gi
+      completionTimeoutPerGiB: 800
+      network: live-migrate
+      parallelMigrationsPerCluster: 5
+      parallelOutboundMigrationsPerNode: 2
+      progressTimeout: 150
+    virtualMachineOptions:
+      disableFreePageReporting: false
+      disableSerialConsoleLog: true
     vmiCPUAllocationRatio: 10
+    workloadUpdateStrategy:
+      batchEvictionInterval: 1m0s
+      batchEvictionSize: 10
+      workloadUpdateMethods:
+        - LiveMigrate
+  workloadSources:
+    enableCommonBootImageImport: true
