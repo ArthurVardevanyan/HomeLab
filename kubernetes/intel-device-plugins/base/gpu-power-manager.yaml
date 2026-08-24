@@ -1,0 +1,64 @@
+---
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: gpu-power-manager
+  namespace: intel-device-plugins-operator
+  annotations:
+    gitops-ci.k8s.io/exempt-image-checksum: "registry.arthurvardevanyan.com/homelab/gpu-toolbox:not_latest"
+  labels:
+    app: gpu-power-manager
+spec:
+  selector:
+    matchLabels:
+      app: gpu-power-manager
+  template:
+    metadata:
+      labels:
+        app: gpu-power-manager
+    spec:
+      automountServiceAccountToken: false
+      dnsPolicy: ClusterFirst
+      enableServiceLinks: false
+      restartPolicy: Always
+      schedulerName: default-scheduler
+      containers:
+        - name: power-manager
+          # renovate: datasource=docker depName=registry.arthurvardevanyan.com/homelab versioning=loose
+          image: registry.arthurvardevanyan.com/homelab/gpu-toolbox:not_latest
+          command: ["sh", "-c"]
+          args:
+            - |
+              POWER_LIMIT_WATTS=${POWER_LIMIT_WATTS:-155}
+              POWER_LIMIT_MICROWATTS=$((POWER_LIMIT_WATTS * 1000000))
+              echo $POWER_LIMIT_MICROWATTS > /sys/class/drm/card0/device/hwmon/hwmon2/power1_cap &&
+              echo $POWER_LIMIT_MICROWATTS > /sys/class/drm/card1/device/hwmon/hwmon3/power1_cap &&
+              echo "GPU power limits set to ${POWER_LIMIT_WATTS}W ($POWER_LIMIT_MICROWATTS micro-watts) on GPU 0 and GPU 1" &&
+              # Loop to maintain limits (handles driver reloads, pod restarts)
+              while true; do sleep 300; echo $POWER_LIMIT_MICROWATTS > /sys/class/drm/card0/device/hwmon/hwmon2/power1_cap; echo $POWER_LIMIT_MICROWATTS > /sys/class/drm/card1/device/hwmon/hwmon3/power1_cap; done
+          resources:
+            requests:
+              cpu: "10m"
+              memory: "16Mi"
+            limits:
+              cpu: "50m"
+              memory: "32Mi"
+          env:
+            - name: POWER_LIMIT_WATTS
+              value: "155"
+          securityContext:
+            privileged: true
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: false
+            runAsNonRoot: false
+            seccompProfile:
+              type: RuntimeDefault
+            capabilities:
+              drop:
+                - ALL
+      nodeSelector:
+        feature.node.kubernetes.io/custom-intel.xe.gpu: "true"
+      tolerations:
+        - key: node-role.kubernetes.io/gpu
+          operator: Exists
+          effect: NoSchedule
