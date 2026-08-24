@@ -7,6 +7,7 @@ metadata:
   labels:
     app: litellm
   annotations:
+    argocd.argoproj.io/sync-wave: "3"
     checkov.io/skip1: CKV_K8S_40=Upstream Image Runs as Root
     checkov.io/skip2: CKV_K8S_22=Model Cache Requires Writable Root FS
     checkov.io/skip3: CKV_K8S_23=Upstream Image Requires Root
@@ -60,7 +61,10 @@ spec:
             - name: LLAMA_SWAP_BASE_URL
               value: http://llama-swap-svc.llm.svc.cluster.local:8080
             - name: LLAMA_SWAP_PIN_REDIS_URL
-              value: redis://litellm-dragonfly.llm.svc.cluster.local:6379
+              valueFrom:
+                secretKeyRef:
+                  name: litellm-dragonfly-redis-url
+                  key: redis_url
             - name: HOME
               value: /root
             - name: GENERIC_CLIENT_ID

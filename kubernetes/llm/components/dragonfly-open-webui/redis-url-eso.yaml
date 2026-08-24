@@ -1,0 +1,24 @@
+---
+apiVersion: external-secrets.io/v1
+kind: ExternalSecret
+metadata:
+  name: open-webui-dragonfly-redis-url
+  namespace: llm
+  annotations:
+    argocd.argoproj.io/sync-wave: "2"
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+spec:
+  refreshInterval: 1h
+  secretStoreRef:
+    name: vault
+    kind: ClusterSecretStore
+  target:
+    name: open-webui-dragonfly-redis-url
+  data:
+    - secretKey: redis_url
+      remoteRef:
+        conversionStrategy: Default
+        decodingStrategy: None
+        key: homelab/llm/open-webui/dragonfly
+        property: redis_url
+        metadataPolicy: None

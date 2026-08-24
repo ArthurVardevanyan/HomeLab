@@ -43,7 +43,10 @@ For GPU provisioning, see [intel-device-plugins](../intel-device-plugins/README.
 ## GPU Monitoring
 
 Live Intel GPU telemetry tools are packaged in `containers/intel-gpu-monitor/`
-and can be run on-demand with `oc debug` — no persistent deployment needed:
+and can be run on-demand with `oc debug` — no persistent deployment needed.
+GPU power limits are managed by the `gpu-power-manager` DaemonSet (160W TDP
+per GPU) — see [GPU Power Tuning Notes](../intel-device-plugins/GPU_POWER_TUNING.md)
+for rationale, expected temperatures, and performance impact.
 
 ```bash
 export KUBECONFIG=$HOME/.kube/okd

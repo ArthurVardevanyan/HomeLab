@@ -5,10 +5,16 @@ metadata:
   name: open-webui-dragonfly
   namespace: llm
   annotations:
+    argocd.argoproj.io/sync-wave: "1"
     argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
 spec:
   replicas: 1
   skipFSGroup: true
+  serviceAccountName: open-webui-dragonfly
+  authentication:
+    passwordFromSecret:
+      name: open-webui-dragonfly-password
+      key: password
   # renovate: datasource=docker depName=docker.dragonflydb.io/dragonflydb/dragonfly
   image: docker.dragonflydb.io/dragonflydb/dragonfly:v1.40.1@sha256:ebf3c6c213e82fb51b4521660cca13f06f3421dc5b1ed14f2f474c50b5e29986
   tolerations:
