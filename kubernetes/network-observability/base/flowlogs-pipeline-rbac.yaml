@@ -1,5 +1,7 @@
 ---
 # https://github.com/netobserv/netobserv-operator/issues/2889
+# https://docs.redhat.com/en/documentation/openshift_container_platform/4.22/html/network_observability/configuring-network-observability-operators#network-observability-grant-permissions-custom-namespace-and-secret-access_network_observability
+# https://docs.redhat.com/en/documentation/openshift_container_platform/4.22/html/network_observability/network-observability-operator-release-notes#network-observability-operator-release-notes-1-12-2-fixed-issues_network-observability-operator-release-notes
 kind: ClusterRoleBinding
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
@@ -16,10 +18,26 @@ roleRef:
 kind: ClusterRoleBinding
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
-  name: netobserv-loki-writer-flp-custom
+  name: netobserv-hostnetwork-flp-custom
 subjects:
   - kind: ServiceAccount
     name: flowlogs-pipeline
+    namespace: openshift-netobserv
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: netobserv-hostnetwork
+---
+kind: ClusterRoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: netobserv-lokiwriter-flp-transformer-custom
+subjects:
+  - kind: ServiceAccount
+    name: flowlogs-pipeline
+    namespace: openshift-netobserv
+  - kind: ServiceAccount
+    name: flowlogs-pipeline-transformer
     namespace: openshift-netobserv
 roleRef:
   apiGroup: rbac.authorization.k8s.io
@@ -29,7 +47,7 @@ roleRef:
 kind: ClusterRoleBinding
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
-  name: netobserv-token-review-plugin-custom
+  name: netobserv-tokenreview-plugin-custom
 subjects:
   - kind: ServiceAccount
     name: netobserv-plugin
