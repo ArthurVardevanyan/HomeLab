@@ -13,6 +13,7 @@ routing with GPU affinity via a custom `llama_swap_affinity` plugin.
     - [Public model aliases](#public-model-aliases)
     - [Router settings](#router-settings)
     - [Response \& cache](#response--cache)
+    - [Client IP forwarding](#client-ip-forwarding)
     - [GPU affinity plugin](#gpu-affinity-plugin)
   - [Deployment](#deployment)
   - [OIDC / SSO](#oidc--sso)
@@ -99,6 +100,23 @@ a Redis-compatible cache backend:
   validating API key lookups.
 - **Authentication**: `enable_redis_auth_cache: true` — Dragonfly requires auth.
 
+### Client IP forwarding
+
+OpenWebUI does not forward standard proxy headers like `X-Forwarded-For` when
+making internal API calls to LiteLLM — its
+`ENABLE_FORWARD_USER_INFO_HEADERS` setting only passes `X-OpenWebUI-*` headers.
+LiteLLM's `_get_forwardable_headers()` only forwards `x-*` prefixed headers
+(plus `anthropic-beta`), so even if OpenWebUI included `X-Forwarded-For`, it
+would be dropped before reaching llama-swap.
+
+`llm_real_ip.py` bridges this gap: the `RealIPForwarder` callback reads the
+real client IP from the original request headers (available through
+`litellm_params.metadata.request_headers`) and injects `X-Forwarded-For` into
+the headers dict that LiteLLM sends to llama-swap.
+
+Registered in `litellm.yaml` callbacks as `llm_real_ip.callback`. Mounted
+alongside `litellm.yaml` at `/etc/litellm` via the same ConfigMap.
+
 ### GPU affinity plugin
 
 `llama_swap_affinity.py` implements custom routing logic by overriding LiteLLM's
@@ -172,7 +190,8 @@ scheduled on the GPU node (`gpu-1`) via `nodeSelector`:
   same path (30s, 5 failures), readiness on `/health/readiness` (15s, 3 failures).
 - **Termination**: 30s grace period.
 - **Volumes**: config (`litellm-config` ConfigMap, read-only) mounted at
-  `/etc/litellm` (contains `litellm.yaml` and `llama_swap_affinity.py`).
+  `/etc/litellm` (contains `litellm.yaml`, `llama_swap_affinity.py`, and
+  `llm_real_ip.py`).
 - **Service account**: minimal permissions, `automountServiceAccountToken: false`.
 - **Security**: non-root, dropped capabilities (`ALL`), `RuntimeDefault`
   seccomp profile, no privilege escalation.
