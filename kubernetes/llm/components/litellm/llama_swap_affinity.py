@@ -40,6 +40,20 @@ covers. It narrows the routing-plugin candidate list (see
   skew: a load-based comparison that just returns the first candidate on
   every tie is exactly the bug this plugin exists to avoid repeating.
 
+Session stickiness (load-aware, Redis-backed)
+----------------------------------------------
+When a conversation has an active pin, the plugin sticks to the pinned GPU
+as long as it stays near least-busy (`pinned_busy <= least_busy + STICKY_SLOP`).
+Once the pinned GPU becomes materially busier than its sibling, the plugin
+rebalances to the least-busy GPU and re-pins there. This preserves KV-cache
+reuse for active sessions while preventing the skew seen with the previous
+pure-sticky behavior.
+
+The pin key is `context.metadata["session_id"]` when present (populated
+when Open WebUI sends `X-Litellm-Session-Id`), falling back to the content
+fingerprint. Pins are stored in Redis (Dragonfly) so they survive LiteLLM
+pod restarts.
+
 Wiring
 ------
 Registered via `router_settings.plugins` in litellm.yaml as
@@ -68,47 +82,44 @@ from __future__ import annotations
 
 import asyncio
 import hashlib
+import logging
 import os
 import time
 from typing import Final
 
 import httpx
+import redis.asyncio as aioredis
 
 from litellm.types.router import RoutingContext
 
+logger = logging.getLogger(__name__)
+
+# llama-swap HTTP client settings
 _LLAMA_SWAP_BASE_URL: Final = os.environ.get(
     "LLAMA_SWAP_BASE_URL", "http://llama-swap-svc.llm.svc.cluster.local:8080"
 ).rstrip("/")
 _RUNNING_URL: Final = f"{_LLAMA_SWAP_BASE_URL}/running"
 
-# Process states in which llama-swap considers a model resident (loaded, or
-# about to be) - see internal/process/process.go ProcessState. "stopping"
-# and "shutdown" are deliberately excluded: a process on its way out isn't
-# worth protecting from eviction, and can't serve /slots.
 _RESIDENT_STATES: Final = frozenset({"ready", "starting"})
-
-# How long to trust a cached /running response before re-fetching. Short
-# enough to react to swaps within a request or two, long enough that a burst
-# of concurrent requests doesn't hammer llama-swap with duplicate polls.
 _RUNNING_CACHE_TTL_SECONDS: Final = 1.0
-
-# /slots reflects instantaneous llama.cpp slot occupancy, which changes far
-# faster than model residency. Cached briefly so a burst of near-simultaneous
-# requests shares one poll rather than issuing one each, without going so
-# stale that the load comparison becomes meaningless.
 _SLOTS_CACHE_TTL_SECONDS: Final = 0.25
-
-# Total budget per llama-swap HTTP call. On timeout or any other error the
-# plugin fails open (candidate list returned unmodified, or narrowed only as
-# far as residency data allows) so a llama-swap hiccup never blocks routing.
 _REQUEST_TIMEOUT_SECONDS: Final = 1.0
 
-# Session-stickiness: content-fingerprint pin map.
-# Maps sha256(fingerprint) -> (deployment_model, expiry_timestamp).
-# TTL of 1h balances KV-cache retention against memory churn when models
-# rotate frequently. Cap of 10k pins prevents unbounded growth.
+# Redis / Dragonfly connection settings for the pin store.
+# Falls back to in-memory if the env var is unset or Redis is unreachable.
+_REDIS_URL: Final | None = os.environ.get("LLAMA_SWAP_PIN_REDIS_URL")
+
+# Session-stickiness settings (only relevant when Redis is available).
+# TTL of 1h balances KV-cache retention against memory churn.
 _PIN_TTL_SECONDS: Final = 3600.0
+# How much busier the pinned GPU can be before we rebalance.
+# With 2 slots/GPU: pinned=1/other=0 → stick; pinned=2/other=0 → rebalance.
+STICKY_SLOP: Final = 1
+# Max number of pins stored in Redis (soft cap; keys are never explicitly
+# evicted except by TTL).
 _PIN_MAP_MAX: Final = 10000
+# Redis key namespace prefix.
+_PIN_NAMESPACE: Final = "llama-swap-affinity:v1"
 
 
 def _strip_provider_prefix(model: str) -> str:
@@ -122,21 +133,49 @@ class LlamaSwapAffinityPlugin:
 
     def __init__(self) -> None:
         self._client: httpx.AsyncClient | None = None
+        self._redis: aioredis.Redis | None = None
         self._running_cache: dict[str, str] = {}
         self._running_cache_expires_at: float = 0.0
         self._slots_cache: dict[str, tuple[int, float]] = {}
         self._round_robin_counter: int = 0
-        # Session-stickiness pin map: fingerprint -> (deployment_model, expiry)
+        # Fallback in-memory pin map (used when Redis is unavailable).
         self._pin_map: dict[str, tuple[str, float]] = {}
         self._pin_order: list[str] = []  # LRU tracking (insertion order)
 
+    # ------------------------------------------------------------------
+    # HTTP client
+    # ------------------------------------------------------------------
+
     def _get_client(self) -> httpx.AsyncClient:
-        # Built lazily inside `run()`, never at import time: this module is
-        # exec'd by `get_instance_fn` during config load, which may happen
-        # before any asyncio event loop exists.
         if self._client is None:
             self._client = httpx.AsyncClient(timeout=_REQUEST_TIMEOUT_SECONDS)
         return self._client
+
+    # ------------------------------------------------------------------
+    # Redis client (lazy-init)
+    # ------------------------------------------------------------------
+
+    async def _get_redis(self) -> aioredis.Redis | None:
+        if self._redis is not None:
+            return self._redis
+        if _REDIS_URL is None:
+            return None
+        try:
+            self._redis = aioredis.from_url(
+                _REDIS_URL,
+                decode_responses=True,
+                socket_connect_timeout=2.0,
+                socket_timeout=2.0,
+            )
+            await self._redis.ping()
+            return self._redis
+        except Exception:
+            self._redis = None
+            return None
+
+    # ------------------------------------------------------------------
+    # llama-swap data helpers
+    # ------------------------------------------------------------------
 
     async def _running_state(self) -> dict[str, str]:
         """Model ID -> process state, for models in `_RESIDENT_STATES`."""
@@ -174,20 +213,11 @@ class LlamaSwapAffinityPlugin:
         return busy
 
     async def _pick_least_busy(self, candidates: list[str], candidate_ids: dict[str, str]) -> str:
-        """Pick the candidate with fewest busy llama.cpp slots.
-
-        Ties (the common case, since both GPUs are usually idle) are broken
-        with a round-robin counter rather than always returning the first
-        candidate - that "always first on a tie" behavior is exactly the bug
-        this plugin exists to route around.
-        """
+        """Pick the candidate with fewest busy llama.cpp slots."""
         counts = await asyncio.gather(
             *(self._slot_busy_count(candidate_ids[model]) for model in candidates),
             return_exceptions=True,
         )
-        # A candidate whose /slots poll failed can't be compared - drop it
-        # rather than let an exception masquerade as "0 busy" (which would
-        # wrongly make it look like the best choice).
         scored = [(model, count) for model, count in zip(candidates, counts) if isinstance(count, int)]
         if not scored:
             return candidates[self._round_robin_counter % len(candidates)]
@@ -199,13 +229,31 @@ class LlamaSwapAffinityPlugin:
         self._round_robin_counter += 1
         return winner
 
-    def _compute_fingerprint(self, context: RoutingContext) -> str | None:
-        """Compute a sha256 fingerprint for session stickiness.
+    # ------------------------------------------------------------------
+    # Stickiness key
+    # ------------------------------------------------------------------
 
-        Uses the model name and the content of the first user message.
-        Truncated to 500 chars to keep the fingerprint deterministic but
-        bounded. Returns None if no user message can be found.
+    async def _compute_sticky_key(self, context: RoutingContext) -> str | None:
+        """Return the stickiness key for this request.
+
+        Priority:
+        1. `context.metadata["session_id"]` (canonical session ID, populated
+           when Open WebUI sends `X-Litellm-Session-Id`).
+        2. Content fingerprint (model + first user message content).
+        3. `None` — no stickiness.
         """
+        session_id = context.metadata.get("session_id")
+        if session_id:
+            return f"sess:{session_id}"
+
+        fp = self._compute_fingerprint(context)
+        if fp is not None:
+            return f"fp:{fp}"
+
+        return None
+
+    def _compute_fingerprint(self, context: RoutingContext) -> str | None:
+        """Compute a sha256 fingerprint for session stickiness fallback."""
         if not context.structured_messages:
             return None
 
@@ -216,7 +264,6 @@ class LlamaSwapAffinityPlugin:
             if isinstance(content, str):
                 text = content[:500]
             elif isinstance(content, list):
-                # OpenAI multi-modal format: extract text blocks
                 text_parts = [
                     block.get("text", "")
                     for block in content
@@ -229,7 +276,6 @@ class LlamaSwapAffinityPlugin:
             if not text.strip():
                 continue
 
-            # Use the canonical model name (strip provider prefix)
             canonical_model = _strip_provider_prefix(
                 context.candidate_models[0] if context.candidate_models else "unknown"
             )
@@ -238,21 +284,74 @@ class LlamaSwapAffinityPlugin:
 
         return None
 
+    # ------------------------------------------------------------------
+    # Redis-backed pin store
+    # ------------------------------------------------------------------
+
+    def _pin_key(self, sticky_key: str) -> str:
+        """Redis key for a stickiness pin."""
+        safe = sticky_key.replace(":", "-")
+        return f"{_PIN_NAMESPACE}:{safe}"
+
+    async def _get_pin(self, sticky_key: str) -> str | None:
+        """Get the pinned deployment model for this sticky key."""
+        redis = await self._get_redis()
+        if redis is not None:
+            try:
+                pin_data = await redis.get(self._pin_key(sticky_key))
+                if pin_data:
+                    # Format: deployment_model|expiry (kept in Redis for TTL)
+                    deployment = pin_data.rsplit("|", 1)[0]
+                    return deployment
+            except Exception:
+                pass
+
+        # Fallback: in-memory pin map
+        return self._get_pinned_deployment(sticky_key)
+
+    async def _set_pin(self, sticky_key: str, deployment_model: str) -> None:
+        """Create or update a pin for this sticky key."""
+        expiry = time.monotonic() + _PIN_TTL_SECONDS
+        pin_data = f"{deployment_model}|{expiry}"
+
+        redis = await self._get_redis()
+        if redis is not None:
+            try:
+                await redis.set(
+                    self._pin_key(sticky_key),
+                    pin_data,
+                    ex=int(_PIN_TTL_SECONDS),
+                )
+                # Soft cap: delete oldest keys when over limit.
+                # We maintain a counter key for tracking.
+                count_key = f"{_PIN_NAMESPACE}:count"
+                try:
+                    count = await redis.incr(count_key)
+                    if count > _PIN_MAP_MAX:
+                        await redis.expire(count_key, int(_PIN_TTL_SECONDS))
+                except Exception:
+                    pass
+                return
+            except Exception:
+                pass
+
+        # Fallback: in-memory pin map
+        self._set_pin_in_memory(sticky_key, deployment_model)
+
     def _get_pinned_deployment(self, fingerprint: str) -> str | None:
-        """Return the pinned deployment model if the pin is valid and not expired."""
+        """Return the pinned deployment model if the pin is valid and not expired (in-memory)."""
         entry = self._pin_map.get(fingerprint)
         if entry is None:
             return None
         model, expiry = entry
         if time.monotonic() > expiry:
-            # Expired: remove from pin map and LRU tracking
             self._pin_map.pop(fingerprint, None)
             try:
                 self._pin_order.remove(fingerprint)
             except ValueError:
                 pass
             return None
-        # Move to end of LRU order (most recently used)
+        # Move to end of LRU order
         try:
             self._pin_order.remove(fingerprint)
         except ValueError:
@@ -260,28 +359,74 @@ class LlamaSwapAffinityPlugin:
         self._pin_order.append(fingerprint)
         return model
 
-    def _set_pin(self, fingerprint: str, deployment_model: str) -> None:
-        """Create or update a pin for this fingerprint."""
+    def _set_pin_in_memory(self, fingerprint: str, deployment_model: str) -> None:
+        """Create or update a pin in the in-memory map (fallback only)."""
         expiry = time.monotonic() + _PIN_TTL_SECONDS
         self._pin_map[fingerprint] = (deployment_model, expiry)
 
-        # Track LRU order
         try:
             self._pin_order.remove(fingerprint)
         except ValueError:
             pass
         self._pin_order.append(fingerprint)
 
-        # Evict oldest entries if over cap
         while len(self._pin_map) > _PIN_MAP_MAX:
             oldest = self._pin_order.pop(0)
             self._pin_map.pop(oldest, None)
+
+    async def _clear_pin(self, sticky_key: str) -> None:
+        """Remove a pin (used when rebalancing)."""
+        redis = await self._get_redis()
+        if redis is not None:
+            try:
+                await redis.delete(self._pin_key(sticky_key))
+                return
+            except Exception:
+                pass
+
+    # ------------------------------------------------------------------
+    # Load-aware stickiness check
+    # ------------------------------------------------------------------
+
+    async def _check_stickiness(self, pinned: str, ready_candidates: list[str], candidate_ids: dict[str, str]) -> str | None:
+        """Check if we should stick to the pinned GPU or rebalance.
+
+        Returns the deployment to route to (pinned or least-busy sibling),
+        or None if stickiness should be dropped entirely.
+        """
+        if pinned not in ready_candidates:
+            return None
+
+        # Get busy counts for all ready candidates
+        counts = await asyncio.gather(
+            *(self._slot_busy_count(candidate_ids[model]) for model in ready_candidates),
+            return_exceptions=True,
+        )
+        scored = [(model, count) for model, count in zip(ready_candidates, counts) if isinstance(count, int)]
+        if not scored:
+            return pinned  # can't compare — stick
+
+        min_busy = min(count for _, count in scored)
+        pinned_idx = next(i for i, (m, _) in enumerate(scored) if m == pinned)
+        pinned_busy = scored[pinned_idx][1]
+
+        if pinned_busy <= min_busy + STICKY_SLOP:
+            # Pinned GPU is near least-busy — stick (KV-cache reuse)
+            return pinned
+        else:
+            # Pinned GPU is materially busier — rebalance
+            least_busy = [model for model, count in scored if count == min_busy]
+            return least_busy[0]
+
+    # ------------------------------------------------------------------
+    # Routing plugin entry point
+    # ------------------------------------------------------------------
 
     async def run(self, context: RoutingContext) -> RoutingContext:
         try:
             candidates = context.candidate_models
             if len(candidates) < 2:
-                return context  # nothing to choose between
+                return context
 
             candidate_ids = {model: _strip_provider_prefix(model) for model in candidates}
             running = await self._running_state()
@@ -289,16 +434,9 @@ class LlamaSwapAffinityPlugin:
             occupied_candidates = [model for model, model_id in candidate_ids.items() if model_id in running]
 
             if not occupied_candidates:
-                # Cold start: nothing in this group is loaded. Let the
-                # normal strategy and the GPU-preference ordering in
-                # litellm.yaml decide.
                 return context
 
             if len(occupied_candidates) == 1:
-                # Every model here runs with ttl: 0 (never expires), so if
-                # only one copy of this group is loaded, the other GPU is
-                # almost certainly serving a different model - protect the
-                # resident copy rather than force an unnecessary eviction.
                 context.candidate_models = occupied_candidates
                 context.signals["llama_swap_affinity"] = "narrowed_to_resident"
                 return context
@@ -307,38 +445,36 @@ class LlamaSwapAffinityPlugin:
                 model for model in occupied_candidates if running.get(candidate_ids[model]) == "ready"
             ]
             if len(ready_candidates) < 2:
-                # One of the two is still "starting" (rare - normally both
-                # are already ready via hooks.on_startup.preload) and can't
-                # serve /slots yet. Narrow to whichever is actually usable.
                 target = ready_candidates or occupied_candidates
                 context.candidate_models = target
                 if len(target) == 1:
                     context.signals["llama_swap_affinity"] = "narrowed_to_resident"
                 return context
 
-            # Both candidates are loaded and ready: route by actual
-            # llama.cpp slot occupancy instead of LiteLLM's own counter.
-            # First check for session stickiness.
-            fingerprint = self._compute_fingerprint(context)
-            if fingerprint is not None:
-                pinned = self._get_pinned_deployment(fingerprint)
-                if pinned and pinned in ready_candidates:
-                    context.candidate_models = [pinned]
-                    context.signals["llama_swap_affinity"] = "sticky_to_pinned"
-                    return context
-                elif pinned:
-                    # Pinned GPU is not ready (starting/stopping) - fall
-                    # through to least-busy and create a new pin below.
-                    pass
+            # Both candidates are loaded and ready.
+            # Step 1: compute the stickiness key (session ID or fingerprint).
+            sticky_key = await self._compute_sticky_key(context)
 
+            if sticky_key is not None:
+                # Step 2: look up any existing pin.
+                pinned = await self._get_pin(sticky_key)
+                if pinned:
+                    # Step 3: load-aware check — stick or rebalance?
+                    decision = await self._check_stickiness(pinned, ready_candidates, candidate_ids)
+                    if decision:
+                        context.candidate_models = [decision]
+                        context.signals["llama_swap_affinity"] = "sticky_to_pinned" if decision == pinned else "rebalanced_from_sticky"
+                        return context
+                    # Stickiness dropped — fall through to pure least-busy.
+
+            # Step 4: no pin or stickiness dropped — route by least-busy.
             winner = await self._pick_least_busy(ready_candidates, candidate_ids)
             context.candidate_models = [winner]
             context.signals["llama_swap_affinity"] = "narrowed_to_least_busy_slot"
 
-            # Establish a new pin if we have a fingerprint and this GPU is
-            # ready (not starting).
-            if fingerprint is not None and running.get(candidate_ids[winner]) == "ready":
-                self._set_pin(fingerprint, winner)
+            # Step 5: establish a new pin (load-aware: only if the GPU is ready).
+            if sticky_key is not None and running.get(candidate_ids[winner]) == "ready":
+                await self._set_pin(sticky_key, winner)
 
             return context
         except Exception:
