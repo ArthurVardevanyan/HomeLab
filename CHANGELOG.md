@@ -367,7 +367,7 @@ Focus on AI hardware acceleration, LLM infrastructure, CI pipeline modernization
 - **API Layer**: **LiteLLM** unified API proxy/router — Deployment with VPA, CloudNative-PG backend (`cnpg-litellm` component), Dragonfly Redis cache (`dragonfly-litellm` component), Gateway Route with TLS and custom probes, State PVC for proxy config persistence.
 - **Workloads**: **Open WebUI** with PDB and network policy, **SearXNG** search engine with VPA. **Model downloader** CronJob to periodically fetch LLM models.
 - **CI/CD**: **gitops-ci** pipeline tool incepted for local and CI validation; **git-clift** semantic releaser incepted; CI process documented for agentic workflows.
-- **Platform**: OKD upgraded to **4.22.0-okd-scos.7**; switch to **stable channel**. OpenShift Logging re-inception; **spread-constraints** on monitoring; **toolbox multi-layer** support.
+- **Platform**: OKD upgraded to **4.22.0-okd-scos.x**; switch to **stable channel**. OpenShift Logging re-inception; **spread-constraints** on monitoring; **toolbox multi-layer** support.
 - **Infrastructure**: **gpu-kernel-args** component (kernel args, machineConfig, MachineConfigPool), updated **Intel device plugins** manifest (1 allocatable per card), updated gpu-1 MachineSet.
 - **Monitoring**: **Prometheus** LLM scrape targets on nas and main configs; **Grafana** LiteLLM dashboard (spend, throughput, tokens, success rate, model routing); updated llama-swap dashboard; removed obsolete llama-cpp dashboard.
 - **Networking**: **BGP routing fix** for worker reachability to load balancer; **NetObserv** service-mode; Service Mesh removed (no longer required for Gateway APIs); Renamed `llm` → `llm-open-webui` network policy; added `llm-lite-llm` for Dragonfly→LiteLLM egress.
