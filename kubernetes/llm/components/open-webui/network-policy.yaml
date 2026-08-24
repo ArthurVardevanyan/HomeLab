@@ -92,19 +92,9 @@ spec:
               dns.operator.openshift.io/daemonset-dns: default
       ports:
         - protocol: UDP
-          port: 5353
+          port: 53
         - protocol: TCP
-          port: 5353
-    - to:
-        - namespaceSelector:
-            matchLabels:
-              kubernetes.io/metadata.name: openshift-kube-apiserver
-          podSelector:
-            matchLabels:
-              app: openshift-kube-apiserver
-      ports:
-        - protocol: TCP
-          port: 6443
+          port: 53
 ---
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
