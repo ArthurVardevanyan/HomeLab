@@ -4,13 +4,14 @@ kind: Deployment
 metadata:
   name: llm-embed
   namespace: llm
-  labels:
-    app.kubernetes.io/name: llm-embed
-    app.kubernetes.io/instance: llm-embed
   annotations:
+    argocd.argoproj.io/sync-wave: "3"
     checkov.io/skip1: CKV_K8S_40=Upstream Image Runs as Root
     checkov.io/skip2: CKV_K8S_22=Model Cache Requires Writable Root FS
     checkov.io/skip3: CKV_K8S_23=Upstream Image Requires Root
+  labels:
+    app.kubernetes.io/name: llm-embed
+    app.kubernetes.io/instance: llm-embed
 spec:
   revisionHistoryLimit: 0
   progressDeadlineSeconds: 1800

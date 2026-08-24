@@ -4,6 +4,8 @@ kind: Deployment
 metadata:
   name: open-webui
   namespace: llm
+  annotations:
+    argocd.argoproj.io/sync-wave: "3"
   labels:
     app.kubernetes.io/name: open-webui
     app.kubernetes.io/instance: open-webui
@@ -74,6 +76,8 @@ spec:
                   key: WEBUI_SECRET_KEY
             - name: WEBUI_URL
               value: https://ai.arthurvardevanyan.com
+            - name: CORS_ALLOW_ORIGIN
+              value: "https://ai.arthurvardevanyan.com"
             - name: ENABLE_OAUTH
               value: "true"
             - name: OAUTH_CLIENT_ID
@@ -97,7 +101,10 @@ spec:
             - name: WEBSOCKET_MANAGER
               value: "redis"
             - name: WEBSOCKET_REDIS_URL
-              value: redis://open-webui-dragonfly.llm.svc.cluster.local.:6379
+              valueFrom:
+                secretKeyRef:
+                  name: open-webui-dragonfly-redis-url
+                  key: redis_url
             - name: DATABASE_URL
               valueFrom:
                 secretKeyRef:
