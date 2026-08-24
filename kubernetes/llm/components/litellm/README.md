@@ -14,6 +14,7 @@ routing with GPU affinity via a custom `llama_swap_affinity` plugin.
     - [Router settings](#router-settings)
     - [Response \& cache](#response--cache)
     - [GPU affinity plugin](#gpu-affinity-plugin)
+      - [KV cache efficiency](#kv-cache-efficiency)
   - [Deployment](#deployment)
   - [OIDC / SSO](#oidc--sso)
   - [Metrics](#metrics)
@@ -113,7 +114,6 @@ candidate list using llama-swap's ground truth:
    different model — routing there would force an unnecessary eviction.
 3. **Both ready**: check for session stickiness first, then fall back to
    least-busy slot selection:
-
    - **Session stickiness**: the plugin computes a sha256 fingerprint from the
      model name and the first user message content (truncated to 500 chars), then
      looks up an in-memory pin map. If a valid pin (not expired, 1h TTL) exists

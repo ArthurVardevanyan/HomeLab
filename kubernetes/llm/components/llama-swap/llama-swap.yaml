@@ -82,9 +82,9 @@ models:
   # 4. Qwen 3.6 35B (A3B) — Spread (both GPUs, 1M ctx, parallel 4)
   # ==========================================
   35b-spread:
-    cmd: ${cmd_base} --split-mode layer --tensor-split 1,1 --parallel 5 --ctx-size 1310720 -m /data/models/Qwen3.6-35B-A3B-UD-Q4_K_M.gguf --mmproj /data/models/Qwen3.6-35B-A3B-mmproj-F16.gguf --image-min-tokens 1024 --no-kv-unified
+    cmd: ${cmd_base} --split-mode layer --parallel 5 --ctx-size 1310720 -m /data/models/Qwen3.6-35B-A3B-UD-Q4_K_M.gguf --mmproj /data/models/Qwen3.6-35B-A3B-mmproj-F16.gguf --image-min-tokens 1024
     env:
-      - "ONEAPI_DEVICE_SELECTOR=level_zero:*"
+      - "ONEAPI_DEVICE_SELECTOR=level_zero:0,1"
       - "SYCL_PI_LEVEL_ZERO_USE_IMMEDIATE_COMMANDLISTS=1"
     ttl: 0
 

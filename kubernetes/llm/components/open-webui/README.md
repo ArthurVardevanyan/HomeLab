@@ -9,6 +9,7 @@ for interacting with the llama-swap backend via LiteLLM.
   - [Table of Contents](#table-of-contents)
   - [Deployment](#deployment)
     - [Deployment details](#deployment-details)
+    - [Header forwarding](#header-forwarding)
   - [OIDC / SSO](#oidc--sso)
   - [Database \& WebSockets](#database--websockets)
   - [Storage](#storage)
@@ -34,6 +35,30 @@ The deployment (`components/open-webui/deployment.yaml`) includes:
 - Network policies restricting access
 - VPA for automatic resource scaling
 - Environment variables for configuration (OIDC, RAG, feature flags)
+
+### Header forwarding
+
+OpenWebUI strips certain headers from incoming requests when forwarding to
+upstream LLM backends (LiteLLM, Ollama, etc.). Our fork patches three files to
+forward two headers that were previously dropped:
+
+| Header            | Purpose                   | Forwarded To         |
+| ----------------- | ------------------------- | -------------------- |
+| `X-Session-ID`    | Session/activity tracking | LiteLLM → llama-swap |
+| `X-Forwarded-For` | Real client IP tracking   | LiteLLM → llama-swap |
+
+Both are forwarded in `routers/openai.py`, `routers/ollama.py`, and
+`utils/tools.py` using the same pattern as the existing `X-Session-ID` forwarding.
+
+These patches are submitted upstream:
+
+- **X-Session-ID**: [Discussion #28931](https://github.com/open-webui/open-webui/discussions/28931) (converted from Issue #28927)
+- **X-Forwarded-For**: [Discussion #28960](https://github.com/open-webui/open-webui/discussions/28960) (Issue [#28959](https://github.com/open-webui/open-webui/issues/28959))
+
+Without these patches, OpenWebUI acts as a header black hole for API clients
+(e.g. OpenCode, curl) that rely on header propagation through proxies.
+The patches follow the existing pattern of forwarding `X-Session-ID` and
+`X-OpenWebUI-*` headers when `ENABLE_FORWARD_USER_INFO_HEADERS` is set.
 
 ## OIDC / SSO
 
