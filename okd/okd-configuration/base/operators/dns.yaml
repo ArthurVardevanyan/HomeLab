@@ -1,0 +1,25 @@
+apiVersion: operator.openshift.io/v1
+kind: DNS
+metadata:
+  name: default
+spec:
+  cache:
+    negativeTTL: 0s
+    positiveTTL: 0s
+  logLevel: Normal
+  nodePlacement:
+    tolerations:
+      - key: node-role.kubernetes.io/infra
+        operator: Exists
+        effect: NoSchedule
+      - key: node-role.kubernetes.io/gpu
+        operator: Exists
+        effect: NoSchedule
+  operatorLogLevel: Normal
+  upstreamResolvers:
+    policy: Sequential
+    protocolStrategy: ""
+    transportConfig: {}
+    upstreams:
+      - port: 53
+        type: SystemResolvConf
