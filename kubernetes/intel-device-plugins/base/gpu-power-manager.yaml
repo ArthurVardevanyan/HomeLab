@@ -29,7 +29,7 @@ spec:
           command: ["sh", "-c"]
           args:
             - |
-              POWER_LIMIT_WATTS=${POWER_LIMIT_WATTS:-155}
+              POWER_LIMIT_WATTS=${POWER_LIMIT_WATTS:-175}
               POWER_LIMIT_MICROWATTS=$((POWER_LIMIT_WATTS * 1000000))
               echo $POWER_LIMIT_MICROWATTS > /sys/class/drm/card0/device/hwmon/hwmon2/power1_cap &&
               echo $POWER_LIMIT_MICROWATTS > /sys/class/drm/card1/device/hwmon/hwmon3/power1_cap &&
@@ -45,9 +45,10 @@ spec:
               memory: "32Mi"
           env:
             - name: POWER_LIMIT_WATTS
-              value: "155"
+              value: "175"
           securityContext:
             privileged: true
+            allowPrivilegeEscalation: true
             readOnlyRootFilesystem: false
             runAsNonRoot: false
             seccompProfile:

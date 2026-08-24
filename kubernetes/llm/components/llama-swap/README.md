@@ -11,7 +11,13 @@ two GPUs (`ONEAPI_DEVICE_SELECTOR=level_zero:0` or `1`).
   - [Table of Contents](#table-of-contents)
   - [Model Matrix](#model-matrix)
   - [B70 Tuning Rationale](#b70-tuning-rationale)
-  - [KV cache: f16 vs q8\_0](#kv-cache-f16-vs-q8_0)
+  - [Memory model](#memory-model)
+    - [Per-GPU VRAM (static at load)](#per-gpu-vram-static-at-load)
+    - [Host RAM (anonymous, per-instance)](#host-ram-anonymous-per-instance)
+    - [Page cache (reclaimable)](#page-cache-reclaimable)
+    - [Node-level accounting](#node-level-accounting)
+    - [Summary](#summary)
+  - [KV cache: f16 vs q8_0](#kv-cache-f16-vs-q8_0)
   - [Why not `--mlock` / `--ngl all`](#why-not---mlock----ngl-all)
   - [GPU Backend: SYCL (not Vulkan)](#gpu-backend-sycl-not-vulkan)
     - [Image tag](#image-tag)
@@ -31,14 +37,14 @@ guarantees **exactly one model per GPU** per set — no stacking, no spillover.
 | ----------------------------------- | ---------------------------------------- | --------------------------------- | ------ |
 | `35b-gpu0` / `35b-gpu1`             | Qwen3.6-35B-A3B (sparse MoE)             | ~4x faster decode on B70          | Yes    |
 | `35b-gpu0-dense` / `35b-gpu1-dense` | Same, `--ctx-size 262144`, 1 slot        | Full native context on single GPU | Yes    |
-| `27b-gpu0` / `27b-gpu1`             | Qwen3.8-27B (dense), `--ctx-size 262144` | higher quality, slower            | Yes    |
+| `27b-gpu0` / `27b-gpu1`             | Qwen3.8-27B (dense), `--ctx-size 196608` | higher quality, slower            | Yes    |
 | `35b-spread`                        | Qwen3.6-35B-A3B, both GPUs               | 1M ctx, parallel 4                | Yes    |
 
-> **27B context:** Set to `262144` (256K native max). Qwen3.8 uses a hybrid
-> architecture where only 16 of 64 layers use full attention — the other 48
-> use linear attention with no KV cache. This keeps the KV cache tiny
-> (~512 MB at full context), well under the 32 GB VRAM budget, so the full
-> context window is usable without risk.
+> **27B context:** Set to `196608` (192K). Qwen3.8 uses a hybrid architecture
+> where 16 of 65 blocks use full attention (the other 49 use linear attention
+> with no KV cache). At 64 KiB/token, the KV pool is 12.0 GiB at full context;
+> total VRAM usage (15.95 GiB weights + 0.86 GiB mmproj + 12.0 GiB KV = 28.8
+> GiB) fits with 3.2 GiB headroom on a 32 GB card.
 
 The **matrix** uses sets that pick exactly one model per GPU. The solver picks
 a set, guaranteeing at most one model per GPU:
@@ -51,7 +57,7 @@ a set, guaranteeing at most one model per GPU:
   `dual_35b0d-27b1`, `dual_27b0-35b1`, `dual_27b0-35b1d` — allows mixing
   model families across GPUs for maximum flexibility.
 - **Spread** (one model spanning both GPUs): `spread_35b` — uses
-  `--split-mode layer --tensor-split 1,1`.
+  `--split-mode layer`.
 
 | Set type      | Effect                                                                   |
 | ------------- | ------------------------------------------------------------------------ |
@@ -92,9 +98,12 @@ Base args passed to each managed llama-server process (in `cmd_base` of
   bandwidth-bound**, so the dequant-removal favors f16 at deep context.
 - `--jinja` — Jinja template support for ChatML-style prompts.
 - `--ctx-size 327680` — 320K default (overridden per-model in some sets).
-  The 35B-A3B models use 320K; the dense 27B models use 128K to fit within
-  32 GB VRAM. The spread models use 1M, 640K, and 768K respectively.
-- `--no-kv-unified` — static per-slot capacity; no shared/dynamic KV pool.
+  The 35B-A3B models use 320K; the 27B models use 192K to fit within
+  32 GB VRAM; the spread models use 1M.
+- Unified KV pool (llama-server default): a single pool of `ctx-size` shared
+  across all parallel slots, fully pre-allocated to VRAM at load time (~28 GiB
+  observed, static), no per-slot static capacity, no spillover because the
+  total fits.
 - `--reasoning-format auto` — reasoning format handled per-request by the client.
 - `-ngl 99` — all layers offloaded to GPU.
 - Flash attention on.
@@ -110,10 +119,6 @@ Base args passed to each managed llama-server process (in `cmd_base` of
 - `SYCL_PI_LEVEL_ZERO_USE_IMMEDIATE_COMMANDLISTS=1` — enables parallel SYCL
   command lists so each inference thread submits directly to the GPU instead
   of funneling through a single dispatch queue.
-- `-t 2 --threads-http 8` — was `-1` (auto → 6 threads) on each of 2
-  llama-server processes sharing a 6-core CPU inside the pod's 5-CPU quota,
-  which also runs LiteLLM, Open WebUI, Dragonfly, and CNPG. Bound explicitly
-  to stop threadpool oversubscription.
 - `--cache-reuse 256` — allows KV reuse via shifting when a prompt changes
   mid-prefix (previously `0`/disabled). Matches how Open WebUI's context
   compaction, RAG re-injection, and tool-result insertion mutate prompts.
@@ -133,6 +138,61 @@ Base args passed to each managed llama-server process (in `cmd_base` of
   `--load-mode` supersedes the deprecated `--mlock`/`--mmap`/`--no-mmap`
   flags — see [Why not `--mlock`](#why-not---mlock----ngl-all) below, which
   predates this flag's introduction.
+
+## Memory model
+
+This section describes the measured breakdown of RAM and VRAM usage across
+llama-swap pod lifecycle. The unified KV pool (llama-server default) is fully
+pre-allocated in VRAM at load time — **nothing spills to host RAM**.
+
+### Per-GPU VRAM (static at load)
+
+VRAM usage is fixed at load and does not grow with session activity. The total
+includes weights, mmproj, and the full KV pool at configured `ctx-size`:
+
+| Model         | Weights   | mmproj   | KV pool  | Total    | Headroom |
+| ------------- | --------- | -------- | -------- | -------- | -------- |
+| 35B-A3B       | 20.6 GiB  | 0.86 GiB | 6.25 GiB | 27.7 GiB | 4.3 GiB  |
+| 35B-A3B-dense | 20.6 GiB  | 0.86 GiB | 4.00 GiB | 25.5 GiB | 6.5 GiB  |
+| 27B           | 15.95 GiB | 0.86 GiB | 12.0 GiB | 28.8 GiB | 3.2 GiB  |
+
+KV pool sizes: 35B-A3B at 320K uses 20 KiB/token (6.25 GiB pool); dense at
+256K uses 16 KiB/token (4.0 GiB pool); 27B at 192K uses 64 KiB/token
+(12.0 GiB pool). **Observed:** VRAM climbs to ~28 GiB on load and holds
+there forever — consistent with a full static pool, not incremental growth.
+
+### Host RAM (anonymous, per-instance)
+
+| Component                                           | Size       | Behavior                                                                                                                                                                                                              |
+| --------------------------------------------------- | ---------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Baseline (mmproj on host + SYCL/Level-Zero runtime) | ~1 GiB     | Allocated at load, stays flat                                                                                                                                                                                         |
+| Usage high-water mark                               | 0 → ~9 GiB | SYCL host staging/pinned buffers + oneDNN compute buffers + glibc arena fragmentation from 12-thread cont-batching/spec-decode; THP-inflated (AnonHugePages ≈ 60–80% of Pss_Anon); climbs with session load, plateaus |
+| Freed on swap                                       | yes        | When the llama-server instance is killed (model swap), all anonymous memory is returned to the cgroup                                                                                                                 |
+
+Measured from a fresh 35B instance (idle, 12K tokens): **905 MiB** Pss_Anon.
+Measured from a heavily-used 35B instance (94K+ tokens): **~10.3 GiB** Pss_Anon.
+Measured from a 27B instance at 159K-token KV high-water mark: **1.97 GiB** Pss_Anon — proving the KV pool itself is not on the host (if it were, KV churn would drive host anon proportional to tokens).
+
+### Page cache (reclaimable)
+
+`--load-mode none` performs plain buffered reads of the GGUF, populating
+kernel page cache: 12–18 GiB across both model files. This shows as
+`active_file`/`inactive_file` in cgroup `memory.stat` and is fully reclaimable
+under pressure. `oc adm top` workingSet excludes reclaimable file cache.
+
+### Node-level accounting
+
+The node `gpu-1` reports an "untracked" gap of **0.8 GiB** between per-pod
+accounting and total node usage — attributable to Level Zero driver metadata
+and is negligible.
+
+### Summary
+
+- VRAM: static ~28 GiB per GPU at load. No spillover.
+- Host anonymous: bounded by usage high-water mark; freed on model swap;
+  never unbounded or leaky.
+- Page cache: reclaimable; does not affect VPA workingSet calculations.
+- Node untracked: <1 GiB; driver overhead.
 
 ## KV cache: f16 vs q8_0
 
@@ -164,11 +224,18 @@ consistently measured q8_0 as slower**, not faster.
 > faster) stands; the bandwidth-dominance explanation for it does not. Keep
 > f16 on the strength of repeated measurement, not this arithmetic.
 
-The fit at 256K f16 is **inferred from an observed ~23 GB** (model + KV) on the
-32 GB card, not measured headroom. **Rollback:** if the pod OOMs on model load
-or pushes VRAM over 32 GB, revert `cache-type-k`/`cache-type-v` to `q8_0`
-(one-line change in `llama-swap.yaml`) — the f16 fit is a judgement call, not
-a guarantee.
+The fit is **measured**, not inferred:
+
+| Model                | Weights   | mmproj   | KV/token | Pool at ctx | Total    | Headroom   |
+| -------------------- | --------- | -------- | -------- | ----------- | -------- | ---------- |
+| 35B-A3B (320K)       | 20.6 GiB  | 0.86 GiB | 20 KiB   | 6.25 GiB    | 27.7 GiB | 4.3 GiB    |
+| 35B-A3B-dense (256K) | 20.6 GiB  | 0.86 GiB | 16 KiB   | 4.0 GiB     | 25.5 GiB | 6.5 GiB    |
+| 27B (192K)           | 15.95 GiB | 0.86 GiB | 64 KiB   | 12.0 GiB    | 28.8 GiB | 3.2 GiB    |
+| spread (1M)          | 20.6 GiB  | 0.86 GiB | 20 KiB   | 19.07 GiB   | 40.5 GiB | — (2× GPU) |
+
+Pool is fully pre-allocated in VRAM at load time (observed ~28 GiB per GPU, static).
+If the pod OOMs on model load or pushes VRAM over 32 GB, revert
+`cache-type-k`/`cache-type-v` to `q8_0` (one-line change in `llama-swap.yaml`).
 
 ## Why not `--mlock` / `--ngl all`
 
