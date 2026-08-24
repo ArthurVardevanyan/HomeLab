@@ -99,7 +99,10 @@ spec:
             - name: WEBSOCKET_REDIS_URL
               value: redis://open-webui-dragonfly.llm.svc.cluster.local.:6379
             - name: DATABASE_URL
-              value: postgresql://postgres:<password>@open-webui-rw.llm.svc.cluster.local:5432/postgres
+              valueFrom:
+                secretKeyRef:
+                  name: open-webui-app
+                  key: fqdn-uri
             - name: ENABLE_WEB_SEARCH
               value: "true"
             - name: WEB_SEARCH_ENGINE

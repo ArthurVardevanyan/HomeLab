@@ -88,7 +88,10 @@ spec:
             - name: GENERIC_USER_EMAIL_ATTRIBUTE
               value: "email"
             - name: DATABASE_URL
-              value: postgresql://postgres@litellm-rw.llm.svc.cluster.local:5432/litellm
+              valueFrom:
+                secretKeyRef:
+                  name: litellm-app
+                  key: fqdn-uri
             - name: SPEND_TRACKING
               value: "true"
           ports:
