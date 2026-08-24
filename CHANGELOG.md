@@ -362,18 +362,23 @@ Focus on AI hardware acceleration, LLM infrastructure, CI pipeline modernization
 
 ### Key Characteristics
 
-- **AI Hardware**: **Dual Intel Arc Pro B70** (Battlemage / Xe2) on gpu-1 — slot 1 Gen4 x4 (`0000:06:00.0`, direct CPU lanes), slot 2 Gen3 x4 (`0000:2d:00.0`, B550 chipset lanes); K8s allocatable: 2x `gpu.intel.com/xe` (one per physical card). **Intel Arc B70** node onboarded with **LLM inference** migrated to llama.cpp Vulkan; **NVIDIA** GPU app removed from ArgoCD.
-- **LLM Stack**: **llama-swap** orchestrator migration (renamed from `llama-cpp-vulkan`), still includes Mesa 26.1 for Intel ANV cooperative-matrix path (~2x decode throughput on Battlemage). Standalone **llama-cpp** inference with dual-GPU model config, **llama-cpp-embed** embedding server with VPA.
-- **API Layer**: **LiteLLM** unified API proxy/router — Deployment with VPA, CloudNative-PG backend (`cnpg-litellm` component), Dragonfly Redis cache (`dragonfly-litellm` component), Gateway Route with TLS and custom probes, State PVC for proxy config persistence.
+- **AI Hardware**: **Dual Intel Arc Pro B70** (Battlemage / Xe2) on gpu-1 — slot 1 Gen4 x4 (`0000:06:00.0`, direct CPU lanes), slot 2 Gen3 x4 (`0000:2d:00.0`, B550 chipset lanes); K8s allocatable: 2x `gpu.intel.com/xe` (one per physical card). **Intel Arc B70** node onboarded with **LLM inference** migrated to llama.cpp SYCL; **NVIDIA** GPU app removed from ArgoCD. **GPU power tuning** — privileged `gpu-power-manager` DaemonSet (155W → 175W cap), `GPU_POWER_TUNING.md` documentation.
+- **LLM Stack**: **llama-swap** orchestrator migrated from Vulkan to **SYCL** (oneAPI), enforcing **one-model-per-GPU**; Redis (Dragonfly)-backed **load-aware session stickiness** for GPU routing and KV cache reuse; session ID + source IP propagation Open WebUI → LiteLLM → llama-swap. Standalone **llama-cpp** inference with dual-GPU model config, **llama-cpp-embed** embedding server with VPA.
+- **API Layer**: **LiteLLM** unified API proxy/router — Deployment with VPA, CloudNative-PG backend (`cnpg-litellm` component), Dragonfly Redis cache (`dragonfly-litellm` component), Gateway Route with TLS and custom probes, State PVC for proxy config persistence; **session stickiness** for KV cache reuse.
 - **Workloads**: **Open WebUI** with PDB and network policy, **SearXNG** search engine with VPA. **Model downloader** CronJob to periodically fetch LLM models.
 - **CI/CD**: **gitops-ci** pipeline tool incepted for local and CI validation; **git-clift** semantic releaser incepted; CI process documented for agentic workflows.
-- **Platform**: OKD upgraded to **4.22.0-okd-scos.x**; switch to **stable channel**. OpenShift Logging re-inception; **spread-constraints** on monitoring; **toolbox multi-layer** support.
+- **Platform**: OKD upgraded to **4.22.0-okd-scos.X**; switch to **stable channel**. OpenShift Logging re-inception; **spread-constraints** on monitoring; **toolbox multi-layer** support. OKD **DNS operator** tolerations on infra/gpu tainted nodes; CNPG **`wal_keep_size`** raised across all clusters; **resource compliance sweep** across repo; ArgoCD sync-options + PSA baseline labels; shellcheck remediation.
 - **Infrastructure**: **gpu-kernel-args** component (kernel args, machineConfig, MachineConfigPool), updated **Intel device plugins** manifest (1 allocatable per card), updated gpu-1 MachineSet.
 - **Monitoring**: **Prometheus** LLM scrape targets on nas and main configs; **Grafana** LiteLLM dashboard (spend, throughput, tokens, success rate, model routing); updated llama-swap dashboard; removed obsolete llama-cpp dashboard.
 - **Networking**: **BGP routing fix** for worker reachability to load balancer; **NetObserv** service-mode; Service Mesh removed (no longer required for Gateway APIs); Renamed `llm` → `llm-open-webui` network policy; added `llm-lite-llm` for Dragonfly→LiteLLM egress.
 - **Automation**: **OLM operator upgrades** automated; **Stackrox** cert rotation fixed.
 - **Renovate Overhaul**: Configuration rewritten with fixed packageRules, improved ansible URL extraction, github-release parsing, RE2 compatibility, captured datasource precedence, and global config consolidation.
 - **Database**: CloudNative-PG **LiteLLM** pg_dump backup secret updated.
+- **Security**: LLM hardening — DB password auth enforcement, tightened egress network policies, **ExternalSecret** for Dragonfly Redis URLs, ArgoCD sync waves.
+- **Observability**: **NetObserv** Loki re-inception with upstream-bug workarounds (RBAC, VPA); OpenShift Logging **VPA** + inotify collector fix via **TuneD + MachineConfig** (GPU crio/sysctl limit files).
+- **Virtualization**: KubeVirt VM **scheduling on GPU node** (NetStateConfig `nncp-gpu`); **live migration across CPU generations**.
+- **Identity**: **OIDC CLI client with PKCE** and dedicated Zitadel app (Terraform).
+- **AI Tooling**: **snip CLI + opencode-snip plugin** via Ansible across desktop, laptop, and vscode-server hosts.
 - **Misc**: VSCode autocomplete additions (`Battlemage`, `iommu`, `litellm`, `Qwen`); Terraform Zitadel LiteLLM OAuth client; opencode config update.
 
 ### Major Milestones
@@ -389,3 +394,11 @@ Focus on AI hardware acceleration, LLM infrastructure, CI pipeline modernization
 - **August 8, 2026**: **Renovate** configuration overhaul — fixed packageRules, ansible URL extraction, github-release parsing, RE2 compatibility, captured datasource precedence, global config consolidation.
 - **August 11, 2026**: **Intel Arc B70** node onboarded with **LLM inference** migrated to llama.cpp Vulkan; **NVIDIA** ArgoCD application removed; opencode dependency update; **CI agentic flow** documentation.
 - **August 13-14, 2026**: PR #624 merged — **Dual Intel Arc Pro B70** upgrade (gpu-1: 2x Xe2 Battlemage); **llama-swap** orchestrator migration; **LiteLLM** API proxy/router with VPA, CloudNative-PG, Dragonfly Redis; **SearXNG** search engine; **Model downloader** CronJob; **gpu-kernel-args** component; **Intel device plugins** updated for dual GPU; **Prometheus** LLM scrape targets; **Grafana** LiteLLM dashboard; **Open WebUI** PDB + network policy; llama-cpp-embed with VPA; Citadel LiteLLM OAuth; CNPG pg_dump backup secret.
+- **August 15, 2026**: Heimdall security context hardening (readOnlyRootFilesystem, automountServiceAccountToken). (#631)
+- **August 17, 2026**: **Qwen 3.8** + additional LLM models; model-downloader network policy. (#634)
+- **August 18, 2026**: **llama-swap Vulkan → SYCL migration**, one-model-per-GPU enforcement; LLM tuning. (#635, #639)
+- **August 19, 2026**: repo-wide **resource compliance check** resolution across 220 files. (#642)
+- **August 21, 2026**: **OIDC CLI client with PKCE** + dedicated Zitadel app; **LiteLLM session stickiness** for KV cache reuse; **NetObserv Loki** re-inception with upstream-bug workarounds; **snip CLI + opencode-snip plugin** across all hosts; shellcheck remediation + ArgoCD sync-options + PSA baseline labels. (#651, #652, #650, #649, #643)
+- **August 22, 2026**: **session ID propagation** Open WebUI → llama-swap; OpenShift Logging **VPA** + namespace + inotify collector fix. (#654, #653)
+- **August 23, 2026**: **KubeVirt on GPU node** — VM scheduling + NetStateConfig `nncp-gpu`; **cross-CPU-generation live migration**; inotify limits via **TuneD + MachineConfig** (+ GPU crio/sysctl limit files). (#658, #659, #655, #656)
+- **August 24, 2026**: **LLM security hardening** (DB password auth, tightened egress, ESO secrets, sync waves); **GPU power tuning + power manager DaemonSet**; OKD **4.22.0-okd-scos.8**; DNS operator tolerations on tainted nodes; **CNPG `wal_keep_size`** raise across all clusters. (#662, #663, #664, #665, #666, #667, #668)
