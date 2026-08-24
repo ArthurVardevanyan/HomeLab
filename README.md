@@ -200,16 +200,17 @@ graph TD
 
 ##### GPU
 
-| Attribute        | Value                                                                                  |
-| ---------------- | -------------------------------------------------------------------------------------- |
-| **Node**         | `gpu-1`                                                                                |
-| **Card**         | 2x Intel® Arc™ Pro B70 Graphics (Battlemage / Xe2, discrete)                           |
-| **Memory**       | ~32 GB GDDR6 per card                                                                  |
-| **PCI Slot 1**   | Gen4 x4, `0000:06:00.0` (top slot, direct CPU lanes)                                   |
-| **PCI Slot 2**   | Gen3 x4, `0000:2d:00.0` (bottom slot, B550 chipset lanes)                              |
-| **KMD**          | `xe`                                                                                   |
-| **K8s Resource** | `gpu.intel.com/xe` — 2 allocatable (one per physical card, no fan-out)                 |
-| **Workload**     | Transcoding (Plex/Immich, VA-API), LLM inference (llama.cpp Vulkan), AI/ML experiments |
+| Attribute        | Value                                                                                                                              |
+| ---------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
+| **Node**         | `gpu-1`                                                                                                                            |
+| **Card**         | 2x Intel® Arc™ Pro B70 Graphics (Battlemage / Xe2, discrete)                                                                       |
+| **Memory**       | ~32 GB GDDR6 per card                                                                                                              |
+| **PCI Slot 1**   | Gen4 x4, `0000:06:00.0` (top slot, direct CPU lanes)                                                                               |
+| **PCI Slot 2**   | Gen3 x4, `0000:2d:00.0` (bottom slot, B550 chipset lanes)                                                                          |
+| **KMD**          | `xe`                                                                                                                               |
+| **K8s Resource** | `gpu.intel.com/xe` — 2 allocatable (one per physical card, no fan-out)                                                             |
+| **Workload**     | Transcoding (Plex/Immich, VA-API), LLM inference (llama.cpp Vulkan), AI/ML experiments                                             |
+| **Power Tuning** | ~155W per GPU via privileged DaemonSet — see [gpu-power-manager.yaml](kubernetes/intel-device-plugins/base/gpu-power-manager.yaml) |
 
 > Replaces the previous NVIDIA GeForce GTX 1080 (8GB). See
 > [kubernetes/intel-device-plugins](kubernetes/intel-device-plugins/README.md) for

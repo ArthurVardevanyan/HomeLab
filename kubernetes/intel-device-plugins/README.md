@@ -30,6 +30,9 @@ B550 MPG). The kernel args and MCP are in
 `okd/okd-configuration/components/gpu-kernel-args/mc.yaml` and
 `okd/okd-configuration/components/gpu-kernel-args/mcp.yaml`.
 
+For GPU power tuning rationale (160W TDP limit to reduce heat and power draw
+while maintaining ~90-95% performance), see [GPU Power Tuning Notes](GPU_POWER_TUNING.md).
+
 ### GPU — 2x Intel Arc Pro B70
 
 **PCIe & IOMMU boot lockups** (`AMD-Vi: Completion-Wait loop timed out`). The
