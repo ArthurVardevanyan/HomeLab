@@ -18,7 +18,7 @@ spec:
   startingDeadlineSeconds: 300
   jobTemplate:
     spec:
-      backoffLimit: 0
+      backoffLimit: 3
       activeDeadlineSeconds: 7200
       completionMode: NonIndexed
       template:
@@ -54,154 +54,96 @@ spec:
                   set -o pipefail
 
                   MODELS=/data/models
-                  CHECKS="${MODELS}/.checks"
                   mkdir -p "${MODELS}"
 
-                  PARALLEL=32
-                  CHUNK_BYTES=134217728  # 128 MiB
                   FORCE_REVALIDATE="${FORCE_REVALIDATE:-false}"
+                  ARIA2C="aria2c -x 16 -k 128M --file-allocation=none --summary-interval=0 \
+                    --connect-timeout=30 --timeout=60 --max-tries=5 --min-split-size=128M \
+                    --split=16 --max-concurrent-downloads=1 --retry-wait=5"
 
-                  # Local fast path: skip a model whose file already exists on
-                  # the PVC. Pure `test -s` stat, no network.
+                  # Local fast path: skip a model whose file already exists on the PVC.
                   dl_local_check() {
                     local name="$1"
                     [ "${FORCE_REVALIDATE}" = "true" ] && return 1
                     local out="${MODELS}/${name}"
                     if [ -s "${out}" ]; then
                       echo "Present: ${name}"
-                      echo "SKIP" > "${CHECKS}/${name}.status"
                       return 0
                     fi
                     return 1
                   }
 
-                  # Resolve CDN redirect + content-length, write outcome to a
-                  # small status file so the real download phase can reuse it.
-                  dl_check() {
-                    local name="$1" src="$2"
-                    local headers cdn size
+                  # Resolve a HuggingFace download URL to its CDN redirect and print the
+                  # final size (content-length or x-linked-size) to stdout.
+                  resolve_cdn() {
+                    local src="$1"
+                    local headers url size
                     headers=$(curl -sIL --connect-timeout 10 --max-time 30 "${src}" || true)
-                    cdn=$(printf '%s' "${headers}" | awk 'BEGIN{IGNORECASE=1}/^location:/{u=$2}END{print u}' | tr -d '\r')
-                    [ -z "${cdn}" ] && cdn="${src}"
+                    url=$(printf '%s' "${headers}" | awk 'BEGIN{IGNORECASE=1}/^location:/{u=$2}END{print u}' | tr -d '\r')
+                    [ -z "${url}" ] && url="${src}"
                     size=$(printf '%s' "${headers}" | awk 'BEGIN{IGNORECASE=1}/^content-length:/{c=$2}END{print c}' | tr -d '\r')
                     if [ -z "${size}" ]; then
                         size=$(printf '%s' "${headers}" | awk 'BEGIN{IGNORECASE=1}/^x-linked-size:/{c=$2}END{print c}' | tr -d '\r')
                     fi
-                    printf 'DOWNLOAD\t%s\t%s\t%s\n' "${size}" "${cdn}" "${src}" > "${CHECKS}/${name}.status"
+                    printf '%s\t%s\n' "${url}" "${size}"
                   }
 
-                  # Download a single model using chunked byte-range parallelism.
+                  # Download a single model with aria2c parallel chunked download, then
+                  # verify the final size matches what the CDN reported.
                   dl_fetch() {
-                    local name="$1" size="$2" cdn="$3"
+                    local name="$1" cdn="$2" expect_size="$3"
                     local out="${MODELS}/${name}"
-                    echo "Downloading ${name} (${size} bytes) with ${PARALLEL} parallel connections ..."
-                    local work="${MODELS}/.dl-${name}"
-                    rm -rf "${work}"; mkdir -p "${work}"
-
-                    local sem="${work}/.sem"
-                    mkfifo "${sem}"; exec 9<>"${sem}"; rm -f "${sem}"
-                    local i=0
-                    while [ "${i}" -lt "${PARALLEL}" ]; do printf 'x\n' >&9; i=$((i + 1)); done
-
-                    local offset=0 idx=0
-                    while [ "${offset}" -lt "${size}" ]; do
-                      if [ -f "${work}/.failed" ]; then
-                        echo "ERROR: aborting remaining chunks for ${name}" >&2
-                        break
-                      fi
-                      local end=$((offset + CHUNK_BYTES - 1))
-                      [ "${end}" -ge "${size}" ] && end=$((size - 1))
-                      local part=$(printf '%s/part.%08d' "${work}" "${idx}")
-                      read -r _ <&9
-                      (
-                        if ! curl -fsS --connect-timeout 10 --max-time 180 --retry 5 --retry-delay 5 \
-                          -r "${offset}-${end}" -o "${part}" "${cdn}"; then
-                          touch "${work}/.failed"
-                        fi
-                        printf 'x\n' >&9
-                      ) &
-                      offset=$((end + 1)); idx=$((idx + 1))
-                    done
-                    wait
-                    exec 9>&-
-
-                    if [ -f "${work}/.failed" ]; then
-                      echo "ERROR: one or more chunks failed for ${name}" >&2
-                      rm -rf "${work}"
+                    mkdir -p "$(dirname "${out}")"
+                    local outdir
+                    outdir=$(dirname "${out}")
+                    local basename
+                    basename=$(basename "${out}")
+                    echo "Downloading ${name} (~${expect_size} bytes) with aria2c ..."
+                    if ! ${ARIA2C} -d "${MODELS}" -o "${basename}" "${cdn}"; then
+                      echo "ERROR: aria2c failed for ${name}" >&2
+                      rm -f "${outdir}/${basename}.aria2" "${outdir}/${basename}"
                       return 1
                     fi
-
-                    echo "Reassembling ${idx} chunks ..."
-                    : > "${out}.part"
-                    i=0
-                    while [ "${i}" -lt "${idx}" ]; do
-                      cat "$(printf '%s/part.%08d' "${work}" "${i}")" >> "${out}.part"
-                      i=$((i + 1))
-                    done
-                    rm -rf "${work}"
-
                     local got
-                    got=$(wc -c < "${out}.part" | tr -d ' ')
-                    if [ "${got}" != "${size}" ]; then
-                      echo "ERROR: ${name} size mismatch (got ${got}, want ${size})" >&2
-                      rm -f "${out}.part"; return 1
+                    got=$(wc -c < "${out}" | tr -d ' ')
+                    if [ "${expect_size}" -gt 0 ] && [ "${got}" != "${expect_size}" ]; then
+                      echo "ERROR: ${name} size mismatch (got ${got}, expected ${expect_size})" >&2
+                      rm -f "${outdir}/${basename}.aria2" "${outdir}/${basename}"
+                      return 1
                     fi
-                    mv "${out}.part" "${out}"
                     echo "Done (${got} bytes): ${name}"
                   }
 
-                  # Phase 0 -- local existence fast path (no network).
-                  rm -rf "${CHECKS}"; mkdir -p "${CHECKS}"
-                  dl_local_check "Qwen3.6-35B-A3B-UD-Q4_K_M.gguf" || true
-                  dl_local_check "Qwen3.6-35B-A3B-mmproj-F16.gguf" || true
-                  dl_local_check "Qwen3.8-27B-Q4_K_M.gguf" || true
-                  dl_local_check "Qwen3.8-27B-mmproj-F16.gguf" || true
-                  # Phase 1 -- resolve remaining redirects concurrently.
-                  [ -f "${CHECKS}/Qwen3.6-35B-A3B-UD-Q4_K_M.gguf.status" ] || \
-                    dl_check "Qwen3.6-35B-A3B-UD-Q4_K_M.gguf" \
-                    "https://huggingface.co/unsloth/Qwen3.6-35B-A3B-GGUF/resolve/main/Qwen3.6-35B-A3B-UD-Q4_K_M.gguf?download=true" &
-                  [ -f "${CHECKS}/Qwen3.6-35B-A3B-mmproj-F16.gguf.status" ] || \
-                    dl_check "Qwen3.6-35B-A3B-mmproj-F16.gguf" \
-                    "https://huggingface.co/unsloth/Qwen3.6-35B-A3B-GGUF/resolve/main/mmproj-F16.gguf?download=true" &
-                  [ -f "${CHECKS}/Qwen3.8-27B-Q4_K_M.gguf.status" ] || \
-                    dl_check "Qwen3.8-27B-Q4_K_M.gguf" \
-                    "https://huggingface.co/unsloth/Qwen3.8-27B-GGUF/resolve/main/Qwen3.8-27B-Q4_K_M.gguf?download=true" &
-                  [ -f "${CHECKS}/Qwen3.8-27B-mmproj-F16.gguf.status" ] || \
-                    dl_check "Qwen3.8-27B-mmproj-F16.gguf" \
-                    "https://huggingface.co/unsloth/Qwen3.8-27B-GGUF/resolve/main/mmproj-F16.gguf?download=true" &
-                  wait
+                  # Phase 1 -- resolve redirects for missing models, then download.
+                  for entry in \
+                    "Qwen3.6-35B-A3B-UD-Q4_K_M.gguf|https://huggingface.co/unsloth/Qwen3.6-35B-A3B-GGUF/resolve/main/Qwen3.6-35B-A3B-UD-Q4_K_M.gguf?download=true" \
+                    "Qwen3.6-35B-A3B-mmproj-F16.gguf|https://huggingface.co/unsloth/Qwen3.6-35B-A3B-GGUF/resolve/main/mmproj-F16.gguf?download=true" \
+                    "Qwen3.8-27B-Q4_K_M.gguf|https://huggingface.co/unsloth/Qwen3.8-27B-GGUF/resolve/main/Qwen3.8-27B-Q4_K_M.gguf?download=true" \
+                    "Qwen3.8-27B-mmproj-F16.gguf|https://huggingface.co/unsloth/Qwen3.8-27B-GGUF/resolve/main/mmproj-F16.gguf?download=true"; do
+                    name="${entry%%|*}"
+                    src="${entry#*|}"
 
-                  # Phase 2 -- sequential download for any flagged models.
-                  for name in \
-                    "Qwen3.6-35B-A3B-UD-Q4_K_M.gguf" \
-                    "Qwen3.6-35B-A3B-mmproj-F16.gguf" \
-                    "Qwen3.8-27B-Q4_K_M.gguf" \
-                    "Qwen3.8-27B-mmproj-F16.gguf"; do
-                    status=$(cat "${CHECKS}/${name}.status")
-                    case "${status}" in
-                       SKIP) echo "Skipping ${name} (up to date)"; continue ;;
-                       DOWNLOAD*)
-                          size=$(printf '%s' "${status}" | cut -f2)
-                          cdn=$(printf '%s' "${status}" | cut -f3)
-                          orig_url=$(printf '%s' "${status}" | cut -f4)
-                          if ! [ "${size}" -gt 0 ] 2>/dev/null; then
-                              retry_src="${orig_url:-${cdn}}"
-                              echo "WARNING: unknown size for ${name}, re-fetching from ${retry_src} ..." >&2
-                              retry_headers=$(curl -sIL --connect-timeout 30 --max-time 120 "${retry_src}" 2>/dev/null || true)
-                              size=$(printf '%s' "${retry_headers}" | awk 'BEGIN{IGNORECASE=1}/^content-length:/{c=$2}END{print c}' | tr -d '\r')
-                              if [ -z "${size}" ]; then
-                                  size=$(printf '%s' "${retry_headers}" | awk 'BEGIN{IGNORECASE=1}/^x-linked-size:/{c=$2}END{print c}' | tr -d '\r')
-                              fi
-                          fi
-                          if ! [ "${size}" -gt 0 ] 2>/dev/null; then
-                              echo "ERROR: could not determine size for ${name}" >&2; exit 1
-                          fi
-                          dl_fetch "${name}" "${size}" "${cdn}" ;;
-                      *) echo "ERROR: unknown status for ${name}: ${status}" >&2; exit 1 ;;
-                    esac
+                    dl_local_check "${name}" && continue
+
+                    result=$(resolve_cdn "${src}")
+                    cdn=$(printf '%s' "${result}" | cut -f1)
+                    size=$(printf '%s' "${result}" | cut -f2)
+
+                    if ! [ "${size}" -gt 0 ] 2>/dev/null; then
+                        echo "WARNING: unknown size for ${name}, re-resolving ..." >&2
+                        result=$(curl -sIL --connect-timeout 30 --max-time 120 "${src}" 2>/dev/null || true)
+                        cdn=$(printf '%s' "${result}" | awk 'BEGIN{IGNORECASE=1}/^location:/{u=$2}END{print u}' | tr -d '\r')
+                        [ -z "${cdn}" ] && cdn="${src}"
+                        size=$(printf '%s' "${result}" | awk 'BEGIN{IGNORECASE=1}/^content-length:/{c=$2}END{print c}' | tr -d '\r')
+                        if [ -z "${size}" ]; then
+                            size=$(printf '%s' "${result}" | awk 'BEGIN{IGNORECASE=1}/^x-linked-size:/{c=$2}END{print c}' | tr -d '\r')
+                        fi
+                    fi
+                    if ! [ "${size}" -gt 0 ] 2>/dev/null; then
+                        echo "ERROR: could not determine size for ${name}" >&2; exit 1
+                    fi
+                    dl_fetch "${name}" "${cdn}" "${size}"
                   done
-
-                  rm -rf "${CHECKS}"
               resources:
                 requests:
                   cpu: "500m"
