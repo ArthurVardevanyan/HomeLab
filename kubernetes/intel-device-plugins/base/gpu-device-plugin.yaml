@@ -2,11 +2,14 @@
 # GpuDevicePlugin custom resource consumed by the Intel Device Plugins Operator.
 # Advertises each Intel Arc Pro B70 (xe KMD) as the `gpu.intel.com/xe` resource.
 #
-# sharedDevNum: 1 -> one real device per physical GPU (no fan-out sharing).
-# Each card is a single allocatable device: gpu-1 reports
-# `gpu.intel.com/xe: 2`. If fan-out is ever needed, bump this number (e.g.
-# `sharedDevNum: 3` gives 3 virtual indices per card, indices 0-2 = GPU 0,
-# 3-5 = GPU 1).
+# sharedDevNum: 3 -> 3 virtual (shared) devices per physical GPU, gpu-1 reports
+# `gpu.intel.com/xe: 6`. preferredAllocationPolicy: balanced spreads devices
+# across physical GPUs. llama-swap requests "4" > 3 (max per card), so the
+# scheduler must draw from both cards regardless of policy -> ONEAPI
+# DEVICE_SELECTOR level_zero:0/1 always satisfiable. The remaining 2 virtual
+# devices are left for transcode pods sharing a physical GPU with an LLM
+# model. Bump sharedDevNum further (e.g. 4 -> 8 total) for more concurrent
+# transcode streams; llama-swap request stays "N+1" for guaranteed spread.
 #
 # With the OLM-installed operator, the operator supplies the plugin/init images
 # for the DaemonSet it manages, so we do NOT pin them here.
@@ -17,10 +20,10 @@ metadata:
   annotations:
     argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
 spec:
-  sharedDevNum: 1
+  sharedDevNum: 3
   enableMonitoring: true
   monitoringMode: single
-  preferredAllocationPolicy: none
+  preferredAllocationPolicy: balanced
   logLevel: 2
   # Run the plugin DaemonSet ONLY on the GPU node (gpu-1), not on every worker.
   # Keyed off the same NFD custom label the llm-server Intel workload uses, produced
