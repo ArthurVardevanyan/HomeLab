@@ -21,6 +21,20 @@ spec:
           restartPolicy: Never
           dnsPolicy: ClusterFirst
           schedulerName: default-scheduler
+          tolerations:
+            - key: node-role.kubernetes.io/gpu
+              operator: Exists
+              effect: NoSchedule
+          affinity:
+            nodeAffinity:
+              preferredDuringSchedulingIgnoredDuringExecution:
+                - weight: 1
+                  preference:
+                    matchExpressions:
+                      - key: nvidia.com/gpu.present
+                        operator: In
+                        values:
+                          - "true"
           terminationGracePeriodSeconds: 300
           automountServiceAccountToken: false
           serviceAccountName: renovate
