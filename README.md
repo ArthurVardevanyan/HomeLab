@@ -208,7 +208,7 @@ graph TD
 | **PCI Slot 1**   | Gen4 x4, `0000:06:00.0` (top slot, direct CPU lanes)                                                                               |
 | **PCI Slot 2**   | Gen3 x4, `0000:2d:00.0` (bottom slot, B550 chipset lanes)                                                                          |
 | **KMD**          | `xe`                                                                                                                               |
-| **K8s Resource** | `gpu.intel.com/xe` — 2 allocatable (one per physical card, no fan-out)                                                             |
+| **K8s Resource** | `gpu.intel.com/xe` — 6 allocatable (3 per card, balanced; LLM reserves 4 to span both)                                             |
 | **Workload**     | Transcoding (Plex/Immich, VA-API), LLM inference (llama.cpp Vulkan), AI/ML experiments                                             |
 | **Power Tuning** | ~155W per GPU via privileged DaemonSet — see [gpu-power-manager.yaml](kubernetes/intel-device-plugins/base/gpu-power-manager.yaml) |
 
