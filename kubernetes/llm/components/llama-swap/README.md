@@ -25,6 +25,7 @@ two GPUs (`ONEAPI_DEVICE_SELECTOR=level_zero:0` or `1`).
   - [Metrics](#metrics)
     - [Proxy metrics](#proxy-metrics)
     - [llama.cpp metrics (via metrics-exporter sidecar)](#llamacpp-metrics-via-metrics-exporter-sidecar)
+  - [MTP Speculative Decoding Experiment (2026-08-25)](#mtp-speculative-decoding-experiment-2026-08-25)
   - [References](#references)
 
 ## Model Matrix
@@ -109,8 +110,8 @@ Base args passed to each managed llama-server process (in `cmd_base` of
 - Flash attention on.
 - `--spec-type ngram-mod` — model-free (n-gram) speculative decoding.
   Replaced `ngram-simple` to test more aggressive drafting (more tokens
-  drafted per forward pass). See README Future Work for planned A/B
-  measurement.
+  drafted per forward pass). Results documented in [MTP Speculative
+  Decoding Experiment](#mtp-speculative-decoding-experiment-2026-08-25).
 - `--poll 0` — disables ggml threadpool spin-waiting (default: 50). With
   `-ngl 99` the threadpool does almost no real work; spinning was competing
   with the SYCL dispatch thread for the same physical cores.
@@ -358,6 +359,127 @@ of how many models are loaded. See [llama.cpp metrics via the metrics-exporter
 sidecar](../README.md#llamacpp-metrics-via-the-metrics-exporter-sidecar) for the
 complete discovery mechanism, transient scrape gap mitigations, and the full
 metric table.
+
+## MTP Speculative Decoding Experiment (2026-08-25)
+
+### What was tested
+
+Speculative decoding with Multi-Token Prediction (MTP) on top of existing
+n-gram speculation. Two model variants were evaluated against the baseline
+n-gram-only (`--spec-type ngram-mod`) configuration:
+
+- **27B** (Qwen3.8-27B): external MTP draft model (`mtp-Qwen3.8-27B-Q4_0.gguf`,
+  1.28 GiB Q4_0) with `--spec-draft-n-max 2 --spec-type ngram-mod,draft-mtp`
+- **35B-A3B** (Qwen3.6-35B-A3B): MTP head baked into the quantization file
+  from `unsloth/Qwen3.6-35B-A3B-MTP-GGUF` (approx. 0.5 GiB larger than the
+  base `unsloth/Qwen3.6-35B-A3B-GGUF` version), with
+  `--spec-draft-n-max 2 --spec-type ngram-mod,draft-mtp`
+
+Both used `--cache-reuse 256` and a coding-agent workload (Open WebUI /
+opencode sessions with 40–80K context).
+
+### Results
+
+#### 27B — ~0% gain
+
+| Metric           | n-gram only | n-gram + MTP |
+| ---------------- | ----------- | ------------ |
+| Gen throughput   | ~21 t/s     | ~20 t/s      |
+| Acceptance rate  | N/A         | ~59%         |
+| Tokens/spec-step | ~2.4        | ~2.4         |
+| VRAM overhead    | —           | +1.28 GiB    |
+
+- MTP draft acceptance: pos0 76.3%, pos1 59.5%, pos2+ 0.4% (n-gram long matches)
+- Avg draft tokens: 2.33/step, accepted: 1.43/step (27B)
+- Position acceptance at pos2+ proves n-gram is the dominant path (n-gram long
+  matches; MTP capped at n_max=2 so it can only contribute pos0/pos1)
+- MTP only ran on n-gram miss steps, where the marginal gain was ~0
+
+#### 35B-A3B — ~20% slower (confounded by VRAM pressure)
+
+| Metric           | n-gram only | MTP file   |
+| ---------------- | ----------- | ---------- |
+| Gen throughput   | ~46–49 t/s  | ~35–37 t/s |
+| Acceptance rate  | N/A         | ~52%       |
+| Tokens/spec-step | ~2.5        | ~2.8       |
+
+- Position acceptance: pos0 83.8%, pos1 70.4%, pos2+ (n-gram long matches)
+- The MTP quant file is ~0.5 GiB larger. At ctx-size 327680 + parallel 2 the GPU
+  is VRAM-constrained (weights + KV pool + MTP head approaches the 32 GB limit)
+- The 294912 context-size change (reduces KV pool by ~0.5 GiB) should restore
+  headroom, but as of this writing has not been deployed to the cluster
+
+### Why MTP didn't help
+
+On a coding-agent workload, n-gram speculation with `--cache-reuse 256` is
+highly effective. Code output is full of exact repetitions (function calls,
+imports, variable names, formatting patterns) that n-gram matches for free — no
+draft model forward pass required. MTP only runs on steps where the n-gram cache
+finds no match, where:
+
+1. The draft acceptance rate is lower (the model's next token is less predictable
+   without a preceding repetition to anchor on)
+2. The draft forward pass cost is real — 1.37 GiB of weights streamed from GDDR6
+   (~2–4 ms on the B70) plus a slightly larger verify batch
+3. The marginal accepted tokens per step barely exceed the n-gram-only baseline
+
+This matches the analysis in [Testing MTP with Qwen3.6 35B-A3B and 27B on Intel
+Arc B70][1]: MTP provides meaningful speedup only when the base has _no_
+speculation at all, or when n-gram matching is ineffective (non-repetitive output,
+short prompts where cache misses dominate).
+
+Three failure modes from the article that apply here:
+
+1. **Acceptance rate < 60%** — our blended acceptance rates (52–59%) sit right at
+   the threshold where MTP stops being beneficial
+2. **VRAM pressure** — the MTP quant is ~0.5 GiB larger; at high ctx sizes this
+   pushes the GPU over the edge, causing KV spillover to host RAM
+3. **Graph recapture** — on Intel SYCL (Level Zero), dynamic-shaped draft passes
+   can trigger per-step CUDA graph recapture, negating the draft cost savings
+   (not verified empirically, but plausible for the observed slowdown)
+
+### Conclusion
+
+**Drop MTP speculation. N-gram-only (`--spec-type ngram-mod`) is the optimal
+configuration for this hardware and workload.**
+
+N-gram speculation provides the majority of the throughput benefit (2×+ over
+non-speculative decode) at zero VRAM cost and zero additional forward passes.
+MTP adds VRAM overhead and extra forward passes with negligible-to-negative
+marginal gain on repetitive code workloads.
+
+### How to re-test
+
+To try MTP again in the future:
+
+1. **Isolate the variable**: run the same workload with n-gram-only vs
+   n-gram+MTP, keeping context size, parallelism, and prompt distribution
+   identical. Use the Open WebUI activity log to compare generation speeds across
+   matched session lengths.
+
+2. **Control for VRAM**: measure the model file size difference; ensure KV pool
+   fits comfortably in VRAM (leave ≥3 GiB headroom). Compare Pss_Anon
+   (`/proc/<pid>/smaps_rollup`) — if it climbs with session load, KV is spilling
+   to host RAM.
+
+3. **Use spec decode metrics**: query
+   `http://127.0.0.1:<port>/metrics` for:
+   - `spec_decode_num_drafts_total` — total speculative steps
+   - `spec_decode_num_accepted_tokens_total` — accepted draft tokens
+   - `spec_decode_num_draft_tokens_total` — total draft tokens proposed
+   - Calculate tokens/step = (accepted + bonus) / draft_steps
+   - Calculate acceptance rate = accepted / draft_tokens
+   - If acceptance rate < 60%, MTP is likely not worth the overhead
+
+4. **Check which path runs**: position acceptance at pos2+ indicates n-gram is
+   contributing (MTP is capped at n_max, so it only proposes pos0/pos1). If pos0
+   acceptance is low, the draft model's predictions are poor for the workload.
+
+5. **Watch for graph recapture**: on Intel SYCL / CUDA, dynamic-shaped draft
+   passes can trigger per-step graph recapture. Monitor load times for sudden
+   jumps or check llama.cpp logs for recapture warnings.
+
+[1]: https://dev.to/arthur__huang/testing-multi-token-prediction-mtp-with-qwen36-35b-a3b-and-27b-on-intel-arc-b70-545i
 
 ## References
 
