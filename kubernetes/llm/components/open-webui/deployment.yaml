@@ -45,7 +45,7 @@ spec:
           # renovate: datasource=docker depName=ghcr.io/open-webui/open-webui
           # image: ghcr.io/open-webui/open-webui:v0.11.0@sha256:72c0ba641ba75e7aa52655cb242570906ececd09b1140fb736483038a22b3228
           # renovate: datasource=docker depName=registry.arthurvardevanyan.com/homelab/open-webui
-          image: registry.arthurvardevanyan.com/homelab/open-webui:v0.11.0-hotfix@sha256:a924171665341baddc9cb8eca11403eca3b77be753e3e3e1856bdbba84189889
+          image: registry.arthurvardevanyan.com/homelab/open-webui:v0.11.1-hotfix@sha256:5f1a8498fcd6fb1dddb70b60f4ed0b294a4287991a125d66d17cc65f5adde0be
           imagePullPolicy: IfNotPresent
           args:
             - bash
@@ -119,6 +119,47 @@ spec:
             # Web GUI Admin Settings Won't Stick, all configs should be in GIT
             - name: ENABLE_PERSISTENT_CONFIG
               value: "false"
+            # Memory system: enables the built-in long-term memory feature.
+            # Background review auto-extracts facts/preferences from recent
+            # conversations every N turns, storing them in the `memory` table.
+            # Memories are injected into future prompts (up to MEMORIES_*_CHAR_LIMIT).
+            - name: ENABLE_MEMORIES
+              value: "true"
+            - name: ENABLE_MEMORY_BACKGROUND_REVIEW
+              value: "true"
+            - name: MEMORIES_REVIEW_INTERVAL_TURNS
+              value: "15"
+            - name: MEMORIES_CONTEXT_CHAR_LIMIT
+              value: "8000"
+            - name: MEMORIES_USER_CHAR_LIMIT
+              value: "8000"
+            # Global model defaults: apply to all models as a baseline.
+            # function_calling=native enables the 8 memory tools
+            # (add_memory, update_memory, search_memories, etc.) across
+            # all 4 models: qwen3.6-35b-a3b, qwen3.6-35b-a3b-dense,
+            # qwen3.6-35b-a3b-spread, qwen3.8-27b.
+            - name: DEFAULT_MODEL_PARAMS
+              value: '{"function_calling":"native"}'
+            # orjson provides a faster JSON encoder/decoder than the stdlib
+            # json module. Open WebUI falls back to stdlib for rejected
+            # payloads, so risk is minimal. Worth enabling on Redis-backed
+            # deployments (WebSocket manager + LiteLLM cache).
+            - name: ENABLE_ORJSON
+              value: "true"
+            # Global default capabilities applied to all models. Per-model
+            # overrides always take precedence. web_search uses the SearXNG
+            # backend already configured; file_context uses the pgvector RAG;
+            # vision enables image analysis; code_interpreter gives the
+            # Python sandbox (no-op unless Open Terminal is connected).
+            - name: DEFAULT_MODEL_METADATA
+              value: '{"capabilities":{"web_search":true,"file_context":true,"vision":true,"code_interpreter":true}}'
+            # The AnyIO default of 40 causes app-wide freezes under load.
+            # 2000+ is recommended for production servers; idle high
+            # ceiling costs nothing (it's a concurrency limit, not a pool).
+            # Your node has 6 cores / 82GB RAM, well above the "weak
+            # hardware" exception threshold.
+            - name: THREAD_POOL_SIZE
+              value: "2000"
             # Open WebUI ships its own context compaction (auto history-summarization).
             # Enabled here at 128K to match the OpenCode client's context cap, so long agent
             # sessions get summarized rather than dropped. Threshold is a soft trigger for
@@ -138,6 +179,8 @@ spec:
             - name: CONTEXT_COMPACTION_TOKEN_THRESHOLD
               value: "256000"
             - name: ENABLE_API_KEYS
+              value: "true"
+            - name: ENABLE_USER_WEBHOOKS
               value: "true"
             - name: USER_PERMISSIONS_FEATURES_API_KEYS
               value: "true"
