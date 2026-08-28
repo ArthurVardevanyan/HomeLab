@@ -2,7 +2,7 @@
 FROM quay.io/projectquay/clair-action:v0.0.16@sha256:a4f36fc822dd6ae9ea4031fb5cfe642c39f37ddf46043b70433c95d27e5959eb AS clair
 
 # renovate: datasource=docker depName=node
-FROM node:26.7.0-trixie@sha256:bde0dae02f2b12d2bce5ee72b2432f0e511767b7b2dc4dd3b064df11ae422fee AS node-tools
+FROM node:26.8.1-trixie@sha256:f5d1cc40abc10c2843339a2134d07817cf33c405cb16bfd052b0ed790254c3a3 AS node-tools
 # renovate: datasource=npm depName=markdownlint-cli
 ENV MARKDOWNLINT_CLI_VERSION=0.49.1
 # renovate: datasource=npm depName=prettier
@@ -69,7 +69,7 @@ RUN curl -sSL https://github.com/cli/cli/releases/download/v${GH_VERSION}/gh_${G
 
 # Google Cloud SDK
 # renovate: datasource=docker depName=google/cloud-sdk
-ENV GCLOUD_VERSION=581.0.0
+ENV GCLOUD_VERSION=582.0.0
 RUN curl -L -o /tmp/google-cloud-cli.tar.gz \
   "https://dl.google.com/dl/cloudsdk/channels/rapid/downloads/google-cloud-cli-${GCLOUD_VERSION}-linux-x86_64.tar.gz" && \
   tar -xzf /tmp/google-cloud-cli.tar.gz -C /usr/local && rm -f /tmp/google-cloud-cli.tar.gz && \
@@ -105,7 +105,7 @@ RUN curl -L -o go.tar.gz "https://go.dev/dl/go${GO_VERSION}.linux-amd64.tar.gz" 
 
 # golangci-lint
 # renovate: datasource=github-releases depName=golangci/golangci-lint
-ENV GOLANGCI_LINT_VERSION=2.13.1
+ENV GOLANGCI_LINT_VERSION=2.13.2
 RUN curl -fL --retry 5 --retry-all-errors --retry-delay 2 -o "golangci-lint-${GOLANGCI_LINT_VERSION}-linux-amd64.tar.gz" \
   "https://github.com/golangci/golangci-lint/releases/download/v${GOLANGCI_LINT_VERSION}/golangci-lint-${GOLANGCI_LINT_VERSION}-linux-amd64.tar.gz" && \
   curl -fL --retry 5 --retry-all-errors --retry-delay 2 -o golangci-lint-checksums.txt \
@@ -148,7 +148,7 @@ ENV GIT_CLIFF_VERSION=2.13.1
 # renovate: datasource=github-releases depName=go-task/task
 ENV TASK_VERSION=3.53.1
 # renovate: datasource=github-releases depName=ArthurVardevanyan/k8s-gitops-ci
-ENV K8S_GITOPS_CI_VERSION=0.57.5
+ENV K8S_GITOPS_CI_VERSION=0.57.6
 RUN curl -fL --retry 5 --retry-all-errors --retry-delay 2 -o "goreleaser_Linux_x86_64.tar.gz" \
   "https://github.com/goreleaser/goreleaser/releases/download/v${GORELEASER_VERSION}/goreleaser_Linux_x86_64.tar.gz" && \
   curl -fL --retry 5 --retry-all-errors --retry-delay 2 -o goreleaser-checksums.txt \
