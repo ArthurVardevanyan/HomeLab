@@ -34,8 +34,7 @@ OIDC, tracks token-level cost, routes the request to the appropriate GPU via the
 `llama_swap_affinity.py` plugin, and returns a streaming response in OpenAI
 format.
 
-Two public model aliases are exposed (`qwen3.6-35b-a3b`, `qwen3.6-27b`),
-each with two GPU-backed deployments (gpu0 and gpu1).
+Four public model aliases are exposed (`qwen3.6-35b-a3b`, `qwen3.6-35b-a3b-dense`, `qwen3.8-27b`, `qwen3.6-35b-a3b-spread`), each with one or two GPU-backed deployments (gpu0 and gpu1, except spread which spans both).
 LiteLLM's routing plugin narrows the candidate list using llama-swap's ground
 truth (which models are resident on which GPU), then picks the least busy slot
 when both GPUs have the model loaded.
@@ -55,13 +54,14 @@ and cost-tracking settings.
 
 ### Public model aliases
 
-Three model names are exposed to clients, each with two deployments (one per
-GPU) for load-aware routing:
+Four model names are exposed to clients: three with two deployments (one per GPU) for load-aware routing, and one spread model using both GPUs.
 
-| Public alias      | GPU 0 deployment  | GPU 1 deployment  | Input cost/token | Output cost/token |
-| ----------------- | ----------------- | ----------------- | ---------------- | ----------------- |
-| `qwen3.6-35b-a3b` | `openai/35b-gpu0` | `openai/35b-gpu1` | 1.86e-6          | 1.24e-6           |
-| `qwen3.6-27b`     | `openai/27b-gpu1` | `openai/27b-gpu0` | 3.98e-6          | 2.65e-6           |
+| Public alias             | GPU 0 deployment        | GPU 1 deployment        | Input cost/token | Output cost/token |
+| ------------------------ | ----------------------- | ----------------------- | ---------------- | ----------------- |
+| `qwen3.6-35b-a3b`        | `openai/35b-gpu0`       | `openai/35b-gpu1`       | 1.35e-6          | 1.35e-6           |
+| `qwen3.6-35b-a3b-dense`  | `openai/35b-gpu0-dense` | `openai/35b-gpu1-dense` | 1.35e-6          | 1.35e-6           |
+| `qwen3.8-27b`            | `openai/27b-gpu1`       | `openai/27b-gpu0`       | 1.18e-6          | 1.18e-6           |
+| `qwen3.6-35b-a3b-spread` | `openai/35b-spread`     | —                       | 0.77e-6          | 0.77e-6           |
 
 All deployments point to `http://llama-swap-svc.llm.svc.cluster.local:8080/v1`
 with `api_key: "dummy"`. Cost tracking is enabled via `SPEND_TRACKING: "true"`
