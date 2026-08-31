@@ -21,6 +21,8 @@ spec:
       value: "./containers/toolbox/containerfile"
     - name: IMAGE
       value: "registry.arthurvardevanyan.com/homelab/toolbox:not_latest"
+    - name: GH_TOKEN
+      value: ""
 
   pipelineSpec:
     params:
@@ -35,6 +37,9 @@ spec:
         description: Path to the Dockerfile to build.
         type: string
         default: ./Dockerfile
+      - name: GH_TOKEN
+        type: string
+        description: GitHub token for authenticated API calls during image build.
 
     results:
       - description: The common vulnerabilities and exposures (CVE) result
@@ -73,6 +78,8 @@ spec:
             value: $(params.IMAGE)
           - name: DOCKERFILE
             value: $(params.DOCKERFILE)
+          - name: BUILD_EXTRA_ARGS
+            value: "--build-arg GH_TOKEN=$(params.GH_TOKEN)"
         workspaces:
           - name: source
             workspace: data
