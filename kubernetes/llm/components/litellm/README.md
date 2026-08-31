@@ -11,6 +11,8 @@ routing with GPU affinity via a custom `llama_swap_affinity` plugin.
   - [Configuration](#configuration)
     - [`litellm.yaml`](#litellmyaml)
     - [Public model aliases](#public-model-aliases)
+    - [Pricing model](#pricing-model)
+      - [Recomputing costs](#recomputing-costs)
     - [Router settings](#router-settings)
     - [Response \& cache](#response--cache)
     - [GPU affinity plugin](#gpu-affinity-plugin)
@@ -34,8 +36,7 @@ OIDC, tracks token-level cost, routes the request to the appropriate GPU via the
 `llama_swap_affinity.py` plugin, and returns a streaming response in OpenAI
 format.
 
-Two public model aliases are exposed (`qwen3.6-35b-a3b`, `qwen3.6-27b`),
-each with two GPU-backed deployments (gpu0 and gpu1).
+Four public model aliases are exposed (`qwen3.6-35b-a3b`, `qwen3.6-35b-a3b-dense`, `qwen3.8-27b`, `qwen3.6-35b-a3b-spread`), each with one or two GPU-backed deployments (gpu0 and gpu1, except spread which spans both).
 LiteLLM's routing plugin narrows the candidate list using llama-swap's ground
 truth (which models are resident on which GPU), then picks the least busy slot
 when both GPUs have the model loaded.
@@ -55,18 +56,118 @@ and cost-tracking settings.
 
 ### Public model aliases
 
-Three model names are exposed to clients, each with two deployments (one per
-GPU) for load-aware routing:
+Four model names are exposed to clients: three with two deployments (one per GPU) for load-aware routing, and one spread model using both GPUs.
 
-| Public alias      | GPU 0 deployment  | GPU 1 deployment  | Input cost/token | Output cost/token |
-| ----------------- | ----------------- | ----------------- | ---------------- | ----------------- |
-| `qwen3.6-35b-a3b` | `openai/35b-gpu0` | `openai/35b-gpu1` | 1.86e-6          | 1.24e-6           |
-| `qwen3.6-27b`     | `openai/27b-gpu1` | `openai/27b-gpu0` | 3.98e-6          | 2.65e-6           |
+| Public alias             | GPU 0 deployment        | GPU 1 deployment        | Input cost/token | Output cost/token |
+| ------------------------ | ----------------------- | ----------------------- | ---------------- | ----------------- |
+| `qwen3.6-35b-a3b`        | `openai/35b-gpu0`       | `openai/35b-gpu1`       | 1.3e-8           | 1.3e-8            |
+| `qwen3.6-35b-a3b-dense`  | `openai/35b-gpu0-dense` | `openai/35b-gpu1-dense` | 1.3e-8           | 1.3e-8            |
+| `qwen3.8-27b`            | `openai/27b-gpu1`       | `openai/27b-gpu0`       | 1.3e-8           | 1.3e-8            |
+| `qwen3.6-35b-a3b-spread` | `openai/35b-spread`     | —                       | 0.8e-8           | 0.8e-8            |
 
 All deployments point to `http://llama-swap-svc.llm.svc.cluster.local:8080/v1`
 with `api_key: "dummy"`. Cost tracking is enabled via `SPEND_TRACKING: "true"`
 and `store_prompts_in_spend_logs: true` — token usage is stored in the CNPG
 PostgreSQL database.
+
+### Pricing model
+
+Costs are based on actual wall-plug electricity consumption measured against
+token throughput. For the current methodology, see
+[`notes/power.log`](../../../notes/power.log) (smart plug data) and the
+recomputation procedure below.
+
+#### Recomputing costs
+
+Run these queries against Thanos (or your Prometheus endpoint) for the target
+period. Replace the time range as needed.
+
+**1. Get the electricity rate from your utility bill.**
+Extract the all-in effective rate (energy charges + PSC + PSCR). For the August
+2026 computation:
+
+```log
+Off-Peak energy:   $0.028780/kWh
+Mid-Peak energy:   $0.055790/kWh
+On-Peak energy:    $0.108000/kWh
+PSC (MI):          $0.097260/kWh
+PSCR:              $0.018770/kWh
+
+All-in (mid-peak baseline): ~$0.227/kWh
+```
+
+**2. Get total tokens from LiteLLM:**
+
+```promql
+# Total input tokens
+sum(increase(litellm_input_tokens_metric_total{model=~".+"}[30d]))
+
+# Total output tokens
+sum(increase(litellm_output_tokens_metric_total{model=~".+"}[30d]))
+```
+
+**3. Get total smart plug energy for the period:**
+
+The smart plug sensor is `sensor.kvm_7_current_consumption` in Home Assistant.
+Data is logged to `notes/power.log` at 1-minute intervals. Compute energy:
+
+```bash
+# Count idle vs active readings (idle < 120W, active ≥ 120W)
+awk -F, 'NR>1 && $2 < 120 {idle++; total++} NR>1 {total++}
+         END {print "Idle:", idle, "Active:", total-idle, "Total:", total}' notes/power.log
+
+# Sum power values to get kWh
+awk -F, 'NR>1 {sum += $2} END {printf "Total Wh: %g, kWh: %g\n", sum, sum/1000}' notes/power.log
+
+# Split idle vs active energy
+awk -F, 'NR>1 {
+    if ($2 < 120) idle_sum += $2; else active_sum += $2;
+    total++
+}
+END {
+    hours_per_reading = 1.0/60.0
+    printf "Idle: %.1f kWh\nActive: %.1f kWh\nTotal: %.1f kWh\n",
+        idle_sum * hours_per_reading / 1000,
+        active_sum * hours_per_reading / 1000,
+        total * hours_per_reading / 1000
+}' notes/power.log
+```
+
+**4. Compute per-token cost:**
+
+```log
+Total tokens = input_tokens + output_tokens
+Total cost = total_kWh × effective_rate
+$/token = total_cost / total_tokens
+```
+
+For the August 2026 data:
+
+- 64.0 kWh total × $0.227/kWh = $14.53
+- 1.136B total tokens (1.128B input + 8.24M output)
+- **$0.0000000128/token ≈ $0.013/1M tokens**
+
+**5. Model-specific adjustments:**
+
+The base rate applies equally to all models since they share the same hardware.
+Adjust for models with different throughput characteristics:
+
+- **Spread model**: parallel processing across both GPUs provides ~30-40%
+  throughput improvement → multiply base rate by 0.6
+- **Dense vs MoE**: if hardware configuration differs (different GPUs, power
+  limits), recalculate using the same procedure
+
+**6. Update files:**
+
+- `kubernetes/llm/components/litellm/litellm.yaml` — `input_cost_per_token` and
+  `output_cost_per_token` for each model alias
+- `machineConfigs/desktop/home/arthur/.config/opencode/opencode.json` — `cost`
+  fields (in $/1M tokens, not $/token)
+- This README — pricing table values
+
+The smart plug data is collected via Home Assistant (`sensor.kvm_7_current_consumption`)
+and written to `notes/power.log` every minute. Ensure the sensor is on the same
+circuit as the LLM system (gpu-1 node) for accurate readings.
 
 ### Router settings
 
