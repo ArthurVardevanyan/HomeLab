@@ -68,7 +68,7 @@ Measured decode throughput (SYCL backend, Qwen3.6-35B-A3B):
 **155W is the chosen setting** — balances cost savings with acceptable performance:
 
 - ~10% performance loss from peak — imperceptible for chat workloads (3-10s → 3.5-11s)
-- 75W power savings per GPU (150W total) — ~$86/year savings at $0.10/kWh
+- 75W power savings per GPU (150W total) — ~$57/year savings at $0.15/kWh
 - Average power draw drops from ~180W to ~155W per GPU
 - Occasional 100K+ token prompts may be slightly slower but still functional
 
