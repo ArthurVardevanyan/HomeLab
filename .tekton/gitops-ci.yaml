@@ -13,6 +13,8 @@ spec:
   params:
     - name: playbooks
       value: servers
+    - name: use_rc
+      value: "true"
     - name: git-commit
       value: "{{ revision }}"
     - name: git-url
@@ -25,6 +27,8 @@ spec:
   pipelineSpec:
     params:
       - name: playbooks
+        type: string
+      - name: use_rc
         type: string
       - name: git-commit
         type: string
@@ -42,6 +46,8 @@ spec:
     tasks:
       - name: gitops-ci
         params:
+          - name: use_rc
+            value: $(params.use_rc)
           - name: git-commit
             value: $(params.git-commit)
           - name: git-url

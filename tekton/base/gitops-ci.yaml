@@ -14,6 +14,9 @@ spec:
     - name: image
       type: string
       default: "registry.arthurvardevanyan.com/homelab/toolbox:not_latest"
+    - name: use_rc
+      type: string
+      default: "false"
     - name: git-commit
       type: string
     - name: git-url
@@ -62,6 +65,8 @@ spec:
           value: $(params.git-pr-number)
         - name: TARGET_BRANCH
           value: $(params.target-branch)
+        - name: USE_K8S_GITOPS_CI_RC
+          value: $(params.use_rc)
         - name: WORKSPACE_BASIC_AUTH_PATH
           value: $(workspaces.basic-auth.path)
       script: |
@@ -79,6 +84,7 @@ spec:
         : "${GIT_PR_NUMBER:=""}"
         : "${GIT_COMMIT:=""}"
         : "${TARGET_BRANCH:=""}"
+        : "${USE_K8S_GITOPS_CI_RC:=""}"
 
         export URL=arthurvardevanyan.com
 
@@ -96,7 +102,10 @@ spec:
 
         gh auth login --with-token <"/${WORKSPACE_BASIC_AUTH_PATH}/git-provider-token"
 
-        k8s-gitops-ci pipeline \
+        K8S_GITOPS_CI_BIN=k8s-gitops-ci
+        [[ "${USE_K8S_GITOPS_CI_RC}" = "true" ]] && K8S_GITOPS_CI_BIN=k8s-gitops-ci-rc
+
+        ${K8S_GITOPS_CI_BIN} pipeline \
           --url "${GIT_URL}" \
           --pr "${GIT_PR_NUMBER}" \
           --revision "${GIT_COMMIT}" \

@@ -1,3 +1,4 @@
+# syntax=docker/dockerfile-1
 # renovate: datasource=docker depName=quay.io/projectquay/clair-action
 FROM quay.io/projectquay/clair-action:v0.0.16@sha256:a4f36fc822dd6ae9ea4031fb5cfe642c39f37ddf46043b70433c95d27e5959eb AS clair
 
@@ -12,6 +13,8 @@ RUN npm install -g \
   prettier@${PRETTIER_CLI_VERSION}
 
 FROM quay.io/centos/centos:stream10-minimal
+
+ARG GH_TOKEN=""
 
 ENV \
   LANG=en_US.UTF-8 \
@@ -176,7 +179,26 @@ RUN curl -fL --retry 5 --retry-all-errors --retry-delay 2 -o "goreleaser_Linux_x
   "https://github.com/ArthurVardevanyan/k8s-gitops-ci/releases/download/v${K8S_GITOPS_CI_VERSION}/k8s-gitops-ci_${K8S_GITOPS_CI_VERSION}_checksums.txt" && \
   grep -E "k8s-gitops-ci_${K8S_GITOPS_CI_VERSION}_linux_amd64\.tar\.gz$" k8s-gitops-ci_checksums.txt | sha256sum -c - && \
   tar -xzf "k8s-gitops-ci_${K8S_GITOPS_CI_VERSION}_linux_amd64.tar.gz" --no-same-owner -C /usr/local/bin k8s-gitops-ci && \
-  chmod +x /usr/local/bin/k8s-gitops-ci && rm -f "k8s-gitops-ci_${K8S_GITOPS_CI_VERSION}_linux_amd64.tar.gz" k8s-gitops-ci_checksums.txt
+   chmod +x /usr/local/bin/k8s-gitops-ci && rm -f "k8s-gitops-ci_${K8S_GITOPS_CI_VERSION}_linux_amd64.tar.gz" k8s-gitops-ci_checksums.txt
+
+# k8s-gitops-ci prerelease (installed as k8s-gitops-ci-rc; no checksum verification since RC assets get purged)
+# shellcheck disable=SC1090,SC2046
+RUN K8S_GITOPS_CI_PRERELEASE=$(curl -sL ${GH_TOKEN:+-H "Authorization: token ${GH_TOKEN}"} "https://api.github.com/repos/ArthurVardevanyan/k8s-gitops-ci/releases" | jq -r '[.[] | select(.prerelease)] | sort_by(.created_at) | last | if . then .tag_name | ltrimstr("v") else empty end') && \
+    if [ -n "${K8S_GITOPS_CI_PRERELEASE}" ] && [ "${K8S_GITOPS_CI_PRERELEASE}" != "${K8S_GITOPS_CI_VERSION}" ]; then \
+      curl -fL --retry 5 --retry-delay 2 -o "k8s-gitops-ci_${K8S_GITOPS_CI_PRERELEASE}_linux_amd64.tar.gz" \
+        "https://github.com/ArthurVardevanyan/k8s-gitops-ci/releases/download/v${K8S_GITOPS_CI_PRERELEASE}/k8s-gitops-ci_${K8S_GITOPS_CI_PRERELEASE}_linux_amd64.tar.gz" && \
+      tar -xzf "k8s-gitops-ci_${K8S_GITOPS_CI_PRERELEASE}_linux_amd64.tar.gz" --no-same-owner -C /tmp "k8s-gitops-ci_${K8S_GITOPS_CI_PRERELEASE}/k8s-gitops-ci" && \
+      cp /tmp/k8s-gitops-ci_${K8S_GITOPS_CI_PRERELEASE}/k8s-gitops-ci /usr/local/bin/k8s-gitops-ci-rc && \
+      chmod +x /usr/local/bin/k8s-gitops-ci-rc && \
+      rm -f "k8s-gitops-ci_${K8S_GITOPS_CI_PRERELEASE}_linux_amd64.tar.gz" && \
+      rm -rf /tmp/k8s-gitops-ci_${K8S_GITOPS_CI_PRERELEASE}; \
+    fi && \
+    rmdir /usr/local/bin/k8s-gitops-ci_${K8S_GITOPS_CI_PRERELEASE} 2>/dev/null || true
+
+# Always ensure k8s-gitops-ci-rc exists — symlink to stable if no RC binary was installed
+RUN if [ ! -f /usr/local/bin/k8s-gitops-ci-rc ]; then \
+      ln -sf k8s-gitops-ci /usr/local/bin/k8s-gitops-ci-rc; \
+    fi
 
 RUN golangci-lint --version
 CMD ["sleep", "infinity"]
