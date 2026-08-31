@@ -7,6 +7,21 @@ metadata:
   annotations:
     argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
 spec:
+  # Pinned to 9.15 to work around a login-breaking regression in the PGO 5.8.9
+  # default image (crunchy-pgadmin4:ubi9-9.17-2633).
+  #
+  # pgAdmin 9.17 ships Flask-Security-Too 5.8.2, which inverted the contract of
+  # User.is_locked(): 5.8.1 used `if not user.is_locked(...): return False`
+  # while 5.8.2 uses `if user.is_locked(...): return False`. pgAdmin's
+  # User.is_locked() (pgadmin/model/__init__.py) still returns True for an
+  # *unlocked* user, so LoginForm.validate() fails for every valid credential
+  # and POST /authenticate/login 302-redirects back to /login with no error.
+  # See https://github.com/pgadmin-org/pgadmin4/issues/10311
+  #
+  # 9.15 ships Flask-Security-Too 5.8.1 and shares the same alembic head
+  # (normalize_locked_text_default), so this is not a schema downgrade.
+  # Remove this pin once Crunchy publishes an image with the fix.
+  image: registry.developers.crunchydata.com/crunchydata/crunchy-pgadmin4:ubi9-9.15-2621@sha256:2aca68f74a212fbeefb6ea4bddab3abab1604c0c367a9ddd8965397aec2a1558
   dataVolumeClaimSpec:
     storageClassName: rook-ceph-block-ci
     accessModes:
