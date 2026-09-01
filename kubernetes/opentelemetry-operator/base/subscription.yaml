@@ -1,0 +1,24 @@
+---
+apiVersion: operators.coreos.com/v1alpha1
+kind: Subscription
+metadata:
+  name: opentelemetry-operator
+  namespace: opentelemetry-operator
+  annotations:
+    argocd.argoproj.io/sync-wave: "0"
+spec:
+  channel: alpha
+  installPlanApproval: Manual
+  name: opentelemetry-operator
+  source: community-operators
+  sourceNamespace: openshift-marketplace
+  # renovate: datasource=github-releases depName=open-telemetry/opentelemetry-operator
+  startingCSV: opentelemetry-operator.v0.152.0
+  config:
+    resources:
+      limits:
+        cpu: 100m
+        memory: 256Mi
+      requests:
+        cpu: 5m
+        memory: 64Mi
