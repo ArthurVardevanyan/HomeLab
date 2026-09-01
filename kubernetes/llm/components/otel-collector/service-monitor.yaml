@@ -1,0 +1,19 @@
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: open-webui-collector
+  namespace: llm
+  labels:
+    app.kubernetes.io/name: otel-collector
+    app.kubernetes.io/instance: otel-collector
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: otel-collector
+      app.kubernetes.io/instance: llm.open-webui
+  endpoints:
+    - port: prometheus
+      interval: 30s
+      path: /metrics
+      honorLabels: true

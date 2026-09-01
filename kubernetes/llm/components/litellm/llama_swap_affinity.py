@@ -96,7 +96,7 @@ logger = logging.getLogger(__name__)
 
 # llama-swap HTTP client settings
 _LLAMA_SWAP_BASE_URL: Final = os.environ.get(
-    "LLAMA_SWAP_BASE_URL", "http://llama-swap-svc.llm.svc.cluster.local:8080"
+    "LLAMA_SWAP_BASE_URL", "http://llama-swap-svc.llm.svc.cluster.local.:8080"
 ).rstrip("/")
 _RUNNING_URL: Final = f"{_LLAMA_SWAP_BASE_URL}/running"
 

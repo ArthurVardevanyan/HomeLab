@@ -65,7 +65,7 @@ Four model names are exposed to clients: three with two deployments (one per GPU
 | `qwen3.8-27b`            | `openai/27b-gpu1`       | `openai/27b-gpu0`       | 1.3e-8           | 1.3e-8            |
 | `qwen3.6-35b-a3b-spread` | `openai/35b-spread`     | —                       | 0.8e-8           | 0.8e-8            |
 
-All deployments point to `http://llama-swap-svc.llm.svc.cluster.local:8080/v1`
+All deployments point to `http://llama-swap-svc.llm.svc.cluster.local.:8080/v1`
 with `api_key: "dummy"`. Cost tracking is enabled via `SPEND_TRACKING: "true"`
 and `store_prompts_in_spend_logs: true` — token usage is stored in the CNPG
 PostgreSQL database.
@@ -192,7 +192,7 @@ circuit as the LLM system (gpu-1 node) for accurate readings.
 
 ### Response & cache
 
-LiteLLM uses **Dragonfly** (`litellm-dragonfly.llm.svc.cluster.local:6379`) as
+LiteLLM uses **Dragonfly** (`litellm-dragonfly.llm.svc.cluster.local.:6379`) as
 a Redis-compatible cache backend:
 
 - **Response caching**: `cache: true` with `ttl: 86400` (24 hours), namespace
@@ -332,7 +332,7 @@ proxy. All state (cache, sessions, cost tracking) is external:
 LiteLLM uses PostgreSQL for cost tracking, spend logs, and session data,
 deployed via CloudNativePG (`components/cnpg-litellm/`):
 
-- **Connection**: `postgresql://postgres@litellm-rw.llm.svc.cluster.local:5432/litellm`
+- **Connection**: `postgresql://postgres@litellm-rw.llm.svc.cluster.local.:5432/litellm`
   (via the CNPG read-write service).
 - **`STORE_MODEL_IN_DB: false`**: models are defined in `litellm.yaml`, not
   fetched from the database.

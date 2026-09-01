@@ -117,13 +117,13 @@ and both llama-swap endpoints) share a single combined `llm` job, with
 - job_name: "llm"
   scrape_interval: 30s
   static_configs:
-    - targets: ["xpumd.intel-device-plugins-operator.svc.cluster.local:8080"]
+    - targets: ["xpumd.intel-device-plugins-operator.svc.cluster.local.:8080"]
       labels: { app: intel-gpu }
-    - targets: ["litellm-svc.llm.svc.cluster.local:4000"]
+    - targets: ["litellm-svc.llm.svc.cluster.local.:4000"]
       labels: { app: litellm }
-    - targets: ["llama-swap-svc.llm.svc.cluster.local:8080"]
+    - targets: ["llama-swap-svc.llm.svc.cluster.local.:8080"]
       labels: { app: llama-swap }
-    - targets: ["llama-swap-svc.llm.svc.cluster.local:9100"]
+    - targets: ["llama-swap-svc.llm.svc.cluster.local.:9100"]
       labels: { app: llama-swap }
 ```
 
