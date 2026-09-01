@@ -2,11 +2,11 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: knowledge-sync
+  name: oikb
   namespace: llm
   labels:
-    app.kubernetes.io/name: knowledge-sync
-    app.kubernetes.io/instance: knowledge-sync
+    app.kubernetes.io/name: oikb
+    app.kubernetes.io/instance: oikb
 spec:
   replicas: 1
   revisionHistoryLimit: 0
@@ -15,25 +15,25 @@ spec:
     type: Recreate
   selector:
     matchLabels:
-      app.kubernetes.io/name: knowledge-sync
+      app.kubernetes.io/name: oikb
   template:
     metadata:
       labels:
-        app.kubernetes.io/name: knowledge-sync
-        app.kubernetes.io/instance: knowledge-sync
+        app.kubernetes.io/name: oikb
+        app.kubernetes.io/instance: oikb
     spec:
       restartPolicy: Always
       schedulerName: default-scheduler
       terminationGracePeriodSeconds: 30
       automountServiceAccountToken: false
-      serviceAccountName: knowledge-sync
+      serviceAccountName: oikb
       enableServiceLinks: false
       dnsPolicy: ClusterFirst
       securityContext:
         seccompProfile:
           type: RuntimeDefault
       containers:
-        - name: knowledge-sync
+        - name: oikb
           # oikb daemon: incremental multi-source sync into Open WebUI Knowledge
           # Bases. Sources, schedules, and tokens come from the ConfigMap
           # (.oikb.yaml) and the ESO Secret (env) mounted below.
@@ -48,10 +48,10 @@ spec:
             - "json"
           env:
             - name: OPEN_WEBUI_URL
-              value: http://open-webui.llm.svc.cluster.local:8080
+              value: http://open-webui.llm.svc.cluster.local.:8080
           envFrom:
             - secretRef:
-                name: knowledge-sync
+                name: oikb
           securityContext:
             runAsNonRoot: true
             readOnlyRootFilesystem: true
@@ -106,7 +106,7 @@ spec:
       volumes:
         - name: config
           configMap:
-            name: knowledge-sync-config
+            name: oikb-config
             items:
               - key: oikb.yaml
                 path: .oikb.yaml

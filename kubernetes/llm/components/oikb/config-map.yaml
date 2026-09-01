@@ -2,11 +2,11 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: knowledge-sync-config
+  name: oikb-config
   namespace: llm
   labels:
-    app.kubernetes.io/name: knowledge-sync
-    app.kubernetes.io/instance: knowledge-sync
+    app.kubernetes.io/name: oikb
+    app.kubernetes.io/instance: oikb
 data:
   # oikb daemon config (mounted at /app/.oikb.yaml). Each source syncs to its
   # own Knowledge Base (one KB per source for clean retrieval and independent
@@ -14,7 +14,7 @@ data:
   # from the ESO Secret via ${VAR} interpolation — never committed here.
   #
   # Create each Knowledge Base in the Open WebUI UI first and record its ID in
-  # Vault under secret/data/homelab/llm/knowledge-sync (KB_*_ID).
+  # Vault under secret/data/homelab/llm/oikb (KB_*_ID).
   #
   # TODO: Jira/Discord/Slack connector env-var names are not listed in the
   # public oikb guide. Confirm exact names per connector by running
