@@ -229,6 +229,11 @@ spec:
               value: "true"
             - name: OTEL_SERVICE_NAME
               value: open-webui
+            - name: TOOL_SERVER_CONNECTIONS
+              valueFrom:
+                secretKeyRef:
+                  name: open-webui-config
+                  key: TOOL_SERVER_CONNECTIONS
           securityContext:
             runAsNonRoot: true
             readOnlyRootFilesystem: true
