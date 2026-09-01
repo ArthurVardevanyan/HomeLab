@@ -4,19 +4,25 @@ kind: VerticalPodAutoscaler
 metadata:
   name: open-webui-collector
   namespace: llm
+  annotations:
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
 spec:
   targetRef:
     apiVersion: opentelemetry.io/v1alpha1
     kind: OpenTelemetryCollector
     name: open-webui-collector
   updatePolicy:
-    updateMode: Auto
+    updateMode: "InPlaceOrRecreate"
   resourcePolicy:
     containerPolicies:
       - containerName: opentelemetry-collector
         minAllowed:
-          cpu: 50m
-          memory: 64Mi
+          cpu: 5m
+          memory: 32Mi
         maxAllowed:
-          cpu: "1"
+          cpu: "250m"
           memory: 512Mi
+        controlledResources:
+          - cpu
+          - memory
+        controlledValues: RequestsOnly

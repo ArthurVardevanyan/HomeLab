@@ -486,16 +486,3 @@ data:
         relabel_configs:
         - target_label: cluster
           replacement: okd
-
-      # Open WebUI metrics via OTEL collector (OTLP → Prometheus bridge).
-      - job_name: 'open-webui'
-        scrape_interval: 30s
-        scrape_timeout: 10s
-        static_configs:
-          - targets:
-            - open-webui-collector.llm.svc.cluster.local:9464
-            labels:
-              app: open-webui
-        relabel_configs:
-        - target_label: cluster
-          replacement: okd
