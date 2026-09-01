@@ -218,6 +218,17 @@ spec:
               value: "15"
             - name: SUBAGENTS_MAX_OUTPUT
               value: "8000"
+            # ---- Observability (OTEL) ----
+            - name: ENABLE_OTEL
+              value: "true"
+            - name: ENABLE_OTEL_METRICS
+              value: "true"
+            - name: OTEL_EXPORTER_OTLP_ENDPOINT
+              value: http://open-webui-collector.llm.svc.cluster.local:4317
+            - name: OTEL_EXPORTER_OTLP_INSECURE
+              value: "true"
+            - name: OTEL_SERVICE_NAME
+              value: open-webui
           securityContext:
             runAsNonRoot: true
             readOnlyRootFilesystem: true

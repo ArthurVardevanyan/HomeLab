@@ -1,0 +1,76 @@
+---
+# Managed by the community OpenTelemetry Operator (kubernetes/opentelemetry-operator).
+#
+# Open WebUI v0.11.0 has NO scrapeable /metrics endpoint; it only PUSHES OTLP.
+# This collector receives OTLP on :4317/:4318 and re-exposes a scrapeable
+# Prometheus endpoint on :9464 (metrics namespaced "openwebui") that the
+# hand-rolled Prometheus (static_configs) scrapes.
+#
+# The operator renders the Deployment + Service ("open-webui-collector") from
+# this CR. Requires the OpenTelemetryCollector CRD, which is third-party (not a
+# cluster built-in), so the sync-option below is required for first sync.
+apiVersion: opentelemetry.io/v1beta1
+kind: OpenTelemetryCollector
+metadata:
+  name: open-webui
+  namespace: llm
+  annotations:
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+  labels:
+    app.kubernetes.io/name: otel-collector
+    app.kubernetes.io/instance: otel-collector
+spec:
+  mode: deployment
+  replicas: 1
+  ports:
+    - name: prometheus
+      port: 9464
+      targetPort: 9464
+      protocol: TCP
+  resources:
+    requests:
+      cpu: "25m"
+      memory: 128Mi
+    limits:
+      cpu: "250m"
+      memory: 512Mi
+  securityContext:
+    runAsNonRoot: true
+    readOnlyRootFilesystem: true
+    allowPrivilegeEscalation: false
+    privileged: false
+    seccompProfile:
+      type: RuntimeDefault
+    capabilities:
+      drop:
+        - ALL
+  config:
+    receivers:
+      otlp:
+        protocols:
+          grpc:
+            endpoint: 0.0.0.0:4317
+          http:
+            endpoint: 0.0.0.0:4318
+    processors:
+      batch:
+        timeout: 10s
+      memory_limiter:
+        check_interval: 5s
+        limit_percentage: 80
+        spike_limit_percentage: 25
+    exporters:
+      prometheus:
+        endpoint: 0.0.0.0:9464
+        namespace: openwebui
+        resource_to_telemetry_conversion:
+          enabled: true
+    service:
+      telemetry:
+        metrics:
+          level: none
+      pipelines:
+        metrics:
+          receivers: [otlp]
+          processors: [memory_limiter, batch]
+          exporters: [prometheus]
