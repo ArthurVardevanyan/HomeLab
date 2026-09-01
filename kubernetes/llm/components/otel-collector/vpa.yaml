@@ -1,0 +1,28 @@
+---
+apiVersion: autoscaling.k8s.io/v1
+kind: VerticalPodAutoscaler
+metadata:
+  name: open-webui-collector
+  namespace: llm
+  annotations:
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+spec:
+  targetRef:
+    apiVersion: opentelemetry.io/v1alpha1
+    kind: OpenTelemetryCollector
+    name: open-webui-collector
+  updatePolicy:
+    updateMode: "InPlaceOrRecreate"
+  resourcePolicy:
+    containerPolicies:
+      - containerName: opentelemetry-collector
+        minAllowed:
+          cpu: 5m
+          memory: 32Mi
+        maxAllowed:
+          cpu: "250m"
+          memory: 512Mi
+        controlledResources:
+          - cpu
+          - memory
+        controlledValues: RequestsOnly

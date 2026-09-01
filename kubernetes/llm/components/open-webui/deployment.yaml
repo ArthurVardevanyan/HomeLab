@@ -53,7 +53,7 @@ spec:
             - /app/backend/start.sh
           env:
             - name: OPENAI_API_BASE_URL
-              value: http://litellm-svc.llm.svc.cluster.local:4000/v1
+              value: http://litellm-svc.llm.svc.cluster.local.:4000/v1
             - name: OPENAI_API_KEY
               valueFrom:
                 secretKeyRef:
@@ -193,7 +193,7 @@ spec:
             - name: RAG_EMBEDDING_MODEL
               value: nomic-embed-text-v1.5
             - name: RAG_OPENAI_API_BASE_URL
-              value: http://llm-embed-svc.llm.svc.cluster.local:11435/v1
+              value: http://llm-embed-svc.llm.svc.cluster.local.:11435/v1
             - name: RAG_OPENAI_API_KEY
               value: sk-noauth
             - name: VECTOR_DB
@@ -218,6 +218,17 @@ spec:
               value: "15"
             - name: SUBAGENTS_MAX_OUTPUT
               value: "8000"
+            # ---- Observability (OTEL) ----
+            - name: ENABLE_OTEL
+              value: "true"
+            - name: ENABLE_OTEL_METRICS
+              value: "true"
+            - name: OTEL_EXPORTER_OTLP_ENDPOINT
+              value: http://open-webui-collector.llm.svc.cluster.local.:4317
+            - name: OTEL_EXPORTER_OTLP_INSECURE
+              value: "true"
+            - name: OTEL_SERVICE_NAME
+              value: open-webui
           securityContext:
             runAsNonRoot: true
             readOnlyRootFilesystem: true
