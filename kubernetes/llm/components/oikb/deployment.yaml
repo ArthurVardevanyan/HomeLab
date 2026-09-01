@@ -29,6 +29,12 @@ spec:
       serviceAccountName: oikb
       enableServiceLinks: false
       dnsPolicy: ClusterFirst
+      tolerations:
+        - key: node-role.kubernetes.io/gpu
+          operator: Exists
+          effect: NoSchedule
+      nodeSelector:
+        node-role.kubernetes.io/gpu: ""
       securityContext:
         seccompProfile:
           type: RuntimeDefault
