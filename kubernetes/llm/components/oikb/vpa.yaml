@@ -1,0 +1,31 @@
+---
+apiVersion: autoscaling.k8s.io/v1
+kind: VerticalPodAutoscaler
+metadata:
+  name: oikb
+  namespace: llm
+  annotations:
+    argocd.argoproj.io/sync-wave: "4"
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+  labels:
+    app.kubernetes.io/name: oikb
+spec:
+  targetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: oikb
+  updatePolicy:
+    updateMode: "InPlaceOrRecreate"
+  resourcePolicy:
+    containerPolicies:
+      - containerName: oikb
+        minAllowed:
+          cpu: 50m
+          memory: 128Mi
+        maxAllowed:
+          cpu: "1"
+          memory: 1Gi
+        controlledResources:
+          - cpu
+          - memory
+        controlledValues: RequestsOnly
