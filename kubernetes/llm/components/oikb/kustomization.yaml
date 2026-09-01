@@ -4,8 +4,13 @@ kind: Component
 resources:
   - service-account.yaml
   - secret.yaml
-  - config-map.yaml
   - deployment.yaml
   - service.yaml
   - network-policy.yaml
   - service-monitor.yaml
+generatorOptions: {}
+configMapGenerator:
+  - files:
+      - oikb.yaml
+    name: oikb-config
+    namespace: llm

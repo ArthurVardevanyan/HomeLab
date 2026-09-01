@@ -1,0 +1,55 @@
+defaults:
+  interval: 1h
+  concurrency: 4
+  filter:
+    max-size: 50mb
+
+sources:
+  # Web / sitemap crawler (migrated from the previous bash CronJob).
+  - name: personal-site
+    source: sitemap:https://www.arthurvardevanyan.com/sitemap.xml
+    kb-id: ${KB_PERSONAL_SITE_ID}
+
+  # GitHub (private repo; read-only fine-grained PAT reuses mcp-github).
+  - name: homelab
+    source: github:${GITHUB_ORG}/HomeLab
+    kb-id: ${KB_HOMELAB_ID}
+    token: ${GITHUB_TOKEN}
+
+  # Nextcloud (WebDAV app password).
+  - name: documents
+    source: "nextcloud:/Documents"
+    kb-id: ${KB_DOCUMENTS_ID}
+
+  # Jira.
+  # TODO: confirm exact env-var names (JIRA_URL / JIRA_USERNAME / JIRA_API_TOKEN?).
+  - name: jira
+    source: jira:${JIRA_PROJECT}
+    kb-id: ${KB_JIRA_ID}
+    token: ${JIRA_TOKEN}
+
+  # Discord.
+  # TODO: confirm exact env-var names and scope syntax (bot token / channel).
+  - name: discord
+    source: discord:${DISCORD_SCOPE}
+    kb-id: ${KB_DISCORD_ID}
+    token: ${DISCORD_TOKEN}
+
+  # Slack.
+  # TODO: confirm exact env-var names and scope syntax (app token / channel).
+  - name: slack
+    source: slack:${SLACK_SCOPE}
+    kb-id: ${KB_SLACK_ID}
+    token: ${SLACK_TOKEN}
+
+  # Zotero research library.
+  - name: zotero
+    source: "zotero:"
+    kb-id: ${KB_ZOTERO_ID}
+
+  # Gmail — deferred. OAuth-heavy (refresh-token flow + oikb[gmail] extra),
+  # not enabled until credentials are provisioned. Uncomment once ready:
+  # - name: gmail
+  #   source: gmail:
+  #   kb-id: ${KB_GMAIL_ID}
+  #   token: ${GMAIL_REFRESH_TOKEN}
