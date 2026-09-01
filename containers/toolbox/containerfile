@@ -187,13 +187,12 @@ RUN K8S_GITOPS_CI_PRERELEASE=$(curl -sL ${GH_TOKEN:+-H "Authorization: token ${G
     if [ -n "${K8S_GITOPS_CI_PRERELEASE}" ] && [ "${K8S_GITOPS_CI_PRERELEASE}" != "${K8S_GITOPS_CI_VERSION}" ]; then \
       curl -fL --retry 5 --retry-delay 2 -o "k8s-gitops-ci_${K8S_GITOPS_CI_PRERELEASE}_linux_amd64.tar.gz" \
         "https://github.com/ArthurVardevanyan/k8s-gitops-ci/releases/download/v${K8S_GITOPS_CI_PRERELEASE}/k8s-gitops-ci_${K8S_GITOPS_CI_PRERELEASE}_linux_amd64.tar.gz" && \
-      tar -xzf "k8s-gitops-ci_${K8S_GITOPS_CI_PRERELEASE}_linux_amd64.tar.gz" --no-same-owner -C /tmp "k8s-gitops-ci_${K8S_GITOPS_CI_PRERELEASE}/k8s-gitops-ci" && \
-      cp /tmp/k8s-gitops-ci_${K8S_GITOPS_CI_PRERELEASE}/k8s-gitops-ci /usr/local/bin/k8s-gitops-ci-rc && \
+      tar -xzf "k8s-gitops-ci_${K8S_GITOPS_CI_PRERELEASE}_linux_amd64.tar.gz" --no-same-owner -C /tmp k8s-gitops-ci && \
+      cp /tmp/k8s-gitops-ci /usr/local/bin/k8s-gitops-ci-rc && \
       chmod +x /usr/local/bin/k8s-gitops-ci-rc && \
       rm -f "k8s-gitops-ci_${K8S_GITOPS_CI_PRERELEASE}_linux_amd64.tar.gz" && \
-      rm -rf /tmp/k8s-gitops-ci_${K8S_GITOPS_CI_PRERELEASE}; \
-    fi && \
-    rmdir /usr/local/bin/k8s-gitops-ci_${K8S_GITOPS_CI_PRERELEASE} 2>/dev/null || true
+      rm -f /tmp/k8s-gitops-ci; \
+    fi
 
 # Always ensure k8s-gitops-ci-rc exists — symlink to stable if no RC binary was installed
 RUN if [ ! -f /usr/local/bin/k8s-gitops-ci-rc ]; then \

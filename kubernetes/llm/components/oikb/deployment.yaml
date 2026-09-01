@@ -29,6 +29,12 @@ spec:
       serviceAccountName: oikb
       enableServiceLinks: false
       dnsPolicy: ClusterFirst
+      tolerations:
+        - key: node-role.kubernetes.io/gpu
+          operator: Exists
+          effect: NoSchedule
+      nodeSelector:
+        node-role.kubernetes.io/gpu: ""
       securityContext:
         seccompProfile:
           type: RuntimeDefault
@@ -89,12 +95,12 @@ spec:
             failureThreshold: 3
           resources:
             requests:
-              cpu: "100m"
-              memory: 256Mi
+              cpu: 10m
+              memory: 64Mi
               ephemeral-storage: "512Mi"
             limits:
-              cpu: "1"
-              memory: 1Gi
+              cpu: "250m"
+              memory: 512Mi
               ephemeral-storage: "2Gi"
           volumeMounts:
             - name: config
@@ -103,6 +109,8 @@ spec:
               readOnly: true
             - name: tmp
               mountPath: /tmp
+            - name: oikb-data
+              mountPath: /.oikb
       volumes:
         - name: config
           configMap:
@@ -113,3 +121,6 @@ spec:
         - name: tmp
           emptyDir:
             sizeLimit: 512Mi
+        - name: oikb-data
+          emptyDir:
+            sizeLimit: 1Gi
