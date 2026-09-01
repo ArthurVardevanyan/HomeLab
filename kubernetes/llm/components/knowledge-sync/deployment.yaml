@@ -1,0 +1,115 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: knowledge-sync
+  namespace: llm
+  labels:
+    app.kubernetes.io/name: knowledge-sync
+    app.kubernetes.io/instance: knowledge-sync
+spec:
+  replicas: 1
+  revisionHistoryLimit: 0
+  progressDeadlineSeconds: 600
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: knowledge-sync
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: knowledge-sync
+        app.kubernetes.io/instance: knowledge-sync
+    spec:
+      restartPolicy: Always
+      schedulerName: default-scheduler
+      terminationGracePeriodSeconds: 30
+      automountServiceAccountToken: false
+      serviceAccountName: knowledge-sync
+      enableServiceLinks: false
+      dnsPolicy: ClusterFirst
+      securityContext:
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: knowledge-sync
+          # oikb daemon: incremental multi-source sync into Open WebUI Knowledge
+          # Bases. Sources, schedules, and tokens come from the ConfigMap
+          # (.oikb.yaml) and the ESO Secret (env) mounted below.
+          # renovate: datasource=docker depName=ghcr.io/open-webui/oikb versioning=docker
+          image: ghcr.io/open-webui/oikb:0.4.0@sha256:e61c1beef9fe91d2f00ca8612e847eacc7d579e2e8e258f40fb1ef3e2891e8d4
+          imagePullPolicy: IfNotPresent
+          args:
+            - "daemon"
+            - "--port"
+            - "8080"
+            - "--log-format"
+            - "json"
+          env:
+            - name: OPEN_WEBUI_URL
+              value: http://open-webui.llm.svc.cluster.local:8080
+          envFrom:
+            - secretRef:
+                name: knowledge-sync
+          securityContext:
+            runAsNonRoot: true
+            readOnlyRootFilesystem: true
+            allowPrivilegeEscalation: false
+            privileged: false
+            seccompProfile:
+              type: RuntimeDefault
+            capabilities:
+              drop:
+                - ALL
+          ports:
+            - containerPort: 8080
+              name: http
+              protocol: TCP
+          startupProbe:
+            tcpSocket:
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 5
+            failureThreshold: 12
+            timeoutSeconds: 5
+          livenessProbe:
+            httpGet:
+              path: /health/ready
+              port: http
+            periodSeconds: 30
+            timeoutSeconds: 5
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: http
+            periodSeconds: 15
+            timeoutSeconds: 5
+            failureThreshold: 3
+          resources:
+            requests:
+              cpu: "100m"
+              memory: 256Mi
+              ephemeral-storage: "512Mi"
+            limits:
+              cpu: "1"
+              memory: 1Gi
+              ephemeral-storage: "2Gi"
+          volumeMounts:
+            - name: config
+              mountPath: /app/.oikb.yaml
+              subPath: .oikb.yaml
+              readOnly: true
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: config
+          configMap:
+            name: knowledge-sync-config
+            items:
+              - key: oikb.yaml
+                path: .oikb.yaml
+        - name: tmp
+          emptyDir:
+            sizeLimit: 512Mi

@@ -1,0 +1,17 @@
+---
+apiVersion: monitoring.coreos.com/v1
+kind: PodMonitor
+metadata:
+  name: knowledge-sync
+  namespace: llm
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+  labels:
+    app.kubernetes.io/instance: open-webui
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: knowledge-sync
+  podMetricsEndpoints:
+    - port: http
+      path: /metrics
