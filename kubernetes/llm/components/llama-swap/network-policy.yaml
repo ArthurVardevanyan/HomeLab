@@ -31,34 +31,6 @@ spec:
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
-  name: allow-internet-egress-llama-swap
-  namespace: llm
-  annotations:
-    argocd.argoproj.io/sync-wave: "0"
-  labels:
-    app: llama-swap
-spec:
-  policyTypes:
-    - Egress
-  podSelector:
-    matchLabels:
-      app: llama-swap
-  egress:
-    - to:
-        - ipBlock:
-            cidr: 0.0.0.0/0
-            except:
-              - 10.0.0.0/8
-              - 172.16.0.0/12
-              - 192.168.0.0/16
-        - ipBlock:
-            cidr: 10.101.10.5/32
-        - ipBlock:
-            cidr: 10.101.10.7/32
----
-apiVersion: networking.k8s.io/v1
-kind: NetworkPolicy
-metadata:
   name: allow-to-openshift-ingress-llama-swap
   namespace: llm
   annotations:
