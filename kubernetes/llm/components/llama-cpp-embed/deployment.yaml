@@ -40,76 +40,20 @@ spec:
           effect: NoSchedule
       nodeSelector:
         node-role.kubernetes.io/gpu: ""
-      initContainers:
-        # renovate: datasource=docker depName=ghcr.io/ggml-org/llama.cpp versioning=regex:^server-vulkan-b(?<major>\d+)$
-        - image: ghcr.io/ggml-org/llama.cpp:server-vulkan-b10666@sha256:74b3e5244810dafac2a6f2e173548676eec2333b16cec2203cfedf6ed0ebdabe
-          imagePullPolicy: IfNotPresent
-          name: model-downloader
-          env:
-            - name: PARALLEL
-              value: "8"
-            - name: CHUNK_BYTES
-              value: "134217728"
-          command:
-            - /bin/sh
-            - "-c"
-            - |
-              set -eu
-              MODELS=/data/models
-              mkdir -p "${MODELS}"
-              # Idempotent: skip if present at the resolved size.
-              if [ -f "${MODELS}/Qwen3-Embedding-4B.Q8_0.gguf" ]; then
-                have=$(wc -c < "${MODELS}/Qwen3-Embedding-4B.Q8_0.gguf" | tr -d ' ')
-                want=$(
-                  curl -fsSKIL --connect-timeout 10 --max-time 30 \
-                  "https://huggingface.co/qwen/Qwen3-Embedding-4B-GGUF/resolve/main/Qwen3-Embedding-4B.Q8_0.gguf" |
-                  awk 'BEGIN{IGNORECASE=1}/^content-length:/{c=$2}END{print c}' | tr -d '\r'
-                )
-                if [ -n "${want}" ] && [ "${have}" = "${want}" ]; then
-                  echo "Present (${have} bytes): Qwen3-Embedding-4B.Q8_0.gguf"
-                  exit 0
-                fi
-              fi
-              curl -fsSL --connect-timeout 10 --max-time 600 --retry 5 --retry-delay 5 \
-                -o "${MODELS}/Qwen3-Embedding-4B.Q8_0.gguf" \
-                "https://huggingface.co/qwen/Qwen3-Embedding-4B-GGUF/resolve/main/Qwen3-Embedding-4B.Q8_0.gguf"
-              echo "Downloaded Qwen3-Embedding-4B.Q8_0.gguf"
-          securityContext:
-            runAsNonRoot: true
-            readOnlyRootFilesystem: true
-            allowPrivilegeEscalation: false
-            privileged: false
-            seccompProfile:
-              type: RuntimeDefault
-            capabilities:
-              drop:
-                - ALL
-          resources:
-            requests:
-              cpu: "100m"
-              memory: 4Gi
-              ephemeral-storage: "256Mi"
-            limits:
-              cpu: "500m"
-              memory: 8Gi
-              ephemeral-storage: "1Gi"
-          volumeMounts:
-            - name: llm-embed-config
-              mountPath: /data
       containers:
         # renovate: datasource=docker depName=ghcr.io/ggml-org/llama.cpp versioning=regex:^server-vulkan-b(?<major>\d+)$
         - image: ghcr.io/ggml-org/llama.cpp:server-vulkan-b10666@sha256:74b3e5244810dafac2a6f2e173548676eec2333b16cec2203cfedf6ed0ebdabe
           name: llm-embed
           args:
             - "--model"
-            - "/data/models/Qwen3-Embedding-4B.Q8_0.gguf"
+            - "/data/models-shared/models/Qwen3-Embedding-4B-Q8_0.gguf"
             - "--embedding"
             - "--host"
             - "0.0.0.0"
             - "--port"
             - "11435"
             - "--ctx-size"
-            - "8192"
+            - "24576"
             - "--batch-size"
             - "512"
             - "--ubatch-size"
@@ -160,17 +104,23 @@ spec:
             failureThreshold: 5
           resources:
             requests:
-              cpu: "250m"
-              memory: 512Mi
+              cpu: "500m"
+              memory: 16Gi
               ephemeral-storage: "128Mi"
             limits:
               cpu: "4"
-              memory: 2Gi
+              memory: 24Gi
               ephemeral-storage: "512Mi"
           volumeMounts:
-            - name: llm-embed-config
-              mountPath: /data
+            - name: llm-models
+              mountPath: /data/models-shared
+              readOnly: false
+            - name: llm-embed-cache
+              mountPath: /data/cache
       volumes:
-        - name: llm-embed-config
+        - name: llm-models
           persistentVolumeClaim:
-            claimName: llm-embed-models
+            claimName: llm-models
+        - name: llm-embed-cache
+          emptyDir:
+            sizeLimit: 1Gi
