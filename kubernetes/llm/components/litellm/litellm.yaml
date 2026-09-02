@@ -63,7 +63,7 @@ model_list:
       api_base: http://llama-swap-svc.llm.svc.cluster.local.:8080/v1
       api_key: "dummy"
       input_cost_per_token: 0.000000001
-      max_requests_per_minute: 960
+      rpm: 960
 
 general_settings:
   forward_client_headers_to_llm_api: true
@@ -120,4 +120,10 @@ litellm_settings:
   enable_redis_auth_cache: true
   callbacks:
     - prometheus
+    - dynamic_rate_limiter_v3
+  router_settings:
+    redis_host: litellm-dragonfly.llm.svc.cluster.local
+    redis_port: 6379
+    redis_password: "<path:secret/data/homelab/llm/litellm/dragonfly#password>"
+    polling_interval: 0.03
   require_auth_for_metrics_endpoint: false
