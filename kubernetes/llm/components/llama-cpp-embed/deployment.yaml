@@ -5,7 +5,7 @@ metadata:
   name: llm-embed
   namespace: llm
   annotations:
-    argocd.argoproj.io/sync-wave: "3"
+    argocd.argoproj.io/sync-wave: "2"
     checkov.io/skip1: CKV_K8S_40=Upstream Image Runs as Root
     checkov.io/skip2: CKV_K8S_22=Model Cache Requires Writable Root FS
     checkov.io/skip3: CKV_K8S_23=Upstream Image Requires Root
@@ -58,22 +58,22 @@ spec:
               MODELS=/data/models
               mkdir -p "${MODELS}"
               # Idempotent: skip if present at the resolved size.
-              if [ -f "${MODELS}/nomic-embed-text-v1.5.Q8_0.gguf" ]; then
-                have=$(wc -c < "${MODELS}/nomic-embed-text-v1.5.Q8_0.gguf" | tr -d ' ')
+              if [ -f "${MODELS}/Qwen3-Embedding-4B.Q8_0.gguf" ]; then
+                have=$(wc -c < "${MODELS}/Qwen3-Embedding-4B.Q8_0.gguf" | tr -d ' ')
                 want=$(
                   curl -fsSKIL --connect-timeout 10 --max-time 30 \
-                  "https://huggingface.co/nomic-ai/nomic-embed-text-v1.5-GGUF/resolve/main/nomic-embed-text-v1.5.Q8_0.gguf" |
+                  "https://huggingface.co/qwen/Qwen3-Embedding-4B-GGUF/resolve/main/Qwen3-Embedding-4B.Q8_0.gguf" |
                   awk 'BEGIN{IGNORECASE=1}/^content-length:/{c=$2}END{print c}' | tr -d '\r'
                 )
                 if [ -n "${want}" ] && [ "${have}" = "${want}" ]; then
-                  echo "Present (${have} bytes): nomic-embed-text-v1.5.Q8_0.gguf"
+                  echo "Present (${have} bytes): Qwen3-Embedding-4B.Q8_0.gguf"
                   exit 0
                 fi
               fi
               curl -fsSL --connect-timeout 10 --max-time 600 --retry 5 --retry-delay 5 \
-                -o "${MODELS}/nomic-embed-text-v1.5.Q8_0.gguf" \
-                "https://huggingface.co/nomic-ai/nomic-embed-text-v1.5-GGUF/resolve/main/nomic-embed-text-v1.5.Q8_0.gguf"
-              echo "Downloaded nomic-embed-text-v1.5.Q8_0.gguf"
+                -o "${MODELS}/Qwen3-Embedding-4B.Q8_0.gguf" \
+                "https://huggingface.co/qwen/Qwen3-Embedding-4B-GGUF/resolve/main/Qwen3-Embedding-4B.Q8_0.gguf"
+              echo "Downloaded Qwen3-Embedding-4B.Q8_0.gguf"
           securityContext:
             runAsNonRoot: true
             readOnlyRootFilesystem: true
@@ -87,11 +87,11 @@ spec:
           resources:
             requests:
               cpu: "100m"
-              memory: 256Mi
+              memory: 4Gi
               ephemeral-storage: "256Mi"
             limits:
               cpu: "500m"
-              memory: 1Gi
+              memory: 8Gi
               ephemeral-storage: "1Gi"
           volumeMounts:
             - name: llm-embed-config
@@ -102,7 +102,7 @@ spec:
           name: llm-embed
           args:
             - "--model"
-            - "/data/models/nomic-embed-text-v1.5.Q8_0.gguf"
+            - "/data/models/Qwen3-Embedding-4B.Q8_0.gguf"
             - "--embedding"
             - "--host"
             - "0.0.0.0"
