@@ -34,14 +34,14 @@ models:
   # 1. Qwen 3.6 35B (A3B)
   # ==========================================
   35b-gpu0:
-    cmd: ${cmd_base} --parallel 2 --ctx-size 327680 -m /data/models/Qwen3.6-35B-A3B-UD-Q4_K_M.gguf --mmproj /data/models/Qwen3.6-35B-A3B-mmproj-F16.gguf --image-min-tokens 1024
+    cmd: ${cmd_base} --parallel 2 --ctx-size 294912 -m /data/models/Qwen3.6-35B-A3B-UD-Q4_K_M.gguf --mmproj /data/models/Qwen3.6-35B-A3B-mmproj-F16.gguf --image-min-tokens 1024
     env:
       - "ONEAPI_DEVICE_SELECTOR=level_zero:0"
       - "SYCL_PI_LEVEL_ZERO_USE_IMMEDIATE_COMMANDLISTS=1"
     ttl: 0
 
   35b-gpu1:
-    cmd: ${cmd_base} --parallel 2 --ctx-size 327680 -m /data/models/Qwen3.6-35B-A3B-UD-Q4_K_M.gguf --mmproj /data/models/Qwen3.6-35B-A3B-mmproj-F16.gguf --image-min-tokens 1024
+    cmd: ${cmd_base} --parallel 2 --ctx-size 294912 -m /data/models/Qwen3.6-35B-A3B-UD-Q4_K_M.gguf --mmproj /data/models/Qwen3.6-35B-A3B-mmproj-F16.gguf --image-min-tokens 1024
     env:
       - "ONEAPI_DEVICE_SELECTOR=level_zero:1"
       - "SYCL_PI_LEVEL_ZERO_USE_IMMEDIATE_COMMANDLISTS=1"
@@ -88,6 +88,16 @@ models:
       - "SYCL_PI_LEVEL_ZERO_USE_IMMEDIATE_COMMANDLISTS=1"
     ttl: 0
 
+  # ==========================================
+  # 5. Qwen3 Embedding 4B (GPU 1, embeddings only)
+  # ==========================================
+  qwen3-embed-gpu1:
+    cmd: /app/llama-server --port ${PORT} --host 127.0.0.1 --cont-batching -m /data/models/Qwen3-Embedding-4B-Q8_0.gguf -t 8 --threads 8 --ctx-size 131072 --cache-type-k f16 --cache-type-v f16 --embedding --ubatch-size 2048 --jinja --poll 0 --parallel 32
+    env:
+      - "ONEAPI_DEVICE_SELECTOR=level_zero:1"
+      - "SYCL_PI_LEVEL_ZERO_USE_IMMEDIATE_COMMANDLISTS=1"
+    ttl: 300
+
 # The matrix dictates all valid VRAM combinations.
 # Each set represents one valid model-per-GPU configuration. The solver
 # picks one set, guaranteeing exactly one model per GPU and preventing
@@ -102,6 +112,7 @@ matrix:
     M35-1: 35b-gpu1
     M35-1-d: 35b-gpu1-dense
     M27-1: 27b-gpu1
+    ME-1: qwen3-embed-gpu1
     # Spread models
     S35: 35b-spread
 
@@ -115,6 +126,7 @@ matrix:
     M35-1-d: 10
     M27-0: 15
     M27-1: 15
+    ME-1: 5
 
   sets:
     # --- Dual (one 35B variant per GPU, all combos) ---
@@ -134,3 +146,8 @@ matrix:
 
     # --- Spread (one instance spanning both GPUs) ---
     spread_35b: S35
+
+    # --- Embedding companion models (GPU 0 chat + GPU 1 embed) ---
+    embed_35b0-1: M35-0 & ME-1
+    embed_35b0d-1: M35-0-d & ME-1
+    embed_27b0-1: M27-0 & ME-1

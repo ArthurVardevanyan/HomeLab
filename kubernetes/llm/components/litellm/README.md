@@ -339,6 +339,47 @@ deployed via CloudNativePG (`components/cnpg-litellm/`):
 - **`store_prompts_in_spend_logs: true`**: prompt content is included in the
   spend tracking logs for cost attribution.
 
+## Embedding Model
+
+The `qwen3-embedding-4b` model is routed through llama-swap on GPU 1. It uses
+a lower RPM limit than chat models to match llama-swap's concurrency capacity:
+
+| Model                | RPM | Requests/sec | Parallel slots | Max concurrent in-flight   |
+| -------------------- | --- | ------------ | -------------- | -------------------------- |
+| `qwen3-embedding-4b` | 960 | 16 r/s       | 32             | ~16 (16 r/s × ~1s/request) |
+
+The 960 RPM (16 r/s) limit is intentionally conservative — it leaves headroom
+so llama-swap never exceeds 50% of its 32-parallel capacity. This prevents
+backpressure buildup and keeps embedding latency predictable.
+
+### Limitation: Open WebUI burst behavior
+
+Open WebUI processes documents by splitting them into chunks (default 5000
+characters) and sends all chunks to LiteLLM in a single burst. When multiple
+files are uploaded simultaneously, the burst can temporarily exceed 16 r/s.
+
+**What happens:**
+
+1. Open WebUI sends 50-100 chunk requests at once
+2. LiteLLM allows the first ~16 requests through (16 r/s × 1s)
+3. Remaining requests hit the 960 RPM limit and receive HTTP 429
+4. Open WebUI displays these as "Request Failed" errors
+
+**Mitigations:**
+
+- The 960 RPM limit is high enough that most single-document syncs complete
+  without errors (5000-char chunks at ~1s each = 50 rps for 1 second, then
+  rate-limited to 16 r/s)
+- Multi-file syncs may show transient 429s for later files
+- No client-side retry is implemented in Open WebUI (it shows the 429 error)
+- No sidecar/queue is deployed (to avoid extra latency and complexity)
+
+If 429s become problematic during large document batches, consider:
+
+- Reducing Open WebUI's `CHUNK_SIZE` to decrease per-batch burst size
+- Adding a proxy-side retry mechanism (nginx/envoy sidecar with 429 backoff)
+- Increasing `rpm` if llama-swap's `--parallel` is raised in the future
+
 ## References
 
 - [LiteLLM](https://github.com/berriai/litellm)

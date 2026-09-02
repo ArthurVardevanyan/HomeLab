@@ -56,15 +56,31 @@ model_list:
       input_cost_per_token: 0.000000008
       output_cost_per_token: 0.000000008
 
+  # --- Embedding Model (GPU 1, via llama-swap) ---
+  - model_name: qwen3-embedding-4b
+    litellm_params:
+      model: openai/qwen3-embed-gpu1
+      api_base: http://llama-swap-svc.llm.svc.cluster.local.:8080/v1
+      api_key: "dummy"
+      input_cost_per_token: 0.000000001
+      rpm: 960
+      max_parallel_requests: 24
+
 general_settings:
   forward_client_headers_to_llm_api: true
   health_check_interval: 300
   store_model_in_db: false
-  store_prompts_in_spend_logs: true
+  # Re-enable when we want prompt history for chat models.
+  # Embeddings don't need it.
+  store_prompts_in_spend_logs: false
   user_header_mappings:
     - header_name: X-OpenWebUI-User-Email
       litellm_user_role: customer
   user_api_key_cache_ttl: 300
+
+router_general_settings:
+  optional_pre_call_checks:
+    - enforce_model_rate_limits
 
 router_settings:
   routing_strategy: least-busy
@@ -105,10 +121,15 @@ litellm_settings:
     type: redis
     host: litellm-dragonfly.llm.svc.cluster.local
     port: 6379
-    ttl: 3600
+    ttl: 21600
     namespace: "litellm-proxy"
     password: "<path:secret/data/homelab/llm/litellm/dragonfly#password>"
   enable_redis_auth_cache: true
   callbacks:
     - prometheus
+  router_settings:
+    redis_host: litellm-dragonfly.llm.svc.cluster.local
+    redis_port: 6379
+    redis_password: "<path:secret/data/homelab/llm/litellm/dragonfly#password>"
+    polling_interval: 0.03
   require_auth_for_metrics_endpoint: false

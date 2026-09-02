@@ -18,6 +18,7 @@ for interacting with the llama-swap backend via LiteLLM.
     - [Task-model offload (deferred)](#task-model-offload-deferred)
     - [RAG vs. web search](#rag-vs-web-search)
     - [Freshness / staleness](#freshness--staleness)
+    - [Knowledge Base Sync (oikb)](#knowledge-base-sync-oikb)
   - [Scaling](#scaling)
   - [References](#references)
 
@@ -123,6 +124,65 @@ search is dynamic but uncontrolled.
 Uploaded documents are re-embedded on each upload. There is no automatic
 re-indexing — stale documents must be manually removed and re-uploaded.
 For automated document ingestion, see [Roadmap: connector auto-sync (Onyx)](../README.md#roadmap-connector-auto-sync-onyx).
+
+### Knowledge Base Sync (oikb)
+
+[oikb](../../oikb/) is a background daemon that continuously syncs knowledge
+bases from configured sources (GitHub repos, web sitemaps, etc.) into Open
+WebUI's vector store. It runs as a standalone deployment in the `llm` namespace.
+
+oikb is **not** connected as a Tool Server (no admin-level MCP integration).
+Instead, it syncs data silently and users manually attach knowledge bases
+to their chats when needed. This avoids exposing the sync endpoints to all
+users.
+
+#### Sync sources (configured in `components/oikb/oikb.yaml`)
+
+| Source  | Format                  | Example                                             |
+| ------- | ----------------------- | --------------------------------------------------- |
+| Sitemap | `web:<url>`             | `web:https://www.arthurvardevanyan.com/sitemap.xml` |
+| GitHub  | `github:<owner>/<repo>` | `github:ArthurVardevanyan/HomeLab`                  |
+
+Each source has a `kb-id` pointing to an Open WebUI knowledge base UUID.
+
+#### Attaching a knowledge base in Open WebUI (manual, per-chat)
+
+1. Open your chat in Open WebUI.
+2. Click the **paperclip** or **knowledge** icon in the message composer.
+3. Select the knowledge base you want to attach (e.g. `homelab`, `personal-site`).
+4. The model will now retrieve from that KB when answering your question.
+
+The KB is attached for the duration of that chat. Start a new chat to attach
+a different KB or none at all.
+
+> **Note:** Knowledge bases are per-user in Open WebUI. When oikb syncs data
+> to a KB, it syncs to the global vector store. Each user decides which KBs
+> to attach to their chats.
+
+#### Verifying oikb sync status
+
+```bash
+export KUBECONFIG=$HOME/.kube/okd
+oc -n llm logs deploy/oikb --tail=20
+```
+
+Look for lines like:
+
+```text
+Sync completed for github:ArthurVardevanyan/HomeLab in 45s
+```
+
+#### Retrieving the oikb API key from Vault
+
+The oikb API key is stored in Vault at `homelab/llm/oikb` (property: `daemon_key`). Retrieve it with:
+
+```bash
+vault kv get -field=daemon_key homelab/llm/oikb
+```
+
+Or via the Vault UI: navigate to `Secrets` → `KV v2` → `homelab` → `llm` → `oikb` → `daemon_key`.
+
+This key is used to authenticate Open WebUI when connecting to oikb as a Tool Server (if configured manually).
 
 ## Scaling
 

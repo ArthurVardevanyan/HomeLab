@@ -12,7 +12,7 @@ metadata:
     checkov.io/skip2: CKV_K8S_22=Model Cache Requires Writable Root FS
     checkov.io/skip3: CKV_K8S_23=Upstream Image Requires Root
 spec:
-  replicas: 1
+  replicas: 2
   revisionHistoryLimit: 0
   progressDeadlineSeconds: 1800
   strategy:
@@ -46,7 +46,7 @@ spec:
         feature.node.kubernetes.io/custom-intel.xe.gpu: "true"
       containers:
         # renovate: datasource=docker depName=ghcr.io/berriai/litellm versioning=loose
-        - image: ghcr.io/berriai/litellm:v1.100.0-dev.2@sha256:545bebaecffb357e5848c9f59eb7f292494f59da4b6544ca08bdcf3c7a8f2423
+        - image: ghcr.io/berriai/litellm:v1.99.1@sha256:a53a7d3ffebede1925bd3ee8a21e4a7b9b63e2e68ec883af136edcccb6eeb82c
           imagePullPolicy: IfNotPresent
           name: litellm
           args: ["--config", "/etc/litellm/litellm.yaml", "--port", "4000"]
@@ -98,6 +98,12 @@ spec:
                   key: fqdn-uri
             - name: SPEND_TRACKING
               value: "true"
+            - name: LITELLM_SPEND_LOG_QUEUE_MAX_SIZE
+              value: "256000000"
+            - name: REDIS_CIRCUIT_BREAKER_FAILURE_THRESHOLD
+              value: "50"
+            - name: REDIS_CIRCUIT_BREAKER_RECOVERY_TIMEOUT
+              value: "30"
           ports:
             - containerPort: 4000
               name: http
@@ -141,7 +147,7 @@ spec:
               ephemeral-storage: "128Mi"
             limits:
               cpu: "1"
-              memory: 3Gi
+              memory: 4Gi
               ephemeral-storage: "512Mi"
           volumeMounts:
             - name: config

@@ -424,6 +424,26 @@ class LlamaSwapAffinityPlugin:
 
     async def run(self, context: RoutingContext) -> RoutingContext:
         try:
+            # Fast-path: skip all routing logic for single-candidate models
+            # (embeddings). These go to a fixed backend — no GPU affinity
+            # or session stickiness applies.
+            if len(context.candidate_models) < 2:
+                return context
+
+            # Explicit guard for the embedding model. Even though it has only
+            # one deployment, LiteLLM's router may still present it with 2
+            # candidate slots (public alias + internal). The short-circuit
+            # above doesn't cover this case, so we check the model name
+            # explicitly to skip the full routing pipeline (HTTP to
+            # llama-swap, Redis lookups, fingerprint computation, /slots
+            # polling).
+            embedding_candidates = [
+                m for m in context.candidate_models
+                if "embedding" in m or "embed" in m
+            ]
+            if embedding_candidates:
+                return context
+
             candidates = context.candidate_models
             if len(candidates) < 2:
                 return context

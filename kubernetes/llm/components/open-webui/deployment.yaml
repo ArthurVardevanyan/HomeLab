@@ -10,7 +10,7 @@ metadata:
     app.kubernetes.io/name: open-webui
     app.kubernetes.io/instance: open-webui
 spec:
-  replicas: 1
+  replicas: 2
   revisionHistoryLimit: 0
   progressDeadlineSeconds: 1800
   strategy:
@@ -98,6 +98,8 @@ spec:
               value: "true"
             - name: OAUTH_PROVIDERS
               value: openid
+            - name: ENABLE_OLLAMA_API
+              value: "false"
             - name: WEBSOCKET_MANAGER
               value: "redis"
             - name: WEBSOCKET_REDIS_URL
@@ -184,6 +186,8 @@ spec:
               value: "true"
             - name: USER_PERMISSIONS_FEATURES_API_KEYS
               value: "true"
+            - name: USER_PERMISSIONS_WORKSPACE_KNOWLEDGE_ACCESS
+              value: "true"
             - name: ENABLE_FORWARD_USER_INFO_HEADERS
               value: "true"
             - name: FORWARD_SESSION_INFO_HEADER_CHAT_ID
@@ -191,11 +195,14 @@ spec:
             - name: RAG_EMBEDDING_ENGINE
               value: openai
             - name: RAG_EMBEDDING_MODEL
-              value: nomic-embed-text-v1.5
+              value: qwen3-embedding-4b
             - name: RAG_OPENAI_API_BASE_URL
-              value: http://llm-embed-svc.llm.svc.cluster.local.:11435/v1
+              value: http://litellm-svc.llm.svc.cluster.local.:4000/v1
             - name: RAG_OPENAI_API_KEY
-              value: sk-noauth
+              valueFrom:
+                secretKeyRef:
+                  name: litellm-config
+                  key: LITELLM_MASTER_KEY
             - name: VECTOR_DB
               value: pgvector
             - name: PGVECTOR_CREATE_EXTENSION
@@ -207,9 +214,9 @@ spec:
             - name: RAG_TOP_K
               value: "4"
             - name: CHUNK_SIZE
-              value: "1000"
+              value: "5000"
             - name: CHUNK_OVERLAP
-              value: "100"
+              value: "500"
             - name: ENABLE_SUBAGENTS
               value: "true"
             - name: SUBAGENTS_MAX_CONCURRENT
@@ -229,11 +236,6 @@ spec:
               value: "true"
             - name: OTEL_SERVICE_NAME
               value: open-webui
-            - name: TOOL_SERVER_CONNECTIONS
-              valueFrom:
-                secretKeyRef:
-                  name: open-webui-config
-                  key: TOOL_SERVER_CONNECTIONS
           securityContext:
             runAsNonRoot: true
             readOnlyRootFilesystem: true
