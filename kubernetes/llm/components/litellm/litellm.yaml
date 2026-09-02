@@ -56,6 +56,14 @@ model_list:
       input_cost_per_token: 0.000000008
       output_cost_per_token: 0.000000008
 
+  # --- Embedding Model (CPU, background sync only) ---
+  - model_name: nomic-embed-text-v1.5
+    litellm_params:
+      model: openai/nomic-embed-text-v1.5
+      api_base: http://llm-embed-svc.llm.svc.cluster.local.:11435/v1
+      api_key: "sk-noauth"
+      input_cost_per_token: 0.000000001
+
 general_settings:
   forward_client_headers_to_llm_api: true
   health_check_interval: 300

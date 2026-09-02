@@ -10,7 +10,7 @@ metadata:
     app.kubernetes.io/name: open-webui
     app.kubernetes.io/instance: open-webui
 spec:
-  replicas: 1
+  replicas: 2
   revisionHistoryLimit: 0
   progressDeadlineSeconds: 1800
   strategy:
@@ -98,6 +98,8 @@ spec:
               value: "true"
             - name: OAUTH_PROVIDERS
               value: openid
+            - name: ENABLE_OLLAMA_API
+              value: "false"
             - name: WEBSOCKET_MANAGER
               value: "redis"
             - name: WEBSOCKET_REDIS_URL
@@ -195,9 +197,12 @@ spec:
             - name: RAG_EMBEDDING_MODEL
               value: nomic-embed-text-v1.5
             - name: RAG_OPENAI_API_BASE_URL
-              value: http://llm-embed-svc.llm.svc.cluster.local.:11435/v1
+              value: http://litellm-svc.llm.svc.cluster.local.:4000/v1
             - name: RAG_OPENAI_API_KEY
-              value: sk-noauth
+              valueFrom:
+                secretKeyRef:
+                  name: litellm-config
+                  key: LITELLM_MASTER_KEY
             - name: VECTOR_DB
               value: pgvector
             - name: PGVECTOR_CREATE_EXTENSION
@@ -272,7 +277,7 @@ spec:
               cpu: "100m"
               memory: 2Gi
             limits:
-              cpu: "1"
+              cpu: "2"
               memory: 4Gi
           volumeMounts:
             - name: data
