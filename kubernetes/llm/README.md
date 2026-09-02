@@ -331,8 +331,8 @@ kubernetes/llm/
 │   │   │                        # configMapGenerator — no separate config/ dir)
 │   │   │                        # also runs the metrics-exporter sidecar
 │   │   │                        # (containers/llama-swap-metrics-exporter/)
+│   │   │                        # embeddings via qwen3-embed-gpu1 model
 │   │   └── llama-swap.yaml      # the actual model matrix config
-│   ├── llama-cpp-embed/         # CPU embeddings for Open WebUI (kept)
 │   ├── litellm/                 # gateway + llama_swap_affinity routing plugin
 │   ├── open-webui/               # chat front-end
 │   ├── searxng/                  # web-search backend for Open WebUI
@@ -374,8 +374,6 @@ implemented yet:
 - **Re-measure decode throughput** (`/api/metrics/stats`) after `ngram-mod` rollout to confirm effect size.
 - **Open WebUI `TASK_MODEL` offload** — see
   [Task-model offload (deferred)](components/open-webui/README.md#task-model-offload-deferred).
-- **`llm-embed` thread/CPU-limit mismatch** — see the note under
-  [Embeddings (CPU)](components/open-webui/README.md#embeddings-cpu).
 
 ## REF
 
