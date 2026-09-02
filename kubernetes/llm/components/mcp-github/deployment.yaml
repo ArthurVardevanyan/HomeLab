@@ -1,0 +1,102 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mcp-github
+  namespace: llm
+  labels:
+    app.kubernetes.io/name: mcp-github
+    app.kubernetes.io/instance: mcp-github
+spec:
+  replicas: 1
+  revisionHistoryLimit: 0
+  progressDeadlineSeconds: 600
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: mcp-github
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: mcp-github
+        app.kubernetes.io/instance: mcp-github
+    spec:
+      restartPolicy: Always
+      schedulerName: default-scheduler
+      terminationGracePeriodSeconds: 30
+      automountServiceAccountToken: false
+      serviceAccountName: mcp-github
+      enableServiceLinks: false
+      dnsPolicy: ClusterFirst
+      securityContext:
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: mcp-github
+          # renovate: datasource=docker depName=ghcr.io/github/github-mcp-server
+          image: ghcr.io/github/github-mcp-server:v0.1.0@sha256:7093c51e346a2cae49951956b28dee4fc6cc65d79049cb676dd607463401f687
+          imagePullPolicy: IfNotPresent
+          args:
+            # Streamable HTTP MCP server. The GitHub PAT is NOT stored on this
+            # container: http mode authenticates per-request via the bearer
+            # token that Open WebUI forwards from the tool-server connection
+            # (auth_type: bearer, key = PAT from Vault). Keeps the token out of
+            # this Deployment entirely.
+            - "http"
+            - "--port"
+            - "8080"
+            - "--listen-host"
+            - "0.0.0.0"
+          env:
+            # Read-only mode: write tools are skipped even if requested.
+            - name: GITHUB_READ_ONLY
+              value: "1"
+            # Limit toolsets to read-oriented capabilities.
+            - name: GITHUB_TOOLSETS
+              value: "repos,issues,pull_requests,code_security"
+          securityContext:
+            runAsNonRoot: true
+            readOnlyRootFilesystem: true
+            allowPrivilegeEscalation: false
+            privileged: false
+            seccompProfile:
+              type: RuntimeDefault
+            capabilities:
+              drop:
+                - ALL
+          ports:
+            - containerPort: 8080
+              name: http
+              protocol: TCP
+          startupProbe:
+            tcpSocket:
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 5
+            failureThreshold: 12
+            timeoutSeconds: 5
+          livenessProbe:
+            tcpSocket:
+              port: http
+            periodSeconds: 30
+            timeoutSeconds: 5
+            failureThreshold: 3
+          readinessProbe:
+            tcpSocket:
+              port: http
+            periodSeconds: 15
+            timeoutSeconds: 5
+            failureThreshold: 3
+          resources:
+            requests:
+              cpu: "25m"
+              memory: 64Mi
+              ephemeral-storage: "64Mi"
+            limits:
+              cpu: "250m"
+              memory: 256Mi
+              ephemeral-storage: "256Mi"

@@ -19,11 +19,17 @@ For GPU provisioning, see [intel-device-plugins](../intel-device-plugins/README.
     - [llama.cpp metrics via the metrics-exporter sidecar](#llamacpp-metrics-via-the-metrics-exporter-sidecar)
     - [Example PromQL queries](#example-promql-queries)
     - [Grafana dashboard](#grafana-dashboard)
+    - [Open WebUI metrics via OTEL collector](#open-webui-metrics-via-otel-collector)
   - [Performance: why decode may trail bare-metal benchmarks](#performance-why-decode-may-trail-bare-metal-benchmarks)
   - [Scaling](#scaling)
   - [Layout](#layout)
-  - [Roadmap: connector auto-sync (Onyx)](#roadmap-connector-auto-sync-onyx)
+  - [Knowledge sync status](#knowledge-sync-status)
   - [Future Work](#future-work)
+  - [Agent Platform](#agent-platform)
+    - [Prerequisites](#prerequisites)
+    - [Tools / MCP (`components/mcp-kubernetes`, `components/mcp-github`)](#tools--mcp-componentsmcp-kubernetes-componentsmcp-github)
+    - [Knowledge sync (`components/oikb`)](#knowledge-sync-componentsoikb)
+    - [Code interpreter, memory, RBAC, eval (Open WebUI config)](#code-interpreter-memory-rbac-eval-open-webui-config)
   - [REF](#ref)
 
 ## Component READMEs
@@ -270,6 +276,42 @@ Concurrency/Efficiency/Diagnostics rows), templated on a `$model` variable
 (`label_values(llamacpp:requests_processing, model)`, multi-select,
 default `All`).
 
+### Open WebUI metrics via OTEL collector
+
+Open WebUI **cannot** be scraped like llama.cpp / llama-swap. Verified against
+the pinned image (`open-webui:v0.11.0`,
+`backend/open_webui/utils/telemetry/metrics.py`): it exposes **no `/metrics`
+endpoint** — the source itself states it _pushes_ metrics and "WebUI does **not**
+expose [Prometheus `/metrics`] directly". The only knobs are OTLP env vars
+(`ENABLE_OTEL`, `ENABLE_OTEL_METRICS` + `OTEL_EXPORTER_OTLP_ENDPOINT`). There is
+**no `ENABLE_PROMETHEUS` flag**, so a `ServiceMonitor`/static scrape job aimed
+at `open-webui:8080` would simply hit nothing.
+
+This is bridged by an `OpenTelemetryCollector` CR
+(`components/otel-collector/collector.yaml`) managed by the community
+**OpenTelemetry Operator** (`kubernetes/opentelemetry-operator`, installed
+cluster-wide via OLM). The operator renders the collector Deployment + Service
+(`open-webui-collector`): OTLP receiver on `:4317`/`:4318`, Prometheus exporter
+re-exposing `/metrics` on `:9464` (metrics namespaced `openwebui_`).
+
+- Open WebUI env (env-set, since `ENABLE_PERSISTENT_CONFIG=false` reverts
+  admin-UI toggles): `ENABLE_OTEL=true`, `ENABLE_OTEL_METRICS=true`,
+  `OTEL_EXPORTER_OTLP_ENDPOINT=http://open-webui-collector…:4317`,
+  `OTEL_EXPORTER_OTLP_INSECURE=true`, `OTEL_SERVICE_NAME=open-webui`.
+- A `- job_name: 'open-webui'` `static_configs` job (target
+  `open-webui-collector…:9464`) is present in **both**
+  `kubernetes/prometheus/components/prometheus/config-map.yaml` **and**
+  `…/prometheus-nas/config-map.yaml`.
+- Grafana dashboard: `kubernetes/grafana/base/dashboards/open-webui.json`
+  (request rate / p95 latency / 5xx from the OTLP HTTP metrics), registered in
+  the grafana `configMapGenerator.files` list. No community dashboard is used —
+  those assume a scrapeable `/metrics` endpoint this OTLP pipeline does not
+  provide.
+
+Audit trail: `ENABLE_AUDIT_STDOUT=true` + `AUDIT_LOG_LEVEL=REQUEST_RESPONSE`
+emit request-level audit logs to stdout for the cluster log stack
+(Loki / VictoriaLogs).
+
 ## Performance: why decode may trail bare-metal benchmarks
 
 The B70 is a **PCIe Gen4 x8** GPU; the exact host slot bandwidth on `gpu-1`
@@ -339,7 +381,12 @@ kubernetes/llm/
 │   ├── model-downloader/         # CronJob (suspended) to (re)fetch GGUFs
 │   ├── dragonfly-litellm/, dragonfly-open-webui/  # Redis-compatible caches
 │   ├── cnpg-litellm/, cnpg-open-webui/            # CloudNativePG Postgres
-│   └── *-gateway/                # Gateway API HTTPRoute + Certificate per app
+│   ├── *-gateway/                # Gateway API HTTPRoute + Certificate per app
+│   ├── otel-collector/           # OpenTelemetryCollector CR (OTLP → Prometheus)
+│   ├── mcp-kubernetes/           # read-only Kubernetes MCP tool server
+│   ├── mcp-github/               # read-only GitHub MCP tool server (http mode)
+│   ├── oikb/                     # oikb daemon: multi-source KB sync
+│   └── agent-eval/               # weekly promptfoo regression eval CronJob
 ├── overlays/
 │   └── okd/
 │       ├── kustomization.yaml   # composes base + all components for this cluster
@@ -347,15 +394,13 @@ kubernetes/llm/
 └── README.md                    # this file
 ```
 
-## Roadmap: connector auto-sync (Onyx)
+## Knowledge sync status
 
-Planned: automated document ingestion connectors (GitHub repos, web scraping,
-email) that continuously sync documents into the vector store. This would
-eliminate manual document uploads and keep RAG data fresh.
-
-See [Onyx](https://github.com/onyx-dot-app/onyx) (or equivalent project) for
-reference implementations. Integration into the ArgoCD application topology
-is the next step once the connector architecture is decided.
+Automated document ingestion into Open WebUI Knowledge Bases is implemented via
+the oikb daemon (see [Knowledge sync (`components/oikb`)](#knowledge-sync-componentsoikb)).
+It continuously syncs GitHub repos and web/sitemap content, eliminating manual
+uploads and keeping RAG data fresh, with per-source Knowledge Bases and
+Prometheus metrics.
 
 ## Future Work
 
@@ -374,6 +419,88 @@ implemented yet:
 - **Re-measure decode throughput** (`/api/metrics/stats`) after `ngram-mod` rollout to confirm effect size.
 - **Open WebUI `TASK_MODEL` offload** — see
   [Task-model offload (deferred)](components/open-webui/README.md#task-model-offload-deferred).
+
+## Agent Platform
+
+Beyond chat + RAG, the `llm` app runs a local, self-hosted agent platform
+(tools, memory, code execution, connectors). All agents are **read-only** and
+GitOps-delivered.
+
+### Prerequisites
+
+- **OpenTelemetry Operator** — the `components/otel-collector/`
+  `OpenTelemetryCollector` CR is rendered by the community OpenTelemetry
+  Operator, installed cluster-wide (all-namespaces) via the
+  `kubernetes/opentelemetry-operator` app. That app is sync-wave `1`; on a fresh
+  cluster the collector CR self-heals on ArgoCD retry once the operator CSV is
+  installed (the CR carries `SkipDryRunOnMissingResource=true`).
+- **Vault secrets** (operators must create these before first sync):
+  - `secret/data/homelab/llm/mcp-github` — `token` = fine-grained read-only
+    GitHub PAT (for the GitHub MCP server + oikb GitHub source).
+  - `components/oikb/secret.yaml` reads from `secret/data/homelab/llm/oikb`
+    (`daemon_key`), `secret/data/homelab/llm/open-webui` (`arthur_api_key`),
+    and `secret/data/homelab/github` (`read-only`).
+
+### Tools / MCP (`components/mcp-kubernetes`, `components/mcp-github`)
+
+Two Model Context Protocol (MCP) tool servers, registered in Open WebUI via
+`TOOL_SERVER_CONNECTIONS` (sourced from the `open-webui-config` secret because
+the GitHub connection embeds a read-only PAT as a bearer key):
+
+- **Kubernetes (read-only)** — `ghcr.io/containers/kubernetes-mcp-server`,
+  `--read-only` + `core,config` toolsets. The hard safety boundary is a
+  dedicated `ClusterRole` (`mcp-kubernetes-readonly`) granting only
+  `get/list/watch` (no secrets); even a mutating tool call is rejected by the
+  API server.
+- **GitHub (read-only)** — `ghcr.io/github/github-mcp-server` in `http` mode,
+  `GITHUB_READ_ONLY=1`, toolsets `repos,issues,pull_requests,code_security`.
+  The PAT is never stored on the container: `http` mode authenticates
+  per-request via the bearer token Open WebUI forwards. Create a fine-grained
+  read-only PAT and store it in Vault at `secret/data/homelab/llm/mcp-github`
+  (`token`).
+
+### Code interpreter, memory, RBAC, eval (Open WebUI config)
+
+- **Code interpreter** — Pyodide (in-browser WASM): sandboxed Python for data
+  analysis / math / transforms, no backend, no cluster access.
+- **Long-term memory** — `ENABLE_MEMORY_SYSTEM_CONTEXT` +
+  `ENABLE_MEMORY_BACKGROUND_REVIEW` (persisted in CNPG).
+- **Governance / RBAC** — `DEFAULT_USER_ROLE=pending` (no open self-signup) +
+  Zitadel role mapping (`ENABLE_OAUTH_ROLE_MANAGEMENT`, `OAUTH_ROLES_CLAIM=roles`,
+  `OAUTH_ALLOWED_ROLES=user,admin`, `OAUTH_ADMIN_ROLES=admin`). The Zitadel side
+  is wired in `terraform/homelab/zitadel_openwebui.tf`: the `openwebui` project
+  asserts roles, the OIDC app emits them in the id_token/userinfo, `user` and
+  `admin` project roles exist, the primary user holds an `admin` `user_grant`
+  (lockout guard), and a Zitadel **Action** flattens granted role keys into a
+  plain `roles` string-array claim (Open WebUI cannot parse Zitadel's native
+  nested roles claim). New OIDC users without a grant land in `pending` until an
+  admin promotes them (in-product) or a `zitadel_user_grant` is added.
+- **Arena eval** — `ENABLE_EVALUATION_ARENA_MODELS` for side-by-side scoring.
+
+### Multi-agent orchestration
+
+Open WebUI's **native agentic loop** drives the MCP tool servers directly (plan
+→ call `kubernetes`/`github` tools → summarize), so no separate orchestration
+service is deployed. A dedicated LangGraph supervisor was evaluated and
+**dropped**: for a single user it added a custom Python image and a long-running
+service for marginal benefit over native tool-calling. The pattern remains
+supervisor-style (one model orchestrating MCP tools); it just lives inside Open
+WebUI instead of a bespoke runtime.
+
+### Knowledge sync (`components/oikb`)
+
+An [oikb](https://github.com/open-webui/oikb) daemon (see
+[Knowledge Base Sync (oikb)](components/open-webui/README.md#knowledge-base-sync-oikb))
+replaces the old sitemap CronJob, syncing GitHub repos and web/sitemap content
+into Open WebUI Knowledge Bases with SHA-256 incremental diffing. Additional
+sources (Nextcloud, Jira, Discord, Slack, Zotero, Gmail) are scaffolded in
+`components/oikb/oikb.yaml` but disabled until their Vault credentials are
+provisioned.
+
+### Eval harness (`components/agent-eval`)
+
+A weekly `promptfoo` CronJob scoring the local LLM against a fixture set
+(`agent-eval-config`) to catch regressions. Runs offline; no GPU cost when idle.
 
 ## REF
 

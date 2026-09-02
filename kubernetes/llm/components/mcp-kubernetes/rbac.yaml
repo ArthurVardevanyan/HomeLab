@@ -1,0 +1,136 @@
+---
+# Read-only cluster access for the Kubernetes MCP agent.
+#
+# This ClusterRole is the HARD safety boundary: even if the model attempts a
+# mutating tool call, the API server rejects it because only get/list/watch are
+# granted. Combined with the server's own --read-only flag (defence in depth).
+#
+# Secrets are deliberately NOT granted (no secrets/configmaps read) to avoid
+# exposing credentials through the agent.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: mcp-kubernetes-readonly
+  labels:
+    app.kubernetes.io/name: mcp-kubernetes
+    app.kubernetes.io/instance: mcp-kubernetes
+rules:
+  # Core, workload, networking, storage, batch, autoscaling — read-only.
+  - apiGroups:
+      - ""
+    resources:
+      - pods
+      - pods/log
+      - pods/status
+      - services
+      - nodes
+      - nodes/status
+      - namespaces
+      - events
+      - persistentvolumeclaims
+      - persistentvolumes
+      - endpoints
+      - serviceaccounts
+      - replicationcontrollers
+      - resourcequotas
+      - limitranges
+    verbs:
+      - get
+      - list
+      - watch
+  - apiGroups:
+      - apps
+    resources:
+      - deployments
+      - statefulsets
+      - daemonsets
+      - replicasets
+    verbs:
+      - get
+      - list
+      - watch
+  - apiGroups:
+      - batch
+    resources:
+      - jobs
+      - cronjobs
+    verbs:
+      - get
+      - list
+      - watch
+  - apiGroups:
+      - networking.k8s.io
+    resources:
+      - ingresses
+      - networkpolicies
+    verbs:
+      - get
+      - list
+      - watch
+  - apiGroups:
+      - autoscaling
+    resources:
+      - horizontalpodautoscalers
+    verbs:
+      - get
+      - list
+      - watch
+  - apiGroups:
+      - policy
+    resources:
+      - poddisruptionbudgets
+    verbs:
+      - get
+      - list
+      - watch
+  - apiGroups:
+      - metrics.k8s.io
+    resources:
+      - pods
+      - nodes
+    verbs:
+      - get
+      - list
+  # OpenShift / OKD built-ins (Routes, Projects, SCC read).
+  - apiGroups:
+      - route.openshift.io
+    resources:
+      - routes
+    verbs:
+      - get
+      - list
+      - watch
+  - apiGroups:
+      - project.openshift.io
+    resources:
+      - projects
+    verbs:
+      - get
+      - list
+      - watch
+  # Gateway API (used by this cluster's ingress).
+  - apiGroups:
+      - gateway.networking.k8s.io
+    resources:
+      - gateways
+      - httproutes
+    verbs:
+      - get
+      - list
+      - watch
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: mcp-kubernetes-readonly
+  labels:
+    app.kubernetes.io/name: mcp-kubernetes
+    app.kubernetes.io/instance: mcp-kubernetes
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: mcp-kubernetes-readonly
+subjects:
+  - kind: ServiceAccount
+    name: mcp-kubernetes
+    namespace: llm
