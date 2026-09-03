@@ -14,7 +14,6 @@ for interacting with the llama-swap backend via LiteLLM.
   - [Database \& WebSockets](#database--websockets)
   - [Storage](#storage)
   - [Document RAG](#document-rag)
-    - [Embeddings (CPU)](#embeddings-cpu)
     - [Task-model offload (deferred)](#task-model-offload-deferred)
     - [RAG vs. web search](#rag-vs-web-search)
     - [Freshness / staleness](#freshness--staleness)
@@ -83,22 +82,6 @@ PersistentVolumeClaim (`open-webui-data`, `ReadWriteMany`, `rook-cephfs`, 5Gi`�
 RAG (Retrieval-Augmented Generation) allows Open WebUI to answer questions
 based on uploaded documents. Documents are embedded and stored in the vector
 store, then retrieved during generation.
-
-### Embeddings (CPU)
-
-Embedding models are **small and fast on CPU**. The `llama-cpp-embed`
-component runs an embeddings server on CPU. The B70 is reserved for generation
-— embedding throughput is sufficient on CPU and saves GPU VRAM for the large
-language model.
-
-Embeddings are loaded by `llama-cpp-embed` and exposed via the Open WebUI
-embedding backend configuration. No GPU resources are consumed for this step.
-
-> **Known oversubscription (not yet fixed):** `llama-cpp-embed` is started
-> with `--threads 8` but the container's `resources.limits.cpu` is `"2"` —
-> a 4× mismatch. Low priority given embeddings are small/fast regardless,
-> but worth aligning (`--threads 2` or raising the CPU limit) if `gpu-1`'s
-> CPU headroom becomes tighter after the llama-swap CPU-request increase.
 
 ### Task-model offload (deferred)
 

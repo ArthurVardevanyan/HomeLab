@@ -56,10 +56,18 @@ model_list:
       input_cost_per_token: 0.000000008
       output_cost_per_token: 0.000000008
 
-  # --- Embedding Model (GPU 1, via llama-swap) ---
+  # --- Embedding Model (GPU 1 primary, GPU 0 fallback, via llama-swap) ---
   - model_name: qwen3-embedding-4b
     litellm_params:
       model: openai/qwen3-embed-gpu1
+      api_base: http://llama-swap-svc.llm.svc.cluster.local.:8080/v1
+      api_key: "dummy"
+      input_cost_per_token: 0.000000001
+      rpm: 960
+      max_parallel_requests: 24
+  - model_name: qwen3-embedding-4b
+    litellm_params:
+      model: openai/qwen3-embed-gpu0
       api_base: http://llama-swap-svc.llm.svc.cluster.local.:8080/v1
       api_key: "dummy"
       input_cost_per_token: 0.000000001
@@ -88,9 +96,10 @@ router_settings:
   # llama-swap-aware routing plugin. For each request, narrows candidates
   # using llama-swap ground truth instead of LiteLLM's own counter:
   #   - nothing resident (cold start)      -> no narrowing, ordering above decides
-  #   - exactly one candidate resident     -> narrow to it (avoid an
-  #                                          unnecessary eviction of an
-  #                                          unrelated model on the other GPU)
+  #   - exactly one candidate resident     -> expose all candidates (the
+  #                                            non-resident GPU receives
+  #                                            traffic and llama-swap loads
+  #                                            it — one-time swap cost)
   #   - both candidates resident and ready -> poll llama.cpp's /slots via
   #                                          llama-swap for actual busy-slot
   #                                          counts, route to the less busy
