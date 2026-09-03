@@ -180,6 +180,40 @@ def _is_tool_call_continuation(context: RoutingContext) -> bool:
     return last.get("role") == "tool"
 
 
+def _find_chat_gpu(running: dict[str, str]) -> str | None:
+    """Return the full deployment model ID for the GPU with the
+    highest-eviction-cost chat model.  None if no chat model is running.
+
+    Eviction costs: spread (25) > 35b-gpu0 (20) > 35b-gpu1 (10).
+    Embedding models have no eviction cost in the matrix and are not
+    considered here.
+    """
+    cost_priority: dict[str, int] = {
+        "35b-gpu0": 20,
+        "35b-gpu1": 10,
+        "35b-spread": 25,
+        "35b-gpu0-dense": 20,
+        "35b-gpu1-dense": 10,
+        "27b-gpu0": 15,
+        "27b-gpu1": 15,
+    }
+    best: tuple[str, int] | None = None
+    for model_id, state in running.items():
+        if state != "ready":
+            continue
+        if "embed" in model_id:
+            continue
+        cost = cost_priority.get(model_id, 0)
+        if best is None or cost > best[1]:
+            best = (model_id, cost)
+    if best is None:
+        return None
+    # Convert model_id back to deployment ID (add openai/ prefix).
+    # The caller's candidate_ids maps full deployment IDs to model IDs,
+    # so we find the matching deployment ID.
+    return best[0]
+
+
 class LlamaSwapAffinityPlugin:
     """Implements `litellm.types.router.RoutingPlugin` (async `run`)."""
 
@@ -243,19 +277,22 @@ class LlamaSwapAffinityPlugin:
         if now < self._running_cache_expires_at:
             return self._running_cache
 
+        self._running_cache = await self._running_state_live()
+        self._running_cache_expires_at = now + effective_ttl
+        return self._running_cache
+
+    async def _running_state_live(self) -> dict[str, str]:
+        """Fetch current running state from llama-swap, bypassing cache."""
         client = self._get_client()
         response = await client.get(_RUNNING_URL)
         response.raise_for_status()
         payload = response.json()
 
-        state = {
+        return {
             entry["model"]: entry["state"]
             for entry in payload.get("running", [])
             if entry.get("state") in _RESIDENT_STATES
         }
-        self._running_cache = state
-        self._running_cache_expires_at = now + effective_ttl
-        return state
 
     async def _slot_stats(
         self, model_id: str, cache_ttl: float | None = None,
@@ -608,7 +645,7 @@ class LlamaSwapAffinityPlugin:
 
             occupied_candidates = [
                 model for model, model_id in candidate_ids.items()
-                if model_id in running
+                if running.get(model_id) == "ready"
             ]
 
             # ------------------------------------------------------------------
@@ -633,6 +670,16 @@ class LlamaSwapAffinityPlugin:
                 ]
 
                 if not resident_candidates:
+                    # No embedding model is resident.  If a chat model is
+                    # running on one GPU, route to the GPU with the higher
+                    # eviction-cost chat model (less disruptive for llama-swap
+                    # to evict that GPU's chat model to make room).  If no
+                    # chat model is running either, return unmodified.
+                    chat_on_gpu = _find_chat_gpu(running)
+                    if chat_on_gpu is not None:
+                        context.candidate_models = [chat_on_gpu]
+                        context.signals["llama_swap_affinity"] = "embedding_routed_to_safe_gpu"
+                        await self._stamp_recency(chat_on_gpu)
                     return context
 
                 if len(resident_candidates) == 1:
@@ -662,6 +709,17 @@ class LlamaSwapAffinityPlugin:
                 # the session on the other GPU or allow overflow.
                 resident_candidate = occupied_candidates[0]
                 resident_model_id = candidate_ids[resident_candidate]
+
+                # Guard check: verify the resident is still running and ready
+                # with a live call.  The cached /running state from 1s ago may
+                # have been evicted by llama-swap's matrix solver by the time
+                # this request reaches the backend.
+                live_running = await self._running_state_live()
+                if live_running.get(resident_model_id) != "ready":
+                    # Resident was evicted or is no longer ready — fall
+                    # through to unmodified candidates (LiteLLM will retry).
+                    return context
+
                 topology = _gpu_topology(resident_model_id)
 
                 if topology is None:

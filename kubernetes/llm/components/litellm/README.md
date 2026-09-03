@@ -390,7 +390,20 @@ GPU — routing to a non-resident GPU would evict the active chat model. When bo
 GPUs happen to have the embed model loaded, the plugin polls `/slots` for least-busy
 selection with round-robin tie-breaking. The `/running` cache uses a 5s TTL to
 reduce HTTP calls during bursts. No session stickiness (embeddings don't need KV
-cache reuse).
+
+cache reuse). When no embedding model is resident, the plugin routes to the GPU
+with the highest-cost chat model (35b-gpu0 at cost 20 > 35b-gpu1 at cost 10),
+since llama-swap would evict that GPU's chat model last before evicting the other.
+If no chat model is running either, the plugin returns candidates unmodified.
+
+### Cache and guard checks
+
+The plugin caches `/running` (1s TTL for chat, 5s TTL for embedding) and `/slots`
+(250ms TTL). Before narrowing to the resident in the "one resident" path, the plugin
+performs a live `/running` call as a guard check — if the model was evicted between
+the cache check and this guard (a race window with llama-swap's matrix solver), the
+plugin falls through to unmodified candidates, letting LiteLLM retry on a GPU that
+is confirmed to be running.
 
 | Deployment         | RPM | Requests/sec | Parallel slots | Max concurrent in-flight   |
 | ------------------ | --- | ------------ | -------------- | -------------------------- |
