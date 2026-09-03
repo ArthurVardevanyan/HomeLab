@@ -16,12 +16,15 @@ routing with GPU affinity via a custom `llama_swap_affinity` plugin.
     - [Router settings](#router-settings)
     - [Response \& cache](#response--cache)
     - [GPU affinity plugin](#gpu-affinity-plugin)
+      - [Session recency protection](#session-recency-protection)
       - [KV cache efficiency](#kv-cache-efficiency)
   - [Deployment](#deployment)
   - [OIDC / SSO](#oidc--sso)
   - [Metrics](#metrics)
   - [Storage](#storage)
   - [Database](#database)
+  - [Embedding Model](#embedding-model)
+    - [Limitation: Open WebUI burst behavior](#limitation-open-webui-burst-behavior)
   - [References](#references)
 
 ## Architecture
@@ -209,13 +212,20 @@ a Redis-compatible cache backend:
 built-in `least-busy` counter for the two model groups. It narrows the
 candidate list using llama-swap's ground truth:
 
-1. **Cold start** (no candidate is resident): leave the candidate list untouched.
+1. **Embedding models**: always narrow to the resident GPU. The llama-swap matrix
+   guarantees at most one model per GPU, so routing to a non-resident GPU would
+   evict the active chat model. The `/running` cache uses a 5s TTL. No session
+   stickiness (embeddings don't need KV cache reuse).
+2. **Cold start** (no candidate is resident): leave the candidate list untouched.
    The GPU-preference ordering in `litellm.yaml`'s model_list decides which GPU
    gets loaded first.
-2. **One resident**: narrow to it. Every model runs with `ttl: 0` (never expires),
-   so if only one copy is loaded, the other GPU is almost certainly serving a
-   different model — routing there would force an unnecessary eviction.
-3. **Both ready**: check for session stickiness first, then fall back to
+3. **One resident**: check whether the resident GPU is saturated and whether the
+   other GPU (the "victim") is actively serving. If the victim is idle and not
+   recently served (within a 120s recency window), expose both GPUs so LiteLLM
+   can route traffic to the non-resident GPU and llama-swap loads it. If the
+   victim is busy or recently served, narrow to the resident to protect the
+   active session. Embedding models always narrow.
+4. **Both ready**: check for session stickiness first, then fall back to
    least-busy slot selection:
    - **Session stickiness**: the plugin computes a sha256 fingerprint from the
      model name and the first user message content (truncated to 500 chars), then
@@ -231,14 +241,34 @@ candidate list using llama-swap's ground truth:
      broken with a round-robin counter — this is what fixes the observed skew
      where LiteLLM's built-in counter always chose the first-listed deployment.
 
-The plugin caches `/running` (1s TTL) and `/slots` (0.25s TTL) to avoid
-hammering llama-swap during request bursts. HTTP calls use a 1s timeout; on
-failure, the plugin fails open (returns candidates unmodified) so a llama-swap
-hiccup never blocks routing.
+The plugin caches `/running` (1s TTL for chat, 5s TTL for embedding) and `/slots`
+(0.25s TTL) to avoid hammering llama-swap during request bursts. HTTP calls use a
+1s timeout. A local try/except around `/slots` lookups narrows to the resident GPU
+on failure (session protection), while the outer fail-open prevents the plugin from
+blocking routing entirely when llama-swap is unreachable.
 
 The `/slots` poll is proxied through llama-swap's `upstream.ignorePaths` guard
 (see `llama-swap.yaml`) which prevents the path from ever triggering a model
 load/swap — defense-in-depth against a bug in the plugin doing otherwise.
+
+#### Session recency protection
+
+The plugin tracks the last time each model was routed via a Redis-backed
+recency store (`llama-swap-affinity:recency:v1` keys), with an in-memory
+fallback when Redis is unavailable. If a GPU was served within the 300s
+recency window, the plugin treats it as "in use" and narrows to the resident
+GPU for other models — preventing session eviction during the user's
+read-and-reply period, tool-call round trips (when slot count drops to zero
+but the session is actively waiting on external I/O), or other natural pauses.
+This fills the gap between mid-generation protection (busy slots) and a user's
+normal conversation rhythm.
+
+The recency store is stamped on every routing decision: overflow exposes,
+narrowed-to-resident, sticky-to-pinned, rebalanced-from-sticky, narrowed-to-least-busy,
+and the `ready_candidates < 2` early exit.
+
+Note: after a pod restart, the in-memory map is empty but Redis-backed entries
+persist for up to 120s.
 
 #### KV cache efficiency
 
@@ -264,11 +294,11 @@ llama-cpp-exporter's Prometheus metrics endpoint.
 
 ## Deployment
 
-LiteLLM is deployed as a single-replica Deployment in the `llm` namespace,
+LiteLLM is deployed as a two-replica Deployment in the `llm` namespace,
 scheduled on the GPU node (`gpu-1`) via `nodeSelector`:
 
 - **Image**: `ghcr.io/berriai/litellm:v1.96.2` (Renovate-managed).
-- **Strategy**: `RollingUpdate` (1 replica, no downtime during rollout).
+- **Strategy**: `RollingUpdate` (2 replicas, no downtime during rollout).
 - **Resources**: 250m–1 CPU, 1Gi–3Gi memory, 128Mi–512Mi ephemeral storage.
   VPA (InPlaceOrRecreate) maintains a 50m CPU / 256Mi memory floor.
 - **Probes**: startup probe on `/health/liveliness` (60×10s), liveness on the
@@ -354,10 +384,13 @@ the appropriate companion set:
 - **Both GPUs busy with chat**: llama-swap evicts the lowest-cost model (embed,
   eviction cost 5) to free a GPU, or queues the request
 
-LiteLLM routes embedding requests using a GPU residency check: when both GPUs
-have the embed model loaded, it polls `/slots` for least-busy selection with
-round-robin tie-breaking. The `/running` cache uses a 5s TTL to reduce HTTP
-calls during bursts. No session stickiness (embeddings don't need KV cache reuse).
+LiteLLM routes embedding requests using GPU residency: the plugin always narrows
+to the resident GPU since the llama-swap matrix guarantees at most one model per
+GPU — routing to a non-resident GPU would evict the active chat model. When both
+GPUs happen to have the embed model loaded, the plugin polls `/slots` for least-busy
+selection with round-robin tie-breaking. The `/running` cache uses a 5s TTL to
+reduce HTTP calls during bursts. No session stickiness (embeddings don't need KV
+cache reuse).
 
 | Deployment         | RPM | Requests/sec | Parallel slots | Max concurrent in-flight   |
 | ------------------ | --- | ------------ | -------------- | -------------------------- |

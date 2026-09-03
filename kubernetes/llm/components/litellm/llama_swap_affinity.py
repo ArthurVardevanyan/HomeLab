@@ -24,20 +24,25 @@ This plugin sidesteps LiteLLM's counter entirely for the model groups it
 covers. It narrows the routing-plugin candidate list (see
 `litellm.types.router.RoutingContext`) using llama-swap ground truth:
 
-- If neither deployment is resident (cold start): leave the candidate list
-  untouched. The GPU-preference ordering in litellm.yaml's model_list
-  decides, same as before this plugin existed.
-- If exactly one candidate is resident: expose **all** candidates. The
-  non-resident sibling receives traffic and llama-swap's matrix solver
-  loads the model there (one-time swap cost). Once both copies are resident
-  the "both ready" path takes over.
-- If both candidates are resident and ready: poll llama.cpp's per-instance
-  `/slots` endpoint (proxied through llama-swap's `/upstream/<model>/slots`)
-  for actual busy-slot counts, and route to whichever has fewer. Ties -
-  the common case, since both GPUs are usually idle - are broken with a
-  simple round-robin counter, which is what actually fixes the observed
-  skew: a load-based comparison that just returns the first candidate on
-  every tie is exactly the bug this plugin exists to avoid repeating.
+- Embedding models: always route to the resident GPU. Since the llama-swap
+  matrix guarantees at most one model per GPU, there is no scenario where
+  both GPUs hold the same embed model — routing to a non-resident GPU would
+  unconditionally evict the active chat model. The `/running` cache uses a
+  5s TTL to reduce HTTP calls during burst embedding workloads.
+- Cold start (no candidate is resident): use victim-preference routing.
+  The plugin checks which GPU's currently-loaded model is idle, and prefers
+  the candidate whose swap would evict that idle GPU (minimising disruption).
+  If victim preference cannot be determined, returns candidates unmodified.
+- One resident: check whether the resident GPU is saturated and whether the
+  victim GPU is actively serving. If the resident is idle and the victim is
+  busy or recently served (within 120s), narrow to the resident to protect
+  the active session. If the resident is saturated (all slots busy), expose
+  both candidates so LiteLLM routes traffic to the non-resident GPU and
+  llama-swap loads the model there. Embedding models always narrow.
+- Both ready: check for session stickiness first, then fall back to
+  least-busy slot selection using per-instance `/slots` polling with
+  round-robin tie-breaking. Since both GPUs hold the same model, evicting
+  either one for the other is harmless.
 
 Session stickiness (load-aware, Redis-backed)
 ----------------------------------------------
@@ -83,6 +88,7 @@ import asyncio
 import hashlib
 import logging
 import os
+import re
 import time
 from typing import Final
 
@@ -102,29 +108,76 @@ _RUNNING_URL: Final = f"{_LLAMA_SWAP_BASE_URL}/running"
 _RESIDENT_STATES: Final = frozenset({"ready", "starting"})
 _RUNNING_CACHE_TTL_SECONDS: Final = 1.0
 _SLOTS_CACHE_TTL_SECONDS: Final = 0.25
+_EMBED_RUNNING_CACHE_TTL_SECONDS: Final = 5.0
 _REQUEST_TIMEOUT_SECONDS: Final = 1.0
 
 # Redis / Dragonfly connection settings for the pin store.
 # Falls back to in-memory if the env var is unset or Redis is unreachable.
 _REDIS_URL: Final | None = os.environ.get("LLAMA_SWAP_PIN_REDIS_URL")
 
+# Redis key namespace prefix for pins.
+_PIN_NAMESPACE: Final = "llama-swap-affinity:v1"
+# Redis key namespace prefix for session recency.
+_RECENCY_NAMESPACE: Final = "llama-swap-affinity:recency:v1"
+
 # Session-stickiness settings (only relevant when Redis is available).
 # TTL of 1h balances KV-cache retention against memory churn.
 _PIN_TTL_SECONDS: Final = 3600.0
 # How much busier the pinned GPU can be before we rebalance.
-# With 2 slots/GPU: pinned=1/other=0 → stick; pinned=2/other=0 → rebalance.
+# With 2 slots/GPU: pinned=1/other=0 -> stick; pinned=2/other=0 -> rebalance.
 STICKY_SLOP: Final = 1
+# Session recency window (seconds). Requests are protected from triggering an
+# eviction if their GPU was served within this window. Covers the gap between
+# mid-generation protection (busy slots), a user's read-and-reply period, and
+# tool-call round trips where slot count drops to zero but the session is
+# actively waiting on external I/O.
+_RECENT_SESSION_WINDOW: Final = 300.0
 # Max number of pins stored in Redis (soft cap; keys are never explicitly
 # evicted except by TTL).
 _PIN_MAP_MAX: Final = 10000
-# Redis key namespace prefix.
-_PIN_NAMESPACE: Final = "llama-swap-affinity:v1"
+
+# GPU topology: model_id -> set of GPU indices that support it.
+# Used to determine what model would be evicted if a swap occurs.
+_KNOWN_TOPOLOGY: Final[dict[str, frozenset[int]]] = {
+    "35b-spread": frozenset({0, 1}),
+}
+_GPU_SUFFIX_RE: Final = re.compile(r"-gpu([01])$")
 
 
 def _strip_provider_prefix(model: str) -> str:
     """`openai/35b-gpu0` -> `35b-gpu0` to match llama-swap's model IDs."""
     _, _, rest = model.partition("/")
     return rest or model
+
+
+def _gpu_topology(model_id: str) -> frozenset[int] | None:
+    """Return the GPU set for a llama-swap model ID, or None for unknown."""
+    if model_id in _KNOWN_TOPOLOGY:
+        return _KNOWN_TOPOLOGY[model_id]
+    match = _GPU_SUFFIX_RE.search(model_id)
+    if match is not None:
+        return frozenset({int(match.group(1))})
+    return None
+
+
+def _is_embedding_request(candidate_ids: dict[str, str]) -> bool:
+    """Check whether all candidates are embedding models."""
+    return any("embed" in mid for mid in candidate_ids)
+
+
+def _is_tool_call_continuation(context: RoutingContext) -> bool:
+    """Return True if the last message is a tool result — the model
+    just emitted ``tool_calls`` and the client is sending back the result.
+    This request is a continuation of an active session and should not
+    trigger cross-GPU routing decisions that could risk an eviction.
+    """
+    msgs = getattr(context, "structured_messages", None)
+    if not msgs:
+        return False
+    last = msgs[-1] if isinstance(msgs, list) else None
+    if last is None:
+        return False
+    return last.get("role") == "tool"
 
 
 class LlamaSwapAffinityPlugin:
@@ -135,11 +188,13 @@ class LlamaSwapAffinityPlugin:
         self._redis: aioredis.Redis | None = None
         self._running_cache: dict[str, str] = {}
         self._running_cache_expires_at: float = 0.0
-        self._slots_cache: dict[str, tuple[int, float]] = {}
+        self._slots_cache: dict[str, tuple[int, int, float]] = {}
         self._round_robin_counter: int = 0
         # Fallback in-memory pin map (used when Redis is unavailable).
         self._pin_map: dict[str, tuple[str, float]] = {}
         self._pin_order: list[str] = []  # LRU tracking (insertion order)
+        # Recent session tracking: model_id -> last served timestamp.
+        self._last_routed: dict[str, float] = {}
 
     # ------------------------------------------------------------------
     # HTTP client
@@ -202,23 +257,36 @@ class LlamaSwapAffinityPlugin:
         self._running_cache_expires_at = now + effective_ttl
         return state
 
-    async def _slot_busy_count(
+    async def _slot_stats(
         self, model_id: str, cache_ttl: float | None = None,
-    ) -> int:
+    ) -> tuple[int, int] | None:
+        """Return (busy_count, total_slots) for a model, or None on failure."""
         now = time.monotonic()
         effective_ttl = cache_ttl if cache_ttl is not None else _SLOTS_CACHE_TTL_SECONDS
         cached = self._slots_cache.get(model_id)
-        if cached is not None and now < cached[1]:
-            return cached[0]
+        if cached is not None and now < cached[2]:
+            return (cached[0], cached[1])
 
         client = self._get_client()
-        response = await client.get(f"{_LLAMA_SWAP_BASE_URL}/upstream/{model_id}/slots")
+        response = await client.get(
+            f"{_LLAMA_SWAP_BASE_URL}/upstream/{model_id}/slots"
+        )
         response.raise_for_status()
         slots = response.json()
         busy = sum(1 for slot in slots if slot.get("is_processing"))
+        total = len(slots)
 
-        self._slots_cache[model_id] = (busy, now + effective_ttl)
-        return busy
+        self._slots_cache[model_id] = (busy, total, now + effective_ttl)
+        return (busy, total)
+
+    async def _slot_busy_count(
+        self, model_id: str, cache_ttl: float | None = None,
+    ) -> int:
+        """Return the number of busy slots for a model."""
+        stats = await self._slot_stats(model_id, cache_ttl=cache_ttl)
+        if stats is not None:
+            return stats[0]
+        return 0
 
     async def _pick_least_busy(
         self,
@@ -246,6 +314,88 @@ class LlamaSwapAffinityPlugin:
         return winner
 
     # ------------------------------------------------------------------
+    # Load-aware saturation check
+    # ------------------------------------------------------------------
+
+    async def _is_gpu_saturated(
+        self, gpu_indices: frozenset[int], running: dict[str, str],
+    ) -> bool:
+        """Check whether the given GPU(s) are fully saturated.
+
+        Sums ``busy`` across all resident models on the specified GPUs.
+        Returns ``True`` only when the total busy count equals the total
+        slot count (no free slots anywhere on those GPUs).
+        """
+        busy_total: int = 0
+        total_slots: int = 0
+        for model_id, state in running.items():
+            if state not in _RESIDENT_STATES:
+                continue
+            top = _gpu_topology(model_id)
+            if top is None:
+                continue
+            if not top.intersection(gpu_indices):
+                continue
+            stats = await self._slot_stats(model_id)
+            if stats is None:
+                return False  # can't confirm saturation
+            busy_total += stats[0]
+            total_slots += stats[1]
+        return total_slots > 0 and busy_total >= total_slots
+
+    # ------------------------------------------------------------------
+    # Recency tracking (Redis-backed, with in-memory fallback)
+    # ------------------------------------------------------------------
+
+    def _recency_key(self, model_id: str) -> str:
+        """Redis key for a recency entry."""
+        safe = model_id.replace(":", "-")
+        return f"{_RECENCY_NAMESPACE}:{safe}"
+
+    async def _is_recency_recent(self, model_id: str) -> bool:
+        """Return whether *model_id* was served within the recency window."""
+        redis = await self._get_redis()
+        if redis is not None:
+            try:
+                val = await redis.get(self._recency_key(model_id))
+                if val is not None:
+                    return (
+                        time.monotonic() - float(val)
+                        < _RECENT_SESSION_WINDOW
+                    )
+                return False
+            except Exception:
+                pass
+
+        # Fallback: in-memory recency map
+        if model_id in self._last_routed:
+            return (
+                time.monotonic() - self._last_routed[model_id]
+                < _RECENT_SESSION_WINDOW
+            )
+        return False
+
+    async def _stamp_recency(self, model: str) -> None:
+        """Record that *model* was just routed (full provider ID)."""
+        model_id = _strip_provider_prefix(model)
+        ts = time.monotonic()
+
+        # Update in-memory map (always, as fast path).
+        self._last_routed[model_id] = ts
+
+        # Persist to Redis for multi-replica visibility.
+        redis = await self._get_redis()
+        if redis is not None:
+            try:
+                await redis.set(
+                    self._recency_key(model_id),
+                    ts,
+                    ex=int(_RECENT_SESSION_WINDOW),
+                )
+            except Exception:
+                pass
+
+    # ------------------------------------------------------------------
     # Stickiness key
     # ------------------------------------------------------------------
 
@@ -256,7 +406,7 @@ class LlamaSwapAffinityPlugin:
         1. `context.metadata["session_id"]` (canonical session ID, populated
            when Open WebUI sends `X-Litellm-Session-Id`).
         2. Content fingerprint (model + first user message content).
-        3. `None` — no stickiness.
+        3. `None` - no stickiness.
         """
         session_id = context.metadata.get("session_id")
         if session_id:
@@ -404,7 +554,10 @@ class LlamaSwapAffinityPlugin:
     # Load-aware stickiness check
     # ------------------------------------------------------------------
 
-    async def _check_stickiness(self, pinned: str, ready_candidates: list[str], candidate_ids: dict[str, str]) -> str | None:
+    async def _check_stickiness(
+        self, pinned: str, ready_candidates: list[str],
+        candidate_ids: dict[str, str],
+    ) -> str | None:
         """Check if we should stick to the pinned GPU or rebalance.
 
         Returns the deployment to route to (pinned or least-busy sibling),
@@ -420,17 +573,17 @@ class LlamaSwapAffinityPlugin:
         )
         scored = [(model, count) for model, count in zip(ready_candidates, counts) if isinstance(count, int)]
         if not scored:
-            return pinned  # can't compare — stick
+            return pinned  # can't compare -- stick
 
         min_busy = min(count for _, count in scored)
         pinned_idx = next(i for i, (m, _) in enumerate(scored) if m == pinned)
         pinned_busy = scored[pinned_idx][1]
 
         if pinned_busy <= min_busy + STICKY_SLOP:
-            # Pinned GPU is near least-busy — stick (KV-cache reuse)
+            # Pinned GPU is near least-busy -- stick (KV-cache reuse)
             return pinned
         else:
-            # Pinned GPU is materially busier — rebalance
+            # Pinned GPU is materially busier -- rebalance
             least_busy = [model for model, count in scored if count == min_busy]
             return least_busy[0]
 
@@ -448,32 +601,158 @@ class LlamaSwapAffinityPlugin:
             if len(candidates) < 2:
                 return context
 
-            candidate_ids = {model: _strip_provider_prefix(model) for model in candidates}
+            candidate_ids = {
+                model: _strip_provider_prefix(model) for model in candidates
+            }
             running = await self._running_state()
 
-            occupied_candidates = [model for model, model_id in candidate_ids.items() if model_id in running]
+            occupied_candidates = [
+                model for model, model_id in candidate_ids.items()
+                if model_id in running
+            ]
+
+            # ------------------------------------------------------------------
+            # Embedding models: always narrow to resident.
+            # The matrix guarantees at most one model per GPU, so there is no
+            # scenario where both GPUs hold the same embed model. Routing to
+            # a non-resident GPU would unconditionally evict the active chat
+            # model. Use a 5s `/running` cache TTL to reduce HTTP calls.
+            # ------------------------------------------------------------------
+            if _is_embedding_request(candidate_ids):
+                candidate_ids_embed = {
+                    model: _strip_provider_prefix(model)
+                    for model in candidates
+                }
+                running_embed = await self._running_state(
+                    cache_ttl=_EMBED_RUNNING_CACHE_TTL_SECONDS
+                )
+
+                resident_candidates = [
+                    model for model, model_id in candidate_ids_embed.items()
+                    if model_id in running_embed
+                ]
+
+                if not resident_candidates:
+                    return context
+
+                if len(resident_candidates) == 1:
+                    context.candidate_models = resident_candidates
+                    context.signals["llama_swap_affinity"] = "narrowed_to_resident"
+                    return context
+
+                # Both GPUs have the embed model loaded -- route to least-busy.
+                winner = await self._pick_least_busy(
+                    resident_candidates, candidate_ids_embed,
+                    slots_cache_ttl=_SLOTS_CACHE_TTL_SECONDS,
+                )
+                context.candidate_models = [winner]
+                context.signals["llama_swap_affinity"] = "narrowed_to_least_busy_slot"
+                await self._stamp_recency(winner)
+                return context
+
+            # ------------------------------------------------------------------
+            # Chat models: residency-aware routing
+            # ------------------------------------------------------------------
 
             if not occupied_candidates:
                 return context
 
             if len(occupied_candidates) == 1:
-                # One GPU has the model resident. Return all candidates so
-                # the non-resident sibling receives traffic and llama-swap
-                # loads it (one-time swap cost). After both are resident the
-                # "both ready" path handles load balancing with
-                # /slots-based selection.
+                # One GPU has the model resident. Decide whether to protect
+                # the session on the other GPU or allow overflow.
+                resident_candidate = occupied_candidates[0]
+                resident_model_id = candidate_ids[resident_candidate]
+                topology = _gpu_topology(resident_model_id)
+
+                if topology is None:
+                    # Unknown topology -- fall through to unmodified candidates.
+                    return context
+
+                # Determine which GPU holds the victim model.
+                victim_gpu = next(
+                    (g for g in (0, 1) if g not in topology), None
+                )
+                if victim_gpu is None:
+                    return context
+
+                # Check victim GPU's state: search ALL running models for any
+                # model whose topology includes the victim GPU.  The previous
+                # implementation only searched the current request's candidate
+                # pair, so the victim model (which is a *different* model from
+                # the resident on the other GPU) was never found, making the
+                # busy/recent checks dead code.
+                victim_model_id = None
+                for running_model_id, state in running.items():
+                    if state not in _RESIDENT_STATES:
+                        continue
+                    top = _gpu_topology(running_model_id)
+                    if top is not None and victim_gpu in top:
+                        victim_model_id = running_model_id
+                        break
+
+                # Tool-call continuation: the model just emitted ``tool_calls``
+                # and the client is sending back the result.  This is a known
+                # active session on the resident GPU — narrow immediately to
+                # protect it regardless of the victim's state.
+                if victim_model_id is not None and _is_tool_call_continuation(context):
+                    context.candidate_models = [resident_candidate]
+                    context.signals["llama_swap_affinity"] = "narrowed_to_resident_tool_call"
+                    await self._stamp_recency(resident_candidate)
+                    return context
+
+                victim_busy = False
+                victim_recent = False
+
+                if victim_model_id is not None:
+                    stats = await self._slot_stats(victim_model_id)
+                    if stats is not None:
+                        victim_busy = stats[0] > 0
+                    victim_recent = await self._is_recency_recent(victim_model_id)
+
+                if victim_model_id is not None and (victim_busy or victim_recent):
+                    # Victim GPU is actively serving or recently served -- narrow
+                    # to resident to protect the active session.
+                    context.candidate_models = [resident_candidate]
+                    if victim_busy:
+                        context.signals["llama_swap_affinity"] = "narrowed_to_resident_victim_busy"
+                    else:
+                        context.signals["llama_swap_affinity"] = "narrowed_to_resident_victim_recent"
+                    await self._stamp_recency(resident_candidate)
+                    return context
+
+                # Resident GPU is idle and victim is not in the way -- check
+                # whether the resident is saturated.  Only allow overflow when
+                # the resident is fully loaded; otherwise route to the idle
+                # resident to avoid any unnecessary eviction.
+                resident_saturated = await self._is_gpu_saturated(
+                    topology, running
+                )
+
+                if not resident_saturated:
+                    # Resident can take more requests -- narrow to resident.
+                    context.candidate_models = [resident_candidate]
+                    context.signals["llama_swap_affinity"] = "narrowed_to_resident"
+                    await self._stamp_recency(resident_candidate)
+                    return context
+
+                # Resident is fully saturated and victim is free -- expose both
+                # GPUs so LiteLLM routes traffic to the non-resident GPU and
+                # llama-swap loads the model there.
                 context.candidate_models = candidates
-                context.signals["llama_swap_affinity"] = "cold_gpu_exposed_for_lb"
+                context.signals["llama_swap_affinity"] = "overflow_exposed_for_lb"
+                await self._stamp_recency(resident_candidate)
                 return context
 
             ready_candidates = [
-                model for model in occupied_candidates if running.get(candidate_ids[model]) == "ready"
+                model for model in occupied_candidates
+                if running.get(candidate_ids[model]) == "ready"
             ]
             if len(ready_candidates) < 2:
                 target = ready_candidates or occupied_candidates
                 context.candidate_models = target
                 if len(target) == 1:
                     context.signals["llama_swap_affinity"] = "narrowed_to_resident"
+                    await self._stamp_recency(target[0])
                 return context
 
             # Both candidates are loaded and ready.
@@ -484,21 +763,30 @@ class LlamaSwapAffinityPlugin:
                 # Step 2: look up any existing pin.
                 pinned = await self._get_pin(sticky_key)
                 if pinned:
-                    # Step 3: load-aware check — stick or rebalance?
-                    decision = await self._check_stickiness(pinned, ready_candidates, candidate_ids)
+                    # Step 3: load-aware check -- stick or rebalance?
+                    decision = await self._check_stickiness(
+                        pinned, ready_candidates, candidate_ids
+                    )
                     if decision:
                         context.candidate_models = [decision]
-                        context.signals["llama_swap_affinity"] = "sticky_to_pinned" if decision == pinned else "rebalanced_from_sticky"
+                        context.signals["llama_swap_affinity"] = (
+                            "sticky_to_pinned" if decision == pinned
+                            else "rebalanced_from_sticky"
+                        )
+                        await self._stamp_recency(decision)
                         return context
-                    # Stickiness dropped — fall through to pure least-busy.
+                    # Stickiness dropped -- fall through to pure least-busy.
 
-            # Step 4: no pin or stickiness dropped — route by least-busy.
+            # Step 4: no pin or stickiness dropped -- route by least-busy.
             winner = await self._pick_least_busy(ready_candidates, candidate_ids)
             context.candidate_models = [winner]
             context.signals["llama_swap_affinity"] = "narrowed_to_least_busy_slot"
+            await self._stamp_recency(winner)
 
             # Step 5: establish a new pin (load-aware: only if the GPU is ready).
-            if sticky_key is not None and running.get(candidate_ids[winner]) == "ready":
+            if sticky_key is not None and running.get(
+                candidate_ids[winner]
+            ) == "ready":
                 await self._set_pin(sticky_key, winner)
 
             return context

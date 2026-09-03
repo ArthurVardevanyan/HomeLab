@@ -27,6 +27,17 @@ hooks:
       - 27b-gpu1
 
 macros:
+  # SYCL graph capture: confirmed working on Battlemage (ext_oneapi_graph +
+  # ext_oneapi_async_memory_alloc present; graphs reused = 254–633 in logs).
+  # SYCL_CACHE_PERSISTENT=1: hard crash on SYCL init, before model load, on
+  # both architectures (bisected: graph-only boots clean, cache-only fails).
+  # Speculative decoding: --spec-draft-n-max set per-model below. The
+  # position-wise histogram (scraped from live metrics) shows MoE has
+  # 87–100% conditional acceptance at every position, while dense has
+  # 67.9% at pos0 and 42.9% at pos1. Capping at 8 (MoE) / 2 (dense)
+  # reduces wasted verification work without materially affecting
+  # throughput — the real bottleneck is draft frequency (0.89%), not
+  # draft length. See README for full analysis.
   cmd_base: "/app/llama-server --port ${PORT} --host 127.0.0.1 --cont-batching --reasoning-format auto --reasoning-preserve -ngl 99 --flash-attn on --cache-type-k f16 --cache-type-v f16 --ubatch-size 2048 --jinja --poll 0 -t 12 --threads-http 4 --cache-reuse 256 --load-mode none --metrics --spec-type ngram-mod"
 
 models:
@@ -34,75 +45,84 @@ models:
   # 1. Qwen 3.6 35B (A3B)
   # ==========================================
   35b-gpu0:
-    cmd: ${cmd_base} --parallel 2 --ctx-size 294912 -m /data/models/Qwen3.6-35B-A3B-UD-Q4_K_M.gguf --mmproj /data/models/Qwen3.6-35B-A3B-mmproj-F16.gguf --image-min-tokens 1024
+    cmd: ${cmd_base} --spec-draft-n-max 8 --parallel 2 --ctx-size 294912 -m /data/models/Qwen3.6-35B-A3B-UD-Q4_K_M.gguf --mmproj /data/models/Qwen3.6-35B-A3B-mmproj-F16.gguf --image-min-tokens 1024
     env:
       - "ONEAPI_DEVICE_SELECTOR=level_zero:0"
       - "SYCL_PI_LEVEL_ZERO_USE_IMMEDIATE_COMMANDLISTS=1"
+      - "GGML_SYCL_ENABLE_GRAPH=1"
     ttl: 0
 
   35b-gpu1:
-    cmd: ${cmd_base} --parallel 2 --ctx-size 294912 -m /data/models/Qwen3.6-35B-A3B-UD-Q4_K_M.gguf --mmproj /data/models/Qwen3.6-35B-A3B-mmproj-F16.gguf --image-min-tokens 1024
+    cmd: ${cmd_base} --spec-draft-n-max 8 --parallel 2 --ctx-size 294912 -m /data/models/Qwen3.6-35B-A3B-UD-Q4_K_M.gguf --mmproj /data/models/Qwen3.6-35B-A3B-mmproj-F16.gguf --image-min-tokens 1024
     env:
       - "ONEAPI_DEVICE_SELECTOR=level_zero:1"
       - "SYCL_PI_LEVEL_ZERO_USE_IMMEDIATE_COMMANDLISTS=1"
+      - "GGML_SYCL_ENABLE_GRAPH=1"
     ttl: 0
 
   # ==========================================
   # 2. Qwen 3.8 27B
   # ==========================================
   27b-gpu0:
-    cmd: ${cmd_base} --parallel 1 --ctx-size 196608 -m /data/models/Qwen3.8-27B-Q4_K_M.gguf --mmproj /data/models/Qwen3.8-27B-mmproj-F16.gguf --image-min-tokens 1024
+    cmd: ${cmd_base} --spec-draft-n-max 2 --parallel 1 --ctx-size 196608 -m /data/models/Qwen3.8-27B-Q4_K_M.gguf --mmproj /data/models/Qwen3.8-27B-mmproj-F16.gguf --image-min-tokens 1024
     env:
       - "ONEAPI_DEVICE_SELECTOR=level_zero:0"
       - "SYCL_PI_LEVEL_ZERO_USE_IMMEDIATE_COMMANDLISTS=1"
+      - "GGML_SYCL_ENABLE_GRAPH=1"
     ttl: 0
 
   27b-gpu1:
-    cmd: ${cmd_base} --parallel 1 --ctx-size 196608 -m /data/models/Qwen3.8-27B-Q4_K_M.gguf --mmproj /data/models/Qwen3.8-27B-mmproj-F16.gguf --image-min-tokens 1024
+    cmd: ${cmd_base} --spec-draft-n-max 2 --parallel 1 --ctx-size 196608 -m /data/models/Qwen3.8-27B-Q4_K_M.gguf --mmproj /data/models/Qwen3.8-27B-mmproj-F16.gguf --image-min-tokens 1024
     env:
       - "ONEAPI_DEVICE_SELECTOR=level_zero:1"
       - "SYCL_PI_LEVEL_ZERO_USE_IMMEDIATE_COMMANDLISTS=1"
+      - "GGML_SYCL_ENABLE_GRAPH=1"
     ttl: 0
 
   35b-gpu0-dense:
-    cmd: ${cmd_base} --parallel 1 --ctx-size 262144 -m /data/models/Qwen3.6-35B-A3B-UD-Q4_K_M.gguf --mmproj /data/models/Qwen3.6-35B-A3B-mmproj-F16.gguf --image-min-tokens 1024
+    cmd: ${cmd_base} --spec-draft-n-max 2 --parallel 1 --ctx-size 262144 -m /data/models/Qwen3.6-35B-A3B-UD-Q4_K_M.gguf --mmproj /data/models/Qwen3.6-35B-A3B-mmproj-F16.gguf --image-min-tokens 1024
     env:
       - "ONEAPI_DEVICE_SELECTOR=level_zero:0"
       - "SYCL_PI_LEVEL_ZERO_USE_IMMEDIATE_COMMANDLISTS=1"
+      - "GGML_SYCL_ENABLE_GRAPH=1"
     ttl: 0
 
   35b-gpu1-dense:
-    cmd: ${cmd_base} --parallel 1 --ctx-size 262144 -m /data/models/Qwen3.6-35B-A3B-UD-Q4_K_M.gguf --mmproj /data/models/Qwen3.6-35B-A3B-mmproj-F16.gguf --image-min-tokens 1024
+    cmd: ${cmd_base} --spec-draft-n-max 2 --parallel 1 --ctx-size 262144 -m /data/models/Qwen3.6-35B-A3B-UD-Q4_K_M.gguf --mmproj /data/models/Qwen3.6-35B-A3B-mmproj-F16.gguf --image-min-tokens 1024
     env:
       - "ONEAPI_DEVICE_SELECTOR=level_zero:1"
       - "SYCL_PI_LEVEL_ZERO_USE_IMMEDIATE_COMMANDLISTS=1"
+      - "GGML_SYCL_ENABLE_GRAPH=1"
     ttl: 0
 
   # ==========================================
   # 4. Qwen 3.6 35B (A3B) — Spread (both GPUs, 1M ctx, parallel 4)
   # ==========================================
   35b-spread:
-    cmd: ${cmd_base} --split-mode layer --parallel 5 --ctx-size 1310720 -m /data/models/Qwen3.6-35B-A3B-UD-Q4_K_M.gguf --mmproj /data/models/Qwen3.6-35B-A3B-mmproj-F16.gguf --image-min-tokens 1024
+    cmd: ${cmd_base} --spec-draft-n-max 8 --split-mode layer --parallel 5 --ctx-size 1310720 -m /data/models/Qwen3.6-35B-A3B-UD-Q4_K_M.gguf --mmproj /data/models/Qwen3.6-35B-A3B-mmproj-F16.gguf --image-min-tokens 1024
     env:
       - "ONEAPI_DEVICE_SELECTOR=level_zero:0,1"
       - "SYCL_PI_LEVEL_ZERO_USE_IMMEDIATE_COMMANDLISTS=1"
+      - "GGML_SYCL_ENABLE_GRAPH=1"
     ttl: 0
 
   # ==========================================
   # 5. Qwen3 Embedding 4B (GPU 0 and GPU 1, embeddings only)
   # ==========================================
   qwen3-embed-gpu0:
-    cmd: /app/llama-server --port ${PORT} --host 127.0.0.1 --cont-batching -m /data/models/Qwen3-Embedding-4B-Q8_0.gguf -t 8 --threads 8 --ctx-size 131072 --cache-type-k f16 --cache-type-v f16 --embedding --ubatch-size 2048 --jinja --poll 0 --parallel 28
+    cmd: /app/llama-server --port ${PORT} --host 127.0.0.1 --cont-batching -m /data/models/Qwen3-Embedding-4B-Q8_0.gguf -t 8 --threads 8 --ctx-size 131072 --cache-type-k f16 --cache-type-v f16 --embedding --ubatch-size 2048 --jinja --poll 0 --parallel 32
     env:
       - "ONEAPI_DEVICE_SELECTOR=level_zero:0"
       - "SYCL_PI_LEVEL_ZERO_USE_IMMEDIATE_COMMANDLISTS=1"
+      - "GGML_SYCL_ENABLE_GRAPH=1"
     ttl: 300
 
   qwen3-embed-gpu1:
-    cmd: /app/llama-server --port ${PORT} --host 127.0.0.1 --cont-batching -m /data/models/Qwen3-Embedding-4B-Q8_0.gguf -t 8 --threads 8 --ctx-size 131072 --cache-type-k f16 --cache-type-v f16 --embedding --ubatch-size 2048 --jinja --poll 0 --parallel 28
+    cmd: /app/llama-server --port ${PORT} --host 127.0.0.1 --cont-batching -m /data/models/Qwen3-Embedding-4B-Q8_0.gguf -t 8 --threads 8 --ctx-size 131072 --cache-type-k f16 --cache-type-v f16 --embedding --ubatch-size 2048 --jinja --poll 0 --parallel 32
     env:
       - "ONEAPI_DEVICE_SELECTOR=level_zero:1"
       - "SYCL_PI_LEVEL_ZERO_USE_IMMEDIATE_COMMANDLISTS=1"
+      - "GGML_SYCL_ENABLE_GRAPH=1"
     ttl: 300
 
 # The matrix dictates all valid VRAM combinations.

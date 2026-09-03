@@ -11,13 +11,15 @@ two GPUs (`ONEAPI_DEVICE_SELECTOR=level_zero:0` or `1`).
   - [Table of Contents](#table-of-contents)
   - [Model Matrix](#model-matrix)
   - [B70 Tuning Rationale](#b70-tuning-rationale)
+    - [Speculative decoding](#speculative-decoding)
+    - [SYCL graph capture](#sycl-graph-capture)
   - [Memory model](#memory-model)
     - [Per-GPU VRAM (static at load)](#per-gpu-vram-static-at-load)
     - [Host RAM (anonymous, per-instance)](#host-ram-anonymous-per-instance)
     - [Page cache (reclaimable)](#page-cache-reclaimable)
     - [Node-level accounting](#node-level-accounting)
     - [Summary](#summary)
-  - [KV cache: f16 vs q8_0](#kv-cache-f16-vs-q8_0)
+  - [KV cache: f16 vs q8\_0](#kv-cache-f16-vs-q8_0)
   - [Why not `--mlock` / `--ngl all`](#why-not---mlock----ngl-all)
   - [GPU Backend: SYCL (not Vulkan)](#gpu-backend-sycl-not-vulkan)
     - [Image tag](#image-tag)
@@ -26,6 +28,27 @@ two GPUs (`ONEAPI_DEVICE_SELECTOR=level_zero:0` or `1`).
     - [Proxy metrics](#proxy-metrics)
     - [llama.cpp metrics (via metrics-exporter sidecar)](#llamacpp-metrics-via-metrics-exporter-sidecar)
   - [MTP Speculative Decoding Experiment (2026-08-25)](#mtp-speculative-decoding-experiment-2026-08-25)
+    - [What was tested](#what-was-tested)
+    - [Results](#results)
+      - [27B — ~0% gain](#27b--0-gain)
+      - [35B-A3B — ~20% slower (confounded by VRAM pressure)](#35b-a3b--20-slower-confounded-by-vram-pressure)
+    - [Why MTP didn't help](#why-mtp-didnt-help)
+    - [Conclusion](#conclusion)
+    - [How to re-test](#how-to-re-test)
+  - [Speculative decoding tuning](#speculative-decoding-tuning)
+    - [Current state](#current-state)
+      - [35B-A3B (MoE, GPU 0)](#35b-a3b-moe-gpu-0)
+      - [27B dense (historic snapshot, n=252 drafts)](#27b-dense-historic-snapshot-n252-drafts)
+    - [Draft-length cap: `--spec-draft-n-max`](#draft-length-cap---spec-draft-n-max)
+      - [MoE position-wise acceptance (conditional on prev accepted)](#moe-position-wise-acceptance-conditional-on-prev-accepted)
+      - [Dense position-wise acceptance](#dense-position-wise-acceptance)
+      - [Effective draft tokens per decode step (capped)](#effective-draft-tokens-per-decode-step-capped)
+    - [Throughput impact](#throughput-impact)
+    - [n-gram `n_min` tuning notes](#n-gram-n_min-tuning-notes)
+    - [n-gram position-wise histogram (introspection)](#n-gram-position-wise-histogram-introspection)
+    - [Throughput vs context](#throughput-vs-context)
+    - [Graph capture](#graph-capture)
+    - [SYCL cache persistent](#sycl-cache-persistent)
   - [References](#references)
 
 ## Model Matrix
@@ -108,15 +131,39 @@ Base args passed to each managed llama-server process (in `cmd_base` of
 - `--reasoning-format auto` — reasoning format handled per-request by the client.
 - `-ngl 99` — all layers offloaded to GPU.
 - Flash attention on.
+- `--poll 0` — disables ggml threadpool spin-waiting (default: 50). With
+  `-ngl 99` the threadpool does almost no real work; spinning was competing
+  with the SYCL dispatch thread for the same physical cores.
+
+### Speculative decoding
+
 - `--spec-type ngram-mod` — model-free (n-gram) speculative decoding.
   Replaced `ngram-simple` to test more aggressive drafting (more tokens
   drafted per forward pass). Results documented in [MTP Speculative
   Decoding Experiment](#mtp-speculative-decoding-experiment-2026-08-25).
-- `--poll 0` — disables ggml threadpool spin-waiting (default: 50). With
-  `-ngl 99` the threadpool does almost no real work; spinning was competing
-  with the SYCL dispatch thread for the same physical cores.
-- `-t 12 --threads-http 4` — 12 inference threads to spread dispatch across
-  all 12 physical cores, spreading the pegged dispatch-thread bottleneck.
+
+  **Per-architecture tuning:** dense and MoE models have different spec
+  behaviour because on MoE a verify batch of K tokens activates the UNION
+  of experts across drafted tokens, so rejected drafts cost real weight
+  streaming. The dense 27B streams ~15.3 GB regardless of verify batch K,
+  making extra tokens per pass close to free.
+
+  Default n-gram thresholds (`n_match=24`, `n_min=48`, `n_max=64`) are
+  un-tuned. The n-gram-mod `draft_one` loop discards the entire draft if
+  fewer than `n_min` consecutive hash hits are found — which throws away
+  short code-gen matches (5–30 tokens). `n_max=64` produces drafts of 60+
+  tokens at 14% acceptance — 86% of draft work wasted. Added
+  `--spec-draft-n-max 8` to cap draft length to a range the model can
+  actually accept.
+
+  See [Speculative decoding tuning](#speculative-decoding-tuning) below
+  for measured data and tuning rationale.
+
+- `-t 12 --threads-http 4` — 12 inference threads. The pod is CPU-quota-capped
+  at 6, so spreading beyond 6 threads adds CFS context-swap overhead — but the
+  exact counterfactual (-t 6 at cpu 6 vs -t 12 at cpu 6) was never measured
+  in isolation. `-t 12` is the current value; it has not been measured in
+  isolation against `-t 6`.
 - `SYCL_PI_LEVEL_ZERO_USE_IMMEDIATE_COMMANDLISTS=1` — enables parallel SYCL
   command lists so each inference thread submits directly to the GPU instead
   of funneling through a single dispatch queue.
@@ -139,6 +186,23 @@ Base args passed to each managed llama-server process (in `cmd_base` of
   `--load-mode` supersedes the deprecated `--mlock`/`--mmap`/`--no-mmap`
   flags — see [Why not `--mlock`](#why-not---mlock----ngl-all) below, which
   predates this flag's introduction.
+
+### SYCL graph capture
+
+- `GGML_SYCL_ENABLE_GRAPH=1` — enables SYCL compute-graph capture to batch
+  kernel launches and reduce the fixed per-pass overhead. Compile support
+  confirmed present in `libggml-sycl.so` (symbols `g_ggml_sycl_enable_graph`,
+  `GGML_SYCL_ENABLE_GRAPH: %d`). Runtime support **confirmed** on Battlemage:
+  `sycl-ls --verbose` reports `ext_oneapi_graph`,
+  `ext_oneapi_limited_graph`, and `ext_oneapi_async_memory_alloc`. Engagement
+  verified in server logs (`graphs reused = 254–633` per request). Enabled on
+  all 9 models.
+- `SYCL_CACHE_PERSISTENT=1` — **do not enable**. Causes llama-server to exit
+  during SYCL init, before model load, on both architectures
+  (`upstream command exited prematurely`). Isolated by bisect: graph-only
+  boots clean, cache-only fails. Not pursued — it only caches JIT kernels to
+  speed startup, has zero effect on decode throughput, and
+  `/tmp/neo_compiler_cache` already provides driver-level caching.
 
 ## Memory model
 
@@ -408,6 +472,10 @@ opencode sessions with 40–80K context).
   is VRAM-constrained (weights + KV pool + MTP head approaches the 32 GB limit)
 - The 294912 context-size change (reduces KV pool by ~0.5 GiB) should restore
   headroom, but as of this writing has not been deployed to the cluster
+- **Expert-union inflation:** on the sparse MoE, a verify batch of K tokens
+  activates the union of top-k experts across all K tokens — the marginal cost
+  of each rejected draft token is real weight streaming, not just compute.
+  This unmodeled factor partially explains the slowdown alongside VRAM pressure
 
 ### Why MTP didn't help
 
@@ -448,6 +516,14 @@ non-speculative decode) at zero VRAM cost and zero additional forward passes.
 MTP adds VRAM overhead and extra forward passes with negligible-to-negative
 marginal gain on repetitive code workloads.
 
+On the sparse MoE, speculative decode has an additional structural cost:
+rejecting a draft token on MoE wastes both compute and the weight-streaming
+of the expert union activated for that token — unlike the dense 27B where
+a verify batch of K streams the same ~15.3 GB regardless of K. This makes
+the 35B a fundamentally worse candidate for speculative tuning than the
+dense model, and warrants an independent sweep with more conservative
+thresholds.
+
 ### How to re-test
 
 To try MTP again in the future:
@@ -480,6 +556,175 @@ To try MTP again in the future:
    jumps or check llama.cpp logs for recapture warnings.
 
 [1]: https://dev.to/arthur__huang/testing-multi-token-prediction-mtp-with-qwen36-35b-a3b-and-27b-on-intel-arc-b70-545i
+
+## Speculative decoding tuning
+
+### Current state
+
+With default n-gram thresholds (`n_min=48`, `n_max=64`) and `--spec-type ngram-mod`, scraped from live metrics:
+
+#### 35B-A3B (MoE, GPU 0)
+
+| Counter                                           | Value                         |
+| ------------------------------------------------- | ----------------------------- |
+| `spec_decode_num_drafts_total` / `n_decode_total` | 278 / 31298 (0.89% frequency) |
+| Total accepted tokens                             | 4438                          |
+| Mean accepted/draft                               | 16.0                          |
+| Spec throughput share                             | 14.2% (4438 / 31298)          |
+
+#### 27B dense (historic snapshot, n=252 drafts)
+
+| Counter           | Value                         |
+| ----------------- | ----------------------------- |
+| Mean draft length | 63 (pinned at `n_max=64` cap) |
+| Acceptance rate   | 17.5% (44 / 252)              |
+
+Drafts fire rarely on both models. The 27B has low position-0 acceptance
+(67.9%) meaning nearly a third of drafts fail at their first token. The MoE
+fires more often (0.89% vs ~0.80%) but still far below ideal.
+
+### Draft-length cap: `--spec-draft-n-max`
+
+Set per-model in `llama-swap.yaml`: **MoE models get 8, dense models get 2**.
+Rationale from live position-wise histogram:
+
+#### MoE position-wise acceptance (conditional on prev accepted)
+
+| Positions | Acceptance rate   |
+| --------- | ----------------- |
+| 0         | 88.5%             |
+| 1–16      | 88–100%           |
+| 17–35     | 87–100%           |
+| 36–63     | 87–100% (small n) |
+
+The MoE has **high conditional acceptance at every position** — 87–100%,
+never dropping below 50%. The overall 26.1% acceptance rate is low because
+drafts are 63 tokens long and the probability of surviving all 63 positions
+is tiny (0.885^63 ≈ 0.0003). Each accepted token is likely to be followed by
+another accepted token.
+
+#### Dense position-wise acceptance
+
+| Position | Acceptance rate |
+| -------- | --------------- |
+| 0        | 67.9%           |
+| 1        | 42.9%           |
+
+Dense has a sharp drop at position 1 — most drafts that survive position 0
+fail at position 1. Positions 2+ are too small-n to be reliable (1–4 accepted
+tokens).
+
+#### Effective draft tokens per decode step (capped)
+
+| Cap | MoE expected | Dense expected | Spec work reduction (MoE) |
+| --: | -----------: | -------------: | ------------------------: |
+|   1 |         0.88 |           0.68 |                     94.5% |
+|   2 |         1.72 |           1.48 |                     89.2% |
+|   8 |         5.43 |              — |                     66.0% |
+|  16 |         8.74 |              — |                     45.2% |
+|  64 |        15.96 |           3.50 |                      0.0% |
+
+### Throughput impact
+
+Capping draft length reduces verification work but has minimal throughput
+impact because spec accounts for only 14% of decode steps (MoE) and less
+than 1% of total output tokens. For the MoE: cap 2 saves 89% of spec
+verification work but translates to ~1.3% throughput improvement. Cap 8
+saves 66% → ~1.7%. The real bottleneck is draft frequency (0.89%), not
+draft length.
+
+**Per-model rationale:** MoE expert-union cost scales with verify batch width.
+A cap of 8 keeps the verify batch narrow enough that the expert-union penalty
+doesn't outweigh the accepted tokens. Dense verify batch cost is near-constant
+(~15 GB streamed regardless of K), so a tighter cap (2) suffices.
+
+### n-gram `n_min` tuning notes
+
+`--spec-ngram-mod-n-min 4` was tried on the 27B (dense) with `--spec-type
+ngram-mod`, `-t 6`, `cpu: 6`, and `GGML_SYCL_ENABLE_GRAPH=1`. Results:
+
+| Metric            | Default (n_min=48)   | n_min=4    |
+| ----------------- | -------------------- | ---------- |
+| Mean draft length | 63 (capped at n_max) | 6.5–7.3    |
+| Acceptance rate   | 13.9%                | 8.6–9.9%   |
+| Tokens/spec-step  | ~1.14                | ~1.56      |
+| Gen throughput    | ~12–14 t/s           | ~13–14 t/s |
+
+n_min=4 raised mean draft length from 63→6.5 (no longer pinned at the cap)
+and tokens/step from 1.14→1.56, but acceptance dropped from 13.9%→9.9%.
+Throughput was indistinguishable (~12–14 t/s at 40–90K context, within normal
+workload variance).
+
+Lowering `n_min` from 48 to 4 increases draft frequency but reduces
+acceptance quality. The trade-off was never quantified in isolation. Draft
+frequency remains the dominant bottleneck: both models fire drafts on only
+~0.8–0.9% of decode steps. The primary tuning lever for throughput is
+increasing draft frequency, not optimizing draft length.
+
+**Verdict: keep `n_min=48` defaults, cap `n_max` per-model.** Lowering `n_min`
+should be tested with a controlled benchmark that measures draft frequency
+improvement vs acceptance degradation.
+
+### n-gram position-wise histogram (introspection)
+
+Scrape the position-wise histogram from any loaded model to diagnose spec
+behavior. This is the most effective tool for choosing draft caps without
+running benchmarks:
+
+```bash
+# Scrape spec counters from llama-swap proxy (port 5802 for 35b-gpu0)
+oc -n llm exec deploy/llama-swap -c llama-swap \
+  -- curl -s http://127.0.0.1:5802/metrics 2>/dev/null \
+  | grep 'spec_decode_num_accepted_tokens_per_pos_total'
+```
+
+Output is cumulative across all requests. For each position i, the conditional
+acceptance rate at that position is:
+
+```text
+acceptance(i) = hist[i] / hist[i-1]    for i > 0
+acceptance(0) = hist[0] / total_drafts
+```
+
+Plot the conditional acceptance curve. The optimal draft cap is the position
+where acceptance drops below 50% — beyond that, most drafted tokens are
+discarded. On MoE this never happens (acceptance stays 87–100%), meaning the
+cap is a safety net against wasted verify work. On dense it happens at
+position 1 (42.9%), meaning cap 1 captures most of the value.
+
+### Throughput vs context
+
+Throughput is strongly context-dependent. Binned from Open WebUI activity
+logs (Aug 25–28, 2026, n=32 requests at 50–80K context):
+
+| Context | Gen t/s range | Mean |
+| ------- | ------------- | ---- |
+| ~16K    | 16.0 – 19.6   | —    |
+| 40–60K  | 4.25 – 21.68  | 13.7 |
+| 60–80K  | 10.3 – 17.2   | —    |
+| 80–98K  | 9.8 – 10.6    | —    |
+
+Fixed-context variance at ~58K: 4.25–21.68 t/s (n=32). The range is driven
+by n-gram hit rate — repetitive code output triggers speculation, novel prose
+does not. There is no stable "baseline" throughput at deep context; it is a
+distribution whose median sits around 12–14 t/s.
+
+### Graph capture
+
+`GGML_SYCL_ENABLE_GRAPH=1` on all 9 models. Runtime confirmed working:
+`ext_oneapi_graph` and `ext_oneapi_async_memory_alloc` present in SYCL
+runtime; `graphs reused = 254–633` observed in logs (reusing, not recapturing
+per step). The only config change between git HEAD and current is graph
+capture; throughput at 40–90K context has been 12–14 t/s with or without it.
+No measurable benefit or regression detected (but not rigorously benchmarked
+due to high workload variance).
+
+### SYCL cache persistent
+
+**Do not enable.** `SYCL_CACHE_PERSISTENT=1` causes a hard crash at SYCL
+initialization, before model loading, on both A3B and 27B models. Bisected:
+graph-only boots clean, cache-only fails. Failure mode: upstream llama-server
+exits immediately with no error message or model load attempt.
 
 ## References
 
