@@ -54,7 +54,7 @@ while [[ $# -gt 0 ]]; do
 done
 
 # ─── Resolve port ───────────────────────────────────────────────────────────
-if [[ -z "$PORT" ]]; then
+if [[ -z "${PORT}" ]]; then
   PORT=$(curl -s localhost:8080/running 2>/dev/null \
     | python3 -c "
 import json, sys
@@ -80,7 +80,7 @@ generate_prompt() {
   local target=$1
   local corpus=$2
 
-  if [[ "$corpus" == "code" ]]; then
+  if [[ "${corpus}" == "code" ]]; then
     local phrase='fn main() { println!("hello"); let x = 42; return x; }\n'
     # ~12 tokens per iteration; pad to target
     local count=$(( target / 12 ))
@@ -95,7 +95,7 @@ generate_prompt() {
     prompt+="${phrase}"
   done
   # Trim to exact target (rough; llama.cpp will handle the rest)
-  echo -n "$prompt"
+  echo -n "${prompt}"
 }
 
 # ─── Scrape spec counters ──────────────────────────────────────────────────
@@ -109,7 +109,7 @@ scrape_counters() {
 parse_counter() {
   local name=$1
   local counters=$2
-  echo "$counters" | grep "${name} " | tail -1 | awk '{print $2}'
+  echo "${counters}" | grep "${name} " | tail -1 | awk '{print $2}'
 }
 
 # ─── Run one request ───────────────────────────────────────────────────────
@@ -144,7 +144,7 @@ run_one() {
 
   # Extract gen_tokens from response (approximate — the response is a llama.cpp stream)
   local gen_tokens
-  gen_tokens=$(echo "$response" | grep -o '"tokens_predicted": *[0-9]*' | tail -1 | grep -o '[0-9]*')
+  gen_tokens=$(echo "${response}" | grep -o '"tokens_predicted": *[0-9]*' | tail -1 | grep -o '[0-9]*')
   gen_tokens=${gen_tokens:-0}
 
   echo "${elapsed}	${gen_tokens}"
@@ -161,11 +161,11 @@ echo "Corpus: ${CORPUS}"
 echo ""
 
 # Pre-run metrics
-PRE_METRICS=$(scrape_counters "$PORT")
+PRE_METRICS=$(scrape_counters "${PORT}")
 
 # Generate prompt
 echo "Generating ${CONTEXT}-token prompt (${CORPUS} corpus)..."
-PROMPT=$(generate_prompt "$CONTEXT" "$CORPUS")
+PROMPT=$(generate_prompt "${CONTEXT}" "${CORPUS}")
 PROMPT_LEN=${#PROMPT}
 echo "Prompt length: ${PROMPT_LEN} chars"
 echo ""
@@ -179,23 +179,23 @@ declare -a TOKENS
 
 for ((r=0; r<REPS; r++)); do
   echo "  Rep ${r}..."
-  result=$(run_one "$PORT" "$PROMPT" "$N_PREDICT" "$SEED")
+  result=$(run_one "${PORT}" "${PROMPT}" "${N_PREDICT}" "${SEED}")
 
-  if [[ "$result" == "FAIL" ]]; then
+  if [[ "${result}" == "FAIL" ]]; then
     echo "    FAILED"
     continue
   fi
 
-  duration=$(echo "$result" | cut -f1)
-  gen_tok=$(echo "$result" | cut -f2)
+  duration=$(echo "${result}" | cut -f1)
+  gen_tok=$(echo "${result}" | cut -f2)
 
-  DURATIONS+=("$duration")
-  TOKENS+=("$gen_tok")
+  DURATIONS+=("${duration}")
+  TOKENS+=("${gen_tok}")
   echo "    ${duration} ms, ${gen_tok} tokens generated"
 done
 
 # Post-run metrics
-POST_METRICS=$(scrape_counters "$PORT")
+POST_METRICS=$(scrape_counters "${PORT}")
 
 # ─── Compute aggregates ───────────────────────────────────────────────────
 if [[ ${#DURATIONS[@]} -eq 0 ]]; then
@@ -213,7 +213,7 @@ median_dur() {
   else
     local a=${sorted[$((n/2 - 1))]}
     local b=${sorted[$((n/2))]}
-    echo "scale=1; ($a + $b) / 2" | bc
+    echo "scale=1; (${a} + ${b}) / 2" | bc
   fi
 }
 
@@ -223,18 +223,18 @@ median_tok() {
 
 med_dur_ms=$(median_dur "${DURATIONS[@]}")
 med_tok=$(median_tok "${TOKENS[@]}")
-med_tps=$(echo "scale=2; $med_tok / ($med_dur_ms / 1000)" | bc 2>/dev/null || echo "N/A")
+med_tps=$(echo "scale=2; ${med_tok} / (${med_dur_ms} / 1000)" | bc 2>/dev/null || echo "N/A")
 
 # Spec counters delta
-post_drafts=$(parse_counter "spec_decode_num_drafts_total" "$POST_METRICS")
-post_accepted=$(parse_counter "spec_decode_num_accepted_tokens_total" "$POST_METRICS")
-post_draft_tokens=$(parse_counter "spec_decode_num_draft_tokens_total" "$POST_METRICS")
-post_predicted=$(parse_counter "tokens_predicted_total" "$POST_METRICS")
+post_drafts=$(parse_counter "spec_decode_num_drafts_total" "${POST_METRICS}")
+post_accepted=$(parse_counter "spec_decode_num_accepted_tokens_total" "${POST_METRICS}")
+post_draft_tokens=$(parse_counter "spec_decode_num_draft_tokens_total" "${POST_METRICS}")
+post_predicted=$(parse_counter "tokens_predicted_total" "${POST_METRICS}")
 
-pre_drafts=$(parse_counter "spec_decode_num_drafts_total" "$PRE_METRICS")
-pre_accepted=$(parse_counter "spec_decode_num_accepted_tokens_total" "$PRE_METRICS")
-pre_draft_tokens=$(parse_counter "spec_decode_num_draft_tokens_total" "$PRE_METRICS")
-pre_predicted=$(parse_counter "tokens_predicted_total" "$PRE_METRICS")
+pre_drafts=$(parse_counter "spec_decode_num_drafts_total" "${PRE_METRICS}")
+pre_accepted=$(parse_counter "spec_decode_num_accepted_tokens_total" "${PRE_METRICS}")
+pre_draft_tokens=$(parse_counter "spec_decode_num_draft_tokens_total" "${PRE_METRICS}")
+pre_predicted=$(parse_counter "tokens_predicted_total" "${PRE_METRICS}")
 
 delta_drafts=$((post_drafts - pre_drafts))
 delta_accepted=$((post_accepted - pre_accepted))
@@ -244,8 +244,8 @@ delta_predicted=$((post_predicted - pre_predicted))
 acceptance="N/A"
 mean_draft="N/A"
 if [[ $delta_draft_tok -gt 0 && $delta_drafts -gt 0 ]]; then
-  acceptance=$(echo "scale=1; $delta_accepted * 100 / $delta_draft_tok" | bc 2>/dev/null || echo "N/A")
-  mean_draft=$(echo "scale=2; ($delta_accepted + $delta_drafts) / $delta_drafts" | bc 2>/dev/null || echo "N/A")
+  acceptance=$(echo "scale=1; ${delta_accepted} * 100 / ${delta_draft_tok}" | bc 2>/dev/null || echo "N/A")
+  mean_draft=$(echo "scale=2; (${delta_accepted} + ${delta_drafts}) / ${delta_drafts}" | bc 2>/dev/null || echo "N/A")
 fi
 
 # ─── Output ───────────────────────────────────────────────────────────────
