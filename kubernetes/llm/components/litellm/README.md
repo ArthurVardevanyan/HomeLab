@@ -31,12 +31,14 @@ Open WebUI → LiteLLM (Zitadel OIDC + cost tracking) → llama-swap → llama-s
 ```
 
 LiteLLM acts as an **OpenAI API compatibility proxy**: Open WebUI sends standard
-`/v1/chat/completions` requests, LiteLLM authenticates the caller via Zitadel
-OIDC, tracks token-level cost, routes the request to the appropriate GPU via the
-`llama_swap_affinity.py` plugin, and returns a streaming response in OpenAI
-format.
+`/v1/chat/completions` and `/v1/embeddings` requests, LiteLLM authenticates the
+caller via Zitadel OIDC, tracks token-level cost, routes the request to the
+appropriate GPU via the `llama_swap_affinity.py` plugin, and returns a streaming
+response in OpenAI format.
 
-Four public model aliases are exposed (`qwen3.6-35b-a3b`, `qwen3.6-35b-a3b-dense`, `qwen3.8-27b`, `qwen3.6-35b-a3b-spread`), each with one or two GPU-backed deployments (gpu0 and gpu1, except spread which spans both).
+Five public model aliases are exposed: three with two deployments (gpu0 and gpu1)
+for load-aware routing, one spread model using both GPUs, and one embedding model
+with two GPU-backed deployments.
 LiteLLM's routing plugin narrows the candidate list using llama-swap's ground
 truth (which models are resident on which GPU), then picks the least busy slot
 when both GPUs have the model loaded.
@@ -341,35 +343,49 @@ deployed via CloudNativePG (`components/cnpg-litellm/`):
 
 ## Embedding Model
 
-The `qwen3-embedding-4b` model is routed through llama-swap on GPU 1. It uses
-a lower RPM limit than chat models to match llama-swap's concurrency capacity:
+The `qwen3-embedding-4b` model runs on both GPUs through llama-swap, with
+GPU 1 as primary and GPU 0 as fallback. The llama-swap matrix solver picks
+the appropriate companion set:
 
-| Model                | RPM | Requests/sec | Parallel slots | Max concurrent in-flight   |
-| -------------------- | --- | ------------ | -------------- | -------------------------- |
-| `qwen3-embedding-4b` | 960 | 16 r/s       | 32             | ~16 (16 r/s × ~1s/request) |
+- **GPU 1 idle, GPU 0 busy with chat**: `embed_35b0-1` or `embed_27b0-1` loads
+  the embed model on GPU 1 alongside a chat model on GPU 0
+- **GPU 0 idle, GPU 1 busy with chat**: `embed_35b1-0` or `embed_27b1-0` loads
+  the embed model on GPU 0 alongside a chat model on GPU 1
+- **Both GPUs busy with chat**: llama-swap evicts the lowest-cost model (embed,
+  eviction cost 5) to free a GPU, or queues the request
 
-The 960 RPM (16 r/s) limit is intentionally conservative — it leaves headroom
-so llama-swap never exceeds 50% of its 32-parallel capacity. This prevents
-backpressure buildup and keeps embedding latency predictable.
+LiteLLM routes embedding requests using a GPU residency check: when both GPUs
+have the embed model loaded, it polls `/slots` for least-busy selection with
+round-robin tie-breaking. The `/running` cache uses a 5s TTL to reduce HTTP
+calls during bursts. No session stickiness (embeddings don't need KV cache reuse).
+
+| Deployment         | RPM | Requests/sec | Parallel slots | Max concurrent in-flight   |
+| ------------------ | --- | ------------ | -------------- | -------------------------- |
+| `qwen3-embed-gpu1` | 960 | 16 r/s       | 32             | ~16 (16 r/s × ~1s/request) |
+| `qwen3-embed-gpu0` | 960 | 16 r/s       | 32             | ~16 (16 r/s × ~1s/request) |
+
+The 960 RPM (16 r/s) per deployment limit leaves headroom so llama-swap never
+exceeds 50% of its 32-parallel capacity. With two GPUs, total capacity is
+~32 r/s when both embeddings are loaded.
 
 ### Limitation: Open WebUI burst behavior
 
 Open WebUI processes documents by splitting them into chunks (default 5000
 characters) and sends all chunks to LiteLLM in a single burst. When multiple
-files are uploaded simultaneously, the burst can temporarily exceed 16 r/s.
+files are uploaded simultaneously, the burst can temporarily exceed the per-GPU
+capacity.
 
 **What happens:**
 
 1. Open WebUI sends 50-100 chunk requests at once
-2. LiteLLM allows the first ~16 requests through (16 r/s × 1s)
-3. Remaining requests hit the 960 RPM limit and receive HTTP 429
+2. LiteLLM allows the first ~16 requests through per GPU (limited by RPM and
+   parallel slots)
+3. Remaining requests hit the rate limit and receive HTTP 429
 4. Open WebUI displays these as "Request Failed" errors
 
 **Mitigations:**
 
-- The 960 RPM limit is high enough that most single-document syncs complete
-  without errors (5000-char chunks at ~1s each = 50 rps for 1 second, then
-  rate-limited to 16 r/s)
+- With two GPUs loaded, total capacity is ~32 r/s (16 r/s per GPU)
 - Multi-file syncs may show transient 429s for later files
 - No client-side retry is implemented in Open WebUI (it shows the 429 error)
 - No sidecar/queue is deployed (to avoid extra latency and complexity)

@@ -27,11 +27,10 @@ covers. It narrows the routing-plugin candidate list (see
 - If neither deployment is resident (cold start): leave the candidate list
   untouched. The GPU-preference ordering in litellm.yaml's model_list
   decides, same as before this plugin existed.
-- If exactly one candidate is resident: narrow to it. Every other model here
-  runs with `ttl: 0` (never expires), so if only one copy is loaded, the
-  other GPU is almost certainly running a *different* model - routing there
-  would force an unnecessary eviction when an already-loaded copy is right
-  there.
+- If exactly one candidate is resident: expose **all** candidates. The
+  non-resident sibling receives traffic and llama-swap's matrix solver
+  loads the model there (one-time swap cost). Once both copies are resident
+  the "both ready" path takes over.
 - If both candidates are resident and ready: poll llama.cpp's per-instance
   `/slots` endpoint (proxied through llama-swap's `/upstream/<model>/slots`)
   for actual busy-slot counts, and route to whichever has fewer. Ties -
@@ -177,9 +176,15 @@ class LlamaSwapAffinityPlugin:
     # llama-swap data helpers
     # ------------------------------------------------------------------
 
-    async def _running_state(self) -> dict[str, str]:
-        """Model ID -> process state, for models in `_RESIDENT_STATES`."""
+    async def _running_state(self, cache_ttl: float | None = None) -> dict[str, str]:
+        """Model ID -> process state, for models in `_RESIDENT_STATES`.
+
+        Args:
+            cache_ttl: Override the default cache TTL. Use a longer TTL for
+                embedding models to reduce HTTP calls during bursts.
+        """
         now = time.monotonic()
+        effective_ttl = cache_ttl if cache_ttl is not None else _RUNNING_CACHE_TTL_SECONDS
         if now < self._running_cache_expires_at:
             return self._running_cache
 
@@ -194,11 +199,14 @@ class LlamaSwapAffinityPlugin:
             if entry.get("state") in _RESIDENT_STATES
         }
         self._running_cache = state
-        self._running_cache_expires_at = now + _RUNNING_CACHE_TTL_SECONDS
+        self._running_cache_expires_at = now + effective_ttl
         return state
 
-    async def _slot_busy_count(self, model_id: str) -> int:
+    async def _slot_busy_count(
+        self, model_id: str, cache_ttl: float | None = None,
+    ) -> int:
         now = time.monotonic()
+        effective_ttl = cache_ttl if cache_ttl is not None else _SLOTS_CACHE_TTL_SECONDS
         cached = self._slots_cache.get(model_id)
         if cached is not None and now < cached[1]:
             return cached[0]
@@ -209,13 +217,21 @@ class LlamaSwapAffinityPlugin:
         slots = response.json()
         busy = sum(1 for slot in slots if slot.get("is_processing"))
 
-        self._slots_cache[model_id] = (busy, now + _SLOTS_CACHE_TTL_SECONDS)
+        self._slots_cache[model_id] = (busy, now + effective_ttl)
         return busy
 
-    async def _pick_least_busy(self, candidates: list[str], candidate_ids: dict[str, str]) -> str:
+    async def _pick_least_busy(
+        self,
+        candidates: list[str],
+        candidate_ids: dict[str, str],
+        slots_cache_ttl: float | None = None,
+    ) -> str:
         """Pick the candidate with fewest busy llama.cpp slots."""
         counts = await asyncio.gather(
-            *(self._slot_busy_count(candidate_ids[model]) for model in candidates),
+            *(
+                self._slot_busy_count(candidate_ids[model], cache_ttl=slots_cache_ttl)
+                for model in candidates
+            ),
             return_exceptions=True,
         )
         scored = [(model, count) for model, count in zip(candidates, counts) if isinstance(count, int)]
@@ -424,24 +440,8 @@ class LlamaSwapAffinityPlugin:
 
     async def run(self, context: RoutingContext) -> RoutingContext:
         try:
-            # Fast-path: skip all routing logic for single-candidate models
-            # (embeddings). These go to a fixed backend — no GPU affinity
-            # or session stickiness applies.
+            # Fast-path: skip all routing logic for single-candidate models.
             if len(context.candidate_models) < 2:
-                return context
-
-            # Explicit guard for the embedding model. Even though it has only
-            # one deployment, LiteLLM's router may still present it with 2
-            # candidate slots (public alias + internal). The short-circuit
-            # above doesn't cover this case, so we check the model name
-            # explicitly to skip the full routing pipeline (HTTP to
-            # llama-swap, Redis lookups, fingerprint computation, /slots
-            # polling).
-            embedding_candidates = [
-                m for m in context.candidate_models
-                if "embedding" in m or "embed" in m
-            ]
-            if embedding_candidates:
                 return context
 
             candidates = context.candidate_models
@@ -457,8 +457,13 @@ class LlamaSwapAffinityPlugin:
                 return context
 
             if len(occupied_candidates) == 1:
-                context.candidate_models = occupied_candidates
-                context.signals["llama_swap_affinity"] = "narrowed_to_resident"
+                # One GPU has the model resident. Return all candidates so
+                # the non-resident sibling receives traffic and llama-swap
+                # loads it (one-time swap cost). After both are resident the
+                # "both ready" path handles load balancing with
+                # /slots-based selection.
+                context.candidate_models = candidates
+                context.signals["llama_swap_affinity"] = "cold_gpu_exposed_for_lb"
                 return context
 
             ready_candidates = [
