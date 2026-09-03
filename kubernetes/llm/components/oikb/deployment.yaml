@@ -10,7 +10,7 @@ metadata:
   annotations:
     argocd.argoproj.io/sync-wave: "4"
 spec:
-  replicas: 1
+  # replicas: 1
   revisionHistoryLimit: 0
   progressDeadlineSeconds: 600
   strategy:
@@ -45,8 +45,9 @@ spec:
           # oikb daemon: incremental multi-source sync into Open WebUI Knowledge
           # Bases. Sources, schedules, and tokens come from the ConfigMap
           # (.oikb.yaml) and the ESO Secret (env) mounted below.
-          # renovate: datasource=docker depName=ghcr.io/open-webui/oikb versioning=docker
-          image: ghcr.io/open-webui/oikb:0.4.0@sha256:e61c1beef9fe91d2f00ca8612e847eacc7d579e2e8e258f40fb1ef3e2891e8d4
+          # ghcr.io/open-webui/oikb:0.4.0@sha256:e61c1beef9fe91d2f00ca8612e847eacc7d579e2e8e258f40fb1ef3e2891e8d4
+          # renovate: datasource=docker depName=registry.arthurvardevanyan.com/homelab/oikb versioning=docker
+          image: registry.arthurvardevanyan.com/homelab/oikb:0.4.0-hotfix@sha256:f763162b3728932e4f7c3d0523e4ff486d93116ac6b13e1a3d74ade4bc9ac01a
           imagePullPolicy: IfNotPresent
           args:
             - "daemon"

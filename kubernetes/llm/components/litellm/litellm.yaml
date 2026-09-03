@@ -97,15 +97,31 @@ router_settings:
   cache_responses: true
   # llama-swap-aware routing plugin. For each request, narrows candidates
   # using llama-swap ground truth instead of LiteLLM's own counter:
-  #   - nothing resident (cold start)      -> no narrowing, ordering above decides
-  #   - exactly one candidate resident     -> expose all candidates (the
-  #                                            non-resident GPU receives
-  #                                            traffic and llama-swap loads
-  #                                            it — one-time swap cost)
+  #   - embedding models               -> always narrow to resident GPU
+  #                                      (matrix guarantees one model per
+  #                                      GPU, routing elsewhere would evict
+  #                                      the active chat model)
+  #   - cold start (no candidate resident) -> no narrowing, ordering above
+  #                                           decides
+  #   - one resident, victim idle      -> expose both GPUs (LiteLLM routes
+  #                                        to the non-resident GPU,
+  #                                        llama-swap loads it, then the
+  #                                        "both ready" path takes over)
+  #   - one resident, victim busy/recent -> narrow to resident to protect
+  #                                         the active session (queue
+  #                                         on the resident GPU instead)
   #   - both candidates resident and ready -> poll llama.cpp's /slots via
   #                                          llama-swap for actual busy-slot
   #                                          counts, route to the less busy
   #                                          one, round-robin on ties
+  # Session recency window: 120s. If a GPU was served within this window,
+  # requests are protected from triggering an eviction (covers the gap
+  # between mid-generation and a user's read-and-reply period).
+  # See llama_swap_affinity.py for the full rationale; resolved via the
+  # dotted-path convention documented at
+  # litellm.proxy.types_utils.utils.get_instance_fn. The /slots poll is
+  # proxied through llama-swap's upstream.ignorePaths guard (see
+  # llama-swap.yaml) so it can never itself trigger a model swap.
   # See llama_swap_affinity.py (mounted alongside this file at /etc/litellm)
   # for the full rationale; resolved via the dotted-path convention
   # documented at litellm.proxy.types_utils.utils.get_instance_fn. The
