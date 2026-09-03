@@ -206,7 +206,7 @@ fi
 # Median duration (ms)
 median_dur() {
   local -a sorted
-  mapfile -t sorted < <(printf '%s\n' "${@}" | sort -n)
+  mapfile -t sorted < <(printf '%s\n' "${@}" | sort -n) || true
   local n=${#sorted[@]}
   if (( n % 2 == 1 )); then
     echo "${sorted[$((n/2))]}"
@@ -243,7 +243,7 @@ delta_predicted=$((post_predicted - pre_predicted))
 
 acceptance="N/A"
 mean_draft="N/A"
-if [[ $delta_draft_tok -gt 0 && $delta_drafts -gt 0 ]]; then
+if [[ ${delta_draft_tok} -gt 0 && ${delta_drafts} -gt 0 ]]; then
   acceptance=$(echo "scale=1; ${delta_accepted} * 100 / ${delta_draft_tok}" | bc 2>/dev/null || echo "N/A")
   mean_draft=$(echo "scale=2; (${delta_accepted} + ${delta_drafts}) / ${delta_drafts}" | bc 2>/dev/null || echo "N/A")
 fi
@@ -252,15 +252,15 @@ fi
 CSV_HEADER="model,port,context,n_predict,reps,corpus,seed,median_dur_ms,median_gen_tok,median_tps,delta_drafts,delta_accepted,delta_draft_tokens,acceptance_pct,mean_draft_len,spec_contrib_pct"
 CSV_ROW="${MODEL},${PORT},${CONTEXT},${N_PREDICT},${REPS},${CORPUS},${SEED},${med_dur_ms},${med_tok},${med_tps},${delta_drafts},${delta_accepted},${delta_draft_tok},${acceptance},${mean_draft},${delta_predicted:-0}"
 
-if [[ -n "$OUTPUT" ]]; then
-  if [[ ! -f "$OUTPUT" ]]; then
-    echo "$CSV_HEADER" > "$OUTPUT"
+if [[ -n "${OUTPUT}" ]]; then
+  if [[ ! -f "${OUTPUT}" ]]; then
+    echo "${CSV_HEADER}" > "${OUTPUT}"
   fi
-  echo "$CSV_ROW" >> "$OUTPUT"
+  echo "${CSV_ROW}" >> "${OUTPUT}"
   echo "Results written to ${OUTPUT}"
 else
-  echo "$CSV_HEADER"
-  echo "$CSV_ROW"
+  echo "${CSV_HEADER}"
+  echo "${CSV_ROW}"
 fi
 
 echo ""
