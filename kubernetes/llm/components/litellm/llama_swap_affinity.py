@@ -675,11 +675,11 @@ class LlamaSwapAffinityPlugin:
                     # eviction-cost chat model (less disruptive for llama-swap
                     # to evict that GPU's chat model to make room).  If no
                     # chat model is running either, return unmodified.
-                    chat_on_gpu = _find_chat_gpu(running)
-                    if chat_on_gpu is not None:
-                        context.candidate_models = [chat_on_gpu]
-                        context.signals["llama_swap_affinity"] = "embedding_routed_to_safe_gpu"
-                        await self._stamp_recency(chat_on_gpu)
+                    # Don't narrow here: if chat_on_gpu becomes unhealthy between
+                    # this check and LiteLLM processing,
+                    # _filter_by_routing_plugin_candidates intersects the narrowed
+                    # list with empty healthy_deployments → 500 error.
+                    # Return unmodified so LiteLLM can try all candidates.
                     return context
 
                 if len(resident_candidates) == 1:
