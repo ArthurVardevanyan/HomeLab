@@ -180,40 +180,6 @@ def _is_tool_call_continuation(context: RoutingContext) -> bool:
     return last.get("role") == "tool"
 
 
-def _find_chat_gpu(running: dict[str, str]) -> str | None:
-    """Return the full deployment model ID for the GPU with the
-    highest-eviction-cost chat model.  None if no chat model is running.
-
-    Eviction costs: spread (25) > 35b-gpu0 (20) > 35b-gpu1 (10).
-    Embedding models have no eviction cost in the matrix and are not
-    considered here.
-    """
-    cost_priority: dict[str, int] = {
-        "35b-gpu0": 20,
-        "35b-gpu1": 10,
-        "35b-spread": 25,
-        "35b-gpu0-dense": 20,
-        "35b-gpu1-dense": 10,
-        "27b-gpu0": 15,
-        "27b-gpu1": 15,
-    }
-    best: tuple[str, int] | None = None
-    for model_id, state in running.items():
-        if state != "ready":
-            continue
-        if "embed" in model_id:
-            continue
-        cost = cost_priority.get(model_id, 0)
-        if best is None or cost > best[1]:
-            best = (model_id, cost)
-    if best is None:
-        return None
-    # Convert model_id back to deployment ID (add openai/ prefix).
-    # The caller's candidate_ids maps full deployment IDs to model IDs,
-    # so we find the matching deployment ID.
-    return best[0]
-
-
 class LlamaSwapAffinityPlugin:
     """Implements `litellm.types.router.RoutingPlugin` (async `run`)."""
 
@@ -670,16 +636,16 @@ class LlamaSwapAffinityPlugin:
                 ]
 
                 if not resident_candidates:
-                    # No embedding model is resident.  If a chat model is
-                    # running on one GPU, route to the GPU with the higher
-                    # eviction-cost chat model (less disruptive for llama-swap
-                    # to evict that GPU's chat model to make room).  If no
-                    # chat model is running either, return unmodified.
-                    # Don't narrow here: if chat_on_gpu becomes unhealthy between
-                    # this check and LiteLLM processing,
-                    # _filter_by_routing_plugin_candidates intersects the narrowed
-                    # list with empty healthy_deployments → 500 error.
-                    # Return unmodified so LiteLLM can try all candidates.
+                    # No embedding model is resident.  Route all requests to
+                    # the primary GPU (GPU 0) so they don't get split across
+                    # both GPUs and conflict.  llama-swap will load the embed
+                    # model on that GPU alongside the running chat model.
+                    primary_embed = next(
+                        (m for m in candidates if "gpu0" in m.lower()),
+                        candidates[0],
+                    )
+                    context.candidate_models = [primary_embed]
+                    context.signals["llama_swap_affinity"] = "narrowed_to_primary_gpu"
                     return context
 
                 if len(resident_candidates) == 1:
