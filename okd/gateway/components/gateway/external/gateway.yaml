@@ -57,6 +57,22 @@ spec:
           - group: ""
             kind: Secret
             name: spotify-cert
+    - name: pr-agent
+      protocol: HTTPS
+      port: 443
+      hostname: "pr-agent.arthurvardevanyan.com"
+      allowedRoutes:
+        namespaces:
+          from: Selector
+          selector:
+            matchLabels:
+              kubernetes.io/metadata.name: pr-agent
+      tls:
+        mode: Terminate
+        certificateRefs:
+          - group: ""
+            kind: Secret
+            name: pr-agent-cert
   infrastructure:
     labels:
       coraza: external-ruleset
