@@ -1,0 +1,23 @@
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: pr-agent-cert
+  namespace: pr-agent
+  annotations:
+    argocd.argoproj.io/sync-options: ServerSideApply=true,SkipDryRunOnMissingResource=true
+  labels:
+    app: pr-agent
+spec:
+  secretName: pr-agent-cert
+  duration: 1080h # 45d
+  renewBeforePercentage: 50
+  privateKey:
+    rotationPolicy: Always
+    algorithm: ECDSA
+    size: 256
+  dnsNames:
+    - "pr-agent.arthurvardevanyan.com"
+  issuerRef:
+    kind: ClusterIssuer
+    name: letsencrypt

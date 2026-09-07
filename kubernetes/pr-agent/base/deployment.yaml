@@ -1,0 +1,127 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: pr-agent
+  namespace: pr-agent
+  annotations:
+    argocd.argoproj.io/sync-wave: "3"
+    checkov.io/skip1: CKV_K8S_40=Upstream Image Runs as Root
+    checkov.io/skip2: CKV_K8S_22=Writable Root FS Required
+    checkov.io/skip3: CKV_K8S_23=Upstream Image Requires Root
+spec:
+  replicas: 2
+  revisionHistoryLimit: 0
+  progressDeadlineSeconds: 1800
+  strategy:
+    type: RollingUpdate
+  selector:
+    matchLabels:
+      app: pr-agent
+  template:
+    metadata:
+      labels:
+        app: pr-agent
+    spec:
+      restartPolicy: Always
+      schedulerName: default-scheduler
+      terminationGracePeriodSeconds: 30
+      automountServiceAccountToken: false
+      serviceAccountName: pr-agent
+      enableServiceLinks: false
+      dnsPolicy: ClusterFirst
+      securityContext:
+        seccompProfile:
+          type: RuntimeDefault
+      tolerations:
+        - key: node-role.kubernetes.io/gpu
+          operator: Exists
+          effect: NoSchedule
+      nodeSelector:
+        node-role.kubernetes.io/gpu: ""
+      containers:
+        - name: pr-agent
+          # renovate: datasource=docker depName=pragent
+          image: pragent/pr-agent:0.44.0-github_app@sha256:be350ea796f912b1a58a551321c1267686522f40ce94adc9cc2fffb4fcbaddd1
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: GITHUB__DEPLOYMENT_TYPE
+              value: "app"
+            - name: GITHUB__APP_ID
+              valueFrom:
+                secretKeyRef:
+                  name: pr-agent-secret
+                  key: github_app
+            - name: GITHUB__PRIVATE_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: pr-agent-secret
+                  key: github_pk
+            - name: GITHUB__WEBHOOK_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: pr-agent-secret
+                  key: webhook_secret
+            - name: CONFIG__MODEL
+              value: "openai/qwen3.6-35b-a3b"
+            - name: LITELLM__CUSTOM_LLM_PROVIDER
+              value: "openai"
+            - name: LITELLM__API_BASE
+              value: "http://litellm-svc.llm.svc.cluster.local.:4000/v1"
+            - name: GITHUB__PUBLISH_AS_CHECK_RUN
+              value: "true"
+            - name: GITHUB_APP__PR_COMMANDS
+              value: "/describe /review /improve"
+            - name: GITHUB_APP__HANDLE_PUSH_TRIGGER
+              value: "true"
+            - name: GITHUB_APP__PUSH_COMMANDS
+              value: "/describe /review"
+            - name: PERSISTENT_COMMENT
+              value: "true"
+            - name: CONFIG__TEMPERATURE
+              value: "0.2"
+            - name: CONFIG__REQUEST_TIMEOUT
+              value: "180"
+            - name: WORKER_TIMEOUT
+              value: "120"
+            - name: GUNICORN_WORKERS
+              value: "2"
+          ports:
+            - containerPort: 3000
+              name: http
+              protocol: TCP
+          securityContext:
+            runAsNonRoot: false
+            readOnlyRootFilesystem: false
+            allowPrivilegeEscalation: false
+            privileged: false
+            seccompProfile:
+              type: RuntimeDefault
+            capabilities:
+              drop:
+                - ALL
+          readinessProbe:
+            httpGet:
+              path: /
+              port: http
+            initialDelaySeconds: 15
+            periodSeconds: 10
+            failureThreshold: 3
+            timeoutSeconds: 5
+          livenessProbe:
+            httpGet:
+              path: /
+              port: http
+            initialDelaySeconds: 30
+            periodSeconds: 30
+            failureThreshold: 3
+            timeoutSeconds: 5
+          resources:
+            requests:
+              cpu: "100m"
+              memory: 512Mi
+              ephemeral-storage: "64Mi"
+            limits:
+              cpu: "500m"
+              memory: 1Gi
+              ephemeral-storage: "128Mi"
