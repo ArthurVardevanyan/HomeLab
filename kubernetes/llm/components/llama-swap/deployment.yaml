@@ -12,6 +12,7 @@ metadata:
     checkov.io/skip2: CKV_K8S_22=Model Cache Requires Writable Root FS
     checkov.io/skip3: CKV_K8S_23=Upstream Image Requires Root
 spec:
+  # replicas: 1
   revisionHistoryLimit: 0
   progressDeadlineSeconds: 1800
   strategy:
@@ -51,7 +52,9 @@ spec:
           name: llama-swap
           command: ["/app/llama-swap"]
           args:
-            ["--config", "/etc/llama-swap/llama-swap.yaml", "--watch-config"]
+            - "--config"
+            - "/etc/llama-swap/llama-swap.yaml"
+            - "--watch-config"
           ports:
             - containerPort: 8080
               name: http
@@ -98,7 +101,7 @@ spec:
               ephemeral-storage: "256Mi"
               gpu.intel.com/xe: "4"
             limits:
-              cpu: "4"
+              cpu: "6"
               memory: 48Gi
               ephemeral-storage: "1Gi"
               gpu.intel.com/xe: "4"
