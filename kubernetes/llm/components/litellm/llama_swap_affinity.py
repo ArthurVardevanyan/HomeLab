@@ -637,11 +637,11 @@ class LlamaSwapAffinityPlugin:
 
                 if not resident_candidates:
                     # No embedding model is resident.  Route all requests to
-                    # the primary GPU (GPU 0) so they don't get split across
+                    # the primary GPU (GPU 1) so they don't get split across
                     # both GPUs and conflict.  llama-swap will load the embed
                     # model on that GPU alongside the running chat model.
                     primary_embed = next(
-                        (m for m in candidates if "gpu0" in m.lower()),
+                        (m for m in candidates if "gpu1" in m.lower()),
                         candidates[0],
                     )
                     context.candidate_models = [primary_embed]
