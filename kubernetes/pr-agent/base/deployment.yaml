@@ -6,9 +6,6 @@ metadata:
   namespace: pr-agent
   annotations:
     argocd.argoproj.io/sync-wave: "3"
-    checkov.io/skip1: CKV_K8S_40=Upstream Image Runs as Root
-    checkov.io/skip2: CKV_K8S_22=Writable Root FS Required
-    checkov.io/skip3: CKV_K8S_23=Upstream Image Requires Root
 spec:
   replicas: 2
   revisionHistoryLimit: 0
@@ -91,8 +88,8 @@ spec:
               name: http
               protocol: TCP
           securityContext:
-            runAsNonRoot: false
-            readOnlyRootFilesystem: false
+            runAsNonRoot: true
+            readOnlyRootFilesystem: true
             allowPrivilegeEscalation: false
             privileged: false
             seccompProfile:
@@ -128,6 +125,16 @@ spec:
           volumeMounts:
             - name: azure-cache
               mountPath: /.azure-devops
+            - name: tmp
+              mountPath: /tmp
+            - name: var-tmp
+              mountPath: /var/tmp
       volumes:
         - name: azure-cache
           emptyDir: {}
+        - name: tmp
+          emptyDir:
+            sizeLimit: 100Mi
+        - name: var-tmp
+          emptyDir:
+            sizeLimit: 100Mi
