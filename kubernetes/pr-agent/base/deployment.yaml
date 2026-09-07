@@ -42,7 +42,7 @@ spec:
       containers:
         - name: pr-agent
           # renovate: datasource=docker depName=pragent
-          image: pragent/pr-agent:0.44.0-github_app@sha256:be350ea796f912b1a58a551321c1267686522f40ce94adc9cc2fffb4fcbaddd1
+          image: docker.io/pragent/pr-agent:0.44.0-github_app@sha256:be350ea796f912b1a58a551321c1267686522f40ce94adc9cc2fffb4fcbaddd1
           imagePullPolicy: IfNotPresent
           env:
             - name: GITHUB__DEPLOYMENT_TYPE
@@ -125,3 +125,9 @@ spec:
               cpu: "500m"
               memory: 1Gi
               ephemeral-storage: "128Mi"
+          volumeMounts:
+            - name: azure-cache
+              mountPath: /.azure-devops
+      volumes:
+        - name: azure-cache
+          emptyDir: {}
