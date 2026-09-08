@@ -115,6 +115,8 @@ spec:
               value: "true"
             - name: CONFIG__TEMPERATURE
               value: "0.2"
+            - name: CONFIG__IGNORE_PR_SOURCE_BRANCHES
+              value: '["^dependabot/", "^renovate/", "^auto/"]'
             # config.request_timeout is dead config for this deployment - it
             # only backs bitbucket_app.request_timeout / asana.request_timeout,
             # neither of which applies here. The LLM call timeout is actually
@@ -127,6 +129,33 @@ spec:
               value: "120"
             - name: GUNICORN_WORKERS
               value: "2"
+          # The Docker image's CMD runs gunicorn directly with no graceful
+          # shutdown — gunicorn defaults to killing workers 3s after SIGTERM,
+          # which silently drops any in-flight BackgroundTasks (the PR review
+          # runs in the background after the HTTP response is already sent).
+          # Override the command to insert --graceful-timeout 660 so workers
+          # get 11 min after SIGTERM to finish in-flight reviews.
+          command:
+            - python
+          args:
+            - -m
+            - gunicorn
+            - -k
+            - uvicorn.workers.UvicornWorker
+            - -c
+            - pr_agent/servers/gunicorn_config.py
+            - --graceful-timeout
+            - "660"
+            - --forwarded-allow-ips
+            - "*"
+            - pr_agent.servers.github_app:app
+          lifecycle:
+            preStop:
+              exec:
+                command:
+                  - /bin/sh
+                  - -c
+                  - sleep 30
           ports:
             - containerPort: 3000
               name: http
