@@ -1,6 +1,22 @@
 ---
 model_list:
-  # --- Public Model Alias 1: Qwen 35B
+  # --- Public Model Alias 1: Claude Sonnet 5 ---
+  - model_name: claude-sonnet-5
+    litellm_params:
+      model: claude-sonnet-5
+  - model_name: claude-sonnet-5
+    litellm_params:
+      model: claude-sonnet-5
+
+  # --- Public Model Alias 2: Claude Opus 5 ---
+  - model_name: claude-opus-5
+    litellm_params:
+      model: claude-opus-5
+  - model_name: claude-opus-5
+    litellm_params:
+      model: claude-opus-5
+
+  # --- Public Model Alias 3: Qwen 35B
   - model_name: qwen3.6-35b-a3b
     litellm_params:
       model: openai/35b-gpu0
@@ -31,7 +47,7 @@ model_list:
       input_cost_per_token: 0.000000013
       output_cost_per_token: 0.000000013
 
-  # --- Public Model Alias 2: Qwen 27B
+  # --- Public Model Alias 4: Qwen 27B
   - model_name: qwen3.8-27b
     litellm_params:
       model: openai/27b-gpu1
@@ -47,7 +63,7 @@ model_list:
       input_cost_per_token: 0.000000013
       output_cost_per_token: 0.000000013
 
-  # --- Public Model Alias 3: Qwen 35B Spread ---
+  # --- Public Model Alias 5: Qwen 35B Spread ---
   - model_name: qwen3.6-35b-a3b-spread
     litellm_params:
       model: openai/35b-spread
@@ -83,10 +99,8 @@ model_list:
 general_settings:
   forward_client_headers_to_llm_api: true
   health_check_interval: 300
-  store_model_in_db: false
-  # Re-enable when we want prompt history for chat models.
-  # Embeddings don't need it.
-  store_prompts_in_spend_logs: false
+  store_model_in_db: true
+  store_prompts_in_spend_logs: true
   user_header_mappings:
     - header_name: X-OpenWebUI-User-Email
       litellm_user_role: customer
