@@ -2,26 +2,29 @@
 apiVersion: autoscaling.k8s.io/v1
 kind: VerticalPodAutoscaler
 metadata:
-  name: opentelemetry-operator
-  namespace: opentelemetry-operator
+  name: pr-agent-dragonfly
+  namespace: pr-agent
   annotations:
+    argocd.argoproj.io/sync-wave: "4"
     argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+  labels:
+    app.kubernetes.io/name: pr-agent-dragonfly
 spec:
   targetRef:
     apiVersion: apps/v1
-    kind: Deployment
-    name: opentelemetry-operator-controller-manager
+    kind: StatefulSet
+    name: pr-agent-dragonfly
   updatePolicy:
     updateMode: "InPlaceOrRecreate"
   resourcePolicy:
     containerPolicies:
-      - containerName: manager
+      - containerName: dragonfly
         minAllowed:
-          cpu: 5m
-          memory: 32Mi
+          cpu: 10m
+          memory: 64Mi
         maxAllowed:
-          cpu: 100m
-          memory: 1Gi
+          cpu: "1"
+          memory: 2Gi
         controlledResources:
           - cpu
           - memory

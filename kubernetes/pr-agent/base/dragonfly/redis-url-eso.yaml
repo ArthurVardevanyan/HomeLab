@@ -1,0 +1,27 @@
+---
+apiVersion: external-secrets.io/v1
+kind: ExternalSecret
+metadata:
+  name: pr-agent-dragonfly-redis-url
+  namespace: pr-agent
+  annotations:
+    argocd.argoproj.io/sync-wave: "2"
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+spec:
+  refreshInterval: 1h
+  secretStoreRef:
+    name: vault
+    kind: ClusterSecretStore
+  target:
+    name: pr-agent-dragonfly-redis-url
+    creationPolicy: Owner
+    deletionPolicy: Retain
+  data:
+    - secretKey: password
+      remoteRef:
+        key: homelab/pr-agent/dragonfly
+        property: password
+    - secretKey: redis_url
+      remoteRef:
+        key: homelab/pr-agent/dragonfly
+        property: redis_url
