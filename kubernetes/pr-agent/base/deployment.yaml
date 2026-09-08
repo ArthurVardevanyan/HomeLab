@@ -76,8 +76,14 @@ spec:
               value: "147456"
             - name: CONFIG__FALLBACK_MODELS
               value: ""
+            # PR Agent always publishes its own check runs with conclusion:
+            # "neutral" (hardcoded in github_provider.py, not configurable) -
+            # GitHub renders this as a grey/unfilled icon regardless of
+            # whether issues were found, so the check status carries no
+            # actionable signal. Publishing as a PR comment instead keeps
+            # the (legible) findings visible in the conversation feed.
             - name: GITHUB__PUBLISH_AS_CHECK_RUN
-              value: "true"
+              value: "false"
             - name: GITHUB_APP__HANDLE_PR_ACTIONS
               value: '["opened", "reopened", "ready_for_review"]'
             - name: GITHUB_APP__PR_COMMANDS
