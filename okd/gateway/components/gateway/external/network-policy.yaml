@@ -220,3 +220,26 @@ spec:
       ports:
         - protocol: TCP
           port: 443
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-to-pr-agent
+  namespace: openshift-ingress
+spec:
+  policyTypes:
+    - Egress
+  podSelector:
+    matchLabels:
+      gateway.networking.k8s.io/gateway-name: https-gateway-external
+  egress:
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: pr-agent
+          podSelector:
+            matchLabels:
+              app: pr-agent
+      ports:
+        - protocol: TCP
+          port: 3000

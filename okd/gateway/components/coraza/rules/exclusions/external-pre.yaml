@@ -15,3 +15,12 @@ data:
     # https://analytics-for-spotify.arthurvardevanyan.com/analytics/*
     SecRule REQUEST_HEADERS:Host "@rx ^analytics-for-spotify\.arthurvardevanyan\.com(:|$)" "id:1102,phase:1,pass,nolog,chain"
       SecRule REQUEST_URI "@rx ^/analytics/(analyzeHistoricalImport|importHistoricalData)/" "t:none,ctl:requestBodyAccess=Off"
+
+    # -- PR Agent GitHub webhooks: payloads embed arbitrary PR text, commit
+    # messages, and file paths that false-positive on CRS content rules
+    # (e.g. 933150 matched "printF" in printFailedSectionDetail(); 930120
+    # matched ".config/" in a modified file path). Endpoint is authenticated
+    # via HMAC-SHA256 (GITHUB__WEBHOOK_SECRET), so body inspection is
+    # redundant here.
+    SecRule REQUEST_HEADERS:Host "@rx ^pr-agent\.arthurvardevanyan\.com(:|$)" "id:1115,phase:1,pass,nolog,chain"
+      SecRule REQUEST_URI "@rx ^/api/v1/github_webhooks$" "t:none,ctl:requestBodyAccess=Off"
