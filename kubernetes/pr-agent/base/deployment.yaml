@@ -65,6 +65,11 @@ spec:
               value: "openai"
             - name: LITELLM__API_BASE
               value: "http://litellm-svc.llm.svc.cluster.local.:4000/v1"
+            - name: OPENAI_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: pr-agent-secret
+                  key: openai_api_key
             - name: GITHUB__PUBLISH_AS_CHECK_RUN
               value: "true"
             - name: GITHUB_APP__PR_COMMANDS
