@@ -175,7 +175,7 @@ graph TD
 | **Container Overlay** | mdadm 2x1TB SSD       |
 | **Ceph Storage**      | 2x4TB CEPH NVME       |
 | **Nic's**             | 4x10GbE/1GbE A/P      |
-| **Bond 0:** v10       | Host/Pod/LoadBalancer |
+| **Bond 0:** v10       | Host/Pod              |
 | **Bond 2:** v12       | Ceph Private          |
 | **Bond 3:** v13       | Ceph Public           |
 | **Bond 4:** v14       | VM Live Migrate       |
@@ -318,30 +318,32 @@ end
 | clients | 2       | 10.102.2.0/24 |                        |
 | iot     | 3       | 10.102.3.0/24 | TODO: Enable Isolation |
 
-| Name                      | VLAN ID | Subnet         | Info                    |
-| ------------------------- | ------- | -------------- | ----------------------- |
-| infrastructure            | 111     | 10.101.1.0/24  |                         |
-| clients                   | X       | 10.101.2.0/24  | TODO: Create            |
-| iot                       | X       | 10.101.3.0/24  | TODO: Create            |
-| openshift-machine-network | 10      | 10.101.10.0/24 | Host/Pod/Load Balancers |
-| openshift-nad             | 11      | 10.101.11.0/24 | Virtual Machines        |
-| openshift-ceph-private    | 12      | 10.101.12.0/24 | Isolated                |
-| openshift-ceph-public     | 13      | 10.101.13.0/24 | Isolated                |
-| openshift-lm              | 14      | 10.101.14.0/24 | Isolated                |
-| openshift-ovn-network     | 15      | 10.101.15.0/24 | Isolated                |
-| openshift-service-network | 16      | 10.101.16.0/22 | Isolated                |
-| openshift-pod-network     | 32      | 10.101.32.0/19 | Isolated                |
+| Name                      | VLAN ID | Subnet         | Info             |
+| ------------------------- | ------- | -------------- | ---------------- |
+| infrastructure            | 111     | 10.101.1.0/24  |                  |
+| clients                   | X       | 10.101.2.0/24  | TODO: Create     |
+| iot                       | X       | 10.101.3.0/24  | TODO: Create     |
+| metallb                   | 9       | 10.101.9.0/24  | Load Balancers   |
+| openshift-machine-network | 10      | 10.101.10.0/24 | Host/Pod         |
+| openshift-nad             | 11      | 10.101.11.0/24 | Virtual Machines |
+| openshift-ceph-private    | 12      | 10.101.12.0/24 | Isolated         |
+| openshift-ceph-public     | 13      | 10.101.13.0/24 | Isolated         |
+| openshift-lm              | 14      | 10.101.14.0/24 | Isolated         |
+| openshift-ovn-network     | 15      | 10.101.15.0/24 | Isolated         |
+| openshift-service-network | 16      | 10.101.16.0/22 | Isolated         |
+| openshift-pod-network     | 32      | 10.101.32.0/19 | Isolated         |
 
-| Name                           | VLAN ID | Subnet         | Info                    |
-| ------------------------------ | ------- | -------------- | ----------------------- |
-| virt-openshift-machine-network | 310     | 10.103.10.0/24 | Host/Pod/Load Balancers |
-| virt-openshift-nad             | 311     | 10.103.11.0/24 | Virtual Machines        |
-| virt-openshift-ceph-private    | 312     | 10.103.12.0/24 | Isolated                |
-| virt-openshift-ceph-public     | 313     | 10.103.13.0/24 | Isolated                |
-| virt-openshift-lm              | 314     | 10.103.14.0/24 | Isolated                |
-| virt-openshift-ovn-network     | 315     | 10.103.15.0/24 | Isolated                |
-| virt-openshift-service-network | 316     | 10.103.16.0/22 | Isolated                |
-| virt-openshift-pod-network     | 332     | 10.103.32.0/19 | Isolated                |
+| Name                           | VLAN ID | Subnet         | Info             |
+| ------------------------------ | ------- | -------------- | ---------------- |
+| virt-metallb                   | 309     | 10.103.9.0/24  | Load Balancers   |
+| virt-openshift-machine-network | 310     | 10.103.10.0/24 | Host/Pod         |
+| virt-openshift-nad             | 311     | 10.103.11.0/24 | Virtual Machines |
+| virt-openshift-ceph-private    | 312     | 10.103.12.0/24 | Isolated         |
+| virt-openshift-ceph-public     | 313     | 10.103.13.0/24 | Isolated         |
+| virt-openshift-lm              | 314     | 10.103.14.0/24 | Isolated         |
+| virt-openshift-ovn-network     | 315     | 10.103.15.0/24 | Isolated         |
+| virt-openshift-service-network | 316     | 10.103.16.0/22 | Isolated         |
+| virt-openshift-pod-network     | 332     | 10.103.32.0/19 | Isolated         |
 
 ### 2. Kubernetes Cluster (`/okd`)
 
