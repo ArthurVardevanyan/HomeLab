@@ -74,8 +74,12 @@ spec:
               value: "147456"
             - name: CONFIG__MAX_MODEL_TOKENS
               value: "147456"
+            # Empty string here is not a no-op: PR Agent splits it on "," into
+            # [''] and appends that to the model list, so every timeout is
+            # immediately followed by a guaranteed second failure ("Invalid
+            # model name passed in model="). An empty list means what it says.
             - name: CONFIG__FALLBACK_MODELS
-              value: ""
+              value: "[]"
             # PR Agent always publishes its own check runs with conclusion:
             # "neutral" (hardcoded in github_provider.py, not configurable) -
             # GitHub renders this as a grey/unfilled icon regardless of
@@ -92,6 +96,11 @@ spec:
               value: "true"
             - name: GITHUB_APP__PUSH_COMMANDS
               value: '["/describe", "/review"]'
+            # Default (true) allows 2 concurrent push-triggered tasks per PR;
+            # a rapid second push doubles GPU load instead of queueing behind
+            # the first. false caps it at 1.
+            - name: GITHUB_APP__PUSH_TRIGGER_PENDING_TASKS_BACKLOG
+              value: "false"
             - name: PERSISTENT_COMMENT
               value: "true"
             - name: CONFIG__IGNORE_BOT_PR
@@ -106,8 +115,14 @@ spec:
               value: "true"
             - name: CONFIG__TEMPERATURE
               value: "0.2"
-            - name: CONFIG__REQUEST_TIMEOUT
-              value: "180"
+            # config.request_timeout is dead config for this deployment - it
+            # only backs bitbucket_app.request_timeout / asana.request_timeout,
+            # neither of which applies here. The LLM call timeout is actually
+            # config.ai_timeout (litellm_ai_handler.py), which defaults to
+            # 120s - too short for a 35B model shared across GPUs under load,
+            # and the true cause of repeated APITimeoutErrors. Raised to 600s.
+            - name: CONFIG__AI_TIMEOUT
+              value: "600"
             - name: WORKER_TIMEOUT
               value: "120"
             - name: GUNICORN_WORKERS
