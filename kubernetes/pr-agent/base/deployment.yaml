@@ -22,7 +22,7 @@ spec:
     spec:
       restartPolicy: Always
       schedulerName: default-scheduler
-      terminationGracePeriodSeconds: 30
+      terminationGracePeriodSeconds: 1290
       automountServiceAccountToken: false
       serviceAccountName: pr-agent
       enableServiceLinks: false
@@ -129,12 +129,30 @@ spec:
               value: "120"
             - name: GUNICORN_WORKERS
               value: "2"
+            # LiteLLM response cache: caches LLM requests/responses to reduce
+            # latency and API costs for repeated PR diffs. Uses Dragonfly (Redis
+            # compatible) for cross-pod sharing. TTL is 6 hours.
+            - name: PR_AGENT__LITELLM__CACHE_ENABLED
+              value: "true"
+            - name: PR_AGENT__LITELLM__CACHE_TYPE
+              value: "redis"
+            - name: PR_AGENT__LITELLM__CACHE_TTL
+              value: "21600"
+            - name: PR_AGENT__LITELLM__CACHE_HOST
+              value: "pr-agent-dragonfly.pr-agent.svc.cluster.local"
+            - name: PR_AGENT__LITELLM__CACHE_PORT
+              value: "6379"
+            - name: PR_AGENT__LITELLM__CACHE_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: pr-agent-dragonfly-redis-url
+                  key: password
           # The Docker image's CMD runs gunicorn directly with no graceful
           # shutdown — gunicorn defaults to killing workers 3s after SIGTERM,
           # which silently drops any in-flight BackgroundTasks (the PR review
           # runs in the background after the HTTP response is already sent).
-          # Override the command to insert --graceful-timeout 660 so workers
-          # get 11 min after SIGTERM to finish in-flight reviews.
+          # Override the command to insert --graceful-timeout 1200 so workers
+          # get 20 min after SIGTERM to finish in-flight reviews.
           command:
             - python
           args:
@@ -145,7 +163,7 @@ spec:
             - -c
             - pr_agent/servers/gunicorn_config.py
             - --graceful-timeout
-            - "660"
+            - "1200"
             - --forwarded-allow-ips
             - "*"
             - pr_agent.servers.github_app:app
@@ -155,7 +173,7 @@ spec:
                 command:
                   - /bin/sh
                   - -c
-                  - sleep 30
+                  - sleep 60
           ports:
             - containerPort: 3000
               name: http
