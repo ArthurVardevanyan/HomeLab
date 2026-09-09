@@ -57,12 +57,10 @@ Each model is launched as an independent llama-server instance bound to one of
 the two GPUs (`ONEAPI_DEVICE_SELECTOR=level_zero:0` or `1`). The matrix
 guarantees **exactly one model per GPU** per set — no stacking, no spillover.
 
-| Model id                            | Model                                    | Trait                             | Vision |
-| ----------------------------------- | ---------------------------------------- | --------------------------------- | ------ |
-| `35b-gpu0` / `35b-gpu1`             | Qwen3.6-35B-A3B (sparse MoE)             | ~4x faster decode on B70          | Yes    |
-| `35b-gpu0-dense` / `35b-gpu1-dense` | Same, `--ctx-size 262144`, 1 slot        | Full native context on single GPU | Yes    |
-| `27b-gpu0` / `27b-gpu1`             | Qwen3.8-27B (dense), `--ctx-size 196608` | higher quality, slower            | Yes    |
-| `35b-spread`                        | Qwen3.6-35B-A3B, both GPUs               | 1M ctx, parallel 4                | Yes    |
+| Model id                | Model                                    | Trait                    | Vision |
+| ----------------------- | ---------------------------------------- | ------------------------ | ------ |
+| `35b-gpu0` / `35b-gpu1` | Qwen3.6-35B-A3B (sparse MoE)             | ~4x faster decode on B70 | Yes    |
+| `27b-gpu0` / `27b-gpu1` | Qwen3.8-27B (dense), `--ctx-size 196608` | higher quality, slower   | Yes    |
 
 > **27B context:** Set to `196608` (192K). Qwen3.8 uses a hybrid architecture
 > where 16 of 65 blocks use full attention (the other 49 use linear attention
@@ -215,15 +213,13 @@ pre-allocated in VRAM at load time — **nothing spills to host RAM**.
 VRAM usage is fixed at load and does not grow with session activity. The total
 includes weights, mmproj, and the full KV pool at configured `ctx-size`:
 
-| Model         | Weights   | mmproj   | KV pool  | Total    | Headroom |
-| ------------- | --------- | -------- | -------- | -------- | -------- |
-| 35B-A3B       | 20.6 GiB  | 0.86 GiB | 6.25 GiB | 27.7 GiB | 4.3 GiB  |
-| 35B-A3B-dense | 20.6 GiB  | 0.86 GiB | 4.00 GiB | 25.5 GiB | 6.5 GiB  |
-| 27B           | 15.95 GiB | 0.86 GiB | 12.0 GiB | 28.8 GiB | 3.2 GiB  |
+| Model   | Weights  | mmproj   | KV pool  | Total    | Headroom |
+| ------- | -------- | -------- | -------- | -------- | -------- |
+| 35B-A3B | 20.6 GiB | 0.86 GiB | 3.12 GiB | 24.6 GiB | 7.4 GiB  |
 
-KV pool sizes: 35B-A3B at 320K uses 20 KiB/token (6.25 GiB pool); dense at
-256K uses 16 KiB/token (4.0 GiB pool); 27B at 192K uses 64 KiB/token
-(12.0 GiB pool). **Observed:** VRAM climbs to ~28 GiB on load and holds
+| 27B | 15.95 GiB | 0.86 GiB | 6.00 GiB | 22.8 GiB | 9.2 GiB |
+
+KV pool sizes with Q8_0: 35B-A3B at 320K uses 10 KiB/token (3.12 GiB pool); 27B at 192K uses 32 KiB/token (6.0 GiB pool). **Observed:** VRAM climbs to ~28 GiB on load and holds
 there forever — consistent with a full static pool, not incremental growth.
 
 ### Host RAM (anonymous, per-instance)
@@ -365,18 +361,18 @@ clinfo | grep -i "Device Name"
 
 For higher throughput:
 
-- **Dual** (`dual_35b`, `dual_35b-d`, `dual_35b-0d-1`, `dual_35b-0-1d`,
-  `dual_27b`): one model per GPU, same family, both GPUs always required.
-  Provides
-  redundancy and doubles throughput for concurrent requests.
-- **Mixed dual** (`dual_35b0-27b1`, `dual_35b0d-27b1`, `dual_27b0-35b1`,
-  `dual_27b0-35b1d`): 35B on one GPU + 27B on the other, for maximum
-  flexibility without full-model loading.
-- **Dense 35B** (`dual_35b-d`, `dual_35b-0d-1`, `dual_35b-0-1d`): same 35B
-  model as dual but with `--ctx-size 262144` and 1 slot for maximum
-  per-request context.
-- **Spread** (`spread_35b`): one model spanning both GPUs via
-  `--split-mode layer --tensor-split 1,1` for maximum context (1M).
+- **Dual** (`dual_35b`, `dual_27b`, `dual_35b0-27b1`, `dual_27b0-35b1`): one model per GPU, same
+  family, both GPUs required. Chat-only mode — no embedding, saves ~2 GB VRAM.
+- **Dual spread** (`dual_35b-spread`, `dual_27b-spread`, `dual_35b0-27b1-spread`, `dual_27b0-35b1-spread`):
+  one model per GPU + embed-spread spanning both GPUs (~2 GB total). Embed runs alongside chat.
+- **Embed spread standalone** (`embed_spread`): embed-only mode when no chat is needed.
+
+Preload at boot (`hooks.on_startup.preload`): `35b-gpu0`, `27b-gpu1`, `embed-spread`.
+These models are loaded immediately on startup. The matrix solver then picks the best configuration.
+Embed-spread stays resident when a `-spread` set is chosen (evict_cost 1 vs chat models 10–20).
+If only chat-only sets are active, embed may be evicted by the solver but reloads via TTL (300s)
+when needed.
+
 - **Multiple llama-swap replicas** with a LoadBalancer: add replicas in
   `overlays/okd/llama-swap.yaml` and expose via a LoadBalancer service.
   llama-swap's config matrix handles the shared hardware — no external
