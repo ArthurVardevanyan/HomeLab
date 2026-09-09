@@ -4,20 +4,35 @@
 #       + llama-swap v251 SYCL binaries
 #       + cookbook MTP + APC + GDN + backward-copy + eagle-drop patches
 # renovate: datasource=docker depName=vllm/vllm-openai-xpu versioning=loose
-FROM vllm/vllm-openai-xpu:sha256:f01e24f6@sha256:a58d3e3e5b3c6a8f9d2b1c4e7f8a0d3b6c9e2f5a8b1d4e7f0a3c6b9d2e5f8a1b AS vllm-base
-FROM ghcr.io/mostlygeek/llama-swap:v251-intel-b10711@sha256:1ba4ee9b4d4ac46d185e14fdabd782b71fd1fc31488122f576c4c04e9d461c6d AS llama-swap-bin
-FROM scratch
+FROM docker.io/vllm/vllm-openai-xpu:nightly@sha256:7ede53bd3f5fc3eeef64fea13096c035b009825e050c4912043e4b78c38be6e5 AS vllm-base
+FROM ghcr.io/mostlygeek/llama-swap:v251-intel-b10711@sha256:2da4476f45072bbfe4c48933ebc36f71f18111be9cd21ac1506595b7feb5973b AS llama-swap-bin
 
-# ca-certificates
-COPY --from=llama-swap-bin /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
+# vllm-wrapper — not shipped in llama-swap release archives, built from source
+FROM docker.io/library/golang:1.27-bookworm AS vllm-wrapper-build
+ARG LS_VERSION=251
+RUN set -eux; \
+  git clone --depth 1 --branch v${LS_VERSION} https://github.com/mostlygeek/llama-swap.git /src/llama-swap; \
+  cd /src/llama-swap && \
+  CGO_ENABLED=0 go build -trimpath -o /usr/local/bin/vllm-wrapper ./cmd/vllm-wrapper
 
-# llama-swap binary + llama-server (SYCL build)
+# Final image — use vllm-base (has python3, curl, vLLM libs) and overlay llama-swap binaries
+FROM vllm-base
+
+# ca-certificates (already in vllm-base, kept for completeness)
+# COPY --from=llama-swap-bin /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
+
+# llama-swap binary + llama-server (SYCL build) + vllm-wrapper
 COPY --from=llama-swap-bin /app/llama-swap /app/llama-swap
 COPY --from=llama-swap-bin /app/llama-server /app/llama-server
-COPY --from=llama-swap-bin /app/vllm-wrapper /app/vllm-wrapper
-
-# Verify llama-server SYCL symbols
-RUN /app/llama-server --help 2>&1 | head -1 || true
+COPY --from=llama-swap-bin /app/*.so* /app/
+COPY --from=llama-swap-bin /app/libllama* /app/
+# Intel OneAPI runtime libs needed by llama-server (SYCL build)
+COPY --from=llama-swap-bin /opt/intel/oneapi/compiler/2025.3/lib/libsvml.so /opt/intel/oneapi/compiler/2025.3/lib/
+COPY --from=llama-swap-bin /opt/intel/oneapi/compiler/2025.3/lib/libimf.so /opt/intel/oneapi/compiler/2025.3/lib/
+COPY --from=llama-swap-bin /opt/intel/oneapi/compiler/2025.3/lib/libintlc.so* /opt/intel/oneapi/compiler/2025.3/lib/
+COPY --from=llama-swap-bin /opt/intel/oneapi/compiler/2025.3/lib/libiomp5.so /opt/intel/oneapi/compiler/2025.3/lib/
+COPY --from=llama-swap-bin /opt/intel/oneapi/compiler/2025.3/lib/libirng.so /opt/intel/oneapi/compiler/2025.3/lib/
+COPY --from=vllm-wrapper-build /usr/local/bin/vllm-wrapper /app/vllm-wrapper
 
 # Cookbook patches (vendor + apply at build time)
 COPY patches/ /tmp/patches/
@@ -67,7 +82,11 @@ ENV ONEAPI_DEVICE_SELECTOR=level_zero:* \
   SYCL_DEVICE_FILTER=level_zero \
   ZE_FLAT_DEVICE_HIERARCHY=COMPOSITE \
   GGML_SYCL_ENABLE_GRAPH=1 \
-  SYCL_CACHE_PERSISTENT=0
+  SYCL_CACHE_PERSISTENT=0 \
+  LD_LIBRARY_PATH=/app:/opt/intel/oneapi/compiler/2025.3/lib
+
+# Verify llama-server SYCL symbols
+RUN /app/llama-server --help 2>&1 | head -1 || true
 
 # llama-swap: health endpoint
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
