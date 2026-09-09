@@ -51,6 +51,13 @@ ENV ANSIBLE_VERSION=14.3.1
 RUN pip3 install --no-cache-dir ansible==${ANSIBLE_VERSION} && \
   find /usr -name '*.pyc' -delete
 
+# huggingface_hub (for model-downloader cronjob vLLM dir downloads)
+# renovate: datasource=pypi depName=huggingface_hub
+ENV HUGGINGFACE_HUB_VERSION=0.36.0
+RUN pip3 install --no-cache-dir huggingface_hub==${HUGGINGFACE_HUB_VERSION} && \
+  find /usr -name '*.pyc' -delete && \
+  rm -rf /usr/lib/python3*/EXTERNALLY-MANAGED
+
 # gh, argocd-vault-plugin, yq, kubeconform, mc
 # renovate: datasource=github-releases depName=cli/cli
 ENV GH_VERSION=2.98.0

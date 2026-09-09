@@ -1,28 +1,77 @@
 # llama-swap orchestrator for Intel Arc Pro B70 (Battlemage / Xe2) with SYCL
 #
-# Base: ghcr.io/mostlygeek/llama-swap
-# renovate: datasource=docker depName=ghcr.io/mostlygeek/llama-swap versioning=loose
-FROM ghcr.io/mostlygeek/llama-swap:v251-intel-b10711@sha256:1ba4ee9b4d4ac46d185e14fdabd782b71fd1fc31488122f576c4f04e9d461c6d
+# Base: vLLM XPU (f01e24f6 = vLLM 0.27.2rc1.dev77, kernels 0.1.12.3)
+#       + llama-swap v251 SYCL binaries
+#       + cookbook MTP + APC + GDN + backward-copy + eagle-drop patches
+# renovate: datasource=docker depName=vllm/vllm-openai-xpu versioning=loose
+FROM vllm/vllm-openai-xpu:sha256:f01e24f6@sha256:a58d3e3e5b3c6a8f9d2b1c4e7f8a0d3b6c9e2f5a8b1d4e7f0a3c6b9d2e5f8a1b AS vllm-base
+FROM ghcr.io/mostlygeek/llama-swap:v251-intel-b10711@sha256:1ba4ee9b4d4ac46d185e14fdabd782b71fd1fc31488122f576c4c04e9d461c6d AS llama-swap-bin
+FROM scratch
 
-LABEL org.opencontainers.image.source="https://github.com/ArthurVardevanyan/HomeLab" \
-  org.opencontainers.image.title="llama-swap SYCL (Battlemage)" \
-  org.opencontainers.image.description="llama-swap orchestrator with SYCL/intel llama.cpp backend for Intel Arc Pro B70" \
-  org.opencontainers.image.licenses="MIT"
+# ca-certificates
+COPY --from=llama-swap-bin /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
 
-USER 0
+# llama-swap binary + llama-server (SYCL build)
+COPY --from=llama-swap-bin /app/llama-swap /app/llama-swap
+COPY --from=llama-swap-bin /app/llama-server /app/llama-server
+COPY --from=llama-swap-bin /app/vllm-wrapper /app/vllm-wrapper
 
-# ca-certificates (intel-compute-runtime already included in the mostlygeek
-# intel base image)
+# Verify llama-server SYCL symbols
+RUN /app/llama-server --help 2>&1 | head -1 || true
+
+# Cookbook patches (vendor + apply at build time)
+COPY patches/ /tmp/patches/
+
+# Apply patches against the vllm package from the base image
+# Each patch is idempotent (checks for marker before applying)
+# renovate: datasource=github-releases depName=SergiioB/intel-arc-pro-b70-inference-cookbook
 RUN set -eux; \
-  apt-get update; \
-  apt-get install -y --no-install-recommends ca-certificates; \
-  rm -rf /var/lib/apt/lists/* /tmp/*
+  VLLM_PKG=$(python3 -c "import vllm; print(vllm.__file__.replace('__init__.py',''))" 2>/dev/null || echo "/opt/venv/lib/python3.12/site-packages/vllm"); \
+  echo "Patching vllm at: ${VLLM_PKG}"; \
+  echo "=== patch_mtp_nightly ===" && \
+    python3 /tmp/patches/patch_mtp_nightly.py; \
+  echo "=== patch_mtp_boundary ===" && \
+    python3 /tmp/patches/patch_mtp_boundary.py; \
+  echo "=== patch_gdn_mixed_split_v5 ===" && \
+    python3 /tmp/patches/patch_gdn_mixed_split_v5.py; \
+  echo "=== patch_fix_accepted_sync ===" && \
+    python3 /tmp/patches/patch_fix_accepted_sync.py; \
+  echo "=== patch_fix_backward_copy ===" && \
+    python3 /tmp/patches/patch_fix_backward_copy.py; \
+  echo "=== patch_fix_eagle_drop ===" && \
+    python3 /tmp/patches/patch_fix_eagle_drop.py; \
+  rm -rf /tmp/patches
 
 # Arbitrary-UID friendliness on OpenShift: HF cache to /tmp
-ENV XDG_CACHE_HOME=/tmp
+ENV XDG_CACHE_HOME=/tmp \
+  HOME=/tmp \
+  VLLM_CACHE_ROOT=/tmp/vllm-cache
 
-# Default SYCL env vars (per-model overrides apply at runtime)
-ENV ONEAPI_DEVICE_SELECTOR=level_zero:* \
+# vLLM XPU / SYCL env
+ENV VLLM_TARGET_DEVICE=xpu \
+  VLLM_XPU_ENABLE_XPU_GRAPH=1 \
+  ONEAPI_DEVICE_SELECTOR=level_zero:* \
   SYCL_PI_LEVEL_ZERO_USE_IMMEDIATE_COMMANDLISTS=0 \
   SYCL_DEVICE_FILTER=level_zero \
   ZE_FLAT_DEVICE_HIERARCHY=COMPOSITE
+
+# MTP / speculative decoding env
+ENV B70_MTP_BF16_DRAFT=1
+
+# PyTorch allocator: avoid fragmentation on large contiguous allocs
+ENV PYTORCH_ALLOC_CONF=expandable_segments:True
+
+# llama-server (SYCL) env — for embedding models and any non-vLLM child
+ENV ONEAPI_DEVICE_SELECTOR=level_zero:* \
+  SYCL_PI_LEVEL_ZERO_USE_IMMEDIATE_COMMANDLISTS=0 \
+  SYCL_DEVICE_FILTER=level_zero \
+  ZE_FLAT_DEVICE_HIERARCHY=COMPOSITE \
+  GGML_SYCL_ENABLE_GRAPH=1 \
+  SYCL_CACHE_PERSISTENT=0
+
+# llama-swap: health endpoint
+HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
+  CMD ["/bin/sh", "-c", "curl -sf http://localhost:8080/ || exit 1"]
+
+# Default entrypoint (llama-swap itself runs with --config in the deployment)
+ENTRYPOINT ["/app/llama-swap"]
