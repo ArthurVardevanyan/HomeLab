@@ -5,11 +5,11 @@
 #       + cookbook MTP + APC + GDN + backward-copy + eagle-drop patches
 # renovate: datasource=docker depName=vllm/vllm-openai-xpu versioning=loose
 FROM docker.io/vllm/vllm-openai-xpu:nightly@sha256:7ede53bd3f5fc3eeef64fea13096c035b009825e050c4912043e4b78c38be6e5 AS vllm-base
-FROM ghcr.io/mostlygeek/llama-swap:v251-intel-b10711@sha256:2da4476f45072bbfe4c48933ebc36f71f18111be9cd21ac1506595b7feb5973b AS llama-swap-bin
+FROM ghcr.io/mostlygeek/llama-swap:v255-intel-b10868@sha256:46287099a3ec050f806b284fb6446a054a503469e31634ac0af5b563297c3b13 AS llama-swap-bin
 
 # vllm-wrapper — not shipped in llama-swap release archives, built from source
 FROM docker.io/library/golang:1.27-bookworm AS vllm-wrapper-build
-ARG LS_VERSION=251
+ARG LS_VERSION=255
 RUN set -eux; \
   git clone --depth 1 --branch v${LS_VERSION} https://github.com/mostlygeek/llama-swap.git /src/llama-swap; \
   cd /src/llama-swap && \
