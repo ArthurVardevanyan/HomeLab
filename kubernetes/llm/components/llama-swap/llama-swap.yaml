@@ -19,12 +19,15 @@ upstream:
 
 hooks:
   on_startup:
-    # preload takes model IDs (not matrix set names) - 35B non-dense on GPU 0
-    # (primary slot, higher eviction cost) + 27B dense on GPU 1 gives useful
+    # preload takes model IDs (not matrix set names) - 35B MoE on GPU 0
+    # (primary slot, higher eviction cost) + 27B on GPU 1 gives useful
     # work on both GPUs from boot rather than data-parallel redundancy.
+    # embed-spread is also preloaded — 0.6B Q8_0 uses ~2 GB across both GPUs,
+    # fitting alongside any dual chat config without pressure.
     preload:
       - 35b-gpu0
       - 27b-gpu1
+      - embed-spread
 
 macros:
   # SYCL graph capture: confirmed working on Battlemage (ext_oneapi_graph +
@@ -38,7 +41,7 @@ macros:
   # reduces wasted verification work without materially affecting
   # throughput — the real bottleneck is draft frequency (0.89%), not
   # draft length. See README for full analysis.
-  cmd_base: "/app/llama-server --port ${PORT} --host 127.0.0.1 --cont-batching --reasoning-format auto --reasoning-preserve -ngl 99 --flash-attn on --cache-type-k f16 --cache-type-v f16 --ubatch-size 2048 --jinja --poll 0 -t 12 --threads-http 4 --cache-reuse 256 --load-mode none --metrics --spec-type ngram-mod"
+  cmd_base: "/app/llama-server --port ${PORT} --host 127.0.0.1 --cont-batching --reasoning-format auto --reasoning-preserve -ngl 99 --flash-attn on --cache-type-k q8_0 --cache-type-v q8_0 --ubatch-size 2048 --jinja --poll 0 -t 12 --threads-http 4 --cache-reuse 256 --load-mode none --metrics --spec-type ngram-mod"
 
 models:
   # ==========================================
@@ -79,51 +82,17 @@ models:
       - "GGML_SYCL_ENABLE_GRAPH=1"
     ttl: 0
 
-  35b-gpu0-dense:
-    cmd: ${cmd_base} --spec-ngram-mod-n-max 2 --parallel 1 --ctx-size 262144 -m /data/models/Qwen3.6-35B-A3B-UD-Q4_K_M.gguf --mmproj /data/models/Qwen3.6-35B-A3B-mmproj-F16.gguf --image-min-tokens 1024
-    env:
-      - "ONEAPI_DEVICE_SELECTOR=level_zero:0"
-      - "SYCL_PI_LEVEL_ZERO_USE_IMMEDIATE_COMMANDLISTS=1"
-      - "GGML_SYCL_ENABLE_GRAPH=1"
-    ttl: 0
-
-  35b-gpu1-dense:
-    cmd: ${cmd_base} --spec-ngram-mod-n-max 2 --parallel 1 --ctx-size 262144 -m /data/models/Qwen3.6-35B-A3B-UD-Q4_K_M.gguf --mmproj /data/models/Qwen3.6-35B-A3B-mmproj-F16.gguf --image-min-tokens 1024
-    env:
-      - "ONEAPI_DEVICE_SELECTOR=level_zero:1"
-      - "SYCL_PI_LEVEL_ZERO_USE_IMMEDIATE_COMMANDLISTS=1"
-      - "GGML_SYCL_ENABLE_GRAPH=1"
-    ttl: 0
-
   # ==========================================
-  # 4. Qwen 3.6 35B (A3B) — Spread (both GPUs, 1M ctx, parallel 4)
+  # 4. Qwen3 Embedding 0.6B (spread across both GPUs)
   # ==========================================
-  35b-spread:
-    cmd: ${cmd_base} --spec-ngram-mod-n-max 8 --split-mode layer --parallel 5 --ctx-size 1310720 -m /data/models/Qwen3.6-35B-A3B-UD-Q4_K_M.gguf --mmproj /data/models/Qwen3.6-35B-A3B-mmproj-F16.gguf --image-min-tokens 1024
+  embed-spread:
+    cmd: /app/llama-server --port ${PORT} --host 127.0.0.1 --cont-batching -m /data/models/Qwen3-Embedding-0.6B-Q8_0.gguf -t 8 --threads 8 --ctx-size 122880 --cache-type-k q8_0 --cache-type-v q8_0 --embedding --ubatch-size 256 --jinja --poll 0 --parallel 30
     env:
       - "ONEAPI_DEVICE_SELECTOR=level_zero:0,1"
       - "SYCL_PI_LEVEL_ZERO_USE_IMMEDIATE_COMMANDLISTS=1"
       - "GGML_SYCL_ENABLE_GRAPH=1"
     ttl: 0
-
-  # ==========================================
-  # 5. Qwen3 Embedding 4B (GPU 0 and GPU 1, embeddings only)
-  # ==========================================
-  qwen3-embed-gpu0:
-    cmd: /app/llama-server --port ${PORT} --host 127.0.0.1 --cont-batching -m /data/models/Qwen3-Embedding-4B-Q8_0.gguf -t 8 --threads 8 --ctx-size 131072 --cache-type-k f16 --cache-type-v f16 --embedding --ubatch-size 2048 --jinja --poll 0 --parallel 32
-    env:
-      - "ONEAPI_DEVICE_SELECTOR=level_zero:0"
-      - "SYCL_PI_LEVEL_ZERO_USE_IMMEDIATE_COMMANDLISTS=1"
-    ttl: 300
-    concurrencyLimit: 32
-
-  qwen3-embed-gpu1:
-    cmd: /app/llama-server --port ${PORT} --host 127.0.0.1 --cont-batching -m /data/models/Qwen3-Embedding-4B-Q8_0.gguf -t 8 --threads 8 --ctx-size 131072 --cache-type-k f16 --cache-type-v f16 --embedding --ubatch-size 2048 --jinja --poll 0 --parallel 32
-    env:
-      - "ONEAPI_DEVICE_SELECTOR=level_zero:1"
-      - "SYCL_PI_LEVEL_ZERO_USE_IMMEDIATE_COMMANDLISTS=1"
-    ttl: 300
-    concurrencyLimit: 32
+    concurrencyLimit: 30
 
 # The matrix dictates all valid VRAM combinations.
 # Each set represents one valid model-per-GPU configuration. The solver
@@ -133,54 +102,45 @@ matrix:
   vars:
     # GPU 0 models
     M35-0: 35b-gpu0
-    M35-0-d: 35b-gpu0-dense
     M27-0: 27b-gpu0
     # GPU 1 models
     M35-1: 35b-gpu1
-    M35-1-d: 35b-gpu1-dense
     M27-1: 27b-gpu1
-    ME-0: qwen3-embed-gpu0
-    ME-1: qwen3-embed-gpu1
+    # ME-0: qwen3-embed-gpu0
+    # ME-1: qwen3-embed-gpu1
     # Spread models
-    S35: 35b-spread
+    S35-e: embed-spread
 
   # Eviction cost: higher = harder to evict. Spread > 35B > 27B.
   # GPU 0 35B costs more than GPU 1 so eviction is deterministic.
   evict_costs:
-    S35: 25
     M35-0: 20
-    M35-0-d: 20
     M35-1: 10
-    M35-1-d: 10
     M27-0: 15
     M27-1: 15
-    ME-1: 5
+    # ME-1: 5
+    S35-e: 1
 
   sets:
-    # --- Dual (one 35B variant per GPU, all combos) ---
+    # --- Dual (one 35B per GPU, chat-only) ---
     dual_35b: M35-0 & M35-1
-    dual_35b-d: M35-0-d & M35-1-d
-    dual_35b-0d-1: M35-0-d & M35-1
-    dual_35b-0-1d: M35-0 & M35-1-d
 
-    # --- Dual (one 27B per GPU) ---
+    # --- Dual (one 27B per GPU, chat-only) ---
     dual_27b: M27-0 & M27-1
 
-    # --- Dual (35B + 27B mixed, one per GPU) ---
+    # --- Dual (35B + 27B mixed, chat-only) ---
     dual_35b0-27b1: M35-0 & M27-1
-    dual_35b0d-27b1: M35-0-d & M27-1
     dual_27b0-35b1: M27-0 & M35-1
-    dual_27b0-35b1d: M27-0 & M35-1-d
 
-    # --- Spread (one instance spanning both GPUs) ---
-    spread_35b: S35
+    # --- Dual with embed spread (one 35B per GPU + embed on both) ---
+    dual_35b-spread: M35-0 & M35-1 & S35-e
 
-    # --- Embedding companion models (GPU 0 chat + GPU 1 embed) ---
-    embed_35b0-1: M35-0 & ME-1
-    embed_35b0d-1: M35-0-d & ME-1
-    embed_27b0-1: M27-0 & ME-1
+    # --- Dual with embed spread (one 27B per GPU + embed on both) ---
+    dual_27b-spread: M27-0 & M27-1 & S35-e
 
-    # --- Embedding companion models (GPU 1 chat + GPU 0 embed) ---
-    embed_35b1-0: M35-1 & ME-0
-    embed_35b1-d-0: M35-1-d & ME-0
-    embed_27b1-0: M27-1 & ME-0
+    # --- Dual with embed spread (35B + 27B mixed + embed on both) ---
+    dual_35b0-27b1-spread: M35-0 & M27-1 & S35-e
+    dual_27b0-35b1-spread: M27-0 & M35-1 & S35-e
+
+    # --- Embed spread standalone ---
+    embed_spread: S35-e

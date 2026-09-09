@@ -331,10 +331,9 @@ kubernetes/llm/
 │   │   │                        # configMapGenerator — no separate config/ dir)
 │   │   │                        # also runs the metrics-exporter sidecar
 │   │   │                        # (containers/llama-swap-metrics-exporter/)
-│   │   │                        # embeddings via qwen3-embed-gpu1 model
 │   │   └── llama-swap.yaml      # the actual model matrix config
 │   ├── litellm/                 # gateway + llama_swap_affinity routing plugin
-│   ├── open-webui/               # chat front-end
+│   ├── open-webui/              # chat front-end
 │   ├── searxng/                  # web-search backend for Open WebUI
 │   ├── model-downloader/         # CronJob (suspended) to (re)fetch GGUFs
 │   ├── dragonfly-litellm/, dragonfly-open-webui/  # Redis-compatible caches

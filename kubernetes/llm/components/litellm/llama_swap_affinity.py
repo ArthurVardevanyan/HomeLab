@@ -139,7 +139,7 @@ _PIN_MAP_MAX: Final = 10000
 # GPU topology: model_id -> set of GPU indices that support it.
 # Used to determine what model would be evicted if a swap occurs.
 _KNOWN_TOPOLOGY: Final[dict[str, frozenset[int]]] = {
-    "35b-spread": frozenset({0, 1}),
+    "embed-spread": frozenset({0, 1}),
 }
 _GPU_SUFFIX_RE: Final = re.compile(r"-gpu([01])$")
 

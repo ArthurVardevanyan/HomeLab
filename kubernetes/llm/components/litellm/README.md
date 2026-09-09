@@ -24,6 +24,7 @@ routing with GPU affinity via a custom `llama_swap_affinity` plugin.
   - [Storage](#storage)
   - [Database](#database)
   - [Embedding Model](#embedding-model)
+    - [Cache and guard checks](#cache-and-guard-checks)
     - [Limitation: Open WebUI burst behavior](#limitation-open-webui-burst-behavior)
   - [References](#references)
 
@@ -39,9 +40,8 @@ caller via Zitadel OIDC, tracks token-level cost, routes the request to the
 appropriate GPU via the `llama_swap_affinity.py` plugin, and returns a streaming
 response in OpenAI format.
 
-Five public model aliases are exposed: three with two deployments (gpu0 and gpu1)
-for load-aware routing, one spread model using both GPUs, and one embedding model
-with two GPU-backed deployments.
+Four public model aliases are exposed: one with two deployments (gpu0 and gpu1)
+for load-aware routing, and one spread embedding model using both GPUs.
 LiteLLM's routing plugin narrows the candidate list using llama-swap's ground
 truth (which models are resident on which GPU), then picks the least busy slot
 when both GPUs have the model loaded.
@@ -63,12 +63,12 @@ and cost-tracking settings.
 
 Four model names are exposed to clients: three with two deployments (one per GPU) for load-aware routing, and one spread model using both GPUs.
 
-| Public alias             | GPU 0 deployment        | GPU 1 deployment        | Input cost/token | Output cost/token |
-| ------------------------ | ----------------------- | ----------------------- | ---------------- | ----------------- |
-| `qwen3.6-35b-a3b`        | `openai/35b-gpu0`       | `openai/35b-gpu1`       | 1.3e-8           | 1.3e-8            |
-| `qwen3.6-35b-a3b-dense`  | `openai/35b-gpu0-dense` | `openai/35b-gpu1-dense` | 1.3e-8           | 1.3e-8            |
-| `qwen3.8-27b`            | `openai/27b-gpu1`       | `openai/27b-gpu0`       | 1.3e-8           | 1.3e-8            |
-| `qwen3.6-35b-a3b-spread` | `openai/35b-spread`     | —                       | 0.8e-8           | 0.8e-8            |
+| Public alias             | GPU 0 deployment  | GPU 1 deployment  | Input cost/token | Output cost/token |
+| ------------------------ | ----------------- | ----------------- | ---------------- | ----------------- |
+| `qwen3.6-35b-a3b`        | `openai/35b-gpu0` | `openai/35b-gpu1` | 1.3e-8           | 1.3e-8            |
+| `qwen3.8-27b`            | `openai/27b-gpu1` | `openai/27b-gpu0` | 1.3e-8           | 1.3e-8            |
+| `qwen3-embedding-spread` | —                 | —                 | 1e-9             | 1e-9              |
+| `qwen3-embedding-0.6b`   | — (CPU)           | — (CPU)           | 1e-9             | 1e-9              |
 
 All deployments point to `http://llama-swap-svc.llm.svc.cluster.local.:8080/v1`
 with `api_key: "dummy"`. Cost tracking is enabled via `SPEND_TRACKING: "true"`
@@ -157,10 +157,8 @@ For the August 2026 data:
 The base rate applies equally to all models since they share the same hardware.
 Adjust for models with different throughput characteristics:
 
-- **Spread model**: parallel processing across both GPUs provides ~30-40%
-  throughput improvement → multiply base rate by 0.6
-- **Dense vs MoE**: if hardware configuration differs (different GPUs, power
-  limits), recalculate using the same procedure
+- **Embed spread**: parallel processing across both GPUs for embeddings →
+  multiply base rate by 0.5
 
 **6. Update files:**
 
