@@ -40,6 +40,16 @@ spillover.
 | `27b-gpu0` / `27b-gpu1` | vLLM      | Qwen3.8-27B (dense, GPTQ-Int4, with vision)   | 131K    |
 | `embed-spread`          | llama.cpp | Qwen3-Embedding-0.6B (Q8_0 GGUF)              | 120K    |
 
+> **`embed-spread` is currently disabled** (commented out of the `matrix`
+> in `llama-swap.yaml`, model block left in place): the shipped
+> `/app/llama-server` segfaults loading any gguf model — reproduced on CPU
+> (`-ngl 0`), with a different model, and with the SYCL backend excluded
+> entirely. The crash always occurs immediately after threadpool init,
+> before any device/backend line prints. Leading suspect: a CPU-dispatch
+> mismatch (gpu-1's host CPU is an AMD Ryzen 5 3600 / Zen 2, but the
+> process maps `libggml-cpu-haswell.so`). This needs a llama.cpp rebuild
+> and is tracked separately from the vLLM GPU-1 fixes.
+
 The **matrix** uses sets that pick exactly one model per GPU. The solver picks
 a set, guaranteeing at most one model per GPU:
 
@@ -51,9 +61,10 @@ a set, guaranteeing at most one model per GPU:
   flexibility.
 - **Embed spread** (chat models + embedding on both GPUs): `dual_35b-spread`,
   `dual_27b-spread`, `dual_35b0-27b1-spread`, `dual_27b0-35b1-spread` —
-  embedding model runs alongside chat on both GPUs.
+  embedding model runs alongside chat on both GPUs. **Currently disabled**,
+  see note above.
 - **Embed spread standalone** (`embed_spread`): embedding-only mode when no
-  chat is needed.
+  chat is needed. **Currently disabled**, see note above.
 
 | Set type      | Effect                                                                   |
 | ------------- | ------------------------------------------------------------------------ |
@@ -85,23 +96,41 @@ Both 35B-A3B MoE and 27B dense models use vLLM XPU with these shared flags:
 - `--quantization gptq --dtype float16` — GPTQ-Int4 weights, FP16 compute
 - `--kv-cache-dtype fp8` — FP8 KV cache, ~2× context capacity vs f16.
   Essential for the 35B's 131K context target.
-- `--gpu-memory-utilization 0.88` (35B) / `0.90` (27B) — headroom for
-  SYCL runtime, PyTorch allocator, and vLLM engine overhead
+- `--gpu-memory-utilization 0.95` — headroom for SYCL runtime, PyTorch
+  allocator, and vLLM engine overhead. Both models are hybrid GDN/linear
+  attention (`full_attention_interval: 4` — only 1 in 4 layers holds a real
+  KV cache), so the effective KV footprint per token is small and 0.95 does
+  not risk OOM on load.
 - `--enable-prefix-caching` — APC for prompt reuse (code, structured output)
+- `--enable-auto-tool-choice` — on both models
+- `--reasoning-parser qwen3` — parses `<think>...</think>` out of the
+  Qwen3.6/3.8 chat template into the OpenAI-compatible `reasoning_content`
+  field instead of leaving it inline in `content`. Without this flag,
+  clients that render `reasoning_content` separately (e.g. OpenCode,
+  Open WebUI) see raw `<think>` tags in the response body.
 - `--speculative-config MTP4` — Multi-Token Prediction with 4 speculative
   tokens. On MoE: expert-union verify cost is the limiting factor; MTP4
   balances acceptance rate vs verification cost.
-- `--max-num-seqs 64 --max-num-batched-tokens 8192` — concurrency budget
+- `--max-num-seqs 4 --max-num-batched-tokens 8192` — concurrency budget.
+  `max-num-seqs` is a scheduler admission cap, not a hard rejection limit:
+  requests beyond it queue (`vllm:num_requests_waiting_by_reason{reason="capacity"}`)
+  rather than erroring. vLLM reports `kv_cache_max_concurrency` (via the
+  `vllm:cache_config_info` metric) as the number of _full-length_
+  (`max-model-len`) sequences the KV pool can hold simultaneously — on the
+  35B at 131K/fp8/0.95 util this is ~2.9. Since most real requests use far
+  less than the full context window, `--max-num-seqs 4` fits comfortably in
+  practice; the worst case under sustained full-context load is preemption
+  and prefill recompute (a throughput cost), not an OOM or crash.
 
 Per-model specifics:
 
 - **35B-A3B (vision)**: `--max-model-len 131072` (131K),
   `--tool-call-parser qwen3_coder`. The MoE's ~2.3B activated params per
   token make it fast to decode but expensive to spec-decode (expert union on
-  verify batch). MTP4 + fp8 KV + 0.88 util = 131K fits comfortably in 32 GB.
-- **27B dense**: `--enable-auto-tool-choice --tool-call-parser qwen3_xml`,
-  `--max-model-len 131072`, `--gpu-memory-utilization 0.90`. The dense
-  model is simpler (no expert routing) and can run at higher util.
+  verify batch). MTP4 + fp8 KV + 0.95 util = 131K fits comfortably in 32 GB.
+- **27B dense**: `--tool-call-parser qwen3_xml`, `--max-model-len 196608`
+  (192K). The dense model is simpler (no expert routing) and can run at a
+  longer context for the same VRAM budget.
 
 ### MTP Speculative Decoding (vLLM)
 
@@ -145,11 +174,17 @@ SYCL runtime buffers.
 VRAM usage is fixed at load and does not grow with session activity. The total
 includes weights, KV cache, and vLLM engine overhead:
 
-| Model               | Weights   | KV cache (q8_0) | Headroom  |
-| ------------------- | --------- | --------------- | --------- |
-| 35B-A3B (131K)      | ~23.4 GiB | ~3.5 GiB        | ~5.1 GiB  |
-| 27B (131K)          | ~18.2 GiB | ~2.0 GiB        | ~11.8 GiB |
-| embed-spread (120K) | ~0.4 GiB  | ~0.5 GiB        | ~31.1 GiB |
+| Model               | Weights   | KV cache (fp8) | Headroom  |
+| ------------------- | --------- | -------------- | --------- |
+| 35B-A3B (131K)      | ~23.4 GiB | ~3.5 GiB       | ~5.1 GiB  |
+| 27B (196K)          | ~18.2 GiB | ~2.0 GiB       | ~11.8 GiB |
+| embed-spread (120K) | ~0.4 GiB  | ~0.5 GiB       | ~31.1 GiB |
+
+> Figures predate the `--gpu-memory-utilization 0.95` tuning pass and are
+> approximate; the ratios (weights dominate, KV cache is small relative to
+> weights on both hybrid GDN models) still hold. Query
+> `vllm:cache_config_info` on the model's proxied `/metrics` endpoint for
+> exact live `kv_cache_size_tokens` and `kv_cache_max_concurrency`.
 
 VRAM headroom accounts for SYCL runtime (~1–2 GB) and vLLM engine overhead
 (tokenizer, scheduler, KV cache manager). If the pod OOMs on model load or
@@ -170,12 +205,19 @@ pushes VRAM over 32 GB, reduce `--gpu-memory-utilization` or `--max-model-len`.
 
 ## GPU Backend: SYCL (not Vulkan)
 
-llama-swap uses Intel's SYCL/Level Zero backend (`ONEAPI_DEVICE_SELECTOR`
-env vars) for llama-server children (embedding models). Each model in the
-matrix specifies its target GPU explicitly:
+llama-swap uses Intel's SYCL/Level Zero backend for both llama.cpp
+(embedding models) and vLLM (chat models). Device targeting differs by
+engine:
 
-- `ONEAPI_DEVICE_SELECTOR=level_zero:0` — GPU 0
-- `ONEAPI_DEVICE_SELECTOR=level_zero:1` — GPU 1
+- **llama.cpp (`embed-spread`)**: `ONEAPI_DEVICE_SELECTOR=level_zero:0,1`
+  — llama.cpp honors this var directly to pick/limit visible devices.
+- **vLLM (`35b-*` / `27b-*`)**: `ZE_AFFINITY_MASK=0` or `=1` only.
+  `ONEAPI_DEVICE_SELECTOR` is **not** set for vLLM models — verified it has
+  no effect on `torch.xpu.device_count()` or device selection at all.
+  vLLM's `XPUPlatform.device_control_env_var` is `ZE_AFFINITY_MASK`; vLLM
+  re-translates logical↔physical device IDs through this var itself
+  (`vllm/platforms/interface.py`), so it's the only lever that actually
+  works, and the only one vLLM expects to own.
 
 Chat models run on vLLM XPU (`VLLM_TARGET_DEVICE=xpu`) — the same SYCL/Level
 Zero path via PyTorch/XPU. No Mesa/Vulkan userspace is needed.
@@ -183,10 +225,10 @@ Zero path via PyTorch/XPU. No Mesa/Vulkan userspace is needed.
 ### Image tag
 
 The custom image is
-`registry.arthurvardevanyan.com/homelab/llama-swap:v251-f01e24f6` — the tag
-encodes the llama-swap version (`v251`) and the vLLM XPU base image digest
-prefix (`f01e24f6`). Renovate-managed; the PaC build (Tekton) pushes on PR
-merge.
+`registry.arthurvardevanyan.com/homelab/llama-swap:v255-intel-b10868-<sha>` —
+the tag encodes the llama-swap version (`v255`), the vLLM XPU base image
+build (`intel-b10868`), and a short commit SHA of the containerfile/patches.
+Renovate-managed; the PaC build (Tekton) pushes on PR merge.
 
 ### Preload times
 
@@ -197,7 +239,7 @@ models (llama.cpp) load in ~45–90 s.
 Confirm the SYCL backend from inside the pod:
 
 ```bash
-export KUBECONFIG=$HOME.kube/okd
+export KUBECONFIG=$HOME/.kube/okd
 oc -n llm exec deploy/llama-swap -- /app/llama-server --help 2>&1 | grep -iE "sycl|level.zero|ze"
 # or, from a debug pod with gpu.intel.com/xe request:
 xpu-smi stats -d 0
@@ -205,8 +247,6 @@ clinfo | grep -i "Device Name"
 ```
 
 ## Scaling
-
-For higher throughput:
 
 For higher throughput:
 
@@ -218,38 +258,31 @@ For higher throughput:
 - **Embed spread** (`dual_35b-spread`, `dual_27b-spread`,
   `dual_35b0-27b1-spread`, `dual_27b0-35b1-spread`): chat models on both
   GPUs + embedding model spread across both GPUs (~2 GB total). Embed runs
-  alongside chat.
+  alongside chat. **Currently commented out of `matrix.sets`** — see the
+  `embed-spread` note in [Model Matrix](#model-matrix).
 - **Embed spread standalone** (`embed_spread`): embed-only mode when no chat
-  is needed.
-
-Preload at boot (`hooks.on_startup.preload`): `35b-gpu0`, `27b-gpu1`,
-`embed-spread`. These models are loaded immediately on startup. The matrix
-solver then picks the best configuration. Embed-spread stays resident when a
-`-spread` set is chosen (evict_cost 1 vs chat models 10–20). If only
-chat-only sets are active, embed may be evicted by the solver but reloads
-via TTL (300s) when needed.
-
-- **Dual** (`dual_35b`, `dual_27b`): one model per GPU, same family, both
-  GPUs always required. Provides redundancy and doubles throughput for
-  concurrent requests.
-- **Mixed dual** (`dual_35b0-27b1`, `dual_35b1-27b0`): 35B on one GPU + 27B
-  on the other, for maximum flexibility without full-model loading.
-- **Embedding companion** (`embed_35b0-1`, `embed_27b0-1`, etc.): one chat
-  model + one embedding model, GPU-bound model stays resident while the
-  embedding model unloads after TTL (300 s).
+  is needed. **Currently commented out of `matrix.sets`**, same reason.
 - **Multiple llama-swap replicas** with a LoadBalancer: add replicas in
   `overlays/okd/llama-swap.yaml` and expose via a LoadBalancer service.
   llama-swap's config matrix handles the shared hardware — no external
   orchestrator needed for GPU-aware scheduling.
-- **Horizontal Pod Autoscaler** (HPA): not yet configured. With data parallel
-  mode and ~2 slots per GPU, the current setup handles concurrent requests
-  well. Add HPA once load patterns are measured.
+- **Horizontal Pod Autoscaler** (HPA): not yet configured. With
+  `--max-num-seqs 4` per chat model, the current setup handles concurrent
+  requests well. Add HPA once load patterns are measured.
+
+`hooks.on_startup.preload` is currently commented out in `llama-swap.yaml`
+(no models load automatically at boot); the matrix solver loads a set
+on-demand from the first request. When re-enabled, embed-spread stays
+resident once a `-spread` set is chosen (evict_cost 1 vs chat models
+10–20); if only chat-only sets are active, embed may be evicted by the
+solver but reloads via TTL (300s) when needed.
 
 ## Metrics
 
 llama-swap exposes **proxy-level** Prometheus metrics on `/metrics` (port 8080).
 For chat models (vLLM), token-throughput metrics come from the vLLM
-`/metrics` endpoint (port 8080 upstream). Embedding models (llama.cpp)
+`/metrics` endpoint on the child process's own ephemeral upstream port
+(assigned per-model by llama-swap, not fixed). Embedding models (llama.cpp)
 still expose `llamacpp:*` metrics via the metrics-exporter sidecar on port 9100.
 
 ### Proxy metrics
@@ -276,10 +309,14 @@ child's `/metrics` endpoint, and re-exposes aggregated series on port 9100:
 | `llamacpp:requests_processing`    | Gauge   | Requests currently processing    |
 | `llamacpp:requests_deferred`      | Gauge   | Requests deferred (queued)       |
 
-Chat model metrics (vLLM) are exposed on the child process's own port
-and can be scraped via the llama-swap proxy:
-`GET http://127.0.0.1:<proxy-port>/metrics` — vLLM's `/metrics` endpoint
-is proxied through llama-swap when the model is loaded.
+Chat model metrics (vLLM) are exposed on the child process's own ephemeral
+port and can be scraped via the llama-swap proxy:
+`GET http://127.0.0.1:8080/upstream/<model-id>/metrics` — vLLM's `/metrics`
+endpoint is proxied through llama-swap when the model is loaded. Includes
+`vllm:cache_config_info` (KV cache size, `kv_cache_max_concurrency`,
+`gpu_memory_utilization`) and `vllm:num_requests_waiting_by_reason`
+(`capacity` = waiting for a free `max-num-seqs` slot, `deferred` = blocked
+by other transient constraints).
 
 ## References
 
