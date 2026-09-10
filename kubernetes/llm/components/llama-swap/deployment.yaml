@@ -115,8 +115,9 @@ spec:
               mountPath: /cache
             - name: store
               mountPath: /var/lib/llama-swap
-        # metrics-exporter sidecar: scrapes llama.cpp /metrics from each
-        # dynamically-assigned child process and exposes aggregated metrics
+        # metrics-exporter sidecar: scrapes /metrics from each dynamically-
+        # assigned child process (supports llama.cpp, vLLM, and other
+        # backends), then exposes aggregated, backend-neutral metrics
         # renovate: datasource=docker depName=registry.arthurvardevanyan.com/homelab/llama-swap-metrics-exporter versioning=loose
         - image: registry.arthurvardevanyan.com/homelab/llama-swap-metrics-exporter:2026.08.21.143431@sha256:554bc278017929d4dd4ccf2f7a1f4cd02184c6abe597f9815fb3cb286cbfd8fb
           imagePullPolicy: IfNotPresent

@@ -199,15 +199,37 @@ design writeup):
 | `llamacpp:n_decode_total`                 | Counter | Total `llama_decode()` calls        |
 | `llamacpp:n_busy_slots_per_decode`        | Gauge   | Average busy slots per decode       |
 
-All of these carry the exporter-added `model` label (e.g. `35b-gpu0`,
-`27b-gpu1`), so per-model dashboards/alerts use
-`{model="..."}` or `{model=~"$model"}` selectors.
+### vLLM metrics (chat models, via metrics-exporter)
+
+| Metric                                               | Type      | Description                                     |
+| ---------------------------------------------------- | --------- | ----------------------------------------------- |
+| `vllm:num_requests_running`                          | Gauge     | Concurrent decode tasks                         |
+| `vllm:num_requests_waiting`                          | Gauge     | Requests in the scheduling queue                |
+| `vllm:prompt_tokens_total`                           | Counter   | Prompt tokens processed                         |
+| `vllm:generation_tokens_total`                       | Counter   | Decoded tokens generated                        |
+| `vllm:kv_cache_usage_perc`                           | Gauge     | PagedAttention KV cache block utilization (0-1) |
+| `vllm:prefix_cache_hits_total`                       | Counter   | KV cache prefix matching hits                   |
+| `vllm:prefix_cache_queries_total`                    | Counter   | KV cache prefix matching queries                |
+| `vllm:time_to_first_token_seconds_bucket`            | Histogram | Time from request to first output token         |
+| `vllm:request_time_per_output_token_seconds_bucket`  | Histogram | Decode time per output token                    |
+| `vllm:e2e_request_latency_seconds_bucket`            | Histogram | End-to-end request latency                      |
+| `vllm:spec_decode_num_draft_tokens_total`            | Counter   | Speculative decoding draft tokens               |
+| `vllm:spec_decode_num_accepted_tokens_total`         | Counter   | Accepted speculative tokens                     |
+| `vllm:spec_decode_num_drafts_total`                  | Counter   | Speculative verification steps                  |
+| `vllm:spec_decode_num_accepted_tokens_per_pos_total` | Counter   | Accepted tokens per draft position              |
+
+All metrics carry the exporter-added `model` label (e.g. `35b-gpu0`, `27b-gpu1`),
+so per-model dashboards/alerts use `{model="..."}` or `{model=~"$model"}`
+selectors.
 
 Verify from inside the pod:
 
 ```bash
 export KUBECONFIG=$HOME/.kube/okd
-oc -n llm exec deploy/llama-swap -c metrics-exporter -- curl -sS localhost:9100/metrics | grep '^llamacpp:'
+# llama.cpp metrics (embed-spread)
+oc -n llm exec deploy/llama-swap -c metrics-exporter -- curl -sS localhost:9100/metrics | grep '^llamacpp:' | head -5
+# vLLM metrics (chat models)
+oc -n llm exec deploy/llama-swap -c metrics-exporter -- curl -sS localhost:9100/metrics | grep '^vllm:' | head -5
 ```
 
 > **Known limitation: transient scrape gaps under heavy load.** llama-server's
@@ -267,10 +289,12 @@ llamacpp:requests_deferred{model=~"$model"}
 
 `kubernetes/grafana/base/dashboards/llama-swap.json` contains both the
 host-level llama-swap panels (Memory/CPU/Network, from the proxy metrics
-above) and the per-model `llamacpp:*` panels (Overview/Performance/
-Concurrency/Efficiency/Diagnostics rows), templated on a `$model` variable
-(`label_values(llamacpp:requests_processing, model)`, multi-select,
-default `All`).
+above), the per-model `llamacpp:*` panels (Overview/Performance/Concurrency/
+Efficiency/Diagnostics rows, re-scoped to `{model="embed-spread"}`), and the
+per-model `vllm:*` panels (new "vLLM Chat Models" and "Speculative Decoding
+(MTP)" rows), templated on a `$model` variable
+(`label_values(exporter_model_last_success_timestamp_seconds, model)`,
+multi-select, default `All`).
 
 ## Performance: backend history and current state
 

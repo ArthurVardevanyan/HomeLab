@@ -445,10 +445,11 @@ data:
       #   shared drop-based filter below is equivalent to the previous
       #   keep-only-hw_ allowlist.
       # - litellm: LiteLLM gateway.
-      # - llama-swap: proxy metrics (port 8080) and llamacpp:* per-model
-      #   metrics via the metrics-exporter sidecar (port 9100), which
-      #   discovers active models on llama-swap's /running API and scrapes
-      #   each dynamically-assigned llama-server port.
+      # - llama-swap: proxy metrics (port 8080) and per-model metrics
+      #   via the backend-agnostic metrics-exporter sidecar (port 9100),
+      #   which discovers active models on llama-swap's /running API and
+      #   scrapes each dynamically-assigned serving port (supports vLLM,
+      #   llama.cpp, and other backends).
       - job_name: 'llm'
         scrape_interval: 30s
         scrape_timeout: 10s
