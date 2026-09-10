@@ -15,9 +15,10 @@ routing with GPU affinity via a custom `llama_swap_affinity` plugin.
       - [Recomputing costs](#recomputing-costs)
     - [Router settings](#router-settings)
     - [Response \& cache](#response--cache)
-    - [GPU affinity plugin](#gpu-affinity-plugin)
-      - [Session recency protection](#session-recency-protection)
-      - [KV cache efficiency](#kv-cache-efficiency)
+  - [GPU affinity plugin](#gpu-affinity-plugin)
+    - [Session recency protection](#session-recency-protection)
+    - [Known limitation — no intra-pair load balancing for vLLM (Option C)](#known-limitation--no-intra-pair-load-balancing-for-vllm-option-c)
+    - [KV cache efficiency](#kv-cache-efficiency)
   - [Deployment](#deployment)
   - [OIDC / SSO](#oidc--sso)
   - [Metrics](#metrics)
@@ -217,32 +218,36 @@ candidate list using llama-swap's ground truth:
 2. **Cold start** (no candidate is resident): leave the candidate list untouched.
    The GPU-preference ordering in `litellm.yaml`'s model_list decides which GPU
    gets loaded first.
-3. **One resident**: check whether the resident GPU is saturated and whether the
-   other GPU (the "victim") is actively serving. If the victim is idle and not
-   recently served (within a 120s recency window), expose both GPUs so LiteLLM
-   can route traffic to the non-resident GPU and llama-swap loads it. If the
-   victim is busy or recently served, narrow to the resident to protect the
-   active session. Embedding models always narrow.
+3. **One resident**: determine which model is the exclusive occupant of the
+   victim GPU (if any). Only exclusive occupants can block overflow — spread
+   co-residents (e.g. `embed-spread` on both GPUs) do not evict when a sibling
+   model loads. If an exclusive occupant exists and is busy or recently served,
+   narrow to the resident to protect the active session. If no exclusive occupant
+   is present (only spread co-residents), expose both GPUs so llama-swap loads
+   the sibling model and reaches a declared set like `dual_35b-spread` or
+   `dual_27b-spread`. Embedding models always narrow.
 4. **Both ready**: check for session stickiness first, then fall back to
-   least-busy slot selection:
+   round-robin. Since both GPUs hold the same model, evicting either one for
+   the other is harmless. Same-model pairs (`dual_35b`, `dual_27b`) are handled
+   by this path and reach a valid matrix set that evicts nothing.
    - **Session stickiness**: the plugin computes a sha256 fingerprint from the
      model name and the first user message content (truncated to 500 chars), then
      looks up an in-memory pin map. If a valid pin (not expired, 1h TTL) exists
      and the pinned GPU is ready, the request is routed there to keep the
      conversation's KV cache hot. If the pinned GPU is not ready, it falls back
-     to least-busy and creates a new pin. The pin map has an LRU eviction cap of
+     to round-robin and creates a new pin. The pin map has an LRU eviction cap of
      10,000 entries.
+   - **Round-robin**: when no pin applies, the plugin alternates between the two
+     GPUs on each request — this breaks the observed skew where LiteLLM's built-in
+     counter always chose the first-listed deployment.
 
-   - **Least-busy**: when no pin applies, poll llama.cpp's per-instance `/slots`
-     endpoint (proxied through `llama-swap-svc:8080/upstream/<model>/slots`) for
-     actual busy-slot counts, route to whichever has fewer busy slots. Ties are
-     broken with a round-robin counter — this is what fixes the observed skew
-     where LiteLLM's built-in counter always chose the first-listed deployment.
+Note: chat models (vLLM backends) lack a `/slots` endpoint, so `/slots` polling
+via `llama-swap-svc:8080/upstream/<model>/slots` is llama.cpp-only and only
+applies to the embed-spread embedding model.
 
 The plugin caches `/running` (1s TTL for chat, 5s TTL for embedding) and `/slots`
-(0.25s TTL) to avoid hammering llama-swap during request bursts. HTTP calls use a
-1s timeout. A local try/except around `/slots` lookups narrows to the resident GPU
-on failure (session protection), while the outer fail-open prevents the plugin from
+(0.25s TTL, llama.cpp only) to avoid hammering llama-swap during request bursts.
+HTTP calls use a 1s timeout. The outer fail-open prevents the plugin from
 blocking routing entirely when llama-swap is unreachable.
 
 The `/slots` poll is proxied through llama-swap's `upstream.ignorePaths` guard
@@ -266,7 +271,44 @@ narrowed-to-resident, sticky-to-pinned, rebalanced-from-sticky, narrowed-to-leas
 and the `ready_candidates < 2` early exit.
 
 Note: after a pod restart, the in-memory map is empty but Redis-backed entries
-persist for up to 120s.
+persist for up to 300s.
+
+#### Known limitation — no intra-pair load balancing for vLLM (Option C)
+
+Chat models (qwen3.6-35b-a3b, qwen3.8-27b) run via vLLM upstream backends.
+vLLM exposes a `/metrics` endpoint (Prometheus format) with
+`vllm:num_requests_running` / `vllm:num_requests_waiting` counters, but lacks
+a `/slots`-style endpoint.
+
+The `/metrics` path is reachable through llama-swap
+(`/upstream/<model>/metrics` → HTTP 200), confirmed with live traffic reading
+`vllm:num_requests_running 2.0` on a loaded GPU.
+
+However `/metrics` is **not** covered by llama-swap's `upstream.ignorePaths`
+guard (only `^/slots$` and static-asset extensions are guarded). Polling
+`/metrics` on an _unloaded_ model could trigger the very model swap this
+plugin prevents — the same failure it was designed to fix.
+
+Implementing Option C (load-aware intra-pair routing for vLLM) therefore
+requires:
+
+1. Adding `^/metrics$` to `upstream.ignorePaths` in `llama-swap.yaml`
+2. Polling `/metrics` per candidate, parsing 2 metric lines each
+3. Using `vllm:num_requests_running` as the load signal in
+   `_pick_least_busy` for vLLM candidates
+
+Cost note: `/metrics` is ~690 lines per scrape — requires caching and a
+hot-path parse budget. This gap is recorded here for future implementation.
+
+Same-model pairs (e.g. `dual_35b`: `35b-gpu0` + `35b-gpu1` both `ready`)
+reach the two-resident path automatically, but without measurable load data
+the plugin cannot proactively create them. The pair is only formed via
+llama-swap's own solver when external factors (e.g. `embed-spread` being
+evicted) free a GPU. When saturation **is** measurable, the plugin can
+respond by exposing both GPUs when the resident is fully loaded and the
+victim GPU has no exclusive occupant. Spread co-residents (e.g. `embed-spread`)
+do not block overflow since they share the GPU and do not evict when a
+sibling loads.
 
 #### KV cache efficiency
 

@@ -15,6 +15,13 @@ llama-server (llama.cpp SYCL).
     - [vLLM serve flags (per-model in `llama-swap.yaml`)](#vllm-serve-flags-per-model-in-llama-swapyaml)
     - [MTP Speculative Decoding (vLLM)](#mtp-speculative-decoding-vllm)
     - [SYCL / Level Zero env](#sycl--level-zero-env)
+  - [Measured Performance (2026-09-10)](#measured-performance-2026-09-10)
+    - [27B Dense (GPU-1)](#27b-dense-gpu-1)
+    - [35B-A3B MoE (GPU-0)](#35b-a3b-moe-gpu-0)
+    - [MoE vs Dense](#moe-vs-dense)
+    - [MTP Per-Position Acceptance](#mtp-per-position-acceptance)
+    - [SaaS Comparison](#saas-comparison)
+    - [Known Gaps](#known-gaps)
   - [Memory model](#memory-model)
     - [Per-GPU VRAM (static at load)](#per-gpu-vram-static-at-load)
     - [Host RAM (anonymous, per-instance)](#host-ram-anonymous-per-instance)
@@ -99,11 +106,11 @@ Both 35B-A3B MoE and 27B dense models use vLLM XPU with these shared flags:
 - `--quantization gptq --dtype float16` — GPTQ-Int4 weights, FP16 compute
 - `--kv-cache-dtype fp8` — FP8 KV cache, ~2× context capacity vs f16.
   Essential for the 35B's 131K context target.
-- `--gpu-memory-utilization 0.95` — headroom for SYCL runtime, PyTorch
+- `--gpu-memory-utilization 0.88` — headroom for SYCL runtime, PyTorch
   allocator, and vLLM engine overhead. Both models are hybrid GDN/linear
   attention (`full_attention_interval: 4` — only 1 in 4 layers holds a real
-  KV cache), so the effective KV footprint per token is small and 0.95 does
-  not risk OOM on load.
+  KV cache), so the effective KV footprint per token is small and 0.88
+  leaves generous headroom.
 - `--enable-prefix-caching` — APC for prompt reuse (code, structured output)
 - `--enable-auto-tool-choice` — on both models
 - `--reasoning-parser qwen3` — parses `<think>...</think>` out of the
@@ -120,20 +127,21 @@ Both 35B-A3B MoE and 27B dense models use vLLM XPU with these shared flags:
   rather than erroring. vLLM reports `kv_cache_max_concurrency` (via the
   `vllm:cache_config_info` metric) as the number of _full-length_
   (`max-model-len`) sequences the KV pool can hold simultaneously — on the
-  35B at 131K/fp8/0.95 util this is ~2.9. Since most real requests use far
-  less than the full context window, `--max-num-seqs 4` fits comfortably in
-  practice; the worst case under sustained full-context load is preemption
-  and prefill recompute (a throughput cost), not an OOM or crash.
+  35B at 131K/fp8/0.88 util this is a single-digit figure. Since most real
+  requests use far less than the full context window, `--max-num-seqs 4` fits
+  comfortably in practice; the worst case under sustained full-context load
+  is preemption and prefill recompute (a throughput cost), not an OOM or
+  crash.
 
 Per-model specifics:
 
 - **35B-A3B (vision)**: `--max-model-len 131072` (131K),
   `--tool-call-parser qwen3_coder`. The MoE's ~2.3B activated params per
   token make it fast to decode but expensive to spec-decode (expert union on
-  verify batch). MTP4 + fp8 KV + 0.95 util = 131K fits comfortably in 32 GB.
-- **27B dense**: `--tool-call-parser qwen3_xml`, `--max-model-len 196608`
-  (192K). The dense model is simpler (no expert routing) and can run at a
-  longer context for the same VRAM budget.
+  verify batch). MTP4 + fp8 KV + 0.88 util fits comfortably in 32 GB.
+- **27B dense**: `--tool-call-parser qwen3_xml`, `--max-model-len 131072`
+  (131K). The dense model is simpler (no expert routing) and runs alongside
+  the 35B at the same context window.
 
 ### MTP Speculative Decoding (vLLM)
 
@@ -155,6 +163,10 @@ on `B70_MTP_BF16_DRAFT=1`. Additional patches applied at build time:
 See the [Cookbook image patch matrix](https://github.com/SergiioB/intel-arc-pro-b70-inference-cookbook)
 for SHA-256 hashes of each patch against the f01e24f6 vllm source.
 
+> Measured acceptance rates and decode throughput from this MTP configuration
+> are in [Measured Performance (2026-09-10)](#measured-performance-2026-09-10)
+> below.
+
 ### SYCL / Level Zero env
 
 Same env vars as the llama.cpp era — `ZE_FLAT_DEVICE_HIERARCHY=COMPOSITE`,
@@ -164,6 +176,141 @@ Same env vars as the llama.cpp era — `ZE_FLAT_DEVICE_HIERARCHY=COMPOSITE`,
 
 `SYCL_CACHE_PERSISTENT=0` — not enabled (causes hard crash at SYCL init,
 bisected: graph-only boots clean, cache-only fails).
+
+## Measured Performance (2026-09-10)
+
+> **Node:** gpu-1 (2× Intel Arc Pro B70, 32 GB each, Ryzen 5 3600 host).
+> **Config:** llama-swap + vLLM 0.28.1rc1, GPTQ-Int4, `--kv-cache-dtype fp8`,
+> MTP speculative decoding (`num_speculative_tokens: 4`). 35B runs on GPU-0,
+> 27B on GPU-1 — they are never colocated, so cross-model comparisons below
+> are cross-GPU/cross-time, not a controlled head-to-head.
+
+### 27B Dense (GPU-1)
+
+Session 1 (fresh, GPU KV cache 25–43%, prefix cache climbing 47–53%):
+
+| Metric                     | Value           |
+| -------------------------- | --------------- |
+| Mean gen throughput        | ~40 tok/s       |
+| Range (clean decode)       | 31.5–59.5 tok/s |
+| Mean MTP acceptance length | ~3.15           |
+| Avg draft acceptance rate  | 55.2%           |
+
+Session 2 (deeper into the same conversation, GPU KV cache 77–81%, prefix cache steady ~50%):
+
+| Metric                     | Value           |
+| -------------------------- | --------------- |
+| Mean gen throughput        | ~44 tok/s       |
+| Range (clean decode)       | 31.8–57.5 tok/s |
+| Mean MTP acceptance length | ~3.77           |
+| Avg draft acceptance rate  | 69.3%           |
+
+**Key findings:**
+
+- **No degradation through 81% KV cache utilization** — throughput and MTP
+  acceptance were both slightly _higher_ in session 2 despite heavier KV
+  pressure. A 91–99% acceptance streak (4 consecutive windows) pulled decode
+  to 54–57.5 tok/s. This is evidence that **MTP acceptance rate, not KV
+  pressure or raw compute, is the dominant swing factor** in decode
+  throughput on this hardware. Behavior above ~90% KV utilization (near
+  eviction/exhaustion) remains untested.
+- **The ~2–2.5× improvement over pre-MTP llama.cpp comes from MTP itself:**
+  the vLLM engine swap alone (same XPU backend, same GPTQ quant, no MTP) is
+  roughly a wash with the old llama.cpp Vulkan decode (~18–22 tok/s
+  estimated vs 8–25 tok/s measured). MTP4's mean acceptance length of ~3.15
+  means ~3 tokens land per target-model forward pass — a ~3×
+  tokens-per-forward-pass multiplier that the smaller MTP draft-head cost is
+  cheap enough to justify.
+
+### 35B-A3B MoE (GPU-0)
+
+> Small sample: n=3–4 true clean-decode (`prompt=0`) windows in the measured
+> session (n=25 total non-idle windows). Numbers below are directional, not
+> final.
+
+| Metric                                        | Value                            |
+| --------------------------------------------- | -------------------------------- |
+| Mean gen throughput (excl. 1 short turn, n=3) | ~72 tok/s (54.6–87.8)            |
+| Mean gen throughput (incl. short turn, n=4)   | ~55 tok/s (6.7–87.8)             |
+| Peak observed (lightly diluted window)        | 112.2 tok/s                      |
+| Mean MTP acceptance length (all 25 windows)   | ~3.39                            |
+| Avg draft acceptance rate (all 25 windows)    | ~59.8%                           |
+| Prefix cache hit rate                         | climbed 0% → 87.8% over session  |
+| GPU KV cache usage                            | 13–30% (well below 27B's 25–81%) |
+
+### MoE vs Dense
+
+| Metric                     | 27B Dense (both sessions) | 35B-A3B MoE                        |
+| -------------------------- | ------------------------- | ---------------------------------- |
+| Clean decode throughput    | 31.5–59.5 (avg ~40–44)    | 54.6–87.8 (avg ~55–72), peak 112.2 |
+| Mean MTP acceptance length | 3.15–3.77                 | ~3.39                              |
+| Avg draft acceptance rate  | 55.2–69.3%                | ~59.8%                             |
+| GPU KV cache usage         | 25–81%                    | 13–30%                             |
+| Prefix cache hit rate      | 47–53% → steady 50%       | climbed to 87.8%                   |
+
+**Takeaway:** the 35B MoE (≈2.3B active params/token) decodes ~1.5–2× faster
+than the 27B dense model despite being the larger checkpoint — consistent
+with MoE sparsity keeping per-token compute low. It also uses noticeably less
+GPU KV cache for the same conversation style. MTP acceptance is in the same
+ballpark as 27B (~55–70% draft acceptance across all data), so the
+throughput gap comes from the base model's per-forward-pass cost, not a
+materially different MTP hit rate.
+
+### MTP Per-Position Acceptance
+
+Per-position acceptance decays with draft depth — the expected pattern for a
+speculative-decoding head:
+
+| Position | Typical acceptance      |
+| -------- | ----------------------- |
+| 1        | 0.75–0.85               |
+| 2        | 0.47–0.66               |
+| 3        | 0.25–0.54               |
+| 4        | 0.13–0.70 (often <0.50) |
+
+Position-4 acceptance is often very low (0.13–0.40, one instance of 0.000).
+Drafting 4 tokens when the 4th almost never lands means ~1/4 of the draft
+forward passes are near-waste — `num_speculative_tokens: 3` vs `4` is a
+low-cost tuning lever worth testing.
+
+### SaaS Comparison
+
+| GPU         | Backend                      | Model              | Decode t/s             | Source                          |
+| ----------- | ---------------------------- | ------------------ | ---------------------- | ------------------------------- |
+| Arc Pro B70 | vLLM XPU FP16 (no MTP, TP=4) | Qwen3.6-35B-A3B    | 16.3                   | Puget Systems                   |
+| Arc Pro B70 | vLLM XPU FP16 (no MTP, TP=4) | Qwen3.6-27B        | 13.1                   | Puget Systems                   |
+| Arc Pro B70 | **vLLM XPU + MTP4**          | Qwen3.8-27B (GPTQ) | ~40–44 avg (31.5–59.5) | HomeLab (GPU-1, two sessions)   |
+| Arc Pro B70 | **vLLM XPU + MTP4**          | Qwen3.6-35B-A3B    | ~55–72 avg (6.7–112.2) | HomeLab (GPU-0, single session) |
+
+Puget Systems' figures use tensor-parallelism across 4 GPUs with no
+speculative decoding. HomeLab's single-GPU MTP setup reaches ~3× Puget's
+27B figure and ~4× its 35B figure — attributable to MTP speculative decoding
+plus the absence of TP/cross-card communication overhead.
+
+### Known Gaps
+
+1. **Position-4 MTP acceptance is weak** (often 0.13–0.40, one 0.000).
+   Testing `num_speculative_tokens: 3` vs `4` is the obvious tuning lever.
+2. **No long-running decay test yet** — sessions measured were ~4–5 minutes.
+   Session 2 showed no decay through 77–81% KV cache, but a 30+ minute
+   session is needed to characterize decode decay near KV exhaustion.
+3. **35B-A3B sample is small** — only 3–4 true clean-decode windows measured.
+   Numbers are directional; need a longer dedicated 35B session for
+   confidence.
+4. **Concurrency untested** — only single-stream tested (`--max-num-seqs 4`,
+   1 running req). Multi-stream throughput is unmeasured.
+5. **No Prometheus percentiles** — data above is from 10-second-window
+   averages in vLLM engine logs. True p50/p99/p999 inter-token latency would
+   require querying the vLLM `/metrics` endpoint directly.
+6. **Speculative quality tradeoff unverified** — MTP uses a smaller draft
+   model (usually quantized/truncated). Need to verify output quality is not
+   degraded vs the base model (human eval or benchmark comparison).
+7. **SYCL-era vs vLLM throughput measurement gap (open).** The 2026-08-18
+   llama.cpp SYCL migration recorded 862–1230 t/s via llama-swap's Activity
+   "Gen Speed" column; the vLLM + MTP numbers above (~40–72 tok/s) are
+   10-second-window means from the vLLM engine log. These are different
+   measurement methods and are **not directly comparable** — reconciling the
+   apparent ~20× gap is an open question, not a confirmed regression.
 
 ## Memory model
 
@@ -183,8 +330,8 @@ includes weights, KV cache, and vLLM engine overhead:
 | 27B (196K)          | ~18.2 GiB | ~2.0 GiB       | ~11.8 GiB |
 | embed-spread (120K) | ~0.4 GiB  | ~0.5 GiB       | ~31.1 GiB |
 
-> Figures predate the `--gpu-memory-utilization 0.95` tuning pass and are
-> approximate; the ratios (weights dominate, KV cache is small relative to
+> Figures are approximate and predate the `--gpu-memory-utilization 0.88`
+> tuning pass; the ratios (weights dominate, KV cache is small relative to
 > weights on both hybrid GDN models) still hold. Query
 > `vllm:cache_config_info` on the model's proxied `/metrics` endpoint for
 > exact live `kv_cache_size_tokens` and `kv_cache_max_concurrency`.
@@ -328,3 +475,4 @@ by other transient constraints).
 - [Intel Arc B70 Inference Cookbook](https://github.com/SergiioB/intel-arc-pro-b70-inference-cookbook)
 - [Intel Level Zero](https://github.com/oneapi-src/level-zero)
 - [75 t/s on a single B70 (Reddit)](https://www.reddit.com/r/IntelArc/comments/1u3l4zx/qwen3635ba3b_at_75_tokens_per_second_on_a_single/)
+- [Puget Systems — Multi-GPU B70 inference](https://www.pugetsystems.com/labs/articles/intel-arc-pro-b70-multi-gpu-ai-inference-performance/) — vLLM XPU TP=4 baseline (no MTP), cited in [SaaS Comparison](#saas-comparison)

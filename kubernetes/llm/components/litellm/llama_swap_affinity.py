@@ -4,7 +4,7 @@ copy is resident, which one is actually less busy.
 
 Problem this solves
 --------------------
-All qwen3.6-35b-a3b / qwen3.6-27b deployments share
+All qwen3.6-35b-a3b / qwen3.8-27b deployments share
 one llama-swap pod with two GPUs. LiteLLM's `least-busy` routing_strategy
 tracks in-flight requests with its own per-deployment counter, which has two
 independent problems observed in production here:
@@ -26,23 +26,56 @@ covers. It narrows the routing-plugin candidate list (see
 
 - Embedding models: always route to the resident GPU. Since the llama-swap
   matrix guarantees at most one model per GPU, there is no scenario where
-  both GPUs hold the same embed model — routing to a non-resident GPU would
+  both GPUs hold the same embed model - routing to a non-resident GPU would
   unconditionally evict the active chat model. The `/running` cache uses a
   5s TTL to reduce HTTP calls during burst embedding workloads.
-- Cold start (no candidate is resident): use victim-preference routing.
-  The plugin checks which GPU's currently-loaded model is idle, and prefers
-  the candidate whose swap would evict that idle GPU (minimising disruption).
-  If victim preference cannot be determined, returns candidates unmodified.
-- One resident: check whether the resident GPU is saturated and whether the
-  victim GPU is actively serving. If the resident is idle and the victim is
-  busy or recently served (within 120s), narrow to the resident to protect
-  the active session. If the resident is saturated (all slots busy), expose
-  both candidates so LiteLLM routes traffic to the non-resident GPU and
-  llama-swap loads the model there. Embedding models always narrow.
+- One resident: determine which model is the exclusive occupant of the victim
+  GPU (if any). Only exclusive occupants can block overflow — spread
+  co-residents (e.g. `embed-spread` on both GPUs) do not evict when a sibling
+  model loads. If an exclusive occupant exists and is busy or recently served,
+  narrow to the resident to protect the active session. If no exclusive
+  occupant is present (only spread co-residents), expose both GPUs so
+  llama-swap loads the sibling model and reaches a declared set like
+  `dual_35b-spread` or `dual_27b-spread`. Embedding models always narrow.
 - Both ready: check for session stickiness first, then fall back to
-  least-busy slot selection using per-instance `/slots` polling with
-  round-robin tie-breaking. Since both GPUs hold the same model, evicting
-  either one for the other is harmless.
+  round-robin. Since both GPUs hold the same model, evicting either one for
+  the other is harmless. Same-model pairs (`dual_35b`, `dual_27b`) are
+  handled by this path and reach a valid matrix set that evicts nothing.
+
+Known limitation — no intra-pair load balancing for vLLM (Option C gap)
+------------------------------------------------------------------------
+The chat models (qwen3.6-35b-a3b, qwen3.8-27b) run via vLLM upstream
+backends. vLLM exposes a `/metrics` endpoint (Prometheus format) with
+`vllm:num_requests_running` / `vllm:num_requests_waiting` counters, but
+lacks a `/slots`-style endpoint.
+
+The `/metrics` path is reachable through llama-swap
+(`/upstream/<model>/metrics` → HTTP 200), confirmed with live traffic
+reading `vllm:num_requests_running 2.0` on a loaded GPU.
+
+However `/metrics` is **not** covered by llama-swap's `upstream.ignorePaths`
+guard (only `^/slots$` and static-asset extensions are guarded). Polling
+`/metrics` on an *unloaded* model could trigger the very model swap this
+plugin prevents — the same failure it was designed to fix.
+
+Implementing Option C therefore requires:
+  1. Adding `^/metrics$` to `upstream.ignorePaths` in `llama-swap.yaml`
+  2. Polling `/metrics` per candidate, parsing 2 metric lines each
+  3. Using `vllm:num_requests_running` as the load signal in
+     `_pick_least_busy` for vLLM candidates
+
+Cost note: `/metrics` is ~690 lines per scrape — requires caching and a
+hot-path parse budget. This gap is documented here for future implementation.
+
+Same-model pairs (e.g. `dual_35b`: `35b-gpu0` + `35b-gpu1` both `ready`)
+reach the two-resident path automatically, but without measurable load data
+the plugin cannot proactively create them. The pair is only formed via
+llama-swap's own solver when external factors (e.g. `embed-spread` being
+evicted) free a GPU. When saturation **is** measurable, the plugin can
+respond by exposing both GPUs when the resident is fully loaded and the
+victim GPU has no exclusive occupant. Spread co-residents (e.g. `embed-spread`)
+do not block overflow since they share the GPU and do not evict when a
+sibling loads.
 
 Session stickiness (load-aware, Redis-backed)
 ----------------------------------------------
@@ -67,11 +100,10 @@ is mounted alongside litellm.yaml by the same ConfigMap - no image build
 required. See `litellm.proxy.types_utils.utils.get_instance_fn`.
 
 The `/slots` poll is proxied through llama-swap rather than hitting each
-llama-server instance directly, and llama-swap's `upstream.ignorePaths`
-config (see llama-swap.yaml) is set so that path can never itself trigger a
-model load/swap - this plugin only ever polls models it already knows are
-resident, but that config is defense-in-depth against a bug here doing
-otherwise.
+llama-server instance directly. llama-swap's `upstream.ignorePaths` config
+(see llama-swap.yaml) guards `^/slots$` and static-asset extensions,
+preventing those paths from triggering a model load/swap. This is
+defense-in-depth against a bug here doing otherwise.
 
 Requires `router_settings.disable_cooldowns: true` (see litellm.yaml): if a
 deployment this plugin narrows to were ever in a LiteLLM failure cooldown,
@@ -100,6 +132,16 @@ from litellm.types.router import RoutingContext
 logger = logging.getLogger(__name__)
 
 # llama-swap HTTP client settings
+
+# Set of llama.cpp models (identified by their upstream model_id, stripped of
+# GPU suffix).  Only these models support the /slots endpoint.  Explicit
+# allowlist — never probe at runtime because hitting an unloaded model's
+# /slots path can itself trigger a model load/swap.
+_LLAMA_CPP_MODELS: Final = frozenset({
+    "embed-spread",
+    # TODO: add chat model IDs here when Option C is implemented
+    # (e.g. "35b-gpu0", "35b-gpu1", "27b-gpu0", "27b-gpu1").
+})
 _LLAMA_SWAP_BASE_URL: Final = os.environ.get(
     "LLAMA_SWAP_BASE_URL", "http://llama-swap-svc.llm.svc.cluster.local.:8080"
 ).rstrip("/")
@@ -160,9 +202,20 @@ def _gpu_topology(model_id: str) -> frozenset[int] | None:
     return None
 
 
+def _supports_slots(model_id: str) -> bool:
+    """Return True if *model_id* is a llama.cpp model (has /slots).
+
+    Uses an explicit allowlist rather than probing at runtime because
+    probing an unloaded model can trigger a model load/swap.
+    """
+    # Check against the full model ID first (e.g. "embed-spread"),
+    # then against the stripped prefix without GPU suffix.
+    return model_id in _LLAMA_CPP_MODELS or _GPU_SUFFIX_RE.sub("", model_id) in _LLAMA_CPP_MODELS
+
+
 def _is_embedding_request(candidate_ids: dict[str, str]) -> bool:
     """Check whether all candidates are embedding models."""
-    return any("embed" in mid for mid in candidate_ids)
+    return all("embed" in mid for mid in candidate_ids)
 
 
 def _is_tool_call_continuation(context: RoutingContext) -> bool:
@@ -187,7 +240,10 @@ class LlamaSwapAffinityPlugin:
         self._client: httpx.AsyncClient | None = None
         self._redis: aioredis.Redis | None = None
         self._running_cache: dict[str, str] = {}
-        self._running_cache_expires_at: float = 0.0
+        # Per-TTL-class expiry — chat (1s) and embed (5s) must not clobber
+        # each other.  A single shared expiry (bug in the original) caused
+        # whichever call ran last to overwrite the window for both classes.
+        self._running_cache_expires_at: dict[float, float] = {}
         self._slots_cache: dict[str, tuple[int, int, float]] = {}
         self._round_robin_counter: int = 0
         # Fallback in-memory pin map (used when Redis is unavailable).
@@ -240,11 +296,16 @@ class LlamaSwapAffinityPlugin:
         """
         now = time.monotonic()
         effective_ttl = cache_ttl if cache_ttl is not None else _RUNNING_CACHE_TTL_SECONDS
-        if now < self._running_cache_expires_at:
+
+        # Per-TTL-class expiry: chat (1s) and embed (5s) must not clobber
+        # each other.  A single shared expiry caused whichever call ran last
+        # to overwrite the window for both classes.
+        cache_key = effective_ttl
+        if now < self._running_cache_expires_at.get(cache_key, -1):
             return self._running_cache
 
         self._running_cache = await self._running_state_live()
-        self._running_cache_expires_at = now + effective_ttl
+        self._running_cache_expires_at[cache_key] = now + effective_ttl
         return self._running_cache
 
     async def _running_state_live(self) -> dict[str, str]:
@@ -263,33 +324,49 @@ class LlamaSwapAffinityPlugin:
     async def _slot_stats(
         self, model_id: str, cache_ttl: float | None = None,
     ) -> tuple[int, int] | None:
-        """Return (busy_count, total_slots) for a model, or None on failure."""
+        """Return (busy_count, total_slots) for a model, or None on failure.
+
+        Short-circuits to None for non-llama.cpp models (e.g. vLLM backends
+        which have no /slots endpoint).  This avoids unnecessary HTTP calls
+        and lets callers propagate `None` to mean "unknown load".
+        """
+        if not _supports_slots(model_id):
+            return None
+
         now = time.monotonic()
         effective_ttl = cache_ttl if cache_ttl is not None else _SLOTS_CACHE_TTL_SECONDS
         cached = self._slots_cache.get(model_id)
         if cached is not None and now < cached[2]:
             return (cached[0], cached[1])
 
-        client = self._get_client()
-        response = await client.get(
-            f"{_LLAMA_SWAP_BASE_URL}/upstream/{model_id}/slots"
-        )
-        response.raise_for_status()
-        slots = response.json()
-        busy = sum(1 for slot in slots if slot.get("is_processing"))
-        total = len(slots)
+        try:
+            client = self._get_client()
+            response = await client.get(
+                f"{_LLAMA_SWAP_BASE_URL}/upstream/{model_id}/slots"
+            )
+            response.raise_for_status()
+            slots = response.json()
+            busy = sum(1 for slot in slots if slot.get("is_processing"))
+            total = len(slots)
 
-        self._slots_cache[model_id] = (busy, total, now + effective_ttl)
-        return (busy, total)
+            self._slots_cache[model_id] = (busy, total, now + effective_ttl)
+            return (busy, total)
+        except Exception:
+            return None
 
     async def _slot_busy_count(
         self, model_id: str, cache_ttl: float | None = None,
-    ) -> int:
-        """Return the number of busy slots for a model."""
+    ) -> int | None:
+        """Return the number of busy slots for a model, or None on failure.
+
+        Changed from returning `0` to propagating `None` — an upstream that
+        lacks /slots (vLLM) or a request that fails is *unknown*, not idle.
+        Callers must handle `None` appropriately.
+        """
         stats = await self._slot_stats(model_id, cache_ttl=cache_ttl)
         if stats is not None:
             return stats[0]
-        return 0
+        return None
 
     async def _pick_least_busy(
         self,
@@ -297,7 +374,12 @@ class LlamaSwapAffinityPlugin:
         candidate_ids: dict[str, str],
         slots_cache_ttl: float | None = None,
     ) -> str:
-        """Pick the candidate with fewest busy llama.cpp slots."""
+        """Pick the candidate with fewest llama.cpp busy slots (None = unknown).
+
+        When all counts are unknown (None) the caller has already ruled out
+        the non-resident GPU, so the tie-break is a simple round-robin across
+        the remaining candidates rather than the original `candidates[0]` bias.
+        """
         counts = await asyncio.gather(
             *(
                 self._slot_busy_count(candidate_ids[model], cache_ttl=slots_cache_ttl)
@@ -328,6 +410,12 @@ class LlamaSwapAffinityPlugin:
         Sums ``busy`` across all resident models on the specified GPUs.
         Returns ``True`` only when the total busy count equals the total
         slot count (no free slots anywhere on those GPUs).
+
+        When slot stats are unavailable (e.g. vLLM /metrics not yet
+        integrated), returns ``True`` to assume the GPU is busy.  This
+        prevents the plugin from exposing both GPUs on unknown load and
+        triggering cross-GPU evictions — the exact failure mode this
+        plugin was designed to prevent.
         """
         busy_total: int = 0
         total_slots: int = 0
@@ -341,7 +429,11 @@ class LlamaSwapAffinityPlugin:
                 continue
             stats = await self._slot_stats(model_id)
             if stats is None:
-                return False  # can't confirm saturation
+                return False  # unknown → assume idle; narrow-to-resident is
+                              # the safe path — exposing both GPUs on unknown
+                              # load risks cold-loading a sibling and waiting
+                              # 5-10 min for a full vLLM startup while the
+                              # request is already in-flight.
             busy_total += stats[0]
             total_slots += stats[1]
         return total_slots > 0 and busy_total >= total_slots
@@ -565,6 +657,10 @@ class LlamaSwapAffinityPlugin:
 
         Returns the deployment to route to (pinned or least-busy sibling),
         or None if stickiness should be dropped entirely.
+
+        When load is unknown (all counts None — e.g. vLLM models without
+        Option C), falls back to sticking to the pinned GPU to preserve
+        KV-cache reuse and avoid cross-GPU evictions on bad data.
         """
         if pinned not in ready_candidates:
             return None
@@ -576,7 +672,7 @@ class LlamaSwapAffinityPlugin:
         )
         scored = [(model, count) for model, count in zip(ready_candidates, counts) if isinstance(count, int)]
         if not scored:
-            return pinned  # can't compare -- stick
+            return pinned  # unknown → stick to pin to preserve KV cache
 
         min_busy = min(count for _, count in scored)
         pinned_idx = next(i for i, (m, _) in enumerate(scored) if m == pinned)
@@ -699,26 +795,36 @@ class LlamaSwapAffinityPlugin:
                 if victim_gpu is None:
                     return context
 
-                # Check victim GPU's state: search ALL running models for any
-                # model whose topology includes the victim GPU.  The previous
-                # implementation only searched the current request's candidate
-                # pair, so the victim model (which is a *different* model from
-                # the resident on the other GPU) was never found, making the
-                # busy/recent checks dead code.
-                victim_model_id = None
-                for running_model_id, state in running.items():
+                # Check victim GPU's state: determine which model is the
+                # exclusive occupant of the victim GPU (if any).  Only
+                # exclusive occupants can block overflow — spread co-residents
+                # (topology == {0, 1}) do not evict when a sibling model
+                # loads on the same GPU.  Iterate sorted for deterministic
+                # results when multiple models share the victim GPU.
+                exclusive_victim: str | None = None
+                spread_co_residents: list[str] = []
+                for model_id in sorted(running):
+                    state = running[model_id]
                     if state not in _RESIDENT_STATES:
                         continue
-                    top = _gpu_topology(running_model_id)
-                    if top is not None and victim_gpu in top:
-                        victim_model_id = running_model_id
-                        break
+                    top = _gpu_topology(model_id)
+                    if top is None:
+                        continue
+                    if not (top.intersection({victim_gpu})):
+                        continue
+                    # Check if this model exclusively occupies the victim GPU
+                    # (does not also occupy the resident GPU).
+                    if top == {victim_gpu}:
+                        exclusive_victim = model_id
+                        break  # first (sorted) exclusive occupant wins
+                    elif top == {0, 1}:
+                        spread_co_residents.append(model_id)
 
                 # Tool-call continuation: the model just emitted ``tool_calls``
                 # and the client is sending back the result.  This is a known
                 # active session on the resident GPU — narrow immediately to
                 # protect it regardless of the victim's state.
-                if victim_model_id is not None and _is_tool_call_continuation(context):
+                if exclusive_victim is not None and _is_tool_call_continuation(context):
                     context.candidate_models = [resident_candidate]
                     context.signals["llama_swap_affinity"] = "narrowed_to_resident_tool_call"
                     await self._stamp_recency(resident_candidate)
@@ -727,13 +833,13 @@ class LlamaSwapAffinityPlugin:
                 victim_busy = False
                 victim_recent = False
 
-                if victim_model_id is not None:
-                    stats = await self._slot_stats(victim_model_id)
+                if exclusive_victim is not None:
+                    stats = await self._slot_stats(exclusive_victim)
                     if stats is not None:
                         victim_busy = stats[0] > 0
-                    victim_recent = await self._is_recency_recent(victim_model_id)
+                    victim_recent = await self._is_recency_recent(exclusive_victim)
 
-                if victim_model_id is not None and (victim_busy or victim_recent):
+                if exclusive_victim is not None and (victim_busy or victim_recent):
                     # Victim GPU is actively serving or recently served -- narrow
                     # to resident to protect the active session.
                     context.candidate_models = [resident_candidate]
@@ -741,6 +847,20 @@ class LlamaSwapAffinityPlugin:
                         context.signals["llama_swap_affinity"] = "narrowed_to_resident_victim_busy"
                     else:
                         context.signals["llama_swap_affinity"] = "narrowed_to_resident_victim_recent"
+                    await self._stamp_recency(resident_candidate)
+                    return context
+
+                # No exclusive occupant on the victim GPU — only spread
+                # co-residents (e.g. embed-spread) are present.  Those share
+                # the GPU and do not evict when a sibling model loads, so
+                # overflow is safe.  (For same-model pairs like dual_35b,
+                # both GPUs will be in occupied_candidates which hits the
+                # two-resident path below.)
+                if exclusive_victim is None and spread_co_residents:
+                    # Expose both GPUs — the spread co-resident(s) stay
+                    # resident and the sibling model loads as a new copy.
+                    context.candidate_models = candidates
+                    context.signals["llama_swap_affinity"] = "overflow_spread_coresident"
                     await self._stamp_recency(resident_candidate)
                     return context
 

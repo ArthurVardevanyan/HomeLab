@@ -1,0 +1,12 @@
+[Unit]
+Description=Generate en_US.utf8 locale on first boot
+DefaultDependencies=no
+After=local-fs.target
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/bin/sh -c 'if ! locale -a 2>/dev/null | grep -q "^en_US.utf8$"; then localedef -i en_US -f UTF-8 en_US.utf8; fi'
+
+[Install]
+WantedBy=multi-user.target
