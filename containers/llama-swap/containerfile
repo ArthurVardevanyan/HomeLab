@@ -1,11 +1,10 @@
 # llama-swap orchestrator for Intel Arc Pro B70 (Battlemage / Xe2) with SYCL
 #
-# Base: vLLM XPU (f01e24f6 = vLLM 0.27.2rc1.dev77, kernels 0.1.12.3)
-#       + llama-swap v251 SYCL binaries
+# Base: vLLM XPU (vLLM 0.28.1rc1.dev580 + SYCL 9) + llama-swap v255 SYCL binaries
 #       + cookbook MTP + APC + GDN + backward-copy + eagle-drop patches
 # renovate: datasource=docker depName=vllm/vllm-openai-xpu versioning=loose
 FROM docker.io/vllm/vllm-openai-xpu:nightly@sha256:7ede53bd3f5fc3eeef64fea13096c035b009825e050c4912043e4b78c38be6e5 AS vllm-base
-FROM ghcr.io/mostlygeek/llama-swap:v255-intel-b10868@sha256:46287099a3ec050f806b284fb6446a054a503469e31634ac0af5b563297c3b13 AS llama-swap-bin
+FROM ghcr.io/mostlygeek/llama-swap:v255-intel-b10868@sha256:23599ef59fcaed6ad13fd76aec97968903e24479beb476fbe268d49524270f9c AS llama-swap-bin
 
 # vllm-wrapper — not shipped in llama-swap release archives, built from source
 FROM docker.io/library/golang:1.27-bookworm AS vllm-wrapper-build
@@ -26,13 +25,13 @@ COPY --from=llama-swap-bin /app/llama-swap /app/llama-swap
 COPY --from=llama-swap-bin /app/llama-server /app/llama-server
 COPY --from=llama-swap-bin /app/*.so* /app/
 COPY --from=llama-swap-bin /app/libllama* /app/
-# Intel OneAPI runtime libs needed by llama-server (SYCL build)
-COPY --from=llama-swap-bin /opt/intel/oneapi/compiler/2025.3/lib/libsvml.so /opt/intel/oneapi/compiler/2025.3/lib/
-COPY --from=llama-swap-bin /opt/intel/oneapi/compiler/2025.3/lib/libimf.so /opt/intel/oneapi/compiler/2025.3/lib/
-COPY --from=llama-swap-bin /opt/intel/oneapi/compiler/2025.3/lib/libintlc.so* /opt/intel/oneapi/compiler/2025.3/lib/
-COPY --from=llama-swap-bin /opt/intel/oneapi/compiler/2025.3/lib/libiomp5.so /opt/intel/oneapi/compiler/2025.3/lib/
-COPY --from=llama-swap-bin /opt/intel/oneapi/compiler/2025.3/lib/libirng.so /opt/intel/oneapi/compiler/2025.3/lib/
+# Complete OneAPI runtime (SYCL, MKL, OpenMP, SVML, etc.)
+COPY --from=llama-swap-bin /opt/intel/oneapi /opt/intel/oneapi
 COPY --from=vllm-wrapper-build /usr/local/bin/vllm-wrapper /app/vllm-wrapper
+
+# vllm-device-wrapper — ensures ONEAPI env vars are exported for child processes
+COPY vllm-device-wrapper.sh /app/vllm-device-wrapper.sh
+RUN chmod +x /app/vllm-device-wrapper.sh
 
 # Cookbook patches (vendor + apply at build time)
 COPY patches/ /tmp/patches/
@@ -44,17 +43,17 @@ RUN set -eux; \
   VLLM_PKG=$(python3 -c "import vllm; print(vllm.__file__.replace('__init__.py',''))" 2>/dev/null || echo "/opt/venv/lib/python3.12/site-packages/vllm"); \
   echo "Patching vllm at: ${VLLM_PKG}"; \
   echo "=== patch_mtp_nightly ===" && \
-    python3 /tmp/patches/patch_mtp_nightly.py; \
+  python3 /tmp/patches/patch_mtp_nightly.py; \
   echo "=== patch_mtp_boundary ===" && \
-    python3 /tmp/patches/patch_mtp_boundary.py; \
+  python3 /tmp/patches/patch_mtp_boundary.py; \
   echo "=== patch_gdn_mixed_split_v5 ===" && \
-    python3 /tmp/patches/patch_gdn_mixed_split_v5.py; \
+  python3 /tmp/patches/patch_gdn_mixed_split_v5.py; \
   echo "=== patch_fix_accepted_sync ===" && \
-    python3 /tmp/patches/patch_fix_accepted_sync.py; \
+  python3 /tmp/patches/patch_fix_accepted_sync.py; \
   echo "=== patch_fix_backward_copy ===" && \
-    python3 /tmp/patches/patch_fix_backward_copy.py; \
+  python3 /tmp/patches/patch_fix_backward_copy.py; \
   echo "=== patch_fix_eagle_drop ===" && \
-    python3 /tmp/patches/patch_fix_eagle_drop.py; \
+  python3 /tmp/patches/patch_fix_eagle_drop.py; \
   rm -rf /tmp/patches
 
 # Arbitrary-UID friendliness on OpenShift: HF cache to /tmp
@@ -63,30 +62,32 @@ ENV XDG_CACHE_HOME=/tmp \
   VLLM_CACHE_ROOT=/tmp/vllm-cache
 
 # vLLM XPU / SYCL env
+# NOTE: LD_LIBRARY_PATH ordering is deliberate — /opt/venv/lib must come first
+# because both the vLLM runtime (libsycl.so.9) and the copied llama.cpp
+# runtime (libsycl.so.8) depend on libur_loader.so.0 (same SONAME, same
+# version tag LIBUR_LOADER_0.12).  The venv loader is a strict superset of the
+# oneAPI loader and exports urDeviceWaitExp; if the oneAPI dir is searched
+# first the dynamic linker binds the older loader and torch fails with:
+#   ImportError: libsycl.so.9: undefined symbol: urDeviceWaitExp
+# The venv loader satisfies all 192 UR symbols required by the llama.cpp SYCL
+# stack, so libsycl.so.8 continues to resolve from oneAPI via RUNPATH while
+# sharing the newer loader.
 ENV VLLM_TARGET_DEVICE=xpu \
   VLLM_XPU_ENABLE_XPU_GRAPH=1 \
   ONEAPI_DEVICE_SELECTOR=level_zero:* \
   SYCL_PI_LEVEL_ZERO_USE_IMMEDIATE_COMMANDLISTS=0 \
-  SYCL_DEVICE_FILTER=level_zero \
-  ZE_FLAT_DEVICE_HIERARCHY=COMPOSITE
-
-# MTP / speculative decoding env
-ENV B70_MTP_BF16_DRAFT=1
-
-# PyTorch allocator: avoid fragmentation on large contiguous allocs
-ENV PYTORCH_ALLOC_CONF=expandable_segments:True
-
-# llama-server (SYCL) env — for embedding models and any non-vLLM child
-ENV ONEAPI_DEVICE_SELECTOR=level_zero:* \
-  SYCL_PI_LEVEL_ZERO_USE_IMMEDIATE_COMMANDLISTS=0 \
-  SYCL_DEVICE_FILTER=level_zero \
   ZE_FLAT_DEVICE_HIERARCHY=COMPOSITE \
   GGML_SYCL_ENABLE_GRAPH=1 \
   SYCL_CACHE_PERSISTENT=0 \
-  LD_LIBRARY_PATH=/app:/opt/intel/oneapi/compiler/2025.3/lib
+  B70_MTP_BF16_DRAFT=1 \
+  PYTORCH_ALLOC_CONF=expandable_segments:True \
+  LD_LIBRARY_PATH=/opt/venv/lib:/opt/ucx/lib:/usr/local/lib:/app:/opt/intel/oneapi/compiler/2025.3/lib:/opt/intel/oneapi/mkl/2025.3/lib:/opt/intel/oneapi/tbb/2022.3/lib/intel64/gcc4.8:/opt/intel/oneapi/dnnl/2025.3/lib
 
-# Verify llama-server SYCL symbols
-RUN /app/llama-server --help 2>&1 | head -1 || true
+# Verify torch/vllm imports and llama-server SYCL linkage
+RUN set -eux; \
+  python3 -c "import torch, vllm"; \
+  ! ldd /app/libggml-sycl.so | grep "not found"; \
+  /app/llama-server --version
 
 # llama-swap: health endpoint
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \

@@ -48,7 +48,7 @@ spec:
         name: SCAN_OUTPUT
         value: $(tasks.clair-action.results.SCAN_OUTPUT)
         type: string
-      - description: Upstream llama-swap build number (from FROM tag)
+      - description: The full image tag for the built container
         name: BUILD_TAG
         value: $(tasks.base-image-tag.results.TAG)
         type: string
@@ -81,7 +81,7 @@ spec:
             workspace: data
         taskSpec:
           results:
-            - description: Upstream llama-swap build number (from FROM tag)
+            - description: The full image tag for the built container
               name: TAG
               type: string
           workspaces:
@@ -90,13 +90,16 @@ spec:
             - name: extract-tag
               image: "registry.arthurvardevanyan.com/homelab/toolbox:not_latest"
               workingDir: $(workspaces.data.path)
+              env:
+                - name: GIT_COMMIT
+                  value: $(params.git-commit)
               script: |
                 #!/usr/bin/env bash
                 set -o errexit -o nounset -o pipefail
 
-                # Match either v<version>-intel-b<build>.
+                # Match the full image tag prefix from the containerfile FROM line.
                 tags=( $(grep -oE '[-a-z0-9]+-intel-b[0-9]+' "$(params.CONTEXT)/$(params.DOCKERFILE)" \
-                         | grep -oE 'b[0-9]+$' | sort -u || true) )
+                         | sort -u || true) )
                 if [ "${#tags[@]}" -ne 1 ]; then
                   echo "ERROR: expected exactly 1 intel-b<build> tag in $(params.CONTEXT)/$(params.DOCKERFILE), got ${#tags[@]}" >&2
                   printf '%s\n' "${tags[@]:-<none>}" >&2
@@ -105,7 +108,7 @@ spec:
                 # Guard: the base must stay digest-pinned.
                 grep -qE '@sha256:[0-9a-f]{64}' "$(params.CONTEXT)/$(params.DOCKERFILE)" || {
                   echo "ERROR: base image is not digest-pinned" >&2; exit 1; }
-                tag="${tags[0]##*-}"
+                tag="${tags[0]}-${GIT_COMMIT:0:8}"
                 echo "Resolved build tag: ${tag}"
                 printf '%s' "${tag}" > "$(results.TAG.path)"
 
