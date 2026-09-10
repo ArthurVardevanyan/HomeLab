@@ -9,7 +9,6 @@ metadata:
   annotations:
     argocd.argoproj.io/sync-wave: "2"
     argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
-    io.kubernetes.cri-o.Devices: /dev/fuse
     tekton.dev/categories: Image Build
     tekton.dev/pipelines.minVersion: "0.17.0"
     tekton.dev/tags: image-build
@@ -33,8 +32,8 @@ spec:
       description: The location of the buildah builder image.
       default: quay.io/buildah/stable:v1.43.1-immutable@sha256:fc649e1899c4e09a8e19d6fbdbda178d2008fa4186d5a280211f8ffa59e77e32
     - name: STORAGE_DRIVER
-      description: Buildah storage driver (fuse-overlayfs uses /dev/fuse via CRI-O annotation; use vfs as a fallback)
-      default: fuse-overlayfs
+      description: "Buildah storage driver (default: overlay with fuse-overlayfs as mount_program for improved performance)"
+      default: overlay
     - name: DOCKERFILE
       description: Path to the Dockerfile to build.
       default: ./Dockerfile
