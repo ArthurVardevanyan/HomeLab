@@ -40,10 +40,13 @@ RUN rpm --import https://dl.fedoraproject.org/pub/epel/RPM-GPG-KEY-EPEL-10 && \
   microdnf -y update && \
   microdnf -y install --nodocs --setopt=install_weak_deps=0 \
   aria2 libpmem tcpdump sshpass rsync rclone git jq unzip tar make ShellCheck diffutils findutils gawk \
-  fio postgresql18 python3 python3-pip procps libatomic iperf3 skopeo openssl gcc && \
+  fio postgresql18 python3 python3-pip procps libatomic iperf3 skopeo openssl gcc glibc-langpack-en && \
   ln -sf /usr/bin/python3 /usr/local/bin/python && \
   microdnf clean all && rm -rf /var/cache/* && \
   rm -rf /usr/share/doc/* /usr/share/man/* /usr/share/info/*
+
+# glibc-langpack-en ships pre-compiled en_US.utf8 locale — no localedef step needed
+RUN locale -a | grep -q en_US.utf8 || (echo "ERROR: en_US.utf8 locale not pre-compiled by glibc-langpack-en" && exit 1)
 
 # Ansible
 # renovate: datasource=pypi depName=ansible
