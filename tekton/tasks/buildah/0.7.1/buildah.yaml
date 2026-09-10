@@ -80,7 +80,7 @@ spec:
           cpu: 1000m
         limits:
           cpu: "4000m"
-          ephemeral-storage: 75Gi
+          ephemeral-storage: 300Gi
           memory: 5Gi
       image: $(params.BUILDER_IMAGE)
       workingDir: $(workspaces.source.path)
@@ -97,11 +97,18 @@ spec:
           "--format=$(params.FORMAT)" "--tls-verify=$(params.TLSVERIFY)" \
           -f "$(params.DOCKERFILE)" -t "$(params.IMAGE)" "$(params.CONTEXT)"
         [ "$(params.SKIP_PUSH)" = "true" ] && echo "Push skipped" && exit 0
-        # push the image (CERT_DIR_FLAG should be omitted if empty and PUSH_EXTRA_ARGS can contain multiple args)
-        # shellcheck disable=SC2046,SC2086
-        buildah ${CERT_DIR_FLAG} "--storage-driver=$(params.STORAGE_DRIVER)" push $(params.PUSH_EXTRA_ARGS) \
-          "--tls-verify=$(params.TLSVERIFY)" --digestfile /tmp/image-digest "$(params.IMAGE)" \
-          "docker://$(params.IMAGE)"
+        # push the image with retries (registry 500s are transient)
+        RETRIES=5
+        for i in $(seq 1 $RETRIES); do
+          if buildah ${CERT_DIR_FLAG} "--storage-driver=$(params.STORAGE_DRIVER)" push $(params.PUSH_EXTRA_ARGS) \
+              "--tls-verify=$(params.TLSVERIFY)" --digestfile /tmp/image-digest "$(params.IMAGE)" \
+              "docker://$(params.IMAGE)"; then
+            break
+          fi
+          [ "$i" -eq "$RETRIES" ] && echo "Push failed after $RETRIES attempts" >&2 && exit 1
+          echo "Push attempt $i/$RETRIES failed, retrying..." >&2
+          sleep 5
+        done
         tee "$(results.IMAGE_DIGEST.path)" < /tmp/image-digest
         printf '%s' "$(params.IMAGE)" | tee "$(results.IMAGE_URL.path)"
       volumeMounts:
@@ -141,7 +148,7 @@ spec:
   volumes:
     - name: varlibcontainers
       emptyDir:
-        sizeLimit: 75Gi
+        sizeLimit: 300Gi
       # ephemeral:
       #   volumeClaimTemplate:
       #     metadata:
