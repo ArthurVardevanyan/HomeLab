@@ -11,13 +11,13 @@ upstream:
 
 hooks:
   on_startup:
-    # Preload 35B MoE on GPU 0 + 27B dense on GPU 1
-    # embed-spread is also preloaded — 0.6B Q8_0 uses ~2 GB across both GPUs,
-    # fitting alongside any dual chat config without pressure.
-    # preload:
-    - 35b-gpu0
-    - 27b-gpu1
-    - embed-spread
+    preload:
+      # Preload 35B MoE on GPU 0 + 27B dense on GPU 1
+      # embed-spread is also preloaded — 0.6B Q8_0 uses ~2 GB across both GPUs,
+      # fitting alongside any dual chat config without pressure.
+      - embed-spread
+      - 35b-gpu0
+      - 27b-gpu1
 
 macros:
   cmd_base_vllm: "/app/vllm-device-wrapper.sh"
@@ -30,7 +30,7 @@ models:
   #    Fallback: llmfan46/Qwen3.6-35B-A3B-MoE-GPTQ-Int4 (cookbook-verified)
   # ==========================================
   35b-gpu0:
-    cmd: '${cmd_base_vllm} /data/models/Qwen3.6-35B-A3B-GPTQ-Int4 --host 127.0.0.1 --port ${PORT} --quantization gptq --dtype float16 --max-model-len 131072 --gpu-memory-utilization 0.88 --kv-cache-dtype fp8 --enable-prefix-caching --enable-auto-tool-choice --tool-call-parser qwen3_coder --reasoning-parser qwen3 --speculative-config ''{"method": "mtp", "num_speculative_tokens": 4}'' --max-num-seqs 4 --max-num-batched-tokens 8192 --served-model-name 35b-gpu0'
+    cmd: '${cmd_base_vllm} /data/models/Qwen3.6-35B-A3B-GPTQ-Int4 --host 127.0.0.1 --port ${PORT} --quantization gptq --dtype float16 --max-model-len 196608 --gpu-memory-utilization 0.88 --kv-cache-dtype fp8 --enable-prefix-caching --enable-auto-tool-choice --tool-call-parser qwen3_coder --reasoning-parser qwen3 --speculative-config ''{"method": "mtp", "num_speculative_tokens": 3}'' --max-num-seqs 4 --max-num-batched-tokens 4096 --served-model-name 35b-gpu0'
     env:
       # ONEAPI_DEVICE_SELECTOR has no effect on vLLM/torch XPU device
       # enumeration (verified: torch.xpu.device_count() is unchanged across
@@ -43,7 +43,7 @@ models:
     ttl: 0
 
   35b-gpu1:
-    cmd: '${cmd_base_vllm} /data/models/Qwen3.6-35B-A3B-GPTQ-Int4 --host 127.0.0.1 --port ${PORT} --quantization gptq --dtype float16 --max-model-len 131072 --gpu-memory-utilization 0.88 --kv-cache-dtype fp8 --enable-prefix-caching --enable-auto-tool-choice --tool-call-parser qwen3_coder --reasoning-parser qwen3 --speculative-config ''{"method": "mtp", "num_speculative_tokens": 4}'' --max-num-seqs 4 --max-num-batched-tokens 8192 --served-model-name 35b-gpu1'
+    cmd: '${cmd_base_vllm} /data/models/Qwen3.6-35B-A3B-GPTQ-Int4 --host 127.0.0.1 --port ${PORT} --quantization gptq --dtype float16 --max-model-len 196608 --gpu-memory-utilization 0.88 --kv-cache-dtype fp8 --enable-prefix-caching --enable-auto-tool-choice --tool-call-parser qwen3_coder --reasoning-parser qwen3 --speculative-config ''{"method": "mtp", "num_speculative_tokens": 3}'' --max-num-seqs 4 --max-num-batched-tokens 4096 --served-model-name 35b-gpu1'
     env:
       # See 35b-gpu0 above re: ONEAPI_DEVICE_SELECTOR removal.
       - "SYCL_PI_LEVEL_ZERO_USE_IMMEDIATE_COMMANDLISTS=1"
@@ -55,7 +55,7 @@ models:
   #    Source: SergiioB/Qwen3.8-27B-GPTQ-Int4-sym-G128-MTP-BF16 @9d189a60
   # ==========================================
   27b-gpu0:
-    cmd: '${cmd_base_vllm} /data/models/Qwen3.8-27B-GPTQ-Int4 --host 127.0.0.1 --port ${PORT} --quantization gptq --dtype float16 --max-model-len 131072 --gpu-memory-utilization 0.88 --kv-cache-dtype fp8 --enable-prefix-caching --enable-auto-tool-choice --tool-call-parser qwen3_xml --reasoning-parser qwen3 --speculative-config ''{"method": "mtp", "num_speculative_tokens": 4}'' --max-num-seqs 4 --max-num-batched-tokens 8192 --served-model-name 27b-gpu0'
+    cmd: '${cmd_base_vllm} /data/models/Qwen3.8-27B-GPTQ-Int4 --host 127.0.0.1 --port ${PORT} --quantization gptq --dtype float16 --max-model-len 131072 --gpu-memory-utilization 0.88 --kv-cache-dtype fp8 --enable-prefix-caching --enable-auto-tool-choice --tool-call-parser qwen3_xml --reasoning-parser qwen3 --speculative-config ''{"method": "mtp", "num_speculative_tokens": 3}'' --max-num-seqs 4 --max-num-batched-tokens 4096 --served-model-name 27b-gpu0'
     env:
       # See 35b-gpu0 above re: ONEAPI_DEVICE_SELECTOR removal.
       - "SYCL_PI_LEVEL_ZERO_USE_IMMEDIATE_COMMANDLISTS=1"
@@ -63,7 +63,7 @@ models:
     ttl: 0
 
   27b-gpu1:
-    cmd: '${cmd_base_vllm} /data/models/Qwen3.8-27B-GPTQ-Int4 --host 127.0.0.1 --port ${PORT} --quantization gptq --dtype float16 --max-model-len 131072 --gpu-memory-utilization 0.88 --kv-cache-dtype fp8 --enable-prefix-caching --enable-auto-tool-choice --tool-call-parser qwen3_xml --reasoning-parser qwen3 --speculative-config ''{"method": "mtp", "num_speculative_tokens": 4}'' --max-num-seqs 4 --max-num-batched-tokens 8192 --served-model-name 27b-gpu1'
+    cmd: '${cmd_base_vllm} /data/models/Qwen3.8-27B-GPTQ-Int4 --host 127.0.0.1 --port ${PORT} --quantization gptq --dtype float16 --max-model-len 131072 --gpu-memory-utilization 0.88 --kv-cache-dtype fp8 --enable-prefix-caching --enable-auto-tool-choice --tool-call-parser qwen3_xml --reasoning-parser qwen3 --speculative-config ''{"method": "mtp", "num_speculative_tokens": 3}'' --max-num-seqs 4 --max-num-batched-tokens 4096 --served-model-name 27b-gpu1'
     env:
       # See 35b-gpu0 above re: ONEAPI_DEVICE_SELECTOR removal.
       - "SYCL_PI_LEVEL_ZERO_USE_IMMEDIATE_COMMANDLISTS=1"

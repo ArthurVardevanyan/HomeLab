@@ -43,7 +43,7 @@ spillover.
 
 | Model id                | Backend   | Model                                         | Context |
 | ----------------------- | --------- | --------------------------------------------- | ------- |
-| `35b-gpu0` / `35b-gpu1` | vLLM      | Qwen3.6-35B-A3B (MoE, GPTQ-Int4, with vision) | 131K    |
+| `35b-gpu0` / `35b-gpu1` | vLLM      | Qwen3.6-35B-A3B (MoE, GPTQ-Int4, with vision) | 196K    |
 | `27b-gpu0` / `27b-gpu1` | vLLM      | Qwen3.8-27B (dense, GPTQ-Int4, with vision)   | 131K    |
 | `embed-spread`          | llama.cpp | Qwen3-Embedding-0.6B (Q8_0 GGUF)              | 120K    |
 
@@ -105,7 +105,7 @@ Both 35B-A3B MoE and 27B dense models use vLLM XPU with these shared flags:
 
 - `--quantization gptq --dtype float16` — GPTQ-Int4 weights, FP16 compute
 - `--kv-cache-dtype fp8` — FP8 KV cache, ~2× context capacity vs f16.
-  Essential for the 35B's 131K context target.
+  Essential for the 35B's 196K context target.
 - `--gpu-memory-utilization 0.88` — headroom for SYCL runtime, PyTorch
   allocator, and vLLM engine overhead. Both models are hybrid GDN/linear
   attention (`full_attention_interval: 4` — only 1 in 4 layers holds a real
@@ -118,16 +118,16 @@ Both 35B-A3B MoE and 27B dense models use vLLM XPU with these shared flags:
   field instead of leaving it inline in `content`. Without this flag,
   clients that render `reasoning_content` separately (e.g. OpenCode,
   Open WebUI) see raw `<think>` tags in the response body.
-- `--speculative-config MTP4` — Multi-Token Prediction with 4 speculative
-  tokens. On MoE: expert-union verify cost is the limiting factor; MTP4
+- `--speculative-config MTP3` — Multi-Token Prediction with 3 speculative
+  tokens. MTP3 is used — position-4 acceptance is weak (13–40%), making 3 tokens the balance point
   balances acceptance rate vs verification cost.
-- `--max-num-seqs 4 --max-num-batched-tokens 8192` — concurrency budget.
+- `--max-num-seqs 4 --max-num-batched-tokens 4096` — concurrency budget.
   `max-num-seqs` is a scheduler admission cap, not a hard rejection limit:
   requests beyond it queue (`vllm:num_requests_waiting_by_reason{reason="capacity"}`)
   rather than erroring. vLLM reports `kv_cache_max_concurrency` (via the
   `vllm:cache_config_info` metric) as the number of _full-length_
   (`max-model-len`) sequences the KV pool can hold simultaneously — on the
-  35B at 131K/fp8/0.88 util this is a single-digit figure. Since most real
+  35B at 196K/fp8/0.88 util this is a single-digit figure. Since most real
   requests use far less than the full context window, `--max-num-seqs 4` fits
   comfortably in practice; the worst case under sustained full-context load
   is preemption and prefill recompute (a throughput cost), not an OOM or
@@ -135,10 +135,10 @@ Both 35B-A3B MoE and 27B dense models use vLLM XPU with these shared flags:
 
 Per-model specifics:
 
-- **35B-A3B (vision)**: `--max-model-len 131072` (131K),
+- **35B-A3B (vision)**: `--max-model-len 196608` (196K),
   `--tool-call-parser qwen3_coder`. The MoE's ~2.3B activated params per
   token make it fast to decode but expensive to spec-decode (expert union on
-  verify batch). MTP4 + fp8 KV + 0.88 util fits comfortably in 32 GB.
+  verify batch). MTP3 + fp8 KV + 0.88 util fits comfortably in 32 GB.
 - **27B dense**: `--tool-call-parser qwen3_xml`, `--max-model-len 131072`
   (131K). The dense model is simpler (no expert routing) and runs alongside
   the 35B at the same context window.
@@ -326,8 +326,8 @@ includes weights, KV cache, and vLLM engine overhead:
 
 | Model               | Weights   | KV cache (fp8) | Headroom  |
 | ------------------- | --------- | -------------- | --------- |
-| 35B-A3B (131K)      | ~23.4 GiB | ~3.5 GiB       | ~5.1 GiB  |
-| 27B (196K)          | ~18.2 GiB | ~2.0 GiB       | ~11.8 GiB |
+| 35B-A3B (196K)      | ~23.4 GiB | ~3.5 GiB       | ~5.1 GiB  |
+| 27B (131K)          | ~18.2 GiB | ~2.0 GiB       | ~11.8 GiB |
 | embed-spread (120K) | ~0.4 GiB  | ~0.5 GiB       | ~31.1 GiB |
 
 > Figures are approximate and predate the `--gpu-memory-utilization 0.88`
@@ -338,7 +338,7 @@ includes weights, KV cache, and vLLM engine overhead:
 
 VRAM headroom accounts for SYCL runtime (~1–2 GB) and vLLM engine overhead
 (tokenizer, scheduler, KV cache manager). If the pod OOMs on model load or
-pushes VRAM over 32 GB, reduce `--gpu-memory-utilization` or `--max-model-len`.
+pushes VRAM over 32 GB, reduce `--gpu-memory-utilization`, `--max-num-batched-tokens`, or `--max-model-len`.
 
 ### Host RAM (anonymous, per-instance)
 
