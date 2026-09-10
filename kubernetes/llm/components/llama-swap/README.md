@@ -40,15 +40,19 @@ spillover.
 | `27b-gpu0` / `27b-gpu1` | vLLM      | Qwen3.8-27B (dense, GPTQ-Int4, with vision)   | 131K    |
 | `embed-spread`          | llama.cpp | Qwen3-Embedding-0.6B (Q8_0 GGUF)              | 120K    |
 
-> **`embed-spread` is currently disabled** (commented out of the `matrix`
-> in `llama-swap.yaml`, model block left in place): the shipped
-> `/app/llama-server` segfaults loading any gguf model — reproduced on CPU
-> (`-ngl 0`), with a different model, and with the SYCL backend excluded
-> entirely. The crash always occurs immediately after threadpool init,
-> before any device/backend line prints. Leading suspect: a CPU-dispatch
-> mismatch (gpu-1's host CPU is an AMD Ryzen 5 3600 / Zen 2, but the
-> process maps `libggml-cpu-haswell.so`). This needs a llama.cpp rebuild
-> and is tracked separately from the vLLM GPU-1 fixes.
+> `embed-spread` previously failed to load: plain `/app/llama-server` was
+> segfaulting on CPU (`-ngl 0`, immediately after "llama threadpool init")
+> and hanging on GPU (`-ngl 99`, host-side stall mid-layer-0 attention —
+> VRAM allocated, GPU idle, one CPU thread pinned). Root cause was NOT a
+> CPU-dispatch mismatch (haswell is the correct ggml CPU variant for this
+> node's Ryzen 5 3600) and NOT a Battlemage-specific bug — it was this
+> image's `LD_LIBRARY_PATH` putting vLLM's `/opt/venv/lib` (SYCL 9 stack)
+> ahead of oneAPI, so llama-server bound vLLM's Intel OpenMP runtime
+> instead of the oneAPI 2025.3 runtime it was built against. Fixed by
+> routing llama.cpp through `llama-device-wrapper.sh`, which points it at a
+> hermetic runtime vendored into `/app/rt/` (see the containerfile). See
+> the `embed-spread` model comment in `llama-swap.yaml` for the full
+> writeup.
 
 The **matrix** uses sets that pick exactly one model per GPU. The solver picks
 a set, guaranteeing at most one model per GPU:
@@ -61,10 +65,9 @@ a set, guaranteeing at most one model per GPU:
   flexibility.
 - **Embed spread** (chat models + embedding on both GPUs): `dual_35b-spread`,
   `dual_27b-spread`, `dual_35b0-27b1-spread`, `dual_27b0-35b1-spread` —
-  embedding model runs alongside chat on both GPUs. **Currently disabled**,
-  see note above.
+  embedding model runs alongside chat on both GPUs.
 - **Embed spread standalone** (`embed_spread`): embedding-only mode when no
-  chat is needed. **Currently disabled**, see note above.
+  chat is needed.
 
 | Set type      | Effect                                                                   |
 | ------------- | ------------------------------------------------------------------------ |

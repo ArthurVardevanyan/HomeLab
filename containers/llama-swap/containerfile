@@ -29,9 +29,76 @@ COPY --from=llama-swap-bin /app/libllama* /app/
 COPY --from=llama-swap-bin /opt/intel/oneapi /opt/intel/oneapi
 COPY --from=vllm-wrapper-build /usr/local/bin/vllm-wrapper /app/vllm-wrapper
 
+# Hermetic Intel runtime for llama.cpp, vendored into /app/rt/.
+#
+# Why this exists: vLLM's SYCL 9 stack requires /opt/venv/lib first on
+# LD_LIBRARY_PATH (see LD_LIBRARY_PATH comment below re: urDeviceWaitExp).
+# But llama-server was built by IntelLLVM against oneAPI 2025.3, and if it
+# runs under that vLLM-first LD_LIBRARY_PATH it binds the venv's OpenMP
+# runtime (libiomp5/libimf/libsvml/libintlc/libirng — all differ by md5
+# from oneAPI's) instead of its own. That ABI mismatch reproduces as:
+#   - CPU (-ngl 0): segfault immediately after "llama threadpool init"
+#     (first OpenMP thread spin-up); last library loaded is venv's
+#     libarcher.so (OMPT tool lib pulled in by the venv's iomp5).
+#   - GPU (-ngl 99): no crash, but a host-side hang mid-layer-0 attention
+#     (stalls after the Kcur matmul/RoPE step) — VRAM is allocated but the
+#     GPU stays idle and one CPU thread pins at 100%; SYCL_CACHE growth
+#     stops, so it is not a JIT compile, just a stuck OpenMP wait.
+# llama-swap's own upstream image (ghcr.io/mostlygeek/llama-swap, see
+# `main` branch of this containerfile) never hits this because llama.cpp
+# there runs on the runtime it was built against — confirming the cause is
+# the shared LD_LIBRARY_PATH, not a CPU-dispatch or Battlemage issue.
+#
+# Fix: vendor a private copy of oneAPI's Intel runtime for llama.cpp only,
+# and point it at /app/rt via llama-device-wrapper.sh (see below). vLLM
+# keeps /opt/venv/lib. Two independent SYCL stacks, one image, never mixed
+# in the same process.
+#
+# This is the full ldd closure of llama-server + libggml-sycl.so +
+# libggml-cpu-haswell.so under an oneAPI-first LD_LIBRARY_PATH, plus two
+# libraries that UR adapters dlopen() at runtime (libur_adapter_level_zero*
+# and libumf) and therefore never show up in ldd. Deliberately NOT vendored
+# (must resolve from the host GPU stack): libze_loader.so.1,
+# libze_intel_gpu.so.1, libigc.so.2, libopencl-clang2.so.17.
+RUN set -eux; \
+  mkdir -p /app/rt; \
+  ONEAPI=/opt/intel/oneapi; \
+  cp -a \
+    "${ONEAPI}/compiler/2025.3/lib/libiomp5.so" \
+    "${ONEAPI}/compiler/2025.3/lib/libimf.so" \
+    "${ONEAPI}/compiler/2025.3/lib/libsvml.so" \
+    "${ONEAPI}/compiler/2025.3/lib/libintlc.so.5" \
+    "${ONEAPI}/compiler/2025.3/lib/libirng.so" \
+    "${ONEAPI}/compiler/2025.3/lib/libsycl.so.8" \
+    "${ONEAPI}/compiler/2025.3/lib/libsycl.so.8.0.0" \
+    "${ONEAPI}/compiler/2025.3/lib/libur_loader.so.0" \
+    "${ONEAPI}/compiler/2025.3/lib/libur_loader.so.0.12.0" \
+    "${ONEAPI}/compiler/2025.3/lib/libOpenCL.so.1" \
+    "${ONEAPI}/compiler/2025.3/lib/libOpenCL.so.1.0.0" \
+    "${ONEAPI}/compiler/2025.3/lib/libur_adapter_level_zero.so.0" \
+    "${ONEAPI}/compiler/2025.3/lib/libur_adapter_level_zero.so.0.12.0" \
+    "${ONEAPI}/compiler/2025.3/lib/libur_adapter_level_zero_v2.so.0" \
+    "${ONEAPI}/compiler/2025.3/lib/libur_adapter_level_zero_v2.so.0.12.0" \
+    "${ONEAPI}/umf/latest/lib/libumf.so.1" \
+    "${ONEAPI}/umf/latest/lib/libumf.so.1.0.2" \
+    "${ONEAPI}/mkl/2025.3/lib/libmkl_sycl_blas.so.5" \
+    "${ONEAPI}/mkl/2025.3/lib/libmkl_intel_ilp64.so.2" \
+    "${ONEAPI}/mkl/2025.3/lib/libmkl_tbb_thread.so.2" \
+    "${ONEAPI}/mkl/2025.3/lib/libmkl_core.so.2" \
+    "${ONEAPI}/tbb/2022.3/lib/intel64/gcc4.8/libtbb.so.12" \
+    "${ONEAPI}/tbb/2022.3/lib/intel64/gcc4.8/libtbb.so.12.17" \
+    "${ONEAPI}/dnnl/2025.3/lib/libdnnl.so.3" \
+    "${ONEAPI}/dnnl/2025.3/lib/libdnnl.so.3.9" \
+    /app/rt/; \
+  ! LD_LIBRARY_PATH=/app/rt:/app ldd /app/llama-server | grep -E "not found|/opt/venv"; \
+  ! LD_LIBRARY_PATH=/app/rt:/app ldd /app/libggml-sycl.so | grep -E "not found|/opt/venv"
+
 # vllm-device-wrapper — ensures ONEAPI env vars are exported for child processes
 COPY vllm-device-wrapper.sh /app/vllm-device-wrapper.sh
-RUN chmod +x /app/vllm-device-wrapper.sh
+# llama-device-wrapper — pins llama.cpp to the hermetic /app/rt runtime so it
+# never binds vLLM's SYCL 9 / venv OpenMP stack (see /app/rt comment above).
+COPY llama-device-wrapper.sh /app/llama-device-wrapper.sh
+RUN chmod +x /app/vllm-device-wrapper.sh /app/llama-device-wrapper.sh
 
 # Cookbook patches (vendor + apply at build time)
 COPY patches/ /tmp/patches/
@@ -62,16 +129,20 @@ ENV XDG_CACHE_HOME=/tmp \
   VLLM_CACHE_ROOT=/tmp/vllm-cache
 
 # vLLM XPU / SYCL env
-# NOTE: LD_LIBRARY_PATH ordering is deliberate — /opt/venv/lib must come first
-# because both the vLLM runtime (libsycl.so.9) and the copied llama.cpp
-# runtime (libsycl.so.8) depend on libur_loader.so.0 (same SONAME, same
-# version tag LIBUR_LOADER_0.12).  The venv loader is a strict superset of the
-# oneAPI loader and exports urDeviceWaitExp; if the oneAPI dir is searched
-# first the dynamic linker binds the older loader and torch fails with:
+# NOTE: This LD_LIBRARY_PATH is for the container's default process
+# (llama-swap) and anything it execs WITHOUT going through
+# llama-device-wrapper.sh — in practice, only vLLM (via
+# vllm-device-wrapper.sh) and llama-swap itself. /opt/venv/lib must come
+# first because vLLM's runtime (libsycl.so.9) needs urDeviceWaitExp, which
+# only the venv's libur_loader.so.0 exports:
 #   ImportError: libsycl.so.9: undefined symbol: urDeviceWaitExp
-# The venv loader satisfies all 192 UR symbols required by the llama.cpp SYCL
-# stack, so libsycl.so.8 continues to resolve from oneAPI via RUNPATH while
-# sharing the newer loader.
+# llama.cpp does NOT use this LD_LIBRARY_PATH — llama-swap always launches it
+# through llama-device-wrapper.sh, which overrides LD_LIBRARY_PATH to the
+# hermetic /app/rt runtime (see /app/rt COPY block above) instead of
+# inheriting this one. Do not remove /opt/intel/oneapi/... entries below on
+# the assumption they are dead weight for llama.cpp — some non-llama.cpp
+# tooling (e.g. sycl-ls, oneAPI CLI utilities) still relies on them for
+# manual debugging inside the container.
 ENV VLLM_TARGET_DEVICE=xpu \
   VLLM_XPU_ENABLE_XPU_GRAPH=1 \
   ONEAPI_DEVICE_SELECTOR=level_zero:* \
