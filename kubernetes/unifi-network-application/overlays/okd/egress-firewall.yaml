@@ -6,6 +6,12 @@ metadata:
   namespace: unifi-network-application
 spec:
   egress:
+    # Control Plane
+    - type: Allow
+      to:
+        nodeSelector:
+          matchLabels:
+            node-role.kubernetes.io/control-plane: ""
     - type: Allow
       to:
         dnsName: unifi.arthurvardevanyan.com

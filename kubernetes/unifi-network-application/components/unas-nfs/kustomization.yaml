@@ -1,0 +1,20 @@
+---
+apiVersion: kustomize.config.k8s.io/v1alpha1
+kind: Component
+resources:
+  - ./cronjob.yaml
+  - ./rbac.yaml
+  - ./network-policy.yaml
+generatorOptions:
+  disableNameSuffixHash: true
+configMapGenerator:
+  - files:
+      - shared-54d42e41-1bec-4de7-9ebc-98303186e8de.exports
+      - shared-58e64326-3679-470c-acc3-3b194d45ea8f.exports
+      - shared-8fdecd7b-7930-4234-9680-9b29cb85b8bb.exports
+    name: nfs-exports
+    namespace: unifi-network-application
+  - files:
+      - nfs-sync.sh
+    name: nfs-sync
+    namespace: unifi-network-application
