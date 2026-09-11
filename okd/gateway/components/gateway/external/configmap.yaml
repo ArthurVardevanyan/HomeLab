@@ -129,10 +129,17 @@ data:
                       - /bin/sh
                       - -c
                       - sleep 45
+              startupProbe:
+                failureThreshold: 30
+                initialDelaySeconds: 10
+                periodSeconds: 5
+                httpGet:
+                  path: /healthz/ready
+                  port: 15021
               resources:
                 requests:
-                  cpu: 75m
+                  cpu: 100m
                   memory: 1Gi
                 limits:
-                  cpu: 300m
+                  cpu: 450m
                   memory: 2Gi
