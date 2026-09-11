@@ -38,6 +38,16 @@ spec:
         - protocol: TCP
           port: 5432
     - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: llm
+          podSelector:
+            matchLabels:
+              app.kubernetes.io/name: open-webui
+      ports:
+        - protocol: TCP
+          port: 8080
+    - to:
         - ipBlock:
             cidr: 0.0.0.0/0
             except:
