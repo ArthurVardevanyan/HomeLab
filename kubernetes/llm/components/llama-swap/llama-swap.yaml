@@ -53,6 +53,27 @@ models:
   # ==========================================
   # 2. Qwen 3.8 27B (dense) — with vision, 131K ctx
   #    Source: SergiioB/Qwen3.8-27B-GPTQ-Int4-sym-G128-MTP-BF16 @9d189a60
+  #
+  #    vLLM XPU startup memory check is a known false-positive on UMA systems:
+  #    - #50135: "ValueError: Free memory on device xpu:0 (0.22/30.3 GiB) on
+  #      startup is less than desired GPU memory utilization"
+  #    - #48140: "Startup free-memory check uses MemFree instead of
+  #      MemAvailable — spurious ValueError on UMA devices (GB10 / GB200 /
+  #      Jetson)"
+  #
+  #    Root cause: vLLM's pre-flight check reads /proc/meminfo MemFree (or
+  #    the XPU equivalent) which does not account for reclaimable kernel memory
+  #    or the PyTorch caching allocator's existing allocations. On UMA systems
+  #    where device memory is a subset of the total host memory, MemFree is
+  #    much lower than MemAvailable, causing the check to fail even when enough
+  #    VRAM is physically available.
+  #
+  #    Workaround: preload models in a specific order so that by the time the
+  #    27B model's vLLM instance starts, the embedding model's memory has been
+  #    accounted for by the allocator, and the vLLM memory check uses a higher
+  #    effective available threshold. Also pin each 27B instance to a dedicated
+  #    GPU with ZE_AFFINITY_MASK to avoid cross-GPU fragmentation during the
+  #    initial allocation.
   # ==========================================
   27b-gpu0:
     cmd: '${cmd_base_vllm} /data/models/Qwen3.8-27B-GPTQ-Int4 --host 127.0.0.1 --port ${PORT} --quantization gptq --dtype float16 --max-model-len 194560 --gpu-memory-utilization 0.93 --kv-cache-dtype fp8 --enable-prefix-caching --enable-auto-tool-choice --tool-call-parser qwen3_xml --reasoning-parser qwen3 --speculative-config ''{"method": "mtp", "num_speculative_tokens": 3}'' --max-num-seqs 3 --max-num-batched-tokens 4096 --served-model-name 27b-gpu0' #  --kv-cache-memory 10864792422

@@ -43,7 +43,7 @@ spillover.
 
 | Model id                | Backend   | Model                                         | Context |
 | ----------------------- | --------- | --------------------------------------------- | ------- |
-| `35b-gpu0` / `35b-gpu1` | vLLM      | Qwen3.6-35B-A3B (MoE, GPTQ-Int4, with vision) | 196K    |
+| `35b-gpu0` / `35b-gpu1` | vLLM      | Qwen3.6-35B-A3B (MoE, GPTQ-Int4, with vision) | 256K    |
 | `27b-gpu0` / `27b-gpu1` | vLLM      | Qwen3.8-27B (dense, GPTQ-Int4, with vision)   | 131K    |
 | `embed-spread`          | llama.cpp | Qwen3-Embedding-0.6B (Q8_0 GGUF)              | 120K    |
 
@@ -105,11 +105,11 @@ Both 35B-A3B MoE and 27B dense models use vLLM XPU with these shared flags:
 
 - `--quantization gptq --dtype float16` — GPTQ-Int4 weights, FP16 compute
 - `--kv-cache-dtype fp8` — FP8 KV cache, ~2× context capacity vs f16.
-  Essential for the 35B's 196K context target.
-- `--gpu-memory-utilization 0.88` — headroom for SYCL runtime, PyTorch
+  Essential for the 35B's 256K context target.
+- `--gpu-memory-utilization 0.93` — headroom for SYCL runtime, PyTorch
   allocator, and vLLM engine overhead. Both models are hybrid GDN/linear
   attention (`full_attention_interval: 4` — only 1 in 4 layers holds a real
-  KV cache), so the effective KV footprint per token is small and 0.88
+  KV cache), so the effective KV footprint per token is small and 0.93
   leaves generous headroom.
 - `--enable-prefix-caching` — APC for prompt reuse (code, structured output)
 - `--enable-auto-tool-choice` — on both models
@@ -127,7 +127,7 @@ Both 35B-A3B MoE and 27B dense models use vLLM XPU with these shared flags:
   rather than erroring. vLLM reports `kv_cache_max_concurrency` (via the
   `vllm:cache_config_info` metric) as the number of _full-length_
   (`max-model-len`) sequences the KV pool can hold simultaneously — on the
-  35B at 196K/fp8/0.88 util this is a single-digit figure. Since most real
+  35B at 256K/fp8/0.93 util this is a single-digit figure. Since most real
   requests use far less than the full context window, `--max-num-seqs 4` fits
   comfortably in practice; the worst case under sustained full-context load
   is preemption and prefill recompute (a throughput cost), not an OOM or
@@ -135,12 +135,12 @@ Both 35B-A3B MoE and 27B dense models use vLLM XPU with these shared flags:
 
 Per-model specifics:
 
-- **35B-A3B (vision)**: `--max-model-len 196608` (196K),
+- **35B-A3B (vision)**: `--max-model-len 262144` (256K),
   `--tool-call-parser qwen3_coder`. The MoE's ~2.3B activated params per
   token make it fast to decode but expensive to spec-decode (expert union on
-  verify batch). MTP3 + fp8 KV + 0.88 util fits comfortably in 32 GB.
-- **27B dense**: `--tool-call-parser qwen3_xml`, `--max-model-len 131072`
-  (131K). The dense model is simpler (no expert routing) and runs alongside
+  verify batch). MTP3 + fp8 KV + 0.93 util fits comfortably in 32 GB.
+- **27B dense**: `--tool-call-parser qwen3_xml`, `--max-model-len 194560`
+  (190K). The dense model is simpler (no expert routing) and runs alongside
   the 35B at the same context window.
 
 ### MTP Speculative Decoding (vLLM)
@@ -181,7 +181,7 @@ bisected: graph-only boots clean, cache-only fails).
 
 > **Node:** gpu-1 (2× Intel Arc Pro B70, 32 GB each, Ryzen 5 3600 host).
 > **Config:** llama-swap + vLLM 0.28.1rc1, GPTQ-Int4, `--kv-cache-dtype fp8`,
-> MTP speculative decoding (`num_speculative_tokens: 4`). 35B runs on GPU-0,
+> MTP speculative decoding (`num_speculative_tokens: 3`). 35B runs on GPU-0,
 > 27B on GPU-1 — they are never colocated, so cross-model comparisons below
 > are cross-GPU/cross-time, not a controlled head-to-head.
 
@@ -217,7 +217,7 @@ Session 2 (deeper into the same conversation, GPU KV cache 77–81%, prefix cach
 - **The ~2–2.5× improvement over pre-MTP llama.cpp comes from MTP itself:**
   the vLLM engine swap alone (same XPU backend, same GPTQ quant, no MTP) is
   roughly a wash with the old llama.cpp Vulkan decode (~18–22 tok/s
-  estimated vs 8–25 tok/s measured). MTP4's mean acceptance length of ~3.15
+  estimated vs 8–25 tok/s measured). MTP3's mean acceptance length of ~3.15
   means ~3 tokens land per target-model forward pass — a ~3×
   tokens-per-forward-pass multiplier that the smaller MTP draft-head cost is
   cheap enough to justify.
@@ -279,8 +279,8 @@ low-cost tuning lever worth testing.
 | ----------- | ---------------------------- | ------------------ | ---------------------- | ------------------------------- |
 | Arc Pro B70 | vLLM XPU FP16 (no MTP, TP=4) | Qwen3.6-35B-A3B    | 16.3                   | Puget Systems                   |
 | Arc Pro B70 | vLLM XPU FP16 (no MTP, TP=4) | Qwen3.6-27B        | 13.1                   | Puget Systems                   |
-| Arc Pro B70 | **vLLM XPU + MTP4**          | Qwen3.8-27B (GPTQ) | ~40–44 avg (31.5–59.5) | HomeLab (GPU-1, two sessions)   |
-| Arc Pro B70 | **vLLM XPU + MTP4**          | Qwen3.6-35B-A3B    | ~55–72 avg (6.7–112.2) | HomeLab (GPU-0, single session) |
+| Arc Pro B70 | **vLLM XPU + MTP3**          | Qwen3.8-27B (GPTQ) | ~40–44 avg (31.5–59.5) | HomeLab (GPU-1, two sessions)   |
+| Arc Pro B70 | **vLLM XPU + MTP3**          | Qwen3.6-35B-A3B    | ~55–72 avg (6.7–112.2) | HomeLab (GPU-0, single session) |
 
 Puget Systems' figures use tensor-parallelism across 4 GPUs with no
 speculative decoding. HomeLab's single-GPU MTP setup reaches ~3× Puget's
@@ -326,11 +326,11 @@ includes weights, KV cache, and vLLM engine overhead:
 
 | Model               | Weights   | KV cache (fp8) | Headroom  |
 | ------------------- | --------- | -------------- | --------- |
-| 35B-A3B (196K)      | ~23.4 GiB | ~3.5 GiB       | ~5.1 GiB  |
-| 27B (131K)          | ~18.2 GiB | ~2.0 GiB       | ~11.8 GiB |
+| 35B-A3B (256K)      | ~23.4 GiB | ~4.8 GiB       | ~3.8 GiB  |
+| 27B (190K)          | ~18.2 GiB | ~2.9 GiB       | ~9.8 GiB  |
 | embed-spread (120K) | ~0.4 GiB  | ~0.5 GiB       | ~31.1 GiB |
 
-> Figures are approximate and predate the `--gpu-memory-utilization 0.88`
+> Figures are approximate and predate the `--gpu-memory-utilization 0.93`
 > tuning pass; the ratios (weights dominate, KV cache is small relative to
 > weights on both hybrid GDN models) still hold. Query
 > `vllm:cache_config_info` on the model's proxied `/metrics` endpoint for

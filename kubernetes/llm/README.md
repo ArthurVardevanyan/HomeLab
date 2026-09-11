@@ -298,7 +298,7 @@ multi-select, default `All`).
 
 ## Performance: backend history and current state
 
-### Current: vLLM XPU + MTP4 (2026-09-10)
+### Current: vLLM XPU + MTP3 (2026-09-10)
 
 Chat models run on vLLM XPU with MTP (Multi-Token Prediction) speculative
 decoding: 27B dense achieves **~40–44 tok/s** clean decode, 35B-A3B MoE
@@ -315,7 +315,7 @@ concurrency, etc.).
 | Aug 12–14, 2026        | llama.cpp Vulkan     | f16 KV, dual GPU, ngram-simple | decode p50 20.6, p95 45.0, p99 70.2, max 76.7 t/s (n=847)                                                |
 | Aug 14, 2026           | + `--load-mode none` |                                | working set 32 GiB → 4.7 GiB; cold load 82.3 s (still in effect on the embed model via `cmd_base_llama`) |
 | Aug 18, 2026           | llama.cpp SYCL       | f16 KV, dual GPU               | 35B 1087–1230 t/s, 27B 862–1052 t/s (llama-swap Activity "Gen Speed" column)                             |
-| Sep 10, 2026 (current) | vLLM XPU + MTP4      | GPTQ-Int4, fp8 KV cache        | 27B ~40–44 tok/s, 35B ~55–72 tok/s (vLLM engine 10s-window log means)                                    |
+| Sep 10, 2026 (current) | vLLM XPU + MTP3      | GPTQ-Int4, fp8 KV cache        | 27B ~40–44 tok/s, 35B ~55–72 tok/s (vLLM engine 10s-window log means)                                    |
 
 > **Open question — SYCL vs vLLM measurement gap:** the Aug 18 llama.cpp SYCL
 > figures (862–1230 t/s) come from llama-swap's Activity page "Gen Speed"
