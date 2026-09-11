@@ -3,7 +3,7 @@
 # Base: vLLM XPU (vLLM 0.28.1rc1.dev580 + SYCL 9) + llama-swap v255 SYCL binaries
 #       + cookbook MTP + APC + GDN + backward-copy + eagle-drop patches
 # renovate: datasource=docker depName=vllm/vllm-openai-xpu versioning=loose
-FROM docker.io/vllm/vllm-openai-xpu:nightly@sha256:7ede53bd3f5fc3eeef64fea13096c035b009825e050c4912043e4b78c38be6e5 AS vllm-base
+FROM docker.io/vllm/vllm-openai-xpu:v0.29.0@sha256:96db42e248d48760a4937eb3d04c4878b39d13a9814efea95d510393e097a901 AS vllm-base
 FROM ghcr.io/mostlygeek/llama-swap:v255-intel-b10868@sha256:23599ef59fcaed6ad13fd76aec97968903e24479beb476fbe268d49524270f9c AS llama-swap-bin
 
 # vllm-wrapper — not shipped in llama-swap release archives, built from source
@@ -64,32 +64,32 @@ RUN set -eux; \
   mkdir -p /app/rt; \
   ONEAPI=/opt/intel/oneapi; \
   cp -a \
-    "${ONEAPI}/compiler/2025.3/lib/libiomp5.so" \
-    "${ONEAPI}/compiler/2025.3/lib/libimf.so" \
-    "${ONEAPI}/compiler/2025.3/lib/libsvml.so" \
-    "${ONEAPI}/compiler/2025.3/lib/libintlc.so.5" \
-    "${ONEAPI}/compiler/2025.3/lib/libirng.so" \
-    "${ONEAPI}/compiler/2025.3/lib/libsycl.so.8" \
-    "${ONEAPI}/compiler/2025.3/lib/libsycl.so.8.0.0" \
-    "${ONEAPI}/compiler/2025.3/lib/libur_loader.so.0" \
-    "${ONEAPI}/compiler/2025.3/lib/libur_loader.so.0.12.0" \
-    "${ONEAPI}/compiler/2025.3/lib/libOpenCL.so.1" \
-    "${ONEAPI}/compiler/2025.3/lib/libOpenCL.so.1.0.0" \
-    "${ONEAPI}/compiler/2025.3/lib/libur_adapter_level_zero.so.0" \
-    "${ONEAPI}/compiler/2025.3/lib/libur_adapter_level_zero.so.0.12.0" \
-    "${ONEAPI}/compiler/2025.3/lib/libur_adapter_level_zero_v2.so.0" \
-    "${ONEAPI}/compiler/2025.3/lib/libur_adapter_level_zero_v2.so.0.12.0" \
-    "${ONEAPI}/umf/latest/lib/libumf.so.1" \
-    "${ONEAPI}/umf/latest/lib/libumf.so.1.0.2" \
-    "${ONEAPI}/mkl/2025.3/lib/libmkl_sycl_blas.so.5" \
-    "${ONEAPI}/mkl/2025.3/lib/libmkl_intel_ilp64.so.2" \
-    "${ONEAPI}/mkl/2025.3/lib/libmkl_tbb_thread.so.2" \
-    "${ONEAPI}/mkl/2025.3/lib/libmkl_core.so.2" \
-    "${ONEAPI}/tbb/2022.3/lib/intel64/gcc4.8/libtbb.so.12" \
-    "${ONEAPI}/tbb/2022.3/lib/intel64/gcc4.8/libtbb.so.12.17" \
-    "${ONEAPI}/dnnl/2025.3/lib/libdnnl.so.3" \
-    "${ONEAPI}/dnnl/2025.3/lib/libdnnl.so.3.9" \
-    /app/rt/; \
+  "${ONEAPI}/compiler/2025.3/lib/libiomp5.so" \
+  "${ONEAPI}/compiler/2025.3/lib/libimf.so" \
+  "${ONEAPI}/compiler/2025.3/lib/libsvml.so" \
+  "${ONEAPI}/compiler/2025.3/lib/libintlc.so.5" \
+  "${ONEAPI}/compiler/2025.3/lib/libirng.so" \
+  "${ONEAPI}/compiler/2025.3/lib/libsycl.so.8" \
+  "${ONEAPI}/compiler/2025.3/lib/libsycl.so.8.0.0" \
+  "${ONEAPI}/compiler/2025.3/lib/libur_loader.so.0" \
+  "${ONEAPI}/compiler/2025.3/lib/libur_loader.so.0.12.0" \
+  "${ONEAPI}/compiler/2025.3/lib/libOpenCL.so.1" \
+  "${ONEAPI}/compiler/2025.3/lib/libOpenCL.so.1.0.0" \
+  "${ONEAPI}/compiler/2025.3/lib/libur_adapter_level_zero.so.0" \
+  "${ONEAPI}/compiler/2025.3/lib/libur_adapter_level_zero.so.0.12.0" \
+  "${ONEAPI}/compiler/2025.3/lib/libur_adapter_level_zero_v2.so.0" \
+  "${ONEAPI}/compiler/2025.3/lib/libur_adapter_level_zero_v2.so.0.12.0" \
+  "${ONEAPI}/umf/latest/lib/libumf.so.1" \
+  "${ONEAPI}/umf/latest/lib/libumf.so.1.0.2" \
+  "${ONEAPI}/mkl/2025.3/lib/libmkl_sycl_blas.so.5" \
+  "${ONEAPI}/mkl/2025.3/lib/libmkl_intel_ilp64.so.2" \
+  "${ONEAPI}/mkl/2025.3/lib/libmkl_tbb_thread.so.2" \
+  "${ONEAPI}/mkl/2025.3/lib/libmkl_core.so.2" \
+  "${ONEAPI}/tbb/2022.3/lib/intel64/gcc4.8/libtbb.so.12" \
+  "${ONEAPI}/tbb/2022.3/lib/intel64/gcc4.8/libtbb.so.12.17" \
+  "${ONEAPI}/dnnl/2025.3/lib/libdnnl.so.3" \
+  "${ONEAPI}/dnnl/2025.3/lib/libdnnl.so.3.9" \
+  /app/rt/; \
   ! LD_LIBRARY_PATH=/app/rt:/app ldd /app/llama-server | grep -E "not found|/opt/venv"; \
   ! LD_LIBRARY_PATH=/app/rt:/app ldd /app/libggml-sycl.so | grep -E "not found|/opt/venv"
 
