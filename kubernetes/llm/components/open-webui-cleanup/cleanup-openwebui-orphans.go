@@ -23,10 +23,11 @@ const (
 	defaultDBURI           = "postgres://postgres:postgres@open-webui-rw.llm.svc.cluster.local:5432/openwebui?sslmode=require"
 	defaultAPIBase         = "http://open-webui.llm.svc.cluster.local:8080"
 	defaultBatchSize       = 500
-	defaultConcurrency     = 5
+	defaultConcurrency     = 1
 	defaultMaxRetries      = 1
-	defaultRetryDelay      = 2.0
+	defaultRetryDelay      = 5.0
 	defaultClientTimeout   = 30 * time.Second
+	defaultRateLimitDelay  = 5 * time.Second
 )
 
 func main() {
@@ -172,9 +173,10 @@ func deleteFile(apiBase, apiToken, id string, maxRetries int, retryDelay float64
 			return true, http.StatusNotFound
 		case http.StatusTooManyRequests:
 			retryAfter := parseRetryAfter(resp.Header.Get("Retry-After"))
-			if retryAfter > 0 && retryAfter > time.Duration(retryDelay*float64(time.Second)) {
-				retryAfter = time.Duration(retryDelay * float64(time.Second))
+			if retryAfter == 0 || retryAfter < defaultRateLimitDelay {
+				retryAfter = defaultRateLimitDelay
 			}
+			fmt.Printf("  Retrying %s (attempt %d/%d, waiting %v for 429)...\n", id, attempt+1, maxRetries+1, retryAfter)
 			time.Sleep(retryAfter)
 			continue
 		default:
@@ -212,27 +214,26 @@ func cleanup(fileIDs []string, apiBase, apiToken string, concurrency, maxRetries
 	failed := atomic.Int64{}
 
 	var wg sync.WaitGroup
-	sem := make(chan struct{}, concurrency)
+	sem := make(chan struct{}, 1)
 
-	for _, id := range fileIDs {
+	for i, id := range fileIDs {
 		wg.Add(1)
-		sem <- struct{}{}
-		go func(fid string) {
+		go func(idx int, fid string) {
 			defer wg.Done()
-			defer func() { <-sem }()
-
+			sem <- struct{}{}
 			ok, status := deleteFile(apiBase, apiToken, fid, maxRetries, retryDelay)
+			<-sem
 			if ok {
 				deleted.Add(1)
-				if deleted.Load()%500 == 0 {
-					fmt.Printf("  Processed: %d deleted, %d failed so far...\n",
-						deleted.Load(), failed.Load())
+				if idx%50 == 0 {
+					fmt.Printf("  Progress: %d/%d deleted, %d failed so far...\n",
+						deleted.Load(), idx, failed.Load())
 				}
 			} else {
 				failed.Add(1)
 				fmt.Fprintf(os.Stderr, "  FAIL %s (status %d)\n", fid, status)
 			}
-		}(id)
+		}(i, id)
 	}
 
 	wg.Wait()
