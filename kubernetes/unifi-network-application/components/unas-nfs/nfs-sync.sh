@@ -46,16 +46,16 @@ check_pod_health() {
   local pod_names
   pod_names="$(kubectl get pods -n "${ns}" -l "${selector}" -o name --field-selector=status.phase=Running 2>/dev/null || true)"
   if [[ -n "${pod_names}" ]]; then
-    echo "${pod_names}" | while read -r pod; do
+    while IFS= read -r pod; do
       if [[ -n "${pod}" ]]; then
         pod_name="${pod#pod/}"
-        logs="$(kubectl logs "${pod}" -n "${ns}" --tail=500 2>/dev/null || true)"
+        logs="$(kubectl logs "${pod}" -n "${ns}" --tail=500 --all-containers 2>/dev/null || true)"
         if echo "${logs}" | grep -iqE "${ALL_PATTERNS}"; then
           echo "[${ns}/${pod_name}] storage issues detected"
           return 0
         fi
       fi
-    done
+    done <<< "${pod_names}"
   fi
   return 1
 }
