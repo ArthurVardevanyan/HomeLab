@@ -147,7 +147,7 @@ func deleteFile(apiBase, apiToken, id string, maxRetries int, retryDelay float64
 
 	for attempt := 0; attempt <= maxRetries; attempt++ {
 		if attempt > 0 {
-			backoff := time.Duration(float64(retryDelay) * math.Pow(2, float64(attempt-1)))
+			backoff := time.Duration(float64(time.Second) * float64(retryDelay) * math.Pow(2, float64(attempt-1)))
 			jitter := time.Duration(rand.Float64() * float64(backoff) * 0.5)
 			sleep := backoff + jitter
 			fmt.Printf("  Retrying %s (attempt %d/%d, waiting %v)...\n", id, attempt+1, maxRetries+1, sleep)
