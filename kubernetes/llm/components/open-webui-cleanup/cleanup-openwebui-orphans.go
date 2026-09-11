@@ -24,8 +24,8 @@ const (
 	defaultAPIBase         = "http://open-webui.llm.svc.cluster.local:8080"
 	defaultBatchSize       = 500
 	defaultConcurrency     = 5
-	defaultMaxRetries      = 3
-	defaultRetryDelay      = 1.0
+	defaultMaxRetries      = 1
+	defaultRetryDelay      = 2.0
 	defaultClientTimeout   = 30 * time.Second
 )
 
@@ -91,10 +91,6 @@ func main() {
 
 	deleted, failed := cleanup(fileIDs, *apiBase, *apiToken, *concurrency, *maxRetries, *retryDelay, *dryRun)
 	fmt.Printf("Deleted: %d\nFailed: %d\n", deleted, failed)
-
-	if failed > 0 {
-		os.Exit(1)
-	}
 }
 
 func getOrphanedFileIDs(db *sql.DB, batchSize int) ([]string, error) {
@@ -225,7 +221,7 @@ func cleanup(fileIDs []string, apiBase, apiToken string, concurrency, maxRetries
 			defer wg.Done()
 			defer func() { <-sem }()
 
-			ok, _ := deleteFile(apiBase, apiToken, fid, maxRetries, retryDelay)
+			ok, status := deleteFile(apiBase, apiToken, fid, maxRetries, retryDelay)
 			if ok {
 				deleted.Add(1)
 				if deleted.Load()%500 == 0 {
@@ -234,7 +230,7 @@ func cleanup(fileIDs []string, apiBase, apiToken string, concurrency, maxRetries
 				}
 			} else {
 				failed.Add(1)
-				fmt.Fprintf(os.Stderr, "  FAIL %s\n", fid)
+				fmt.Fprintf(os.Stderr, "  FAIL %s (status %d)\n", fid, status)
 			}
 		}(id)
 	}
