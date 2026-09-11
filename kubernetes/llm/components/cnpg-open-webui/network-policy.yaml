@@ -215,6 +215,16 @@ spec:
     - from:
         - namespaceSelector:
             matchLabels:
+              kubernetes.io/metadata.name: llm
+          podSelector:
+            matchLabels:
+              app: open-webui-cleanup
+      ports:
+        - protocol: TCP
+          port: 5432
+    - from:
+        - namespaceSelector:
+            matchLabels:
               kubernetes.io/metadata.name: cnpg-system
           podSelector:
             matchLabels:
