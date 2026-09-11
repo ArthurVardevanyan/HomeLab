@@ -1,0 +1,88 @@
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: open-webui-cleanup
+  namespace: llm
+  annotations:
+    argocd.argoproj.io/sync-wave: "4"
+    gitops-ci.k8s.io/exempt-image-checksum: "registry.arthurvardevanyan.com/homelab/toolbox:not_latest"
+  labels:
+    app: open-webui-cleanup
+spec:
+  schedule: "0 3 * * 0"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 2
+  failedJobsHistoryLimit: 2
+  suspend: true
+  startingDeadlineSeconds: 300
+  jobTemplate:
+    spec:
+      backoffLimit: 3
+      activeDeadlineSeconds: 7200
+      completionMode: NonIndexed
+      template:
+        metadata:
+          labels:
+            app: open-webui-cleanup
+        spec:
+          restartPolicy: Never
+          schedulerName: default-scheduler
+          automountServiceAccountToken: false
+          enableServiceLinks: false
+          dnsPolicy: ClusterFirst
+          securityContext:
+            runAsNonRoot: true
+            seccompProfile:
+              type: RuntimeDefault
+          containers:
+            - name: cleanup
+              image: registry.arthurvardevanyan.com/homelab/toolbox:not_latest
+              imagePullPolicy: IfNotPresent
+              command:
+                - /bin/sh
+                - "-c"
+                - |
+                  set -o errexit
+                  set -o nounset
+                  set -o pipefail
+
+                  SCRIPT_DIR=/scripts
+                  cd "$SCRIPT_DIR"
+                  echo "running open-webui orphan cleanup ..."
+                  go run .
+              volumeMounts:
+                - name: scripts
+                  mountPath: /scripts
+              resources:
+                requests:
+                  cpu: "100m"
+                  memory: 256Mi
+                limits:
+                  cpu: "500m"
+                  memory: 512Mi
+              securityContext:
+                allowPrivilegeEscalation: false
+                readOnlyRootFilesystem: false
+                privileged: false
+                runAsNonRoot: true
+                seccompProfile:
+                  type: RuntimeDefault
+                capabilities:
+                  drop:
+                    - ALL
+              env:
+                - name: DATABASE_URL
+                  valueFrom:
+                    secretKeyRef:
+                      name: open-webui-app
+                      key: fqdn-uri
+                - name: OWUI_API_TOKEN
+                  valueFrom:
+                    secretKeyRef:
+                      name: oikb
+                      key: OPEN_WEBUI_API_KEY
+          volumes:
+            - name: scripts
+              configMap:
+                name: open-webui-cleanup
