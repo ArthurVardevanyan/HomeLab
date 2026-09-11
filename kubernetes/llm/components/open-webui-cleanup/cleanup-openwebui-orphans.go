@@ -143,51 +143,55 @@ func deleteFile(apiBase, apiToken, id string, maxRetries int, retryDelay float64
 	client := &http.Client{Timeout: defaultClientTimeout}
 
 	for attempt := 0; attempt <= maxRetries; attempt++ {
-		if attempt > 0 {
-			backoff := time.Duration(float64(time.Second) * float64(retryDelay) * math.Pow(2, float64(attempt-1)))
-			jitter := time.Duration(rand.Float64() * float64(backoff) * 0.5)
-			sleep := backoff + jitter
-			fmt.Printf("  Retrying %s (attempt %d/%d, waiting %v)...\n", id, attempt+1, maxRetries+1, sleep)
-			time.Sleep(sleep)
-		}
-
-		url := apiBase + "/api/v1/files/" + id
-		req, err := http.NewRequest("DELETE", url, nil)
+		req, err := http.NewRequest("DELETE", apiBase+"/api/v1/files/"+id, nil)
 		if err != nil {
-			return false, http.StatusInternalServerError
-		}
-		req.Header.Set("Authorization", "Bearer "+apiToken)
-
-		resp, err := client.Do(req)
-		if err != nil {
+			if attempt == maxRetries {
+				return false, http.StatusInternalServerError
+			}
+			time.Sleep(backoff(attempt, retryDelay))
 			continue
 		}
-
+		req.Header.Set("Authorization", "Bearer "+apiToken)
+		resp, err := client.Do(req)
+		if err != nil {
+			if attempt == maxRetries {
+				return false, 0
+			}
+			time.Sleep(backoff(attempt, retryDelay))
+			continue
+		}
 		_, _ = io.ReadAll(resp.Body)
 		resp.Body.Close()
-
 		switch resp.StatusCode {
 		case http.StatusOK:
 			return true, http.StatusOK
 		case http.StatusNotFound:
 			return true, http.StatusNotFound
 		case http.StatusTooManyRequests:
-			retryAfter := parseRetryAfter(resp.Header.Get("Retry-After"))
-			if retryAfter == 0 || retryAfter < defaultRateLimitDelay {
-				retryAfter = defaultRateLimitDelay
+			if attempt == maxRetries {
+				return false, http.StatusTooManyRequests
 			}
-			fmt.Printf("  Retrying %s (attempt %d/%d, waiting %v for 429)...\n", id, attempt+1, maxRetries+1, retryAfter)
-			time.Sleep(retryAfter)
+			wait := parseRetryAfter(resp.Header.Get("Retry-After"))
+			if wait == 0 {
+				wait = defaultRateLimitDelay
+			}
+			fmt.Printf("  %s rate-limited, retrying in %v (attempt %d/%d)\n", id, wait, attempt+1, maxRetries+1)
+			time.Sleep(wait)
 			continue
 		default:
-			if resp.StatusCode >= 500 {
+			if resp.StatusCode >= 500 && attempt < maxRetries {
+				time.Sleep(backoff(attempt, retryDelay))
 				continue
 			}
 			return false, resp.StatusCode
 		}
 	}
-
 	return false, http.StatusTooManyRequests
+}
+
+func backoff(attempt int, retryDelay float64) time.Duration {
+	base := time.Duration(float64(time.Second) * float64(retryDelay) * math.Pow(2, float64(attempt)))
+	return base + time.Duration(rand.Float64()*float64(base)*0.5)
 }
 
 var retryAfterRegex = regexp.MustCompile(`^([0-9]+)$`)
