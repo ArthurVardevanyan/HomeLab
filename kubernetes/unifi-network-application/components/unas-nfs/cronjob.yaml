@@ -1,0 +1,77 @@
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: nfs-sync
+  annotations:
+    checkov.io/skip1: CKV_K8S_40=OpenShift Injects Random UID
+    checkov.io/skip2: CKV_K8S_43=Don't Mind Tag for This
+    gitops-ci.k8s.io/exempt-image-checksum: "registry.arthurvardevanyan.com/homelab/toolbox:not_latest"
+  namespace: unifi-network-application
+spec:
+  suspend: true
+  schedule: "0 * * * *"
+  jobTemplate:
+    spec:
+      activeDeadlineSeconds: 300
+      backoffLimit: 1
+      template:
+        metadata:
+          labels:
+            app: nfs-sync
+        spec:
+          serviceAccountName: nfs-sync
+          automountServiceAccountToken: true
+          enableServiceLinks: false
+          dnsPolicy: ClusterFirst
+          schedulerName: default-scheduler
+          containers:
+            - name: nfs-sync
+              image: registry.arthurvardevanyan.com/homelab/toolbox:not_latest
+              securityContext:
+                runAsNonRoot: true
+                privileged: false
+                readOnlyRootFilesystem: true
+                allowPrivilegeEscalation: false
+                seccompProfile:
+                  type: RuntimeDefault
+                capabilities:
+                  drop:
+                    - ALL
+              volumeMounts:
+                - mountPath: /tmp/.ssh
+                  name: ssh-creds
+                  readOnly: true
+                - mountPath: /tmp/exports
+                  name: nfs-exports
+                - mountPath: /tmp/nfs-sync
+                  name: nfs-sync-script
+                - mountPath: /tmp/scratch
+                  name: scratch
+              resources:
+                limits:
+                  cpu: 100m
+                  ephemeral-storage: 64Mi
+                  memory: 64Mi
+                requests:
+                  cpu: 5m
+                  ephemeral-storage: 16Mi
+                  memory: 16Mi
+              command:
+                - "bash"
+                - "/tmp/nfs-sync/nfs-sync.sh"
+          volumes:
+            - name: ssh-creds
+              secret:
+                secretName: udm-creds
+                optional: false
+            - name: nfs-exports
+              configMap:
+                name: nfs-exports
+            - name: nfs-sync-script
+              configMap:
+                name: nfs-sync
+            - name: scratch
+              emptyDir:
+                sizeLimit: 50Mi
+          restartPolicy: Never
