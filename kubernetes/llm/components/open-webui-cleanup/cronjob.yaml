@@ -54,6 +54,10 @@ spec:
               volumeMounts:
                 - name: scripts
                   mountPath: /scripts
+                - name: gocache
+                  mountPath: /tmp/go-build
+                - name: gomodcache
+                  mountPath: /tmp/go-mod
               resources:
                 requests:
                   cpu: "100m"
@@ -72,6 +76,10 @@ spec:
                   drop:
                     - ALL
               env:
+                - name: GOCACHE
+                  value: /tmp/go-build
+                - name: GOMODCACHE
+                  value: /tmp/go-mod
                 - name: DATABASE_URL
                   valueFrom:
                     secretKeyRef:
@@ -86,3 +94,7 @@ spec:
             - name: scripts
               configMap:
                 name: open-webui-cleanup
+            - name: gocache
+              emptyDir: {}
+            - name: gomodcache
+              emptyDir: {}
