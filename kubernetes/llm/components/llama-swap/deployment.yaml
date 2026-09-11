@@ -45,9 +45,9 @@ spec:
       nodeSelector:
         feature.node.kubernetes.io/custom-intel.xe.gpu: "true"
       containers:
-        # Custom image = upstream llama-swap SYCL (b10450)
+        # Custom image = llama-swap v255 + vLLM XPU nightly + cookbook patches
         # renovate: datasource=docker depName=registry.arthurvardevanyan.com/homelab/llama-swap versioning=loose
-        - image: registry.arthurvardevanyan.com/homelab/llama-swap:v251-b10711@sha256:4c9b9e7a086fe77164a5069c277e760143bce09fb0eb63014a6e1e9d31cb2694
+        - image: registry.arthurvardevanyan.com/homelab/llama-swap:v255-intel-b10868-e05358a6@sha256:3ca2530d30e307fe7d0529cc7a7cf1faf94399b0178a56664f3ff3c7eaf3e65b
           imagePullPolicy: IfNotPresent
           name: llama-swap
           command: ["/app/llama-swap"]
@@ -98,12 +98,12 @@ spec:
             requests:
               cpu: "2"
               memory: 12Gi
-              ephemeral-storage: "256Mi"
+              ephemeral-storage: "1Gi"
               gpu.intel.com/xe: "4"
             limits:
               cpu: "6"
               memory: 48Gi
-              ephemeral-storage: "1Gi"
+              ephemeral-storage: "2Gi"
               gpu.intel.com/xe: "4"
           volumeMounts:
             - name: config
@@ -115,8 +115,9 @@ spec:
               mountPath: /cache
             - name: store
               mountPath: /var/lib/llama-swap
-        # metrics-exporter sidecar: scrapes llama.cpp /metrics from each
-        # dynamically-assigned child process and exposes aggregated metrics
+        # metrics-exporter sidecar: scrapes /metrics from each dynamically-
+        # assigned child process (supports llama.cpp, vLLM, and other
+        # backends), then exposes aggregated, backend-neutral metrics
         # renovate: datasource=docker depName=registry.arthurvardevanyan.com/homelab/llama-swap-metrics-exporter versioning=loose
         - image: registry.arthurvardevanyan.com/homelab/llama-swap-metrics-exporter:2026.08.21.143431@sha256:554bc278017929d4dd4ccf2f7a1f4cd02184c6abe597f9815fb3cb286cbfd8fb
           imagePullPolicy: IfNotPresent

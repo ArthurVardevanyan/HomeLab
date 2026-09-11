@@ -4,14 +4,8 @@ model_list:
   - model_name: claude-sonnet-5
     litellm_params:
       model: claude-sonnet-5
-  - model_name: claude-sonnet-5
-    litellm_params:
-      model: claude-sonnet-5
 
   # --- Public Model Alias 2: Claude Opus 5 ---
-  - model_name: claude-opus-5
-    litellm_params:
-      model: claude-opus-5
   - model_name: claude-opus-5
     litellm_params:
       model: claude-opus-5
@@ -55,11 +49,11 @@ model_list:
       api_base: http://llama-swap-svc.llm.svc.cluster.local.:8080/v1
       api_key: "dummy"
       input_cost_per_token: 0.000000001
-      rpm: 960
-      max_parallel_requests: 20
+      rpm: 480
+      max_parallel_requests: 10
       timeout: 600
-      num_retries: 5
-      retry_after: 5
+      num_retries: 3
+      retry_after: 3
 
 general_settings:
   forward_client_headers_to_llm_api: true
@@ -84,8 +78,6 @@ router_settings:
   #                                      (matrix guarantees one model per
   #                                      GPU, routing elsewhere would evict
   #                                      the active chat model)
-  #   - cold start (no candidate resident) -> no narrowing, ordering above
-  #                                           decides
   #   - one resident, victim idle      -> expose both GPUs (LiteLLM routes
   #                                        to the non-resident GPU,
   #                                        llama-swap loads it, then the
@@ -93,23 +85,18 @@ router_settings:
   #   - one resident, victim busy/recent -> narrow to resident to protect
   #                                         the active session (queue
   #                                         on the resident GPU instead)
-  #   - both candidates resident and ready -> poll llama.cpp's /slots via
-  #                                          llama-swap for actual busy-slot
-  #                                          counts, route to the less busy
-  #                                          one, round-robin on ties
-  # Session recency window: 120s. If a GPU was served within this window,
+  #   - both candidates resident and ready -> round-robin (Option B).
+  #     Note: vLLM chat models lack a /slots endpoint, so least-busy
+  #     polling via /slots only works for the embed-spread model.
+  #     See the "Known limitation — no intra-pair load balancing for vLLM"
+  #     section in llama_swap_affinity.py for Option C details.
+  # Session recency window: 300s. If a GPU was served within this window,
   # requests are protected from triggering an eviction (covers the gap
   # between mid-generation and a user's read-and-reply period).
-  # See llama_swap_affinity.py for the full rationale; resolved via the
-  # dotted-path convention documented at
-  # litellm.proxy.types_utils.utils.get_instance_fn. The /slots poll is
-  # proxied through llama-swap's upstream.ignorePaths guard (see
-  # llama-swap.yaml) so it can never itself trigger a model swap.
   # See llama_swap_affinity.py (mounted alongside this file at /etc/litellm)
-  # for the full rationale; resolved via the dotted-path convention
-  # documented at litellm.proxy.types_utils.utils.get_instance_fn. The
-  # /slots poll is proxied through llama-swap's upstream.ignorePaths guard
-  # (see llama-swap.yaml) so it can never itself trigger a model swap.
+  # for the full rationale. The /slots poll is proxied through llama-swap's
+  # upstream.ignorePaths guard (see llama-swap.yaml) so it can never itself
+  # trigger a model load/swap.
   plugins:
     - llama_swap_affinity.plugin
   # Required by the plugin above: narrowing candidates to a resident

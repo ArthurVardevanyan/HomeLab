@@ -1,28 +1,168 @@
 # llama-swap orchestrator for Intel Arc Pro B70 (Battlemage / Xe2) with SYCL
 #
-# Base: ghcr.io/mostlygeek/llama-swap
-# renovate: datasource=docker depName=ghcr.io/mostlygeek/llama-swap versioning=loose
-FROM ghcr.io/mostlygeek/llama-swap:v251-intel-b10711@sha256:1ba4ee9b4d4ac46d185e14fdabd782b71fd1fc31488122f576c4f04e9d461c6d
+# Base: vLLM XPU (vLLM 0.28.1rc1.dev580 + SYCL 9) + llama-swap v255 SYCL binaries
+#       + cookbook MTP + APC + GDN + backward-copy + eagle-drop patches
+# renovate: datasource=docker depName=vllm/vllm-openai-xpu versioning=loose
+FROM docker.io/vllm/vllm-openai-xpu:nightly@sha256:7ede53bd3f5fc3eeef64fea13096c035b009825e050c4912043e4b78c38be6e5 AS vllm-base
+FROM ghcr.io/mostlygeek/llama-swap:v255-intel-b10868@sha256:23599ef59fcaed6ad13fd76aec97968903e24479beb476fbe268d49524270f9c AS llama-swap-bin
 
-LABEL org.opencontainers.image.source="https://github.com/ArthurVardevanyan/HomeLab" \
-  org.opencontainers.image.title="llama-swap SYCL (Battlemage)" \
-  org.opencontainers.image.description="llama-swap orchestrator with SYCL/intel llama.cpp backend for Intel Arc Pro B70" \
-  org.opencontainers.image.licenses="MIT"
-
-USER 0
-
-# ca-certificates (intel-compute-runtime already included in the mostlygeek
-# intel base image)
+# vllm-wrapper — not shipped in llama-swap release archives, built from source
+FROM docker.io/library/golang:1.27-bookworm AS vllm-wrapper-build
+ARG LS_VERSION=255
 RUN set -eux; \
-  apt-get update; \
-  apt-get install -y --no-install-recommends ca-certificates; \
-  rm -rf /var/lib/apt/lists/* /tmp/*
+  git clone --depth 1 --branch v${LS_VERSION} https://github.com/mostlygeek/llama-swap.git /src/llama-swap; \
+  cd /src/llama-swap && \
+  CGO_ENABLED=0 go build -trimpath -o /usr/local/bin/vllm-wrapper ./cmd/vllm-wrapper
+
+# Final image — use vllm-base (has python3, curl, vLLM libs) and overlay llama-swap binaries
+FROM vllm-base
+
+# ca-certificates (already in vllm-base, kept for completeness)
+# COPY --from=llama-swap-bin /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
+
+# llama-swap binary + llama-server (SYCL build) + vllm-wrapper
+COPY --from=llama-swap-bin /app/llama-swap /app/llama-swap
+COPY --from=llama-swap-bin /app/llama-server /app/llama-server
+COPY --from=llama-swap-bin /app/*.so* /app/
+COPY --from=llama-swap-bin /app/libllama* /app/
+# Complete OneAPI runtime (SYCL, MKL, OpenMP, SVML, etc.)
+COPY --from=llama-swap-bin /opt/intel/oneapi /opt/intel/oneapi
+COPY --from=vllm-wrapper-build /usr/local/bin/vllm-wrapper /app/vllm-wrapper
+
+# Hermetic Intel runtime for llama.cpp, vendored into /app/rt/.
+#
+# Why this exists: vLLM's SYCL 9 stack requires /opt/venv/lib first on
+# LD_LIBRARY_PATH (see LD_LIBRARY_PATH comment below re: urDeviceWaitExp).
+# But llama-server was built by IntelLLVM against oneAPI 2025.3, and if it
+# runs under that vLLM-first LD_LIBRARY_PATH it binds the venv's OpenMP
+# runtime (libiomp5/libimf/libsvml/libintlc/libirng — all differ by md5
+# from oneAPI's) instead of its own. That ABI mismatch reproduces as:
+#   - CPU (-ngl 0): segfault immediately after "llama threadpool init"
+#     (first OpenMP thread spin-up); last library loaded is venv's
+#     libarcher.so (OMPT tool lib pulled in by the venv's iomp5).
+#   - GPU (-ngl 99): no crash, but a host-side hang mid-layer-0 attention
+#     (stalls after the Kcur matmul/RoPE step) — VRAM is allocated but the
+#     GPU stays idle and one CPU thread pins at 100%; SYCL_CACHE growth
+#     stops, so it is not a JIT compile, just a stuck OpenMP wait.
+# llama-swap's own upstream image (ghcr.io/mostlygeek/llama-swap, see
+# `main` branch of this containerfile) never hits this because llama.cpp
+# there runs on the runtime it was built against — confirming the cause is
+# the shared LD_LIBRARY_PATH, not a CPU-dispatch or Battlemage issue.
+#
+# Fix: vendor a private copy of oneAPI's Intel runtime for llama.cpp only,
+# and point it at /app/rt via llama-device-wrapper.sh (see below). vLLM
+# keeps /opt/venv/lib. Two independent SYCL stacks, one image, never mixed
+# in the same process.
+#
+# This is the full ldd closure of llama-server + libggml-sycl.so +
+# libggml-cpu-haswell.so under an oneAPI-first LD_LIBRARY_PATH, plus two
+# libraries that UR adapters dlopen() at runtime (libur_adapter_level_zero*
+# and libumf) and therefore never show up in ldd. Deliberately NOT vendored
+# (must resolve from the host GPU stack): libze_loader.so.1,
+# libze_intel_gpu.so.1, libigc.so.2, libopencl-clang2.so.17.
+RUN set -eux; \
+  mkdir -p /app/rt; \
+  ONEAPI=/opt/intel/oneapi; \
+  cp -a \
+    "${ONEAPI}/compiler/2025.3/lib/libiomp5.so" \
+    "${ONEAPI}/compiler/2025.3/lib/libimf.so" \
+    "${ONEAPI}/compiler/2025.3/lib/libsvml.so" \
+    "${ONEAPI}/compiler/2025.3/lib/libintlc.so.5" \
+    "${ONEAPI}/compiler/2025.3/lib/libirng.so" \
+    "${ONEAPI}/compiler/2025.3/lib/libsycl.so.8" \
+    "${ONEAPI}/compiler/2025.3/lib/libsycl.so.8.0.0" \
+    "${ONEAPI}/compiler/2025.3/lib/libur_loader.so.0" \
+    "${ONEAPI}/compiler/2025.3/lib/libur_loader.so.0.12.0" \
+    "${ONEAPI}/compiler/2025.3/lib/libOpenCL.so.1" \
+    "${ONEAPI}/compiler/2025.3/lib/libOpenCL.so.1.0.0" \
+    "${ONEAPI}/compiler/2025.3/lib/libur_adapter_level_zero.so.0" \
+    "${ONEAPI}/compiler/2025.3/lib/libur_adapter_level_zero.so.0.12.0" \
+    "${ONEAPI}/compiler/2025.3/lib/libur_adapter_level_zero_v2.so.0" \
+    "${ONEAPI}/compiler/2025.3/lib/libur_adapter_level_zero_v2.so.0.12.0" \
+    "${ONEAPI}/umf/latest/lib/libumf.so.1" \
+    "${ONEAPI}/umf/latest/lib/libumf.so.1.0.2" \
+    "${ONEAPI}/mkl/2025.3/lib/libmkl_sycl_blas.so.5" \
+    "${ONEAPI}/mkl/2025.3/lib/libmkl_intel_ilp64.so.2" \
+    "${ONEAPI}/mkl/2025.3/lib/libmkl_tbb_thread.so.2" \
+    "${ONEAPI}/mkl/2025.3/lib/libmkl_core.so.2" \
+    "${ONEAPI}/tbb/2022.3/lib/intel64/gcc4.8/libtbb.so.12" \
+    "${ONEAPI}/tbb/2022.3/lib/intel64/gcc4.8/libtbb.so.12.17" \
+    "${ONEAPI}/dnnl/2025.3/lib/libdnnl.so.3" \
+    "${ONEAPI}/dnnl/2025.3/lib/libdnnl.so.3.9" \
+    /app/rt/; \
+  ! LD_LIBRARY_PATH=/app/rt:/app ldd /app/llama-server | grep -E "not found|/opt/venv"; \
+  ! LD_LIBRARY_PATH=/app/rt:/app ldd /app/libggml-sycl.so | grep -E "not found|/opt/venv"
+
+# vllm-device-wrapper — ensures ONEAPI env vars are exported for child processes
+COPY vllm-device-wrapper.sh /app/vllm-device-wrapper.sh
+# llama-device-wrapper — pins llama.cpp to the hermetic /app/rt runtime so it
+# never binds vLLM's SYCL 9 / venv OpenMP stack (see /app/rt comment above).
+COPY llama-device-wrapper.sh /app/llama-device-wrapper.sh
+RUN chmod +x /app/vllm-device-wrapper.sh /app/llama-device-wrapper.sh
+
+# Cookbook patches (vendor + apply at build time)
+COPY patches/ /tmp/patches/
+
+# Apply patches against the vllm package from the base image
+# Each patch is idempotent (checks for marker before applying)
+# renovate: datasource=github-releases depName=SergiioB/intel-arc-pro-b70-inference-cookbook
+RUN set -eux; \
+  VLLM_PKG=$(python3 -c "import vllm; print(vllm.__file__.replace('__init__.py',''))" 2>/dev/null || echo "/opt/venv/lib/python3.12/site-packages/vllm"); \
+  echo "Patching vllm at: ${VLLM_PKG}"; \
+  echo "=== patch_mtp_nightly ===" && \
+  python3 /tmp/patches/patch_mtp_nightly.py; \
+  echo "=== patch_mtp_boundary ===" && \
+  python3 /tmp/patches/patch_mtp_boundary.py; \
+  echo "=== patch_gdn_mixed_split_v5 ===" && \
+  python3 /tmp/patches/patch_gdn_mixed_split_v5.py; \
+  echo "=== patch_fix_accepted_sync ===" && \
+  python3 /tmp/patches/patch_fix_accepted_sync.py; \
+  echo "=== patch_fix_backward_copy ===" && \
+  python3 /tmp/patches/patch_fix_backward_copy.py; \
+  echo "=== patch_fix_eagle_drop ===" && \
+  python3 /tmp/patches/patch_fix_eagle_drop.py; \
+  rm -rf /tmp/patches
 
 # Arbitrary-UID friendliness on OpenShift: HF cache to /tmp
-ENV XDG_CACHE_HOME=/tmp
+ENV XDG_CACHE_HOME=/tmp \
+  HOME=/tmp \
+  VLLM_CACHE_ROOT=/tmp/vllm-cache
 
-# Default SYCL env vars (per-model overrides apply at runtime)
-ENV ONEAPI_DEVICE_SELECTOR=level_zero:* \
+# vLLM XPU / SYCL env
+# NOTE: This LD_LIBRARY_PATH is for the container's default process
+# (llama-swap) and anything it execs WITHOUT going through
+# llama-device-wrapper.sh — in practice, only vLLM (via
+# vllm-device-wrapper.sh) and llama-swap itself. /opt/venv/lib must come
+# first because vLLM's runtime (libsycl.so.9) needs urDeviceWaitExp, which
+# only the venv's libur_loader.so.0 exports:
+#   ImportError: libsycl.so.9: undefined symbol: urDeviceWaitExp
+# llama.cpp does NOT use this LD_LIBRARY_PATH — llama-swap always launches it
+# through llama-device-wrapper.sh, which overrides LD_LIBRARY_PATH to the
+# hermetic /app/rt runtime (see /app/rt COPY block above) instead of
+# inheriting this one. Do not remove /opt/intel/oneapi/... entries below on
+# the assumption they are dead weight for llama.cpp — some non-llama.cpp
+# tooling (e.g. sycl-ls, oneAPI CLI utilities) still relies on them for
+# manual debugging inside the container.
+ENV VLLM_TARGET_DEVICE=xpu \
+  VLLM_XPU_ENABLE_XPU_GRAPH=1 \
+  ONEAPI_DEVICE_SELECTOR=level_zero:* \
   SYCL_PI_LEVEL_ZERO_USE_IMMEDIATE_COMMANDLISTS=0 \
-  SYCL_DEVICE_FILTER=level_zero \
-  ZE_FLAT_DEVICE_HIERARCHY=COMPOSITE
+  ZE_FLAT_DEVICE_HIERARCHY=COMPOSITE \
+  GGML_SYCL_ENABLE_GRAPH=1 \
+  SYCL_CACHE_PERSISTENT=0 \
+  B70_MTP_BF16_DRAFT=1 \
+  PYTORCH_ALLOC_CONF=expandable_segments:True \
+  LD_LIBRARY_PATH=/opt/venv/lib:/opt/ucx/lib:/usr/local/lib:/app:/opt/intel/oneapi/compiler/2025.3/lib:/opt/intel/oneapi/mkl/2025.3/lib:/opt/intel/oneapi/tbb/2022.3/lib/intel64/gcc4.8:/opt/intel/oneapi/dnnl/2025.3/lib
+
+# Verify torch/vllm imports and llama-server SYCL linkage
+RUN set -eux; \
+  python3 -c "import torch, vllm"; \
+  ! ldd /app/libggml-sycl.so | grep "not found"; \
+  /app/llama-server --version
+
+# llama-swap: health endpoint
+HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
+  CMD ["/bin/sh", "-c", "curl -sf http://localhost:8080/ || exit 1"]
+
+# Default entrypoint (llama-swap itself runs with --config in the deployment)
+ENTRYPOINT ["/app/llama-swap"]

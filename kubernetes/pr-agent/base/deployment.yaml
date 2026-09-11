@@ -71,9 +71,9 @@ spec:
             - name: OPENAI__API_BASE
               value: "http://litellm-svc.llm.svc.cluster.local.:4000/v1"
             - name: CONFIG__CUSTOM_MODEL_MAX_TOKENS
-              value: "147456"
+              value: "32768"
             - name: CONFIG__MAX_MODEL_TOKENS
-              value: "147456"
+              value: "32768"
             # Empty string here is not a no-op: PR Agent splits it on "," into
             # [''] and appends that to the model list, so every timeout is
             # immediately followed by a guaranteed second failure ("Invalid
@@ -128,7 +128,7 @@ spec:
             - name: WORKER_TIMEOUT
               value: "120"
             - name: GUNICORN_WORKERS
-              value: "2"
+              value: "3"
           # The Docker image's CMD runs gunicorn directly with no graceful
           # shutdown — gunicorn defaults to killing workers 3s after SIGTERM,
           # which silently drops any in-flight BackgroundTasks (the PR review

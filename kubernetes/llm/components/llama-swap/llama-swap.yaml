@@ -1,103 +1,121 @@
 ---
-healthCheckTimeout: 300
+healthCheckTimeout: 900
 
 store:
   path: /var/lib/llama-swap/llama-swap.db
 
-# Controls /upstream/<model>/<path> passthrough. The llama_swap_affinity
-# LiteLLM routing plugin (see litellm.yaml) polls /upstream/<model>/slots to
-# read per-instance llama.cpp slot occupancy for load-aware routing between
-# the two GPU copies of a model. Restating the built-in default pattern here
-# is required: specifying ignorePaths replaces it rather than merging with
-# it. Both entries prevent a request from ever triggering a swap; the plugin
-# only polls models it already knows are resident, but this is
-# defense-in-depth against a plugin bug doing otherwise.
 upstream:
   ignorePaths:
-    - '.*\.(js|json|css|png|gif|jpg|jpeg|ico|txt)$' # llama-swap built-in default
-    - ^/slots$ # a /slots poll must never trigger a model load/swap
+    - '.*\.(js|json|css|png|gif|jpg|jpeg|ico|txt)$'
+    - ^/slots$
 
 hooks:
   on_startup:
-    # preload takes model IDs (not matrix set names) - 35B MoE on GPU 0
-    # (primary slot, higher eviction cost) + 27B on GPU 1 gives useful
-    # work on both GPUs from boot rather than data-parallel redundancy.
-    # embed-spread is also preloaded — 0.6B Q8_0 uses ~2 GB across both GPUs,
-    # fitting alongside any dual chat config without pressure.
     preload:
+      # Preload 35B MoE on GPU 0 + 27B dense on GPU 1
+      # embed-spread is also preloaded — 0.6B Q8_0 uses ~2 GB across both GPUs,
+      # fitting alongside any dual chat config without pressure.
       - 35b-gpu0
       - 27b-gpu1
       - embed-spread
 
 macros:
-  # SYCL graph capture: confirmed working on Battlemage (ext_oneapi_graph +
-  # ext_oneapi_async_memory_alloc present; graphs reused = 254–633 in logs).
-  # SYCL_CACHE_PERSISTENT=1: hard crash on SYCL init, before model load, on
-  # both architectures (bisected: graph-only boots clean, cache-only fails).
-  # Speculative decoding: --spec-ngram-mod-n-max set per-model below. The
-  # position-wise histogram (scraped from live metrics) shows MoE has
-  # 87–100% conditional acceptance at every position, while dense has
-  # 67.9% at pos0 and 42.9% at pos1. Capping at 8 (MoE) / 2 (dense)
-  # reduces wasted verification work without materially affecting
-  # throughput — the real bottleneck is draft frequency (0.89%), not
-  # draft length. See README for full analysis.
-  cmd_base: "/app/llama-server --port ${PORT} --host 127.0.0.1 --cont-batching --reasoning-format auto --reasoning-preserve -ngl 99 --flash-attn on --cache-type-k q8_0 --cache-type-v q8_0 --ubatch-size 2048 --jinja --poll 0 -t 12 --threads-http 4 --cache-reuse 256 --load-mode none --metrics --spec-type ngram-mod"
+  cmd_base_vllm: "/app/vllm-device-wrapper.sh"
+  cmd_base_llama: "/app/llama-device-wrapper.sh --port ${PORT} --host 127.0.0.1 --cont-batching -ngl 99 --flash-attn on --cache-type-k f16 --cache-type-v f16 --ubatch-size 2048 --jinja --poll 0 -t 12 --threads-http 4 --cache-reuse 256 --load-mode none --metrics"
 
 models:
   # ==========================================
-  # 1. Qwen 3.6 35B (A3B)
+  # 1. Qwen 3.6 35B-A3B (MoE) — with vision tower, 131K ctx
+  #    Source: rcs1000/Qwen3.6-35B-A3B-MTP-Preserved-GPTQ-Int4 @4b2e1978
+  #    Fallback: llmfan46/Qwen3.6-35B-A3B-MoE-GPTQ-Int4 (cookbook-verified)
   # ==========================================
   35b-gpu0:
-    cmd: ${cmd_base} --spec-ngram-mod-n-max 8 --parallel 2 --ctx-size 294912 -m /data/models/Qwen3.6-35B-A3B-UD-Q4_K_M.gguf --mmproj /data/models/Qwen3.6-35B-A3B-mmproj-F16.gguf --image-min-tokens 1024
+    cmd: '${cmd_base_vllm} /data/models/Qwen3.6-35B-A3B-GPTQ-Int4 --host 127.0.0.1 --port ${PORT} --quantization gptq --dtype float16 --max-model-len 262144 --gpu-memory-utilization 0.93 --kv-cache-dtype fp8 --enable-prefix-caching --enable-auto-tool-choice --tool-call-parser qwen3_coder --reasoning-parser qwen3 --speculative-config ''{"method": "mtp", "num_speculative_tokens": 3}'' --max-num-seqs 6 --max-num-batched-tokens 4096 --served-model-name 35b-gpu0' #  --kv-cache-memory 7408818586
     env:
-      - "ONEAPI_DEVICE_SELECTOR=level_zero:0"
+      # ONEAPI_DEVICE_SELECTOR has no effect on vLLM/torch XPU device
+      # enumeration (verified: torch.xpu.device_count() is unchanged across
+      # every selector value). vLLM's XPUPlatform claims ZE_AFFINITY_MASK as
+      # its own device_control_env_var and re-translates logical<->physical
+      # device IDs through it, so ZE_AFFINITY_MASK is the only var that
+      # actually needs to be set here.
       - "SYCL_PI_LEVEL_ZERO_USE_IMMEDIATE_COMMANDLISTS=1"
-      - "GGML_SYCL_ENABLE_GRAPH=1"
+      - "ZE_AFFINITY_MASK=0"
     ttl: 0
 
   35b-gpu1:
-    cmd: ${cmd_base} --spec-ngram-mod-n-max 8 --parallel 2 --ctx-size 294912 -m /data/models/Qwen3.6-35B-A3B-UD-Q4_K_M.gguf --mmproj /data/models/Qwen3.6-35B-A3B-mmproj-F16.gguf --image-min-tokens 1024
+    cmd: '${cmd_base_vllm} /data/models/Qwen3.6-35B-A3B-GPTQ-Int4 --host 127.0.0.1 --port ${PORT} --quantization gptq --dtype float16 --max-model-len 262144 --gpu-memory-utilization 0.93 --kv-cache-dtype fp8 --enable-prefix-caching --enable-auto-tool-choice --tool-call-parser qwen3_coder --reasoning-parser qwen3 --speculative-config ''{"method": "mtp", "num_speculative_tokens": 3}'' --max-num-seqs 6 --max-num-batched-tokens 4096 --served-model-name 35b-gpu1' #  --kv-cache-memory 7408818586s
     env:
-      - "ONEAPI_DEVICE_SELECTOR=level_zero:1"
+      # See 35b-gpu0 above re: ONEAPI_DEVICE_SELECTOR removal.
       - "SYCL_PI_LEVEL_ZERO_USE_IMMEDIATE_COMMANDLISTS=1"
-      - "GGML_SYCL_ENABLE_GRAPH=1"
+      - "ZE_AFFINITY_MASK=1"
     ttl: 0
 
   # ==========================================
-  # 2. Qwen 3.8 27B
+  # 2. Qwen 3.8 27B (dense) — with vision, 131K ctx
+  #    Source: SergiioB/Qwen3.8-27B-GPTQ-Int4-sym-G128-MTP-BF16 @9d189a60
+  #
+  #    vLLM XPU startup memory check is a known false-positive on UMA systems:
+  #    - #50135: "ValueError: Free memory on device xpu:0 (0.22/30.3 GiB) on
+  #      startup is less than desired GPU memory utilization"
+  #    - #48140: "Startup free-memory check uses MemFree instead of
+  #      MemAvailable — spurious ValueError on UMA devices (GB10 / GB200 /
+  #      Jetson)"
+  #
+  #    Root cause: vLLM's pre-flight check reads /proc/meminfo MemFree (or
+  #    the XPU equivalent) which does not account for reclaimable kernel memory
+  #    or the PyTorch caching allocator's existing allocations. On UMA systems
+  #    where device memory is a subset of the total host memory, MemFree is
+  #    much lower than MemAvailable, causing the check to fail even when enough
+  #    VRAM is physically available.
+  #
+  #    Workaround: preload models in a specific order so that by the time the
+  #    27B model's vLLM instance starts, the embedding model's memory has been
+  #    accounted for by the allocator, and the vLLM memory check uses a higher
+  #    effective available threshold. Also pin each 27B instance to a dedicated
+  #    GPU with ZE_AFFINITY_MASK to avoid cross-GPU fragmentation during the
+  #    initial allocation.
   # ==========================================
   27b-gpu0:
-    cmd: ${cmd_base} --spec-ngram-mod-n-max 2 --parallel 1 --ctx-size 196608 -m /data/models/Qwen3.8-27B-Q4_K_M.gguf --mmproj /data/models/Qwen3.8-27B-mmproj-F16.gguf --image-min-tokens 1024
+    cmd: '${cmd_base_vllm} /data/models/Qwen3.8-27B-GPTQ-Int4 --host 127.0.0.1 --port ${PORT} --quantization gptq --dtype float16 --max-model-len 194560 --gpu-memory-utilization 0.93 --kv-cache-dtype fp8 --enable-prefix-caching --enable-auto-tool-choice --tool-call-parser qwen3_xml --reasoning-parser qwen3 --speculative-config ''{"method": "mtp", "num_speculative_tokens": 3}'' --max-num-seqs 3 --max-num-batched-tokens 4096 --served-model-name 27b-gpu0' #  --kv-cache-memory 10864792422
     env:
-      - "ONEAPI_DEVICE_SELECTOR=level_zero:0"
+      # See 35b-gpu0 above re: ONEAPI_DEVICE_SELECTOR removal.
       - "SYCL_PI_LEVEL_ZERO_USE_IMMEDIATE_COMMANDLISTS=1"
-      - "GGML_SYCL_ENABLE_GRAPH=1"
+      - "ZE_AFFINITY_MASK=0"
     ttl: 0
 
   27b-gpu1:
-    cmd: ${cmd_base} --spec-ngram-mod-n-max 2 --parallel 1 --ctx-size 196608 -m /data/models/Qwen3.8-27B-Q4_K_M.gguf --mmproj /data/models/Qwen3.8-27B-mmproj-F16.gguf --image-min-tokens 1024
+    cmd: '${cmd_base_vllm} /data/models/Qwen3.8-27B-GPTQ-Int4 --host 127.0.0.1 --port ${PORT} --quantization gptq --dtype float16 --max-model-len 194560 --gpu-memory-utilization 0.93 --kv-cache-dtype fp8 --enable-prefix-caching --enable-auto-tool-choice --tool-call-parser qwen3_xml --reasoning-parser qwen3 --speculative-config ''{"method": "mtp", "num_speculative_tokens": 3}'' --max-num-seqs 3 --max-num-batched-tokens 4096 --served-model-name 27b-gpu1' # --kv-cache-memory 10864792422
     env:
-      - "ONEAPI_DEVICE_SELECTOR=level_zero:1"
+      # See 35b-gpu0 above re: ONEAPI_DEVICE_SELECTOR removal.
       - "SYCL_PI_LEVEL_ZERO_USE_IMMEDIATE_COMMANDLISTS=1"
-      - "GGML_SYCL_ENABLE_GRAPH=1"
+      - "ZE_AFFINITY_MASK=1"
     ttl: 0
 
   # ==========================================
-  # 4. Qwen3 Embedding 0.6B (spread across both GPUs)
+  # 3. Qwen3 Embedding 0.6B (spread across both GPUs)
+  #    Root cause of the earlier failure (fixed via llama-device-wrapper.sh
+  #    + the hermetic /app/rt runtime — see containerfile): this image's
+  #    default LD_LIBRARY_PATH puts /opt/venv/lib (vLLM's SYCL 9 stack)
+  #    first, so plain /app/llama-server bound vLLM's Intel OpenMP runtime
+  #    instead of the oneAPI 2025.3 runtime it was built against (all of
+  #    libiomp5/libimf/libsvml/libintlc/libirng differ by md5 between the
+  #    two). That ABI mismatch segfaulted on CPU (-ngl 0, immediately after
+  #    "llama threadpool init") and hung on GPU (-ngl 99, host-side stall
+  #    mid-layer-0 attention — VRAM allocated, GPU idle, one CPU thread
+  #    pinned). It was NOT a CPU-dispatch/Zen 2/haswell issue (haswell is
+  #    the correct ggml CPU variant for this node's Ryzen 5 3600), and NOT
+  #    a Battlemage-specific bug — llama-swap's upstream mostlygeek/
+  #    llama-swap image runs this exact command/env with no changes needed.
   # ==========================================
   embed-spread:
-    cmd: /app/llama-server --port ${PORT} --host 127.0.0.1 --cont-batching -m /data/models/Qwen3-Embedding-0.6B-Q8_0.gguf -t 8 --threads 8 --ctx-size 122880 --cache-type-k q8_0 --cache-type-v q8_0 --embedding --ubatch-size 256 --jinja --poll 0 --parallel 30
+    cmd: /app/llama-device-wrapper.sh --port ${PORT} --host 127.0.0.1 --cont-batching -m /data/models/Qwen3-Embedding-0.6B-Q8_0.gguf --split-mode layer --tensor-split 1,1 -ngl 99 -t 8 --threads 8 --ctx-size 81920 --cache-type-k q8_0 --cache-type-v q8_0 --embedding --ubatch-size 256 --jinja --poll 0 --parallel 20 --metrics
     env:
       - "ONEAPI_DEVICE_SELECTOR=level_zero:0,1"
       - "SYCL_PI_LEVEL_ZERO_USE_IMMEDIATE_COMMANDLISTS=1"
       - "GGML_SYCL_ENABLE_GRAPH=1"
     ttl: 0
-    concurrencyLimit: 30
+    concurrencyLimit: 20
 
-# The matrix dictates all valid VRAM combinations.
-# Each set represents one valid model-per-GPU configuration. The solver
-# picks one set, guaranteeing exactly one model per GPU and preventing
-# spillover to system RAM.
 matrix:
   vars:
     # GPU 0 models
@@ -106,19 +124,15 @@ matrix:
     # GPU 1 models
     M35-1: 35b-gpu1
     M27-1: 27b-gpu1
-    # ME-0: qwen3-embed-gpu0
-    # ME-1: qwen3-embed-gpu1
     # Spread models
     S35-e: embed-spread
 
-  # Eviction cost: higher = harder to evict. Spread > 35B > 27B.
-  # GPU 0 35B costs more than GPU 1 so eviction is deterministic.
+  # Eviction cost: higher = harder to evict
   evict_costs:
     M35-0: 20
     M35-1: 10
     M27-0: 15
     M27-1: 15
-    # ME-1: 5
     S35-e: 1
 
   sets:

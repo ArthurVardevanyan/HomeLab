@@ -116,11 +116,6 @@ spec:
 
                   # Phase 1 -- resolve redirects for missing models, then download.
                   for entry in \
-                    "Qwen3.6-35B-A3B-UD-Q4_K_M.gguf|https://huggingface.co/unsloth/Qwen3.6-35B-A3B-GGUF/resolve/main/Qwen3.6-35B-A3B-UD-Q4_K_M.gguf?download=true" \
-                    "Qwen3.6-35B-A3B-mmproj-F16.gguf|https://huggingface.co/unsloth/Qwen3.6-35B-A3B-GGUF/resolve/main/mmproj-F16.gguf?download=true" \
-                    "Qwen3.8-27B-Q4_K_M.gguf|https://huggingface.co/unsloth/Qwen3.8-27B-GGUF/resolve/main/Qwen3.8-27B-Q4_K_M.gguf?download=true" \
-                    "Qwen3.8-27B-mmproj-F16.gguf|https://huggingface.co/unsloth/Qwen3.8-27B-GGUF/resolve/main/mmproj-F16.gguf?download=true" \
-                    "Qwen3-Embedding-4B-Q8_0.gguf|https://huggingface.co/qwen/Qwen3-Embedding-4B-GGUF/resolve/main/Qwen3-Embedding-4B-Q8_0.gguf?download=true" \
                     "Qwen3-Embedding-0.6B-Q8_0.gguf|https://huggingface.co/qwen/Qwen3-Embedding-0.6B-GGUF/resolve/main/Qwen3-Embedding-0.6B-Q8_0.gguf?download=true"; do
                     name="${entry%%|*}"
                     src="${entry#*|}"
@@ -146,6 +141,34 @@ spec:
                     fi
                     dl_fetch "${name}" "${cdn}" "${size}"
                   done
+
+                  # Phase 2 -- download vLLM model directories from HuggingFace Hub
+                  # using aria2c. Queries HF API for file list, downloads each file
+                  # preserving directory structure.
+
+                  dl_hf_dir_aria2() {
+                    local repo="$1" revision="$2" local_dir="$3"
+                    local sentinel="${local_dir}/.download-complete"
+                    [ "${FORCE_REVALIDATE}" = "true" ] || [ -f "${sentinel}" ] && { echo "HF dir present: ${local_dir}"; return 0; }
+                    echo "Downloading HF dir: ${repo}@${revision} -> ${local_dir} ..."
+                    local files
+                    files=$(curl -sL "https://huggingface.co/api/models/${repo}/tree/${revision}" | jq -r '.[].path')
+                    mkdir -p "${local_dir}"
+                    while IFS= read -r filepath; do
+                      [ -z "${filepath}" ] && continue
+                      local outfile="${local_dir}/${filepath}"
+                      mkdir -p "$(dirname "${outfile}")"
+                      local url="https://huggingface.co/${repo}/resolve/${revision}/${filepath}?download=true"
+                      echo "Downloading ${filepath} ..."
+                      ${ARIA2C} -d "$(dirname "${outfile}")" -o "$(basename "${outfile}")" "${url}"
+                    done <<< "${files}"
+                    touch "${sentinel}"
+                    echo "Done HF dir: ${local_dir}"
+                  }
+
+                  mkdir -p /data/models
+                  dl_hf_dir_aria2 "rcs1000/Qwen3.6-35B-A3B-MTP-Preserved-GPTQ-Int4" "4b2e1978673b1287fcf974974a506f353de06b63" "/data/models/Qwen3.6-35B-A3B-GPTQ-Int4"
+                  dl_hf_dir_aria2 "SergiioB/Qwen3.8-27B-GPTQ-Int4-sym-G128-MTP-BF16" "main" "/data/models/Qwen3.8-27B-GPTQ-Int4"
               resources:
                 requests:
                   cpu: "100m"
