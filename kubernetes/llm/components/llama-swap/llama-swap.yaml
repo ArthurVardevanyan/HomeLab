@@ -87,7 +87,7 @@ models:
   #    llama-swap image runs this exact command/env with no changes needed.
   # ==========================================
   embed-spread:
-    cmd: /app/llama-device-wrapper.sh --port ${PORT} --host 127.0.0.1 --cont-batching -m /data/models/Qwen3-Embedding-0.6B-Q8_0.gguf -ngl 99 -t 8 --threads 8 --ctx-size 81920 --cache-type-k q8_0 --cache-type-v q8_0 --embedding --ubatch-size 256 --jinja --poll 0 --parallel 20 --metrics
+    cmd: /app/llama-device-wrapper.sh --port ${PORT} --host 127.0.0.1 --cont-batching -m /data/models/Qwen3-Embedding-0.6B-Q8_0.gguf --split-mode layer --tensor-split 1,1 -ngl 99 -t 8 --threads 8 --ctx-size 81920 --cache-type-k q8_0 --cache-type-v q8_0 --embedding --ubatch-size 256 --jinja --poll 0 --parallel 20 --metrics
     env:
       - "ONEAPI_DEVICE_SELECTOR=level_zero:0,1"
       - "SYCL_PI_LEVEL_ZERO_USE_IMMEDIATE_COMMANDLISTS=1"
