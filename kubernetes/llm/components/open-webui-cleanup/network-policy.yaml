@@ -16,6 +16,28 @@ spec:
       app: open-webui-cleanup
   egress:
     - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: openshift-dns
+          podSelector:
+            matchLabels:
+              dns.operator.openshift.io/daemonset-dns: default
+      ports:
+        - port: 5353
+          protocol: UDP
+        - port: 5353
+          protocol: TCP
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: llm
+          podSelector:
+            matchLabels:
+              cnpg.io/cluster: open-webui
+      ports:
+        - protocol: TCP
+          port: 5432
+    - to:
         - ipBlock:
             cidr: 0.0.0.0/0
             except:
