@@ -1,3 +1,4 @@
+# OperatorConfig defines the default settings for all CSI drivers.
 ---
 apiVersion: csi.ceph.io/v1
 kind: OperatorConfig
@@ -8,14 +9,31 @@ metadata:
     argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
 spec:
   driverSpecDefaults:
-    fsGroupPolicy: File
-    log: {}
-    deployCsiAddons: false
-    clusterName: rook-ceph
+    log:
+      verbosity: 0
     imageSet:
       name: rook-csi-operator-image-set-configmap
+    enableMetadata: true
+    generateOMapInfo: false
+    fsGroupPolicy: File
+    deployCsiAddons: false
+    clusterName: rook-ceph
     cephFsClientType: kernel
+    nodePlugin:
+      priorityClassName: "system-node-critical"
+      kubeletDirPath: /var/lib/kubelet
+      enableSeLinuxHostMount: false
+      affinity:
+        nodeAffinity: {}
+      imagePullPolicy: IfNotPresent
+      resources: {}
+      tolerations:
+        - key: node-role.kubernetes.io/control-plane
+          operator: Exists
     controllerPlugin:
+      priorityClassName: "system-cluster-critical"
+      deploymentStrategy:
+        type: Recreate
       affinity:
         nodeAffinity:
           requiredDuringSchedulingIgnoredDuringExecution:
@@ -24,21 +42,7 @@ spec:
                   - key: node-role.kubernetes.io/control-plane
                     operator: Exists
       imagePullPolicy: IfNotPresent
-      priorityClassName: system-node-critical
       replicas: 2
-      resources: {}
-      tolerations:
-        - key: node-role.kubernetes.io/control-plane
-          operator: Exists
-    generateOMapInfo: false
-    enableMetadata: true
-    nodePlugin:
-      affinity:
-        nodeAffinity: {}
-      enableSeLinuxHostMount: false
-      imagePullPolicy: IfNotPresent
-      kubeletDirPath: /var/lib/kubelet
-      priorityClassName: system-cluster-critical
       resources: {}
       tolerations:
         - key: node-role.kubernetes.io/control-plane

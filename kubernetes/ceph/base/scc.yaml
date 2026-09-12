@@ -19,7 +19,7 @@ allowHostNetwork: false
 # set to true if running rook with the provider as host
 allowHostPorts: false
 priority: 0
-allowedCapabilities: ["MKNOD"]
+allowedCapabilities: ["MKNOD", "SYS_ADMIN"]
 allowHostIPC: true
 readOnlyRootFilesystem: false
 # drop all default privileges
@@ -50,6 +50,7 @@ users:
   - system:serviceaccount:rook-ceph:rook-ceph-mgr # serviceaccount:namespace:cluster
   - system:serviceaccount:rook-ceph:rook-ceph-osd # serviceaccount:namespace:cluster
   - system:serviceaccount:rook-ceph:rook-ceph-rgw # serviceaccount:namespace:cluster
+  - system:serviceaccount:rook-ceph:rook-ceph-nvmeof # serviceaccount:namespace:cluster
 ---
 # scc for the CSI driver
 kind: SecurityContextConstraints
@@ -90,18 +91,15 @@ volumes:
   - hostPath
   - projected
 users:
-  # A user needs to be added for each rook service account.
+  # A user needs to be added for each csi service account managed by the ceph-csi-operator.
   # This assumes running in the default sample "rook-ceph" namespace.
   # If other namespaces or service accounts are configured, they need to be updated here.
-  - system:serviceaccount:rook-ceph:rook-csi-rbd-plugin-sa # serviceaccount:namespace:operator
-  - system:serviceaccount:rook-ceph:rook-csi-rbd-provisioner-sa # serviceaccount:namespace:operator
-  - system:serviceaccount:rook-ceph:rook-csi-cephfs-plugin-sa # serviceaccount:namespace:operator
-  - system:serviceaccount:rook-ceph:rook-csi-cephfs-provisioner-sa # serviceaccount:namespace:operator
-  - system:serviceaccount:rook-ceph:rook-csi-nfs-plugin-sa # serviceaccount:namespace:operator
-  - system:serviceaccount:rook-ceph:rook-csi-nfs-provisioner-sa # serviceaccount:namespace:operator
-  - system:serviceaccount:rook-ceph:ceph-csi-cephfs-ctrlplugin-sa
-  - system:serviceaccount:rook-ceph:ceph-csi-cephfs-nodeplugin-sa
-  - system:serviceaccount:rook-ceph:ceph-csi-nfs-ctrlplugin-sa
-  - system:serviceaccount:rook-ceph:ceph-csi-nfs-nodeplugin-sa
-  - system:serviceaccount:rook-ceph:ceph-csi-rbd-ctrlplugin-sa
-  - system:serviceaccount:rook-ceph:ceph-csi-rbd-nodeplugin-sa
+  - system:serviceaccount:rook-ceph:ceph-csi-cephfs-ctrlplugin-sa # serviceaccount:namespace:operator
+  - system:serviceaccount:rook-ceph:ceph-csi-cephfs-nodeplugin-sa # serviceaccount:namespace:operator
+  - system:serviceaccount:rook-ceph:ceph-csi-nfs-ctrlplugin-sa # serviceaccount:namespace:operator
+  - system:serviceaccount:rook-ceph:ceph-csi-nfs-nodeplugin-sa # serviceaccount:namespace:operator
+  - system:serviceaccount:rook-ceph:ceph-csi-nvmeof-ctrlplugin-sa # serviceaccount:namespace:operator
+  - system:serviceaccount:rook-ceph:ceph-csi-nvmeof-nodeplugin-sa # serviceaccount:namespace:operator
+  - system:serviceaccount:rook-ceph:ceph-csi-rbd-ctrlplugin-sa # serviceaccount:namespace:operator
+  - system:serviceaccount:rook-ceph:ceph-csi-rbd-nodeplugin-sa # serviceaccount:namespace:operator
+  - system:serviceaccount:rook-ceph:nvmeof-csi-provisioner # serviceaccount:namespace:operator
