@@ -15,6 +15,10 @@ llama-server (llama.cpp SYCL).
     - [vLLM serve flags (per-model in `llama-swap.yaml`)](#vllm-serve-flags-per-model-in-llama-swapyaml)
     - [MTP Speculative Decoding (vLLM)](#mtp-speculative-decoding-vllm)
     - [SYCL / Level Zero env](#sycl--level-zero-env)
+  - [Fast model swaps (vLLM sleep mode)](#fast-model-swaps-vllm-sleep-mode)
+    - [Level 2: PVC-backed (weights discarded)](#level-2-pvc-backed-weights-discarded)
+    - [Wake sequence](#wake-sequence)
+    - [Preload times (with vllm-wrapper)](#preload-times-with-vllm-wrapper)
   - [Measured Performance (2026-09-10)](#measured-performance-2026-09-10)
     - [27B Dense (GPU-1)](#27b-dense-gpu-1)
     - [35B-A3B MoE (GPU-0)](#35b-a3b-moe-gpu-0)
@@ -176,6 +180,45 @@ Same env vars as the llama.cpp era — `ZE_FLAT_DEVICE_HIERARCHY=COMPOSITE`,
 
 `SYCL_CACHE_PERSISTENT=0` — not enabled (causes hard crash at SYCL init,
 bisected: graph-only boots clean, cache-only fails).
+
+## Fast model swaps (vLLM sleep mode)
+
+llama-swap uses **vllm-wrapper** as a reverse proxy in front of vLLM, enabling
+vLLM's **level 2 sleep mode** (PVC-backed). When a model is swapped out, vLLM
+discards its weights from VRAM and host RAM, freeing memory for other models.
+On wake, vllm-wrapper performs a multi-step wake sequence to reload weights
+from the PVC-backed model cache.
+
+### Level 2: PVC-backed (weights discarded)
+
+- **Level 1**: Pins model weights in host RAM, keeps memory reserved. Pod memory
+  limit stays at 48 GiB.
+- **Level 2**: Weights are discarded on sleep and cached on PVC. The pod memory
+  limit remains 48 GiB (no pinned RAM reservation). Weights are reloaded from
+  the PVC cache on wake, leveraging SYCL `XpuMemAllocator` and the `XPUWorker`
+  `reload_weights` mechanism.
+
+vllm-wrapper implements the full wake sequence (`wake_tags=weights →
+collective_rpc reload_weights → wake_tags=kv_cache`) with safety nets: if
+`/collective_rpc` returns 404 (legacy daemon without `VLLM_SERVER_DEV_MODE`),
+the wrapper falls back to a simple `/wake_up` call.
+
+### Wake sequence
+
+1. **`/wake_up?tags=weights`** — re-allocate weight tensor memory
+2. **`/collective_rpc method=reload_weights`** — reload weights from model source
+   (PVC cache). This is the key step that converts a level-2 sleep into a
+   fully functional model.
+3. **`/wake_up?tags=kv_cache`** — re-allocate KV cache
+
+### Preload times (with vllm-wrapper)
+
+Cold model swaps (no cache): ~120–180 s (same as before).
+Warm model swaps (PVC cache, level 2): ~60–120 s — SYCL init (~15 s) + weight
+load from PVC (~45–105 s) + engine warm-up (~30–60 s). Page-cache hot path
+can reduce weight load to ~30–60 s with sustained workload.
+
+Embedding models (llama.cpp): no change, ~45–90 s.
 
 ## Measured Performance (2026-09-10)
 
