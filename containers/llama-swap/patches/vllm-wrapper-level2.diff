@@ -1,0 +1,208 @@
+diff --git cmd/vllm-wrapper/main.go cmd/vllm-wrapper/main.go
+index 81536c6..3741c1f 100644
+--- cmd/vllm-wrapper/main.go
++++ cmd/vllm-wrapper/main.go
+@@ -1,10 +1,12 @@
+ package main
+ 
+ import (
++	"bytes"
+ 	"context"
+ 	"encoding/json"
+ 	"flag"
+ 	"fmt"
++	"io"
+ 	"log"
+ 	"net"
+ 	"net/http"
+@@ -90,7 +92,11 @@ func serveCmd(args []string) {
+ 	// Step 1: Ensure the daemon is running and awake.
+ 	// First, check if we can reach the daemon (liveness).
+ 	if err := checkHealthy(vllmURL, healthPath); err != nil {
+-		// Not reachable, try to wake up (in case it's asleep but we couldn't reach? Actually, if not reachable, waking won't work)
++		// Not reachable, try to wake up (in case it's asleep but we couldn't reach?
++		// Actually, if not reachable, waking won't work. But with level-2 sleep
++		// (weights discarded on PVC), the daemon process may be alive but its
++		// weights memory is empty — wakeUpVLLM succeeds but serves garbage.
++		// We MUST do a reload_weights on wake to close that hole.
+ 		log.Printf("vLLM daemon not reachable (%v), attempting to wake up", err)
+ 		if err := wakeUpVLLM(vllmURL); err != nil {
+ 			// Wake up failed (e.g., connection refused), assume daemon not running, try to start it.
+@@ -99,23 +105,34 @@ func serveCmd(args []string) {
+ 				log.Fatalf("Failed to start daemon: %v", err)
+ 			}
+ 		} else {
+-			// Wake up succeeded, now wait for healthy (liveness).
+-			log.Printf("Wake up sent, waiting for healthy state")
++			// Wake up succeeded — it may be a level-2 sleep (weights discarded).
++			// Reload weights from PVC to prevent serving garbage.
++			log.Printf("Wake up succeeded; reloading weights from PVC (level-2 safety net)")
++			_ = reloadWeights(vllmURL) // best-effort; 404 = legacy daemon
++			log.Printf("Weight reload sent, waiting for healthy state")
+ 			if err := waitForHealthyWithPath(vllmURL, healthPath, waitTimeout); err != nil {
+ 				log.Fatalf("vLLM health check failed after wake up: %v", err)
+ 			}
+ 		}
+ 	} else {
+-		// Reachable (liveness ok). Now wake up to ensure it's not asleep.
+-		log.Printf("vLLM daemon is reachable at %s%s, attempting to wake up if asleep", vllmURL, healthPath)
+-		if err := wakeUpVLLM(vllmURL); err != nil {
+-			// Log the error but continue because wake is idempotent and we might be already awake.
+-			log.Printf("Warning: wake up failed (but continuing): %v", err)
+-		}
+-		// After waking, we wait for the daemon to become healthy again (liveness) to ensure it's ready.
+-		log.Printf("Waiting for vLLM to be healthy after wake up")
+-		if err := waitForHealthyWithPath(vllmURL, healthPath, 10*time.Second); err != nil {
+-			log.Fatalf("vLLM health check failed after wake up: %v", err)
++		// Reachable (liveness ok). Check if it's sleeping at level 2.
++		log.Printf("vLLM daemon is reachable at %s%s", vllmURL, healthPath)
++		sleeping, _ := isSleeping(vllmURL)
++		if sleeping {
++			log.Printf("vLLM daemon is sleeping — performing full wake (level-2)")
++			if err := wakeUpLevel2(vllmURL); err != nil {
++				log.Printf("Warning: full wake failed (but continuing): %v", err)
++			}
++			log.Printf("Full wake sent, waiting for healthy state")
++			if err := waitForHealthyWithPath(vllmURL, healthPath, waitTimeout); err != nil {
++				log.Fatalf("vLLM health check failed after wake up: %v", err)
++			}
++		} else {
++			// Not sleeping — daemon is healthy and awake, just wait a short window.
++			log.Printf("vLLM daemon is awake and healthy (no wake needed)")
++			if err := waitForHealthyWithPath(vllmURL, healthPath, 10*time.Second); err != nil {
++				log.Fatalf("vLLM health check failed: %v", err)
++			}
+ 		}
+ 	}
+ 
+@@ -150,10 +167,25 @@ func serveCmd(args []string) {
+ 		return nil
+ 	}
+ 
++	// Strip control-plane paths from the public proxy.
++	// Control is always loopback-direct (vllm-wrapper talks to the daemon
++	// directly for /sleep, /wake_up, etc.), so there is no risk of leaking
++	// these paths to end-users through the proxy.
++	controlPaths := map[string]bool{
++		"/sleep":           true,
++		"/wake_up":         true,
++		"/is_sleeping":     true,
++		"/collective_rpc":  true,
++	}
++
+ 	// Create HTTP server.
+ 	srv := &http.Server{
+ 		Addr: listenAddr,
+ 		Handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
++			if controlPaths[r.URL.Path] {
++				http.NotFound(w, r)
++				return
++			}
+ 			proxy.ServeHTTP(w, r)
+ 		}),
+ 	}
+@@ -190,6 +222,104 @@ func serveCmd(args []string) {
+ 	log.Println("Server stopped")
+ }
+ 
++// isSleeping checks whether the vLLM daemon is in a sleeping state.
++// Returns (true, nil) if sleeping, (false, nil) if not sleeping.
++// Returns (false, error) if the endpoint is unavailable (e.g. legacy
++// daemon without sleep mode — we assume it is not sleeping since it can't
++// be put to sleep without --enable-sleep-mode + dev mode).
++func isSleeping(vllmURL string) (bool, error) {
++	resp, err := http.Get(vllmURL + "/is_sleeping")
++	if err != nil {
++		return false, err
++	}
++	defer resp.Body.Close()
++
++	if resp.StatusCode != http.StatusOK {
++		return false, fmt.Errorf("unexpected status code: %d", resp.StatusCode)
++	}
++
++	var result struct {
++		IsSleeping bool `json:"is_sleeping"`
++	}
++	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
++		return false, err
++	}
++	return result.IsSleeping, nil
++}
++
++// wakeUpLevel2 performs the level-2 wake sequence:
++//  1. wake_up(tags=["weights"]) — re-allocate weight tensors
++//  2. reload_weights — re-read weights from the model source (PVC)
++//  3. wake_up(tags=["kv_cache"]) — re-allocate KV cache
++//
++// This is the full level-2 wake sequence required when vLLM was put to
++// sleep at level 2 (weights discarded on eviction).
++func wakeUpLevel2(vllmURL string) error {
++	// Step 1: Wake up weight memory only.
++	log.Printf("wake_up(tags=weights)")
++	if err := wakeUpTags(vllmURL, "weights"); err != nil {
++		return fmt.Errorf("wake_up weights failed: %w", err)
++	}
++
++	// Step 2: Reload weights from model source (PVC).
++	log.Printf("reload_weights from PVC")
++	if err := reloadWeights(vllmURL); err != nil {
++		return fmt.Errorf("reload_weights failed: %w", err)
++	}
++
++	// Step 3: Wake up KV cache.
++	log.Printf("wake_up(tags=kv_cache)")
++	if err := wakeUpTags(vllmURL, "kv_cache"); err != nil {
++		return fmt.Errorf("wake_up kv_cache failed: %w", err)
++	}
++
++	return nil
++}
++
++// wakeUpTags sends a POST to /wake_up with optional tags to selectively
++// wake only certain memory allocations (e.g. "weights" or "kv_cache").
++func wakeUpTags(vllmURL string, tags string) error {
++	resp, err := http.Post(vllmURL+"/wake_up?tags="+tags, "application/json", strings.NewReader(""))
++	if err != nil {
++		return fmt.Errorf("failed to POST /wake_up?tags=%s: %w", tags, err)
++	}
++	defer resp.Body.Close()
++
++	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusNoContent {
++		return fmt.Errorf("/wake_up?tags=%s returned unexpected status %d: %s", tags, resp.StatusCode, resp.Status)
++	}
++	return nil
++}
++
++// reloadWeights triggers a collective RPC to reload model weights from the
++// PVC. This is the key step that converts a level-2 sleep (weights discarded)
++// into a fully functional model — without it the engine would serve garbage.
++func reloadWeights(vllmURL string) error {
++	body := []byte(`{"method":"reload_weights"}`)
++	resp, err := http.Post(vllmURL+"/collective_rpc", "application/json", bytes.NewReader(body))
++	if err != nil {
++		return fmt.Errorf("failed to POST /collective_rpc: %w", err)
++	}
++	defer resp.Body.Close()
++
++	if resp.StatusCode == http.StatusNotFound {
++		// Daemon doesn't support /collective_rpc (legacy or no dev mode).
++		// Best-effort: log and continue. The engine will not have valid weights,
++		// but this branch is only reached when a level-2 wake is expected.
++		log.Printf("Warning: /collective_rpc not available — weights may be empty (legacy daemon)")
++		return nil
++	}
++	if resp.StatusCode != http.StatusOK {
++		body, _ := io.ReadAll(resp.Body)
++		return fmt.Errorf("/collective_rpc returned status %d: %s", resp.StatusCode, string(body))
++	}
++
++	// Read and log the response body.
++	result, _ := io.ReadAll(resp.Body)
++	log.Printf("reload_weights response: %s", string(result))
++	return nil
++}
++
+ // sleepCmd implements the sleep subcommand.
+ func sleepCmd(args []string) {
+ 	var (
