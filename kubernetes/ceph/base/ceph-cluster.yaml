@@ -35,13 +35,15 @@ spec:
       # Additionally remove any `keyType: aes` configurations below.
       # allowedCiphers:
       #   - aes256k
-      daemon:
-        keyRotationPolicy: KeyGeneration
-        keyGeneration: 2
+      allowedCiphers:
+        - aes
       csi:
-        keyRotationPolicy: KeyGeneration
-        keyGeneration: 2
-        keepPriorKeyCountMax: 1
+        keepPriorKeyCountMax: 2
+        keyGeneration: 3
+        keyRotationPolicy: Disabled
+        keyType: aes
+      daemon:
+        keyRotationPolicy: Disabled
         keyType: aes
   # The path on the host where configuration files will be persisted. Must be specified. If there are multiple clusters, the directory must be unique for each cluster.
   # Important: if you reinstall the cluster, make sure you delete this directory from each host or else the mons will fail to start on the new cluster.
@@ -212,6 +214,7 @@ spec:
       tolerations:
         - key: node-role.kubernetes.io/control-plane
           operator: Exists
+        - key: nodeutilization.descheduler.openshift.io/appropriate
   # The above placement information can also be specified for mon, osd, and mgr components
   #   mon:
   # Monitor deployments may contain an anti-affinity rule for avoiding monitor
@@ -427,13 +430,19 @@ spec:
         interval: 60s
     # Temp Till Kernel 7
     muteHealthWarning:
-      AUTH_INSECURE_ROTATING_SERVICE_KEY_TYPE:
+      AUTH_EMERGENCY_CIPHERS_SET:
         policy: mute
       AUTH_INSECURE_CLIENT_KEY_TYPE:
         policy: mute
       AUTH_INSECURE_KEYS_ALLOWED:
         policy: mute
       AUTH_INSECURE_KEYS_CREATABLE:
+        policy: mute
+      AUTH_INSECURE_ROTATING_SERVICE_KEY_TYPE:
+        policy: mute
+      AUTH_INSECURE_SERVICE_KEY_TYPE:
+        policy: mute
+      AUTH_INSECURE_SERVICE_TICKETS:
         policy: mute
     # Change pod liveness probe timing or threshold values. Works for all mon,mgr,osd daemons.
     livenessProbe:
