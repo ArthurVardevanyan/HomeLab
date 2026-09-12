@@ -1,4 +1,6 @@
 ---
+# The deployment for the rook operator
+# OLM: BEGIN OPERATOR DEPLOYMENT
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -7,7 +9,7 @@ metadata:
     checkov.io/skip1: CKV_K8S_40=OpenShift Injects Random UID
     checkov.io/skip2: CKV_K8S_43=Don't Mind Tag for This
     checkov.io/skip3: CKV_K8S_38= Require Use of Service Account Tokens
-  namespace: rook-ceph # namespace:operator
+  namespace: rook-ceph
   labels:
     operator: rook
     storage-backend: ceph
@@ -41,7 +43,7 @@ spec:
       serviceAccountName: rook-ceph-system
       containers:
         - name: rook-ceph-operator
-          image: docker.io/rook/ceph:v1.19.4@sha256:f0f307d7fce0ba2bc60d15e446b9fafddf1153492398fd653d10708f9874bf31
+          image: docker.io/rook/ceph:v1.20.7@sha256:2f970c4256179d56fa9f7867a634701f533103908c4e2ad43cf3954c1f7e33f9
           args: ["ceph", "operator"]
           securityContext:
             privileged: false
@@ -57,9 +59,9 @@ spec:
               name: rook-config
             - mountPath: /etc/ceph
               name: default-config-dir
+            - mountPath: /tmp
+              name: tmp
           env:
-            # If the operator should only watch for cluster CRDs in the same namespace, set this to "true".
-            # If this is not set to true, the operator will watch for cluster CRDs in all namespaces.
             - name: ROOK_CURRENT_NAMESPACE_ONLY
               value: "false"
 
@@ -76,7 +78,7 @@ spec:
             # Provide customised regex as the values using comma. For eg. regex for rbd based volume, value will be like "(?i)rbd[0-9]+".
             # In case of more than one regex, use comma to separate between them.
             # Default regex will be "(?i)dm-[0-9]+,(?i)rbd[0-9]+,(?i)nbd[0-9]+"
-            # Add regex expression after putting a comma to blacklist a disk
+            # add regex expression after putting a comma to blacklist a disk
             # If value is empty, the default regex will be used.
             - name: DISCOVER_DAEMON_UDEV_BLACKLIST
               value: "(?i)dm-[0-9]+,(?i)rbd[0-9]+,(?i)nbd[0-9]+"
@@ -137,16 +139,21 @@ spec:
             requests:
               cpu: 35m
               memory: 256Mi
+
           #  Uncomment it to run lib bucket provisioner in multithreaded mode
-          # - name: LIB_BUCKET_PROVISIONER_THREADS
+          #- name: LIB_BUCKET_PROVISIONER_THREADS
           #  value: "5"
 
-          # Uncomment these two settings to run the operator on the host network
-          # hostNetwork: true
-          # dnsPolicy: ClusterFirstWithHostNet
+      # Uncomment these two settings to run the operator on the host network
+      # hostNetwork: true
+      # dnsPolicy: ClusterFirstWithHostNet
+
       volumes:
         - name: rook-config
           emptyDir: {}
         - name: default-config-dir
           emptyDir: {}
+        - name: tmp
+          emptyDir: {}
       enableServiceLinks: false
+# OLM: END OPERATOR DEPLOYMENT

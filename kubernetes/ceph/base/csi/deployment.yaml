@@ -1,3 +1,4 @@
+---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -37,10 +38,10 @@ spec:
                 fieldRef:
                   fieldPath: metadata.namespace
             - name: CSI_SERVICE_ACCOUNT_PREFIX
-              value: ceph-csi-
+              value: "ceph-csi-"
             - name: WATCH_NAMESPACE
               value: ""
-          image: quay.io/cephcsi/ceph-csi-operator:v0.6.0@sha256:4e009d4c6c26e86175b31aa83f0b2c69ae1d53df7ee5f39be9f1fe841346a4c3
+          image: quay.io/cephcsi/ceph-csi-operator:v1.0.4@sha256:c62933fd4083635f969f8a61932af45dba9902d48867e2b5d98a69d8e4344eb6
           livenessProbe:
             httpGet:
               path: /healthz

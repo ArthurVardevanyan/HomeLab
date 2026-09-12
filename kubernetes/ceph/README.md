@@ -74,6 +74,72 @@ subjects:
 ./notes/rook multus validation cleanup --namespace rook-ceph
 ```
 
+## Known Issues
+
+### minio-go v7.0.98 / Ceph v20.2.4 SigV4 Signature Incompatibility
+
+**Impact:** Post-upgrade OBC S3 "Access Denied" (403) errors on PUT operations.
+
+**Root Cause:** `minio-go/v7.0.98` streaming signer excludes `Content-Type` from `SignedHeaders`, conflicting with Ceph's CVE-2026-54330 SigV4 hardening.
+
+**Affected clients/buckets:**
+
+- `thanos-chunk-store`
+- `thanos-index-store`
+- `thanos-delete-store`
+- `netobserv`
+- `openshift-logging`
+
+**Working clients/buckets:**
+
+- `thanos-compact/store/sidecar` (v7.0.93 — unaffected version)
+- `open-webui` (Boto3/1.42.62 — uses different signing logic)
+- `quay`
+- `nextcloud`
+
+**Related PRs:**
+
+- <https://github.com/minio/minio-go/pull/2300> (issue)
+- <https://github.com/minio/minio-go/pull/2301> (fix)
+- <https://github.com/ceph/ceph/pull/71364> (RGW flexibility fix)
+
+**Resolution:**
+
+- No server-side RGW config option exists to relax SigV4 enforcement for general clients.
+- Upstream operators cannot be controlled/updated (OpenShift operators).
+- **Pending AES requirement:** Upgrade affected clients to a fixed version of `minio-go` that includes the signature fix, or migrate to an SDK version that properly includes `Content-Type` in signed headers.
+
+### CephX Key Rotation (CVE-2025-30156)
+
+Ceph announced security vulnerability CVE-2025-30156 impacting all Ceph clusters. The existing AES service tickets do not effectively implement integrity checks and can have their permissions modified without detection.
+
+**Resolution:**
+
+- Upgrade to Rook v1.20.6+ (or v1.19.10+) and Ceph v20.2.4+ (or v19.2.6+)
+- Initiate key rotation by setting `keyRotationPolicy: KeyGeneration` and incrementing `keyGeneration` in the CephCluster CR
+- Core daemon keys (mon, mgr, osd, mds) must migrate to AES256K to resolve the vulnerability
+- CSI, CephClient, and RBD-mirror peer keys may remain on `aes` type during transition if host kernels do not support AES256K (requires Linux kernel 7.0+)
+- Reference: <https://rook.io/docs/rook/latest/Storage-Configuration/Advanced/cephx-key-rotation/>
+
+**Current Status:**
+
+- [ ] Verify current Rook and Ceph versions meet requirements
+- [ ] Apply key rotation patch to CephCluster CR if needed
+- [ ] Mute remaining health warnings if applicable:
+
+  ```yaml
+  healthCheck:
+    muteHealthWarning:
+      AUTH_INSECURE_ROTATING_SERVICE_KEY_TYPE:
+        policy: mute
+      AUTH_INSECURE_CLIENT_KEY_TYPE:
+        policy: mute
+      AUTH_INSECURE_KEYS_ALLOWED:
+        policy: mute
+      AUTH_INSECURE_KEYS_CREATABLE:
+        policy: mute
+  ```
+
 ## Refs
 
 - <https://rook.io/docs/rook/latest/Getting-Started/example-configurations/>
