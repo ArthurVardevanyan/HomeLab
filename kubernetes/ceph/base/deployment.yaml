@@ -59,6 +59,8 @@ spec:
               name: rook-config
             - mountPath: /etc/ceph
               name: default-config-dir
+            - mountPath: /tmp
+              name: tmp
           env:
             - name: ROOK_CURRENT_NAMESPACE_ONLY
               value: "false"
@@ -150,6 +152,8 @@ spec:
         - name: rook-config
           emptyDir: {}
         - name: default-config-dir
+          emptyDir: {}
+        - name: tmp
           emptyDir: {}
       enableServiceLinks: false
 # OLM: END OPERATOR DEPLOYMENT
