@@ -9,9 +9,14 @@ FROM ghcr.io/mostlygeek/llama-swap:v255-intel-b10868@sha256:23599ef59fcaed6ad13f
 # vllm-wrapper — not shipped in llama-swap release archives, built from source
 FROM docker.io/library/golang:1.27-bookworm AS vllm-wrapper-build
 ARG LS_VERSION=255
+# renovate: datasource=github-releases depName=mostlygeek/llama-swap
+# NOTE: The COPY from patches/ at line 108 runs before this stage's RUN
+#       executes (Docker evaluates instructions top-to-bottom).
 RUN set -eux; \
   git clone --depth 1 --branch v${LS_VERSION} https://github.com/mostlygeek/llama-swap.git /src/llama-swap; \
   cd /src/llama-swap && \
+  # Apply vllm-wrapper level-2 sleep mode patch (PVC-backed, weights discarded)
+  git apply /tmp/patches/vllm-wrapper-level2.diff && \
   CGO_ENABLED=0 go build -trimpath -o /usr/local/bin/vllm-wrapper ./cmd/vllm-wrapper
 
 # Final image — use vllm-base (has python3, curl, vLLM libs) and overlay llama-swap binaries
@@ -102,7 +107,6 @@ RUN chmod +x /app/vllm-device-wrapper.sh /app/llama-device-wrapper.sh
 
 # Cookbook patches (vendor + apply at build time)
 COPY patches/ /tmp/patches/
-
 # Apply patches against the vllm package from the base image
 # Each patch is idempotent (checks for marker before applying)
 # renovate: datasource=github-releases depName=SergiioB/intel-arc-pro-b70-inference-cookbook
@@ -152,6 +156,7 @@ ENV VLLM_TARGET_DEVICE=xpu \
   SYCL_CACHE_PERSISTENT=0 \
   B70_MTP_BF16_DRAFT=1 \
   PYTORCH_ALLOC_CONF=expandable_segments:True \
+  VLLM_SERVER_DEV_MODE=1 \
   LD_LIBRARY_PATH=/opt/venv/lib:/opt/ucx/lib:/usr/local/lib:/app:/opt/intel/oneapi/compiler/2025.3/lib:/opt/intel/oneapi/mkl/2025.3/lib:/opt/intel/oneapi/tbb/2022.3/lib/intel64/gcc4.8:/opt/intel/oneapi/dnnl/2025.3/lib
 
 # Verify torch/vllm imports and llama-server SYCL linkage

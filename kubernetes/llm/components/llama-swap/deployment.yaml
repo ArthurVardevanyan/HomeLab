@@ -62,6 +62,8 @@ spec:
           env:
             - name: LLAMA_CACHE
               value: /cache
+            - name: VLLM_XDISK_CACHE
+              value: /root/.cache/vllm
           securityContext:
             runAsNonRoot: true
             readOnlyRootFilesystem: false
@@ -115,6 +117,8 @@ spec:
               mountPath: /cache
             - name: store
               mountPath: /var/lib/llama-swap
+            - name: vllm-cache
+              mountPath: /root/.cache/vllm
         # metrics-exporter sidecar: scrapes /metrics from each dynamically-
         # assigned child process (supports llama.cpp, vLLM, and other
         # backends), then exposes aggregated, backend-neutral metrics
@@ -158,5 +162,8 @@ spec:
         - name: store
           persistentVolumeClaim:
             claimName: llm-llama-swap-store
+        - name: vllm-cache
+          persistentVolumeClaim:
+            claimName: llm-vllm-cache
         - name: metrics-cache
           emptyDir: {}
