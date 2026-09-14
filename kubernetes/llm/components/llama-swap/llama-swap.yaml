@@ -25,8 +25,8 @@ macros:
   # Uses fixed vLLM ports per GPU: 8000 for GPU-0 models, 8001 for GPU-1 models.
   # vllm-wrapper listens on the llama-swap assigned ${PORT} and proxies to
   # the fixed vLLM port.
-  cmd_base_vllm_gpu0: "/app/vllm-wrapper --sleep-level 2 --vllm-url http://127.0.0.1:8000 --listen :${PORT} -- /app/vllm-device-wrapper.sh"
-  cmd_base_vllm_gpu1: "/app/vllm-wrapper --sleep-level 2 --vllm-url http://127.0.0.1:8001 --listen :${PORT} -- /app/vllm-device-wrapper.sh"
+  cmd_base_vllm_gpu0: "/app/vllm-wrapper serve --sleep-level 2 --vllm-url http://127.0.0.1:8000 --listen :${PORT} -- /app/vllm-device-wrapper.sh"
+  cmd_base_vllm_gpu1: "/app/vllm-wrapper serve --sleep-level 2 --vllm-url http://127.0.0.1:8001 --listen :${PORT} -- /app/vllm-device-wrapper.sh"
   cmd_base_llama: "/app/llama-device-wrapper.sh --port ${PORT} --host 127.0.0.1 --cont-batching -ngl 99 --flash-attn on --cache-type-k f16 --cache-type-v f16 --ubatch-size 2048 --jinja --poll 0 -t 12 --threads-http 4 --cache-reuse 256 --load-mode none --metrics"
 
 models:
