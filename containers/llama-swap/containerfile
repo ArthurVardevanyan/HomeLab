@@ -7,15 +7,17 @@ FROM docker.io/vllm/vllm-openai-xpu:v0.29.0@sha256:96db42e248d48760a4937eb3d04c4
 FROM ghcr.io/mostlygeek/llama-swap:v255-intel-b10868@sha256:23599ef59fcaed6ad13fd76aec97968903e24479beb476fbe268d49524270f9c AS llama-swap-bin
 
 # vllm-wrapper — not shipped in llama-swap release archives, built from source
+#
+# NOTE: The COPY from patches/ below is inside the final stage, but this
+#       stage needs the patch too. Stages don't share filesystems (COPY in
+#       one stage does NOT reach another). So we copy the patch here.
 FROM docker.io/library/golang:1.27-bookworm AS vllm-wrapper-build
 ARG LS_VERSION=255
 # renovate: datasource=github-releases depName=mostlygeek/llama-swap
-# NOTE: The COPY from patches/ at line 108 runs before this stage's RUN
-#       executes (Docker evaluates instructions top-to-bottom).
+COPY patches/vllm-wrapper-level2.diff /tmp/patches/vllm-wrapper-level2.diff
 RUN set -eux; \
   git clone --depth 1 --branch v${LS_VERSION} https://github.com/mostlygeek/llama-swap.git /src/llama-swap; \
   cd /src/llama-swap && \
-  # Apply vllm-wrapper level-2 sleep mode patch (PVC-backed, weights discarded)
   git apply /tmp/patches/vllm-wrapper-level2.diff && \
   CGO_ENABLED=0 go build -trimpath -o /usr/local/bin/vllm-wrapper ./cmd/vllm-wrapper
 
