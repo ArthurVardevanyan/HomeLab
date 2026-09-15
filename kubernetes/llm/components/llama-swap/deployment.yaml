@@ -38,6 +38,7 @@ spec:
         seccompProfile:
           type: RuntimeDefault
         runAsNonRoot: true
+        fsGroup: 1001530000
       tolerations:
         - key: node-role.kubernetes.io/gpu
           operator: Exists
@@ -62,8 +63,8 @@ spec:
           env:
             - name: LLAMA_CACHE
               value: /cache
-            - name: VLLM_XDISK_CACHE
-              value: /root/.cache/vllm
+            - name: VLLM_CACHE_ROOT
+              value: /var/lib/vllm-cache
           securityContext:
             runAsNonRoot: true
             readOnlyRootFilesystem: false
@@ -118,7 +119,7 @@ spec:
             - name: store
               mountPath: /var/lib/llama-swap
             - name: vllm-cache
-              mountPath: /root/.cache/vllm
+              mountPath: /var/lib/vllm-cache
         # metrics-exporter sidecar: scrapes /metrics from each dynamically-
         # assigned child process (supports llama.cpp, vLLM, and other
         # backends), then exposes aggregated, backend-neutral metrics
