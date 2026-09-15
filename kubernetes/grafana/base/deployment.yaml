@@ -104,7 +104,7 @@ spec:
               memory: "256Mi"
               cpu: "5m"
           env:
-            - name: GF_INSTALL_PLUGINS
+            - name: GF_PLUGINS_PREINSTALL
               value: "victoriametrics-logs-datasource"
           envFrom:
             - secretRef:
@@ -122,6 +122,8 @@ spec:
               mountPath: /etc/grafana/provisioning/datasources
             - name: tmp
               mountPath: /tmp
+            - name: plugins-bundled
+              mountPath: /usr/share/grafana/data/plugins-bundled
       volumes:
         - name: tmp
           emptyDir:
@@ -129,6 +131,9 @@ spec:
         - name: grafana-cache
           emptyDir:
             sizeLimit: 128Mi
+        - name: plugins-bundled
+          emptyDir:
+            sizeLimit: 256Mi
         - name: grafana-source-config
           configMap:
             name: grafana-source-config
