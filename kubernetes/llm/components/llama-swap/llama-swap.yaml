@@ -47,6 +47,8 @@ models:
       - "SYCL_PI_LEVEL_ZERO_USE_IMMEDIATE_COMMANDLISTS=1"
       - "ZE_AFFINITY_MASK=0"
     ttl: 0
+    cmdStop: /app/vllm-wrapper sleep --vllm-url http://127.0.0.1:8000 --sleep-level 2 --stop-pid ${PID}
+    unloadTimeout: 60
 
   35b-gpu1:
     cmd: '${cmd_base_vllm_gpu1} /data/models/Qwen3.6-35B-A3B-GPTQ-Int4 --host 127.0.0.1 --port 8001 --quantization gptq --dtype float16 --max-model-len 262144 --gpu-memory-utilization 0.87 --kv-cache-dtype fp8 --enable-prefix-caching --enable-auto-tool-choice --tool-call-parser qwen3_coder --reasoning-parser qwen3 --speculative-config ''{"method": "mtp", "num_speculative_tokens": 3}'' --max-num-seqs 6 --max-num-batched-tokens 4096 --served-model-name 35b-gpu1 --kv-cache-memory 4239633792' # --gpu-memory-utilization 0.93
@@ -55,6 +57,8 @@ models:
       - "SYCL_PI_LEVEL_ZERO_USE_IMMEDIATE_COMMANDLISTS=1"
       - "ZE_AFFINITY_MASK=1"
     ttl: 0
+    cmdStop: /app/vllm-wrapper sleep --vllm-url http://127.0.0.1:8001 --sleep-level 2 --stop-pid ${PID}
+    unloadTimeout: 60
 
   # ==========================================
   # 2. Qwen 3.8 27B (dense) — with vision, 131K ctx
@@ -88,6 +92,8 @@ models:
       - "SYCL_PI_LEVEL_ZERO_USE_IMMEDIATE_COMMANDLISTS=1"
       - "ZE_AFFINITY_MASK=0"
     ttl: 0
+    cmdStop: /app/vllm-wrapper sleep --vllm-url http://127.0.0.1:8000 --sleep-level 2 --stop-pid ${PID}
+    unloadTimeout: 60
 
   27b-gpu1:
     cmd: '${cmd_base_vllm_gpu1} /data/models/Qwen3.8-27B-GPTQ-Int4 --host 127.0.0.1 --port 8001 --quantization gptq --dtype float16 --max-model-len 175104 --gpu-memory-utilization 0.87 --kv-cache-dtype fp8 --enable-prefix-caching --enable-auto-tool-choice --tool-call-parser qwen3_xml --reasoning-parser qwen3 --speculative-config ''{"method": "mtp", "num_speculative_tokens": 3}'' --max-num-seqs 3 --max-num-batched-tokens 4096 --served-model-name 27b-gpu1 --kv-cache-memory 7047184611' # --gpu-memory-utilization 0.93
@@ -96,6 +102,8 @@ models:
       - "SYCL_PI_LEVEL_ZERO_USE_IMMEDIATE_COMMANDLISTS=1"
       - "ZE_AFFINITY_MASK=1"
     ttl: 0
+    cmdStop: /app/vllm-wrapper sleep --vllm-url http://127.0.0.1:8001 --sleep-level 2 --stop-pid ${PID}
+    unloadTimeout: 60
 
   # ==========================================
   # 3. Qwen3 Embedding 0.6B (spread across both GPUs)
