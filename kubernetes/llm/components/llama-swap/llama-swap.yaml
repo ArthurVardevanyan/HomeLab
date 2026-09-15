@@ -8,6 +8,7 @@ upstream:
   ignorePaths:
     - '.*\.(js|json|css|png|gif|jpg|jpeg|ico|txt)$'
     - ^/slots$
+    - ^/metrics$
 
 hooks:
   on_startup:
@@ -20,7 +21,12 @@ hooks:
       - 27b-gpu1
 
 macros:
-  cmd_base_vllm: "/app/vllm-device-wrapper.sh"
+  # vllm-wrapper with level-2 sleep (PVC-backed, weights discarded on sleep).
+  # Uses fixed vLLM ports per GPU: 8000 for GPU-0 models, 8001 for GPU-1 models.
+  # vllm-wrapper listens on the llama-swap assigned ${PORT} and proxies to
+  # the fixed vLLM port.
+  cmd_base_vllm_gpu0: "/app/vllm-wrapper serve --sleep-level 2 --wait-timeout 600s --vllm-url http://127.0.0.1:8000 --listen :${PORT} -- /app/vllm-device-wrapper.sh"
+  cmd_base_vllm_gpu1: "/app/vllm-wrapper serve --sleep-level 2 --wait-timeout 600s --vllm-url http://127.0.0.1:8001 --listen :${PORT} -- /app/vllm-device-wrapper.sh"
   cmd_base_llama: "/app/llama-device-wrapper.sh --port ${PORT} --host 127.0.0.1 --cont-batching -ngl 99 --flash-attn on --cache-type-k f16 --cache-type-v f16 --ubatch-size 2048 --jinja --poll 0 -t 12 --threads-http 4 --cache-reuse 256 --load-mode none --metrics"
 
 models:
@@ -30,7 +36,7 @@ models:
   #    Fallback: llmfan46/Qwen3.6-35B-A3B-MoE-GPTQ-Int4 (cookbook-verified)
   # ==========================================
   35b-gpu0:
-    cmd: '${cmd_base_vllm} /data/models/Qwen3.6-35B-A3B-GPTQ-Int4 --host 127.0.0.1 --port ${PORT} --quantization gptq --dtype float16 --max-model-len 262144 --gpu-memory-utilization 0.87 --kv-cache-dtype fp8 --enable-prefix-caching --enable-auto-tool-choice --tool-call-parser qwen3_coder --reasoning-parser qwen3 --speculative-config ''{"method": "mtp", "num_speculative_tokens": 3}'' --max-num-seqs 6 --max-num-batched-tokens 4096 --served-model-name 35b-gpu0 --kv-cache-memory 4239633792' # --gpu-memory-utilization 0.93
+    cmd: '${cmd_base_vllm_gpu0} /data/models/Qwen3.6-35B-A3B-GPTQ-Int4 --host 127.0.0.1 --port 8000 --quantization gptq --dtype float16 --max-model-len 262144 --gpu-memory-utilization 0.87 --kv-cache-dtype fp8 --enable-prefix-caching --enable-auto-tool-choice --tool-call-parser qwen3_coder --reasoning-parser qwen3 --speculative-config ''{"method": "mtp", "num_speculative_tokens": 3}'' --max-num-seqs 6 --max-num-batched-tokens 4096 --served-model-name 35b-gpu0 --kv-cache-memory 4239633792' # --gpu-memory-utilization 0.93
     env:
       # ONEAPI_DEVICE_SELECTOR has no effect on vLLM/torch XPU device
       # enumeration (verified: torch.xpu.device_count() is unchanged across
@@ -41,14 +47,18 @@ models:
       - "SYCL_PI_LEVEL_ZERO_USE_IMMEDIATE_COMMANDLISTS=1"
       - "ZE_AFFINITY_MASK=0"
     ttl: 0
+    cmdStop: /app/vllm-wrapper sleep --vllm-url http://127.0.0.1:8000 --sleep-level 2 --stop-pid ${PID}
+    unloadTimeout: 60
 
   35b-gpu1:
-    cmd: '${cmd_base_vllm} /data/models/Qwen3.6-35B-A3B-GPTQ-Int4 --host 127.0.0.1 --port ${PORT} --quantization gptq --dtype float16 --max-model-len 262144 --gpu-memory-utilization 0.87 --kv-cache-dtype fp8 --enable-prefix-caching --enable-auto-tool-choice --tool-call-parser qwen3_coder --reasoning-parser qwen3 --speculative-config ''{"method": "mtp", "num_speculative_tokens": 3}'' --max-num-seqs 6 --max-num-batched-tokens 4096 --served-model-name 35b-gpu1 --kv-cache-memory 4239633792' # --gpu-memory-utilization 0.93
+    cmd: '${cmd_base_vllm_gpu1} /data/models/Qwen3.6-35B-A3B-GPTQ-Int4 --host 127.0.0.1 --port 8001 --quantization gptq --dtype float16 --max-model-len 262144 --gpu-memory-utilization 0.87 --kv-cache-dtype fp8 --enable-prefix-caching --enable-auto-tool-choice --tool-call-parser qwen3_coder --reasoning-parser qwen3 --speculative-config ''{"method": "mtp", "num_speculative_tokens": 3}'' --max-num-seqs 6 --max-num-batched-tokens 4096 --served-model-name 35b-gpu1 --kv-cache-memory 4239633792' # --gpu-memory-utilization 0.93
     env:
       # See 35b-gpu0 above re: ONEAPI_DEVICE_SELECTOR removal.
       - "SYCL_PI_LEVEL_ZERO_USE_IMMEDIATE_COMMANDLISTS=1"
       - "ZE_AFFINITY_MASK=1"
     ttl: 0
+    cmdStop: /app/vllm-wrapper sleep --vllm-url http://127.0.0.1:8001 --sleep-level 2 --stop-pid ${PID}
+    unloadTimeout: 60
 
   # ==========================================
   # 2. Qwen 3.8 27B (dense) — with vision, 131K ctx
@@ -76,20 +86,24 @@ models:
   #    initial allocation.
   # ==========================================
   27b-gpu0:
-    cmd: '${cmd_base_vllm} /data/models/Qwen3.8-27B-GPTQ-Int4 --host 127.0.0.1 --port ${PORT} --quantization gptq --dtype float16 --max-model-len 175104 --gpu-memory-utilization 0.87 --kv-cache-dtype fp8 --enable-prefix-caching --enable-auto-tool-choice --tool-call-parser qwen3_xml --reasoning-parser qwen3 --speculative-config ''{"method": "mtp", "num_speculative_tokens": 3}'' --max-num-seqs 3 --max-num-batched-tokens 4096 --served-model-name 27b-gpu0 --kv-cache-memory 7047184611' # --gpu-memory-utilization 0.93
+    cmd: '${cmd_base_vllm_gpu0} /data/models/Qwen3.8-27B-GPTQ-Int4 --host 127.0.0.1 --port 8000 --quantization gptq --dtype float16 --max-model-len 175104 --gpu-memory-utilization 0.87 --kv-cache-dtype fp8 --enable-prefix-caching --enable-auto-tool-choice --tool-call-parser qwen3_xml --reasoning-parser qwen3 --speculative-config ''{"method": "mtp", "num_speculative_tokens": 3}'' --max-num-seqs 3 --max-num-batched-tokens 4096 --served-model-name 27b-gpu0 --kv-cache-memory 7047184611' # --gpu-memory-utilization 0.93
     env:
       # See 35b-gpu0 above re: ONEAPI_DEVICE_SELECTOR removal.
       - "SYCL_PI_LEVEL_ZERO_USE_IMMEDIATE_COMMANDLISTS=1"
       - "ZE_AFFINITY_MASK=0"
     ttl: 0
+    cmdStop: /app/vllm-wrapper sleep --vllm-url http://127.0.0.1:8000 --sleep-level 2 --stop-pid ${PID}
+    unloadTimeout: 60
 
   27b-gpu1:
-    cmd: '${cmd_base_vllm} /data/models/Qwen3.8-27B-GPTQ-Int4 --host 127.0.0.1 --port ${PORT} --quantization gptq --dtype float16 --max-model-len 175104 --gpu-memory-utilization 0.87 --kv-cache-dtype fp8 --enable-prefix-caching --enable-auto-tool-choice --tool-call-parser qwen3_xml --reasoning-parser qwen3 --speculative-config ''{"method": "mtp", "num_speculative_tokens": 3}'' --max-num-seqs 3 --max-num-batched-tokens 4096 --served-model-name 27b-gpu1 --kv-cache-memory 7047184611' # --gpu-memory-utilization 0.93
+    cmd: '${cmd_base_vllm_gpu1} /data/models/Qwen3.8-27B-GPTQ-Int4 --host 127.0.0.1 --port 8001 --quantization gptq --dtype float16 --max-model-len 175104 --gpu-memory-utilization 0.87 --kv-cache-dtype fp8 --enable-prefix-caching --enable-auto-tool-choice --tool-call-parser qwen3_xml --reasoning-parser qwen3 --speculative-config ''{"method": "mtp", "num_speculative_tokens": 3}'' --max-num-seqs 3 --max-num-batched-tokens 4096 --served-model-name 27b-gpu1 --kv-cache-memory 7047184611' # --gpu-memory-utilization 0.93
     env:
       # See 35b-gpu0 above re: ONEAPI_DEVICE_SELECTOR removal.
       - "SYCL_PI_LEVEL_ZERO_USE_IMMEDIATE_COMMANDLISTS=1"
       - "ZE_AFFINITY_MASK=1"
     ttl: 0
+    cmdStop: /app/vllm-wrapper sleep --vllm-url http://127.0.0.1:8001 --sleep-level 2 --stop-pid ${PID}
+    unloadTimeout: 60
 
   # ==========================================
   # 3. Qwen3 Embedding 0.6B (spread across both GPUs)
