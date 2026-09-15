@@ -1,0 +1,129 @@
+diff --git a/cmd/vllm-wrapper/main.go b/cmd/vllm-wrapper/main.go
+index 3741c1f..c090191 100644
+--- a/cmd/vllm-wrapper/main.go
++++ b/cmd/vllm-wrapper/main.go
+@@ -18,6 +18,9 @@ import (
+ 	"strings"
+ 	"syscall"
+ 	"time"
++	"errors"
++	"path/filepath"
++	"strconv"
+ )
+ 
+ // sleepLevel represents the vLLM sleep level.
+@@ -121,7 +124,10 @@ func serveCmd(args []string) {
+ 		if sleeping {
+ 			log.Printf("vLLM daemon is sleeping — performing full wake (level-2)")
+ 			if err := wakeUpLevel2(vllmURL); err != nil {
+-				log.Printf("Warning: full wake failed (but continuing): %v", err)
++				log.Printf("ERROR: level-2 wake failed — cold-restarting daemon: %v", err)
++				if err := coldRestartDaemon(startArgs, vllmURL, healthPath, waitTimeout); err != nil {
++					log.Fatalf("Cold-restart failed: %v", err)
++				}
+ 			}
+ 			log.Printf("Full wake sent, waiting for healthy state")
+ 			if err := waitForHealthyWithPath(vllmURL, healthPath, waitTimeout); err != nil {
+@@ -479,20 +485,97 @@ func startJournalForwarder(ctx context.Context, unit string) error {
+ // startDaemon executes the start command and waits for the vLLM daemon to become healthy.
+ func startDaemon(startArgs []string, vllmURL string, healthPath string, waitTimeout time.Duration) error {
+ 	cmd := exec.Command(startArgs[0], startArgs[1:]...)
++	cmd.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}
+ 	cmd.Stdout = os.Stdout
+ 	cmd.Stderr = os.Stderr
+ 	if err := cmd.Start(); err != nil {
+ 		return fmt.Errorf("failed to start daemon command: %w", err)
+ 	}
+-	// Wait for healthy state.
+-	log.Printf("Started daemon with PID %d, waiting for healthy state", cmd.Process.Pid)
++	pid := cmd.Process.Pid
++	log.Printf("Started daemon PID %d (pgid=%d), waiting for healthy state", pid, pid)
++
++	// Record daemon PID + command in a pidfile so a later invocation can
++	// find and terminate a stale/broken daemon on a failed wake.
++	if err := recordDaemonPID(startArgs, vllmURL, pid); err != nil {
++		log.Printf("Warning: failed to record daemon PID %d: %v", pid, err)
++	}
++
+ 	err := waitForHealthyWithPath(vllmURL, healthPath, waitTimeout)
+ 	if err != nil {
+-		// If we fail to become healthy, kill the started process.
+ 		_ = cmd.Process.Kill()
++		_ = os.Remove(daemonPIDFile(vllmURL))
+ 		return fmt.Errorf("daemon did not become healthy: %w", err)
+ 	}
+-	// Daemon is healthy, we don't wait for the command to exit (it should keep running).
+-	// We'll let it run; the wrapper will not kill it on exit.
+ 	return nil
+ }
++
++// daemonPIDFile returns the path to the pidfile that records the vLLM daemon
++// PID. The wrapper writes it when it starts a daemon so a later invocation
++// can find and terminate a stale/broken daemon on a failed wake.
++func daemonPIDFile(vllmURL string) string {
++	dir := os.Getenv("VLLM_CACHE_ROOT")
++	if dir == "" {
++		dir = "/tmp"
++	}
++	return filepath.Join(dir, fmt.Sprintf("vllm-daemon-%s.pid", daemonPort(vllmURL)))
++}
++
++func daemonPort(vllmURL string) string {
++	if u, err := url.Parse(vllmURL); err == nil && u.Port() != "" {
++		return u.Port()
++	}
++	return "0"
++}
++
++// recordDaemonPID writes the PID and the daemon's executable path to the
++// pidfile so a later invocation can match and terminate a stale daemon.
++func recordDaemonPID(startArgs []string, vllmURL string, pid int) error {
++	data := fmt.Sprintf("%d\n%s\n", pid, startArgs[0])
++	pidFile := daemonPIDFile(vllmURL)
++	if err := os.MkdirAll(filepath.Dir(pidFile), 0755); err != nil {
++		return fmt.Errorf("failed to create pidfile dir: %w", err)
++	}
++	if err := os.WriteFile(pidFile, []byte(data), 0644); err != nil {
++		return err
++	}
++	return nil
++}
++
++// coldRestartDaemon terminates any stale daemon recorded in the pidfile (matched
++// by exact PID + cmdline verification to prevent accidental kills) and starts a
++// fresh daemon. It returns nil on success or an error if the fresh daemon could
++// not become healthy.
++func coldRestartDaemon(startArgs []string, vllmURL, healthPath string, waitTimeout time.Duration) error {
++	pidFile := daemonPIDFile(vllmURL)
++
++	// Read the recorded PID and command.
++	data, err := os.ReadFile(pidFile)
++	if err == nil {
++		lines := strings.SplitN(strings.TrimSpace(string(data)), "\n", 2)
++		if len(lines) >= 2 {
++			if pid, err := strconv.Atoi(strings.TrimSpace(lines[0])); err == nil && pid > 0 {
++				// Verify the process exists and its cmdline matches the recorded
++				// executable. This prevents killing a PID that was reused by
++				// an unrelated process.
++				if cmd, err := os.ReadFile(fmt.Sprintf("/proc/%d/cmdline", pid)); err == nil {
++					current := strings.ReplaceAll(string(cmd), "\x00", " ")
++					recordedCmd := strings.TrimSpace(lines[1])
++					if filepath.Base(strings.Fields(current)[0]) == filepath.Base(recordedCmd) {
++						// Kill the whole process group (daemon + EngineCore).
++						if err := syscall.Kill(-pid, syscall.SIGKILL); err == nil {
++							log.Printf("Killed stale daemon group PID %d (cmdline match)", pid)
++						}
++						// Brief wait so the port becomes available.
++						time.Sleep(500 * time.Millisecond)
++					}
++				}
++			}
++		}
++		_ = os.Remove(pidFile)
++	}
++
++	// Start a fresh daemon (cold restart).
++	log.Printf("Starting fresh daemon (cold restart)")
++	return startDaemon(startArgs, vllmURL, healthPath, waitTimeout)
++}
++
