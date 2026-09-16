@@ -1,0 +1,562 @@
+diff --git a/cmd/vllm-wrapper/main.go b/cmd/vllm-wrapper/main.go
+index 81536c6..70f3f9c 100644
+--- a/cmd/vllm-wrapper/main.go
++++ b/cmd/vllm-wrapper/main.go
+@@ -1,10 +1,12 @@
+ package main
+ 
+ import (
++	"bytes"
+ 	"context"
+ 	"encoding/json"
+ 	"flag"
+ 	"fmt"
++	"io"
+ 	"log"
+ 	"net"
+ 	"net/http"
+@@ -13,11 +15,140 @@ import (
+ 	"os"
+ 	"os/exec"
+ 	"os/signal"
++	"path/filepath"
+ 	"strings"
+ 	"syscall"
+ 	"time"
+ )
+ 
++// logFile tracks the log file handle for daemon log forwarding.
++// It is set by startDaemon and read by serveCmd for log file adoption.
++var logFile *os.File
++
++// logFileCh is closed when the log forwarder goroutine should stop.
++var logFileCh chan struct{}
++
++// logFileOffset tracks the last read offset for log file adoption.
++var logFileOffset int64
++
++// logModelName stores the model name for log file path computation.
++var logModelName string
++
++const (
++	logDir = "/var/lib/llama-swap/logs"
++)
++
++// extractModelName extracts the model name from the command arguments.
++// It looks for --served-model-name <name> in the args first.
++// If not found, it falls back to the basename of the model directory path.
++func extractModelName(args []string) string {
++	for i, arg := range args {
++		if arg == "--served-model-name" && i+1 < len(args) {
++			return args[i+1]
++		}
++	}
++	// Fallback: model path (e.g., /data/models/Qwen3.8-27B-GPTQ-Int4)
++	for _, arg := range args {
++		if strings.HasPrefix(arg, "/data/models/") || strings.HasPrefix(arg, "/models/") {
++			return filepath.Base(arg)
++		}
++	}
++	return "unknown-model"
++}
++
++// getLogFilePath returns the log file path for the given model name.
++func getLogFilePath(modelName string) string {
++	return filepath.Join(logDir, modelName+".log")
++}
++
++// setupLogDir ensures the log directory exists.
++func setupLogDir() error {
++	if err := os.MkdirAll(logDir, 0755); err != nil {
++		return fmt.Errorf("failed to create log dir %s: %w", logDir, err)
++	}
++	return nil
++}
++
++// tailLogFile tails the log file from startOffset and writes new lines to os.Stdout.
++// It polls the file every 100ms and exits when stopCh is closed.
++// If the file is truncated, it restarts from offset 0.
++func tailLogFile(filePath string, startOffset int64, stopCh <-chan struct{}) {
++	var offset = startOffset
++	var fileSize int64 = startOffset
++
++	// Open the log file.
++	file, err := os.OpenFile(filePath, os.O_RDONLY, 0644)
++	if err != nil {
++		log.Printf("Warning: failed to open log file %s: %v", filePath, err)
++		return
++	}
++	defer file.Close()
++
++	// Seek to the start offset.
++	if _, err := file.Seek(offset, 0); err != nil {
++		log.Printf("Warning: failed to seek to offset %d: %v", offset, err)
++		return
++	}
++
++	ticker := time.NewTicker(100 * time.Millisecond)
++	defer ticker.Stop()
++
++	for {
++		select {
++		case <-stopCh:
++			return
++		case <-ticker.C:
++			// Get current file size.
++			info, err := file.Stat()
++			if err != nil {
++				continue
++			}
++			fileSize = info.Size()
++
++			// If file was truncated (smaller than our offset), restart from 0.
++			if fileSize < offset {
++				offset = 0
++				if _, err := file.Seek(0, 0); err != nil {
++					continue
++				}
++				fileSize = 0
++			}
++
++			// If file has grown, read new content.
++			if fileSize > offset {
++				newBytes := make([]byte, fileSize-offset)
++				n, err := file.Read(newBytes)
++				if err != nil && err != io.EOF {
++					// If file changed (e.g., truncated), reopen.
++					file.Close()
++					file, err = os.OpenFile(filePath, os.O_RDONLY, 0644)
++					if err != nil {
++						continue
++					}
++					offset = 0
++					continue
++				}
++				if n > 0 {
++					// Write new content to os.Stdout.
++					os.Stdout.Write(newBytes[:n])
++					offset += int64(n)
++				}
++			}
++		}
++	}
++}
++
++// startLogForwarder starts a goroutine that tails the log file and writes
++// new lines to os.Stdout. It returns a channel that can be closed to stop
++// the forwarder.
++func startLogForwarder(ctx context.Context, filePath string, startOffset int64) (<-chan struct{}, error) {
++	stopCh := make(chan struct{})
++	go func() {
++		tailLogFile(filePath, startOffset, stopCh)
++	}()
++	return stopCh, nil
++}
++
+ // sleepLevel represents the vLLM sleep level.
+ type sleepLevel int
+ 
+@@ -79,6 +210,26 @@ func serveCmd(args []string) {
+ 	// Ensure vLLM URL does not have trailing slash.
+ 	vllmURL = strings.TrimRight(vllmURL, "/")
+ 
++	// Extract model name from command arguments for log file path.
++	modelName := extractModelName(startArgs)
++	logFilePath := getLogFilePath(modelName)
++
++	// Set up log directory.
++	if err := setupLogDir(); err != nil {
++		log.Printf("Warning: failed to set up log dir: %v", err)
++	}
++
++	// Compute log file state before entering daemon management paths.
++	logFileExists := false
++	var logFileSize int64
++	if info, err := os.Stat(logFilePath); err == nil {
++		logFileExists = true
++		logFileSize = info.Size()
++	}
++
++	// Create stop channel for the log forwarder; closed on wrapper exit.
++	logFileCh = make(chan struct{})
++
+ 	journalCtx, stopJournal := context.WithCancel(context.Background())
+ 	defer stopJournal()
+ 	if journalUnit != "" {
+@@ -87,35 +238,99 @@ func serveCmd(args []string) {
+ 		}
+ 	}
+ 
+-	// Step 1: Ensure the daemon is running and awake.
+-	// First, check if we can reach the daemon (liveness).
++	// ---------- Step 1: Ensure the daemon is running and awake ----------
++	//
++	// There are four paths depending on liveness and sleep state.
++	// Each path either starts a fresh daemon (cold start) or adopts
++	// an existing one.  For every path we must start the log forwarder
++	// so that daemon output survives wrapper restarts.
++
++	var daemonStartOffset int64 // offset to pass to the forwarder
++
+ 	if err := checkHealthy(vllmURL, healthPath); err != nil {
+-		// Not reachable, try to wake up (in case it's asleep but we couldn't reach? Actually, if not reachable, waking won't work)
++		// ===== Path A: Unreachable → try wake → try cold-start =====
+ 		log.Printf("vLLM daemon not reachable (%v), attempting to wake up", err)
+ 		if err := wakeUpVLLM(vllmURL); err != nil {
+-			// Wake up failed (e.g., connection refused), assume daemon not running, try to start it.
++			// Wake failed — cold start: truncate log, spawn daemon, forward.
+ 			log.Printf("Wake up failed: %v, attempting to start daemon", err)
+-			if err := startDaemon(startArgs, vllmURL, healthPath, waitTimeout); err != nil {
++			if err := startDaemon(startArgs, vllmURL, healthPath, waitTimeout, logFilePath, true); err != nil {
+ 				log.Fatalf("Failed to start daemon: %v", err)
+ 			}
++			daemonStartOffset = 0 // new log file, read from beginning
+ 		} else {
+-			// Wake up succeeded, now wait for healthy (liveness).
+-			log.Printf("Wake up sent, waiting for healthy state")
++			// ===== Path B: Wake succeeded — adopt existing daemon =====
++			log.Printf("Wake up succeeded; reloading weights from PVC (level-2 safety net)")
++			_ = reloadWeights(vllmURL)
++			log.Printf("Weight reload sent, waiting for healthy state")
+ 			if err := waitForHealthyWithPath(vllmURL, healthPath, waitTimeout); err != nil {
+ 				log.Fatalf("vLLM health check failed after wake up: %v", err)
+ 			}
++			// Adopt: open existing log file at EOF, start forwarder.
++			if logFileExists {
++				daemonStartOffset = logFileSize
++			} else {
++				daemonStartOffset = 0
++			}
+ 		}
+ 	} else {
+-		// Reachable (liveness ok). Now wake up to ensure it's not asleep.
+-		log.Printf("vLLM daemon is reachable at %s%s, attempting to wake up if asleep", vllmURL, healthPath)
+-		if err := wakeUpVLLM(vllmURL); err != nil {
+-			// Log the error but continue because wake is idempotent and we might be already awake.
+-			log.Printf("Warning: wake up failed (but continuing): %v", err)
++		// ===== Reachable =====
++		log.Printf("vLLM daemon is reachable at %s%s", vllmURL, healthPath)
++		sleeping, _ := isSleeping(vllmURL)
++		if sleeping {
++			// ===== Path C: Sleeping — full wake =====
++			log.Printf("vLLM daemon is sleeping — performing full wake (level-2)")
++			if err := wakeUpLevel2(vllmURL); err != nil {
++				log.Printf("Warning: full wake failed (but continuing): %v", err)
++			}
++			log.Printf("Full wake sent, waiting for healthy state")
++			if err := waitForHealthyWithPath(vllmURL, healthPath, waitTimeout); err != nil {
++				log.Fatalf("vLLM health check failed after wake up: %v", err)
++			}
++			// Adopt: open existing log file at EOF, start forwarder.
++			if logFileExists {
++				daemonStartOffset = logFileSize
++			} else {
++				daemonStartOffset = 0
++			}
++		} else {
++			// ===== Path D: Awake — no wake needed =====
++			log.Printf("vLLM daemon is awake and healthy (no wake needed)")
++			if err := waitForHealthyWithPath(vllmURL, healthPath, 10*time.Second); err != nil {
++				log.Fatalf("vLLM health check failed: %v", err)
++			}
++			// Adopt: open existing log file at EOF, start forwarder.
++			if logFileExists {
++				daemonStartOffset = logFileSize
++			} else {
++				daemonStartOffset = 0
++			}
+ 		}
+-		// After waking, we wait for the daemon to become healthy again (liveness) to ensure it's ready.
+-		log.Printf("Waiting for vLLM to be healthy after wake up")
+-		if err := waitForHealthyWithPath(vllmURL, healthPath, 10*time.Second); err != nil {
+-			log.Fatalf("vLLM health check failed after wake up: %v", err)
++	}
++
++	// ---------- Step 1.5: Start the log forwarder ----------
++	// Open the log file and start forwarding daemon output to stdout.
++	// This works for both cold-start and adoption paths.
++	if logFileExists {
++		// Adoption: open existing log file at EOF, start forwarder.
++		adoptLog, err := os.OpenFile(logFilePath, os.O_RDONLY, 0644)
++		if err != nil {
++			log.Printf("Warning: failed to open log file %s for forwarder: %v", logFilePath, err)
++		} else {
++			if daemonStartOffset > 0 {
++				_, err := adoptLog.Seek(0, 2) // seek to EOF
++				if err != nil {
++					log.Printf("Warning: failed to seek to EOF: %v", err)
++				}
++			} else {
++				_, err := adoptLog.Seek(0, 0) // seek to start
++				if err != nil {
++					log.Printf("Warning: failed to seek to start: %v", err)
++				}
++			}
++			if _, err := startLogForwarder(context.Background(), logFilePath, daemonStartOffset); err != nil {
++				log.Printf("Warning: failed to start log forwarder: %v", err)
++			}
++			log.Printf("Log forwarder started (offset=%d, file=%s)", daemonStartOffset, logFilePath)
+ 		}
+ 	}
+ 
+@@ -150,10 +365,25 @@ func serveCmd(args []string) {
+ 		return nil
+ 	}
+ 
++	// Strip control-plane paths from the public proxy.
++	// Control is always loopback-direct (vllm-wrapper talks to the daemon
++	// directly for /sleep, /wake_up, etc.), so there is no risk of leaking
++	// these paths to end-users through the proxy.
++	controlPaths := map[string]bool{
++		"/sleep":           true,
++		"/wake_up":         true,
++		"/is_sleeping":     true,
++		"/collective_rpc":  true,
++	}
++
+ 	// Create HTTP server.
+ 	srv := &http.Server{
+ 		Addr: listenAddr,
+ 		Handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
++			if controlPaths[r.URL.Path] {
++				http.NotFound(w, r)
++				return
++			}
+ 			proxy.ServeHTTP(w, r)
+ 		}),
+ 	}
+@@ -190,6 +420,104 @@ func serveCmd(args []string) {
+ 	log.Println("Server stopped")
+ }
+ 
++// isSleeping checks whether the vLLM daemon is in a sleeping state.
++// Returns (true, nil) if sleeping, (false, nil) if not sleeping.
++// Returns (false, error) if the endpoint is unavailable (e.g. legacy
++// daemon without sleep mode — we assume it is not sleeping since it can't
++// be put to sleep without --enable-sleep-mode + dev mode).
++func isSleeping(vllmURL string) (bool, error) {
++	resp, err := http.Get(vllmURL + "/is_sleeping")
++	if err != nil {
++		return false, err
++	}
++	defer resp.Body.Close()
++
++	if resp.StatusCode != http.StatusOK {
++		return false, fmt.Errorf("unexpected status code: %d", resp.StatusCode)
++	}
++
++	var result struct {
++		IsSleeping bool `json:"is_sleeping"`
++	}
++	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
++		return false, err
++	}
++	return result.IsSleeping, nil
++}
++
++// wakeUpLevel2 performs the level-2 wake sequence:
++//  1. wake_up(tags=["weights"]) — re-allocate weight tensors
++//  2. reload_weights — re-read weights from the model source (PVC)
++//  3. wake_up(tags=["kv_cache"]) — re-allocate KV cache
++//
++// This is the full level-2 wake sequence required when vLLM was put to
++// sleep at level 2 (weights discarded on eviction).
++func wakeUpLevel2(vllmURL string) error {
++	// Step 1: Wake up weight memory only.
++	log.Printf("wake_up(tags=weights)")
++	if err := wakeUpTags(vllmURL, "weights"); err != nil {
++		return fmt.Errorf("wake_up weights failed: %w", err)
++	}
++
++	// Step 2: Reload weights from model source (PVC).
++	log.Printf("reload_weights from PVC")
++	if err := reloadWeights(vllmURL); err != nil {
++		return fmt.Errorf("reload_weights failed: %w", err)
++	}
++
++	// Step 3: Wake up KV cache.
++	log.Printf("wake_up(tags=kv_cache)")
++	if err := wakeUpTags(vllmURL, "kv_cache"); err != nil {
++		return fmt.Errorf("wake_up kv_cache failed: %w", err)
++	}
++
++	return nil
++}
++
++// wakeUpTags sends a POST to /wake_up with optional tags to selectively
++// wake only certain memory allocations (e.g. "weights" or "kv_cache").
++func wakeUpTags(vllmURL string, tags string) error {
++	resp, err := http.Post(vllmURL+"/wake_up?tags="+tags, "application/json", strings.NewReader(""))
++	if err != nil {
++		return fmt.Errorf("failed to POST /wake_up?tags=%s: %w", tags, err)
++	}
++	defer resp.Body.Close()
++
++	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusNoContent {
++		return fmt.Errorf("/wake_up?tags=%s returned unexpected status %d: %s", tags, resp.StatusCode, resp.Status)
++	}
++	return nil
++}
++
++// reloadWeights triggers a collective RPC to reload model weights from the
++// PVC. This is the key step that converts a level-2 sleep (weights discarded)
++// into a fully functional model — without it the engine would serve garbage.
++func reloadWeights(vllmURL string) error {
++	body := []byte(`{"method":"reload_weights"}`)
++	resp, err := http.Post(vllmURL+"/collective_rpc", "application/json", bytes.NewReader(body))
++	if err != nil {
++		return fmt.Errorf("failed to POST /collective_rpc: %w", err)
++	}
++	defer resp.Body.Close()
++
++	if resp.StatusCode == http.StatusNotFound {
++		// Daemon doesn't support /collective_rpc (legacy or no dev mode).
++		// Best-effort: log and continue. The engine will not have valid weights,
++		// but this branch is only reached when a level-2 wake is expected.
++		log.Printf("Warning: /collective_rpc not available — weights may be empty (legacy daemon)")
++		return nil
++	}
++	if resp.StatusCode != http.StatusOK {
++		body, _ := io.ReadAll(resp.Body)
++		return fmt.Errorf("/collective_rpc returned status %d: %s", resp.StatusCode, string(body))
++	}
++
++	// Read and log the response body.
++	result, _ := io.ReadAll(resp.Body)
++	log.Printf("reload_weights response: %s", string(result))
++	return nil
++}
++
+ // sleepCmd implements the sleep subcommand.
+ func sleepCmd(args []string) {
+ 	var (
+@@ -346,23 +674,87 @@ func startJournalForwarder(ctx context.Context, unit string) error {
+ 	return nil
+ }
+ 
+-// startDaemon executes the start command and waits for the vLLM daemon to become healthy.
+-func startDaemon(startArgs []string, vllmURL string, healthPath string, waitTimeout time.Duration) error {
++// startDaemon executes the start command, redirects daemon I/O to a log file,
++// and waits for the vLLM daemon to become healthy.  It starts a log forwarder
++// goroutine to tail the log file and write new lines to os.Stdout so that the
++// wrapper's own stdout carries the daemon's logs.
++func startDaemon(startArgs []string, vllmURL string, healthPath string,
++	waitTimeout time.Duration, logFilePath string, shouldTruncate bool) error {
++
++	// Ensure log directory exists.
++	if err := os.MkdirAll(filepath.Dir(logFilePath), 0755); err != nil {
++		return fmt.Errorf("failed to create log dir %s: %w", filepath.Dir(logFilePath), err)
++	}
++
++	// Open (or create/truncate) the log file.
++	var flags int
++	if shouldTruncate {
++		// Fresh start — truncate the log file so old logs don't bleed in.
++		flags = os.O_CREATE | os.O_WRONLY | os.O_TRUNC
++	} else {
++		// Adoption — open existing log file at EOF.
++		flags = os.O_RDWR
++	}
++	logFile, err := os.OpenFile(logFilePath, flags, 0644)
++	if err != nil {
++		return fmt.Errorf("failed to open log file %s: %w", logFilePath, err)
++	}
++
++	// Open the log file for reading (to start the forwarder).
++	logFileReader, err := os.OpenFile(logFilePath, os.O_RDONLY, 0644)
++	if err != nil {
++		logFile.Close()
++		return fmt.Errorf("failed to open log file %s for reading: %w", logFilePath, err)
++	}
++
++	// Determine starting offset for the log forwarder.
++	var startOffset int64
++	if shouldTruncate {
++		startOffset = 0
++	} else {
++		_, err := logFileReader.Seek(0, 2) // seek to EOF
++		if err != nil {
++			logFile.Close()
++			logFileReader.Close()
++			return fmt.Errorf("failed to seek to EOF: %w", err)
++		}
++		startOffset, _ = logFileReader.Seek(0, 1)
++	}
++
++	// Start the log forwarder goroutine that tails the log file.
++	if _, err := startLogForwarder(context.Background(), logFilePath, startOffset); err != nil {
++		log.Printf("Warning: failed to start log forwarder: %v", err)
++	}
++
++	// Execute the daemon command with I/O redirected to the log file.
+ 	cmd := exec.Command(startArgs[0], startArgs[1:]...)
+-	cmd.Stdout = os.Stdout
+-	cmd.Stderr = os.Stderr
++	cmd.Stdout = logFile
++	cmd.Stderr = logFile
++	cmd.SysProcAttr = &syscall.SysProcAttr{
++		Pdeathsig: syscall.SIGTERM,
++	}
+ 	if err := cmd.Start(); err != nil {
++		logFile.Close()
++		logFileReader.Close()
+ 		return fmt.Errorf("failed to start daemon command: %w", err)
+ 	}
++
+ 	// Wait for healthy state.
+-	log.Printf("Started daemon with PID %d, waiting for healthy state", cmd.Process.Pid)
+-	err := waitForHealthyWithPath(vllmURL, healthPath, waitTimeout)
++	log.Printf("Started daemon with PID %d, waiting for healthy state (log: %s, offset: %d)",
++		cmd.Process.Pid, logFilePath, startOffset)
++	err = waitForHealthyWithPath(vllmURL, healthPath, waitTimeout)
+ 	if err != nil {
+-		// If we fail to become healthy, kill the started process.
++		// If we fail to become healthy, kill the started process and close the log file.
+ 		_ = cmd.Process.Kill()
++		_ = logFile.Close()
++		_ = logFileReader.Close()
+ 		return fmt.Errorf("daemon did not become healthy: %w", err)
+ 	}
+-	// Daemon is healthy, we don't wait for the command to exit (it should keep running).
+-	// We'll let it run; the wrapper will not kill it on exit.
++
++	// Daemon is healthy — close the file handles (keep the file open on disk).
++	// The forwarder goroutine has its own file handle for reading.
++	logFile.Close()
++	logFileReader.Close()
++
+ 	return nil
+ }
+diff --git a/cmd/vllm-wrapper/main_test.go b/cmd/vllm-wrapper/main_test.go
+index 65ddf9e..0548d19 100644
+--- a/cmd/vllm-wrapper/main_test.go
++++ b/cmd/vllm-wrapper/main_test.go
+@@ -91,8 +91,10 @@ func TestSleepCommandMarshal(t *testing.T) {
+ // TestStartDaemon tests that startDaemon returns an error when the start command exits
+ // quickly and the daemon does not become healthy.
+ func TestStartDaemon(t *testing.T) {
++	tmpDir := t.TempDir()
++	logFile := filepath.Join(tmpDir, "test.log")
+ 	// Use a start command that exits immediately (true) and a health URL that will not respond.
+-	err := startDaemon([]string{"true"}, "http://127.0.0.1:12345/health", "/health", 10*time.Millisecond)
++	err := startDaemon([]string{"true"}, "http://127.0.0.1:12345/health", "/health", 10*time.Millisecond, logFile, true)
+ 	if err == nil {
+ 		t.Fatalf("startDaemon expected error but got nil")
+ 	}
+@@ -105,6 +107,7 @@ func TestStartDaemon(t *testing.T) {
+ func TestStartDaemonArgv(t *testing.T) {
+ 	tmpDir := t.TempDir()
+ 	argvFile := filepath.Join(tmpDir, "argv.txt")
++	logFile := filepath.Join(tmpDir, "test.log")
+ 
+ 	script := filepath.Join(tmpDir, "write-argv.sh")
+ 	if err := os.WriteFile(script, []byte(
+@@ -113,7 +116,7 @@ func TestStartDaemonArgv(t *testing.T) {
+ 		t.Fatalf("write helper script: %v", err)
+ 	}
+ 
+-	err := startDaemon([]string{script, "arg1", "arg2", "arg3"}, "http://127.0.0.1:12345/health", "/health", 100*time.Millisecond)
++	err := startDaemon([]string{script, "arg1", "arg2", "arg3"}, "http://127.0.0.1:12345/health", "/health", 100*time.Millisecond, logFile, true)
+ 	if err == nil {
+ 		t.Fatal("expected error (health check fails)")
+ 	}

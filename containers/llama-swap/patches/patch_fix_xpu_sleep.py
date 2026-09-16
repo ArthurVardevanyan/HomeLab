@@ -1,14 +1,17 @@
 #!/usr/bin/env python3
-"""Patch XPU xpu_mem_allocator to fix expandable-segments leak in sleep mode.
+"""Patch XPU xpu_mem_allocator to prevent expandable-segments from breaking
+the pluggable allocator used for sleep mode (pytorch#147851).
 
-Expandable segments are incompatible with the pluggable allocator used for
-sleep mode (pytorch#147851). When enabled via PYTORCH_ALLOC_CONF, the XPU
-allocator uses the VMM/remap path and bypasses the pluggable-allocator
-malloc callback, leaving pointer_to_data empty so sleep() frees 0 GiB.
+Expandable segments are incompatible with the pluggable-allocator MemPool.
+When enabled via PYTORCH_ALLOC_CONF, the XPU allocator uses the VMM/remap
+path and bypasses the pluggable-allocator malloc callback, leaving
+pointer_to_data empty so sleep() frees 0 GiB.
 
-This patch mirrors CUDA's cumem.py:79-141: temporarily disable expandable
-segments around each pool context, and release freed-but-unmapped allocations
-via the pool snapshot (pytorch#145168).
+This patch temporarily disables expandable segments around each pool context
+and restores them on exit so pool allocations use the pluggable allocator
+(sleep frees weights correctly) while the default allocator keeps expandable
+segments for the KV-cache (anti-fragmentation, preserving the original
+PYTORCH_ALLOC_CONF intent).
 """
 from __future__ import annotations
 
@@ -69,14 +72,6 @@ NEW = '''    def use_memory_pool(self, tag: str | None = None):
             ) as data:
                 self.allocator_and_pools[tag] = data
                 yield
-                # Release pool allocations that were freed but not yet unmapped
-                # (pytorch#145168: pluggable-allocator empty_cache bug).
-                for _alloc in data[0].snapshot():
-                    size = _alloc.get("allocated_size")
-                    addr = _alloc.get("address")
-                    if size == 0 and addr is not None:
-                        handle = self._python_free_callback(addr)
-                        unmap_and_release(handle)
         finally:
             self.current_tag = old_tag
             if expandable_was_enabled:

@@ -15,12 +15,12 @@ FROM docker.io/library/golang:1.27-bookworm AS vllm-wrapper-build
 ARG LS_VERSION=255
 # renovate: datasource=github-releases depName=mostlygeek/llama-swap
 COPY patches/vllm-wrapper-level2.diff /tmp/patches/vllm-wrapper-level2.diff
-COPY patches/vllm-wrapper-hardening.diff /tmp/patches/vllm-wrapper-hardening.diff
+COPY patches/vllm-wrapper-logs.diff /tmp/patches/vllm-wrapper-logs.diff
 RUN set -eux; \
   git clone --depth 1 --branch v${LS_VERSION} https://github.com/mostlygeek/llama-swap.git /src/llama-swap; \
   cd /src/llama-swap && \
   git apply /tmp/patches/vllm-wrapper-level2.diff && \
-  git apply /tmp/patches/vllm-wrapper-hardening.diff && \
+  git apply /tmp/patches/vllm-wrapper-logs.diff && \
   CGO_ENABLED=0 go build -trimpath -o /usr/local/bin/vllm-wrapper ./cmd/vllm-wrapper
 
 # Final image — use vllm-base (has python3, curl, vLLM libs) and overlay llama-swap binaries
