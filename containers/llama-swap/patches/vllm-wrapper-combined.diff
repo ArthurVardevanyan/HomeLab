@@ -1,5 +1,5 @@
 diff --git a/cmd/vllm-wrapper/main.go b/cmd/vllm-wrapper/main.go
-index 81536c6..70f3f9c 100644
+index 81536c6..03b4229 100644
 --- a/cmd/vllm-wrapper/main.go
 +++ b/cmd/vllm-wrapper/main.go
 @@ -1,10 +1,12 @@
@@ -430,7 +430,7 @@ index 81536c6..70f3f9c 100644
  // sleepCmd implements the sleep subcommand.
  func sleepCmd(args []string) {
  	var (
-@@ -346,23 +674,87 @@ func startJournalForwarder(ctx context.Context, unit string) error {
+@@ -346,23 +674,84 @@ func startJournalForwarder(ctx context.Context, unit string) error {
  	return nil
  }
  
@@ -494,9 +494,6 @@ index 81536c6..70f3f9c 100644
 -	cmd.Stderr = os.Stderr
 +	cmd.Stdout = logFile
 +	cmd.Stderr = logFile
-+	cmd.SysProcAttr = &syscall.SysProcAttr{
-+		Pdeathsig: syscall.SIGTERM,
-+	}
  	if err := cmd.Start(); err != nil {
 +		logFile.Close()
 +		logFileReader.Close()
