@@ -176,7 +176,7 @@ for SHA-256 hashes of each patch against the f01e24f6 vllm source.
 Same env vars as the llama.cpp era — `ZE_FLAT_DEVICE_HIERARCHY=COMPOSITE`,
 `GGML_SYCL_ENABLE_GRAPH=1` for llama-server children. vLLM itself uses
 `VLLM_TARGET_DEVICE=xpu`, `VLLM_XPU_ENABLE_XPU_GRAPH=1`, and
-`PYTORCH_ALLOC_CONF=expandable_segments:True` for memory management.
+`PYTORCH_ALLOC_CONF=expandable_segments:False` so vLLM sleep (level 2) can free VRAM (expandable segments bypass the pluggable allocator)
 
 `SYCL_CACHE_PERSISTENT=0` — not enabled (causes hard crash at SYCL init,
 bisected: graph-only boots clean, cache-only fails).
