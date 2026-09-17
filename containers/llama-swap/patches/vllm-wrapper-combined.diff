@@ -1,5 +1,5 @@
 diff --git a/cmd/vllm-wrapper/main.go b/cmd/vllm-wrapper/main.go
-index 81536c6..03b4229 100644
+index 81536c6..c18fd4d 100644
 --- a/cmd/vllm-wrapper/main.go
 +++ b/cmd/vllm-wrapper/main.go
 @@ -1,10 +1,12 @@
@@ -430,7 +430,53 @@ index 81536c6..03b4229 100644
  // sleepCmd implements the sleep subcommand.
  func sleepCmd(args []string) {
  	var (
-@@ -346,23 +674,84 @@ func startJournalForwarder(ctx context.Context, unit string) error {
+@@ -208,15 +536,15 @@ func sleepCmd(args []string) {
+ 	}
+ 	vllmURL = strings.TrimRight(vllmURL, "/")
+ 
+-	// Prepare sleep request body.
+-	body := map[string]int{"level": sleepLevel}
+-	jsonBody, err := json.Marshal(body)
+-	if err != nil {
+-		log.Fatalf("Failed to marshal sleep request: %v", err)
+-	}
++	// vLLM's /sleep endpoint (entrypoints/serve/dev/sleep/api_router.py)
++	// reads `level` exclusively from the query string
++	// (raw_request.query_params.get("level", "1")) and ignores the request
++	// body entirely. A JSON body here is silently discarded and the sleep
++	// always runs at the default level 1, regardless of --sleep-level.
++	sleepURL := fmt.Sprintf("%s/sleep?level=%d", vllmURL, sleepLevel)
+ 
+ 	// Send POST to /sleep endpoint.
+-	resp, err := http.Post(vllmURL+"/sleep", "application/json", strings.NewReader(string(jsonBody)))
++	resp, err := http.Post(sleepURL, "application/json", strings.NewReader(""))
+ 	if err != nil {
+ 		log.Fatalf("Failed to send sleep request: %v", err)
+ 	}
+@@ -237,14 +565,16 @@ func sleepCmd(args []string) {
+ }
+ 
+ // sleepVLLM sends a POST to /sleep to put the vLLM daemon to sleep.
++//
++// The level MUST be passed as a query parameter, not a JSON body: vLLM's
++// /sleep handler reads `level` via
++// raw_request.query_params.get("level", "1") and never parses the request
++// body, so a JSON body is silently ignored and the sleep always defaults
++// to level 1 (host-RAM backup) regardless of the caller's intent.
+ func sleepVLLM(vllmURL string, sleepLevel int) error {
+-	body := map[string]int{"level": sleepLevel}
+-	jsonBody, err := json.Marshal(body)
+-	if err != nil {
+-		return fmt.Errorf("failed to marshal sleep request: %w", err)
+-	}
++	sleepURL := fmt.Sprintf("%s/sleep?level=%d", vllmURL, sleepLevel)
+ 
+-	resp, err := http.Post(vllmURL+"/sleep", "application/json", strings.NewReader(string(jsonBody)))
++	resp, err := http.Post(sleepURL, "application/json", strings.NewReader(""))
+ 	if err != nil {
+ 		return fmt.Errorf("failed to send sleep request: %w", err)
+ 	}
+@@ -346,23 +676,84 @@ func startJournalForwarder(ctx context.Context, unit string) error {
  	return nil
  }
  
@@ -525,10 +571,65 @@ index 81536c6..03b4229 100644
  	return nil
  }
 diff --git a/cmd/vllm-wrapper/main_test.go b/cmd/vllm-wrapper/main_test.go
-index 65ddf9e..0548d19 100644
+index 65ddf9e..b24ed53 100644
 --- a/cmd/vllm-wrapper/main_test.go
 +++ b/cmd/vllm-wrapper/main_test.go
-@@ -91,8 +91,10 @@ func TestSleepCommandMarshal(t *testing.T) {
+@@ -2,7 +2,6 @@ package main
+ 
+ import (
+ 	"context"
+-	"encoding/json"
+ 	"net/http"
+ 	"net/http/httptest"
+ 	"os"
+@@ -74,25 +73,47 @@ func TestWaitForHealthy(t *testing.T) {
+ 	}
+ }
+ 
+-func TestSleepCommandMarshal(t *testing.T) {
+-	// We test the sleep command by checking the JSON marshaling we use in sleepCmd.
+-	// Since sleepCmd is not easily unit-testable without exposing more, we test the structure.
+-	body := map[string]int{"level": 1}
+-	data, err := json.Marshal(body)
+-	if err != nil {
+-		t.Fatalf("Failed to marshal: %v", err)
++// TestSleepVLLMUsesQueryParam verifies that sleepVLLM sends the sleep level
++// as a query parameter, not a JSON body. vLLM's /sleep handler
++// (entrypoints/serve/dev/sleep/api_router.py) reads
++// `raw_request.query_params.get("level", "1")` and never parses the request
++// body — a JSON body is silently ignored, so the level MUST be on the URL.
++func TestSleepVLLMUsesQueryParam(t *testing.T) {
++	var gotLevel string
++	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
++		if r.Method != http.MethodPost || r.URL.Path != "/sleep" {
++			t.Errorf("Unexpected request: %s %s", r.Method, r.URL.Path)
++		}
++		gotLevel = r.URL.Query().Get("level")
++		w.WriteHeader(http.StatusOK)
++	}))
++	defer ts.Close()
++
++	if err := sleepVLLM(ts.URL, 2); err != nil {
++		t.Fatalf("sleepVLLM failed: %v", err)
+ 	}
+-	expected := `{"level":1}`
+-	if string(data) != expected {
+-		t.Errorf("Expected %s, got %s", expected, string(data))
++	if gotLevel != "2" {
++		t.Errorf("Expected level query param %q, got %q", "2", gotLevel)
++	}
++
++	// Test failure when server returns error.
++	ts2 := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
++		w.WriteHeader(http.StatusInternalServerError)
++	}))
++	defer ts2.Close()
++
++	if err := sleepVLLM(ts2.URL, 2); err == nil {
++		t.Errorf("sleepVLLM expected error for non-200 response")
+ 	}
+ }
+ 
  // TestStartDaemon tests that startDaemon returns an error when the start command exits
  // quickly and the daemon does not become healthy.
  func TestStartDaemon(t *testing.T) {
@@ -540,7 +641,7 @@ index 65ddf9e..0548d19 100644
  	if err == nil {
  		t.Fatalf("startDaemon expected error but got nil")
  	}
-@@ -105,6 +107,7 @@ func TestStartDaemon(t *testing.T) {
+@@ -105,6 +126,7 @@ func TestStartDaemon(t *testing.T) {
  func TestStartDaemonArgv(t *testing.T) {
  	tmpDir := t.TempDir()
  	argvFile := filepath.Join(tmpDir, "argv.txt")
@@ -548,7 +649,7 @@ index 65ddf9e..0548d19 100644
  
  	script := filepath.Join(tmpDir, "write-argv.sh")
  	if err := os.WriteFile(script, []byte(
-@@ -113,7 +116,7 @@ func TestStartDaemonArgv(t *testing.T) {
+@@ -113,7 +135,7 @@ func TestStartDaemonArgv(t *testing.T) {
  		t.Fatalf("write helper script: %v", err)
  	}
  

@@ -16,9 +16,9 @@ hooks:
       # Preload 35B MoE on GPU 0 + 27B dense on GPU 1
       # embed-spread is also preloaded — 0.6B Q8_0 uses ~2 GB across both GPUs,
       # fitting alongside any dual chat config without pressure.
-      - embed-spread
+      # - embed-spread
       - 35b-gpu0
-      - 27b-gpu1
+      # - 27b-gpu1
 
 macros:
   # vllm-wrapper with level-2 sleep (PVC-backed, weights discarded on sleep).
@@ -36,7 +36,7 @@ models:
   #    Fallback: llmfan46/Qwen3.6-35B-A3B-MoE-GPTQ-Int4 (cookbook-verified)
   # ==========================================
   35b-gpu0:
-    cmd: '${cmd_base_vllm_gpu0} /data/models/Qwen3.6-35B-A3B-GPTQ-Int4 --host 127.0.0.1 --port 8000 --quantization gptq --dtype float16 --max-model-len 262144 --gpu-memory-utilization 0.87 --kv-cache-dtype fp8 --enable-prefix-caching --enable-auto-tool-choice --tool-call-parser qwen3_coder --reasoning-parser qwen3 --speculative-config ''{"method": "mtp", "num_speculative_tokens": 3}'' --max-num-seqs 6 --max-num-batched-tokens 4096 --served-model-name 35b-gpu0 --kv-cache-memory 4239633792' # --enable-sleep-mode' # --gpu-memory-utilization 0.93
+    cmd: '${cmd_base_vllm_gpu0} /data/models/Qwen3.6-35B-A3B-GPTQ-Int4 --host 127.0.0.1 --port 8000 --quantization gptq --dtype float16 --max-model-len 262144 --gpu-memory-utilization 0.87 --kv-cache-dtype fp8 --enable-prefix-caching --enable-auto-tool-choice --tool-call-parser qwen3_coder --reasoning-parser qwen3 --speculative-config ''{"method": "mtp", "num_speculative_tokens": 3}'' --max-num-seqs 6 --max-num-batched-tokens 8192 --served-model-name 35b-gpu0 --kv-cache-memory 4239633792 --enable-sleep-mode' # --gpu-memory-utilization 0.93
     env:
       # ONEAPI_DEVICE_SELECTOR has no effect on vLLM/torch XPU device
       # enumeration (verified: torch.xpu.device_count() is unchanged across
@@ -46,16 +46,38 @@ models:
       # actually needs to be set here.
       - "SYCL_PI_LEVEL_ZERO_USE_IMMEDIATE_COMMANDLISTS=1"
       - "ZE_AFFINITY_MASK=0"
+      # --enable-sleep-mode is required on XPU for sleep to free any VRAM at
+      # all: gpu_worker._maybe_get_memory_pool_context() only activates the
+      # XpuMemAllocator pool (pluggable allocator + MemPool) when
+      # enable_sleep_mode is True; without it, pointer_to_data stays empty
+      # and sleep() frees 0.00 GiB no matter what.
+      #
+      # expandable_segments:False is REQUIRED here (not just the containerfile
+      # default) — the pool's malloc callback is bypassed when expandable
+      # segments are on (pytorch#147851), which is exactly the "frees 0 GiB"
+      # failure mode. max_split_size_mb:20 restores the anti-fragmentation
+      # mitigation vLLM applies during weight load on CUDA
+      # (gpu_worker._scoped_allocator_max_split) but skips on XPU
+      # (gated by `if not current_platform.is_cuda(): return`), even though
+      # the XPU caching allocator honors the same generic
+      # c10::CachingAllocator::AcceleratorAllocatorConfig. Without it, weights
+      # loaded through the sleep-mode pool fragment badly enough that
+      # capture_model() (which runs *outside* the pool) OOMs — independent of
+      # --kv-cache-memory, which is why no KV size avoided it.
+      - "PYTORCH_ALLOC_CONF=expandable_segments:False,max_split_size_mb:20"
     ttl: 0
     cmdStop: /app/vllm-wrapper sleep --vllm-url http://127.0.0.1:8000 --sleep-level 2 --stop-pid ${PID}
     unloadTimeout: 60
 
   35b-gpu1:
-    cmd: '${cmd_base_vllm_gpu1} /data/models/Qwen3.6-35B-A3B-GPTQ-Int4 --host 127.0.0.1 --port 8001 --quantization gptq --dtype float16 --max-model-len 262144 --gpu-memory-utilization 0.87 --kv-cache-dtype fp8 --enable-prefix-caching --enable-auto-tool-choice --tool-call-parser qwen3_coder --reasoning-parser qwen3 --speculative-config ''{"method": "mtp", "num_speculative_tokens": 3}'' --max-num-seqs 6 --max-num-batched-tokens 4096 --served-model-name 35b-gpu1 --kv-cache-memory 4239633792' # --enable-sleep-mode' # --gpu-memory-utilization 0.93
+    cmd: '${cmd_base_vllm_gpu1} /data/models/Qwen3.6-35B-A3B-GPTQ-Int4 --host 127.0.0.1 --port 8001 --quantization gptq --dtype float16 --max-model-len 262144 --gpu-memory-utilization 0.87 --kv-cache-dtype fp8 --enable-prefix-caching --enable-auto-tool-choice --tool-call-parser qwen3_coder --reasoning-parser qwen3 --speculative-config ''{"method": "mtp", "num_speculative_tokens": 3}'' --max-num-seqs 6 --max-num-batched-tokens 8192 --served-model-name 35b-gpu1 --kv-cache-memory 4239633792 --enable-sleep-mode' # --gpu-memory-utilization 0.93
     env:
-      # See 35b-gpu0 above re: ONEAPI_DEVICE_SELECTOR removal.
+      # See 35b-gpu0 above re: ONEAPI_DEVICE_SELECTOR removal, and re:
+      # --enable-sleep-mode / PYTORCH_ALLOC_CONF (required for XPU sleep to
+      # free VRAM without OOMing on graph capture).
       - "SYCL_PI_LEVEL_ZERO_USE_IMMEDIATE_COMMANDLISTS=1"
       - "ZE_AFFINITY_MASK=1"
+      - "PYTORCH_ALLOC_CONF=expandable_segments:False,max_split_size_mb:20"
     ttl: 0
     cmdStop: /app/vllm-wrapper sleep --vllm-url http://127.0.0.1:8001 --sleep-level 2 --stop-pid ${PID}
     unloadTimeout: 60
@@ -86,21 +108,27 @@ models:
   #    initial allocation.
   # ==========================================
   27b-gpu0:
-    cmd: '${cmd_base_vllm_gpu0} /data/models/Qwen3.8-27B-GPTQ-Int4 --host 127.0.0.1 --port 8000 --quantization gptq --dtype float16 --max-model-len 175104 --gpu-memory-utilization 0.87 --kv-cache-dtype fp8 --enable-prefix-caching --enable-auto-tool-choice --tool-call-parser qwen3_xml --reasoning-parser qwen3 --speculative-config ''{"method": "mtp", "num_speculative_tokens": 3}'' --max-num-seqs 3 --max-num-batched-tokens 4096 --served-model-name 27b-gpu0 --kv-cache-memory 7047184611' # --enable-sleep-mode' # --gpu-memory-utilization 0.93
+    cmd: '${cmd_base_vllm_gpu0} /data/models/Qwen3.8-27B-GPTQ-Int4 --host 127.0.0.1 --port 8000 --quantization gptq --dtype float16 --max-model-len 175104 --gpu-memory-utilization 0.87 --kv-cache-dtype fp8 --enable-prefix-caching --enable-auto-tool-choice --tool-call-parser qwen3_xml --reasoning-parser qwen3 --speculative-config ''{"method": "mtp", "num_speculative_tokens": 3}'' --max-num-seqs 3 --max-num-batched-tokens 8192 --served-model-name 27b-gpu0 --kv-cache-memory 7047184611 --enable-sleep-mode' # --gpu-memory-utilization 0.93
     env:
-      # See 35b-gpu0 above re: ONEAPI_DEVICE_SELECTOR removal.
+      # See 35b-gpu0 above re: ONEAPI_DEVICE_SELECTOR removal, and re:
+      # --enable-sleep-mode / PYTORCH_ALLOC_CONF (required for XPU sleep to
+      # free VRAM without OOMing on graph capture).
       - "SYCL_PI_LEVEL_ZERO_USE_IMMEDIATE_COMMANDLISTS=1"
       - "ZE_AFFINITY_MASK=0"
+      - "PYTORCH_ALLOC_CONF=expandable_segments:False,max_split_size_mb:20"
     ttl: 0
     cmdStop: /app/vllm-wrapper sleep --vllm-url http://127.0.0.1:8000 --sleep-level 2 --stop-pid ${PID}
     unloadTimeout: 60
 
   27b-gpu1:
-    cmd: '${cmd_base_vllm_gpu1} /data/models/Qwen3.8-27B-GPTQ-Int4 --host 127.0.0.1 --port 8001 --quantization gptq --dtype float16 --max-model-len 175104 --gpu-memory-utilization 0.87 --kv-cache-dtype fp8 --enable-prefix-caching --enable-auto-tool-choice --tool-call-parser qwen3_xml --reasoning-parser qwen3 --speculative-config ''{"method": "mtp", "num_speculative_tokens": 3}'' --max-num-seqs 3 --max-num-batched-tokens 4096 --served-model-name 27b-gpu1 --kv-cache-memory 7047184611' # --enable-sleep-mode' # --gpu-memory-utilization 0.93
+    cmd: '${cmd_base_vllm_gpu1} /data/models/Qwen3.8-27B-GPTQ-Int4 --host 127.0.0.1 --port 8001 --quantization gptq --dtype float16 --max-model-len 175104 --gpu-memory-utilization 0.87 --kv-cache-dtype fp8 --enable-prefix-caching --enable-auto-tool-choice --tool-call-parser qwen3_xml --reasoning-parser qwen3 --speculative-config ''{"method": "mtp", "num_speculative_tokens": 3}'' --max-num-seqs 3 --max-num-batched-tokens 8192 --served-model-name 27b-gpu1 --kv-cache-memory 7047184611 --enable-sleep-mode' # --gpu-memory-utilization 0.93
     env:
-      # See 35b-gpu0 above re: ONEAPI_DEVICE_SELECTOR removal.
+      # See 35b-gpu0 above re: ONEAPI_DEVICE_SELECTOR removal, and re:
+      # --enable-sleep-mode / PYTORCH_ALLOC_CONF (required for XPU sleep to
+      # free VRAM without OOMing on graph capture).
       - "SYCL_PI_LEVEL_ZERO_USE_IMMEDIATE_COMMANDLISTS=1"
       - "ZE_AFFINITY_MASK=1"
+      - "PYTORCH_ALLOC_CONF=expandable_segments:False,max_split_size_mb:20"
     ttl: 0
     cmdStop: /app/vllm-wrapper sleep --vllm-url http://127.0.0.1:8001 --sleep-level 2 --stop-pid ${PID}
     unloadTimeout: 60
