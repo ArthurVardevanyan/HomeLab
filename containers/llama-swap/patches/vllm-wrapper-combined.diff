@@ -1,5 +1,5 @@
 diff --git a/cmd/vllm-wrapper/main.go b/cmd/vllm-wrapper/main.go
-index 81536c6..c18fd4d 100644
+index 81536c6..7c5f6a5 100644
 --- a/cmd/vllm-wrapper/main.go
 +++ b/cmd/vllm-wrapper/main.go
 @@ -1,10 +1,12 @@
@@ -183,7 +183,7 @@ index 81536c6..c18fd4d 100644
  	journalCtx, stopJournal := context.WithCancel(context.Background())
  	defer stopJournal()
  	if journalUnit != "" {
-@@ -87,35 +238,99 @@ func serveCmd(args []string) {
+@@ -87,35 +238,114 @@ func serveCmd(args []string) {
  		}
  	}
  
@@ -215,6 +215,11 @@ index 81536c6..c18fd4d 100644
 -			// Wake up succeeded, now wait for healthy (liveness).
 -			log.Printf("Wake up sent, waiting for healthy state")
 +			// ===== Path B: Wake succeeded — adopt existing daemon =====
++			// Verify identity BEFORE reloading weights: reload_weights on a
++			// stale daemon serving a different model would corrupt that
++			// model's weights in place, which is worse than merely misrouting
++			// requests.
++			verifyIdentityOrFatal(vllmURL, modelName)
 +			log.Printf("Wake up succeeded; reloading weights from PVC (level-2 safety net)")
 +			_ = reloadWeights(vllmURL)
 +			log.Printf("Weight reload sent, waiting for healthy state")
@@ -239,6 +244,10 @@ index 81536c6..c18fd4d 100644
 +		sleeping, _ := isSleeping(vllmURL)
 +		if sleeping {
 +			// ===== Path C: Sleeping — full wake =====
++			// Verify identity before waking: a sleeping daemon still answers
++			// /is_sleeping and /health, so it can pass checkHealthy while
++			// belonging to a different model that shares this port.
++			verifyIdentityOrFatal(vllmURL, modelName)
 +			log.Printf("vLLM daemon is sleeping — performing full wake (level-2)")
 +			if err := wakeUpLevel2(vllmURL); err != nil {
 +				log.Printf("Warning: full wake failed (but continuing): %v", err)
@@ -255,6 +264,12 @@ index 81536c6..c18fd4d 100644
 +			}
 +		} else {
 +			// ===== Path D: Awake — no wake needed =====
++			// This is the path that silently misrouted 35b-gpu1 to an
++			// already-running 27b-gpu1 daemon when both shared vLLM port
++			// 8001: checkHealthy only confirms *a* daemon answers HTTP 200,
++			// not that it is *this* model. Verify identity before treating
++			// the daemon as ready.
++			verifyIdentityOrFatal(vllmURL, modelName)
 +			log.Printf("vLLM daemon is awake and healthy (no wake needed)")
 +			if err := waitForHealthyWithPath(vllmURL, healthPath, 10*time.Second); err != nil {
 +				log.Fatalf("vLLM health check failed: %v", err)
@@ -299,7 +314,7 @@ index 81536c6..c18fd4d 100644
  		}
  	}
  
-@@ -150,10 +365,25 @@ func serveCmd(args []string) {
+@@ -150,10 +380,25 @@ func serveCmd(args []string) {
  		return nil
  	}
  
@@ -308,10 +323,10 @@ index 81536c6..c18fd4d 100644
 +	// directly for /sleep, /wake_up, etc.), so there is no risk of leaking
 +	// these paths to end-users through the proxy.
 +	controlPaths := map[string]bool{
-+		"/sleep":           true,
-+		"/wake_up":         true,
-+		"/is_sleeping":     true,
-+		"/collective_rpc":  true,
++		"/sleep":          true,
++		"/wake_up":        true,
++		"/is_sleeping":    true,
++		"/collective_rpc": true,
 +	}
 +
  	// Create HTTP server.
@@ -325,7 +340,7 @@ index 81536c6..c18fd4d 100644
  			proxy.ServeHTTP(w, r)
  		}),
  	}
-@@ -190,6 +420,104 @@ func serveCmd(args []string) {
+@@ -190,6 +435,104 @@ func serveCmd(args []string) {
  	log.Println("Server stopped")
  }
  
@@ -430,7 +445,7 @@ index 81536c6..c18fd4d 100644
  // sleepCmd implements the sleep subcommand.
  func sleepCmd(args []string) {
  	var (
-@@ -208,15 +536,15 @@ func sleepCmd(args []string) {
+@@ -208,15 +551,15 @@ func sleepCmd(args []string) {
  	}
  	vllmURL = strings.TrimRight(vllmURL, "/")
  
@@ -453,7 +468,7 @@ index 81536c6..c18fd4d 100644
  	if err != nil {
  		log.Fatalf("Failed to send sleep request: %v", err)
  	}
-@@ -237,14 +565,16 @@ func sleepCmd(args []string) {
+@@ -237,14 +580,16 @@ func sleepCmd(args []string) {
  }
  
  // sleepVLLM sends a POST to /sleep to put the vLLM daemon to sleep.
@@ -476,7 +491,90 @@ index 81536c6..c18fd4d 100644
  	if err != nil {
  		return fmt.Errorf("failed to send sleep request: %w", err)
  	}
-@@ -346,23 +676,84 @@ func startJournalForwarder(ctx context.Context, unit string) error {
+@@ -306,6 +651,14 @@ func waitForHealthyWithPath(vllmURL string, healthPath string, timeout time.Dura
+ }
+ 
+ // checkHealthy sends a GET request to the health path and returns nil if the response status is 200 OK.
++//
++// NOTE: HTTP 200 here only proves *some* vLLM daemon is answering on this
++// port — not that it is running the model this wrapper invocation was
++// asked to serve. Multiple models sharing a vLLM port (or a stale daemon
++// left over from a previous model that failed to exit) can satisfy this
++// check while serving the wrong model entirely. Callers that intend to
++// adopt the reachable daemon (rather than replace it) MUST additionally
++// call verifyModelIdentity before treating adoption as successful.
+ func checkHealthy(vllmURL string, healthPath string) error {
+ 	resp, err := http.Get(vllmURL + healthPath)
+ 	if err != nil {
+@@ -318,6 +671,67 @@ func checkHealthy(vllmURL string, healthPath string) error {
+ 	return nil
+ }
+ 
++// getServedModelName queries the vLLM daemon's OpenAI-compatible /v1/models
++// endpoint and returns the model ID it reports itself as serving (vLLM's
++// --served-model-name value). Used to confirm daemon identity before
++// adopting an already-running process.
++func getServedModelName(vllmURL string) (string, error) {
++	resp, err := http.Get(vllmURL + "/v1/models")
++	if err != nil {
++		return "", fmt.Errorf("failed to GET /v1/models: %w", err)
++	}
++	defer resp.Body.Close()
++
++	if resp.StatusCode != http.StatusOK {
++		return "", fmt.Errorf("/v1/models returned unexpected status %d", resp.StatusCode)
++	}
++
++	var result struct {
++		Data []struct {
++			ID string `json:"id"`
++		} `json:"data"`
++	}
++	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
++		return "", fmt.Errorf("failed to decode /v1/models response: %w", err)
++	}
++	if len(result.Data) == 0 {
++		return "", fmt.Errorf("/v1/models returned no models")
++	}
++	return result.Data[0].ID, nil
++}
++
++// verifyModelIdentity confirms that the vLLM daemon reachable at vllmURL is
++// actually serving expectedModel. This guards against silently adopting a
++// stale daemon for a different model that is still bound to the same port
++// (e.g. a previous model's process failed to exit before this wrapper was
++// asked to serve a different model on the same --vllm-url). Returns a
++// descriptive error on mismatch or query failure.
++func verifyModelIdentity(vllmURL string, expectedModel string) error {
++	actual, err := getServedModelName(vllmURL)
++	if err != nil {
++		return fmt.Errorf("could not verify served model identity: %w", err)
++	}
++	if actual != expectedModel {
++		return fmt.Errorf(
++			"daemon at %s is serving model %q, expected %q — a stale daemon for a different model is still running on this port",
++			vllmURL, actual, expectedModel,
++		)
++	}
++	return nil
++}
++
++// verifyIdentityOrFatal calls verifyModelIdentity and exits fatally on
++// mismatch rather than silently proxying requests to the wrong model. A
++// fatal exit here causes llama-swap to observe the wrapper failing to
++// start, which correctly surfaces as a load failure instead of a silent
++// misroute (see the 35b-gpu1/27b-gpu1 port-sharing incident this guards
++// against).
++func verifyIdentityOrFatal(vllmURL string, expectedModel string) {
++	if err := verifyModelIdentity(vllmURL, expectedModel); err != nil {
++		log.Fatalf("Refusing to adopt daemon at %s: %v", vllmURL, err)
++	}
++}
++
+ // startJournalForwarder forwards new log entries from a user systemd unit to stdout.
+ func startJournalForwarder(ctx context.Context, unit string) error {
+ 	cmd := exec.CommandContext(
+@@ -346,23 +760,84 @@ func startJournalForwarder(ctx context.Context, unit string) error {
  	return nil
  }
  
@@ -571,7 +669,7 @@ index 81536c6..c18fd4d 100644
  	return nil
  }
 diff --git a/cmd/vllm-wrapper/main_test.go b/cmd/vllm-wrapper/main_test.go
-index 65ddf9e..b24ed53 100644
+index 65ddf9e..5221536 100644
 --- a/cmd/vllm-wrapper/main_test.go
 +++ b/cmd/vllm-wrapper/main_test.go
 @@ -2,7 +2,6 @@ package main
@@ -582,7 +680,7 @@ index 65ddf9e..b24ed53 100644
  	"net/http"
  	"net/http/httptest"
  	"os"
-@@ -74,25 +73,47 @@ func TestWaitForHealthy(t *testing.T) {
+@@ -74,25 +73,112 @@ func TestWaitForHealthy(t *testing.T) {
  	}
  }
  
@@ -591,8 +689,6 @@ index 65ddf9e..b24ed53 100644
 -	// Since sleepCmd is not easily unit-testable without exposing more, we test the structure.
 -	body := map[string]int{"level": 1}
 -	data, err := json.Marshal(body)
--	if err != nil {
--		t.Fatalf("Failed to marshal: %v", err)
 +// TestSleepVLLMUsesQueryParam verifies that sleepVLLM sends the sleep level
 +// as a query parameter, not a JSON body. vLLM's /sleep handler
 +// (entrypoints/serve/dev/sleep/api_router.py) reads
@@ -611,10 +707,7 @@ index 65ddf9e..b24ed53 100644
 +
 +	if err := sleepVLLM(ts.URL, 2); err != nil {
 +		t.Fatalf("sleepVLLM failed: %v", err)
- 	}
--	expected := `{"level":1}`
--	if string(data) != expected {
--		t.Errorf("Expected %s, got %s", expected, string(data))
++	}
 +	if gotLevel != "2" {
 +		t.Errorf("Expected level query param %q, got %q", "2", gotLevel)
 +	}
@@ -627,6 +720,75 @@ index 65ddf9e..b24ed53 100644
 +
 +	if err := sleepVLLM(ts2.URL, 2); err == nil {
 +		t.Errorf("sleepVLLM expected error for non-200 response")
++	}
++}
++
++// TestGetServedModelName verifies extraction of the model ID from vLLM's
++// OpenAI-compatible /v1/models response.
++func TestGetServedModelName(t *testing.T) {
++	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
++		if r.URL.Path != "/v1/models" {
++			t.Errorf("Unexpected path: %s", r.URL.Path)
++		}
++		w.WriteHeader(http.StatusOK)
++		w.Write([]byte(`{"object":"list","data":[{"id":"27b-gpu1","object":"model"}]}`))
++	}))
++	defer ts.Close()
++
++	got, err := getServedModelName(ts.URL)
+ 	if err != nil {
+-		t.Fatalf("Failed to marshal: %v", err)
++		t.Fatalf("getServedModelName failed: %v", err)
++	}
++	if got != "27b-gpu1" {
++		t.Errorf("expected model id %q, got %q", "27b-gpu1", got)
++	}
++
++	// Empty data list should error rather than return a zero value that
++	// could accidentally compare equal to an empty expected string.
++	ts2 := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
++		w.WriteHeader(http.StatusOK)
++		w.Write([]byte(`{"object":"list","data":[]}`))
++	}))
++	defer ts2.Close()
++
++	if _, err := getServedModelName(ts2.URL); err == nil {
++		t.Errorf("expected error for empty /v1/models data")
++	}
++}
++
++// TestVerifyModelIdentity is a regression test for the incident where
++// 35b-gpu1 and 27b-gpu1 shared a vLLM port: the wrapper's checkHealthy only
++// confirmed HTTP 200, so a stale 27b-gpu1 daemon still bound to that port
++// was silently adopted as if it were 35b-gpu1. verifyModelIdentity must
++// reject that adoption.
++func TestVerifyModelIdentity(t *testing.T) {
++	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
++		w.WriteHeader(http.StatusOK)
++		w.Write([]byte(`{"object":"list","data":[{"id":"27b-gpu1"}]}`))
++	}))
++	defer ts.Close()
++
++	// Matching name: no error.
++	if err := verifyModelIdentity(ts.URL, "27b-gpu1"); err != nil {
++		t.Errorf("expected no error for matching model, got %v", err)
+ 	}
+-	expected := `{"level":1}`
+-	if string(data) != expected {
+-		t.Errorf("Expected %s, got %s", expected, string(data))
++
++	// Mismatched name: must error (this is the exact 35b-gpu1/27b-gpu1 case).
++	err := verifyModelIdentity(ts.URL, "35b-gpu1")
++	if err == nil {
++		t.Fatalf("expected error for mismatched model, got nil")
++	}
++	if !strings.Contains(err.Error(), "35b-gpu1") || !strings.Contains(err.Error(), "27b-gpu1") {
++		t.Errorf("error should name both expected and actual models, got: %v", err)
++	}
++
++	// Unreachable /v1/models: must error, not silently pass.
++	if err := verifyModelIdentity("http://127.0.0.1:1", "35b-gpu1"); err == nil {
++		t.Errorf("expected error when /v1/models is unreachable")
  	}
  }
  
@@ -641,7 +803,7 @@ index 65ddf9e..b24ed53 100644
  	if err == nil {
  		t.Fatalf("startDaemon expected error but got nil")
  	}
-@@ -105,6 +126,7 @@ func TestStartDaemon(t *testing.T) {
+@@ -105,6 +191,7 @@ func TestStartDaemon(t *testing.T) {
  func TestStartDaemonArgv(t *testing.T) {
  	tmpDir := t.TempDir()
  	argvFile := filepath.Join(tmpDir, "argv.txt")
@@ -649,7 +811,7 @@ index 65ddf9e..b24ed53 100644
  
  	script := filepath.Join(tmpDir, "write-argv.sh")
  	if err := os.WriteFile(script, []byte(
-@@ -113,7 +135,7 @@ func TestStartDaemonArgv(t *testing.T) {
+@@ -113,7 +200,7 @@ func TestStartDaemonArgv(t *testing.T) {
  		t.Fatalf("write helper script: %v", err)
  	}
  
