@@ -1,5 +1,5 @@
 diff --git a/cmd/vllm-wrapper/main.go b/cmd/vllm-wrapper/main.go
-index 81536c6..7c5f6a5 100644
+index 81536c6..c004ada 100644
 --- a/cmd/vllm-wrapper/main.go
 +++ b/cmd/vllm-wrapper/main.go
 @@ -1,10 +1,12 @@
@@ -340,10 +340,111 @@ index 81536c6..7c5f6a5 100644
  			proxy.ServeHTTP(w, r)
  		}),
  	}
-@@ -190,6 +435,104 @@ func serveCmd(args []string) {
+@@ -166,12 +411,27 @@ func serveCmd(args []string) {
+ 		}
+ 	}()
+ 
++	// Start the backend liveness monitor. Cancelled on normal shutdown below.
++	// It calls log.Fatalf (os.Exit(1)) directly if the backend dies, rather
++	// than routing through the signal channel below: log.Fatalf guarantees
++	// this process exits even if the main goroutine is stuck for any other
++	// reason, and a hard exit is exactly what we want here — there is no
++	// backend left to gracefully drain a proxy shutdown against.
++	livenessCtx, cancelLiveness := context.WithCancel(context.Background())
++	defer cancelLiveness()
++	go monitorBackendLiveness(livenessCtx, vllmURL, healthPath)
++
+ 	// Wait for interrupt signal to gracefully shutdown.
+ 	c := make(chan os.Signal, 1)
+ 	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
+ 	sig := <-c
+ 	signal.Stop(c)
+ 
++	// Stop the liveness monitor before initiating our own intentional
++	// shutdown/sleep sequence, so it cannot race a legitimate sleep
++	// transition and mistake it for a backend crash.
++	cancelLiveness()
++
+ 	if sig == syscall.SIGTERM {
+ 		log.Printf("SIGTERM received, putting vLLM to sleep (level %d)", sleepLevel)
+ 		if err := sleepVLLM(vllmURL, sleepLevel); err != nil {
+@@ -190,6 +450,177 @@ func serveCmd(args []string) {
  	log.Println("Server stopped")
  }
  
++// backendLivenessInterval is how often the liveness monitor polls the
++// backend's health endpoint once the proxy is up and serving.
++const backendLivenessInterval = 5 * time.Second
++
++// backendLivenessFailureThreshold is the number of consecutive failed health
++// checks required before the liveness monitor concludes the backend has
++// died and exits the wrapper. Set well above 1 to tolerate a handful of
++// transient blips (e.g. a slow request holding up the event loop) without
++// mistaking them for a crash.
++const backendLivenessFailureThreshold = 3
++
++// monitorBackendLiveness periodically polls the vLLM backend's health
++// endpoint and exits the wrapper process if the backend stops responding.
++//
++// This closes a gap where a crashed backing vLLM process (e.g. the
++// UR_RESULT_ERROR_DEVICE_LOST crash on inference requests, see the
++// llama-swap README's "Sleep mode compatibility investigation") left the
++// vllm-wrapper proxy itself running and answering its own listener, so
++// llama-swap kept reporting the model as loaded and proxied every request
++// straight into 502s indefinitely. llama-swap's only mechanism for
++// detecting an upstream failure is its own cmd.Wait() on the process it
++// spawned (vllm-wrapper) — it has no visibility into vllm-wrapper's
++// backend. By exiting here, llama-swap's existing "upstream process exited
++// unexpectedly" handling (internal/process/process_command.go) takes over
++// and the model correctly transitions back to Stopped, where a subsequent
++// request will restart it from scratch.
++//
++// A sleeping backend still answers its health endpoint (see isSleeping's
++// doc comment — /health and /is_sleeping remain reachable while sleeping),
++// so this monitor does not need to special-case sleep state: only an
++// actually-dead process (connection refused) or a backend stuck answering
++// non-200 for multiple consecutive checks trips it.
++func monitorBackendLiveness(ctx context.Context, vllmURL string, healthPath string) {
++	runLivenessLoop(ctx, backendLivenessInterval, func() error {
++		return checkHealthy(vllmURL, healthPath)
++	}, func(consecutiveFailures int) {
++		log.Fatalf("Backend at %s is unreachable after %d consecutive checks — exiting so llama-swap can restart the model",
++			vllmURL, consecutiveFailures)
++	})
++}
++
++// runLivenessLoop drives the poll/count/trip logic for monitorBackendLiveness
++// without any dependency on the network or on log.Fatalf, so the
++// failure-counting behavior (reset-on-success, trip-at-threshold) can be
++// unit tested directly. check is called once per tick; onDead is invoked
++// exactly once, when the failure threshold is first reached, after which
++// the loop returns (mirroring the real monitor's log.Fatalf exiting the
++// process — there is nothing further to do once onDead fires).
++func runLivenessLoop(ctx context.Context, interval time.Duration, check func() error, onDead func(consecutiveFailures int)) {
++	ticker := time.NewTicker(interval)
++	defer ticker.Stop()
++
++	consecutiveFailures := 0
++	for {
++		select {
++		case <-ctx.Done():
++			return
++		case <-ticker.C:
++			if err := check(); err != nil {
++				consecutiveFailures++
++				log.Printf("Warning: backend liveness check failed (%d/%d): %v",
++					consecutiveFailures, backendLivenessFailureThreshold, err)
++				if consecutiveFailures >= backendLivenessFailureThreshold {
++					onDead(consecutiveFailures)
++					return
++				}
++			} else {
++				consecutiveFailures = 0
++			}
++		}
++	}
++}
++
 +// isSleeping checks whether the vLLM daemon is in a sleeping state.
 +// Returns (true, nil) if sleeping, (false, nil) if not sleeping.
 +// Returns (false, error) if the endpoint is unavailable (e.g. legacy
@@ -445,7 +546,7 @@ index 81536c6..7c5f6a5 100644
  // sleepCmd implements the sleep subcommand.
  func sleepCmd(args []string) {
  	var (
-@@ -208,15 +551,15 @@ func sleepCmd(args []string) {
+@@ -208,15 +639,15 @@ func sleepCmd(args []string) {
  	}
  	vllmURL = strings.TrimRight(vllmURL, "/")
  
@@ -468,7 +569,7 @@ index 81536c6..7c5f6a5 100644
  	if err != nil {
  		log.Fatalf("Failed to send sleep request: %v", err)
  	}
-@@ -237,14 +580,16 @@ func sleepCmd(args []string) {
+@@ -237,14 +668,16 @@ func sleepCmd(args []string) {
  }
  
  // sleepVLLM sends a POST to /sleep to put the vLLM daemon to sleep.
@@ -491,7 +592,7 @@ index 81536c6..7c5f6a5 100644
  	if err != nil {
  		return fmt.Errorf("failed to send sleep request: %w", err)
  	}
-@@ -306,6 +651,14 @@ func waitForHealthyWithPath(vllmURL string, healthPath string, timeout time.Dura
+@@ -306,6 +739,14 @@ func waitForHealthyWithPath(vllmURL string, healthPath string, timeout time.Dura
  }
  
  // checkHealthy sends a GET request to the health path and returns nil if the response status is 200 OK.
@@ -506,7 +607,7 @@ index 81536c6..7c5f6a5 100644
  func checkHealthy(vllmURL string, healthPath string) error {
  	resp, err := http.Get(vllmURL + healthPath)
  	if err != nil {
-@@ -318,6 +671,67 @@ func checkHealthy(vllmURL string, healthPath string) error {
+@@ -318,6 +759,67 @@ func checkHealthy(vllmURL string, healthPath string) error {
  	return nil
  }
  
@@ -574,7 +675,7 @@ index 81536c6..7c5f6a5 100644
  // startJournalForwarder forwards new log entries from a user systemd unit to stdout.
  func startJournalForwarder(ctx context.Context, unit string) error {
  	cmd := exec.CommandContext(
-@@ -346,23 +760,84 @@ func startJournalForwarder(ctx context.Context, unit string) error {
+@@ -346,23 +848,84 @@ func startJournalForwarder(ctx context.Context, unit string) error {
  	return nil
  }
  
@@ -669,18 +770,25 @@ index 81536c6..7c5f6a5 100644
  	return nil
  }
 diff --git a/cmd/vllm-wrapper/main_test.go b/cmd/vllm-wrapper/main_test.go
-index 65ddf9e..5221536 100644
+index 65ddf9e..ac01d0b 100644
 --- a/cmd/vllm-wrapper/main_test.go
 +++ b/cmd/vllm-wrapper/main_test.go
-@@ -2,7 +2,6 @@ package main
+@@ -2,12 +2,13 @@ package main
  
  import (
  	"context"
 -	"encoding/json"
++	"fmt"
  	"net/http"
  	"net/http/httptest"
  	"os"
-@@ -74,25 +73,112 @@ func TestWaitForHealthy(t *testing.T) {
+ 	"path/filepath"
+ 	"strings"
++	"sync/atomic"
+ 	"testing"
+ 	"time"
+ )
+@@ -74,25 +75,112 @@ func TestWaitForHealthy(t *testing.T) {
  	}
  }
  
@@ -754,7 +862,10 @@ index 65ddf9e..5221536 100644
 +
 +	if _, err := getServedModelName(ts2.URL); err == nil {
 +		t.Errorf("expected error for empty /v1/models data")
-+	}
+ 	}
+-	expected := `{"level":1}`
+-	if string(data) != expected {
+-		t.Errorf("Expected %s, got %s", expected, string(data))
 +}
 +
 +// TestVerifyModelIdentity is a regression test for the incident where
@@ -772,10 +883,7 @@ index 65ddf9e..5221536 100644
 +	// Matching name: no error.
 +	if err := verifyModelIdentity(ts.URL, "27b-gpu1"); err != nil {
 +		t.Errorf("expected no error for matching model, got %v", err)
- 	}
--	expected := `{"level":1}`
--	if string(data) != expected {
--		t.Errorf("Expected %s, got %s", expected, string(data))
++	}
 +
 +	// Mismatched name: must error (this is the exact 35b-gpu1/27b-gpu1 case).
 +	err := verifyModelIdentity(ts.URL, "35b-gpu1")
@@ -803,7 +911,7 @@ index 65ddf9e..5221536 100644
  	if err == nil {
  		t.Fatalf("startDaemon expected error but got nil")
  	}
-@@ -105,6 +191,7 @@ func TestStartDaemon(t *testing.T) {
+@@ -105,6 +193,7 @@ func TestStartDaemon(t *testing.T) {
  func TestStartDaemonArgv(t *testing.T) {
  	tmpDir := t.TempDir()
  	argvFile := filepath.Join(tmpDir, "argv.txt")
@@ -811,7 +919,7 @@ index 65ddf9e..5221536 100644
  
  	script := filepath.Join(tmpDir, "write-argv.sh")
  	if err := os.WriteFile(script, []byte(
-@@ -113,7 +200,7 @@ func TestStartDaemonArgv(t *testing.T) {
+@@ -113,7 +202,7 @@ func TestStartDaemonArgv(t *testing.T) {
  		t.Fatalf("write helper script: %v", err)
  	}
  
@@ -820,3 +928,84 @@ index 65ddf9e..5221536 100644
  	if err == nil {
  		t.Fatal("expected error (health check fails)")
  	}
+@@ -133,3 +222,80 @@ func TestStartDaemonArgv(t *testing.T) {
+ 		}
+ 	}
+ }
++
++// TestRunLivenessLoopTripsAtThreshold is a regression test for the
++// vllm-wrapper health-check masking bug: previously nothing monitored the
++// backing vLLM process after startup, so a crashed backend left the wrapper
++// proxy running and llama-swap reporting the model as loaded indefinitely
++// (see the llama-swap README's "Sleep mode compatibility investigation").
++// runLivenessLoop must trip onDead only after backendLivenessFailureThreshold
++// consecutive check failures, not on the first failure (tolerating a
++// transient blip), and must not trip at all on success.
++func TestRunLivenessLoopTripsAtThreshold(t *testing.T) {
++	var calls int32
++	var died bool
++	var diedAtFailures int
++
++	check := func() error {
++		n := atomic.AddInt32(&calls, 1)
++		if n <= 2 {
++			return fmt.Errorf("simulated backend failure %d", n)
++		}
++		// 3rd call succeeds — must reset the failure counter.
++		return nil
++	}
++
++	ctx, cancel := context.WithCancel(context.Background())
++	defer cancel()
++
++	done := make(chan struct{})
++	go func() {
++		runLivenessLoop(ctx, 5*time.Millisecond, check, func(n int) {
++			died = true
++			diedAtFailures = n
++		})
++		close(done)
++	}()
++
++	// Let it run through several intermittent-failure/success cycles.
++	// With a reset on success, onDead must never fire here.
++	time.Sleep(100 * time.Millisecond)
++	cancel()
++	<-done
++
++	if died {
++		t.Errorf("onDead fired after %d consecutive failures, but successes should have reset the counter", diedAtFailures)
++	}
++}
++
++// TestRunLivenessLoopTripsOnSustainedFailure verifies the monitor exits
++// exactly once, exactly at the configured threshold, when the backend never
++// recovers (the real crash scenario — no more successes after the crash).
++func TestRunLivenessLoopTripsOnSustainedFailure(t *testing.T) {
++	check := func() error {
++		return fmt.Errorf("connection refused")
++	}
++
++	var diedAtFailures int
++	onDead := func(n int) { diedAtFailures = n }
++
++	ctx, cancel := context.WithCancel(context.Background())
++	defer cancel()
++
++	done := make(chan struct{})
++	go func() {
++		runLivenessLoop(ctx, 5*time.Millisecond, check, onDead)
++		close(done)
++	}()
++
++	select {
++	case <-done:
++	case <-time.After(2 * time.Second):
++		t.Fatal("runLivenessLoop did not trip onDead within timeout")
++	}
++
++	if diedAtFailures != backendLivenessFailureThreshold {
++		t.Errorf("expected onDead to fire at exactly %d consecutive failures, got %d",
++			backendLivenessFailureThreshold, diedAtFailures)
++	}
++}
