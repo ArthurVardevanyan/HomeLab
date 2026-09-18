@@ -17,7 +17,7 @@ routing with GPU affinity via a custom `llama_swap_affinity` plugin.
     - [Response \& cache](#response--cache)
   - [GPU affinity plugin](#gpu-affinity-plugin)
     - [Session recency protection](#session-recency-protection)
-    - [Known limitation — no intra-pair load balancing for vLLM (Option C)](#known-limitation--no-intra-pair-load-balancing-for-vllm-option-c)
+    - [vLLM load balancing](#vllm-load-balancing-option-c--implemented)
     - [KV cache efficiency](#kv-cache-efficiency)
   - [Deployment](#deployment)
   - [OIDC / SSO](#oidc--sso)
@@ -241,18 +241,20 @@ candidate list using llama-swap's ground truth:
      GPUs on each request — this breaks the observed skew where LiteLLM's built-in
      counter always chose the first-listed deployment.
 
-Note: chat models (vLLM backends) lack a `/slots` endpoint, so `/slots` polling
-via `llama-swap-svc:8080/upstream/<model>/slots` is llama.cpp-only and only
-applies to the embed-spread embedding model.
+Note: chat models (vLLM backends) now use vLLM `/metrics` polling for load
+balancing (Option C — see below). Embedding models still use `/slots` polling
+via `llama-swap-svc:8080/upstream/<model>/slots`.
 
 The plugin caches `/running` (1s TTL for chat, 5s TTL for embedding) and `/slots`
-(0.25s TTL, llama.cpp only) to avoid hammering llama-swap during request bursts.
-HTTP calls use a 1s timeout. The outer fail-open prevents the plugin from
-blocking routing entirely when llama-swap is unreachable.
+(0.25s TTL, llama.cpp only) and `/metrics` (1s TTL, vLLM only) to avoid
+hammering llama-swap during request bursts. HTTP calls use a 1s timeout. The
+outer fail-open prevents the plugin from blocking routing entirely when
+llama-swap is unreachable.
 
-The `/slots` poll is proxied through llama-swap's `upstream.ignorePaths` guard
-(see `llama-swap.yaml`) which prevents the path from ever triggering a model
-load/swap — defense-in-depth against a bug in the plugin doing otherwise.
+The `/slots` and `/metrics` polls are proxied through llama-swap's
+`upstream.ignorePaths` guard (see `llama-swap.yaml`) which prevents these paths
+from ever triggering a model load/swap — defense-in-depth against a bug in the
+plugin doing otherwise.
 
 #### Session recency protection
 
@@ -273,7 +275,7 @@ and the `ready_candidates < 2` early exit.
 Note: after a pod restart, the in-memory map is empty but Redis-backed entries
 persist for up to 300s.
 
-#### Known limitation — no intra-pair load balancing for vLLM (Option C)
+#### vLLM load balancing (Option C — implemented)
 
 Chat models (qwen3.6-35b-a3b, qwen3.8-27b) run via vLLM upstream backends.
 vLLM exposes a `/metrics` endpoint (Prometheus format) with
@@ -284,31 +286,27 @@ The `/metrics` path is reachable through llama-swap
 (`/upstream/<model>/metrics` → HTTP 200), confirmed with live traffic reading
 `vllm:num_requests_running 2.0` on a loaded GPU.
 
-However `/metrics` is **not** covered by llama-swap's `upstream.ignorePaths`
-guard (only `^/slots$` and static-asset extensions are guarded). Polling
-`/metrics` on an _unloaded_ model could trigger the very model swap this
-plugin prevents — the same failure it was designed to fix.
+The `/metrics` path **is** now covered by llama-swap's `upstream.ignorePaths`
+guard (`^/metrics$` added) — polling `/metrics` on an unloaded model no longer
+triggers a model swap.
 
-Implementing Option C (load-aware intra-pair routing for vLLM) therefore
-requires:
+Implementation:
 
-1. Adding `^/metrics$` to `upstream.ignorePaths` in `llama-swap.yaml`
-2. Polling `/metrics` per candidate, parsing 2 metric lines each
-3. Using `vllm:num_requests_running` as the load signal in
-   `_pick_least_busy` for vLLM candidates
+1. `^/metrics$` added to `upstream.ignorePaths` in `llama-swap.yaml`
+2. `/metrics` polled per candidate, parsing 2 metric lines each
+3. `vllm:num_requests_running` used as the load signal in `_pick_least_busy`
+   for vLLM candidates (replaces the previous unknown/None fallback)
 
-Cost note: `/metrics` is ~690 lines per scrape — requires caching and a
-hot-path parse budget. This gap is recorded here for future implementation.
+Cost note: `/metrics` is ~690 lines per scrape — caching with a 1s TTL keeps
+the hot-path budget reasonable. The metrics cache (`_vllm_metrics_cache`)
+stores `(running, waiting, expiry_ts)` per model.
 
 Same-model pairs (e.g. `dual_35b`: `35b-gpu0` + `35b-gpu1` both `ready`)
-reach the two-resident path automatically, but without measurable load data
-the plugin cannot proactively create them. The pair is only formed via
-llama-swap's own solver when external factors (e.g. `embed-spread` being
-evicted) free a GPU. When saturation **is** measurable, the plugin can
-respond by exposing both GPUs when the resident is fully loaded and the
-victim GPU has no exclusive occupant. Spread co-residents (e.g. `embed-spread`)
-do not block overflow since they share the GPU and do not evict when a
-sibling loads.
+reach the two-resident path automatically. With vLLM metrics now available,
+the plugin can proactively create pairs by exposing both GPUs when the
+resident is fully loaded and the victim GPU has no exclusive occupant.
+Spread co-residents (e.g. `embed-spread`) do not block overflow since they
+share the GPU and do not evict when a sibling loads.
 
 #### KV cache efficiency
 

@@ -47,7 +47,7 @@ spec:
       containers:
         # Custom image = llama-swap v255 + vLLM XPU nightly + cookbook patches
         # renovate: datasource=docker depName=registry.arthurvardevanyan.com/homelab/llama-swap versioning=loose
-        - image: registry.arthurvardevanyan.com/homelab/llama-swap:v255-intel-b10868-f347fda5@sha256:738980b66d16c61feceebab77217fafe25f77fe517c8dd67b58ce565eb5ec3fb
+        - image: registry.arthurvardevanyan.com/homelab/llama-swap:v255-intel-b10868-13630a4f@sha256:d05b8b6ea1722e2420e028a1eef0b074a29667f262cedf701a107dd41e2a914a
           imagePullPolicy: IfNotPresent
           name: llama-swap
           command: ["/app/llama-swap"]
@@ -62,6 +62,8 @@ spec:
           env:
             - name: LLAMA_CACHE
               value: /cache
+            - name: VLLM_CACHE_ROOT
+              value: /var/lib/vllm-cache
           securityContext:
             runAsNonRoot: true
             readOnlyRootFilesystem: false
@@ -115,6 +117,8 @@ spec:
               mountPath: /cache
             - name: store
               mountPath: /var/lib/llama-swap
+            - name: vllm-cache
+              mountPath: /var/lib/vllm-cache
         # metrics-exporter sidecar: scrapes /metrics from each dynamically-
         # assigned child process (supports llama.cpp, vLLM, and other
         # backends), then exposes aggregated, backend-neutral metrics
@@ -158,5 +162,8 @@ spec:
         - name: store
           persistentVolumeClaim:
             claimName: llm-llama-swap-store
+        - name: vllm-cache
+          persistentVolumeClaim:
+            claimName: llm-vllm-cache
         - name: metrics-cache
           emptyDir: {}

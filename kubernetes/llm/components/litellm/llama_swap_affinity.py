@@ -42,30 +42,22 @@ covers. It narrows the routing-plugin candidate list (see
   the other is harmless. Same-model pairs (`dual_35b`, `dual_27b`) are
   handled by this path and reach a valid matrix set that evicts nothing.
 
-Known limitation — no intra-pair load balancing for vLLM (Option C gap)
-------------------------------------------------------------------------
-The chat models (qwen3.6-35b-a3b, qwen3.8-27b) run via vLLM upstream
-backends. vLLM exposes a `/metrics` endpoint (Prometheus format) with
-`vllm:num_requests_running` / `vllm:num_requests_waiting` counters, but
-lacks a `/slots`-style endpoint.
+vLLM load balancing (Option C — implemented)
+----------------------------------------------
+Chat models (qwen3.6-35b-a3b, qwen3.8-27b) run via vLLM upstream backends.
+vLLM exposes a ``/metrics`` endpoint (Prometheus format) with
+``vllm:num_requests_running`` / ``vllm:num_requests_waiting`` counters, but
+lacks a ``/slots``-style endpoint.  The ``/metrics`` path is reachable
+through llama-swap (``/upstream/<model>/metrics`` → HTTP 200).  Implementing
+Option C required:
 
-The `/metrics` path is reachable through llama-swap
-(`/upstream/<model>/metrics` → HTTP 200), confirmed with live traffic
-reading `vllm:num_requests_running 2.0` on a loaded GPU.
+1. Adding ``^/metrics$`` to ``upstream.ignorePaths`` in ``llama-swap.yaml``
+2. Polling ``/metrics`` per candidate, parsing 2 metric lines each
+3. Using ``vllm:num_requests_running`` as the load signal in
+   ``_pick_least_busy`` for vLLM candidates
 
-However `/metrics` is **not** covered by llama-swap's `upstream.ignorePaths`
-guard (only `^/slots$` and static-asset extensions are guarded). Polling
-`/metrics` on an *unloaded* model could trigger the very model swap this
-plugin prevents — the same failure it was designed to fix.
-
-Implementing Option C therefore requires:
-  1. Adding `^/metrics$` to `upstream.ignorePaths` in `llama-swap.yaml`
-  2. Polling `/metrics` per candidate, parsing 2 metric lines each
-  3. Using `vllm:num_requests_running` as the load signal in
-     `_pick_least_busy` for vLLM candidates
-
-Cost note: `/metrics` is ~690 lines per scrape — requires caching and a
-hot-path parse budget. This gap is documented here for future implementation.
+``/metrics`` is ~690 lines per scrape — caching with a 1s TTL keeps the
+hot-path budget reasonable.
 
 Same-model pairs (e.g. `dual_35b`: `35b-gpu0` + `35b-gpu1` both `ready`)
 reach the two-resident path automatically, but without measurable load data
@@ -139,13 +131,16 @@ logger = logging.getLogger(__name__)
 # /slots path can itself trigger a model load/swap.
 _LLAMA_CPP_MODELS: Final = frozenset({
     "embed-spread",
-    # TODO: add chat model IDs here when Option C is implemented
-    # (e.g. "35b-gpu0", "35b-gpu1", "27b-gpu0", "27b-gpu1").
 })
+_VLLM_MODELS: Final = frozenset({"35b", "27b"})
 _LLAMA_SWAP_BASE_URL: Final = os.environ.get(
     "LLAMA_SWAP_BASE_URL", "http://llama-swap-svc.llm.svc.cluster.local.:8080"
 ).rstrip("/")
 _RUNNING_URL: Final = f"{_LLAMA_SWAP_BASE_URL}/running"
+_VLLM_METRICS_TTL_SECONDS: Final = 1.0
+_VLLM_METRICS_URL_TEMPLATE: Final = (
+    f"{_LLAMA_SWAP_BASE_URL}/upstream/{{}}/metrics"
+)
 
 _RESIDENT_STATES: Final = frozenset({"ready", "starting"})
 _RUNNING_CACHE_TTL_SECONDS: Final = 1.0
@@ -213,6 +208,19 @@ def _supports_slots(model_id: str) -> bool:
     return model_id in _LLAMA_CPP_MODELS or _GPU_SUFFIX_RE.sub("", model_id) in _LLAMA_CPP_MODELS
 
 
+def _supports_vllm_metrics(model_id: str) -> bool:
+    """Return True if *model_id* is a vLLM chat model (has /metrics).
+
+    Uses an explicit allowlist — probing an unloaded model's /metrics path
+    could trigger a model swap when not covered by upstream.ignorePaths.
+    """
+    # Strip GPU suffix and check against known vLLM model prefixes.
+    stripped = _GPU_SUFFIX_RE.sub("", model_id)
+    return stripped in _VLLM_MODELS or model_id in {
+        f"{prefix}-gpu{gpu}" for prefix in _VLLM_MODELS for gpu in (0, 1)
+    }
+
+
 def _is_embedding_request(candidate_ids: dict[str, str]) -> bool:
     """Check whether all candidates are embedding models."""
     return all("embed" in mid for mid in candidate_ids)
@@ -245,6 +253,8 @@ class LlamaSwapAffinityPlugin:
         # whichever call ran last to overwrite the window for both classes.
         self._running_cache_expires_at: dict[float, float] = {}
         self._slots_cache: dict[str, tuple[int, int, float]] = {}
+        # Per-model vLLM metrics cache: model_id -> (running, waiting, expiry_ts)
+        self._vllm_metrics_cache: dict[str, tuple[int, int, float]] = {}
         self._round_robin_counter: int = 0
         # Fallback in-memory pin map (used when Redis is unavailable).
         self._pin_map: dict[str, tuple[str, float]] = {}
@@ -368,21 +378,66 @@ class LlamaSwapAffinityPlugin:
             return stats[0]
         return None
 
+    async def _get_vllm_metrics(
+        self, model_id: str, cache_ttl: float | None = None,
+    ) -> tuple[int, int] | None:
+        """Return (running, waiting) request counts from vLLM /metrics.
+
+        Polls ``/upstream/<model>/metrics`` through llama-swap, parses the
+        ``vllm:num_requests_running`` and ``vllm:num_requests_waiting``
+        Prometheus counters.  Returns ``(running, waiting)`` on success,
+        ``None`` on failure or if the model does not support metrics.
+        """
+        if not _supports_vllm_metrics(model_id):
+            return None
+
+        now = time.monotonic()
+        effective_ttl = (
+            cache_ttl if cache_ttl is not None else _VLLM_METRICS_TTL_SECONDS
+        )
+        cached = self._vllm_metrics_cache.get(model_id)
+        if cached is not None and now < cached[2]:
+            return (cached[0], cached[1])
+
+        try:
+            client = self._get_client()
+            response = await client.get(
+                _VLLM_METRICS_URL_TEMPLATE.format(model_id)
+            )
+            response.raise_for_status()
+            text = response.text
+
+            running: int = 0
+            waiting: int = 0
+            for line in text.splitlines():
+                stripped = line.strip()
+                if stripped.startswith("vllm:num_requests_running "):
+                    running = int(float(stripped.split()[1]))
+                elif stripped.startswith("vllm:num_requests_waiting "):
+                    waiting = int(float(stripped.split()[1]))
+
+            self._vllm_metrics_cache[model_id] = (running, waiting, now + effective_ttl)
+            return (running, waiting)
+        except Exception:
+            return None
+
     async def _pick_least_busy(
         self,
         candidates: list[str],
         candidate_ids: dict[str, str],
         slots_cache_ttl: float | None = None,
     ) -> str:
-        """Pick the candidate with fewest llama.cpp busy slots (None = unknown).
+        """Pick the candidate with fewest busy slots or vLLM running requests.
 
+        For llama.cpp models (embedding) uses ``/slots`` busy counts.
+        For vLLM chat models uses ``/metrics`` ``vllm:num_requests_running``.
         When all counts are unknown (None) the caller has already ruled out
         the non-resident GPU, so the tie-break is a simple round-robin across
-        the remaining candidates rather than the original `candidates[0]` bias.
+        the remaining candidates rather than the original ``candidates[0]`` bias.
         """
         counts = await asyncio.gather(
             *(
-                self._slot_busy_count(candidate_ids[model], cache_ttl=slots_cache_ttl)
+                self._get_model_load(model, cache_ttl=slots_cache_ttl)
                 for model in candidates
             ),
             return_exceptions=True,
@@ -397,6 +452,25 @@ class LlamaSwapAffinityPlugin:
         winner = least_busy[self._round_robin_counter % len(least_busy)]
         self._round_robin_counter += 1
         return winner
+
+    async def _get_model_load(
+        self, model_id: str, cache_ttl: float | None = None,
+    ) -> int | None:
+        """Return the load signal for a model: busy slots or vLLM running requests.
+
+        Uses ``/slots`` for llama.cpp models (``_supports_slots``) and
+        ``/metrics`` ``vllm:num_requests_running`` for vLLM chat models
+        (``_supports_vllm_metrics``).  Returns ``None`` when the model
+        doesn't support either metric endpoint or both calls fail.
+        """
+        # Check vLLM metrics first (chat models).
+        if _supports_vllm_metrics(model_id):
+            metrics = await self._get_vllm_metrics(model_id, cache_ttl=cache_ttl)
+            if metrics is not None:
+                return metrics[0]  # running count
+            return None
+        # Fall back to llama.cpp /slots.
+        return await self._slot_busy_count(model_id, cache_ttl=cache_ttl)
 
     # ------------------------------------------------------------------
     # Load-aware saturation check

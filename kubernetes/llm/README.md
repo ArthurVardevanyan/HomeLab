@@ -308,6 +308,17 @@ for the full session-level breakdown, MTP acceptance-rate analysis, and
 known gaps (position-4 acceptance tuning, long-running decay test,
 concurrency, etc.).
 
+> **Sleep mode is 27B-only for now.** 35B runs without `--enable-sleep-mode`
+> and swaps via full cold restart. An earlier diagnosis attributed this to
+> an inherent MoE expert-tensor/Level-Zero-handle limit, but that was
+> confounded by an allocator misconfiguration (`expandable_segments:False`
+> set image-wide plus a per-model `max_split_size_mb:20` cap) that has since
+> been reverted — the same misconfiguration caused a GPU CAT error/crash on
+> 35B even without sleep mode. Whether 35B can safely re-enable sleep mode
+> now is unconfirmed. See
+> [Sleep mode compatibility investigation](components/llama-swap/README.md#sleep-mode-compatibility-investigation)
+> for the full investigation.
+
 ### Backend history
 
 | Era                    | Backend              | Config                         | Key numbers                                                                                              |
