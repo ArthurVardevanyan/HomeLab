@@ -18,8 +18,9 @@ llama-server (llama.cpp SYCL).
   - [Fast model swaps (vLLM sleep mode)](#fast-model-swaps-vllm-sleep-mode)
     - [Level 2: PVC-backed (weights discarded)](#level-2-pvc-backed-weights-discarded)
     - [Wake sequence](#wake-sequence)
+    - [Backend liveness monitoring](#backend-liveness-monitoring)
     - [Preload times (with vllm-wrapper)](#preload-times-with-vllm-wrapper)
-    - [Sleep mode is 27B-only: 35B MoE incompatibility](#sleep-mode-is-27b-only-35b-moe-incompatibility)
+    - [Sleep mode compatibility investigation](#sleep-mode-compatibility-investigation)
   - [Measured Performance (2026-09-10)](#measured-performance-2026-09-10)
     - [27B Dense (GPU-1)](#27b-dense-gpu-1)
     - [35B-A3B MoE (GPU-0)](#35b-a3b-moe-gpu-0)
@@ -177,18 +178,28 @@ for SHA-256 hashes of each patch against the f01e24f6 vllm source.
 Same env vars as the llama.cpp era — `ZE_FLAT_DEVICE_HIERARCHY=COMPOSITE`,
 `GGML_SYCL_ENABLE_GRAPH=1` for llama-server children. vLLM itself uses
 `VLLM_TARGET_DEVICE=xpu`, `VLLM_XPU_ENABLE_XPU_GRAPH=1`, and
-`PYTORCH_ALLOC_CONF=expandable_segments:False` so vLLM sleep (level 2) can free VRAM (expandable segments bypass the pluggable allocator)
+`PYTORCH_ALLOC_CONF=expandable_segments:True` (image-wide default,
+anti-fragmentation). Expandable segments bypass the pluggable allocator
+sleep mode needs (pytorch#147851), so `patch_fix_xpu_sleep.py` temporarily
+flips this to `False` only for the duration of the sleep-mode pool context
+and restores `True` on exit — the image-wide default is never changed.
+**Do not** set `expandable_segments:False` globally or per-model: an earlier
+attempt at exactly that fragmented every weight allocation into ~20 MiB
+chunks and caused a Level Zero CAT error (device-lost crash) on the 35B MoE
+model at inference time.
 
 `SYCL_CACHE_PERSISTENT=0` — not enabled (causes hard crash at SYCL init,
 bisected: graph-only boots clean, cache-only fails).
 
 ## Fast model swaps (vLLM sleep mode)
 
-> **27B dense only** — the 35B-A3B MoE does **not** use sleep mode
-> (`--enable-sleep-mode` is absent from both `35b-gpu0` and `35b-gpu1` in
-> `llama-swap.yaml`). See
-> [Sleep mode is 27B-only](#sleep-mode-is-27b-only-35b-moe-incompatibility)
-> below for why.
+> **27B dense only, for now** — the 35B-A3B MoE does **not** currently use
+> sleep mode (`--enable-sleep-mode` is absent from both `35b-gpu0` and
+> `35b-gpu1` in `llama-swap.yaml`), pending a retest after fixing an
+> allocator misconfiguration that was the actual cause of an earlier 35B
+> boot failure. See
+> [Sleep mode compatibility investigation](#sleep-mode-compatibility-investigation)
+> below.
 
 llama-swap uses **vllm-wrapper** as a reverse proxy in front of vLLM, enabling
 vLLM's **level 2 sleep mode** (PVC-backed) for the 27B dense model. When a
@@ -218,6 +229,29 @@ the wrapper falls back to a simple `/wake_up` call.
    fully functional model.
 3. **`/wake_up?tags=kv_cache`** — re-allocate KV cache
 
+### Backend liveness monitoring
+
+llama-swap's only crash-detection mechanism is `cmd.Wait()` on the OS
+process it directly spawns — for vLLM models that's `vllm-wrapper`, not the
+vLLM daemon itself. Before this fix, a backing vLLM process that crashed
+after startup (e.g. the `UR_RESULT_ERROR_DEVICE_LOST` crash described in
+[Sleep mode compatibility investigation](#sleep-mode-compatibility-investigation))
+left `vllm-wrapper`'s own HTTP listener running and un-crashed, so
+llama-swap kept reporting the model `loaded` and proxied every request into
+a 502 indefinitely — the only recovery was a manual pod restart.
+
+`vllm-wrapper serve` now runs a background goroutine
+(`monitorBackendLiveness`) that polls the backend's health endpoint every 5
+seconds once the proxy is up. After 3 consecutive failures (~15 s), it calls
+`log.Fatalf`, exiting the wrapper process. That exit is exactly what
+llama-swap's existing `cmd.Wait()` handler expects from an upstream that
+died on its own — it transitions the model back to `Stopped`
+(`internal/process/process_command.go`'s "upstream process exited
+unexpectedly" path), so the next request triggers a normal cold start
+instead of proxying into a permanently broken 502. The monitor is cancelled
+before `vllm-wrapper`'s own intentional sleep/shutdown sequence runs, so a
+normal TTL-triggered sleep is never mistaken for a crash.
+
 ### Preload times (with vllm-wrapper)
 
 Cold model swaps (no cache): ~120–180 s (same as before).
@@ -227,79 +261,98 @@ can reduce weight load to ~30–60 s with sustained workload.
 
 Embedding models (llama.cpp): no change, ~45–90 s.
 
-### Sleep mode is 27B-only: 35B MoE incompatibility
+### Sleep mode compatibility investigation
 
-`--enable-sleep-mode` activates vLLM's `XpuMemAllocator` (`xpumem.py`), a
-pluggable allocator that reserves Level Zero virtual address space and maps
-one **discrete physical-memory handle per allocation**, so sleep can later
-unmap/remap physical pages without losing the virtual address. Every distinct
-tensor allocated while the pool is active — every weight tensor, not just the
-KV cache — gets its own handle.
+**Status: 35B disabled sleep mode pending retest; root cause of the original
+failure was a global allocator misconfiguration, not an inherent MoE
+limitation.**
 
-The 35B-A3B is a 256-expert MoE checkpoint (`model.safetensors.index.json`
-lists 122,882 expert-tensor entries vs. 0 for the 27B dense model). Loading
-it under the sleep-mode allocator produced 345 discrete Level Zero handles
-(344 weight allocations + 1 KV cache allocation, confirmed via
-`VLLM_LOGGING_LEVEL=DEBUG` and `xpumem.py`'s per-allocation log line) and the
-daemon reliably failed during `warmup_kernels()` right after graph capture:
+An earlier debugging session (2026-09-17) diagnosed a 35B boot failure under
+`--enable-sleep-mode`:
 
 ```text
 terminate called after throwing an instance of 'sycl::_V1::exception'
   what():  level_zero backend failed with error: 40 (UR_RESULT_ERROR_OUT_OF_RESOURCES)
 ```
 
-Error 40 is Level Zero's resource/handle exhaustion (distinct from error 20,
-`OUT_OF_DEVICE_MEMORY` — a byte-OOM). The 27B dense model, with far fewer
-distinct weight tensors, never exhausts the handle budget and sleeps/wakes
-reliably.
+and concluded the MoE checkpoint's expert-tensor count (256 experts,
+122,882 tensor entries in `model.safetensors.index.json` vs. 0 for the 27B
+dense model) exhausted Level Zero physical-memory handles under vLLM's
+sleep-mode `XpuMemAllocator` — each of 344 observed weight allocations maps
+to a discrete handle, and the theory was that the MoE's much higher tensor
+count is what exceeds the handle budget.
 
-**Confirmed by git history**: commit `3445d362` (before `--enable-sleep-mode`
-was added to 35B in `d7c8b8b8`) ran 35B successfully with otherwise identical
-flags. Sleep mode is what broke it.
+**That conclusion was wrong.** The same debugging session had also, as part
+of isolating the failure, set:
 
-Every other variable was tried and ruled out as an independent or
-contributing cause before concluding the allocator itself is the problem
-(each tested with `--enforce-eager` isolating graph capture, since eager mode
-turns the same handle exhaustion into a hang instead of a crash — the
-underlying resource limit is unaffected either way):
+- `PYTORCH_ALLOC_CONF=expandable_segments:False` **image-wide** in the
+  containerfile (replacing the working default of `expandable_segments:True`)
+- `max_split_size_mb:20` as a **per-model** override on top of that
 
-- **`--enforce-eager`** (disables CUDA/XPU graph capture): removes graph
-  capture's own handle pressure, but the daemon still hangs indefinitely
-  during `warmup_kernels()`'s real forward pass — same root exhaustion, just
-  surfaced differently (hang instead of crash).
+Both changes were committed and shipped, and both remained in place through
+the "35B without sleep mode" retest — so the 344-allocation count used as
+evidence of an MoE-specific handle exhaustion was itself an artifact of
+`max_split_size_mb:20` forcing 24 GiB of weights into ~20 MiB chunks with no
+expandable-segment backing, not a property of the checkpoint. Removing only
+`--enable-sleep-mode` while leaving the fragmenting allocator config in
+place did not isolate the sleep-mode variable at all.
+
+With `--enable-sleep-mode` removed but the fragmenting allocator config
+still active, 35B booted successfully (graph capture, weight load, kernel
+warmup all passed) but then **crashed on the first real inference request**
+with a Level Zero device-lost error, correlated exactly in `dmesg` with a
+GPU compute-engine reset:
+
+```text
+RuntimeError: level_zero backend failed with error: 20 (UR_RESULT_ERROR_DEVICE_LOST)
+  at vllm/v1/attention/backends/gdn_attn.py:325, in build (spec_state_indices_tensor = block_table_tensor[...])
+
+xe 0000:06:00.0: [drm] Tile0: GT0: Engine memory CAT error [18]: class=ccs, guc_id=14
+xe 0000:06:00.0: [drm] Tile0: GT0: Engine reset: engine_class=ccs, guc_id=14
+xe 0000:06:00.0: [drm] Tile0: GT0: Timedout job: seqno=968 ... in VLLM::EngineCor
+```
+
+A CAT (address-translation) fault and engine reset is consistent with a
+severely fragmented address space (344 small, non-expandable mappings)
+rather than a byte-OOM or a sleep-mode-specific defect. **35B ran
+successfully on `main` before sleep mode was ever added**
+(`--enable-sleep-mode` was introduced in `d7c8b8b8`), with
+`expandable_segments:True` and no `max_split_size_mb` cap — i.e. under the
+allocator config now being restored.
+
+**Fix applied**: reverted `PYTORCH_ALLOC_CONF` to `expandable_segments:True`
+image-wide (matching `main`) and removed the per-model `max_split_size_mb:20`
+override entirely. `patch_fix_xpu_sleep.py` already handles the
+sleep-mode/expandable-segments conflict correctly at the source level — it
+toggles `expandable_segments` to `False` only for the duration of the
+sleep-mode pool context and restores `True` on exit — so no per-model
+`PYTORCH_ALLOC_CONF` override is needed once the image-wide default is
+correct. See [SYCL / Level Zero env](#sycl--level-zero-env) above.
+
+**Open question**: whether 35B can now run `--enable-sleep-mode` safely with
+the corrected allocator config has not yet been retested. 35B remains
+without `--enable-sleep-mode` until that retest confirms one way or the
+other. If it still fails with sleep mode re-enabled under the corrected
+allocator, that would be much stronger evidence of a genuine MoE-specific
+incompatibility — but that evidence does not yet exist.
+
+For reference, prior to finding the allocator regression, these variables
+were tried and ruled out as the _sole_ cause of the original hang/crash
+(kept here since they remain accurate observations, independent of the
+allocator finding above):
+
+- **`--enforce-eager`** (disables CUDA/XPU graph capture): converted the
+  crash into an indefinite hang at the same later point
+  (`warmup_kernels()`), not a fix.
 - **`--speculative-config` (MTP) removed entirely**: hang persisted, only the
-  specific kernel where the trace freezes changed
-  (`_triton_mrope_forward` instead of the GDN mamba-align kernels).
-- **`--max-num-seqs 1`**: forces `vllm/v1/worker/gpu/warmup.py`'s
-  `warmup_kernels()` to skip every multi-request/mixed spec-decode batch
-  branch entirely (its own comment documents that GDN reclassifies
-  non-spec decodes as prefills in a multi-request batch — a separate,
-  narrower bug `patch_gdn_mixed_split_v5.py` already exists for). Hang
-  persisted identically even with a single-request batch.
+  specific kernel where the trace froze changed.
+- **`--max-num-seqs 1`** (ruling out multi-request/mixed spec-decode GDN
+  batches): hang persisted identically with a single-request batch.
 - **`SYCL_PI_LEVEL_ZERO_USE_IMMEDIATE_COMMANDLISTS` unset**: no change.
-- **`TRITON_CACHE_AUTOTUNING=0`** (disables Triton's own autotune-result
-  disk cache): no change.
-- **`max_split_size_mb:20` removed from `PYTORCH_ALLOC_CONF`**: weights
-  loaded as 344 discrete handles regardless (140×2MiB, 89×20MiB observed
-  either way) — this setting shapes handle _sizes_, not handle _count_.
+- **`TRITON_CACHE_AUTOTUNING=0`**: no change.
 - **`xpu-smi` telemetry during the hang**: GPU0 held a steady 90 W / 61 °C /
-  99.94% memory-utilization for 10+ minutes (vs. GPU1 idle at ~1–8 W) —
-  the device is actively executing, not idling on a purely host-side stall,
-  consistent with the runtime spinning on exhausted Level Zero resources
-  rather than a simple missing-synchronize bug.
-- **`35b-gpu1` with none of the above changes at all** (no
-  `--enforce-eager`, default env): failed with the original `error: 40`
-  directly, confirming the failure is inherent to sleep mode on this
-  checkpoint, not an artifact of any other diagnostic change.
-
-No config-only combination avoids the handle exhaustion. A real fix would
-require either a source patch to `xpumem.py`/vLLM (e.g. coalescing expert
-tensors into fewer physical-memory handles) or an upstream Level Zero
-handle-budget increase — out of scope here. **35B runs permanently without
-`--enable-sleep-mode`**; unload is a full process stop and reload is a full
-cold start, same as any non-sleep-mode model (see
-[Preload times](#preload-times-with-vllm-wrapper) above for cold-start
-timing).
+  99.94% memory-utilization for 10+ minutes — the device was actively
+  executing, not idling on a purely host-side stall.
 
 ## Measured Performance (2026-09-10)
 
@@ -435,9 +488,11 @@ plus the absence of TP/cross-card communication overhead.
    10-second-window means from the vLLM engine log. These are different
    measurement methods and are **not directly comparable** — reconciling the
    apparent ~20× gap is an open question, not a confirmed regression.
-8. **35B MoE cannot use sleep mode** — see
-   [Sleep mode is 27B-only](#sleep-mode-is-27b-only-35b-moe-incompatibility).
-   Swapping 35B off a GPU is a full cold restart, not a fast wake.
+8. **35B does not use sleep mode (pending retest)** — see
+   [Sleep mode compatibility investigation](#sleep-mode-compatibility-investigation).
+   Swapping 35B off a GPU is currently a full cold restart, not a fast wake;
+   whether it can safely re-enable sleep mode after the allocator fix is
+   unconfirmed.
 
 ## Memory model
 

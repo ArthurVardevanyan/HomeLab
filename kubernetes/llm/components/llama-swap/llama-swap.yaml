@@ -51,14 +51,16 @@ models:
   #    Source: rcs1000/Qwen3.6-35B-A3B-MTP-Preserved-GPTQ-Int4 @4b2e1978
   #    Fallback: llmfan46/Qwen3.6-35B-A3B-MoE-GPTQ-Int4 (cookbook-verified)
   # ==========================================
-  # NOTE: 35B does NOT use --enable-sleep-mode. See "Sleep mode is 27B-only"
-  # in README.md for the full investigation (MoE expert-tensor count
-  # exhausts Level Zero physical-memory handles under the sleep-mode
-  # XpuMemAllocator; confirmed independent of MTP, eager mode, batch shape,
-  # immediate-command-lists, and Triton autotune caching -- every other
-  # config lever was tried and ruled out first). 35B loses fast
-  # sleep/wake model swaps as a result: unloading is a full process stop,
-  # reloading is a full cold start, same as any non-sleep-mode model.
+  # NOTE: 35B does NOT use --enable-sleep-mode (pending retest — see
+  # "Sleep mode compatibility" in README.md). An earlier diagnostic run
+  # attributed a boot failure (error 40, Level Zero handle exhaustion) to
+  # 35B's MoE expert-tensor count under the sleep-mode allocator, but that
+  # run also had PYTORCH_ALLOC_CONF's expandable_segments disabled globally
+  # plus a per-model max_split_size_mb:20 cap (both since reverted — see
+  # containerfile and git history), which independently fragments every
+  # allocation regardless of sleep mode. The MoE-specific mechanism was
+  # never isolated from that confound. Sleep mode will be re-tried on 35B
+  # once the allocator revert is confirmed stable.
   35b-gpu0:
     cmd: '${cmd_base_vllm_35b_gpu0} /data/models/Qwen3.6-35B-A3B-GPTQ-Int4 --host 127.0.0.1 --port 8000 --quantization gptq --dtype float16 --max-model-len 262144 --gpu-memory-utilization 0.87 --kv-cache-dtype fp8 --enable-prefix-caching --enable-auto-tool-choice --tool-call-parser qwen3_coder --reasoning-parser qwen3 --speculative-config ''{"method": "mtp", "num_speculative_tokens": 3}'' --max-num-seqs 6 --max-num-batched-tokens 8192 --served-model-name 35b-gpu0 --kv-cache-memory 4239633792' # --gpu-memory-utilization 0.93
     env:
@@ -70,7 +72,6 @@ models:
       # actually needs to be set here.
       - "SYCL_PI_LEVEL_ZERO_USE_IMMEDIATE_COMMANDLISTS=1"
       - "ZE_AFFINITY_MASK=0"
-      - "PYTORCH_ALLOC_CONF=expandable_segments:False,max_split_size_mb:20"
     ttl: 0
 
   35b-gpu1:
@@ -79,7 +80,6 @@ models:
       # See 35b-gpu0 above re: ONEAPI_DEVICE_SELECTOR removal.
       - "SYCL_PI_LEVEL_ZERO_USE_IMMEDIATE_COMMANDLISTS=1"
       - "ZE_AFFINITY_MASK=1"
-      - "PYTORCH_ALLOC_CONF=expandable_segments:False,max_split_size_mb:20"
     ttl: 0
 
   # ==========================================
@@ -130,12 +130,19 @@ models:
     # minimal to none).
     cmd: '${cmd_base_vllm_27b_gpu0} /data/models/Qwen3.8-27B-GPTQ-Int4 --host 127.0.0.1 --port 8002 --quantization gptq --dtype float16 --max-model-len 175104 --gpu-memory-utilization 0.87 --kv-cache-dtype fp8 --enable-prefix-caching --enable-auto-tool-choice --tool-call-parser qwen3_xml --reasoning-parser qwen3 --speculative-config ''{"method": "mtp", "num_speculative_tokens": 3}'' --max-num-seqs 3 --max-num-batched-tokens 8192 --served-model-name 27b-gpu0 --kv-cache-memory 7047184611 --enable-sleep-mode --cudagraph-capture-sizes 1 2 4 8 12' # --gpu-memory-utilization 0.93
     env:
-      # See 35b-gpu0 above re: ONEAPI_DEVICE_SELECTOR removal, and re:
-      # --enable-sleep-mode / PYTORCH_ALLOC_CONF (required for XPU sleep to
-      # free VRAM without OOMing on graph capture).
+      # See 35b-gpu0 above re: ONEAPI_DEVICE_SELECTOR removal.
+      # --enable-sleep-mode requires PYTORCH_ALLOC_CONF's expandable_segments
+      # to be OFF for the sleep-mode pool's malloc callback to receive
+      # allocations (pytorch#147851) — but the image-wide default is
+      # expandable_segments:True (containerfile), so patch_fix_xpu_sleep.py
+      # toggles it to False only inside the pool context and restores True
+      # on exit (see that patch for the mechanism). No per-model
+      # PYTORCH_ALLOC_CONF override is needed or wanted here: setting it
+      # image-wide broke 35B (fragmented every weight allocation into ~20
+      # MiB chunks, causing a Level Zero CAT error / device-lost crash at
+      # inference time) before this was corrected.
       - "SYCL_PI_LEVEL_ZERO_USE_IMMEDIATE_COMMANDLISTS=1"
       - "ZE_AFFINITY_MASK=0"
-      - "PYTORCH_ALLOC_CONF=expandable_segments:False,max_split_size_mb:20"
     ttl: 0
     cmdStop: /app/vllm-wrapper sleep --vllm-url http://127.0.0.1:8002 --sleep-level 2 --stop-pid ${PID}
     unloadTimeout: 60
@@ -145,12 +152,10 @@ models:
     # rationale (identical --max-num-seqs 3 / MTP config on this model).
     cmd: '${cmd_base_vllm_27b_gpu1} /data/models/Qwen3.8-27B-GPTQ-Int4 --host 127.0.0.1 --port 8003 --quantization gptq --dtype float16 --max-model-len 175104 --gpu-memory-utilization 0.87 --kv-cache-dtype fp8 --enable-prefix-caching --enable-auto-tool-choice --tool-call-parser qwen3_xml --reasoning-parser qwen3 --speculative-config ''{"method": "mtp", "num_speculative_tokens": 3}'' --max-num-seqs 3 --max-num-batched-tokens 8192 --served-model-name 27b-gpu1 --kv-cache-memory 7047184611 --enable-sleep-mode --cudagraph-capture-sizes 1 2 4 8 12' # --gpu-memory-utilization 0.93
     env:
-      # See 35b-gpu0 above re: ONEAPI_DEVICE_SELECTOR removal, and re:
-      # --enable-sleep-mode / PYTORCH_ALLOC_CONF (required for XPU sleep to
-      # free VRAM without OOMing on graph capture).
+      # See 27b-gpu0 above re: ONEAPI_DEVICE_SELECTOR removal and
+      # PYTORCH_ALLOC_CONF / --enable-sleep-mode.
       - "SYCL_PI_LEVEL_ZERO_USE_IMMEDIATE_COMMANDLISTS=1"
       - "ZE_AFFINITY_MASK=1"
-      - "PYTORCH_ALLOC_CONF=expandable_segments:False,max_split_size_mb:20"
     ttl: 0
     cmdStop: /app/vllm-wrapper sleep --vllm-url http://127.0.0.1:8003 --sleep-level 2 --stop-pid ${PID}
     unloadTimeout: 60
