@@ -308,6 +308,13 @@ for the full session-level breakdown, MTP acceptance-rate analysis, and
 known gaps (position-4 acceptance tuning, long-running decay test,
 concurrency, etc.).
 
+> **Sleep mode is 27B-only.** The 35B-A3B MoE's ~123k expert tensors exhaust
+> Level Zero physical-memory handles under vLLM's sleep-mode allocator
+> (`error: 40 (UR_RESULT_ERROR_OUT_OF_RESOURCES)`), so 35B runs without
+> `--enable-sleep-mode` and swaps via full cold restart. See
+> [Sleep mode is 27B-only](components/llama-swap/README.md#sleep-mode-is-27b-only-35b-moe-incompatibility)
+> for the full investigation.
+
 ### Backend history
 
 | Era                    | Backend              | Config                         | Key numbers                                                                                              |

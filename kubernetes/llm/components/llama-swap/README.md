@@ -19,6 +19,7 @@ llama-server (llama.cpp SYCL).
     - [Level 2: PVC-backed (weights discarded)](#level-2-pvc-backed-weights-discarded)
     - [Wake sequence](#wake-sequence)
     - [Preload times (with vllm-wrapper)](#preload-times-with-vllm-wrapper)
+    - [Sleep mode is 27B-only: 35B MoE incompatibility](#sleep-mode-is-27b-only-35b-moe-incompatibility)
   - [Measured Performance (2026-09-10)](#measured-performance-2026-09-10)
     - [27B Dense (GPU-1)](#27b-dense-gpu-1)
     - [35B-A3B MoE (GPU-0)](#35b-a3b-moe-gpu-0)
@@ -183,11 +184,17 @@ bisected: graph-only boots clean, cache-only fails).
 
 ## Fast model swaps (vLLM sleep mode)
 
+> **27B dense only** — the 35B-A3B MoE does **not** use sleep mode
+> (`--enable-sleep-mode` is absent from both `35b-gpu0` and `35b-gpu1` in
+> `llama-swap.yaml`). See
+> [Sleep mode is 27B-only](#sleep-mode-is-27b-only-35b-moe-incompatibility)
+> below for why.
+
 llama-swap uses **vllm-wrapper** as a reverse proxy in front of vLLM, enabling
-vLLM's **level 2 sleep mode** (PVC-backed). When a model is swapped out, vLLM
-discards its weights from VRAM and host RAM, freeing memory for other models.
-On wake, vllm-wrapper performs a multi-step wake sequence to reload weights
-from the PVC-backed model cache.
+vLLM's **level 2 sleep mode** (PVC-backed) for the 27B dense model. When a
+model is swapped out, vLLM discards its weights from VRAM and host RAM,
+freeing memory for other models. On wake, vllm-wrapper performs a multi-step
+wake sequence to reload weights from the PVC-backed model cache.
 
 ### Level 2: PVC-backed (weights discarded)
 
@@ -219,6 +226,80 @@ load from PVC (~45–105 s) + engine warm-up (~30–60 s). Page-cache hot path
 can reduce weight load to ~30–60 s with sustained workload.
 
 Embedding models (llama.cpp): no change, ~45–90 s.
+
+### Sleep mode is 27B-only: 35B MoE incompatibility
+
+`--enable-sleep-mode` activates vLLM's `XpuMemAllocator` (`xpumem.py`), a
+pluggable allocator that reserves Level Zero virtual address space and maps
+one **discrete physical-memory handle per allocation**, so sleep can later
+unmap/remap physical pages without losing the virtual address. Every distinct
+tensor allocated while the pool is active — every weight tensor, not just the
+KV cache — gets its own handle.
+
+The 35B-A3B is a 256-expert MoE checkpoint (`model.safetensors.index.json`
+lists 122,882 expert-tensor entries vs. 0 for the 27B dense model). Loading
+it under the sleep-mode allocator produced 345 discrete Level Zero handles
+(344 weight allocations + 1 KV cache allocation, confirmed via
+`VLLM_LOGGING_LEVEL=DEBUG` and `xpumem.py`'s per-allocation log line) and the
+daemon reliably failed during `warmup_kernels()` right after graph capture:
+
+```text
+terminate called after throwing an instance of 'sycl::_V1::exception'
+  what():  level_zero backend failed with error: 40 (UR_RESULT_ERROR_OUT_OF_RESOURCES)
+```
+
+Error 40 is Level Zero's resource/handle exhaustion (distinct from error 20,
+`OUT_OF_DEVICE_MEMORY` — a byte-OOM). The 27B dense model, with far fewer
+distinct weight tensors, never exhausts the handle budget and sleeps/wakes
+reliably.
+
+**Confirmed by git history**: commit `3445d362` (before `--enable-sleep-mode`
+was added to 35B in `d7c8b8b8`) ran 35B successfully with otherwise identical
+flags. Sleep mode is what broke it.
+
+Every other variable was tried and ruled out as an independent or
+contributing cause before concluding the allocator itself is the problem
+(each tested with `--enforce-eager` isolating graph capture, since eager mode
+turns the same handle exhaustion into a hang instead of a crash — the
+underlying resource limit is unaffected either way):
+
+- **`--enforce-eager`** (disables CUDA/XPU graph capture): removes graph
+  capture's own handle pressure, but the daemon still hangs indefinitely
+  during `warmup_kernels()`'s real forward pass — same root exhaustion, just
+  surfaced differently (hang instead of crash).
+- **`--speculative-config` (MTP) removed entirely**: hang persisted, only the
+  specific kernel where the trace freezes changed
+  (`_triton_mrope_forward` instead of the GDN mamba-align kernels).
+- **`--max-num-seqs 1`**: forces `vllm/v1/worker/gpu/warmup.py`'s
+  `warmup_kernels()` to skip every multi-request/mixed spec-decode batch
+  branch entirely (its own comment documents that GDN reclassifies
+  non-spec decodes as prefills in a multi-request batch — a separate,
+  narrower bug `patch_gdn_mixed_split_v5.py` already exists for). Hang
+  persisted identically even with a single-request batch.
+- **`SYCL_PI_LEVEL_ZERO_USE_IMMEDIATE_COMMANDLISTS` unset**: no change.
+- **`TRITON_CACHE_AUTOTUNING=0`** (disables Triton's own autotune-result
+  disk cache): no change.
+- **`max_split_size_mb:20` removed from `PYTORCH_ALLOC_CONF`**: weights
+  loaded as 344 discrete handles regardless (140×2MiB, 89×20MiB observed
+  either way) — this setting shapes handle _sizes_, not handle _count_.
+- **`xpu-smi` telemetry during the hang**: GPU0 held a steady 90 W / 61 °C /
+  99.94% memory-utilization for 10+ minutes (vs. GPU1 idle at ~1–8 W) —
+  the device is actively executing, not idling on a purely host-side stall,
+  consistent with the runtime spinning on exhausted Level Zero resources
+  rather than a simple missing-synchronize bug.
+- **`35b-gpu1` with none of the above changes at all** (no
+  `--enforce-eager`, default env): failed with the original `error: 40`
+  directly, confirming the failure is inherent to sleep mode on this
+  checkpoint, not an artifact of any other diagnostic change.
+
+No config-only combination avoids the handle exhaustion. A real fix would
+require either a source patch to `xpumem.py`/vLLM (e.g. coalescing expert
+tensors into fewer physical-memory handles) or an upstream Level Zero
+handle-budget increase — out of scope here. **35B runs permanently without
+`--enable-sleep-mode`**; unload is a full process stop and reload is a full
+cold start, same as any non-sleep-mode model (see
+[Preload times](#preload-times-with-vllm-wrapper) above for cold-start
+timing).
 
 ## Measured Performance (2026-09-10)
 
@@ -354,6 +435,9 @@ plus the absence of TP/cross-card communication overhead.
    10-second-window means from the vLLM engine log. These are different
    measurement methods and are **not directly comparable** — reconciling the
    apparent ~20× gap is an open question, not a confirmed regression.
+8. **35B MoE cannot use sleep mode** — see
+   [Sleep mode is 27B-only](#sleep-mode-is-27b-only-35b-moe-incompatibility).
+   Swapping 35B off a GPU is a full cold restart, not a fast wake.
 
 ## Memory model
 
