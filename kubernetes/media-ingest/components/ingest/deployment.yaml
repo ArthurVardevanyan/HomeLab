@@ -1,0 +1,82 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: media-ingest
+  namespace: media-ingest
+  annotations:
+    argocd.argoproj.io/sync-wave: "4"
+spec:
+  # replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: media-ingest
+  template:
+    metadata:
+      labels:
+        app: media-ingest
+    spec:
+      automountServiceAccountToken: false
+      dnsPolicy: ClusterFirst
+      enableServiceLinks: false
+      restartPolicy: Always
+      schedulerName: default-scheduler
+      serviceAccountName: ingest
+      securityContext:
+        runAsNonRoot: true
+      volumes:
+        - name: work
+          emptyDir:
+            sizeLimit: 200Gi
+        - name: secret
+          secret:
+            secretName: rclone
+        - name: config
+          configMap:
+            name: ingest
+      containers:
+        - name: ingest
+          imagePullPolicy: Always
+          image: registry.arthurvardevanyan.com/homelab/gpu-toolbox:not_latest
+          # renovate: datasource=docker depName=registry.arthurvardevanyan.com/homelab versioning=loose
+          command:
+            - /bin/bash
+            - /etc/config/ingest.sh
+          resources:
+            requests:
+              cpu: "500m"
+              memory: "1Gi"
+              gpu.intel.com/xe: "4"
+            limits:
+              cpu: "2"
+              memory: "4Gi"
+              ephemeral-storage: 200Gi
+              gpu.intel.com/xe: "4"
+          envFrom:
+            - configMapRef:
+                name: ingest
+          volumeMounts:
+            - name: work
+              mountPath: /mnt/work
+            - name: secret
+              mountPath: /etc/secret
+              readOnly: true
+            - name: config
+              mountPath: /etc/config
+              readOnly: true
+          securityContext:
+            runAsNonRoot: true
+            allowPrivilegeEscalation: false
+            seccompProfile:
+              type: RuntimeDefault
+            capabilities:
+              drop:
+                - ALL
+      nodeSelector:
+        feature.node.kubernetes.io/custom-intel.xe.gpu: "true"
+      tolerations:
+        - key: node-role.kubernetes.io/gpu
+          operator: Exists
+          effect: NoSchedule

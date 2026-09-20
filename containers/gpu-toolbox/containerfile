@@ -14,7 +14,7 @@ ARG JELLYFIN_FFMPEG_VERSION=7.1.4-3
 
 RUN set -eux; \
   apt-get update; \
-  apt-get install -y --no-install-recommends ca-certificates curl; \
+  apt-get install -y --no-install-recommends ca-certificates curl jq; \
   curl -fSL -o /tmp/jellyfin-ffmpeg.deb \
   "https://repo.jellyfin.org/files/ffmpeg/ubuntu/latest-7.x/amd64/jellyfin-ffmpeg7_${JELLYFIN_FFMPEG_VERSION}-resolute_amd64.deb"; \
   # Verify the deb contains the expected ffmpeg binary
@@ -49,17 +49,19 @@ RUN set -eux; \
   intel-gpu-tools \
   mesa-vulkan-drivers \
   vulkan-tools \
-  # kobuk-team PPA — Intel Xe/Battlemage drivers + tools
-  intel-media-va-driver-non-free \
-  intel-opencl-icd \
-  libvpl2 \
-  libvpl-tools \
-  libze-intel-gpu1 \
-  libze1 \
-  vainfo \
-  xpu-smi \
-  # jellyfin-ffmpeg7 (pulls its own deps from Ubuntu repos)
-  /tmp/jellyfin-ffmpeg.deb; \
+   # kobuk-team PPA — Intel Xe/Battlemage drivers + tools
+   intel-media-va-driver-non-free \
+   intel-opencl-icd \
+   libvpl2 \
+   libvpl-tools \
+   libze-intel-gpu1 \
+   libze1 \
+   vainfo \
+   xpu-smi \
+   # rclone (SMB/NAS transfer for media ingest)
+   rclone \
+   # jellyfin-ffmpeg7 (pulls its own deps from Ubuntu repos)
+   /tmp/jellyfin-ffmpeg.deb; \
   # Symlink ffmpeg/ffprobe into PATH
   ln -sf /usr/lib/jellyfin-ffmpeg/ffmpeg /usr/local/bin/ffmpeg; \
   ln -sf /usr/lib/jellyfin-ffmpeg/ffprobe /usr/local/bin/ffprobe; \

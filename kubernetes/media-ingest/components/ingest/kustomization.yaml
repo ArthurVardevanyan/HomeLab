@@ -1,0 +1,15 @@
+---
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - external-secret.yaml
+  - deployment.yaml
+generatorOptions:
+  disableNameSuffixHash: false
+configMapGenerator:
+  - envs:
+      - ingest.env
+    files:
+      - ingest.sh
+    name: ingest
+    namespace: media-ingest
