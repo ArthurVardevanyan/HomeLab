@@ -104,6 +104,12 @@ discover_devices() {
     [ -e "$by_path_file" ] || continue
     [ -c "$by_path_file" ] || continue
 
+    # Extract BDF from by-path filename: pci-0000:06:00.0-render -> 0000:06:00.0
+    local bdf
+    bdf=$(basename "$by_path_file")
+    bdf="${bdf#pci-}"
+    bdf="${bdf%-render}"
+
     # Get minor number from by-path file
     local by_path_minor
     by_path_minor=$(stat -c '%t:%T' "$by_path_file")
@@ -125,7 +131,7 @@ discover_devices() {
         done
         if ! $already; then
           RENDER_NODES+=("$render_node")
-          CARD_BDFS+=("$(basename "$render_node")")
+          CARD_BDFS+=("$bdf")
         fi
         break
       fi
@@ -144,7 +150,20 @@ discover_devices() {
     [ ${#sorted_nodes[@]} -eq 0 ] && sorted_nodes=()
     for render_node in "${sorted_nodes[@]}"; do
       RENDER_NODES+=("$render_node")
-      CARD_BDFS+=("$idx")
+      # Try to derive BDF from sysfs symlink: /sys/class/drm/renderD128/device -> ../../../../devices/pci0000:06/0000:06:00.0
+      local dev_link
+      dev_link=$(readlink -f "/sys/class/drm/$(basename "$render_node")/device" 2>/dev/null || true)
+      local bdf_from_sysfs=""
+      if [ -n "$dev_link" ]; then
+        if [[ "$dev_link" =~ /([0-9a-fA-F]{4}:[0-9a-fA-F]{2}:[0-9a-fA-F]{2}\.[0-9])$ ]]; then
+          bdf_from_sysfs="${BASH_REMATCH[1]}"
+        fi
+      fi
+      if [ -n "$bdf_from_sysfs" ]; then
+        CARD_BDFS+=("$bdf_from_sysfs")
+      else
+        CARD_BDFS+=("idx:${idx}")
+      fi
       idx=$((idx + 1))
     done
   fi
