@@ -65,6 +65,7 @@ COST_53K=2000
 RENDER_NODES=()      # e.g. /dev/dri/renderD128
 CARD_BDFS=()         # e.g. 0000:06:00.0
 CARD_INDEX=()        # 0, 1, ...
+CARD_GPU_INDICES=()  # GPU index for xpu-smi (e.g. 0, 1, ...)
 
 # --- Card state ---
 declare -A CARD_COOL_DOWN    # epoch seconds — 0 means not in cooldown
@@ -172,6 +173,52 @@ discover_devices() {
     CARD_INDEX+=("$i")
   done
 
+  # Map discovered BDFs to GPU indices via xpu-smi --list-gpus
+  # The UUID encodes the BDF: e.g. "0600" (4th segment) → bus=06, dev=00, func=0 → BDF 0000:06:00.0
+  if [ ${#CARD_BDFS[@]} -gt 0 ] && command -v xpu-smi &>/dev/null; then
+    local gpu_idx=0
+    local uuid_field=""
+    local bdf_hex=""
+    while IFS= read -r uuid_line; do
+      uuid_field="${uuid_line#*UUID: }"
+      # Extract 5th segment from UUID (index 4): e.g. "0600" from "GPU-868023e2-0000-0000-0600-000000000000"
+      bdf_hex=$(echo "$uuid_field" | awk -F- '{print $5}' | head -c 4)
+      # Parse UUID segment: first 2 hex = bus, last 2 hex = dev<<4 | func
+      if [ ${#bdf_hex} -eq 4 ] && [[ "$bdf_hex" =~ ^[0-9a-fA-F]{4}$ ]]; then
+        local bus_hex="${bdf_hex:0:2}"
+        local dev_func_hex="${bdf_hex:2:2}"
+        local bus=$((16#${bus_hex}))
+        local dev_func=$((16#${dev_func_hex}))
+        local dev=$(( (dev_func >> 4) & 0xF ))
+        local func=$(( dev_func & 0xF ))
+        local uuid_bdf
+        uuid_bdf=$(printf "0000:%02x:%02x.%s" "$bus" "$dev" "$func")
+
+        # Match against discovered BDFs
+        local matched=false
+        for i in "${!CARD_BDFS[@]}"; do
+          if [ "${CARD_BDFS[$i]}" = "$uuid_bdf" ]; then
+            CARD_GPU_INDICES+=("$gpu_idx")
+            matched=true
+            break
+          fi
+        done
+        if ! $matched; then
+          # BDF from UUID not found — try GPU index fallback
+          CARD_GPU_INDICES+=("$gpu_idx")
+        fi
+      fi
+      gpu_idx=$((gpu_idx + 1))
+    done < <(xpu-smi --list-gpus 2>/dev/null | grep "^GPU ")
+  fi
+
+  # Fallback: if any GPU index is missing, use sequential indices
+  for i in "${!CARD_BDFS[@]}"; do
+    if [ -z "${CARD_GPU_INDICES[$i]:-}" ]; then
+      CARD_GPU_INDICES+=("$i")
+    fi
+  done
+
   log INFO "Discovered ${#CARD_BDFS[@]} GPU card(s):"
   for i in "${!CARD_BDFS[@]}"; do
     log INFO "  Card $i: ${RENDER_NODES[$i]} (${CARD_BDFS[$i]})"
@@ -183,9 +230,9 @@ discover_devices() {
 # Returns: total used free (in MB)
 # ------------------------------------------------------------------
 probe_card_vram() {
-  local bdf="$1"
+  local gpu_idx="$1"
   local out
-  out=$(xpu-smi --query-gpu=memory.total,memory.used,memory.free --id="$bdf" \
+  out=$(xpu-smi --query-gpu=memory.total,memory.used,memory.free --id="$gpu_idx" \
         --format=csv,noheader,nounits 2>/dev/null) || true
 
   if [ -n "$out" ]; then
@@ -193,10 +240,10 @@ probe_card_vram() {
     total=$(echo "$out" | awk -F',' '{print $1}' | tr -d ' ')
     used=$(echo "$out" | awk -F',' '{print $2}' | tr -d ' ')
     free=$(echo "$out" | awk -F',' '{print $3}' | tr -d ' ')
-    log DEBUG "Card $bdf: total=${total}MB used=${used}MB free=${free}MB"
+    log DEBUG "Card $gpu_idx: total=${total}MB used=${used}MB free=${free}MB"
     echo "${free}"
   else
-    log WARN "xpu-smi failed for $bdf — assuming full VRAM"
+    log WARN "xpu-smi failed for card $gpu_idx — assuming full VRAM"
     echo "32656"
   fi
 }
@@ -212,7 +259,7 @@ probe_all_cards() {
   for i in "${!CARD_BDFS[@]}"; do
     local bdf="${CARD_BDFS[$i]}"
     local free
-    free=$(probe_card_vram "$bdf")
+    free=$(probe_card_vram "${CARD_GPU_INDICES[$i]}")
     CARD_FREE+=("$free")
 
     if [ "$free" = "32656" ]; then
