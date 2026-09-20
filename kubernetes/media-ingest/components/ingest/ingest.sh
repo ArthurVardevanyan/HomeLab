@@ -10,7 +10,7 @@ shopt -s failglob
 #   Rate control: -rc_mode {ICQ, QVBR, AVBR, ...} — see README for measured facts
 #   Default: QVBR (safe, always has a quality target; ICQ may be settable after calibration)
 # GPU: xe:"4", 2 pipelines per card (8 total on node, coexists with llama-swap)
-# Source: NAS SMB (umas-arthur remote)
+# Source: NAS SMB (unas-arthur remote)
 # Dest: new folder on the same NAS, mirrored layout
 # Completion: rclone move original → <source>/_ingested/<relpath> after verified upload
 # Trigger: long-running pod, INGEST_INTERVAL=900 scan + dispatch loop
@@ -98,23 +98,38 @@ discover_devices() {
   find /dev/dri/ -maxdepth 1 | while IFS= read -r line; do log DEBUG "  $line"; done
 
   # Try by-path discovery first
+  # Note: on this system, by-path entries are character device files (not symlinks),
+  # so we match by comparing minor numbers against renderD nodes.
   for by_path_file in /dev/dri/by-path/*-render; do
     [ -e "$by_path_file" ] || continue
-    [ -L "$by_path_file" ] || continue
-    local target
-    target=$(readlink -f "$by_path_file")
-    [ -c "$target" ] || continue
-    local bname
-    bname=$(basename "$target")
-    case "$bname" in
-      renderD*)
+    [ -c "$by_path_file" ] || continue
+
+    # Get minor number from by-path file
+    local by_path_minor
+    by_path_minor=$(stat -c '%t:%T' "$by_path_file")
+    by_path_minor="${by_path_minor##*:}"  # hex minor
+    by_path_minor=$((16#${by_path_minor}))  # convert hex to decimal
+
+    for render_node in /dev/dri/renderD*; do
+      [ -c "$render_node" ] || continue
+      local rd_minor
+      rd_minor=$(stat -c '%t:%T' "$render_node")
+      rd_minor="${rd_minor##*:}"
+      rd_minor=$((16#${rd_minor}))
+
+      if [ "$by_path_minor" = "$rd_minor" ]; then
+        # Check we haven't already added this render node
         local already=false
         for existing in "${RENDER_NODES[@]}"; do
-          [ "$existing" = "$target" ] && { already=true; break; }
+          [ "$existing" = "$render_node" ] && { already=true; break; }
         done
-        $already || { RENDER_NODES+=("$target"); CARD_BDFS+=("$bname"); }
-        ;;
-    esac
+        if ! $already; then
+          RENDER_NODES+=("$render_node")
+          CARD_BDFS+=("$(basename "$render_node")")
+        fi
+        break
+      fi
+    done
   done
 
   # Fallback: if by-path found nothing, enumerate /dev/dri/renderD* directly
