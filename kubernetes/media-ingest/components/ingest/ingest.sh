@@ -435,9 +435,9 @@ dispatch_one_file() {
       continue
     fi
 
-    # Check if free VRAM is sufficient for this file
-    if [ "$free" -ge "$pipeline_cost" ] 2>/dev/null; then
-      if [ "$free" -gt "$best_free" ] 2>/dev/null || [ "$best_card" -eq -1 ]; then
+    # Check if free VRAM is sufficient for this file (awk for float comparison)
+    if awk "BEGIN {exit !($free >= $pipeline_cost)}"; then
+      if awk "BEGIN {exit !($free > $best_free)}"; then
         best_card=$i
         best_free=$free
       fi
@@ -446,6 +446,7 @@ dispatch_one_file() {
 
   if [ "$best_card" -eq -1 ]; then
     log INFO "No card has enough VRAM for ${filename} (cost=${pipeline_cost}MB) — waiting (card0_free=${CARD_FREE[0]:-0}, card1_free=${CARD_FREE[1]:-0})"
+    sleep "$INGEST_DISPATCH_INTERVAL"
     return 1
   fi
 
@@ -596,7 +597,7 @@ contest_watcher() {
       local now
       now=$(date +%s)
 
-      if [ "$free" -lt "$pipeline_cost" ] 2>/dev/null; then
+      if awk "BEGIN {exit !($free < $pipeline_cost)}"; then
         # Card has insufficient VRAM for this job — it's contended
         local contested=${CARD_CONTEST[$card_idx]:-0}
         contested=$((contested + 1))
@@ -768,8 +769,10 @@ main() {
           if dispatch_one_file "$line"; then
             # Dispatched — remove from queue
             sed -i "1d" "$QUEUE_FILE"
+          else
+            # Dispatch failed (no card available) — wait before retry
+            log DEBUG "Dispatch failed for ${filename} — retrying after ${INGEST_DISPATCH_INTERVAL}s"
           fi
-          # If dispatch failed (no card available), we retry after sleeping
         fi
       fi
 
@@ -777,6 +780,8 @@ main() {
       if [ ! -s "$RUNNING_FILE" ] && [ ! -s "$QUEUE_FILE" ]; then
         break
       fi
+
+      sleep "$INGEST_DISPATCH_INTERVAL"
     done
 
     # Brief sleep between scan cycles
