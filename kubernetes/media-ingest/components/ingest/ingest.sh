@@ -35,7 +35,7 @@ B_DEPTH="${B_DEPTH:-3}"
 QVBR_QUALITY="${QVBR_QUALITY:-24}"
 
 INGEST_INTERVAL="${INGEST_INTERVAL:-900}"
-INGEST_DISPATCH_INTERVAL="${INGEST_DISPATCH_INTERVAL:-10}"
+INGEST_DISPATCH_INTERVAL="${INGEST_DISPATCH_INTERVAL:-30}"
 PIPELINES_PER_CARD="${PIPELINES_PER_CARD:-4}"
 
 MAX_HEIGHT=2160  # default cap: min(native, 4K)
@@ -231,6 +231,7 @@ discover_devices() {
 # ------------------------------------------------------------------
 probe_card_vram() {
   local gpu_idx="$1"
+  local prev_free="${2:-}"
   local out
   out=$(xpu-smi --query-gpu=memory.total,memory.used,memory.free --id="$gpu_idx" \
         --format=csv,noheader,nounits 2>/dev/null) || true
@@ -240,7 +241,10 @@ probe_card_vram() {
     total=$(echo "$out" | awk -F',' '{print $1}' | tr -d ' ')
     used=$(echo "$out" | awk -F',' '{print $2}' | tr -d ' ')
     free=$(echo "$out" | awk -F',' '{print $3}' | tr -d ' ')
-    log DEBUG "Card $gpu_idx: total=${total}MB used=${used}MB free=${free}MB"
+    # Only log when values change (reduces noise from constant probing)
+    if [ -n "$prev_free" ] && [ "$prev_free" != "$free" ]; then
+      log INFO "Card $gpu_idx: total=${total}MB used=${used}MB free=${free}MB (was ${prev_free}MB)"
+    fi
     echo "${free}"
   else
     log WARN "xpu-smi failed for card $gpu_idx — assuming full VRAM"
@@ -254,18 +258,26 @@ probe_card_vram() {
 # ------------------------------------------------------------------
 probe_all_cards() {
   CARD_FREE=()
+  CARD_USED=()
   local all_failed=true
 
   for i in "${!CARD_BDFS[@]}"; do
     local bdf="${CARD_BDFS[$i]}"
+    local prev_free="${CARD_FREE[$i]:-0}"
     local free
-    free=$(probe_card_vram "${CARD_GPU_INDICES[$i]}")
+    free=$(probe_card_vram "${CARD_GPU_INDICES[$i]}" "$prev_free")
     CARD_FREE+=("$free")
 
     if [ "$free" = "32656" ]; then
       all_failed=true
     else
       all_failed=false
+    fi
+    # Store used for next iteration
+    if [ -n "$used" ]; then
+      CARD_USED+=("$used")
+    else
+      CARD_USED+=(0)
     fi
   done
 
@@ -477,7 +489,10 @@ dispatch_one_file() {
   local log_file="${LOG_DIR}/${filename}.log"
 
 
-  ffmpeg -hide_banner \
+  # Timeout guard: 5 minutes max — prevents hangs from missing/unusable GPUs
+  local ENCODE_TIMEOUT="${FFMPEG_TIMEOUT:-300}"
+
+  timeout "$ENCODE_TIMEOUT" ffmpeg -hide_banner \
     -vaapi_device "vaapi=${device}" \
     -hwaccel vaapi -hwaccel_device "$device" -hwaccel_output_format vaapi \
     -i "$input_file" \
@@ -586,6 +601,22 @@ contest_watcher() {
     # Probe VRAM
     probe_all_cards
 
+    # Device health check — kill jobs on cards that lost their devices
+    for i in "${!RENDER_NODES[@]}"; do
+      if [ ! -e "${RENDER_NODES[$i]}" ]; then
+        log ERROR "Render device ${RENDER_NODES[$i]} (card $i) disappeared — killing active jobs"
+        for i2 in "${!CARD_BDFS[@]}"; do
+          CARD_ACTIVE_COUNT[$i2]=0
+        done
+        continue 2
+      fi
+    done
+
+    # Clear contest counters
+    for i in "${!CARD_BDFS[@]}"; do
+      CARD_CONTEST[$i]=0
+    done
+
     # Check each active job for contention
     local tmp_running="/tmp/ingest-running.tmp"
     true > "$tmp_running"
@@ -652,6 +683,21 @@ main() {
     log ERROR "No GPU devices found — cannot proceed"
     exit 1
   fi
+
+  # Validate that render devices actually exist (not stale entries)
+  local valid_count=0
+  for i in "${!RENDER_NODES[@]}"; do
+    if [ -e "${RENDER_NODES[$i]}" ]; then
+      valid_count=$((valid_count + 1))
+    else
+      log ERROR "Render device ${RENDER_NODES[$i]} (card $i) does not exist — GPU passthrough missing?"
+    fi
+  done
+  if [ "$valid_count" -eq 0 ]; then
+    log ERROR "No valid render devices found — cannot proceed (0/${#RENDER_NODES[@]} devices exist)"
+    exit 1
+  fi
+  log INFO "Validated $valid_count/${#RENDER_NODES[@]} render device(s) available"
 
   # Install rclone config
   install_rclone_conf
