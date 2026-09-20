@@ -270,7 +270,7 @@ parse_sources() {
     remote=$(echo "$entry" | sed 's/^[^=]*=//;s/:.*//')
     local remainder
     remainder="${entry#*=}"
-    path="${remainder%%:*}"
+    path="${remainder#*:}"
     path="${path#\*/}"
     h_override="${entry##*:h=}"
     h_override="${h_override%%:*}"
