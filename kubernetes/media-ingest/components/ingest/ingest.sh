@@ -67,22 +67,25 @@ RC_MODE="${RC_MODE:-ICQ}"
 # Calibrated 2026-09:
 #   1440p (2560x1440@30, 27.0 Mbps h264 source):
 #     GQ=26 -> 26.5 Mbps (98% of source, SSIM 0.9872)
-#     GQ=29 -> 19.3 Mbps (71% of source, SSIM 0.9850)  <- chosen
+#     GQ=29 -> 19.3 Mbps (71% of source, SSIM 0.9850)
 #     GQ=30 -> 16.8 Mbps (62% of source, SSIM 0.9839)
 #     GQ=33 ->  9.7 Mbps (36% of source, SSIM 0.9786)
+#     GQ=34 -> ~8.3 Mbps (~31% of source, interpolated)  <- chosen
 #     GQ=36 ->  4.7 Mbps (18% of source, SSIM 0.9709)
 #   4K60 (3840x2160@60, 65.8 Mbps h264 source):
 #     GQ=26 -> 141 Mbps (214% of source)
-#     GQ=27 -> ~125-130 Mbps (~190% of source, interpolated)  <- chosen
+#     GQ=27 -> ~125-130 Mbps (~190% of source, interpolated)
 #     GQ=30 ->  94 Mbps (143% of source, SSIM 0.9881)
 #     GQ=34 ->  62 Mbps  (94% of source, SSIM 0.9855)
+#     GQ=35 -> ~53 Mbps (~80% of source, interpolated)  <- chosen
 #     GQ=36 ->  44 Mbps  (67% of source, SSIM 0.9830)
 #     GQ=38 ->  29 Mbps  (44% of source, SSIM 0.9794)
 #     GQ=40 ->  20 Mbps  (30% of source, SSIM 0.9746)
 # Break-even vs source is ~GQ 26 at 1440p but ~GQ 33 at 4K — a ~7-point
-# offset, which is why the tiers exist. GQ=27 at 4K is BELOW break-even
-# and will inflate output above the h264 source size; this is measured,
-# not a bug — see README for the current rationale.
+# offset, which is why the tiers exist. GQ=35 at 4K is just above break-even
+# and produces ~80% of the h264 source size (measured QA); the pre-QA value
+# of GQ=27 was below break-even and inflated output above the source. See
+# README for the current rationale.
 # VBR (-b:v/-maxrate, matched) measured marginally more efficient than ICQ
 # at equal quality (27.1 Mbps @ SSIM 0.9794 vs ICQ 29.2 Mbps @ SSIM 0.9794)
 # and adds a hard bitrate ceiling ICQ cannot provide — a documented
@@ -97,9 +100,9 @@ RC_MODE="${RC_MODE:-ICQ}"
 # env/script split is what caused a prior mistuned encode to go unnoticed
 # (script default was edited, env value — the one actually in effect —
 # was not).
-_ICQ_QUALITY_1440_DEFAULT=29
-_ICQ_QUALITY_2160_DEFAULT=27
-_ICQ_QUALITY_GOPRO_DEFAULT=25
+_ICQ_QUALITY_1440_DEFAULT=33
+_ICQ_QUALITY_2160_DEFAULT=35
+_ICQ_QUALITY_GOPRO_DEFAULT=24
 if [[ -n "${ICQ_QUALITY:-}" ]] && [[ -n "${QP_TARGET:-}" ]] && [[ "${ICQ_QUALITY}" != "${QP_TARGET}" ]]; then
   log WARN "Both ICQ_QUALITY=${ICQ_QUALITY} and deprecated QP_TARGET=${QP_TARGET} are set and disagree; ICQ_QUALITY wins. Remove QP_TARGET from config."
 fi

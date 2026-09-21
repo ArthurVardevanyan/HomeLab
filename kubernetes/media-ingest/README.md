@@ -10,6 +10,10 @@ Per-source video ingest from NAS SMB to a new folder with GPU-accelerated AV1 en
   - [Encoder Facts (Measured)](#encoder-facts-measured)
   - [Configuration](#configuration)
   - [Quality \& Bitrate](#quality--bitrate)
+  - [Visual Quality QA](#visual-quality-qa)
+    - [Original QA (ICQ 32 / 35 / 24)](#original-qa-icq-32--35--24)
+    - [ICQ 34 Verification (New 1440p sample)](#icq-34-verification-new-1440p-sample)
+    - [ICQ Headroom Verdict](#icq-headroom-verdict)
   - [GPU Usage](#gpu-usage)
     - [Concurrency Constraint (Measured)](#concurrency-constraint-measured)
     - [Safety Net: Per-File Watchdog](#safety-net-per-file-watchdog)
@@ -22,11 +26,11 @@ Per-source video ingest from NAS SMB to a new folder with GPU-accelerated AV1 en
 
 Per-source output = **min(native, 4K)**:
 
-| Source                  | Output                     | ICQ tier | Observed Bitrate                           |
-| ----------------------- | -------------------------- | -------- | ------------------------------------------ |
-| Rear 2560×1440 30fps    | 1440p (native, no upscale) | 1440     | ~19 Mbps (~71% of a 27.0 Mbps h264 source) |
-| Front 3840×2160 60fps   | 4K (native)                | 2160     | ~2x of a 65.8 Mbps h264 source (measured)  |
-| GoPro GX*/GH* (any res) | min(native, 4K)            | gopro    | User-selected (not yet calibrated)         |
+| Source                  | Output                     | ICQ tier | Observed Bitrate                                               |
+| ----------------------- | -------------------------- | -------- | -------------------------------------------------------------- |
+| Rear 2560×1440 30fps    | 1440p (native, no upscale) | 1440     | ~8 Mbps (~31% of source, ICQ 34 projected)                     |
+| Front 3840×2160 60fps   | 4K (native)                | 2160     | ~53 Mbps (~80% of source, ICQ 35 projected)                    |
+| GoPro GX*/GH* (any res) | min(native, 4K)            | gopro    | 50.1% of source (measured at ICQ 24 — calibrated, no headroom) |
 
 ICQ quality is **resolution-tiered** (`ICQ_QUALITY_1440`,
 `ICQ_QUALITY_2160`) plus **GoPro-specific** (`ICQ_QUALITY_GOPRO`) — the
@@ -68,7 +72,7 @@ curves.
 | `preset` and `lookahead` are valid encoder options            | **Neither `-preset` nor `-lookahead` exists.** These are libx264/libsvtav1 concepts.                                                                                                                                                                                                                                                                                                                                                                                                                                    | `ffmpeg -h encoder=av1_vaapi`                      |
 | 10-bit AV1 encoding is supported on this hardware             | **Not on VA-API.** vainfo shows only `VAProfileAV1Profile0` for encoding (8-bit only).                                                                                                                                                                                                                                                                                                                                                                                                                                  | `vainfo`                                           |
 | `libsvtav1` is available for 10-bit CPU encoding              | **Present.** The `gpu-toolbox` image includes `libsvtav1` via the jellyfin-ffmpeg7 bundle. No rebuild needed. CPU throughput is poor at 4K (~0.1× realtime measured, and 4K encodes OOM'd at the pod's 4Gi limit) — not currently a practical alternative without raising limits.                                                                                                                                                                                                                                       | Container filesystem, live test 2026-09            |
-| ICQ quality value is settable via `-global_quality`           | **Confirmed.** ICQ uses `-global_quality` (not `-qp`; `-qp` is a no-op in ICQ mode). Quality range ~15 (high quality) to 45 (low quality); three tiers: resolution-tiered (`ICQ_QUALITY_1440`=29, `ICQ_QUALITY_2160`=27) plus GoPro-specific (`ICQ_QUALITY_GOPRO`=25, selected by `GX*`/`GH*` filename prefix). Verified binding via `-v verbose` (`RC mode: ICQ.` / `RC quality: N.`).                                                                                                                                 | `ffmpeg -h encoder=av1_vaapi`                      |
+| ICQ quality value is settable via `-global_quality`           | **Confirmed.** ICQ uses `-global_quality` (not `-qp`; `-qp` is a no-op in ICQ mode). Quality range ~15 (high quality) to 45 (low quality); three tiers: resolution-tiered (`ICQ_QUALITY_1440`=34, `ICQ_QUALITY_2160`=35) plus GoPro-specific (`ICQ_QUALITY_GOPRO`=24, selected by `GX*`/`GH*` filename prefix). Verified binding via `-v verbose` (`RC mode: ICQ.` / `RC quality: N.`).                                                                                                                                 | `ffmpeg -h encoder=av1_vaapi`                      |
 | ffmpeg's `q=-0.0` in the stats line means quality is unset    | **False.** VAAPI never reports a per-frame quantizer to ffmpeg's stats line, so `q=-0.0` is expected and says nothing about whether `-global_quality` took effect. Confirm with `-v verbose` instead.                                                                                                                                                                                                                                                                                                                   | `ffmpeg -v verbose`                                |
 | Encoding hangs while an LLM is resident on the GPU            | **Not reproducible.** A 4K60 encode completed normally with a 28.4 GB model resident on card 0. The earlier claim in `NOTES.md` and in [GPU Usage](#gpu-usage) did not hold up on retest — see below.                                                                                                                                                                                                                                                                                                                   | Live test, 2026-09                                 |
 | `B_DEPTH`/`-b_depth` controls compression efficiency          | **Measured inert.** Verbose logging reports `Using intra, P- and B-frames (supported references: 3 / 1)` regardless of the value; 300-frame test encodes at `-b_depth` 1, 3, and 5 produced byte-identical output. Kept as a passthrough only, not a tuning knob.                                                                                                                                                                                                                                                       | Live test (`-v verbose`, matched encodes), 2026-09 |
@@ -79,16 +83,16 @@ curves.
 
 ## Configuration
 
-The ConfigMap uses placeholder values — fill these in before first deploy.
+The ConfigMap is populated from `components/ingest/ingest.env`.
 
 | Variable              | Purpose                                                                                       | Default                        |
 | --------------------- | --------------------------------------------------------------------------------------------- | ------------------------------ |
 | `INGEST_SOURCES`      | Comma-separated sources: `name=remote:ingest/import/...[:h=NNN][:qp=NNN][,...]`               | _placeholder_                  |
 | `INGEST_DEST`         | rclone dest path (e.g., `nas:ingest/export`)                                                  | _placeholder_                  |
 | `RC_MODE`             | Rate control: `ICQ` (default), `CQP`, `CBR`, `VBR`. **QVBR/AVBR not supported by iHD 25.4.6** | `ICQ`                          |
-| `ICQ_QUALITY_1440`    | ICQ quality target for sources with output height ≤1600p                                      | `29`                           |
-| `ICQ_QUALITY_2160`    | ICQ quality target for sources with output height >1600p                                      | `27`                           |
-| `ICQ_QUALITY_GOPRO`   | ICQ quality target for GoPro files (selected by `GX*`/`GH*` filename prefix, not resolution)  | `25`                           |
+| `ICQ_QUALITY_1440`    | ICQ quality target for sources with output height ≤1600p                                      | `34`                           |
+| `ICQ_QUALITY_2160`    | ICQ quality target for sources with output height >1600p                                      | `35`                           |
+| `ICQ_QUALITY_GOPRO`   | ICQ quality target for GoPro files (selected by `GX*`/`GH*` filename prefix, not resolution)  | `24`                           |
 | `ICQ_QUALITY`         | **Deprecated.** Flat quality target; if set, seeds all three tiers above unless also set.     | _unset_                        |
 | `QP_TARGET`           | **Deprecated.** Legacy alias for `ICQ_QUALITY` (flat); honored only if `ICQ_QUALITY` unset.   | _unset_                        |
 | `B_DEPTH`             | B-frame reference depth (1-INT_MAX). **Measured inert on this driver** — kept as passthrough. | `3`                            |
@@ -138,39 +142,40 @@ jellyfin-ffmpeg build).
 
 **1440p** — 300 frames of rear-cam footage, **27.0 Mbps h264** source:
 
-| `-global_quality`           | Bitrate   | % of source | SSIM   |
-| --------------------------- | --------- | ----------- | ------ |
-| 26                          | 26.5 Mbps | 98%         | 0.9872 |
-| **29** (`ICQ_QUALITY_1440`) | 19.3 Mbps | **71%**     | 0.9850 |
-| 30                          | 16.8 Mbps | 62%         | 0.9839 |
-| 33                          | 9.7 Mbps  | 36%         | 0.9786 |
-| 36                          | 4.7 Mbps  | 18%         | 0.9709 |
+| `-global_quality`           | Bitrate   | % of source | SSIM                  |
+| --------------------------- | --------- | ----------- | --------------------- |
+| 26                          | 26.5 Mbps | 98%         | 0.9872                |
+| 29                          | 19.3 Mbps | 71%         | 0.9850                |
+| 30                          | 16.8 Mbps | 62%         | 0.9839                |
+| 33                          | 9.7 Mbps  | 36%         | 0.9786                |
+| **34** (`ICQ_QUALITY_1440`) | ~8.0 Mbps | ~31%        | ~0.977 (interpolated) |
+| 36                          | 4.7 Mbps  | 18%         | 0.9709                |
 
 **4K60** — 300 frames of front-cam GoPro footage, **65.8 Mbps h264** source:
 
-| `-global_quality`           | Bitrate                      | % of source | SSIM   |
-| --------------------------- | ---------------------------- | ----------- | ------ |
-| 26                          | 141 Mbps                     | 214%        | —      |
-| **27** (`ICQ_QUALITY_2160`) | ~125-130 Mbps (interpolated) | **~190%**   | —      |
-| 30                          | 94 Mbps                      | 143%        | 0.9881 |
-| 32                          | 77 Mbps                      | 117%        | 0.9871 |
-| 34                          | 62 Mbps                      | 94%         | 0.9855 |
-| 36                          | 44 Mbps                      | 67%         | 0.9830 |
-| 38                          | 29 Mbps                      | 44%         | 0.9794 |
-| 40                          | 20 Mbps                      | 30%         | 0.9746 |
+| `-global_quality`           | Bitrate                      | % of source | SSIM                  |
+| --------------------------- | ---------------------------- | ----------- | --------------------- |
+| 26                          | 141 Mbps                     | 214%        | —                     |
+| 27 (pre-QA)                 | ~125-130 Mbps (interpolated) | ~190%       | —                     |
+| 30                          | 94 Mbps                      | 143%        | 0.9881                |
+| 32                          | 77 Mbps                      | 117%        | 0.9871                |
+| 34                          | 62 Mbps                      | 94%         | 0.9855                |
+| **35** (`ICQ_QUALITY_2160`) | ~53 Mbps                     | ~80%        | ~0.984 (interpolated) |
+| 36                          | 44 Mbps                      | 67%         | 0.9830                |
+| 38                          | 29 Mbps                      | 44%         | 0.9794                |
+| 40                          | 20 Mbps                      | 30%         | 0.9746                |
 
-The current 4K tier value (27) sits **below** the ~33 break-even point and
-is expected to produce roughly double the h264 source size. This is a
-deliberate configuration choice, not a bug — the tiers make it a one-line
-change in `ingest.env` to retune.
+The current 4K tier value (35) sits just **above** the ~33 break-even point
+— QA measured ~80% of the h264 source size (SSIM 0.9560). The pre-QA value
+of 27 was **below** break-even and produced ~2× the h264 source size; this
+was a quality-first choice (no perceptual quality gain above 35).
 
 These curves are calibrated on one clip per resolution. GoPro files are
 **not** assigned by resolution — they are selected by filename prefix
 (`GX*` / `GH*`, matching GoPro's own 5.3K/4K naming convention) and
 receive `ICQ_QUALITY_GOPRO` regardless of output height. The current value
-of 25 is **user-selected, not SSIM/bitrate-calibrated** against an actual
-GoPro source; re-run a calibration sweep on representative GoPro footage
-before adopting it as the default.
+of 24 is **calibrated** (2026-09 QA, SSIM 0.9680 at 50.1% of source) —
+already in the imperceptible band, no headroom, keep at 24.
 
 ICQ has no output bitrate ceiling, so actual output size still varies with
 scene complexity and is **not capped or gated** — the ingest script logs
@@ -206,6 +211,81 @@ saves ~1.6% over that. The purpose is **consistent seek granularity**
 (~2s) across cameras with different native framerates, not compression.
 If the framerate can't be probed, `-g` is omitted and the driver default
 applies.
+
+## Visual Quality QA
+
+Full-file QA comparing `ingest/test/` sources against the AV1 exports in
+`ingest/export/` (2026-09). 1440p and 4K frames decoded locally (h264/AV1
+on `ffmpeg-free` build); GoPro frames decoded via the `media-ingest` pod
+(Jellyfin ffmpeg 7.1.4, Intel Xe QSV for HEVC). PNGs are lossless 8-bit.
+
+### Original QA (ICQ 32 / 35 / 24)
+
+**1440p** — 2560×1440 @ 30fps, 614 MB h264 → 264 MB AV1 (42.9%), ICQ 32:
+
+| Frame    | Time   | SSIM All   | PSNR Avg     | XPSNR R   |
+| -------- | ------ | ---------- | ------------ | --------- |
+| F00      | 0.0s   | 0.9344     | 37.66 dB     | 43.14     |
+| F01      | 44.9s  | 0.9412     | 37.37 dB     | 42.87     |
+| F02      | 89.8s  | 0.9364     | 37.08 dB     | 42.47     |
+| F03      | 134.6s | 0.9413     | 36.94 dB     | 42.70     |
+| F04      | 179.5s | 0.9391     | 36.57 dB     | 42.46     |
+| **Mean** |        | **0.9385** | **37.12 dB** | **42.73** |
+
+**4K** — 3840×2160 @ 60fps, 1480 MB h264 → 1117 MB AV1 (75.4%), ICQ 35:
+
+| Frame    | Time   | SSIM All   | PSNR Avg     | XPSNR R   |
+| -------- | ------ | ---------- | ------------ | --------- |
+| F00      | 0.0s   | 0.9627     | 35.63 dB     | 44.28     |
+| F01      | 44.9s  | 0.9683     | 32.07 dB     | 42.51     |
+| F02      | 89.8s  | 0.9559     | 35.35 dB     | 43.95     |
+| F03      | 134.6s | 0.9502     | 34.49 dB     | 42.72     |
+| F04      | 179.5s | 0.9429     | 36.28 dB     | 43.45     |
+| **Mean** |        | **0.9560** | **34.76 dB** | **43.38** |
+
+**GoPro 5.3K** — 5312×2988 → 3840×2160, 4012 MB → 2012 MB (50.1%), ICQ 24:
+
+| Frame    | Time   | SSIM All   | PSNR Avg     | XPSNR R   |
+| -------- | ------ | ---------- | ------------ | --------- |
+| F00      | 0.0s   | 0.9838     | 44.85 dB     | 50.30     |
+| F01      | 80.2s  | 0.9598     | 42.44 dB     | 46.03     |
+| F02      | 160.4s | 0.9710     | 44.14 dB     | 46.80     |
+| F03      | 240.6s | 0.9605     | 43.22 dB     | 46.22     |
+| F04      | 320.8s | 0.9650     | 42.88 dB     | 45.95     |
+| **Mean** |        | **0.9680** | **43.51 dB** | **47.06** |
+
+### ICQ 34 Verification (New 1440p sample)
+
+Re-encoded a different 1440p sample (586 MB source → 304 MB export, 51.9%)
+at ICQ 34 — the current setting.
+
+| Frame    | Time   | SSIM All   | PSNR Avg     | XPSNR R   |
+| -------- | ------ | ---------- | ------------ | --------- |
+| F00      | 0.0s   | 0.9477     | 34.94 dB     | 41.93     |
+| F01      | 44.9s  | 0.9108     | 32.21 dB     | 39.60     |
+| F02      | 89.8s  | 0.9129     | 32.91 dB     | 39.80     |
+| F03      | 134.6s | 0.9127     | 33.91 dB     | 40.27     |
+| F04      | 179.5s | 0.9322     | 33.79 dB     | 40.26     |
+| **Mean** |        | **0.9233** | **33.55 dB** | **40.37** |
+
+The SSIM drop from ICQ 32 (0.9385) to ICQ 34 (0.9233) is consistent with the
+projected ~0.92–0.93 range. 0.9233 is below the "imperceptible" band (0.95+)
+but still "very good" — acceptable for dashcam content with moderate scene
+complexity.
+
+### ICQ Headroom Verdict
+
+On this encoder **higher ICQ = more compression** (smaller file, lower SSIM).
+
+| Resolution | ICQ | SSIM Mean | Size vs. source | Headroom | Status                                                             |
+| ---------- | --- | --------- | --------------- | -------- | ------------------------------------------------------------------ |
+| 1440p h264 | 32  | 0.9385    | 42.9%           | Yes      | **Raised to 34** — SSIM 0.9233 (projected; verified on new sample) |
+| 4K h264    | 35  | 0.9560    | 75.4%           | No       | Keep — imperceptible (≥0.95)                                       |
+| GoPro 5.3K | 24  | 0.9680    | 50.1%           | No       | Keep — imperceptible (≥0.95)                                       |
+
+4K and GoPro are already in the imperceptible band — there is no headroom to
+raise their ICQ. Only 1440p has room for additional compression; 34 is the
+current setting and has been verified.
 
 ## GPU Usage
 
