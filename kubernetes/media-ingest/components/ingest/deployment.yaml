@@ -6,6 +6,10 @@ metadata:
   namespace: media-ingest
   annotations:
     argocd.argoproj.io/sync-wave: "4"
+    # gpu-toolbox:not_latest is a floating tag rebuilt on every containerfile
+    # change (see .tekton/gpu-toolbox.yaml) — a SHA pin would go stale on the
+    # next build. Matches the same exemption used by gpu-power-manager.yaml.
+    gitops-ci.k8s.io/exempt-image-checksum: "registry.arthurvardevanyan.com/homelab/gpu-toolbox:not_latest"
 spec:
   # replicas: 1
   strategy:
@@ -26,10 +30,17 @@ spec:
       serviceAccountName: ingest
       securityContext:
         runAsNonRoot: true
+        supplementalGroups:
+          - 44 # video
+          - 107 # render
+          - 797 # irc (device node group)
       volumes:
         - name: work
           emptyDir:
             sizeLimit: 200Gi
+        - name: tmp
+          emptyDir:
+            sizeLimit: 5Gi
         - name: secret
           secret:
             secretName: rclone
@@ -51,7 +62,7 @@ spec:
               gpu.intel.com/xe: "4"
             limits:
               cpu: "2"
-              memory: "4Gi"
+              memory: "6Gi"
               ephemeral-storage: 200Gi
               gpu.intel.com/xe: "4"
           envFrom:
@@ -60,6 +71,8 @@ spec:
           volumeMounts:
             - name: work
               mountPath: /mnt/work
+            - name: tmp
+              mountPath: /tmp
             - name: secret
               mountPath: /etc/secret
               readOnly: true
@@ -69,6 +82,8 @@ spec:
           securityContext:
             runAsNonRoot: true
             allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            privileged: false
             seccompProfile:
               type: RuntimeDefault
             capabilities:
