@@ -382,8 +382,8 @@ probe_all_cards() {
       for i in "${!CARD_BDFS[@]}"; do
         CARD_FREE[i]=32656
       done
-  PROBE_FAIL_COUNT=0
-  true > "${INGEST_RETRY_FILE}"
+      PROBE_FAIL_COUNT=0
+      true > "${INGEST_RETRY_FILE}"
     fi
   else
     PROBE_FAIL_COUNT=0
@@ -933,6 +933,7 @@ reap_completed_jobs() {
       # Check for device-init failure → cooldown this card
       if [[ -f "${LOG_DIR}/failed/${filename}.log" ]]; then
         if grep -q "No VA display found\|Device creation failed" "${LOG_DIR}/failed/${filename}.log" 2>/dev/null; then
+          local now; now=$(date +%s)
           local cooldown_until=$((now + INGEST_CARD_COOLDOWN))
           CARD_COOL_DOWN[${card_idx}]=${cooldown_until}
           log WARN "Device-init failure detected on card ${card_idx} — cooldown until ${cooldown_until}"
