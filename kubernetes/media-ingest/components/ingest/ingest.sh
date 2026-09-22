@@ -941,6 +941,7 @@ reap_completed_jobs() {
     fi
 
     rm -f "${output_file}"
+    rm -f "${WORK_DIR}/${filename}"
     reaped=$((reaped + 1))
   done < "${RUNNING_FILE}"
 
@@ -1018,6 +1019,7 @@ contest_watcher() {
           fi
           kill -TERM "${pid}" 2>/dev/null || true
           rm -f "${output_file}" "${LOG_DIR}/${filename}.log"
+          rm -f "${WORK_DIR}/${filename}"
 
           # Decrement active count
           CARD_ACTIVE_COUNT[${card_idx}]=$(( ${CARD_ACTIVE_COUNT[${card_idx}]:-1} - 1 ))
@@ -1366,6 +1368,7 @@ main() {
              fi
 
             rm -f "${output_file}"
+            rm -f "${WORK_DIR}/${filename}"
             reaped=$((reaped + 1))
           fi
         done < "${RUNNING_FILE}"
