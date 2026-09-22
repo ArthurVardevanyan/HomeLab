@@ -996,6 +996,12 @@ spec:
               value: ghcr.io/tektoncd/operator/proxy-webhook-f8f95c9cea9508fe8915ae3d012d15fb:v0.81.0@sha256:d89344485ada5f64255619946d8bd78a5ba587d8791b077b9fb9ba9f7f9377f9
             - name: IMAGE_JOB_PRUNER_TKN
               value: ghcr.io/tektoncd/plumbing/tkn@sha256:233de6c8b8583a34c2379fa98d42dba739146c9336e8d41b66030484357481ed
+            # NOTE: pinned to release-v1.23.x digest (RRv7 build, no useHistory
+            # chunks). The :main tag is currently broken for OKD 5.0's RRv7
+            # console (mid-migration RRv5→v7). Remove once upstream ships a
+            # clean :main build and re-run create_manifest.sh.
+            - name: IMAGE_PIPELINES_CONSOLE_PLUGIN
+              value: ghcr.io/openshift-pipelines/console-plugin:release-v1.24.x
             - name: METRICS_DOMAIN
               value: tekton.dev/operator
             - name: VERSION

@@ -596,6 +596,19 @@ fi
 cp "${CRDS_FILE}" "${SCRIPT_DIR}/overlays/operator/crds.yaml"
 cp "${OPERATOR_FILE}" "${OPERATOR_YAML}"
 
+# NOTE: this perl injection is a TEMPORARY workaround for the broken `:main`
+# default in openshift-pipelines/console-plugin (mid-migration RRv5→v7 build
+# still ships `useHistory` chunks that crash on OKD 5.0's RRv7 console).
+# TODO: remove both this perl block and the env var in operator.yaml once
+# upstream publishes a clean :main build and re-runs this script.
+# shellcheck disable=SC2016
+perl -0pi -e '
+  s/((- name: CONFIG_LEADERELECTION_NAME\n\s+value: tekton-operator-controller-config-leader-election)\n)(\s+image:)/$1          - name: IMAGE_PIPELINES_CONSOLE_PLUGIN
+              value: ghcr\.io\/openshift-pipelines\/console-plugin\@sha256:d058f546c662daa79f24f65333d84448c24a3e8782780c4bdb262264ed698112
+$3/ms
+  if $ARGV =~ m{operator\.yaml$}
+' "${OPERATOR_YAML}"
+
 # Local policy: keep the IMAGE_ADDONS_OC env var disabled even though newer
 # upstream releases ship it active. The Deployment merge forces .env back to
 # upstream, so this active entry is re-added here and commented out (matching

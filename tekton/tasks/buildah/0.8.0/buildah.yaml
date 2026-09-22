@@ -120,11 +120,13 @@ spec:
           for i in "${!PLATFORMS[@]}"; do
             PLATFORM="${PLATFORMS[$i]}"
             ARCH="${PLATFORM##*/}"
-            # Compute per-arch suffix directly from ARCH (no placeholder trickery
-            # via IMAGE_TAG_SUFFIX param — Tekton parameter expansion mangles
-            # literal ${ARCH} since it looks like a Tekton variable ref).
-            SUFFIX="-${ARCH}"
-            IMAGES+=("${PLATFORM##*/}:${SUFFIX}")
+            # Extract image name (without tag), use :ARCH as the tag
+            # No placeholder trickery — ARCH is already available in this loop
+            IMAGE_NAME="${IMAGE%:*}"
+            # IMAGE has a tag (e.g. "registry.example.com/repo/image:0.1.0")
+            # -> IMAGE_NAME = "registry.example.com/repo/image"
+            # If IMAGE has no tag, IMAGE_NAME == IMAGE which is fine
+            IMAGES+=("${IMAGE_NAME}:${ARCH}")
           done
 
           # 2. Build each architecture
