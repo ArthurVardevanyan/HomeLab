@@ -1,0 +1,32 @@
+---
+apiVersion: k8s.ovn.org/v1
+kind: EgressFirewall
+metadata:
+  name: default
+  namespace: media-ingest
+  annotations:
+    argocd.argoproj.io/sync-wave: "0"
+spec:
+  egress:
+    # Control Plane
+    - type: Allow
+      to:
+        nodeSelector:
+          matchLabels:
+            node-role.kubernetes.io/control-plane: ""
+      ports:
+        - protocol: TCP
+          port: 6443
+    # NAS SMB
+    - type: Allow
+      to:
+        dnsName: unas.arthurvardevanyan.com
+      ports:
+        - protocol: TCP
+          port: 445
+        - protocol: TCP
+          port: 139
+    # Deny all other egress
+    - type: Deny
+      to:
+        cidrSelector: 0.0.0.0/0
