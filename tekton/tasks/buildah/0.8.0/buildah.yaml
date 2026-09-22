@@ -106,6 +106,9 @@ spec:
         [ "$(workspaces.sslcertdir.bound)" = "true" ] && CERT_DIR_FLAG="--cert-dir=$(workspaces.sslcertdir.path)"
         [ "$(workspaces.dockerconfig.bound)" = "true" ] && DOCKER_CONFIG="$(workspaces.dockerconfig.path)" && export DOCKER_CONFIG
 
+        # Resolve the IMAGE param into a shell variable for use in string operations
+        IMAGE="$(params.IMAGE)"
+
         # Detect if multi-arch mode is enabled (IMAGE_REPOSITORIES is non-empty)
         MULTI_ARCH=false
         if [ -n "$(params.IMAGE_REPOSITORIES)" ]; then
