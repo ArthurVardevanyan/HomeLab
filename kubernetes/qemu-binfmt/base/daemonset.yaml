@@ -1,0 +1,71 @@
+---
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: qemu-binfmt
+  namespace: qemu-bgit add infmt
+  labels:
+    app: qemu-binfmt
+  annotations:
+    argocd.argoproj.io/sync-wave: "0"
+    gitops-ci.k8s.io/exempt-image-checksum: "registry.arthurvardevanyan.com/homelab/qemu-binfmt:not_latest"
+spec:
+  selector:
+    matchLabels:
+      app: qemu-binfmt
+  updateStrategy:
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        app: qemu-binfmt
+    spec:
+      serviceAccountName: qemu-binfmt-sa
+      nodeSelector:
+        kubernetes.io/arch: amd64
+      tolerations:
+        - effect: NoSchedule
+          operator: Exists
+        - effect: NoExecute
+          operator: Exists
+      restartPolicy: Always
+      securityContext:
+        runAsNonRoot: false
+      containers:
+        - name: qemu-binfmt
+          image: registry.arthurvardevanyan.com/homelab/qemu-binfmt:not_latest
+          imagePullPolicy: Always
+          command: ["/usr/local/bin/manage-binfmt.sh"]
+          securityContext:
+            privileged: true
+            readOnlyRootFilesystem: false
+          volumeMounts:
+            - name: binfmt-misc
+              mountPath: /proc/sys/fs/binfmt_misc
+            - name: qemu-host
+              mountPath: /opt/qemu-user-static
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+            limits:
+              cpu: 500m
+              memory: 256Mi
+          livenessProbe:
+            exec:
+              command:
+                - /bin/sh
+                - -c
+                - "[ -e /proc/sys/fs/binfmt_misc/qemu-aarch64 ]"
+            initialDelaySeconds: 30
+            periodSeconds: 60
+            failureThreshold: 3
+      volumes:
+        - name: binfmt-misc
+          hostPath:
+            path: /proc/sys/fs/binfmt_misc
+            type: Directory
+        - name: qemu-host
+          hostPath:
+            path: /opt/qemu-user-static
+            type: DirectoryOrCreate
