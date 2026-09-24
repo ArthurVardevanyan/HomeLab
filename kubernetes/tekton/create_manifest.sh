@@ -604,6 +604,20 @@ cp "${OPERATOR_FILE}" "${OPERATOR_YAML}"
 # shellcheck disable=SC2016
 perl -0pi -e 's/^([ \t]*)- name: IMAGE_ADDONS_OC\n([ \t]*)value: image-registry\.openshift-image-registry\.svc:5000\/openshift\/cli:latest/${1}# - name: IMAGE_ADDONS_OC\n${2}# value: image-registry.openshift-image-registry.svc:5000\/openshift\/cli:latest/m' "${OPERATOR_YAML}"
 
+# Local policy: pin the console-plugin image to our locally built release
+# (the upstream release-v1.24.x tag is corrupted by a webpack caching bug;
+# see PRs for the console-plugin repo). Pin by digest so future upstream
+# tag re-publishes cannot silently break the console again. Idempotent:
+# removes any existing IMAGE_PIPELINES_CONSOLE_PLUGIN entries then appends.
+IMAGE_VALUE="registry.redhat.io/openshift-pipelines/pipelines-console-plugin-rhel9@sha256:b087e18744c18135e4a0fc2f1c1c6e3114db02419c9933d632e67b455301cccb"
+# 1) Remove any existing IMAGE_PIPELINES_CONSOLE_PLUGIN entries (idempotent)
+perl -0pi -e 's/((- [ \t]*name: IMAGE_PIPELINES_CONSOLE_PLUGIN\n[ \t]*value: .*?\n))//mg' "${OPERATOR_YAML}"
+# 2) Insert the pinned image after IMAGE_ADDONS_PARAM_MAVEN_IMAGE value
+#    (pass image via ENV to avoid perl interpreting @ as an array ref)
+export IMAGE_PIPELINES_CONSOLE_PLUGIN="${IMAGE_VALUE}"
+perl -0pi -e 's~(IMAGE_ADDONS_PARAM_MAVEN_IMAGE\n([ \t]+value: .*?\n))~$1            - name: IMAGE_PIPELINES_CONSOLE_PLUGIN\n              value: $ENV{IMAGE_PIPELINES_CONSOLE_PLUGIN}\n~m' "${OPERATOR_YAML}"
+unset IMAGE_PIPELINES_CONSOLE_PLUGIN
+
 # Local policy: restore the rationale comment above the rbac-wildcards exemption
 # on the tekton-operator ClusterRole. yq sets the annotation value but cannot
 # emit the explanatory comment, so it is re-inserted here (idempotent: it only
