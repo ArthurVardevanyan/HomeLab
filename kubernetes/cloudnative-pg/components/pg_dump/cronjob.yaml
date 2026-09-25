@@ -30,7 +30,7 @@ spec:
                 secretName: pgdump-config
             - name: pgdump-emptydir
               emptyDir:
-                sizeLimit: 20Gi
+                sizeLimit: 50Gi
             - name: tmp
               emptyDir:
                 sizeLimit: 1Gi
@@ -44,13 +44,13 @@ spec:
               command: ["/bin/bash", "-c", "sh /mnt/pg_dump/pgdump.sh"]
               resources:
                 limits:
-                  cpu: 250m
+                  cpu: 500m
                   memory: 512Mi
-                  ephemeral-storage: "20Gi"
+                  ephemeral-storage: 50Gi
                 requests:
-                  cpu: 50m
+                  cpu: 150m
                   memory: 215Mi
-                  ephemeral-storage: "20Gi"
+                  ephemeral-storage: 50Gi
               volumeMounts:
                 - name: tmp
                   mountPath: /tmp
