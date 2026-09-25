@@ -3,11 +3,11 @@
 FROM quay.io/projectquay/clair-action:v0.0.16@sha256:a4f36fc822dd6ae9ea4031fb5cfe642c39f37ddf46043b70433c95d27e5959eb AS clair
 
 # renovate: datasource=docker depName=node
-FROM node:26.9.0-trixie@sha256:e26b4e7d163a29e0d05806e167db8cc0c76f02f633006c1f5c0aeea5a8415147 AS node-tools
+FROM node:26.10.0-trixie@sha256:a723b54c35a76e947095a20a67d39585bb09c862e6b1adeb8a9f518f95e34fb0 AS node-tools
 # renovate: datasource=npm depName=markdownlint-cli
 ENV MARKDOWNLINT_CLI_VERSION=0.49.1
 # renovate: datasource=npm depName=prettier
-ENV PRETTIER_CLI_VERSION=3.9.8
+ENV PRETTIER_CLI_VERSION=3.9.9
 RUN npm install -g \
   markdownlint-cli@${MARKDOWNLINT_CLI_VERSION} \
   prettier@${PRETTIER_CLI_VERSION}
@@ -75,7 +75,7 @@ RUN curl -sSL https://github.com/cli/cli/releases/download/v${GH_VERSION}/gh_${G
 
 # Google Cloud SDK
 # renovate: datasource=docker depName=google/cloud-sdk
-ENV GCLOUD_VERSION=585.0.0
+ENV GCLOUD_VERSION=586.0.0
 RUN curl -L -o /tmp/google-cloud-cli.tar.gz \
   "https://dl.google.com/dl/cloudsdk/channels/rapid/downloads/google-cloud-cli-${GCLOUD_VERSION}-linux-x86_64.tar.gz" && \
   tar -xzf /tmp/google-cloud-cli.tar.gz -C /usr/local && rm -f /tmp/google-cloud-cli.tar.gz && \
@@ -111,7 +111,7 @@ RUN curl -L -o go.tar.gz "https://go.dev/dl/go${GO_VERSION}.linux-amd64.tar.gz" 
 
 # golangci-lint
 # renovate: datasource=github-releases depName=golangci/golangci-lint
-ENV GOLANGCI_LINT_VERSION=2.13.2
+ENV GOLANGCI_LINT_VERSION=2.14.0
 RUN curl -fL --retry 5 --retry-all-errors --retry-delay 2 -o "golangci-lint-${GOLANGCI_LINT_VERSION}-linux-amd64.tar.gz" \
   "https://github.com/golangci/golangci-lint/releases/download/v${GOLANGCI_LINT_VERSION}/golangci-lint-${GOLANGCI_LINT_VERSION}-linux-amd64.tar.gz" && \
   curl -fL --retry 5 --retry-all-errors --retry-delay 2 -o golangci-lint-checksums.txt \
@@ -150,11 +150,11 @@ RUN curl -fL --retry 5 --retry-all-errors --retry-delay 2 -o "kustomize_v${KUSTO
 # renovate: datasource=github-releases depName=goreleaser/goreleaser
 ENV GORELEASER_VERSION=2.18.2
 # renovate: datasource=github-releases depName=orhun/git-cliff
-ENV GIT_CLIFF_VERSION=2.14.1
+ENV GIT_CLIFF_VERSION=2.14.2
 # renovate: datasource=github-releases depName=go-task/task
 ENV TASK_VERSION=3.53.1
 # renovate: datasource=github-releases depName=ArthurVardevanyan/k8s-gitops-ci
-ENV K8S_GITOPS_CI_VERSION=0.59.4
+ENV K8S_GITOPS_CI_VERSION=0.60.0
 RUN curl -fL --retry 5 --retry-all-errors --retry-delay 2 -o "goreleaser_Linux_x86_64.tar.gz" \
   "https://github.com/goreleaser/goreleaser/releases/download/v${GORELEASER_VERSION}/goreleaser_Linux_x86_64.tar.gz" && \
   curl -fL --retry 5 --retry-all-errors --retry-delay 2 -o goreleaser-checksums.txt \
