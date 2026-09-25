@@ -84,7 +84,6 @@ stateful_workload_stop() {
   kubectl scale --replicas=0 -n ntp deployment/ntp-rootless
   kubectl scale --replicas=0 -n cloudflare-ddns deployment/cloudflare-ddns
 
-  #kubectl scale --replicas=0 -n minio-operator deployment/minio-operator
   kubectl scale --replicas=0 -n quay deployment/quay-operator-tng
   kubectl scale --replicas=0 -n quay deployment/quay-quay-app
   kubectl scale --replicas=0 -n quay deployment/quay-clair-app
@@ -243,7 +242,6 @@ stateful_workload_start() {
   kubectl scale --replicas=1 -n prometheus statefulset/thanos-truenas-store-gateway
   kubectl scale --replicas=1 -n uptime-kuma statefulset/uptime-kuma
   kubectl scale --replicas=3 -n vault statefulset/vault
-  #kubectl scale --replicas=1 -n minio-operator deployment/minio-operator
   kubectl scale --replicas=1 -n quay deployment/quay-operator-tng
   kubectl scale --replicas=2 -n quay deployment/quay-quay-app
   kubectl scale --replicas=2 -n quay deployment/quay-clair-app

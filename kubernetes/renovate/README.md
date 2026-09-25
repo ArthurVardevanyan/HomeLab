@@ -63,7 +63,6 @@ These images were found in files but do not appear to be managed by Renovate (no
 | `quay.io/jetstack/version-checker:v0.10.0@sha256:ea7a85422684479d0e51a41efc8edb12bed8f43aa89ab59dfea45aa92b2e8c8d`                                                                            |
 | `quay.io/metallb/controller:v0.14.8@sha256:93b83b39d06bbcb0aedc0eb750c9e43e3c46dc08a6f88400ed96105224d784ec`                                                                                  |
 | `quay.io/metallb/metallb-operator:0.14.2@sha256:df5a10332e70b47ada287b39b4b7fb6b5b4aac048347b938b490645e14d351f0`                                                                             |
-| `quay.io/minio/minio:RELEASE.2025-09-07T16-13-09Z@sha256:14cea493d9a34af32f524e538b8346cf79f3321eff8e708c1e2960462bd8936e`                                                                    |
 | `quay.io/mongodb/mongodb-kubernetes-operator:0.10.0@sha256:76cd4db62ad61a15f9231ba58f1ffd7654c7b183d1e257c707a0575fd22e5ed2`                                                                  |
 | `quay.io/nmstate/kubernetes-nmstate-operator:v0.85.1@sha256:55b8221fa302886b0f2a1c7d9a8198e91fc64f38a216f63c1a42e105b142cecc`                                                                 |
 | `quay.io/nmstate/nmstate-console-plugin:release-1.0.0@sha256:34b2ba0a80bec7f74c3b5c5f0e4900ed0c9be1cd0ef28ee0ffdc3bcb5e7fe793`                                                                |
@@ -109,7 +108,6 @@ These images were found in files but do not appear to be managed by Renovate (no
 | `ghcr.io/actions/actions-runner:2.330.0@sha256:ee54ad8776606f29434f159196529b7b9c83c0cb9195c1ff5a7817e7e570dcfe`                                           |
 | `ghcr.io/zitadel/zitadel:v4.7.6@sha256:182c062408cae95fa7cfe6995bd8f0372770c1694a2ad6b5245042b629c1f983`                                                   |
 | `quay.io/centos/centos:stream10`                                                                                                                           |
-| `quay.io/minio/minio:RELEASE.2025-09-07T16-13-09Z@sha256:14cea493d9a34af32f524e538b8346cf79f3321eff8e708c1e2960462bd8936e`                                 |
 | `quay.io/thanos/thanos:v0.40.1@sha256:aae7b2b030ed00d88abd8c5a357d08b46f22151ca0d50d9c796223fa332389c8`                                                    |
 | `registry.arthurvardevanyan.com/homelab/kube-eagle:v1.2.2@sha256:5bde9f6749c5d5b9208e6f396b503e788b49f8e95b9a596a82ea28e91f942f88`                         |
 | `registry.arthurvardevanyan.com/homelab/openshift-monitoring-cr-controller:v2.3.3@sha256:17c0c9d1f17f0bb380f818dafb89526e3f8c9106675726dee705304bedefc51c` |
