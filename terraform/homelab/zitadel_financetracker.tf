@@ -29,7 +29,7 @@ resource "zitadel_application_oidc" "financetracker" {
   access_token_type           = "OIDC_TOKEN_TYPE_BEARER"
   access_token_role_assertion = false
   id_token_role_assertion     = false
-  id_token_userinfo_assertion = false
+  id_token_userinfo_assertion = true
   additional_origins          = []
 }
 
