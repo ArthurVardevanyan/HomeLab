@@ -1,0 +1,27 @@
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  annotations:
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+  name: sable-dns-cert
+  namespace: sable-dns
+spec:
+  secretName: sable-dns-cert
+  duration: 1080h # 45d
+  renewBeforePercentage: 50
+  privateKey:
+    rotationPolicy: Always
+    algorithm: ECDSA
+    size: 256
+  keystores:
+    pkcs12:
+      create: true
+      password: sable-dns
+      profile: Modern2023
+  dnsNames:
+    - "okd.sabledns.io"
+    - "okd.dns.sabledns.io"
+  issuerRef:
+    kind: ClusterIssuer
+    name: letsencrypt

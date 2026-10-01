@@ -1,0 +1,26 @@
+---
+apiVersion: externaldns.k8s.io/v1alpha1
+kind: DNSEndpoint
+metadata:
+  name: sable-dns
+  namespace: sable-dns
+  annotations:
+    externaldns.k8s.io: unifi
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+spec:
+  endpoints:
+    - dnsName: sabledns.io
+      recordTTL: 60
+      recordType: A
+      targets:
+        - 10.101.1.4
+    - dnsName: dns.sabledns.io
+      recordTTL: 60
+      recordType: A
+      targets:
+        - 10.101.1.4
+    - dnsName: okd.dns.sabledns.io
+      recordTTL: 60
+      recordType: A
+      targets:
+        - 10.101.9.254

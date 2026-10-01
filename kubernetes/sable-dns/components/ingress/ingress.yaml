@@ -1,0 +1,39 @@
+---
+kind: Ingress
+apiVersion: networking.k8s.io/v1
+metadata:
+  name: sable-dns
+  namespace: sable-dns
+  labels:
+    app.kubernetes.io/instance: sable-dns
+  annotations:
+    externaldns.k8s.io: unifi
+    route.openshift.io/termination: edge
+spec:
+  ingressClassName: openshift-default
+  tls:
+    - hosts:
+        - sabledns.io
+        - dns.sabledns.io
+      secretName: sable-dns-cert
+  rules:
+    - host: sabledns.io
+      http:
+        paths:
+          - path: ""
+            pathType: ImplementationSpecific
+            backend:
+              service:
+                name: sable-dns-service
+                port:
+                  name: http-console
+    - host: dns.sabledns.io
+      http:
+        paths:
+          - path: ""
+            pathType: ImplementationSpecific
+            backend:
+              service:
+                name: sable-dns-service
+                port:
+                  name: http-console
