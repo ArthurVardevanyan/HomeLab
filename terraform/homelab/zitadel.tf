@@ -77,7 +77,7 @@ resource "zitadel_org_member" "zitadel_arthur" {
   roles   = ["ORG_OWNER"]
 }
 
-resource "zitadel_smtp_config" "default" {
+resource "zitadel_email_provider_smtp" "default" {
   sender_address   = local.smtp_username
   sender_name      = "no-reply"
   tls              = true
