@@ -76,38 +76,55 @@ subjects:
 
 ## Known Issues
 
-### minio-go v7.0.98 / Ceph v20.2.4 SigV4 Signature Incompatibility
+### S3 `PUT` → `403 Forbidden` — Ceph v20.2.4 SigV4 Hardening (CVE-2026-54330)
 
-**Impact:** Post-upgrade OBC S3 "Access Denied" (403) errors on PUT operations.
+**Impact:** S3 `PUT` operations with a request body return `403 Forbidden`.
+GET, HEAD, and LIST operations are unaffected.
 
-**Root Cause:** `minio-go/v7.0.98` streaming signer excludes `Content-Type` from `SignedHeaders`, conflicting with Ceph's CVE-2026-54330 SigV4 hardening.
+**Root Cause:** `minio-go`'s streaming signer excludes `Content-Type` from
+`SignedHeaders`, and some SDKs (e.g. `aws-sdk-php` used by Nextcloud) omit it
+on certain paths. Ceph's CVE-2026-54330 hardening in v20.2.4 rejects requests
+where `Content-Type` is present but not signed. Per the AWS SigV4 spec
+`Content-Type` is an optional signature header — actual S3 accepts it unsigned.
 
 **Affected clients/buckets:**
 
+- `thanos-sidecar` (`minio-go/v7.0.93`) — chunk/index/delete-store PUTs
 - `thanos-chunk-store`
 - `thanos-index-store`
 - `thanos-delete-store`
-- `netobserv`
-- `openshift-logging`
+- `thanos-compact/store/sidecar`
+- `netobserv` (S3 writes)
+- `openshift-logging` (S3 writes)
+- `nextcloud` (`aws-sdk-php`) — file uploads
 
 **Working clients/buckets:**
 
-- `thanos-compact/store/sidecar` (v7.0.93 — unaffected version)
-- `open-webui` (Boto3/1.42.62 — uses different signing logic)
+- `open-webui` (Boto3 — uses different signing logic)
 - `quay`
-- `nextcloud`
 
 **Related PRs:**
 
 - <https://github.com/minio/minio-go/pull/2300> (issue)
 - <https://github.com/minio/minio-go/pull/2301> (fix)
-- <https://github.com/ceph/ceph/pull/71364> (RGW flexibility fix)
+- <https://github.com/ceph/ceph/pull/71364> (RGW Content-Type fix; merged to
+  tentacle branch 2026-09-03, targets v20.2.5)
 
 **Resolution:**
 
-- No server-side RGW config option exists to relax SigV4 enforcement for general clients.
-- Upstream operators cannot be controlled/updated (OpenShift operators).
-- **Pending AES requirement:** Upgrade affected clients to a fixed version of `minio-go` that includes the signature fix, or migrate to an SDK version that properly includes `Content-Type` in signed headers.
+- **Applied (2026-10-01):** set `rgw_sigv4_insecure = true` in
+  `kubernetes/ceph/base/trim-override.yaml`. This restores pre-CVE lenient
+  behavior and immediately fixes all affected S3 clients.
+
+  > **Security note:** this disables the CVE-2026-54330 SigV4 hardening,
+  > including acceptance of unsigned `x-amz-*` headers. The RGW service is
+  > ClusterIP-only (no Route/Ingress), so exposure is limited to cluster-internal
+  > attackers. Acceptable for a homelab.
+
+- **Pending:** upgrade to Ceph v20.2.5 (ceph PR #71364 fixes compatibility
+  while preserving CVE protection). Remove the `rgw_sigv4_insecure` override
+  and perform a rolling upgrade via Rook. v20.2.5 milestone is currently open
+  and 9+ days past its 2026-09-22 due date.
 
 ### CephX Key Rotation (CVE-2025-30156)
 
