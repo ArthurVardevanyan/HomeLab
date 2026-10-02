@@ -157,6 +157,14 @@ spec:
             # Python sandbox (no-op unless Open Terminal is connected).
             - name: DEFAULT_MODEL_METADATA
               value: '{"capabilities":{"web_search":true,"file_context":true,"vision":true,"code_interpreter":true}}'
+            # Per-model capability overrides (takes precedence over DEFAULT_MODEL_METADATA).
+            # Explicitly enables web_search, vision, file_context, and code_interpreter
+            # for all 3 chat models so settings persist across ENABLE_PERSISTENT_CONFIG=false.
+            - name: MODEL_CONFIGS
+              value: '{"qwen3.6-35b-a3b":{"name":"Qwen 3.6 35B-A3B","model_info":{},"model_weights":{},"capabilities":{"web_search":true,"file_context":true,"vision":true,"code_interpreter":true}},"qwen3.6-35b-a3b-spread":{"name":"Qwen 3.6 35B-A3B Spread","model_info":{},"model_weights":{},"capabilities":{"web_search":true,"file_context":true,"vision":true,"code_interpreter":true}},"qwen3.8-27b":{"name":"Qwen 3.8 27B","model_info":{},"model_weights":{},"capabilities":{"web_search":true,"file_context":true,"vision":true,"code_interpreter":true}}}'
+            # Model display/priority order in the Open WebUI UI.
+            - name: DEFAULT_MODEL_ORDER
+              value: "qwen3.6-35b-a3b,qwen3.6-35b-a3b-spread,qwen3.8-27b"
             # The AnyIO default of 40 causes app-wide freezes under load.
             # 2000+ is recommended for production servers; idle high
             # ceiling costs nothing (it's a concurrency limit, not a pool).
