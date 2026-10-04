@@ -1,0 +1,31 @@
+---
+apiVersion: v1
+kind: Service
+metadata:
+  annotations:
+    metallb.universe.tf/loadBalancerIPs: "10.101.9.254"
+  name: sable-dns-udp-bgp
+  namespace: sable-dns
+spec:
+  externalTrafficPolicy: Cluster
+  internalTrafficPolicy: Cluster
+  ipFamilies:
+    - IPv4
+  ipFamilyPolicy: SingleStack
+  ports:
+    - name: dns-udp
+      port: 53
+      protocol: UDP
+      targetPort: dns-udp
+    - name: dns-tcp
+      port: 53
+      protocol: TCP
+      targetPort: dns-tcp
+    - name: https
+      port: 53443
+      protocol: TCP
+      targetPort: https-console
+  selector:
+    app: sable-dns
+  type: LoadBalancer
+  loadBalancerClass: metallb.io/metallb-class
