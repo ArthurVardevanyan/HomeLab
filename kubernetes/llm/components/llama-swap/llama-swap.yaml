@@ -110,26 +110,8 @@ models:
   #    initial allocation.
   # ==========================================
   27b-gpu0:
-    # --cudagraph-capture-sizes 1 2 4 8 12 (DIAGNOSTIC/optimization, this
-    # session): trims vLLM's auto-computed cudagraph capture-size list for
-    # this model's actual traffic shape. With --max-num-seqs 3 and MTP
-    # (num_speculative_tokens=3 -> decode_query_len=4),
-    # VllmConfig._set_cudagraph_sizes() computes
-    # max_cudagraph_capture_size = min(3*4*2, 512) = 24, producing default
-    # sizes [1, 2, 4, 8, 12, 16, 24] — where 4, 8, 12 are the uniform-decode
-    # sizes for exactly 1/2/3 concurrent decode requests (load-bearing, do
-    # NOT remove) and 16/24 come only from the generic step-8 grid, not
-    # tied to any reachable decode-request count at max-num-seqs 3. Trimmed
-    # to [1, 2, 4, 8, 12] to drop the two graphs (16, 24) that were sized
-    # for a higher max-num-seqs than this model actually runs, reducing the
-    # sleep-mode residual VRAM held by capture_model() (which runs outside
-    # the sleep-mode pool context, see gpu_worker.py:788 vs. the
-    # tag="weights" pool scope at gpu_worker.py:490 — so its graph memory
-    # is never reclaimed by sleep()'s empty_cache(), only by full process
-    # exit). Verify post-sleep VRAM before/after and confirm no throughput
-    # regression (16/24-sized batches were only reachable via mixed
-    # decode+prefill chunking, not pure decode, so impact should be
-    # minimal to none).
+    # --cudagraph-capture-sizes 1 2 4 8 12: trims vLLM's auto-computed
+    # cudagraph capture-size list (see 35b-gpu0 above for the full rationale).
     cmd: '${cmd_base_vllm_27b_gpu0} /data/models/Qwen3.8-27B-GPTQ-Int4 --host 127.0.0.1 --port 8002 --quantization gptq --dtype float16 --max-model-len 175104 --gpu-memory-utilization 0.86 --kv-cache-dtype fp8 --enable-prefix-caching --enable-auto-tool-choice --tool-call-parser qwen3_xml --reasoning-parser qwen3 --speculative-config ''{"method": "mtp", "num_speculative_tokens": 3}'' --max-num-seqs 3 --max-num-batched-tokens 8192 --served-model-name 27b-gpu0 --kv-cache-memory 7047184611 --enable-sleep-mode --cudagraph-capture-sizes 1 2 4 8 12' # --gpu-memory-utilization 0.93
     env:
       # See 35b-gpu0 above re: ONEAPI_DEVICE_SELECTOR removal.
@@ -191,41 +173,41 @@ matrix:
   vars:
     # GPU 0 models
     M35-0: 35b-gpu0
-    M27-0: 27b-gpu0
+    # M27-0: 27b-gpu0
     # GPU 1 models
-    M35-1: 35b-gpu1
+    # M35-1: 35b-gpu1
     M27-1: 27b-gpu1
     # Spread models
     S35-e: embed-spread
-
-  # Eviction cost: higher = harder to evict
-  evict_costs:
-    M35-0: 20
-    M35-1: 10
-    M27-0: 15
-    M27-1: 15
-    S35-e: 1
+  #
+  #  # Eviction cost: higher = harder to evict
+  #  evict_costs:
+  #    M35-0: 20
+  #    M35-1: 10
+  #    M27-0: 15
+  #    M27-1: 15
+  #    S35-e: 1
 
   sets:
     # --- Dual (one 35B per GPU, chat-only) ---
-    dual_35b: M35-0 & M35-1
+    # dual_35b: M35-0 & M35-1
 
-    # --- Dual (one 27B per GPU, chat-only) ---
-    dual_27b: M27-0 & M27-1
+    # # --- Dual (one 27B per GPU, chat-only) ---
+    # dual_27b: M27-0 & M27-1
 
-    # --- Dual (35B + 27B mixed, chat-only) ---
-    dual_35b0-27b1: M35-0 & M27-1
-    dual_27b0-35b1: M27-0 & M35-1
+    # # --- Dual (35B + 27B mixed, chat-only) ---
+    # dual_35b0-27b1: M35-0 & M27-1
+    # dual_27b0-35b1: M27-0 & M35-1
 
-    # --- Dual with embed spread (one 35B per GPU + embed on both) ---
-    dual_35b-spread: M35-0 & M35-1 & S35-e
+    # # --- Dual with embed spread (one 35B per GPU + embed on both) ---
+    # dual_35b-spread: M35-0 & M35-1 & S35-e
 
-    # --- Dual with embed spread (one 27B per GPU + embed on both) ---
-    dual_27b-spread: M27-0 & M27-1 & S35-e
+    # # --- Dual with embed spread (one 27B per GPU + embed on both) ---
+    # dual_27b-spread: M27-0 & M27-1 & S35-e
 
     # --- Dual with embed spread (35B + 27B mixed + embed on both) ---
     dual_35b0-27b1-spread: M35-0 & M27-1 & S35-e
-    dual_27b0-35b1-spread: M27-0 & M35-1 & S35-e
+    # dual_27b0-35b1-spread: M27-0 & M35-1 & S35-e
 
-    # --- Embed spread standalone ---
-    embed_spread: S35-e
+    # # --- Embed spread standalone ---
+    # embed_spread: S35-e
