@@ -1,0 +1,16 @@
+---
+# syntax=docker/dockerfile-1
+FROM quay.io/centos/centos:stream10-minimal
+
+# renovate: datasource=repology depName=centos_stream_10/qemu-user-static
+ENV QEMU_USER_STATIC_VERSION=10.2.0
+RUN microdnf -y update && \
+    microdnf -y install --nodocs --setopt=install_weak_deps=0 \
+    qemu-user-static-${QEMU_USER_STATIC_VERSION} bash util-linux && \
+    microdnf clean all && rm -rf /var/cache/* && \
+    rm -rf /usr/share/doc/* /usr/share/man/* /usr/share/info/*
+
+COPY manage-binfmt.sh /usr/local/bin/manage-binfmt.sh
+RUN chmod 755 /usr/local/bin/manage-binfmt.sh
+
+CMD ["sleep", "infinity"]

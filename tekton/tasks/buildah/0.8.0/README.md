@@ -14,20 +14,19 @@ to assemble a container image, then pushes that image to a container registry.
 ## Install the Task
 
 ```bash
-kubectl apply -f https://tekton-hub-api-openshift-pipelines.apps.okd.homelab.arthurvardevanyan.com/v1/resource/homelab/task/buildah/0.7.1/raw
+kubectl apply -f https://tekton-hub-api-openshift-pipelines.apps.okd.homelab.arthurvardevanyan.com/v1/resource/homelab/task/buildah/0.8.0/raw
 ```
 
 ## Parameters
 
 - **IMAGE**: The name (reference) of the image to build.
-- **BUILDER_IMAGE:**: The name of the image containing the Buildah tool. See
-  note below. (_default:_ quay.io/buildah/stable:v1.23.3)
+- **BUILDER_IMAGE:**: The name of the image containing the Buildah tool. (_default:_ quay.io/buildah/stable:v1.23.3)
 - **DOCKERFILE**: The path to the `Dockerfile` to execute (_default:_
   `./Dockerfile`)
 - **CONTEXT**: Path to the directory to use as context (_default:_
   `.`)
-- **TLSVERIFY**: Verify the TLS on the registry endpoint (for push/pull to a
-  non-TLS registry) (_default:_ `true`)
+- **TLSVERIFY**: Verify the TLS on the registry endpoint for push/pull to a
+  non-TLS registry (_default:_ `true`)
 - **FORMAT**: The format of the built container, oci or docker (_default:_
   `oci`)
 - **BUILD_EXTRA_ARGS**: Extra parameters passed for the build command when
@@ -35,6 +34,17 @@ kubectl apply -f https://tekton-hub-api-openshift-pipelines.apps.okd.homelab.art
 - **PUSH_EXTRA_ARGS**: Extra parameters passed for the push command when
   pushing images. (_default:_ `""`)
 - **SKIP_PUSH**: Skip pushing the built image (_default:_ `false`)
+- **IMAGE_REPOSITORIES**: Comma-separated list of image repositories to push
+  the manifest to (e.g. `ghcr.io/ArthurVardevanyan/k8s-gitops-ci`). When
+  set, the task builds multi-arch (per `PLATFORMS`), assembles a manifest
+  list, and pushes the complete manifest to each repository. When empty,
+  falls back to single-arch build-and-push (backward-compatible).
+- **PLATFORMS**: Comma-separated list of platforms to build for (e.g.
+  `linux/amd64,linux/arm64`). Ignored when `IMAGE_REPOSITORIES` is empty.
+- **IMAGE_TAG_SUFFIX**: Suffix appended to each per-arch intermediate image
+  name to avoid collisions during multi-arch builds (e.g. `${ARCH}`).
+  Ignored in single-arch mode. Defaults to empty (buildah auto-generates
+  unique tags).
 
 ## Workspaces
 
@@ -45,7 +55,45 @@ kubectl apply -f https://tekton-hub-api-openshift-pipelines.apps.okd.homelab.art
 
 ## Platforms
 
-The Task can be run on `linux/amd64`, `linux/s390x`, `linux/arm64` and `linux/ppc64le` platforms.
+The Task can be run on `linux/amd64`, `linux/s390x`, `linux/arm64` and
+`linux/ppc64le` platforms. It supports multi-arch builds when
+`IMAGE_REPOSITORIES` is set — it builds each platform separately, assembles
+a manifest list with `buildah manifest`, and pushes the complete manifest
+(all of the per-arch images + the manifest list) to each `IMAGE_REPOSITORY`
+in a single `buildah manifest push` operation.
+
+## Multi-Arch Usage
+
+When `IMAGE_REPOSITORIES` is set, the task builds a multi-arch manifest
+list:
+
+```yaml
+apiVersion: tekton.dev/v1
+kind: TaskRun
+metadata:
+  name: buildah-build-multiarch
+spec:
+  taskRef:
+    name: buildah
+  params:
+    - name: IMAGE
+      value: ghcr.io/ArthurVardevanyan/k8s-gitops-ci:latest
+    - name: IMAGE_REPOSITORIES
+      value: "ghcr.io/ArthurVardevanyan/k8s-gitops-ci"
+    - name: PLATFORMS
+      value: "linux/amd64,linux/arm64"
+    - name: IMAGE_TAG_SUFFIX
+      value: "-${ARCH}"
+  workspaces:
+    - name: source
+      persistentVolumeClaim:
+        claimName: my-source
+```
+
+This builds both `linux/amd64` and `linux/arm64` images, creates a manifest
+list tagged `ghcr.io/ArthurVardevanyan/k8s-gitops-ci:latest`, and pushes the
+complete multi-arch manifest to the registry. The intermediate per-arch
+images are cleaned up after the push.
 
 ## Usage
 

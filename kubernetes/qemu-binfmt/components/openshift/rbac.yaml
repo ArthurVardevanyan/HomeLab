@@ -1,0 +1,31 @@
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: qemu-binfmt-cr
+  labels:
+    app.kubernetes.io/instance: qemu-binfmt
+rules:
+  - apiGroups:
+      - security.openshift.io
+    resourceNames:
+      - privileged
+    resources:
+      - securitycontextconstraints
+    verbs:
+      - use
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: qemu-binfmt-crb
+  labels:
+    app.kubernetes.io/instance: qemu-binfmt
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: qemu-binfmt-cr
+subjects:
+  - kind: ServiceAccount
+    name: qemu-binfmt-sa
+    namespace: qemu-binfmt

@@ -1,0 +1,316 @@
+---
+apiVersion: tekton.dev/v1
+kind: Task
+metadata:
+  name: buildah
+  namespace: homelab
+  labels:
+    app.kubernetes.io/version: "0.8.0"
+  annotations:
+    argocd.argoproj.io/sync-wave: "2"
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+    tekton.dev/categories: Image Build
+    tekton.dev/pipelines.minVersion: "0.17.0"
+    tekton.dev/tags: image-build
+    tekton.dev/platforms: "linux/amd64,linux/s390x,linux/ppc64le,linux/arm64"
+    tekton.dev/displayName: buildah
+spec:
+  description: >-
+    Buildah task builds source into a container image and
+    then pushes it to a container registry.
+
+    Buildah Task builds source into a container image using Project Atomic's
+    Buildah build tool. It uses Buildah's support for building from
+    Dockerfiles, using its buildah bud command. This command executes the
+    directives in the Dockerfile to assemble a container image, then pushes
+    that image to a container registry.
+
+    Supports multi-arch image builds via manifest lists when IMAGE_REPOS is
+    set — builds each platform separately, assembles a manifest list with
+    `buildah manifest`, and pushes the complete manifest (all arch images +
+    the manifest list) to each IMAGE_REPOSITORY in one `buildah manifest push`.
+
+  params:
+    - name: IMAGE
+      description: Reference of the image buildah will produce.
+    - name: BUILDER_IMAGE
+      description: The location of the buildah builder image.
+      default: quay.io/buildah/stable:v1.43.1-immutable@sha256:fc649e1899c4e09a8e19d6fbdbda178d2008fa4186d5a280211f8ffa59e77e32
+    - name: STORAGE_DRIVER
+      description: "Buildah storage driver (default: overlay with fuse-overlayfs as mount_program for improved performance)"
+      default: overlay
+    - name: DOCKERFILE
+      description: Path to the Dockerfile to build.
+      default: ./Dockerfile
+    - name: CONTEXT
+      description: Path to the directory to use as context.
+      default: .
+    - name: TLSVERIFY
+      description: Verify the TLS on the registry endpoint (for push/pull to a non-TLS registry)
+      default: "true"
+    - name: FORMAT
+      description: The format of the built container, oci or docker
+      default: "oci"
+    - name: BUILD_EXTRA_ARGS
+      description: Extra parameters passed for the build command when building images.
+      default: ""
+    - name: PUSH_EXTRA_ARGS
+      description: Extra parameters passed for the push command when pushing images.
+      type: string
+      default: ""
+    - name: SKIP_PUSH
+      description: Skip pushing the built image
+      default: "false"
+    - name: IMAGE_REPOSITORIES
+      description: "Comma-separated list of image repositories to push the manifest to. When set, builds multi-arch (PLATFORMS) and pushes a manifest list; when empty, falls back to single-arch build-and-push (backward-compatible)."
+      default: ""
+    - name: PLATFORMS
+      description: "Comma-separated list of platforms to build for (e.g. linux/amd64,linux/arm64). Ignored when IMAGE_REPOSITORIES is empty (single-arch fallback)."
+      default: "linux/amd64,linux/arm64"
+    - name: IMAGE_TAG_SUFFIX
+      description: "Suffix appended to each per-arch intermediate image name to avoid collisions during multi-arch builds (e.g. ${ARCH}). Ignored in single-arch mode."
+      default: ""
+  workspaces:
+    - name: source
+    - name: sslcertdir
+      optional: true
+    - name: dockerconfig
+      description: >-
+        An optional workspace that allows providing a .docker/config.json file
+        for Buildah to access the container registry.
+        The file should be placed at the root of the Workspace with name config.json.
+      optional: true
+  results:
+    - name: IMAGE_DIGEST
+      description: Digest of the image just built.
+    - name: IMAGE_URL
+      description: Image repository where the built image would be pushed to
+  steps:
+    - name: build-and-push
+      computeResources:
+        requests:
+          memory: 500Mi
+          ephemeral-storage: 5Gi
+          cpu: 1000m
+        limits:
+          cpu: "4000m"
+          ephemeral-storage: 75Gi
+          memory: 5Gi
+      image: $(params.BUILDER_IMAGE)
+      workingDir: $(workspaces.source.path)
+      script: |
+        mkdir -p /home/build/.local/share/containers
+        mkdir -p /home/build/rundir/libpod
+        rm -rf $(workspaces.source.path)/lost+found
+
+        [ "$(workspaces.sslcertdir.bound)" = "true" ] && CERT_DIR_FLAG="--cert-dir=$(workspaces.sslcertdir.path)"
+        [ "$(workspaces.dockerconfig.bound)" = "true" ] && DOCKER_CONFIG="$(workspaces.dockerconfig.path)" && export DOCKER_CONFIG
+
+        MULTI_ARCH=false
+        if [ -n "$(params.IMAGE_REPOSITORIES)" ]; then
+          MULTI_ARCH=true
+        fi
+
+        # ── Fail-fast: require node-wide binfmt handler ──────────────────
+        # The qemu-binfmt DaemonSet (namespace: qemu-binfmt) registers
+        # aarch64 binfmt handlers with the F flag on every node.  Without
+        # it cross-arch RUN steps silently fail with "exec format error".
+        if [ "${MULTI_ARCH}" = "true" ]; then
+          IFS=',' read -ra PLATFORMS <<< "$(params.PLATFORMS)"
+          for platform in "${PLATFORMS[@]}"; do
+            arch="${platform##*/}"
+            case "$arch" in
+              amd64|x86_64) ;;  # native on this (amd64) cluster
+              *)
+                handler="qemu-$arch"
+                if [ ! -f /proc/sys/fs/binfmt_misc/$handler ] || \
+                   [ "$(cat /proc/sys/fs/binfmt_misc/$handler 2>/dev/null | head -1)" != "enabled" ]; then
+                  echo "ERROR: no enabled binfmt handler for ${arch} on this node." >&2
+                  echo "The qemu-binfmt DaemonSet (namespace qemu-binfmt) must be running." >&2
+                  exit 1
+                fi
+                ;;
+            esac
+          done
+        fi
+
+        # Resolve the IMAGE param into a shell variable so string operations
+        # like ${IMAGE%:*} work correctly.
+        IMAGE="$(params.IMAGE)"
+
+        if [ "${MULTI_ARCH}" = "true" ]; then
+          # ── Multi-arch mode ──────────────────────────────────────────────
+          # 1. Parse platforms and images into parallel arrays
+          IFS=',' read -ra PLATFORMS <<< "$(params.PLATFORMS)"
+          IMAGES=()
+          for i in "${!PLATFORMS[@]}"; do
+            PLATFORM="${PLATFORMS[$i]}"
+            ARCH="${PLATFORM##*/}"
+            # Extract image name (without tag), use :ARCH as the tag
+            # No placeholder trickery — ARCH is already available in this loop
+            IMAGE_NAME="${IMAGE%:*}"
+            # IMAGE has a tag (e.g. "registry.example.com/repo/image:0.1.0")
+            # -> IMAGE_NAME = "registry.example.com/repo/image"
+            # If IMAGE has no tag, IMAGE_NAME == IMAGE which is fine
+            IMAGES+=("${IMAGE_NAME}:${ARCH}")
+          done
+
+          # 2. Build each architecture
+          for i in "${!PLATFORMS[@]}"; do
+            PLATFORM="${PLATFORMS[$i]}"
+            IMAGE="${IMAGES[$i]}"
+            ARCH="${PLATFORM##*/}"
+            echo "Building ${IMAGE} for ${PLATFORM}..."
+            buildah ${CERT_DIR_FLAG} "--storage-driver=$(params.STORAGE_DRIVER)" bud \
+              --arch="${ARCH}" --override-arch="${ARCH}" $(params.BUILD_EXTRA_ARGS) \
+              "--format=$(params.FORMAT)" "--tls-verify=$(params.TLSVERIFY)" \
+              -f "$(params.DOCKERFILE)" -t "${IMAGE}" "$(params.CONTEXT)"
+          done
+
+          # 3. Create and populate manifest list
+          MANIFEST_IMAGE="${IMAGES[0]%%:*}"
+          MANIFEST_TAG="${IMAGES[0]##*:}"
+          echo "Creating manifest ${MANIFEST_IMAGE}:${MANIFEST_TAG}..."
+          buildah manifest create "${MANIFEST_IMAGE}:${MANIFEST_TAG}"
+          for i in "${!PLATFORMS[@]}"; do
+            PLATFORM="${PLATFORMS[$i]}"
+            IMAGE="${IMAGES[$i]}"
+            ARCH="${PLATFORM##*/}"
+            echo "Adding ${IMAGE} (${ARCH}) to manifest..."
+            buildah manifest add "${MANIFEST_IMAGE}:${MANIFEST_TAG}" "docker://${IMAGE}"
+          done
+
+          # 4. Push manifest to all repositories
+          RETRIES=5
+          IFS=',' read -ra REPOS <<< "$(params.IMAGE_REPOSITORIES)"
+          for repo in "${REPOS[@]}"; do
+            echo "Pushing manifest to ${repo}..."
+            for i in $(seq 1 $RETRIES); do
+              if buildah ${CERT_DIR_FLAG} "--storage-driver=$(params.STORAGE_DRIVER)" push \
+                  $(params.PUSH_EXTRA_ARGS) "--tls-verify=$(params.TLSVERIFY)" \
+                  --digestfile /tmp/image-digest \
+                  "manifests:${MANIFEST_IMAGE}:${MANIFEST_TAG}" "docker://${repo}"; then
+                break
+              fi
+              [ "$i" -eq "$RETRIES" ] && echo "Push failed after $RETRIES attempts" >&2 && exit 1
+              echo "Push attempt $i/$RETRIES failed, retrying..." >&2
+              sleep 5
+            done
+            tee "$(results.IMAGE_DIGEST.path)" < /tmp/image-digest
+            printf '%s' "${repo}:${MANIFEST_TAG}" | tee "$(results.IMAGE_URL.path)"
+          done
+
+          # 5. Cleanup intermediate images
+          for i in "${!PLATFORMS[@]}"; do
+            IMAGE="${IMAGES[$i]}"
+            buildah rm "${IMAGE}" 2>/dev/null || true
+          done
+
+        else
+          # ── Single-arch mode (backward-compatible) ───────────────────────
+          # shellcheck disable=SC2046,SC2086
+          buildah ${CERT_DIR_FLAG} "--storage-driver=$(params.STORAGE_DRIVER)" bud $(params.BUILD_EXTRA_ARGS) \
+            "--format=$(params.FORMAT)" "--tls-verify=$(params.TLSVERIFY)" \
+            -f "$(params.DOCKERFILE)" -t "$(params.IMAGE)" "$(params.CONTEXT)"
+          [ "$(params.SKIP_PUSH)" = "true" ] && echo "Push skipped" && exit 0
+          # push the image with retries (registry 500s are transient)
+          RETRIES=5
+          for i in $(seq 1 $RETRIES); do
+            if buildah ${CERT_DIR_FLAG} "--storage-driver=$(params.STORAGE_DRIVER)" push $(params.PUSH_EXTRA_ARGS) \
+                "--tls-verify=$(params.TLSVERIFY)" --digestfile /tmp/image-digest "$(params.IMAGE)" \
+                "docker://$(params.IMAGE)"; then
+              break
+            fi
+            [ "$i" -eq "$RETRIES" ] && echo "Push failed after $RETRIES attempts" >&2 && exit 1
+            echo "Push attempt $i/$RETRIES failed, retrying..." >&2
+            sleep 5
+          done
+          tee "$(results.IMAGE_DIGEST.path)" < /tmp/image-digest
+          printf '%s' "$(params.IMAGE)" | tee "$(results.IMAGE_URL.path)"
+        fi
+      volumeMounts:
+        - name: varlibcontainers
+          mountPath: /var/lib/containers
+        - name: tmp
+          mountPath: /tmp
+        - name: var-tmp
+          mountPath: /var/tmp
+        - name: home
+          mountPath: /home
+        - name: root
+          mountPath: /root
+        - name: run
+          mountPath: /var/run
+        - name: cache
+          mountPath: /var/cache
+        - name: networks # TODO Circle Back to This.
+          mountPath: /etc/containers/networks
+        - name: binfmt-misc
+          mountPath: /proc/sys/fs/binfmt_misc
+      securityContext:
+        # runAsNonRoot: true
+        runAsUser: 0 #1000 # 65532
+        privileged: false
+        readOnlyRootFilesystem: false
+        allowPrivilegeEscalation: true
+        # seccompProfile:
+        #   type: RuntimeDefault
+        capabilities:
+          add:
+            - SETFCAP
+            - SYS_ADMIN
+          drop:
+            - MKNOD
+            - KILL
+            # - SETUID
+            # - SETGID
+            # - ALL
+  volumes:
+    - name: varlibcontainers
+      emptyDir:
+        sizeLimit: 75Gi
+      # ephemeral:
+      #   volumeClaimTemplate:
+      #     metadata:
+      #       creationTimestamp: null
+      #     spec:
+      #       accessModes: ["ReadWriteOnce"]
+      #       storageClassName: "rook-ceph-block-ci"
+      #       resources:
+      #         requests:
+      #           storage: 30Gi
+    - name: home
+      emptyDir:
+        sizeLimit: 1Mi
+    - name: tmp
+      emptyDir:
+        sizeLimit: 2Mi
+    - name: var-tmp
+      emptyDir:
+        sizeLimit: 30Gi
+      # ephemeral:
+      #   volumeClaimTemplate:
+      #     metadata:
+      #       creationTimestamp: null
+      #     spec:
+      #       accessModes: ["ReadWriteOnce"]
+      #       storageClassName: "rook-ceph-block-ci"
+      #       resources:
+      #         requests:
+      #           storage: 30Gi
+    - name: root
+      emptyDir:
+        sizeLimit: 1Mi
+    - name: run
+      emptyDir:
+        sizeLimit: 1Mi
+    - name: cache
+      emptyDir:
+        sizeLimit: 1Mi
+    - name: networks # TODO Circle Back to This.
+      emptyDir:
+        sizeLimit: 1Mi
+    - name: binfmt-misc
+      hostPath:
+        path: /proc/sys/fs/binfmt_misc
+        type: Directory
