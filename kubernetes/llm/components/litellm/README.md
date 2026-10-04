@@ -37,15 +37,15 @@ Open WebUI → LiteLLM (Zitadel OIDC + cost tracking) → llama-swap → llama-s
 
 LiteLLM acts as an **OpenAI API compatibility proxy**: Open WebUI sends standard
 `/v1/chat/completions` and `/v1/embeddings` requests, LiteLLM authenticates the
-caller via Zitadel OIDC, tracks token-level cost, routes the request to the
-appropriate GPU via the `llama_swap_affinity.py` plugin, and returns a streaming
+caller via Zitadel OIDC, tracks token-level cost, and returns a streaming
 response in OpenAI format.
 
-Four public model aliases are exposed: one with two deployments (gpu0 and gpu1)
+Four public model aliases are exposed: three with two deployments (gpu0 and gpu1)
 for load-aware routing, and one spread embedding model using both GPUs.
-LiteLLM's routing plugin narrows the candidate list using llama-swap's ground
-truth (which models are resident on which GPU), then picks the least busy slot
-when both GPUs have the model loaded.
+LiteLLM's **GPU affinity plugin (`llama_swap_affinity.py`) is currently
+commented out** — with the llama-swap matrix disabled, all models remain
+resident on their assigned GPUs and routing uses LiteLLM's built-in
+`least-busy` strategy instead.
 
 LiteLLM also provides **response caching** (via Dragonfly Redis-compatible
 cache, 24h TTL) and **cost tracking** (per-model input/output cost per token,
@@ -175,6 +175,10 @@ circuit as the LLM system (gpu-1 node) for accurate readings.
 
 ### Router settings
 
+> **GPU affinity plugin (`llama_swap_affinity.plugin`) is currently
+> commented out.** See the [Architecture](#architecture) note above. The
+> remaining router settings apply but the plugin-based routing is disabled.
+
 - **`routing_strategy: least-busy`** — baseline strategy; superseded by the GPU
   affinity plugin for the models it covers (see below).
 - **`cache_responses: true`** — caches API responses in Dragonfly for repeated
@@ -182,12 +186,12 @@ circuit as the LLM system (gpu-1 node) for accurate readings.
 - **`plugins: [llama_swap_affinity.plugin]`** — the custom routing plugin
   (mounted at `/etc/litellm/llama_swap_affinity.py` alongside `litellm.yaml`).
   Resolved via the dotted-path convention (`litellm.proxy.types_utils.utils.get_instance_fn`).
-- **`disable_cooldowns: true`** — required by the plugin: if a deployment the
-  plugin narrows to were ever dropped via LiteLLM's failure-count cooldown, the
-  intersection with `healthy_deployments` would be empty and the request would
-  hard-fail instead of falling back. All deployments here are one llama-swap pod
-  on one node, so llama-swap's own process state (which the plugin already reads)
-  is a more accurate health signal than LiteLLM's 3-failures/5-second cooldown.
+  **Currently commented out** in `litellm.yaml` — all models remain resident
+  on their assigned GPUs so this plugin is not needed.
+- **`disable_cooldowns: true`** — required by the plugin (currently disabled).
+  If a deployment the plugin narrows to were ever dropped via LiteLLM's
+  failure-count cooldown, the intersection with `healthy_deployments` would
+  be empty and the request would hard-fail instead of falling back.
 - **`health_check_interval: 300`** — backend health check period (seconds).
 - **`store_model_in_db: false`** — models are defined in config, not the database.
 - **`user_api_key_cache_ttl: 300`** — user API key validation cache TTL (seconds).
@@ -206,6 +210,10 @@ a Redis-compatible cache backend:
 - **Authentication**: `enable_redis_auth_cache: true` — Dragonfly requires auth.
 
 ### GPU affinity plugin
+
+> **Currently commented out.** With the llama-swap matrix disabled and all
+> models resident on their assigned GPUs, the affinity plugin is no longer
+> needed. The plugin code remains on disk (not deleted) for easy re-enabling.
 
 `llama_swap_affinity.py` implements custom routing logic by overriding LiteLLM's
 built-in `least-busy` counter for the two model groups. It narrows the

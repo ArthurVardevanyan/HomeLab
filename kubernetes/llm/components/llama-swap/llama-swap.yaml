@@ -110,6 +110,7 @@ models:
   #    initial allocation.
   # ==========================================
   27b-gpu0:
+    # --enable-sleep-mode --cudagraph-capture-sizes 1 2 4 8 12 (disabled)
     # --cudagraph-capture-sizes 1 2 4 8 12 (DIAGNOSTIC/optimization, this
     # session): trims vLLM's auto-computed cudagraph capture-size list for
     # this model's actual traffic shape. With --max-num-seqs 3 and MTP
@@ -130,7 +131,7 @@ models:
     # regression (16/24-sized batches were only reachable via mixed
     # decode+prefill chunking, not pure decode, so impact should be
     # minimal to none).
-    cmd: '${cmd_base_vllm_27b_gpu0} /data/models/Qwen3.8-27B-GPTQ-Int4 --host 127.0.0.1 --port 8002 --quantization gptq --dtype float16 --max-model-len 175104 --gpu-memory-utilization 0.86 --kv-cache-dtype fp8 --enable-prefix-caching --enable-auto-tool-choice --tool-call-parser qwen3_xml --reasoning-parser qwen3 --speculative-config ''{"method": "mtp", "num_speculative_tokens": 3}'' --max-num-seqs 3 --max-num-batched-tokens 8192 --served-model-name 27b-gpu0 --kv-cache-memory 7047184611 --enable-sleep-mode --cudagraph-capture-sizes 1 2 4 8 12' # --gpu-memory-utilization 0.93
+    cmd: '${cmd_base_vllm_27b_gpu0} /data/models/Qwen3.8-27B-GPTQ-Int4 --host 127.0.0.1 --port 8002 --quantization gptq --dtype float16 --max-model-len 175104 --gpu-memory-utilization 0.86 --kv-cache-dtype fp8 --enable-prefix-caching --enable-auto-tool-choice --tool-call-parser qwen3_xml --reasoning-parser qwen3 --speculative-config ''{"method": "mtp", "num_speculative_tokens": 3}'' --max-num-seqs 3 --max-num-batched-tokens 8192 --served-model-name 27b-gpu0 --kv-cache-memory 7047184611' # --enable-sleep-mode --cudagraph-capture-sizes 1 2 4 8 12 # --gpu-memory-utilization 0.93
     env:
       # See 35b-gpu0 above re: ONEAPI_DEVICE_SELECTOR removal.
       # --enable-sleep-mode requires PYTORCH_ALLOC_CONF's expandable_segments
@@ -146,21 +147,22 @@ models:
       - "SYCL_PI_LEVEL_ZERO_USE_IMMEDIATE_COMMANDLISTS=1"
       - "ZE_AFFINITY_MASK=0"
     ttl: 0
-    cmdStop: /app/vllm-wrapper sleep --vllm-url http://127.0.0.1:8002 --sleep-level 2 --stop-pid ${PID}
-    unloadTimeout: 60
+    # cmdStop: /app/vllm-wrapper sleep --vllm-url http://127.0.0.1:8002 --sleep-level 2 --stop-pid ${PID}
+    # unloadTimeout: 60
 
   27b-gpu1:
+    # --enable-sleep-mode --cudagraph-capture-sizes 1 2 4 8 12 (disabled)
     # --cudagraph-capture-sizes 1 2 4 8 12: see 27b-gpu0 above for the full
     # rationale (identical --max-num-seqs 3 / MTP config on this model).
-    cmd: '${cmd_base_vllm_27b_gpu1} /data/models/Qwen3.8-27B-GPTQ-Int4 --host 127.0.0.1 --port 8003 --quantization gptq --dtype float16 --max-model-len 175104 --gpu-memory-utilization 0.86 --kv-cache-dtype fp8 --enable-prefix-caching --enable-auto-tool-choice --tool-call-parser qwen3_xml --reasoning-parser qwen3 --speculative-config ''{"method": "mtp", "num_speculative_tokens": 3}'' --max-num-seqs 3 --max-num-batched-tokens 8192 --served-model-name 27b-gpu1 --kv-cache-memory 7047184611 --enable-sleep-mode --cudagraph-capture-sizes 1 2 4 8 12' # --gpu-memory-utilization 0.93
+    cmd: '${cmd_base_vllm_27b_gpu1} /data/models/Qwen3.8-27B-GPTQ-Int4 --host 127.0.0.1 --port 8003 --quantization gptq --dtype float16 --max-model-len 175104 --gpu-memory-utilization 0.86 --kv-cache-dtype fp8 --enable-prefix-caching --enable-auto-tool-choice --tool-call-parser qwen3_xml --reasoning-parser qwen3 --speculative-config ''{"method": "mtp", "num_speculative_tokens": 3}'' --max-num-seqs 3 --max-num-batched-tokens 8192 --served-model-name 27b-gpu1 --kv-cache-memory 7047184611' # --enable-sleep-mode --cudagraph-capture-sizes 1 2 4 8 12 # --gpu-memory-utilization 0.93
     env:
       # See 27b-gpu0 above re: ONEAPI_DEVICE_SELECTOR removal and
       # PYTORCH_ALLOC_CONF / --enable-sleep-mode.
       - "SYCL_PI_LEVEL_ZERO_USE_IMMEDIATE_COMMANDLISTS=1"
       - "ZE_AFFINITY_MASK=1"
     ttl: 0
-    cmdStop: /app/vllm-wrapper sleep --vllm-url http://127.0.0.1:8003 --sleep-level 2 --stop-pid ${PID}
-    unloadTimeout: 60
+    # cmdStop: /app/vllm-wrapper sleep --vllm-url http://127.0.0.1:8003 --sleep-level 2 --stop-pid ${PID}
+    # unloadTimeout: 60
 
   # ==========================================
   # 3. Qwen3 Embedding 0.6B (spread across both GPUs)
@@ -187,45 +189,45 @@ models:
     ttl: 0
     concurrencyLimit: 20
 
-matrix:
-  vars:
-    # GPU 0 models
-    M35-0: 35b-gpu0
-    M27-0: 27b-gpu0
-    # GPU 1 models
-    M35-1: 35b-gpu1
-    M27-1: 27b-gpu1
-    # Spread models
-    S35-e: embed-spread
-
-  # Eviction cost: higher = harder to evict
-  evict_costs:
-    M35-0: 20
-    M35-1: 10
-    M27-0: 15
-    M27-1: 15
-    S35-e: 1
-
-  sets:
-    # --- Dual (one 35B per GPU, chat-only) ---
-    dual_35b: M35-0 & M35-1
-
-    # --- Dual (one 27B per GPU, chat-only) ---
-    dual_27b: M27-0 & M27-1
-
-    # --- Dual (35B + 27B mixed, chat-only) ---
-    dual_35b0-27b1: M35-0 & M27-1
-    dual_27b0-35b1: M27-0 & M35-1
-
-    # --- Dual with embed spread (one 35B per GPU + embed on both) ---
-    dual_35b-spread: M35-0 & M35-1 & S35-e
-
-    # --- Dual with embed spread (one 27B per GPU + embed on both) ---
-    dual_27b-spread: M27-0 & M27-1 & S35-e
-
-    # --- Dual with embed spread (35B + 27B mixed + embed on both) ---
-    dual_35b0-27b1-spread: M35-0 & M27-1 & S35-e
-    dual_27b0-35b1-spread: M27-0 & M35-1 & S35-e
-
-    # --- Embed spread standalone ---
-    embed_spread: S35-e
+#matrix:
+#  vars:
+#    # GPU 0 models
+#    M35-0: 35b-gpu0
+#    M27-0: 27b-gpu0
+#    # GPU 1 models
+#    M35-1: 35b-gpu1
+#    M27-1: 27b-gpu1
+#    # Spread models
+#    S35-e: embed-spread
+#
+#  # Eviction cost: higher = harder to evict
+#  evict_costs:
+#    M35-0: 20
+#    M35-1: 10
+#    M27-0: 15
+#    M27-1: 15
+#    S35-e: 1
+#
+#  sets:
+#    # --- Dual (one 35B per GPU, chat-only) ---
+#    dual_35b: M35-0 & M35-1
+#
+#    # --- Dual (one 27B per GPU, chat-only) ---
+#    dual_27b: M27-0 & M27-1
+#
+#    # --- Dual (35B + 27B mixed, chat-only) ---
+#    dual_35b0-27b1: M35-0 & M27-1
+#    dual_27b0-35b1: M27-0 & M35-1
+#
+#    # --- Dual with embed spread (one 35B per GPU + embed on both) ---
+#    dual_35b-spread: M35-0 & M35-1 & S35-e
+#
+#    # --- Dual with embed spread (one 27B per GPU + embed on both) ---
+#    dual_27b-spread: M27-0 & M27-1 & S35-e
+#
+#    # --- Dual with embed spread (35B + 27B mixed + embed on both) ---
+#    dual_35b0-27b1-spread: M35-0 & M27-1 & S35-e
+#    dual_27b0-35b1-spread: M27-0 & M35-1 & S35-e
+#
+#    # --- Embed spread standalone ---
+#    embed_spread: S35-e

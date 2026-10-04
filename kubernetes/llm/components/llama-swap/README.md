@@ -193,13 +193,11 @@ bisected: graph-only boots clean, cache-only fails).
 
 ## Fast model swaps (vLLM sleep mode)
 
-> **27B dense only, for now** — the 35B-A3B MoE does **not** currently use
-> sleep mode (`--enable-sleep-mode` is absent from both `35b-gpu0` and
-> `35b-gpu1` in `llama-swap.yaml`), pending a retest after fixing an
-> allocator misconfiguration that was the actual cause of an earlier 35B
-> boot failure. See
-> [Sleep mode compatibility investigation](#sleep-mode-compatibility-investigation)
-> below.
+> **Currently disabled for all models.** With the `matrix:` section commented
+> out, there is no dynamic model switching or sleep/wake cycling — all chat
+> and embedding models remain resident in VRAM 24/7. The `--enable-sleep-mode`,
+> `cmdStop`, and `unloadTimeout` settings on the 27B models have been disabled
+> as they are no longer used.
 
 llama-swap uses **vllm-wrapper** as a reverse proxy in front of vLLM, enabling
 vLLM's **level 2 sleep mode** (PVC-backed) for the 27B dense model. When a
@@ -253,6 +251,10 @@ before `vllm-wrapper`'s own intentional sleep/shutdown sequence runs, so a
 normal TTL-triggered sleep is never mistaken for a crash.
 
 ### Preload times (with vllm-wrapper)
+
+> **Historical reference only** — sleep mode is disabled for all models.
+> With `ttl: 0` on all models and the matrix commented out, all chat and
+> embedding models stay resident in VRAM 24/7. No warm/cold swaps occur.
 
 Cold model swaps (no cache): ~120–180 s (same as before).
 Warm model swaps (PVC cache, level 2): ~60–120 s — SYCL init (~15 s) + weight
@@ -488,11 +490,12 @@ plus the absence of TP/cross-card communication overhead.
    10-second-window means from the vLLM engine log. These are different
    measurement methods and are **not directly comparable** — reconciling the
    apparent ~20× gap is an open question, not a confirmed regression.
-8. **35B does not use sleep mode (pending retest)** — see
-   [Sleep mode compatibility investigation](#sleep-mode-compatibility-investigation).
-   Swapping 35B off a GPU is currently a full cold restart, not a fast wake;
-   whether it can safely re-enable sleep mode after the allocator fix is
-   unconfirmed.
+8. **Sleep mode disabled** — with the `matrix:` section commented out, there
+   is no dynamic model switching. `--enable-sleep-mode`, `cmdStop`, and
+   `unloadTimeout` have been disabled on the 27B models since they are no
+   longer used. All models remain resident in VRAM 24/7. The documentation
+   below (wake sequence, backend liveness, preload times, compatibility
+   investigation) is retained for historical reference.
 
 ## Memory model
 
@@ -580,7 +583,22 @@ clinfo | grep -i "Device Name"
 
 ## Scaling
 
-For higher throughput:
+With the `matrix:` section commented out, llama-swap operates with **fixed
+model assignments** — the 4 chat models and 1 embedding model boot
+preloaded via `hooks.on_startup.preload` and remain resident on their
+assigned GPUs 24/7 (no dynamic switching or evictions).
+
+- **4 chat models** (27B + 35B on both GPUs): loaded at boot, stay resident.
+  `ttl: 0` means no idle unload.
+- **1 embedding model** (`embed-spread`): loaded at boot, shared across both
+  GPUs via `--split-mode layer --tensor-split 1,1`.
+- **No sleep mode**: with the matrix off, `--enable-sleep-mode`, `cmdStop`,
+  and `unloadTimeout` have been disabled on the 27B models — there is no
+  dynamic sleep/wake happening. Both 35B and 27B models run with weights
+  pinned in VRAM at all times.
+
+For higher throughput, restoring the matrix (`matrix:` and `matrix.sets` in
+`llama-swap.yaml`) would re-enable:
 
 - **Dual** (`dual_35b`, `dual_27b`): one model per GPU, same family, both
   GPUs always required. Provides redundancy and doubles throughput for
@@ -590,10 +608,9 @@ For higher throughput:
 - **Embed spread** (`dual_35b-spread`, `dual_27b-spread`,
   `dual_35b0-27b1-spread`, `dual_27b0-35b1-spread`): chat models on both
   GPUs + embedding model spread across both GPUs (~2 GB total). Embed runs
-  alongside chat. **Currently commented out of `matrix.sets`** — see the
-  `embed-spread` note in [Model Matrix](#model-matrix).
+  alongside chat.
 - **Embed spread standalone** (`embed_spread`): embed-only mode when no chat
-  is needed. **Currently commented out of `matrix.sets`**, same reason.
+  is needed.
 - **Multiple llama-swap replicas** with a LoadBalancer: add replicas in
   `overlays/okd/llama-swap.yaml` and expose via a LoadBalancer service.
   llama-swap's config matrix handles the shared hardware — no external
@@ -602,12 +619,10 @@ For higher throughput:
   `--max-num-seqs 4` per chat model, the current setup handles concurrent
   requests well. Add HPA once load patterns are measured.
 
-`hooks.on_startup.preload` is currently commented out in `llama-swap.yaml`
-(no models load automatically at boot); the matrix solver loads a set
-on-demand from the first request. When re-enabled, embed-spread stays
-resident once a `-spread` set is chosen (evict_cost 1 vs chat models
-10–20); if only chat-only sets are active, embed may be evicted by the
-solver but reloads via TTL (300s) when needed.
+`hooks.on_startup.preload` is **active** in `llama-swap.yaml` — the 3 model
+types (35B MoE, 27B dense, 0.6B embedding) load at boot and stay resident
+via `ttl: 0`. With the matrix commented out, the solver is disabled and
+no on-demand set selection occurs.
 
 ## Metrics
 
