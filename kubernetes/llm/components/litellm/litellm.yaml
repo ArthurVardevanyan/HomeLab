@@ -18,13 +18,13 @@ model_list:
       api_key: "dummy"
       input_cost_per_token: 0.000000013
       output_cost_per_token: 0.000000013
-  - model_name: qwen3.6-35b-a3b
-    litellm_params:
-      model: openai/35b-gpu1
-      api_base: http://llama-swap-svc.llm.svc.cluster.local.:8080/v1
-      api_key: "dummy"
-      input_cost_per_token: 0.000000013
-      output_cost_per_token: 0.000000013
+  # - model_name: qwen3.6-35b-a3b
+  #   litellm_params:
+  #     model: openai/35b-gpu1
+  #     api_base: http://llama-swap-svc.llm.svc.cluster.local.:8080/v1
+  #     api_key: "dummy"
+  #     input_cost_per_token: 0.000000013
+  #     output_cost_per_token: 0.000000013
 
   # --- Public Model Alias 4: Qwen 27B
   - model_name: qwen3.8-27b
@@ -34,13 +34,13 @@ model_list:
       api_key: "dummy"
       input_cost_per_token: 0.000000013
       output_cost_per_token: 0.000000013
-  - model_name: qwen3.8-27b
-    litellm_params:
-      model: openai/27b-gpu0
-      api_base: http://llama-swap-svc.llm.svc.cluster.local.:8080/v1
-      api_key: "dummy"
-      input_cost_per_token: 0.000000013
-      output_cost_per_token: 0.000000013
+  # - model_name: qwen3.8-27b
+  #   litellm_params:
+  #     model: openai/27b-gpu0
+  #     api_base: http://llama-swap-svc.llm.svc.cluster.local.:8080/v1
+  #     api_key: "dummy"
+  #     input_cost_per_token: 0.000000013
+  #     output_cost_per_token: 0.000000013
 
   # --- Embed Spread (0.6B, both GPUs) ---
   - model_name: qwen3-embedding-0.6b
@@ -69,47 +69,47 @@ router_general_settings:
   optional_pre_call_checks:
     - enforce_model_rate_limits
 
-router_settings:
-  routing_strategy: least-busy
-  cache_responses: true
-  # llama-swap-aware routing plugin. For each request, narrows candidates
-  # using llama-swap ground truth instead of LiteLLM's own counter:
-  #   - embedding models               -> always narrow to resident GPU
-  #                                      (matrix guarantees one model per
-  #                                      GPU, routing elsewhere would evict
-  #                                      the active chat model)
-  #   - one resident, victim idle      -> expose both GPUs (LiteLLM routes
-  #                                        to the non-resident GPU,
-  #                                        llama-swap loads it, then the
-  #                                        "both ready" path takes over)
-  #   - one resident, victim busy/recent -> narrow to resident to protect
-  #                                         the active session (queue
-  #                                         on the resident GPU instead)
-  #   - both candidates resident and ready -> round-robin (Option B).
-  #     Note: vLLM chat models lack a /slots endpoint, so least-busy
-  #     polling via /slots only works for the embed-spread model.
-  #     See the "Known limitation — no intra-pair load balancing for vLLM"
-  #     section in llama_swap_affinity.py for Option C details.
-  # Session recency window: 300s. If a GPU was served within this window,
-  # requests are protected from triggering an eviction (covers the gap
-  # between mid-generation and a user's read-and-reply period).
-  # See llama_swap_affinity.py (mounted alongside this file at /etc/litellm)
-  # for the full rationale. The /slots poll is proxied through llama-swap's
-  # upstream.ignorePaths guard (see llama-swap.yaml) so it can never itself
-  # trigger a model load/swap.
-  plugins:
-    - llama_swap_affinity.plugin
-  # Required by the plugin above: narrowing candidates to a resident
-  # deployment is only safe if LiteLLM can't simultaneously drop that same
-  # deployment from healthy_deployments via a failure-count cooldown (that
-  # combination raises "No deployments left after routing-plugin filtering"
-  # instead of falling back). All deployments here are one llama-swap pod on
-  # one node; llama-swap's own process state (ready/starting/...) - which the
-  # plugin already reads - is a more accurate health signal for a co-located
-  # local backend than LiteLLM's default 3-failures/5-second cooldown, which
-  # is designed for multi-provider failover and can false-positive on normal
-  # long-generation timeouts or client-aborted streams.
-  disable_cooldowns: true
+#router_settings:
+#  routing_strategy: least-busy
+#  cache_responses: true
+#  # llama-swap-aware routing plugin. For each request, narrows candidates
+#  # using llama-swap ground truth instead of LiteLLM's own counter:
+#  #   - embedding models               -> always narrow to resident GPU
+#  #                                      (matrix guarantees one model per
+#  #                                       GPU, routing elsewhere would evict
+#  #                                       the active chat model)
+#  #   - one resident, victim idle      -> expose both GPUs (LiteLLM routes
+#  #                                        to the non-resident GPU,
+#  #                                        llama-swap loads it, then the
+#  #                                        "both ready" path takes over)
+#  #   - one resident, victim busy/recent -> narrow to resident to protect
+#  #                                         the active session (queue
+#  #                                         on the resident GPU instead)
+#  #   - both candidates resident and ready -> round-robin (Option B).
+#  #     Note: vLLM chat models lack a /slots endpoint, so least-busy
+#  #     polling via /slots only works for the embed-spread model.
+#  #     See the "Known limitation — no intra-pair load balancing for vLLM"
+#  #     section in llama_swap_affinity.py for Option C details.
+#  # Session recency window: 300s. If a GPU was served within this window,
+#  # requests are protected from triggering an eviction (covers the gap
+#  # between mid-generation and a user's read-and-reply period).
+#  # See llama_swap_affinity.py (mounted alongside this file at /etc/litellm)
+#  # for the full rationale. The /slots poll is proxied through llama-swap's
+#  # upstream.ignorePaths guard (see llama-swap.yaml) so it can never itself
+#  # trigger a model load/swap.
+#  plugins:
+#    - llama_swap_affinity.plugin
+#  # Required by the plugin above: narrowing candidates to a resident
+#  # deployment is only safe if LiteLLM can't simultaneously drop that same
+#  # deployment from healthy_deployments via a failure-count cooldown (that
+#  # combination raises "No deployments left after routing-plugin filtering"
+#  # instead of falling back). All deployments here are one llama-swap pod on
+#  # one node; llama-swap's own process state (ready/starting/...) - which the
+#  # plugin already reads - is a more accurate health signal for a co-located
+#  # local backend than LiteLLM's default 3-failures/5-second cooldown, which
+#  # is designed for multi-provider failover and can false-positive on normal
+#  # long-generation timeouts or client-aborted streams.
+#  disable_cooldowns: true
 
 litellm_settings:
   request_timeout: 1800

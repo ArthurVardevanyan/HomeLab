@@ -308,16 +308,11 @@ for the full session-level breakdown, MTP acceptance-rate analysis, and
 known gaps (position-4 acceptance tuning, long-running decay test,
 concurrency, etc.).
 
-> **Sleep mode is 27B-only for now.** 35B runs without `--enable-sleep-mode`
-> and swaps via full cold restart. An earlier diagnosis attributed this to
-> an inherent MoE expert-tensor/Level-Zero-handle limit, but that was
-> confounded by an allocator misconfiguration (`expandable_segments:False`
-> set image-wide plus a per-model `max_split_size_mb:20` cap) that has since
-> been reverted — the same misconfiguration caused a GPU CAT error/crash on
-> 35B even without sleep mode. Whether 35B can safely re-enable sleep mode
-> now is unconfirmed. See
-> [Sleep mode compatibility investigation](components/llama-swap/README.md#sleep-mode-compatibility-investigation)
-> for the full investigation.
+> **Sleep mode disabled.** With the matrix commented out, all models remain
+> resident 24/7. The `--enable-sleep-mode`, `cmdStop`, and `unloadTimeout`
+> settings on 27B models have been disabled. See
+> [Scaling](components/llama-swap/README.md#scaling) for the current operating
+> mode.
 
 ### Backend history
 
@@ -358,7 +353,15 @@ dominant factor in decode throughput.
 
 ## Scaling
 
-For higher throughput:
+> **Matrix disabled.** With the `matrix:` section commented out, llama-swap
+> operates with **fixed model assignments** — all chat and embedding models
+> boot via `hooks.on_startup.preload` and remain resident on their assigned
+> GPUs 24/7 (`ttl: 0`). No dynamic switching or evictions occur.
+>
+> The scaling options below are preserved for reference and can be re-enabled
+> by restoring the `matrix:` section in `llama-swap.yaml`.
+
+For higher throughput (when matrix is re-enabled):
 
 - **Data parallel** (`dual_35b`, `dual_27b`): llama-swap runs the same model
   on both GPUs. Each slot gets a full 22 GB weight copy, but concurrent
@@ -367,8 +370,7 @@ For higher throughput:
   `dual_27b0-35b1d`): 35B on one GPU + 27B on the other. The solver picks
   the mixed set when a cross-family request arrives and the other GPU
   already has a model, avoiding unnecessary eviction.
-- **Spread** (`spread_35b`): one model spanning both GPUs via
-  `--split-mode layer --tensor-split 1,1`.
+- **Spread**: one model spanning both GPUs via `--split-mode layer --tensor-split 1,1`.
 - **Multiple llama-swap replicas** with a LoadBalancer: add replicas in
   `overlays/okd/llama-swap.yaml` and expose via a LoadBalancer service.
   llama-swap's config matrix handles the shared hardware — no external
