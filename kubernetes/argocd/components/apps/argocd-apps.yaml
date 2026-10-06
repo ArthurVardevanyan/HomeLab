@@ -1,0 +1,276 @@
+---
+apiVersion: argoproj.io/v1beta1
+kind: ArgoCD
+metadata:
+  name: argocd-apps
+  namespace: argocd-apps
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+  labels:
+    app.kubernetes.io/instance: argocd
+spec:
+  defaultClusterScopedRoleDisabled: true
+  applicationInstanceLabelKey: argocd.argoproj.io/instance
+  resourceTrackingMethod: annotation+label
+  sourceNamespaces:
+    - /^((?!argocd).)*$/
+  notifications:
+    enabled: true
+    # https://github.com/argoproj-labs/argocd-operator/pull/1520
+    # env:
+    #   - name: ARGOCD_NOTIFICATION_CONTROLLER_SELF_SERVICE_NOTIFICATION_ENABLED
+    #     value: "true"
+    #   - name: ARGOCD_APPLICATION_NAMESPACES
+    #     value: /^((?!argocd).)*$/
+    replicas: 1
+    resources:
+      limits:
+        cpu: 20m
+        memory: 96Mi
+      requests:
+        cpu: 5m
+        memory: 48Mi
+  monitoring:
+    enabled: true
+  server:
+    replicas: 2
+    host: argocd-apps.okd.homelab.arthurvardevanyan.com
+    autoscale:
+      enabled: false
+    grpc:
+      ingress:
+        enabled: false
+    ingress:
+      enabled: false
+    resources:
+      limits:
+        cpu: 50m
+        memory: 256Mi
+      requests:
+        cpu: 5m
+        memory: 128Mi
+    route:
+      enabled: true
+      tls:
+        termination: passthrough
+    service:
+      type: ""
+  grafana:
+    enabled: false
+  prometheus:
+    enabled: false
+  initialSSHKnownHosts: {}
+  disableAdmin: true
+  usersAnonymousEnabled: false
+  rbac:
+    policy: |
+      g, arthur@arthurvardevanyan.com, role:admin
+      g, 305070630980550817, role:admin
+  # renovate: datasource=docker depName=quay.io/argoproj/argocd
+  version: sha256:ed0740273790e58154816104c1e1b41fb308a9c516ade3d0f195fa56f1840cca #v3.3.0
+  image: quay.io/argoproj/argocd
+  repo:
+    replicas: 3
+    # renovate: datasource=docker depName=quay.io/argoproj/argocd
+    version: sha256:ed0740273790e58154816104c1e1b41fb308a9c516ade3d0f195fa56f1840cca #v3.3.0
+    image: quay.io/argoproj/argocd
+    mountsatoken: true
+    serviceaccount: argocd-repo-server
+    resources:
+      limits:
+        cpu: "200m"
+        memory: 1Gi
+        ephemeral-storage: 6Gi
+      requests:
+        cpu: 10m
+        memory: 150Mi
+        ephemeral-storage: 256Mi
+  oidcConfig: |
+    name: Zitadel
+    issuer: https://zitadel.arthurvardevanyan.com
+    clientID: "<path:secret/data/homelab/zitadel/okd#client_id>"
+    clientSecret: "$oidc.zitadel.clientSecret"
+    requestedScopes: ["openid", "profile", "email"]
+    requestedIDTokenClaims: {"groups": {"essential": true}}
+  ha:
+    enabled: false
+  tls:
+    ca: {}
+  redis:
+    enabled: true
+    remote: "argocd-dragonfly:6379"
+  controller:
+    respectRBAC: "true"
+    parallelismLimit: 25
+    sharding:
+      enabled: true
+      replicas: 1
+    processors:
+      operation: 25
+      status: 50
+    resources:
+      limits:
+        cpu: "2"
+        memory: 5Gi
+      requests:
+        cpu: 200m
+        memory: 1536Mi
+  resourceInclusions: |
+    - apiGroups:
+      - ""
+      clusters:
+      - '*'
+      kinds:
+      - LimitRange
+      - Namespace
+      - PersistentVolumeClaim
+      - ResourceQuota
+      - Service
+      - ServiceAccount
+    - apiGroups:
+      - apps
+      clusters:
+      - '*'
+      kinds:
+      - Deployment
+    - apiGroups:
+      - argoproj.io
+      clusters:
+      - '*'
+      kinds:
+      - Application
+    - apiGroups:
+      - autoscaling
+      clusters:
+      - '*'
+      kinds:
+      - HorizontalPodAutoscaler
+    - apiGroups:
+      - batch
+      clusters:
+      - '*'
+      kinds:
+      - CronJob
+    - apiGroups:
+      - cert-manager.io
+      clusters:
+      - '*'
+      kinds:
+      - Certificate
+    - apiGroups:
+      - opentelemetry.io
+      clusters:
+      - '*'
+      kinds:
+      - OpenTelemetryCollector
+    - apiGroups:
+      - external-secrets.io
+      clusters:
+      - '*'
+      kinds:
+      - ExternalSecret
+      - SecretStore
+    - apiGroups:
+      - gateway.networking.k8s.io
+      clusters:
+      - '*'
+      kinds:
+      - HTTPRoute
+    - apiGroups:
+      - generators.external-secrets.io
+      clusters:
+      - '*'
+      kinds:
+      - QuayAccessToken
+    - apiGroups:
+      - k8s.ovn.org
+      clusters:
+      - '*'
+      kinds:
+      - EgressFirewall
+    - apiGroups:
+      - monitoring.coreos.com
+      clusters:
+      - '*'
+      kinds:
+      - PodMonitor
+    - apiGroups:
+      - networking.k8s.io
+      clusters:
+      - '*'
+      kinds:
+      - Ingress
+      - NetworkPolicy
+    - apiGroups:
+      - pipelinesascode.tekton.dev
+      clusters:
+      - '*'
+      kinds:
+      - Repository
+    - apiGroups:
+      - policy
+      clusters:
+      - '*'
+      kinds:
+      - PodDisruptionBudget
+    - apiGroups:
+      - postgresql.cnpg.io
+      clusters:
+      - '*'
+      kinds:
+      - Cluster
+      - ScheduledBackup
+    - apiGroups:
+      - rbac.authorization.k8s.io
+      clusters:
+      - '*'
+      kinds:
+      - ClusterRoleBinding
+      - Role
+      - RoleBinding
+    - apiGroups:
+      - route.openshift.io
+      clusters:
+      - '*'
+      kinds:
+      - Route
+    - apiGroups:
+      - serving.knative.dev
+      clusters:
+      - '*'
+      kinds:
+      - DomainMapping
+      - Service
+    - apiGroups:
+      - traefik.containo.us
+      clusters:
+      - '*'
+      kinds:
+      - IngressRoute
+    - apiGroups:
+      - velero.io
+      clusters:
+      - '*'
+      kinds:
+      - Backup
+    - apiGroups:
+      - kubevirt.io
+      clusters:
+      - '*'
+      kinds:
+      - VirtualMachine
+  resourceExclusions: |
+    - apiGroups:
+      - tekton.dev
+      clusters:
+      - '*'
+      kinds:
+      - TaskRun
+      - PipelineRun
+    - apiGroups:
+      - packages.operators.coreos.com
+      clusters:
+      - '*'
+      kinds:
+      - PackageManifest

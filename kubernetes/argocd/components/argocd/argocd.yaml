@@ -1,0 +1,745 @@
+---
+apiVersion: argoproj.io/v1beta1
+kind: ArgoCD
+metadata:
+  name: argocd
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+    gitops-ci.k8s.io/exempt-image-checksum: "registry.arthurvardevanyan.com/homelab/toolbox:not_latest"
+  labels:
+    app.kubernetes.io/instance: argocd
+spec:
+  defaultClusterScopedRoleDisabled: true
+  applicationInstanceLabelKey: argocd.argoproj.io/instance
+  resourceTrackingMethod: annotation+label
+  notifications:
+    enabled: true
+    replicas: 1
+    resources:
+      limits:
+        cpu: 20m
+        memory: 196Mi
+      requests:
+        cpu: 5m
+        memory: 96Mi
+  monitoring:
+    enabled: true
+  server:
+    replicas: 2
+    host: argocd.okd.homelab.arthurvardevanyan.com
+    autoscale:
+      enabled: false
+    grpc:
+      ingress:
+        enabled: false
+    ingress:
+      enabled: false
+    resources:
+      limits:
+        cpu: 50m
+        memory: 256Mi
+      requests:
+        cpu: 5m
+        memory: 128Mi
+    route:
+      enabled: true
+      tls:
+        termination: passthrough
+    service:
+      type: ""
+  grafana:
+    enabled: false
+  prometheus:
+    enabled: false
+  initialSSHKnownHosts: {}
+  disableAdmin: true
+  usersAnonymousEnabled: false
+  rbac:
+    policy: |
+      g, arthur@arthurvardevanyan.com, role:admin
+      g, 305070630980550817, role:admin
+  # renovate: datasource=docker depName=quay.io/argoproj/argocd
+  version: sha256:e2aadfae709d904e87f46ba4aa49601d827b3022db22cd4d03aae816a2e7097b #v3.5.2
+  image: quay.io/argoproj/argocd
+  repo:
+    replicas: 2
+    # renovate: datasource=docker depName=quay.io/argoproj/argocd
+    version: sha256:e2aadfae709d904e87f46ba4aa49601d827b3022db22cd4d03aae816a2e7097b #v3.5.2
+    image: quay.io/argoproj/argocd
+    mountsatoken: true
+    serviceaccount: argocd-repo-server
+    resources:
+      limits:
+        cpu: "1500m"
+        memory: 1Gi
+        ephemeral-storage: 6Gi
+      requests:
+        cpu: 50m
+        memory: 150Mi
+        ephemeral-storage: 256Mi
+    sidecarContainers:
+      - name: avp-kustomize
+        command: [/var/run/argocd/argocd-cmp-server]
+        imagePullPolicy: IfNotPresent
+        image: registry.arthurvardevanyan.com/homelab/toolbox:not_latest
+        resources:
+          limits:
+            cpu: "1"
+            memory: 3Gi
+            ephemeral-storage: 6Gi
+          requests:
+            cpu: 50m
+            memory: 150Mi
+            ephemeral-storage: 256Mi
+        env:
+          - name: AVP_TYPE
+            value: vault
+          - name: AVP_AUTH_TYPE
+            value: k8s
+          - name: AVP_K8S_ROLE
+            value: argocd
+          - name: VAULT_ADDR
+            value: https://vault.arthurvardevanyan.com
+        volumeMounts:
+          - mountPath: /var/run/argocd
+            name: var-files
+          - mountPath: /home/argocd/cmp-server/plugins
+            name: plugins
+          - mountPath: /home/argocd/cmp-server/config/plugin.yaml
+            subPath: avp-kustomize.yaml
+            name: cmp-plugin
+          - mountPath: /tmp
+            name: cmp-tmp
+    volumes:
+      - configMap:
+          name: cmp-plugin
+        name: cmp-plugin
+      - emptyDir:
+          medium: Memory
+        name: cmp-tmp
+      - name: custom-tools
+        emptyDir: {}
+  oidcConfig: |
+    name: Zitadel
+    issuer: https://zitadel.arthurvardevanyan.com
+    clientID: "<path:secret/data/homelab/zitadel/okd#client_id>"
+    clientSecret: "$oidc.zitadel.clientSecret"
+    requestedScopes: ["openid", "profile", "email"]
+    requestedIDTokenClaims: {"groups": {"essential": true}}
+  ha:
+    enabled: false
+  tls:
+    ca: {}
+  redis:
+    enabled: true
+    remote: "argocd-dragonfly:6379"
+  controller:
+    parallelismLimit: 25
+    sharding:
+      enabled: true
+      replicas: 1
+    processors:
+      operation: 25
+      status: 50
+    resources:
+      limits:
+        cpu: "2"
+        memory: 8Gi
+      requests:
+        cpu: 500m
+        memory: 2Gi
+  resourceInclusions: |
+    - apiGroups:
+      - ""
+      clusters:
+      - '*'
+      kinds:
+      - AgentConfig
+      - ConfigMap
+      - Endpoints
+      - LimitRange
+      - Namespace
+      - PersistentVolume
+      - PersistentVolumeClaim
+      - Pod
+      - Secret
+      - Service
+      - ServiceAccount
+    - apiGroups:
+      - actions.github.com
+      clusters:
+      - '*'
+      kinds:
+      - AutoscalingRunnerSet
+    - apiGroups:
+      - admissionregistration.k8s.io
+      clusters:
+      - '*'
+      kinds:
+      - MutatingWebhookConfiguration
+      - ValidatingWebhookConfiguration
+    - apiGroups:
+      - apiextensions.k8s.io
+      clusters:
+      - '*'
+      kinds:
+      - CustomResourceDefinition
+    - apiGroups:
+      - apiregistration.k8s.io
+      clusters:
+      - '*'
+      kinds:
+      - APIService
+    - apiGroups:
+      - apps
+      clusters:
+      - '*'
+      kinds:
+      - DaemonSet
+      - Deployment
+      - StatefulSet
+    - apiGroups:
+      - argoproj.io
+      clusters:
+      - '*'
+      kinds:
+      - AppProject
+      - Application
+      - ArgoCD
+      - NotificationsConfiguration
+    - apiGroups:
+      - autoscaling
+      clusters:
+      - '*'
+      kinds:
+      - HorizontalPodAutoscaler
+    - apiGroups:
+      - autoscaling.k8s.io
+      clusters:
+      - '*'
+      kinds:
+      - VerticalPodAutoscaler
+    - apiGroups:
+      - autoscaling.openshift.io
+      clusters:
+      - '*'
+      kinds:
+      - VerticalPodAutoscalerController
+    - apiGroups:
+      - awx.ansible.com
+      clusters:
+      - '*'
+      kinds:
+      - AWX
+    - apiGroups:
+      - batch
+      clusters:
+      - '*'
+      kinds:
+      - CronJob
+      - Job
+    - apiGroups:
+      - cdi.kubevirt.io
+      clusters:
+      - '*'
+      kinds:
+      - StorageProfile
+    - apiGroups:
+      - ceph.rook.io
+      clusters:
+      - '*'
+      kinds:
+      - CephBlockPool
+      - CephCluster
+      - CephFilesystem
+      - CephObjectStore
+    - apiGroups:
+      - cert-manager.io
+      clusters:
+      - '*'
+      kinds:
+      - Certificate
+      - ClusterIssuer
+      - Issuer
+    - apiGroups:
+      - che.eclipse.org
+      clusters:
+      - '*'
+      kinds:
+      - KubernetesImagePuller
+    - apiGroups:
+      - config.openshift.io
+      clusters:
+      - '*'
+      kinds:
+      - APIServer
+      - Authentication
+      - ClusterVersion
+      - Image
+      - ImageDigestMirrorSet
+      - ImageTagMirrorSet
+      - Node
+      - OAuth
+      - OperatorHub
+    - apiGroups:
+      - console.openshift.io
+      clusters:
+      - '*'
+      kinds:
+      - ConsoleNotification
+      - ConsolePlugin
+    - apiGroups:
+      - csi.ceph.io
+      clusters:
+      - '*'
+      kinds:
+      - Driver
+      - OperatorConfig
+    - apiGroups:
+      - dragonflydb.io
+      clusters:
+      - '*'
+      kinds:
+      - Dragonfly
+    - apiGroups:
+      - extensions.istio.io
+      clusters:
+      - '*'
+      kinds:
+      - WasmPlugin
+    - apiGroups:
+      - external-secrets.io
+      clusters:
+      - '*'
+      kinds:
+      - ClusterSecretStore
+      - ExternalSecret
+    - apiGroups:
+      - externaldns.k8s.io
+      clusters:
+      - '*'
+      kinds:
+      - DNSEndpoint
+    - apiGroups:
+      - flows.netobserv.io
+      clusters:
+      - '*'
+      kinds:
+      - FlowCollector
+    - apiGroups:
+      - gateway.networking.k8s.io
+      clusters:
+      - '*'
+      kinds:
+      - BackendTLSPolicy
+      - Gateway
+      - GatewayClass
+      - HTTPRoute
+    - apiGroups:
+      - generators.external-secrets.io
+      clusters:
+      - '*'
+      kinds:
+      - QuayAccessToken
+    - apiGroups:
+      - hco.kubevirt.io
+      clusters:
+      - '*'
+      kinds:
+      - HyperConverged
+    - apiGroups:
+      - imageregistry.operator.openshift.io
+      clusters:
+      - '*'
+      kinds:
+      - Config
+    - apiGroups:
+      - k8s.cni.cncf.io
+      clusters:
+      - '*'
+      kinds:
+      - NetworkAttachmentDefinition
+    - apiGroups:
+      - k8s.ovn.org
+      clusters:
+      - '*'
+      kinds:
+      - EgressFirewall
+    - apiGroups:
+      - kepler.system.sustainable.computing.io
+      clusters:
+      - '*'
+      kinds:
+      - PowerMonitor
+    - apiGroups:
+      - kyverno.io
+      clusters:
+      - '*'
+      kinds:
+      - ClusterPolicy
+      - Policy
+    - apiGroups:
+      - logging.openshift.io
+      clusters:
+      - '*'
+      kinds:
+      - LogFileMetricExporter
+    - apiGroups:
+      - loki.grafana.com
+      clusters:
+      - '*'
+      kinds:
+      - LokiStack
+    - apiGroups:
+      - longhorn.io
+      clusters:
+      - '*'
+      kinds:
+      - BackupTarget
+      - RecurringJob
+    - apiGroups:
+      - lvm.topolvm.io
+      clusters:
+      - '*'
+      kinds:
+      - LVMCluster
+    - apiGroups:
+      - machine.openshift.io
+      clusters:
+      - '*'
+      kinds:
+      - Machine
+      - MachineSet
+    - apiGroups:
+      - machineconfiguration.openshift.io
+      clusters:
+      - '*'
+      kinds:
+      - KubeletConfig
+      - MachineConfig
+      - MachineConfigPool
+    - apiGroups:
+      - metal3.io
+      clusters:
+      - '*'
+      kinds:
+      - BareMetalHost
+    - apiGroups:
+      - metallb.io
+      clusters:
+      - '*'
+      kinds:
+      - BGPAdvertisement
+      - BGPPeer
+      - IPAddressPool
+      - MetalLB
+      - BFDProfile
+    - apiGroups:
+      - minio.min.io
+      clusters:
+      - '*'
+      kinds:
+      - Tenant
+    - apiGroups:
+      - mongodbcommunity.mongodb.com
+      clusters:
+      - '*'
+      kinds:
+      - MongoDBCommunity
+    - apiGroups:
+      - monitoring.arthurvardevanyan.com
+      clusters:
+      - '*'
+      kinds:
+      - Cluster
+      - User
+    - apiGroups:
+      - monitoring.coreos.com
+      clusters:
+      - '*'
+      kinds:
+      - PodMonitor
+      - Probe
+      - PrometheusRule
+      - ServiceMonitor
+    - apiGroups:
+      - networking.istio.io
+      clusters:
+      - '*'
+      kinds:
+      - DestinationRule
+      - ServiceEntry
+    - apiGroups:
+      - networking.k8s.io
+      clusters:
+      - '*'
+      kinds:
+      - Ingress
+      - NetworkPolicy
+    - apiGroups:
+      - nfd.openshift.io
+      clusters:
+      - '*'
+      kinds:
+      - NodeFeatureDiscovery
+    - apiGroups:
+      - nfd.k8s-sigs.io
+      clusters:
+      - '*'
+      kinds:
+      - NodeFeatureRule
+    - apiGroups:
+      - deviceplugin.intel.com
+      clusters:
+      - '*'
+      kinds:
+      - GpuDevicePlugin
+    - apiGroups:
+      - nmstate.io
+      clusters:
+      - '*'
+      kinds:
+      - NMState
+      - NodeNetworkConfigurationPolicy
+    - apiGroups:
+      - node.k8s.io
+      clusters:
+      - '*'
+      kinds:
+      - RuntimeClass
+    - apiGroups:
+      - nvidia.com
+      clusters:
+      - '*'
+      kinds:
+      - ClusterPolicy
+    - apiGroups:
+      - objectbucket.io
+      clusters:
+      - '*'
+      kinds:
+      - ObjectBucketClaim
+    - apiGroups:
+      - observability.openshift.io
+      clusters:
+      - '*'
+      kinds:
+      - ClusterLogForwarder
+      - UIPlugin
+    - apiGroups:
+      - operator.external-secrets.io
+      clusters:
+      - '*'
+      kinds:
+      - OperatorConfig
+    - apiGroups:
+      - operator.knative.dev
+      clusters:
+      - '*'
+      kinds:
+      - KnativeServing
+    - apiGroups:
+      - operator.openshift.io
+      clusters:
+      - '*'
+      kinds:
+      - Console
+      - IngressController
+      - InsightsOperator
+      - KubeDescheduler
+      - Network
+      - DNS
+    - apiGroups:
+      - operator.tekton.dev
+      clusters:
+      - '*'
+      kinds:
+      - TektonConfig
+    - apiGroups:
+      - operator.victoriametrics.com
+      clusters:
+      - '*'
+      kinds:
+      - VLCluster
+      - VMCluster
+    - apiGroups:
+      - opentelemetry.io
+      clusters:
+      - '*'
+      kinds:
+      - OpenTelemetryCollector
+    - apiGroups:
+      - operators.coreos.com
+      clusters:
+      - '*'
+      kinds:
+      - CatalogSource
+      - ClusterServiceVersion
+      - OLMConfig
+      - OperatorGroup
+      - Subscription
+    - apiGroups:
+      - org.eclipse.che
+      clusters:
+      - '*'
+      kinds:
+      - CheCluster
+    - apiGroups:
+      - pipelinesascode.tekton.dev
+      clusters:
+      - '*'
+      kinds:
+      - Repository
+    - apiGroups:
+      - pipelines.openshift.io
+      clusters:
+      - '*'
+      kinds:
+      - GitopsService
+    - apiGroups:
+      - policy
+      clusters:
+      - '*'
+      kinds:
+      - PodDisruptionBudget
+    - apiGroups:
+      - postgres-operator.crunchydata.com
+      clusters:
+      - '*'
+      kinds:
+      - PGAdmin
+    - apiGroups:
+      - postgresql.cnpg.io
+      clusters:
+      - '*'
+      kinds:
+      - Cluster
+      - ScheduledBackup
+    - apiGroups:
+      - quay.redhat.com
+      clusters:
+      - '*'
+      kinds:
+      - QuayRegistry
+    - apiGroups:
+      - rbac.authorization.k8s.io
+      clusters:
+      - '*'
+      kinds:
+      - ClusterRole
+      - ClusterRoleBinding
+      - Role
+      - RoleBinding
+    - apiGroups:
+      - route.openshift.io
+      clusters:
+      - '*'
+      kinds:
+      - Route
+    - apiGroups:
+      - samples.operator.openshift.io
+      clusters:
+      - '*'
+      kinds:
+      - Config
+    - apiGroups:
+      - scheduling.k8s.io
+      clusters:
+      - '*'
+      kinds:
+      - PriorityClass
+    - apiGroups:
+      - security.istio.io
+      clusters:
+      - '*'
+      kinds:
+      - AuthorizationPolicy
+    - apiGroups:
+      - security.openshift.io
+      clusters:
+      - '*'
+      kinds:
+      - SecurityContextConstraints
+    - apiGroups:
+      - snapshot.storage.k8s.io
+      clusters:
+      - '*'
+      kinds:
+      - VolumeSnapshotClass
+    - apiGroups:
+      - storage.k8s.io
+      clusters:
+      - '*'
+      kinds:
+      - StorageClass
+    - apiGroups:
+      - tekton.dev
+      clusters:
+      - '*'
+      kinds:
+      - Task
+    - apiGroups:
+      - traefik.io
+      clusters:
+      - '*'
+      kinds:
+      - IngressRoute
+      - IngressRouteTCP
+      - Middleware
+      - TLSStore
+    - apiGroups:
+      - triggers.tekton.dev
+      clusters:
+      - '*'
+      kinds:
+      - EventListener
+      - TriggerBinding
+      - TriggerTemplate
+    - apiGroups:
+      - trust.cert-manager.io
+      clusters:
+      - '*'
+      kinds:
+      - Bundle
+    - apiGroups:
+      - velero.io
+      clusters:
+      - '*'
+      kinds:
+      - BackupStorageLocation
+      - Schedule
+    - apiGroups:
+      - kubevirt.io
+      clusters:
+      - '*'
+      kinds:
+      - VirtualMachine
+    - apiGroups:
+      - waf.k8s.coraza.io
+      clusters:
+      - '*'
+      kinds:
+      - Engine
+      - RuleSet
+    - apiGroups:
+      - tuned.openshift.io
+      clusters:
+      - '*'
+      kinds:
+      - Tuned
+  resourceExclusions: |
+    - apiGroups:
+      - tekton.dev
+      clusters:
+      - '*'
+      kinds:
+      - TaskRun
+      - PipelineRun
+    - apiGroups:
+      - packages.operators.coreos.com
+      clusters:
+      - '*'
+      kinds:
+      - '*'
