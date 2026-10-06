@@ -1,0 +1,22 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: cmp-plugin
+  namespace: argocd
+  labels:
+    app.kubernetes.io/instance: argocd
+data:
+  avp-kustomize.yaml: |
+    apiVersion: argoproj.io/v1alpha1
+    kind: ConfigManagementPlugin
+    metadata:
+      name: argocd-vault-plugin-kustomize
+    spec:
+      allowConcurrency: true
+      generate:
+        command:
+          - sh
+          - "-c"
+          - "kubectl kustomize . | argocd-vault-plugin generate -"
+      lockRepo: false
