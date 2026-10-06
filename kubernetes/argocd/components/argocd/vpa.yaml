@@ -2,34 +2,6 @@
 apiVersion: autoscaling.k8s.io/v1
 kind: VerticalPodAutoscaler
 metadata:
-  name: argocd-operator-controller-manager
-  namespace: argocd
-  annotations:
-    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
-spec:
-  targetRef:
-    apiVersion: apps/v1
-    kind: Deployment
-    name: argocd-operator-controller-manager
-  updatePolicy:
-    updateMode: "InPlaceOrRecreate"
-  resourcePolicy:
-    containerPolicies:
-      - containerName: manager
-        minAllowed:
-          cpu: 5m
-          memory: 16Mi
-        maxAllowed:
-          cpu: 50m
-          memory: 512Mi
-        controlledResources:
-          - cpu
-          - memory
-        controlledValues: RequestsOnly # "RequestsAndLimits"
----
-apiVersion: autoscaling.k8s.io/v1
-kind: VerticalPodAutoscaler
-metadata:
   name: argocd-notifications-controller
   namespace: argocd
   annotations:
