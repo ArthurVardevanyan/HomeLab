@@ -89,42 +89,6 @@ spec:
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
-  name: allow-api-server-ingress
-  namespace: argocd
-  annotations:
-    argocd.argoproj.io/sync-wave: "0"
-  labels:
-    app.kubernetes.io/instance: argocd
-spec:
-  podSelector:
-    matchLabels:
-      control-plane: controller-manager
-  policyTypes:
-    - Ingress
-  ingress:
-    - from:
-        - podSelector:
-            matchLabels:
-              app: openshift-kube-apiserver
-          namespaceSelector:
-            matchLabels:
-              kubernetes.io/metadata.name: openshift-kube-apiserver
-        - namespaceSelector:
-            matchLabels:
-              policy-group.network.openshift.io/host-network: ""
-        - podSelector:
-            matchLabels:
-              app: kube-apiserver-operator
-          namespaceSelector:
-            matchLabels:
-              kubernetes.io/metadata.name: openshift-kube-apiserver-operator
-      ports:
-        - protocol: TCP
-          port: 9443
----
-apiVersion: networking.k8s.io/v1
-kind: NetworkPolicy
-metadata:
   name: allow-from-openshift-ingress
   namespace: argocd
   annotations:
@@ -307,6 +271,40 @@ spec:
 #               - 10.0.0.0/8
 #               - 172.16.0.0/12
 #               - 192.168.0.0/16
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-webhook-ingress
+  namespace: openshift-gitops-operator
+  annotations:
+    argocd.argoproj.io/sync-wave: "0"
+spec:
+  podSelector:
+    matchLabels:
+      control-plane: gitops-operator
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              app: openshift-kube-apiserver
+          namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: openshift-kube-apiserver
+        - namespaceSelector:
+            matchLabels:
+              policy-group.network.openshift.io/host-network: ""
+        - podSelector:
+            matchLabels:
+              app: kube-apiserver-operator
+          namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: openshift-apiserver-operator
+      ports:
+        - protocol: TCP
+          port: 9443
 ---
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy

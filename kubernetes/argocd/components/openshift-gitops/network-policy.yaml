@@ -63,30 +63,6 @@ spec:
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
-  name: allow-ingress-from-argocd
-  namespace: openshift-gitops
-  annotations:
-    argocd.argoproj.io/sync-wave: "0"
-spec:
-  policyTypes:
-    - Ingress
-  podSelector:
-    matchLabels:
-      app.kubernetes.io/name: cluster
-  ingress:
-    - from:
-        - namespaceSelector:
-            matchLabels:
-              kubernetes.io/metadata.name: argocd
-      ports:
-        - protocol: TCP
-          port: 8080
-        - protocol: TCP
-          port: 8443
----
-apiVersion: networking.k8s.io/v1
-kind: NetworkPolicy
-metadata:
   name: allow-openshift-console
   namespace: openshift-gitops
   annotations:
