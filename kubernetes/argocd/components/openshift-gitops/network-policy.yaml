@@ -3,7 +3,7 @@ apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
   name: allow-api-server
-  namespace: argocd-operator
+  namespace: openshift-gitops
   annotations:
     argocd.argoproj.io/sync-wave: "0"
 spec:
@@ -26,7 +26,7 @@ apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
   name: allow-dns-traffic
-  namespace: argocd-operator
+  namespace: openshift-gitops
   annotations:
     argocd.argoproj.io/sync-wave: "0"
 spec:
@@ -51,7 +51,7 @@ apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
   name: allow-monitoring
-  namespace: argocd-operator
+  namespace: openshift-gitops
   annotations:
     argocd.argoproj.io/sync-wave: "0"
 spec:
@@ -77,3 +77,25 @@ spec:
           port: 8383
         - protocol: TCP
           port: 9402
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-ingress-from-argocd
+  namespace: openshift-gitops
+  annotations:
+    argocd.argoproj.io/sync-wave: "0"
+spec:
+  policyTypes:
+    - Ingress
+  podSelector: {}
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: argocd
+      ports:
+        - protocol: TCP
+          port: 8080
+        - protocol: TCP
+          port: 8443
