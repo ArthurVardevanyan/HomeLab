@@ -3,9 +3,9 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
   - namespace.yaml
-  - kyverno.yaml
   - limit-range.yaml
-  - operator-group.yaml
+  - argocd-operator-namespace.yaml
+  - argocd-operator-operatorgroup.yaml
   - subscription.yaml
   - service-monitor.yaml
   - rules.yaml
@@ -14,6 +14,11 @@ resources:
   - cmp-plugin.yaml
   - argocd.yaml
   - installplan-approver.yaml
+  - gitopsservice.yaml
+  - openshift-gitops/namespace.yaml
+  - openshift-gitops/vpa.yaml
+  - openshift-gitops/pdb.yaml
+  - openshift-gitops/hpa.yaml
   - notifications/notificationsConfiguration.yaml
   - notifications/secret.yaml
   - notifications/network-policy.yaml
@@ -24,6 +29,5 @@ resources:
   - ./secret.yaml
   - ./repository.yaml
   - ./vpa.yaml
-  - ./gateway
 components:
   - ./microshift

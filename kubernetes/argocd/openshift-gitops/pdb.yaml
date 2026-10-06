@@ -1,0 +1,14 @@
+---
+kind: PodDisruptionBudget
+apiVersion: policy/v1
+metadata:
+  name: gitops-plugin
+  namespace: openshift-gitops
+  annotations:
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+spec:
+  unhealthyPodEvictionPolicy: AlwaysAllow
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: gitops-plugin

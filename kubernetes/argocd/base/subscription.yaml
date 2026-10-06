@@ -6,23 +6,23 @@ metadata:
     argocd.argoproj.io/sync-wave: "0"
   labels:
     app.kubernetes.io/instance: argocd
-    operators.coreos.com/argocd-operator.argocd: ""
-  name: argocd-operator
-  namespace: argocd
+  name: openshift-gitops-operator
+  namespace: argocd-operator
 spec:
-  channel: alpha
+  channel: gitops-1.22
   installPlanApproval: Manual
-  name: argocd-operator
-  source: operator-hub
+  name: openshift-gitops-operator
+  source: redhat-operators
   sourceNamespace: openshift-marketplace
-  startingCSV: argocd-operator.v0.19.0
   config:
     env:
       - name: ARGOCD_CLUSTER_CONFIG_NAMESPACES
         value: argocd,argocd-apps
+      - name: DISABLE_DEFAULT_ARGOCD_INSTANCE
+        value: "true"
     resources:
       limits:
-        cpu: 50m
+        cpu: 200m
         memory: 512Mi
       requests:
         cpu: 10m
