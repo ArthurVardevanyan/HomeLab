@@ -2,8 +2,8 @@
 kind: PodDisruptionBudget
 apiVersion: policy/v1
 metadata:
-  name: argocd-server
-  namespace: argocd
+  name: argocd-apps-server
+  namespace: argocd-apps
   annotations:
     argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
 spec:
@@ -11,13 +11,13 @@ spec:
   minAvailable: 1
   selector:
     matchLabels:
-      app.kubernetes.io/name: argocd-server
+      app.kubernetes.io/name: argocd-apps-server
 ---
 kind: PodDisruptionBudget
 apiVersion: policy/v1
 metadata:
-  name: argocd-repo-server
-  namespace: argocd
+  name: argocd-apps-repo-server
+  namespace: argocd-apps
   annotations:
     argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
 spec:
@@ -25,4 +25,4 @@ spec:
   minAvailable: 1
   selector:
     matchLabels:
-      app.kubernetes.io/name: argocd-repo-server
+      app.kubernetes.io/name: argocd-apps-repo-server

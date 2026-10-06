@@ -99,3 +99,25 @@ spec:
           port: 8080
         - protocol: TCP
           port: 8443
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-openshift-console
+  namespace: openshift-gitops
+spec:
+  policyTypes:
+    - Ingress
+  podSelector: {}
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              app: console
+              component: ui
+          namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: openshift-console
+      ports:
+        - protocol: TCP
+          port: 9001
