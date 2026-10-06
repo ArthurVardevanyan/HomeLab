@@ -2,6 +2,19 @@
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
+  name: deny-all
+  namespace: openshift-gitops
+  annotations:
+    argocd.argoproj.io/sync-wave: "0"
+spec:
+  policyTypes:
+    - Ingress
+    - Egress
+  podSelector: {}
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
   name: allow-api-server
   namespace: openshift-gitops
   annotations:
@@ -50,37 +63,6 @@ spec:
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
-  name: allow-monitoring
-  namespace: openshift-gitops
-  annotations:
-    argocd.argoproj.io/sync-wave: "0"
-spec:
-  policyTypes:
-    - Ingress
-  podSelector: {}
-  ingress:
-    - from:
-        - namespaceSelector:
-            matchLabels:
-              name: openshift-monitoring
-          podSelector:
-            matchLabels:
-              app.kubernetes.io/name: prometheus
-        - namespaceSelector:
-            matchLabels:
-              name: openshift-user-workload-monitoring
-          podSelector:
-            matchLabels:
-              app.kubernetes.io/name: prometheus
-      ports:
-        - protocol: TCP
-          port: 8383
-        - protocol: TCP
-          port: 9402
----
-apiVersion: networking.k8s.io/v1
-kind: NetworkPolicy
-metadata:
   name: allow-ingress-from-argocd
   namespace: openshift-gitops
   annotations:
@@ -88,7 +70,9 @@ metadata:
 spec:
   policyTypes:
     - Ingress
-  podSelector: {}
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: cluster
   ingress:
     - from:
         - namespaceSelector:
@@ -105,10 +89,14 @@ kind: NetworkPolicy
 metadata:
   name: allow-openshift-console
   namespace: openshift-gitops
+  annotations:
+    argocd.argoproj.io/sync-wave: "0"
 spec:
   policyTypes:
     - Ingress
-  podSelector: {}
+  podSelector:
+    matchLabels:
+      app: gitops-plugin
   ingress:
     - from:
         - podSelector:
