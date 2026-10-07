@@ -33,7 +33,9 @@ COPY --from=node-tools /usr/local/lib/node_modules/ /usr/local/lib/node_modules/
 # OS packages
 # renovate: datasource=github-releases depName=opentofu/opentofu
 ENV OPENTOFU_VERSION=1.12.6
-RUN rpm --import https://dl.fedoraproject.org/pub/epel/RPM-GPG-KEY-EPEL-10 && \
+RUN echo 10 > /etc/dnf/vars/releasever_major && \
+  echo 0 > /etc/dnf/vars/releasever_minor && \
+  rpm --import https://dl.fedoraproject.org/pub/epel/RPM-GPG-KEY-EPEL-10 && \
   rpm -Uvh https://dl.fedoraproject.org/pub/epel/epel-release-latest-10.noarch.rpm && \
   rpm -Uvh https://download.postgresql.org/pub/repos/yum/reporpms/EL-10-x86_64/pgdg-redhat-repo-latest.noarch.rpm && \
   rpm -ivh https://github.com/opentofu/opentofu/releases/download/v${OPENTOFU_VERSION}/tofu_${OPENTOFU_VERSION}_amd64.rpm && \
@@ -54,7 +56,7 @@ ENV ANSIBLE_VERSION=14.4.0
 RUN pip3 install --no-cache-dir ansible==${ANSIBLE_VERSION} && \
   find /usr -name '*.pyc' -delete
 
-# gh, argocd-vault-plugin, yq, kubeconform, mc
+# gh, argocd-vault-plugin, yq, kubeconform
 # renovate: datasource=github-releases depName=cli/cli
 ENV GH_VERSION=2.101.0
 # renovate: datasource=github-releases depName=argoproj-labs/argocd-vault-plugin
@@ -69,9 +71,7 @@ RUN curl -sSL https://github.com/cli/cli/releases/download/v${GH_VERSION}/gh_${G
   curl -L -o /usr/local/bin/yq \
   "https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64" && chmod +x /usr/local/bin/yq && \
   curl -L https://github.com/yannh/kubeconform/releases/download/v${KUBECONFORM_VERSION}/kubeconform-linux-amd64.tar.gz \
-  | tar -xz -C /usr/local/bin kubeconform && chmod +x /usr/local/bin/kubeconform && \
-  curl -L -o /usr/local/bin/mc \
-  "https://dl.min.io/client/mc/release/linux-amd64/mc" && chmod +x /usr/local/bin/mc
+  | tar -xz -C /usr/local/bin kubeconform && chmod +x /usr/local/bin/kubeconform
 
 # Google Cloud SDK
 # renovate: datasource=docker depName=google/cloud-sdk
