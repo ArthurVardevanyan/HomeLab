@@ -1,27 +1,25 @@
 {
   "$schema": "https://opencode.ai/config.json",
   // "plugin": ["opencode-snip@latest"],
-  "disabled_providers": ["opencode"],
-  "lsp": true,
+  // "disabled_providers": ["opencode"],
   "compaction": {
-    "auto": true,
-    "prune": false
+    "auto": true
   },
-  "provider": {
-    "llm": {
-      "name": "Local LLM (Open WebUI)",
+  "providers": {
+    "openai": {
       "npm": "@ai-sdk/openai-compatible",
-      "options": {
+      "settings": {
         "baseURL": "https://ai.arthurvardevanyan.com/api"
       },
       "models": {
         "qwen3.6-35b-a3b": {
+          "modelID": "qwen3.6-35b-a3b",
           "name": "Qwen3.6 35B-A3B MoE",
-          "cost": {
+          "pricing": {
             "input": 0.013,
             "output": 0.013
           },
-          "limit": {
+          "limits": {
             "context": 175104,
             "input": 166912,
             "output": 8192
@@ -29,36 +27,39 @@
         },
 
         "qwen3.8-27b": {
+          "modelID": "qwen3.8-27b",
           "name": "Qwen3.8 27B Dense",
-          "cost": {
+          "pricing": {
             "input": 0.013,
             "output": 0.013
           },
-          "limit": {
+          "limits": {
             "context": 175104,
             "input": 166912,
             "output": 8192
           }
         },
         "claude-sonnet-5": {
+          "modelID": "claude-sonnet-5",
           "name": "Claude Sonnet 5",
-          "cost": {
+          "pricing": {
             "input": 2.0,
             "output": 10.0
           },
-          "limit": {
+          "limits": {
             "context": 175104,
             "input": 166912,
             "output": 8192
           }
         },
         "claude-opus-5": {
+          "modelID": "claude-opus-5",
           "name": "Claude Opus 5",
-          "cost": {
+          "pricing": {
             "input": 5.0,
             "output": 25.0
           },
-          "limit": {
+          "limits": {
             "context": 175104,
             "input": 166912,
             "output": 8192
@@ -67,20 +68,20 @@
       }
     }
   },
-  "agent": {
+  "agents": {
     "plan": {
       "description": "High-level architectural planning.",
-      "model": "llm/qwen3.6-35b-a3b",
+      "model": "openai/qwen3.6-35b-a3b",
       "temperature": 0.2
     },
     "build": {
       "description": "Code generation.",
-      "model": "llm/qwen3.6-35b-a3b",
+      "model": "openai/qwen3.6-35b-a3b",
       "temperature": 0.1
     },
     "explore": {
       "description": "Fast codebase scouting/diagnostics.",
-      "model": "llm/qwen3.6-35b-a3b",
+      "model": "openai/qwen3.6-35b-a3b",
       "temperature": 0.55
     }
   }
