@@ -40,6 +40,9 @@ spec:
           }]
     spec:
       securityContext:
+        sysctls:
+          - name: net.ipv4.ping_group_range
+            value: "0 2147483647"
         seccompProfile:
           type: RuntimeDefault
         runAsNonRoot: true
@@ -78,6 +81,8 @@ spec:
             capabilities:
               add:
                 - CHOWN
+                - DAC_OVERRIDE
+                - FOWNER
                 - SETUID
                 - SETGID
               drop:
@@ -119,7 +124,7 @@ spec:
               path: /manifest.json
               port: http
               scheme: HTTPS
-            timeoutSeconds: 1
+            timeoutSeconds: 5
             periodSeconds: 10
             initialDelaySeconds: 3
             failureThreshold: 3
@@ -128,7 +133,7 @@ spec:
               path: /manifest.json
               port: http
               scheme: HTTPS
-            timeoutSeconds: 1
+            timeoutSeconds: 5
             periodSeconds: 10
             initialDelaySeconds: 3
             failureThreshold: 3
@@ -137,7 +142,7 @@ spec:
               path: /manifest.json
               port: http
               scheme: HTTPS
-            timeoutSeconds: 1
+            timeoutSeconds: 5
             periodSeconds: 5
             successThreshold: 1
             initialDelaySeconds: 3
