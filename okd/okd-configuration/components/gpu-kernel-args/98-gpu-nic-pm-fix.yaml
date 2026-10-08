@@ -8,31 +8,28 @@ metadata:
 spec:
   config:
     ignition:
-      version: "3.2.0"
-      systemd:
-        units:
-          - name: disable-nic-eee.service
-            enabled: true
-            contents: |
-              [Unit]
-              Description=Disable EEE and power management on Realtek NIC
-              After=network-pre.target
-              Before=network-online.target
+      version: 3.2.0
+    storage:
+      files:
+        - path: /etc/udev/rules.d/98-gpu-nic-pm.rules
+          mode: 0644
+          overwrite: true
+          contents:
+            source: data:text/plain;charset=utf-8;base64,QUNUSU9OPT0iYWRkIiwgU1VCU1lTVEVNPT0icGNpIiwgQVRUUnt2ZW5kb3J9PT0iMHgxMGVjIiwgQVRUUntkZXZpY2V9PT0iMHg4MTI1IiwgQVRUUntsaW5rL2Nsa3BtfT0iMCIsIEFUVFJ7bGluay9sMV9hc3BtfT0iMCIsIEFUVFJ7cG93ZXIvY29udHJvbH09Im9uIgo=
+    systemd:
+      units:
+        - name: disable-nic-eee.service
+          enabled: true
+          contents: |
+            [Unit]
+            Description=Disable EEE on Realtek NIC (enp42s0) via ethtool
+            After=sys-subsystem-net-devices-enp42s0.device
+            Requires=sys-subsystem-net-devices-enp42s0.device
 
-              [Service]
-              Type=oneshot
-              ExecStart=/usr/sbin/udevadm trigger --subsystem-match=pci
-              ExecStart=/usr/sbin/ethtool --set-eee enp42s0 eee off
-              RemainAfterExit=yes
-              StandardOutput=journal
-              StandardError=journal
+            [Service]
+            Type=oneshot
+            ExecStart=/usr/sbin/ethtool --set-eee enp42s0 eee off
+            RemainAfterExit=yes
 
-              [Install]
-              WantedBy=multi-user.target
-      storage:
-        files:
-          - path: /etc/udev/rules.d/98-gpu-nic-pm.rules
-            mode: 0644
-            overwrite: true
-            contents:
-              source: data:text/plain;charset=utf-8;base64,QUNUSU9OPT0iYWRkIiwgU1VCU1lTVEVNPT0icGNpIiwgQVRUUnt2ZW5kb3J9PT0iMHgxMGVjIiwgQVRUUntkZXZpY2V9PT0iMHg4MTI1IiwgQVRUUntsaW5rL2Nsa3BtfT0iMCIsIEFUVFJ7bGluay9sMV9hc3BtfT0iMCIsIEFUVFJ7cG93ZXIvY29udHJvbH09Im9uIgo=
+            [Install]
+            WantedBy=multi-user.target
