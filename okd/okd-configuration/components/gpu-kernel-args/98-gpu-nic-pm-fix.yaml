@@ -22,13 +22,19 @@ spec:
           enabled: true
           contents: |
             [Unit]
-            Description=Disable EEE on Realtek NIC (enp42s0) via ethtool
+            Description=Disable EEE and clkpm on Realtek NIC (enp42s0)
+            Wants=network-pre.target
+            Before=network-pre.target
             After=sys-subsystem-net-devices-enp42s0.device
             Requires=sys-subsystem-net-devices-enp42s0.device
 
             [Service]
             Type=oneshot
-            ExecStart=/usr/sbin/ethtool --set-eee enp42s0 eee off
+            # Re-fire the udev "add" event for the NIC only, so the clkpm rule
+            # is applied even if the link/ sysfs attrs were missing at first add.
+            ExecStart=-/usr/sbin/udevadm trigger --action=add --subsystem-match=pci --attr-match=vendor=0x10ec --attr-match=device=0x8125
+            ExecStart=-/usr/sbin/udevadm settle --timeout=10
+            ExecStart=-/usr/sbin/ethtool --set-eee enp42s0 eee off
             RemainAfterExit=yes
 
             [Install]
