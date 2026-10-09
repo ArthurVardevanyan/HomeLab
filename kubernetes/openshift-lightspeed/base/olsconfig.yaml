@@ -1,0 +1,122 @@
+---
+apiVersion: ols.openshift.io/v1alpha1
+kind: OLSConfig
+metadata:
+  name: cluster
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+spec:
+  featureGates:
+    - MCPServer
+  llm:
+    providers:
+      - credentialsSecretRef:
+          name: lightspeed-llm-credentials
+        models:
+          - name: qwen3.6-35b-a3b
+            parameters:
+              toolBudgetRatio: 0.5
+        name: openai
+        type: openai
+        url: http://litellm-svc.llm.svc:4000
+  mcpServers:
+    - headers:
+        - name: kubernetes-authorization
+          valueFrom:
+            type: kubernetes
+      name: openshift-mcp
+      timeout: 120
+      url: http://openshift-mcp-server.openshift-lightspeed.svc:8080/mcp
+  ols:
+    defaultModel: qwen3.6-35b-a3b
+    defaultProvider: openai
+    maxIterations: 30
+    logLevel: INFO
+    credentialHotReload: false
+    conversationCache:
+      postgres:
+        maxConnections: 2000
+        sharedBuffers: 256MB
+      type: postgres
+    deployment:
+      agenticConsole:
+        replicas: 2
+        resources:
+          requests:
+            cpu: 10m
+            memory: 50Mi
+          limits:
+            cpu: 200m
+            memory: 512Mi
+      alertsAdapter:
+        replicas: 2
+        configMapRef:
+          name: alerts-adapter-config
+        resources:
+          requests:
+            cpu: 10m
+            memory: 64Mi
+          limits:
+            cpu: 200m
+            memory: 256Mi
+      api:
+        replicas: 2
+        resources:
+          requests:
+            cpu: 500m
+            memory: 2Gi
+          limits:
+            memory: 4Gi
+      console:
+        replicas: 2
+        resources:
+          requests:
+            cpu: 10m
+            memory: 50Mi
+          limits:
+            cpu: 200m
+            memory: 512Mi
+      dataCollector: {}
+      database:
+        replicas: 2
+        resources:
+          requests:
+            cpu: 50m
+            memory: 512Mi
+          limits:
+            cpu: 1
+            memory: 2Gi
+      mcpServer:
+        replicas: 2
+        resources:
+          requests:
+            cpu: 50m
+            memory: 64Mi
+          limits:
+            cpu: 500m
+            memory: 512Mi
+      otelCollector:
+        replicas: 2
+        resources:
+          requests:
+            cpu: 50m
+            memory: 128Mi
+          limits:
+            cpu: 500m
+            memory: 512Mi
+      rhokp:
+        replicas: 1
+        resources:
+          requests:
+            cpu: 2
+            memory: 2Gi
+          limits:
+            memory: 4Gi
+    storage:
+      class: rook-ceph-block-ci
+      size: 10Gi
+    userDataCollection: {}
+  audit: {}
+  olsDataCollector:
+    logLevel: INFO

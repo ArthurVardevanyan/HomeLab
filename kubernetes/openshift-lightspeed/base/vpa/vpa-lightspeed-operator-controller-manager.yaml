@@ -1,0 +1,30 @@
+---
+apiVersion: autoscaling.k8s.io/v1
+kind: VerticalPodAutoscaler
+metadata:
+  name: lightspeed-operator-controller-manager
+  namespace: openshift-lightspeed
+  annotations:
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+  labels:
+    app: lightspeed-operator-controller-manager
+spec:
+  targetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: lightspeed-operator-controller-manager
+  updatePolicy:
+    updateMode: "InPlaceOrRecreate"
+  resourcePolicy:
+    containerPolicies:
+      - containerName: manager
+        minAllowed:
+          cpu: 5m
+          memory: 32Mi
+        maxAllowed:
+          cpu: "1"
+          memory: 512Mi
+        controlledResources:
+          - cpu
+          - memory
+        controlledValues: RequestsOnly # "RequestsAndLimits"
