@@ -20,7 +20,10 @@ spec:
         metadata:
           labels:
             app: immich-nextcloud-cron
+          annotations:
+            io.kubernetes.cri-o.TrySkipVolumeSELinuxLabel: "true"
         spec:
+          runtimeClassName: selinux
           serviceAccountName: immich
           volumes:
             - name: immich-config

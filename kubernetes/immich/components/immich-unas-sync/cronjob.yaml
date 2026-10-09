@@ -20,8 +20,11 @@ spec:
         metadata:
           labels:
             app: immich-unas-sync
+          annotations:
+            io.kubernetes.cri-o.TrySkipVolumeSELinuxLabel: "true"
         spec:
-          serviceAccountName: umas
+          runtimeClassName: selinux
+          serviceAccountName: unas
           volumes:
             - name: rclone-config
               secret:

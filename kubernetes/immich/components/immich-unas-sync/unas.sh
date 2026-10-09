@@ -27,7 +27,7 @@ else
   RCLONE_OPTS=( "${RCLONE_BASE_OPTS[@]}" )
 fi
 
-LIST_FILE="${1:-/mnt/unas/nextcloud-users.txt}"
+LIST_FILE="${1:-/mnt/unas/users}"
 
 if [[ ! -f "${LIST_FILE}" ]]; then
   echo "Users file not found: ${LIST_FILE}" >&2
@@ -36,19 +36,23 @@ fi
 
 while IFS= read -r line || [[ -n "${line}" ]]; do
   # strip comments and trim whitespace
-  user="${line%%#*}"
-  user="${user#"${user%%[![:space:]]*}"}"
-  user="${user%"${user##*[![:space:]]}"}"
-  [[ -z "${user}" ]] && continue
+  line="${line%%#*}"
+  line="${line#"${line%%[![:space:]]*}"}"
+  line="${line%"${line##*[![:space:]]}"}"
+  [[ -z "${line}" ]] && continue
 
-  src="/mnt/library/${user}"
-  dst="umas-${user}:Personal-Drive/immich"
+  # parse "folder:rclone_user" mapping
+  folder="${line%%:*}"
+  rclone_user="${line##*:}"
+
+  src="/mnt/library/library/${folder}"
+  dst="unas-${rclone_user}:Personal-Drive/immich"
 
   if [[ ! -d "${src}" ]]; then
-    echo "Skipping ${user}: ${src} does not exist" >&2
+    echo "Skipping ${folder}: ${src} does not exist" >&2
     continue
   fi
 
-  echo "Syncing ${src} -> ${dst}"
+  echo "Syncing ${folder} -> ${rclone_user}"
   rclone "${RCLONE_OPTS[@]}" "${src}" "${dst}"
 done < "${LIST_FILE}"
