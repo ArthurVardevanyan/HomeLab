@@ -2,7 +2,7 @@
 kind: CronJob
 apiVersion: batch/v1
 metadata:
-  name: immich-cron
+  name: immich-nextcloud-cron
   namespace: immich
   annotations:
     gitops-ci.k8s.io/exempt-image-checksum: "registry.arthurvardevanyan.com/homelab/toolbox:not_latest"
@@ -19,7 +19,7 @@ spec:
       template:
         metadata:
           labels:
-            app: immich-cron
+            app: immich-nextcloud-cron
         spec:
           serviceAccountName: immich
           volumes:
@@ -41,7 +41,7 @@ spec:
               type: RuntimeDefault
           enableServiceLinks: false
           containers:
-            - name: immich-cron
+            - name: immich-nextcloud-cron
               image: registry.arthurvardevanyan.com/homelab/toolbox:not_latest
               command: ["/bin/bash", "-c", "sh /tmp/immich/immich.sh"]
               resources:
@@ -79,7 +79,7 @@ spec:
           terminationGracePeriodSeconds: 30
           dnsPolicy: ClusterFirst
           automountServiceAccountToken: false
-          hostname: immich-cron
+          hostname: immich-nextcloud-cron
           schedulerName: default-scheduler
   successfulJobsHistoryLimit: 1
   failedJobsHistoryLimit: 1
