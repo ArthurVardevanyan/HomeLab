@@ -1,0 +1,39 @@
+---
+- name: Install herdr
+  hosts: vscode-server
+  gather_facts: false
+  become: true
+  user: arthur
+  vars:
+    # renovate: datasource=github-releases depName=herdrdev/herdr
+    herdr_version: "0.9.3"
+  tasks:
+    - name: Download herdr binary
+      ansible.builtin.get_url:
+        url: "https://github.com/herdrdev/herdr/releases/download/v{{ herdr_version }}/herdr-linux-x86_64"
+        dest: "/tmp/herdr-{{ herdr_version }}"
+        mode: "0755"
+      check_mode: false
+
+    - name: Install herdr binary
+      ansible.builtin.copy:
+        src: "/tmp/herdr-{{ herdr_version }}"
+        dest: /usr/local/bin/herdr
+        mode: "0755"
+        remote_src: true
+
+    - name: Ensure herdr config directory exists
+      ansible.builtin.file:
+        path: /home/arthur/.config/herdr
+        state: directory
+        owner: arthur
+        group: arthur
+        mode: "0755"
+
+    - name: Install herdr config
+      ansible.builtin.copy:
+        src: "../../../machineConfigs/desktop/home/arthur/.config/herdr/config.toml"
+        dest: /home/arthur/.config/herdr/config.toml
+        owner: arthur
+        group: arthur
+        mode: "0644"
