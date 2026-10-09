@@ -40,7 +40,7 @@ RUN echo 10 > /etc/dnf/vars/releasever_major && \
   rpm -Uvh https://download.postgresql.org/pub/repos/yum/reporpms/EL-10-x86_64/pgdg-redhat-repo-latest.noarch.rpm && \
   rpm -ivh https://github.com/opentofu/opentofu/releases/download/v${OPENTOFU_VERSION}/tofu_${OPENTOFU_VERSION}_amd64.rpm && \
   microdnf -y update && \
-  microdnf -y install --nodocs --setopt=install_weak_deps=0 \
+  microdnf -y install --refresh --nodocs --setopt=install_weak_deps=0 \
   aria2 libpmem tcpdump sshpass rsync rclone git jq unzip tar make ShellCheck diffutils findutils gawk \
   fio postgresql18 python3 python3-pip procps libatomic iperf3 skopeo openssl gcc glibc-langpack-en && \
   ln -sf /usr/bin/python3 /usr/local/bin/python && \
