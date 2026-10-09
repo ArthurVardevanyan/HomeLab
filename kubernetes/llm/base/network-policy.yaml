@@ -114,3 +114,28 @@ spec:
           port: 9187
         - protocol: TCP
           port: 9464
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-litellm-ingress-from-openshift-lightspeed
+  namespace: llm
+  annotations:
+    argocd.argoproj.io/sync-wave: "0"
+spec:
+  podSelector:
+    matchLabels:
+      app: litellm
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: openshift-lightspeed
+          podSelector:
+            matchLabels:
+              app.kubernetes.io/name: lightspeed-service-api
+      ports:
+        - port: 4000
+          protocol: TCP
