@@ -1,0 +1,41 @@
+---
+apiVersion: machineconfiguration.openshift.io/v1
+kind: MachineConfig
+metadata:
+  labels:
+    machineconfiguration.openshift.io/role: gpu
+  name: 98-gpu-nic-pm-fix
+spec:
+  config:
+    ignition:
+      version: 3.2.0
+    storage:
+      files:
+        - path: /etc/udev/rules.d/98-gpu-nic-pm.rules
+          mode: 0644
+          overwrite: true
+          contents:
+            source: data:text/plain;charset=utf-8;base64,QUNUSU9OPT0iYWRkIiwgU1VCU1lTVEVNPT0icGNpIiwgQVRUUnt2ZW5kb3J9PT0iMHgxMGVjIiwgQVRUUntkZXZpY2V9PT0iMHg4MTI1IiwgQVRUUntsaW5rL2Nsa3BtfT0iMCIsIEFUVFJ7bGluay9sMV9hc3BtfT0iMCIsIEFUVFJ7cG93ZXIvY29udHJvbH09Im9uIgo=
+    systemd:
+      units:
+        - name: disable-nic-eee.service
+          enabled: true
+          contents: |
+            [Unit]
+            Description=Disable EEE and clkpm on Realtek NIC (enp42s0)
+            Wants=network-pre.target
+            Before=network-pre.target
+            After=sys-subsystem-net-devices-enp42s0.device
+            Requires=sys-subsystem-net-devices-enp42s0.device
+
+            [Service]
+            Type=oneshot
+            # Re-fire the udev "add" event for the NIC only, so the clkpm rule
+            # is applied even if the link/ sysfs attrs were missing at first add.
+            ExecStart=-/usr/sbin/udevadm trigger --action=add --subsystem-match=pci --attr-match=vendor=0x10ec --attr-match=device=0x8125
+            ExecStart=-/usr/sbin/udevadm settle --timeout=10
+            ExecStart=-/usr/sbin/ethtool --set-eee enp42s0 eee off
+            RemainAfterExit=yes
+
+            [Install]
+            WantedBy=multi-user.target

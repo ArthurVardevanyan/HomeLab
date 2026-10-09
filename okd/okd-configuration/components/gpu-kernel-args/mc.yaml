@@ -1,6 +1,9 @@
-# NOTE: If Realtek NIC (enp42s0) link instability persists, consider adding
-# pcie_aspm=off or pcie_aspm.policy=powersave (replace the existing pcie_aspm=force).
-# ASPM can interfere with NIC auto-negotiation on Realtek controllers.
+---
+# NOTE: The Realtek NIC (enp42s0) link instability is handled by the
+# 98-gpu-nic-pm-fix MachineConfig, which disables clkpm/l1_aspm on the NIC
+# (udev rule) and EEE (systemd unit running ethtool). Power management is a
+# suspected cause of link drops on the Realtek RTL8125 controller. The global
+# pcie_aspm=force setting is kept for the GPUs and not changed here.
 apiVersion: machineconfiguration.openshift.io/v1
 kind: MachineConfig
 metadata:
