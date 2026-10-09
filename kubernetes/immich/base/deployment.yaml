@@ -27,7 +27,10 @@ spec:
       labels:
         app.kubernetes.io/name: machine-learning
         app.kubernetes.io/instance: immich
+      annotations:
+        io.kubernetes.cri-o.TrySkipVolumeSELinuxLabel: "true"
     spec:
+      runtimeClassName: selinux
       restartPolicy: Always
       schedulerName: default-scheduler
       securityContext:
@@ -196,10 +199,10 @@ spec:
       labels:
         app.kubernetes.io/name: server
         app.kubernetes.io/instance: immich
-      # annotations:
-      #   io.kubernetes.cri-o.TrySkipVolumeSELinuxLabel: "true"
+      annotations:
+        io.kubernetes.cri-o.TrySkipVolumeSELinuxLabel: "true"
     spec:
-      # runtimeClassName: selinux
+      runtimeClassName: selinux
       restartPolicy: Always
       schedulerName: default-scheduler
       securityContext:
