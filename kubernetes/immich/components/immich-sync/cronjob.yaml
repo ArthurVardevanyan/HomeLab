@@ -3,7 +3,7 @@ kind: CronJob
 apiVersion: batch/v1
 metadata:
   name: immich-cron
-  namespace: nextcloud-fpm
+  namespace: immich
   annotations:
     gitops-ci.k8s.io/exempt-image-checksum: "registry.arthurvardevanyan.com/homelab/toolbox:not_latest"
     checkov.io/skip1: CKV_K8S_40=OpenShift Injects Random UID
@@ -20,27 +20,21 @@ spec:
         metadata:
           labels:
             app: immich-cron
-          # annotations:
-          #   io.kubernetes.cri-o.TrySkipVolumeSELinuxLabel: "true"
         spec:
-          # runtimeClassName: selinux
           serviceAccountName: immich
           volumes:
             - name: immich-config
               secret:
-                secretName: unas
+                secretName: rclone
             - name: immich-script
               configMap:
                 name: immich
-            - name: immich-emptydir
-              emptyDir:
-                sizeLimit: 5Gi
             - name: tmp
               emptyDir:
                 sizeLimit: 1Gi
-            - name: nextcloud-immich
+            - name: immich-nextcloud
               persistentVolumeClaim:
-                claimName: nextcloud-immich
+                claimName: immich-nextcloud
           securityContext:
             runAsNonRoot: true
             seccompProfile:
@@ -66,8 +60,8 @@ spec:
                   mountPath: /tmp/immich
                 - name: immich-config
                   mountPath: /mnt/immich
-                - name: nextcloud-immich
-                  mountPath: /mnt/nextcloud-immich
+                - name: immich-nextcloud
+                  mountPath: /mnt/media/nextcloud
               securityContext:
                 runAsNonRoot: true
                 readOnlyRootFilesystem: true

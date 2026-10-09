@@ -1,0 +1,21 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: alerts-adapter-config
+  namespace: openshift-lightspeed
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+data:
+  config.yaml: |
+    pollInterval: 30s
+    postRunDelay: 1h
+
+    # Per-step tool overrides for analysis-only workflow
+    analysis:
+      tools:
+        skills:
+          - image: quay.io/openshiftanalytics/agentic-skills:latest
+            paths:
+              - /skills/cluster-troubleshoot/investigate-alert
