@@ -16,7 +16,7 @@ resource "zitadel_application_oidc" "immich" {
   redirect_uris = [
     "https://photos.arthurvardevanyan.com/auth/login",
     "https://photos.arthurvardevanyan.com/user-settings",
-    "app.immich:///oauth-callback",
+    "https://photos.arthurvardevanyan.com/api/oauth/mobile-redirect",
   ]
   post_logout_redirect_uris = [
     "https://photos.arthurvardevanyan.com",
