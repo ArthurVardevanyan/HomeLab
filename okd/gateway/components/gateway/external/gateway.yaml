@@ -8,6 +8,12 @@ metadata:
     gateway.networking.k8s.io/gateway-name: https-gateway-external
 spec:
   gatewayClassName: openshift-default
+  allowedListeners:
+    namespaces:
+      from: Selector
+      selector:
+        matchLabels:
+          gateway-tenancy: external
   listeners:
     - name: https
       protocol: HTTPS
