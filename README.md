@@ -254,7 +254,7 @@ end
 
 subgraph Storage
     switch_hd---|10GbE|unas(<center>UNAS<br>10.101.2.6</center>)
-    switch_hd---|2.5GbE|truenas(<center>TrueNas<br>10.101.1.6</center>)
+    switch_hd---|2.5GbE|truenas(<center>TrueNas<br>10.102.1.7</center>)
     router---|1GbE|truenas
 end
 
