@@ -1,0 +1,64 @@
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: ListenerSet
+metadata:
+  name: minio-unas
+  namespace: minio-unas
+spec:
+  parentRef:
+    group: gateway.networking.k8s.io
+    kind: Gateway
+    name: https-gateway
+  listeners:
+    - name: s3
+      hostname: "s3.unas.arthurvardevanyan.com"
+      protocol: HTTPS
+      port: 443
+      allowedRoutes:
+        namespaces:
+          from: Same
+      tls:
+        mode: Terminate
+        certificateRefs:
+          - group: ""
+            kind: Secret
+            name: minio-cert
+    - name: console-s3
+      hostname: "console.s3.unas.arthurvardevanyan.com"
+      protocol: HTTPS
+      port: 443
+      allowedRoutes:
+        namespaces:
+          from: Same
+      tls:
+        mode: Terminate
+        certificateRefs:
+          - group: ""
+            kind: Secret
+            name: minio-cert
+    - name: s3-ssd
+      hostname: "s3.ssd.unas.arthurvardevanyan.com"
+      protocol: HTTPS
+      port: 443
+      allowedRoutes:
+        namespaces:
+          from: Same
+      tls:
+        mode: Terminate
+        certificateRefs:
+          - group: ""
+            kind: Secret
+            name: minio-cert
+    - name: console-s3-ssd
+      hostname: "console.s3.ssd.unas.arthurvardevanyan.com"
+      protocol: HTTPS
+      port: 443
+      allowedRoutes:
+        namespaces:
+          from: Same
+      tls:
+        mode: Terminate
+        certificateRefs:
+          - group: ""
+            kind: Secret
+            name: minio-cert
