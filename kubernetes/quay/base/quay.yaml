@@ -36,7 +36,7 @@ spec:
                         operator: In
                         values:
                           - clair-app
-                  topologyKey: kubernetes.io/hostname
+                  topologyKey: topology.kubernetes.io/zone
             requiredDuringSchedulingIgnoredDuringExecution:
               - labelSelector:
                   matchExpressions:
@@ -44,7 +44,7 @@ spec:
                       operator: In
                       values:
                         - clair-app
-                topologyKey: topology.kubernetes.io/zone
+                topologyKey: kubernetes.io/hostname
     - kind: postgres
       managed: false
     - kind: objectstorage
@@ -126,7 +126,7 @@ spec:
                         operator: In
                         values:
                           - quay-app
-                  topologyKey: kubernetes.io/hostname
+                  topologyKey: topology.kubernetes.io/zone
             requiredDuringSchedulingIgnoredDuringExecution:
               - labelSelector:
                   matchExpressions:
@@ -134,6 +134,6 @@ spec:
                       operator: In
                       values:
                         - quay-app
-                topologyKey: topology.kubernetes.io/zone
+                topologyKey: kubernetes.io/hostname
   configBundleSecret: quay-config-bundle
   # checkov:skip=CKV_SECRET_6 Place Holder

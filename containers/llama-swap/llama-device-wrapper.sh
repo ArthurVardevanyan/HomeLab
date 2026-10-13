@@ -3,7 +3,7 @@
 #
 # Why this exists: this image's default LD_LIBRARY_PATH puts /opt/venv/lib
 # first so vLLM's SYCL 9 stack resolves urDeviceWaitExp (see containerfile).
-# llama-server was built by IntelLLVM against oneAPI 2025.3; if it inherits
+# llama-server was built by IntelLLVM against oneAPI 2026.1; if it inherits
 # that vLLM-first LD_LIBRARY_PATH it binds the venv's OpenMP/Intel runtime
 # instead of its own (libiomp5/libimf/libsvml/libintlc/libirng all differ by
 # md5 between the two). That ABI mismatch segfaults llama-server on CPU
