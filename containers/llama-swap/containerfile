@@ -1,10 +1,10 @@
 # llama-swap orchestrator for Intel Arc Pro B70 (Battlemage / Xe2) with SYCL
 #
-# Base: vLLM XPU (v0.31.0 + SYCL 9) + llama-swap v255 SYCL binaries
+# Base: vLLM XPU (v0.31.0 + SYCL 9) + llama-swap v264 SYCL binaries
 #       + cookbook MTP + APC + GDN + backward-copy + eagle-drop patches
 # renovate: datasource=docker depName=vllm/vllm-openai-xpu versioning=loose
 FROM docker.io/vllm/vllm-openai-xpu:v0.31.0@sha256:95ac815038c4b3537b173798bfe3b89bdf525a52bd653cd14d4deb01f1062be7 AS vllm-base
-FROM ghcr.io/mostlygeek/llama-swap:v255-intel-b10868@sha256:23599ef59fcaed6ad13fd76aec97968903e24479beb476fbe268d49524270f9c AS llama-swap-bin
+FROM ghcr.io/mostlygeek/llama-swap:v264-intel-b11580@sha256:ecce531bc3db1e0486cfb865db6d3edf975cc439eaca05a57bbc76686bc7e5b6 AS llama-swap-bin
 
 # vllm-wrapper — not shipped in llama-swap release archives, built from source
 #
@@ -12,7 +12,7 @@ FROM ghcr.io/mostlygeek/llama-swap:v255-intel-b10868@sha256:23599ef59fcaed6ad13f
 #       stage needs the patch too. Stages don't share filesystems (COPY in
 #       one stage does NOT reach another). So we copy the patch here.
 FROM docker.io/library/golang:1.27-bookworm AS vllm-wrapper-build
-ARG LS_VERSION=255
+ARG LS_VERSION=264
 # renovate: datasource=github-releases depName=mostlygeek/llama-swap
 COPY patches/vllm-wrapper-combined.diff /tmp/patches/vllm-wrapper-combined.diff
 RUN set -eux; \
@@ -40,7 +40,7 @@ COPY --from=vllm-wrapper-build /usr/local/bin/vllm-wrapper /app/vllm-wrapper
 #
 # Why this exists: vLLM's SYCL 9 stack requires /opt/venv/lib first on
 # LD_LIBRARY_PATH (see LD_LIBRARY_PATH comment below re: urDeviceWaitExp).
-# But llama-server was built by IntelLLVM against oneAPI 2025.3, and if it
+# But llama-server was built by IntelLLVM against oneAPI 2026.1, and if it
 # runs under that vLLM-first LD_LIBRARY_PATH it binds the venv's OpenMP
 # runtime (libiomp5/libimf/libsvml/libintlc/libirng — all differ by md5
 # from oneAPI's) instead of its own. That ABI mismatch reproduces as:
@@ -61,44 +61,38 @@ COPY --from=vllm-wrapper-build /usr/local/bin/vllm-wrapper /app/vllm-wrapper
 # keeps /opt/venv/lib. Two independent SYCL stacks, one image, never mixed
 # in the same process.
 #
-# This is the full ldd closure of llama-server + libggml-sycl.so +
-# libggml-cpu-haswell.so under an oneAPI-first LD_LIBRARY_PATH, plus two
-# libraries that UR adapters dlopen() at runtime (libur_adapter_level_zero*
-# and libumf) and therefore never show up in ldd. Deliberately NOT vendored
+# Built dynamically from the ldd closure of llama-server + libggml-sycl.so
+# under an oneAPI-first LD_LIBRARY_PATH, so an oneAPI bump in the llama-swap
+# base image needs no edits here (sonames/versions change every release).
+# Each resolved library is copied with `cp -L` under its SONAME, so /app/rt
+# is flat and contains no dangling symlinks (the oneAPI tree is a symlink
+# farm). The UR adapters are dlopen()ed by libsycl/libur_loader and never show
+# up in ldd, so they are vendored by name and their own closure (libumf,
+# libhwloc, libOpenCL) is resolved the same way. Deliberately NOT vendored
 # (must resolve from the host GPU stack): libze_loader.so.1,
 # libze_intel_gpu.so.1, libigc.so.2, libopencl-clang2.so.17.
 RUN set -eux; \
   mkdir -p /app/rt; \
   ONEAPI=/opt/intel/oneapi; \
-  cp -a \
-  "${ONEAPI}/compiler/2025.3/lib/libiomp5.so" \
-  "${ONEAPI}/compiler/2025.3/lib/libimf.so" \
-  "${ONEAPI}/compiler/2025.3/lib/libsvml.so" \
-  "${ONEAPI}/compiler/2025.3/lib/libintlc.so.5" \
-  "${ONEAPI}/compiler/2025.3/lib/libirng.so" \
-  "${ONEAPI}/compiler/2025.3/lib/libsycl.so.8" \
-  "${ONEAPI}/compiler/2025.3/lib/libsycl.so.8.0.0" \
-  "${ONEAPI}/compiler/2025.3/lib/libur_loader.so.0" \
-  "${ONEAPI}/compiler/2025.3/lib/libur_loader.so.0.12.0" \
-  "${ONEAPI}/compiler/2025.3/lib/libOpenCL.so.1" \
-  "${ONEAPI}/compiler/2025.3/lib/libOpenCL.so.1.0.0" \
-  "${ONEAPI}/compiler/2025.3/lib/libur_adapter_level_zero.so.0" \
-  "${ONEAPI}/compiler/2025.3/lib/libur_adapter_level_zero.so.0.12.0" \
-  "${ONEAPI}/compiler/2025.3/lib/libur_adapter_level_zero_v2.so.0" \
-  "${ONEAPI}/compiler/2025.3/lib/libur_adapter_level_zero_v2.so.0.12.0" \
-  "${ONEAPI}/umf/latest/lib/libumf.so.1" \
-  "${ONEAPI}/umf/latest/lib/libumf.so.1.0.2" \
-  "${ONEAPI}/mkl/2025.3/lib/libmkl_sycl_blas.so.5" \
-  "${ONEAPI}/mkl/2025.3/lib/libmkl_intel_ilp64.so.2" \
-  "${ONEAPI}/mkl/2025.3/lib/libmkl_tbb_thread.so.2" \
-  "${ONEAPI}/mkl/2025.3/lib/libmkl_core.so.2" \
-  "${ONEAPI}/tbb/2022.3/lib/intel64/gcc4.8/libtbb.so.12" \
-  "${ONEAPI}/tbb/2022.3/lib/intel64/gcc4.8/libtbb.so.12.17" \
-  "${ONEAPI}/dnnl/2025.3/lib/libdnnl.so.3" \
-  "${ONEAPI}/dnnl/2025.3/lib/libdnnl.so.3.9" \
-  /app/rt/; \
-  ! LD_LIBRARY_PATH=/app/rt:/app ldd /app/llama-server | grep -E "not found|/opt/venv"; \
-  ! LD_LIBRARY_PATH=/app/rt:/app ldd /app/libggml-sycl.so | grep -E "not found|/opt/venv"
+  PROBE="$(find "${ONEAPI}" -maxdepth 4 -type d -name lib | sort | tr '\n' ':')/app"; \
+  vendor() { \
+  LD_LIBRARY_PATH="${PROBE}" ldd "$@" \
+  | awk '$2 == "=>" && $3 ~ "^/opt/intel/oneapi/" {print $1, $3}' \
+  | sort -u \
+  | while read -r name path; do cp -L "${path}" "/app/rt/${name}"; done; \
+  }; \
+  vendor /app/llama-server /app/libggml-sycl.so; \
+  for name in libur_adapter_level_zero.so.0 libur_adapter_level_zero_v2.so.0 libur_adapter_opencl.so.0; do \
+  src="$(find "${ONEAPI}" -name "${name}" | sort | head -n1)"; \
+  test -n "${src}"; \
+  cp -L "${src}" "/app/rt/${name}"; \
+  vendor "/app/rt/${name}"; \
+  done; \
+  ! LD_LIBRARY_PATH=/app/rt:/app ldd /app/llama-server | grep -E "not found|/opt/venv|/opt/intel"; \
+  ! LD_LIBRARY_PATH=/app/rt:/app ldd /app/libggml-sycl.so | grep -E "not found|/opt/venv|/opt/intel"; \
+  for f in /app/rt/libur_adapter_*.so.0; do \
+  ! LD_LIBRARY_PATH=/app/rt:/app ldd "${f}" | grep -E "not found|/opt/venv|/opt/intel"; \
+  done
 
 # vllm-device-wrapper — ensures ONEAPI env vars are exported for child processes
 COPY vllm-device-wrapper.sh /app/vllm-device-wrapper.sh
@@ -163,7 +157,7 @@ ENV VLLM_TARGET_DEVICE=xpu \
   B70_MTP_BF16_DRAFT=1 \
   PYTORCH_ALLOC_CONF=expandable_segments:True \
   VLLM_SERVER_DEV_MODE=1 \
-  LD_LIBRARY_PATH=/opt/venv/lib:/opt/ucx/lib:/usr/local/lib:/app:/opt/intel/oneapi/compiler/2025.3/lib:/opt/intel/oneapi/mkl/2025.3/lib:/opt/intel/oneapi/tbb/2022.3/lib/intel64/gcc4.8:/opt/intel/oneapi/dnnl/2025.3/lib
+  LD_LIBRARY_PATH=/opt/venv/lib:/opt/ucx/lib:/usr/local/lib:/app:/opt/intel/oneapi/compiler/2026.1/lib:/opt/intel/oneapi/mkl/2026.1/lib:/opt/intel/oneapi/tbb/2023.1/lib:/opt/intel/oneapi/dnnl/2026.0/lib
 
 # Verify torch/vllm imports and llama-server SYCL linkage
 RUN set -eux; \
