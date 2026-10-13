@@ -47,11 +47,12 @@ Each model runs as an independent process bound to one of the two GPUs. The
 matrix guarantees **exactly one model per GPU** per set — no stacking, no
 spillover.
 
-| Model id                | Backend   | Model                                         | Context |
-| ----------------------- | --------- | --------------------------------------------- | ------- |
-| `35b-gpu0` / `35b-gpu1` | vLLM      | Qwen3.6-35B-A3B (MoE, GPTQ-Int4, with vision) | 256K    |
-| `27b-gpu0` / `27b-gpu1` | vLLM      | Qwen3.8-27B (dense, GPTQ-Int4, with vision)   | 131K    |
-| `embed-spread`          | llama.cpp | Qwen3-Embedding-0.6B (Q8_0 GGUF)              | 120K    |
+| Model id                | Backend   | Model                                          | Context |
+| ----------------------- | --------- | ---------------------------------------------- | ------- |
+| `35b-gpu0` / `35b-gpu1` | vLLM      | Qwen3.6-35B-A3B (MoE, GPTQ-Int4, with vision)  | 256K    |
+| `27b-gpu0` / `27b-gpu1` | vLLM      | Qwen3.8-27B (dense, GPTQ-Int4, with vision)    | 131K    |
+| `embed-spread`          | llama.cpp | Qwen3-Embedding-0.6B (Q8_0 GGUF)               | 120K    |
+| `flash-next` (gated)    | llama.cpp | Qwen3.8-Flash-Next (UD-IQ4_XS GGUF, both GPUs) | 64K     |
 
 > `embed-spread` previously failed to load: plain `/app/llama-server` was
 > segfaulting on CPU (`-ngl 0`, immediately after "llama threadpool init")
@@ -69,8 +70,9 @@ spillover.
 
 The **matrix** uses sets that pick exactly one model per GPU. The solver picks
 a set, guaranteeing at most one model per GPU. **Only
-`dual_35b0-27b1-spread` is currently active**; the others below are commented
-out in `llama-swap.yaml` and listed for reference. A model in no active set
+`dual_35b0-27b1-spread` and `flash_next` (`flash-next` + `embed-spread`, both
+GPUs) are currently active**; the others below are commented out in
+`llama-swap.yaml` and listed for reference. A model in no active set
 (`35b-gpu1`, `27b-gpu0`) can only run alone, so requesting it evicts every
 other model.
 
@@ -197,13 +199,16 @@ bisected: graph-only boots clean, cache-only fails).
 
 ## Fast model swaps (vLLM sleep mode)
 
-> **27B models only.** The `matrix:` section is **active** with a single set,
-> `dual_35b0-27b1-spread` (`35b-gpu0` + `27b-gpu1` + `embed-spread`). 27B models
-> on both GPUs have `--enable-sleep-mode` and `cmdStop` / `unloadTimeout: 120`
-> active, so when the matrix evicts a 27B model it is put to sleep (weights
-> discarded from VRAM and host RAM) and woken on demand via the PVC-backed
-> cache. The 27B models have `ttl: 0`, so they never sleep from idleness. 35B
-> models have no sleep mode and no `cmdStop`; evicting one stops its process.
+> **Sleep mode is currently disabled for all vLLM models (35B and 27B).** The
+> 27B models previously ran `--enable-sleep-mode` with `cmdStop` /
+> `unloadTimeout: 120`; both were removed (the 27B macros also drop
+> `--sleep-level`). A matrix eviction now simply stops the process, and the
+> next request cold-starts it. The wake-sequence and liveness material below
+> still describes the wrapper's behavior if sleep is re-enabled.
+>
+> The `matrix:` section is **active** with two sets: `dual_35b0-27b1-spread`
+> (`35b-gpu0` + `27b-gpu1` + `embed-spread`) and the gated `flash_next`
+> (`flash-next` + `embed-spread`). All vLLM models have `ttl: 0`.
 >
 > `35b-gpu1` and `27b-gpu0` are in no matrix set and are `unlisted: true`
 > (hidden from `/v1/models`). A model that is in no set can only run alone, so
@@ -263,11 +268,11 @@ normal TTL-triggered sleep is never mistaken for a crash.
 
 ### Preload times (with vllm-wrapper)
 
-> **27B models only.** The active matrix set keeps `35b-gpu0`, `27b-gpu1` and
-> `embed-spread` resident together. All models have `ttl: 0`, so nothing
-> unloads from idleness. 27B models have `--enable-sleep-mode` with PVC-backed
-> level 2 sleep — when the matrix evicts one, it is discarded and woken on
-> demand.
+> The default matrix set keeps `35b-gpu0`, `27b-gpu1` and `embed-spread`
+> resident together. All models have `ttl: 0`, so nothing unloads from
+> idleness. Sleep mode is currently disabled, so an evicted model is stopped
+> and cold-started on its next request (the warm-swap figures below apply only
+> if sleep is re-enabled).
 
 Cold model swaps (no cache): ~120–180 s (same as before).
 Warm model swaps (PVC cache, level 2): ~60–120 s — SYCL init (~15 s) + weight
@@ -503,11 +508,11 @@ plus the absence of TP/cross-card communication overhead.
    10-second-window means from the vLLM engine log. These are different
    measurement methods and are **not directly comparable** — reconciling the
    apparent ~20× gap is an open question, not a confirmed regression.
-8. **Sleep mode active on 27B only** — the `matrix:` section is active with
-   one set (`dual_35b0-27b1-spread`). 27B models have `--enable-sleep-mode`,
-   `cmdStop`, and `unloadTimeout: 120` active (PVC-backed level 2 sleep), used
-   when the matrix evicts them. 35B models have sleep mode disabled. The documentation below (wake sequence, backend liveness,
-   preload times, compatibility investigation) remains relevant.
+8. **Sleep mode disabled on all vLLM models** — 27B had it previously and it
+   was turned off for now (no `--enable-sleep-mode`, no `cmdStop`, no
+   `unloadTimeout`, `--sleep-level` dropped from the 27B macros). The
+   documentation above (wake sequence, backend liveness, preload times,
+   compatibility investigation) is relevant only if it is re-enabled.
 
 ## Memory model
 
@@ -595,19 +600,22 @@ clinfo | grep -i "Device Name"
 
 ## Scaling
 
-The `matrix:` section is **active** with a single set,
-`dual_35b0-27b1-spread`. `35b-gpu0`, `27b-gpu1` and `embed-spread` are
-preloaded via `hooks.on_startup.preload` and stay resident together. Requests
-for a model outside that set evict the whole set (the matrix solver treats a
-model in no set as able to run only alone).
+The `matrix:` section is **active** with two sets. `dual_35b0-27b1-spread`
+(`35b-gpu0`, `27b-gpu1`, `embed-spread`) is preloaded via
+`hooks.on_startup.preload` and stays resident together. `flash_next`
+(`flash-next` + `embed-spread`) is on demand: requesting `flash-next` evicts the
+35B/27B chat models but keeps `embed-spread`, and requesting a chat model
+evicts `flash-next`. Requests for a model in no set evict everything (the
+matrix solver treats a model in no set as able to run only alone).
+
+`flash-next` (Qwen3.8 Flash-Next, llama.cpp GGUF) is **gated**: the current
+llama.cpp build cannot load it yet. See
+[notes/qwen3.8-flash-next.md](../../../../notes/qwen3.8-flash-next.md).
 
 - **Hidden models** (`35b-gpu1`, `27b-gpu0`): `unlisted: true`, in no set.
   Requesting one by name evicts everything, so LiteLLM must not route to them.
-- **27B models with sleep mode**: `ttl: 0`, so no idle unload. When evicted,
-  `cmdStop` puts them to sleep (level 2, PVC-backed), with
-  `unloadTimeout: 120` so llama-swap does not force-kill a slow sleep.
-- **35B models**: `ttl: 0`, no sleep mode and no `cmdStop`; an eviction stops
-  the process.
+- **27B and 35B models**: `ttl: 0`, no sleep mode and no `cmdStop`; an
+  eviction stops the process (27B sleep mode is disabled for now).
 - **1 embedding model** (`embed-spread`): loaded at boot, shared across both
   GPUs via `--split-mode layer --tensor-split 1,1`.
 

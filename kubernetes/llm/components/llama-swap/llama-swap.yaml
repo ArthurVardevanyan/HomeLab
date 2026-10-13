@@ -39,10 +39,18 @@ macros:
   # regardless of stop/wrapper timing.
   # vllm-wrapper listens on the llama-swap assigned ${PORT} and proxies to
   # the fixed vLLM port.
+  #
+  # Sleep mode is currently DISABLED for every vLLM model (35B and 27B): no
+  # model passes --enable-sleep-mode, none has a cmdStop, and all set
+  # sleepLevel: 0, so a matrix eviction simply stops the process. The 27B
+  # macros omit --sleep-level; the 35B macros keep a legacy --sleep-level 2
+  # that is inert without --enable-sleep-mode. To re-enable 27B sleep:
+  # restore --sleep-level 2 in its macro, add --enable-sleep-mode to its
+  # cmd, and restore its cmdStop + unloadTimeout: 120 (see git history).
   cmd_base_vllm_35b_gpu0: "/app/vllm-wrapper serve --sleep-level 2 --wait-timeout 600s --vllm-url http://127.0.0.1:8000 --listen :${PORT} -- /app/vllm-device-wrapper.sh"
   cmd_base_vllm_35b_gpu1: "/app/vllm-wrapper serve --sleep-level 2 --wait-timeout 600s --vllm-url http://127.0.0.1:8001 --listen :${PORT} -- /app/vllm-device-wrapper.sh"
-  cmd_base_vllm_27b_gpu0: "/app/vllm-wrapper serve --sleep-level 2 --wait-timeout 600s --vllm-url http://127.0.0.1:8002 --listen :${PORT} -- /app/vllm-device-wrapper.sh"
-  cmd_base_vllm_27b_gpu1: "/app/vllm-wrapper serve --sleep-level 2 --wait-timeout 600s --vllm-url http://127.0.0.1:8003 --listen :${PORT} -- /app/vllm-device-wrapper.sh"
+  cmd_base_vllm_27b_gpu0: "/app/vllm-wrapper serve --wait-timeout 600s --vllm-url http://127.0.0.1:8002 --listen :${PORT} -- /app/vllm-device-wrapper.sh"
+  cmd_base_vllm_27b_gpu1: "/app/vllm-wrapper serve --wait-timeout 600s --vllm-url http://127.0.0.1:8003 --listen :${PORT} -- /app/vllm-device-wrapper.sh"
   cmd_base_llama: "/app/llama-device-wrapper.sh --port ${PORT} --host 127.0.0.1 --cont-batching -ngl 99 --flash-attn on --cache-type-k f16 --cache-type-v f16 --ubatch-size 2048 --jinja --poll 0 -t 12 --threads-http 4 --cache-reuse 256 --load-mode none --metrics"
 
 models:
@@ -76,9 +84,6 @@ models:
     sleepLevel: 0
 
   35b-gpu1:
-    # Hidden — not in any matrix set, requesting it evicts the entire set.
-    # Only needed if a client explicitly targets this model ID.
-    unlisted: true
     cmd: '${cmd_base_vllm_35b_gpu1} /data/models/Qwen3.6-35B-A3B-GPTQ-Int4 --host 127.0.0.1 --port 8001 --quantization gptq --dtype float16 --max-model-len 262144 --gpu-memory-utilization 0.86 --kv-cache-dtype fp8 --enable-prefix-caching --enable-auto-tool-choice --tool-call-parser qwen3_coder --reasoning-parser qwen3 --speculative-config ''{"method": "mtp", "num_speculative_tokens": 3}'' --max-num-seqs 6 --max-num-batched-tokens 8192 --served-model-name 35b-gpu1 --kv-cache-memory 4239633792' # --gpu-memory-utilization 0.93
     env:
       # See 35b-gpu0 above re: ONEAPI_DEVICE_SELECTOR removal.
@@ -113,42 +118,34 @@ models:
   #    initial allocation.
   # ==========================================
   27b-gpu0:
-    # Hidden — not in any matrix set, requesting it evicts the entire set.
-    # Only needed if a client explicitly targets this model ID.
-    unlisted: true
     # --cudagraph-capture-sizes 1 2 4 8 12: trims vLLM's auto-computed
     # cudagraph capture-size list (see 35b-gpu0 above for the full rationale).
-    cmd: '${cmd_base_vllm_27b_gpu0} /data/models/Qwen3.8-27B-GPTQ-Int4 --host 127.0.0.1 --port 8002 --quantization gptq --dtype float16 --max-model-len 175104 --gpu-memory-utilization 0.86 --kv-cache-dtype fp8 --enable-prefix-caching --enable-auto-tool-choice --tool-call-parser qwen3_xml --reasoning-parser qwen3 --speculative-config ''{"method": "mtp", "num_speculative_tokens": 3}'' --max-num-seqs 3 --max-num-batched-tokens 8192 --served-model-name 27b-gpu0 --kv-cache-memory 7047184611 --enable-sleep-mode --cudagraph-capture-sizes 1 2 4 8 12' # --gpu-memory-utilization 0.93
+    cmd: '${cmd_base_vllm_27b_gpu0} /data/models/Qwen3.8-27B-GPTQ-Int4 --host 127.0.0.1 --port 8002 --quantization gptq --dtype float16 --max-model-len 175104 --gpu-memory-utilization 0.86 --kv-cache-dtype fp8 --enable-prefix-caching --enable-auto-tool-choice --tool-call-parser qwen3_xml --reasoning-parser qwen3 --speculative-config ''{"method": "mtp", "num_speculative_tokens": 3}'' --max-num-seqs 3 --max-num-batched-tokens 8192 --served-model-name 27b-gpu0 --kv-cache-memory 7047184611 --cudagraph-capture-sizes 1 2 4 8 12' # --gpu-memory-utilization 0.93
     env:
       # See 35b-gpu0 above re: ONEAPI_DEVICE_SELECTOR removal.
-      # --enable-sleep-mode requires PYTORCH_ALLOC_CONF's expandable_segments
-      # to be OFF for the sleep-mode pool's malloc callback to receive
-      # allocations (pytorch#147851) — but the image-wide default is
-      # expandable_segments:True (containerfile), so patch_fix_xpu_sleep.py
-      # toggles it to False only inside the pool context and restores True
-      # on exit (see that patch for the mechanism). No per-model
-      # PYTORCH_ALLOC_CONF override is needed or wanted here: setting it
+      # Sleep mode is disabled for 27B for now (see the macros comment). When
+      # re-enabled, --enable-sleep-mode requires PYTORCH_ALLOC_CONF's
+      # expandable_segments to be OFF for the sleep-mode pool's malloc
+      # callback (pytorch#147851); the image-wide default is True
+      # (containerfile) and patch_fix_xpu_sleep.py toggles it only inside the
+      # pool context. Do NOT set PYTORCH_ALLOC_CONF per model: setting it
       # image-wide broke 35B (fragmented every weight allocation into ~20
-      # MiB chunks, causing a Level Zero CAT error / device-lost crash at
-      # inference time) before this was corrected.
+      # MiB chunks, causing a Level Zero CAT error / device-lost crash).
       - "SYCL_PI_LEVEL_ZERO_USE_IMMEDIATE_COMMANDLISTS=1"
       - "ZE_AFFINITY_MASK=0"
     ttl: 0
-    cmdStop: /app/vllm-wrapper sleep --vllm-url http://127.0.0.1:8002 --sleep-level 2 --stop-pid ${PID}
-    unloadTimeout: 120
+    sleepLevel: 0
 
   27b-gpu1:
     # --cudagraph-capture-sizes 1 2 4 8 12: see 27b-gpu0 above for the full
     # rationale (identical --max-num-seqs 3 / MTP config on this model).
-    cmd: '${cmd_base_vllm_27b_gpu1} /data/models/Qwen3.8-27B-GPTQ-Int4 --host 127.0.0.1 --port 8003 --quantization gptq --dtype float16 --max-model-len 175104 --gpu-memory-utilization 0.86 --kv-cache-dtype fp8 --enable-prefix-caching --enable-auto-tool-choice --tool-call-parser qwen3_xml --reasoning-parser qwen3 --speculative-config ''{"method": "mtp", "num_speculative_tokens": 3}'' --max-num-seqs 3 --max-num-batched-tokens 8192 --served-model-name 27b-gpu1 --kv-cache-memory 7047184611 --enable-sleep-mode --cudagraph-capture-sizes 1 2 4 8 12' # --gpu-memory-utilization 0.93
+    cmd: '${cmd_base_vllm_27b_gpu1} /data/models/Qwen3.8-27B-GPTQ-Int4 --host 127.0.0.1 --port 8003 --quantization gptq --dtype float16 --max-model-len 175104 --gpu-memory-utilization 0.86 --kv-cache-dtype fp8 --enable-prefix-caching --enable-auto-tool-choice --tool-call-parser qwen3_xml --reasoning-parser qwen3 --speculative-config ''{"method": "mtp", "num_speculative_tokens": 3}'' --max-num-seqs 3 --max-num-batched-tokens 8192 --served-model-name 27b-gpu1 --kv-cache-memory 7047184611 --cudagraph-capture-sizes 1 2 4 8 12' # --gpu-memory-utilization 0.93
     env:
-      # See 27b-gpu0 above re: ONEAPI_DEVICE_SELECTOR removal and
-      # PYTORCH_ALLOC_CONF / --enable-sleep-mode.
+      # See 27b-gpu0 above re: ONEAPI_DEVICE_SELECTOR removal and sleep mode.
       - "SYCL_PI_LEVEL_ZERO_USE_IMMEDIATE_COMMANDLISTS=1"
       - "ZE_AFFINITY_MASK=1"
     ttl: 0
-    cmdStop: /app/vllm-wrapper sleep --vllm-url http://127.0.0.1:8003 --sleep-level 2 --stop-pid ${PID}
-    unloadTimeout: 120
+    sleepLevel: 0
 
   # ==========================================
   # 3. Qwen3 Embedding 0.6B (spread across both GPUs)
@@ -175,16 +172,47 @@ models:
     ttl: 0
     concurrencyLimit: 20
 
+  # ==========================================
+  # 4. Qwen 3.8 Flash-Next (qwen4_exp) — llama.cpp GGUF path, GATED
+  #    Source: unsloth/Qwen3.8-Flash-Next-GGUF, UD-IQ4_XS (3 shards, ~94 GB:
+  #    4-bit core ~60 GB -> VRAM across both B70s, 4-bit PLE table ~25.6 GB
+  #    stays on host).
+  #
+  #    GATE: the deployed llama-server (build 11580) has no qwen4exp support
+  #    and will fail to load this file. Requesting this model is expected to
+  #    fail until the image carries a qwen4exp-capable llama.cpp. vLLM XPU is
+  #    not an option (qwen4_exp raises NotImplementedError on XPU). It is
+  #    deliberately NOT in hooks.on_startup.preload and NOT in LiteLLM.
+  #    Download the shards to /data/models/Qwen3.8-Flash-Next-GGUF/UD-IQ4_XS/.
+  #    See notes/qwen3.8-flash-next.md.
+  #
+  #    Memory: --load-mode mmap (NOT mmap+mlock: mlock pins the whole ~94 GB
+  #    file, which cannot fit the node) with --lazy-mode on, so the PLE rows
+  #    are read on demand from the page cache instead of kept resident.
+  #    --parallel / --ctx-size bound the hot set; tune after first load.
+  #    Flags are a starting template, not yet validated against a build that
+  #    can load the model.
+  # ==========================================
+  flash-next:
+    cmd: /app/llama-device-wrapper.sh --port ${PORT} --host 127.0.0.1 --cont-batching -m /data/models/Qwen3.8-Flash-Next-GGUF/UD-IQ4_XS/Qwen3.8-Flash-Next-UD-IQ4_XS-00001-of-00003.gguf --split-mode layer --tensor-split 1,1 -ngl 99 -t 12 --threads-http 4 --flash-attn on --cache-type-k q8_0 --cache-type-v q8_0 --ctx-size 65536 --ubatch-size 1024 --parallel 4 --load-mode mmap --lazy-mode on --jinja --poll 0 --cache-reuse 256 --metrics
+    env:
+      - "ONEAPI_DEVICE_SELECTOR=level_zero:0,1"
+      - "SYCL_PI_LEVEL_ZERO_USE_IMMEDIATE_COMMANDLISTS=1"
+      - "GGML_SYCL_ENABLE_GRAPH=1"
+    ttl: 0
+
 matrix:
   vars:
     # GPU 0 models
     M35-0: 35b-gpu0
-    # M27-0: 27b-gpu0
+    M27-0: 27b-gpu0
     # GPU 1 models
-    # M35-1: 35b-gpu1
+    M35-1: 35b-gpu1
     M27-1: 27b-gpu1
     # Spread models
     S35-e: embed-spread
+    # Both-GPU llama.cpp chat model (gated, see flash-next above)
+    MFLASH: flash-next
   #
   #  # Eviction cost: higher = harder to evict
   #  evict_costs:
@@ -214,6 +242,11 @@ matrix:
     # --- Dual with embed spread (35B + 27B mixed + embed on both) ---
     dual_35b0-27b1-spread: M35-0 & M27-1 & S35-e
     # dual_27b0-35b1-spread: M27-0 & M35-1 & S35-e
+
+    # --- Flash-Next on both GPUs + embed on both ---
+    # Requesting flash-next evicts 35b-gpu0/27b-gpu1 (keeps embed-spread);
+    # requesting either of those evicts flash-next. Gated: see flash-next.
+    flash_next: MFLASH & S35-e
 
     # # --- Embed spread standalone ---
     # embed_spread: S35-e
