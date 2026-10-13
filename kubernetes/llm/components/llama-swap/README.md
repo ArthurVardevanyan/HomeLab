@@ -52,7 +52,7 @@ spillover.
 | `35b-gpu0` / `35b-gpu1` | vLLM      | Qwen3.6-35B-A3B (MoE, GPTQ-Int4, with vision)  | 256K    |
 | `27b-gpu0` / `27b-gpu1` | vLLM      | Qwen3.8-27B (dense, GPTQ-Int4, with vision)    | 131K    |
 | `embed-spread`          | llama.cpp | Qwen3-Embedding-0.6B (Q8_0 GGUF)               | 120K    |
-| `flash-next` (gated)    | llama.cpp | Qwen3.8-Flash-Next (UD-IQ4_XS GGUF, both GPUs) | 64K     |
+| `flash-next`            | llama.cpp | Qwen3.8-Flash-Next (UD-IQ4_XS GGUF, both GPUs) | 256K    |
 
 > `embed-spread` previously failed to load: plain `/app/llama-server` was
 > segfaulting on CPU (`-ngl 0`, immediately after "llama threadpool init")
@@ -207,7 +207,7 @@ bisected: graph-only boots clean, cache-only fails).
 > still describes the wrapper's behavior if sleep is re-enabled.
 >
 > The `matrix:` section is **active** with two sets: `dual_35b0-27b1-spread`
-> (`35b-gpu0` + `27b-gpu1` + `embed-spread`) and the gated `flash_next`
+> (`35b-gpu0` + `27b-gpu1` + `embed-spread`) and `flash_next`
 > (`flash-next` + `embed-spread`). All vLLM models have `ttl: 0`.
 >
 > `35b-gpu1` and `27b-gpu0` are in no matrix set and are `unlisted: true`
@@ -608,8 +608,10 @@ The `matrix:` section is **active** with two sets. `dual_35b0-27b1-spread`
 evicts `flash-next`. Requests for a model in no set evict everything (the
 matrix solver treats a model in no set as able to run only alone).
 
-`flash-next` (Qwen3.8 Flash-Next, llama.cpp GGUF) is **gated**: the current
-llama.cpp build cannot load it yet. See
+`flash-next` (Qwen3.8 Flash-Next, llama.cpp GGUF) is preloaded at startup with
+`embed-spread`. It uses `--fit on` for layer placement (the model does not fit
+in VRAM), a 262144-token `--kv-unified` pool, and `--kv-unified-per-slot 175104`
+as the per-slot cap. See
 [notes/qwen3.8-flash-next.md](../../../../notes/qwen3.8-flash-next.md).
 
 - **Hidden models** (`35b-gpu1`, `27b-gpu0`): `unlisted: true`, in no set.
