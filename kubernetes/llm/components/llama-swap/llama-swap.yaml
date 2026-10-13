@@ -85,6 +85,9 @@ models:
     sleepLevel: 0
 
   35b-gpu1:
+    # Hidden - not in any matrix set, requesting it evicts the entire set.
+    # Only needed if a client explicitly targets this model ID.
+    unlisted: true
     cmd: '${cmd_base_vllm_35b_gpu1} /data/models/Qwen3.6-35B-A3B-GPTQ-Int4 --host 127.0.0.1 --port 8001 --quantization gptq --dtype float16 --max-model-len 262144 --gpu-memory-utilization 0.86 --kv-cache-dtype fp8 --enable-prefix-caching --enable-auto-tool-choice --tool-call-parser qwen3_coder --reasoning-parser qwen3 --speculative-config ''{"method": "mtp", "num_speculative_tokens": 3}'' --max-num-seqs 6 --max-num-batched-tokens 8192 --served-model-name 35b-gpu1 --kv-cache-memory 4239633792' # --gpu-memory-utilization 0.93
     env:
       # See 35b-gpu0 above re: ONEAPI_DEVICE_SELECTOR removal.
@@ -119,6 +122,9 @@ models:
   #    initial allocation.
   # ==========================================
   27b-gpu0:
+    # Hidden - not in any matrix set, requesting it evicts the entire set.
+    # Only needed if a client explicitly targets this model ID.
+    unlisted: true
     # --cudagraph-capture-sizes 1 2 4 8 12: trims vLLM's auto-computed
     # cudagraph capture-size list (see 35b-gpu0 above for the full rationale).
     cmd: '${cmd_base_vllm_27b_gpu0} /data/models/Qwen3.8-27B-GPTQ-Int4 --host 127.0.0.1 --port 8002 --quantization gptq --dtype float16 --max-model-len 175104 --gpu-memory-utilization 0.86 --kv-cache-dtype fp8 --enable-prefix-caching --enable-auto-tool-choice --tool-call-parser qwen3_xml --reasoning-parser qwen3 --speculative-config ''{"method": "mtp", "num_speculative_tokens": 3}'' --max-num-seqs 3 --max-num-batched-tokens 8192 --served-model-name 27b-gpu0 --kv-cache-memory 7047184611 --cudagraph-capture-sizes 1 2 4 8 12' # --gpu-memory-utilization 0.93
@@ -165,7 +171,7 @@ models:
   #    llama-swap image runs this exact command/env with no changes needed.
   # ==========================================
   embed-spread:
-    cmd: /app/llama-device-wrapper.sh --port ${PORT} --host 127.0.0.1 --cont-batching -m /data/models/Qwen3-Embedding-0.6B-Q8_0.gguf --split-mode layer --tensor-split 1,1 -ngl 99 -t 8 --threads 8 --ctx-size 81920 --cache-type-k q8_0 --cache-type-v q8_0 --embedding --ubatch-size 256 --jinja --poll 0 --parallel 20 --metrics
+    cmd: /app/llama-device-wrapper.sh --port ${PORT} --host 127.0.0.1 --cont-batching -m /data/models/Qwen3-Embedding-0.6B-Q8_0.gguf --split-mode layer --tensor-split 1,1 -ngl 99 -t 8 --threads 8 --ctx-size 81920 --cache-type-k q8_0 --cache-type-v q8_0 --embedding --ubatch-size 256 --jinja --poll 0 --kv-unified --parallel 20 --metrics
     env:
       - "ONEAPI_DEVICE_SELECTOR=level_zero:0,1"
       - "SYCL_PI_LEVEL_ZERO_USE_IMMEDIATE_COMMANDLISTS=1"
@@ -195,7 +201,7 @@ models:
   #    can load the model.
   # ==========================================
   flash-next:
-    cmd: /app/llama-device-wrapper.sh --port ${PORT} --host 127.0.0.1 --cont-batching -m /data/models/Qwen3.8-Flash-Next-GGUF/UD-IQ4_XS/Qwen3.8-Flash-Next-UD-IQ4_XS-00001-of-00003.gguf --split-mode layer --tensor-split 1,1 -ngl 99 -t 12 --threads-http 4 --flash-attn on --cache-type-k q8_0 --cache-type-v q8_0 --ctx-size 65536 --ubatch-size 1024 --parallel 4 --load-mode mmap --lazy-mode on --jinja --poll 0 --cache-reuse 256 --metrics
+    cmd: /app/llama-device-wrapper.sh --port ${PORT} --host 127.0.0.1 --cont-batching -m /data/models/Qwen3.8-Flash-Next-UD-IQ4_XS-00001-of-00003.gguf --split-mode layer --tensor-split 1,1 -ngl 99 -t 12 --threads-http 4 --flash-attn on --cache-type-k q8_0 --cache-type-v q8_0 --ctx-size 262148 --kv-unified --ubatch-size 1024 --parallel 2 --load-mode mmap --lazy-mode on --jinja --poll 0 --cache-reuse 256 --metrics
     env:
       - "ONEAPI_DEVICE_SELECTOR=level_zero:0,1"
       - "SYCL_PI_LEVEL_ZERO_USE_IMMEDIATE_COMMANDLISTS=1"
@@ -209,6 +215,7 @@ matrix:
     M27-0: 27b-gpu0
     # GPU 1 models
     M35-1: 35b-gpu1
+    # M35-1: 35b-gpu1
     M27-1: 27b-gpu1
     # Spread models
     S35-e: embed-spread
