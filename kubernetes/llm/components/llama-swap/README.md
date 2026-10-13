@@ -572,9 +572,9 @@ Zero path via PyTorch/XPU. No Mesa/Vulkan userspace is needed.
 ### Image tag
 
 The custom image is
-`registry.arthurvardevanyan.com/homelab/llama-swap:v255-intel-b10868-<sha>` —
-the tag encodes the llama-swap version (`v255`), the vLLM XPU base image
-build (`intel-b10868`), and a short commit SHA of the containerfile/patches.
+`registry.arthurvardevanyan.com/homelab/llama-swap:v264-intel-b11580-<sha>` —
+the tag encodes the llama-swap version (`v264`), the vLLM XPU base image
+build (`intel-b11580`), and a short commit SHA of the containerfile/patches.
 Renovate-managed; the PaC build (Tekton) pushes on PR merge.
 
 ### Preload times
