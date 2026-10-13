@@ -609,9 +609,8 @@ evicts `flash-next`. Requests for a model in no set evict everything (the
 matrix solver treats a model in no set as able to run only alone).
 
 `flash-next` (Qwen3.8 Flash-Next, llama.cpp GGUF) is preloaded at startup with
-`embed-spread`. It uses `-ngl all --n-cpu-moe 13 --fit off --tensor-split 31,17` for
-explicit layer placement (the model does not fit in VRAM, so the experts of the
-first 13 layers stay on the CPU), MTP speculative decoding (`-md` shared head,
+`embed-spread`. It uses `--fit on --fit-target 3072` for layer placement (the model does
+not fit in VRAM, so `--fit` moves some experts to the CPU), MTP speculative decoding (`-md` Q8_0 head,
 `--spec-type draft-mtp`), a 262144-token `--kv-unified` pool, and `--kv-unified-per-slot 175104`
 as the per-slot cap. See
 [notes/qwen3.8-flash-next.md](../../../../notes/qwen3.8-flash-next.md).

@@ -188,24 +188,21 @@ models:
   #    raises NotImplementedError on XPU). See notes/qwen3.8-flash-next.md.
   #
   #    Layers: the whole model does NOT fit in 2x32 GB VRAM with the KV pool.
-  #    Of the ~87 GiB, most are routed experts (512, 10 active); the rest of
-  #    the blocks (attention, SSM, shared expert, ~4 GiB) are read for every
-  #    token. -ngl all puts everything on the GPUs except the expert tensors
-  #    of the first N layers (--n-cpu-moe N, ~1 GiB per layer), which stay
-  #    on the CPU. --fit is off so this layout is explicit. -ngl splits by
-  #    layer COUNT, and the N light layers are all on SYCL0, so
-  #    --tensor-split 31,17 weights SYCL0 higher to even out VRAM.
-  #    VRAM budget (MiB, per device, with embed-spread resident): free ~29.2k,
-  #    weights ~23k (SYCL0 ~22k, SYCL1 ~21k), KV 2040, recurrent ~110, compute buffer (~ubatch). Tune
-  #    N / split / ubatch from the -lv 4 load log (buffer sizes); an
-  #    over-committed device loads but is very slow. -t/-tb 6 match the pod CPU
-  #    limit (6) and the 6 physical cores. Remove -lv 4 once tuned.
+  #    --fit on places layers/experts to fit the free VRAM on each GPU, with
+  #    --fit-target 3072 MiB of headroom per device for the MTP head (~1.4 GB
+  #    each) and the compute buffers. Manual placement (-ngl all --n-cpu-moe N
+  #    --tensor-split ...) was tried: -ngl splits by layer count, not size, so
+  #    SYCL1 over-committed (slow), and a rebalanced split hung the GPU
+  #    (xe: kernel-submitted job timeout, repeated GT0 resets) during
+  #    load_tensors. -t/-tb 6 match the pod CPU limit (6) and the 6 physical
+  #    cores. -lv 4 logs buffer sizes; remove once tuned.
   #
-  #    MTP: the shared-Q8_0 head (~2.7 GB VRAM, borrows embedding/output from
-  #    the main model; a borrow_shared_tensor message at load is expected)
-  #    drafts up to 2 tokens per step. Verify with "draft acceptance" in the
-  #    log or llamacpp:spec_decode_* metrics. GGML_SYCL_ENABLE_GRAPH is not
-  #    set: SYCL graphs are disabled whenever more than one device is used.
+  #    MTP: the self-contained Q8_0 head (~4.1 GB VRAM, own embedding/output
+  #    tensors) drafts up to 2 tokens per step. The -shared- head does not
+  #    load in this build (token_embd.weight not found). Verify with "draft
+  #    acceptance" in the log or llamacpp:spec_decode_* metrics.
+  #    GGML_SYCL_ENABLE_GRAPH is not set: SYCL graphs are disabled whenever
+  #    more than one device is used.
   #
   #    KV: --kv-unified shares one pool (--ctx-size, = model train ctx 262144)
   #    across slots; --kv-unified-per-slot caps any one slot at 175104, so
@@ -217,7 +214,7 @@ models:
   #    are read on demand from the page cache instead of kept resident.
   # ==========================================
   flash-next:
-    cmd: /app/llama-device-wrapper.sh --port ${PORT} --host 127.0.0.1 --cont-batching -m /data/models/Qwen3.8-Flash-Next-UD-IQ4_XS-00001-of-00003.gguf -ngl all --n-cpu-moe 13 --fit off --tensor-split 31,17 -t 6 -tb 6 --threads-http 4 --flash-attn on --cache-type-k q8_0 --cache-type-v q8_0 --ctx-size 262144 --kv-unified --kv-unified-per-slot 175104 --parallel 2 --ubatch-size 512 --load-mode mmap --lazy-mode on --jinja --poll 0 --metrics -lv 4 -md /data/models/mtp-Qwen3.8-Flash-Next-shared-Q8_0.gguf -ngld all --spec-type draft-mtp --spec-draft-n-max 2
+    cmd: /app/llama-device-wrapper.sh --port ${PORT} --host 127.0.0.1 --cont-batching -m /data/models/Qwen3.8-Flash-Next-UD-IQ4_XS-00001-of-00003.gguf --fit on --fit-target 3072 -t 6 -tb 6 --threads-http 4 --flash-attn on --cache-type-k q8_0 --cache-type-v q8_0 --ctx-size 262144 --kv-unified --kv-unified-per-slot 175104 --parallel 2 --ubatch-size 512 --load-mode mmap --lazy-mode on --jinja --poll 0 --metrics -lv 4 -md /data/models/mtp-Qwen3.8-Flash-Next-Q8_0.gguf -ngld all --spec-type draft-mtp --spec-draft-n-max 2
     env:
       - "ONEAPI_DEVICE_SELECTOR=level_zero:0,1"
       - "SYCL_PI_LEVEL_ZERO_USE_IMMEDIATE_COMMANDLISTS=1"
