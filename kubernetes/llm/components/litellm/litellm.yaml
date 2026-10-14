@@ -52,6 +52,23 @@ model_list:
   #     input_cost_per_token: 0.000000013
   #     output_cost_per_token: 0.000000013
 
+  # --- Qwen 3.8 Flash-Next (llama.cpp GGUF, both GPUs) ---
+  # Selecting it evicts the 35b/27b chat set (matrix set flash_next) and
+  # keeps embed. Requires the llama-swap image to carry a qwen4exp-capable
+  # llama.cpp and the GGUF to be on the PVC (see notes/qwen3.8-flash-next.md).
+  # - model_name: qwen3.8-flash-next
+  #   model_info:
+  #     disable_background_health_check: true
+  #   litellm_params:
+  #     model: openai/flash-next
+  #     api_base: http://llama-swap-svc.llm.svc.cluster.local.:8080/v1
+  #     api_key: "dummy"
+  #     input_cost_per_token: 0.000000013
+  #     output_cost_per_token: 0.000000013
+  #     timeout: 7200
+  #     num_retries: 8
+  #     retry_after: 15
+
   # --- Embed Spread (0.6B, both GPUs) ---
   - model_name: qwen3-embedding-0.6b
     litellm_params:
