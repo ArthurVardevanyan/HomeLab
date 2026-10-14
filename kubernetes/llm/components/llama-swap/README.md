@@ -608,11 +608,13 @@ The `matrix:` section is **active** with two sets. `dual_35b0-27b1-spread`
 evicts `flash-next`. Requests for a model in no set evict everything (the
 matrix solver treats a model in no set as able to run only alone).
 
-`flash-next` (Qwen3.8 Flash-Next, llama.cpp GGUF) is preloaded at startup with
-`embed-spread`. It uses `--fit on --fit-target 3072` for layer placement (the model does
+`flash-next` (Qwen3.8 Flash-Next, llama.cpp GGUF) is **not** preloaded; it loads
+on demand (~5 min) and is meant for hard agentic jobs where quality matters more
+than speed. Measured: ~190 tok/s prefill, ~10.6 tok/s decode (35B/27B decode at
+~40-70 tok/s). It uses `--fit on --fit-target 3072` for layer placement (the model does
 not fit in VRAM, so `--fit` moves some experts to the CPU), MTP speculative decoding (`-md` Q8_0 head,
-`--spec-type draft-mtp`), a 262144-token `--kv-unified` pool, and `--kv-unified-per-slot 175104`
-as the per-slot cap. See
+`--spec-type draft-mtp`), and a 262144-token `--kv-unified` pool shared by 2 slots
+with no per-slot cap (one session can use the full 262144). See
 [notes/qwen3.8-flash-next.md](../../../../notes/qwen3.8-flash-next.md).
 
 - **Hidden models** (`35b-gpu1`, `27b-gpu0`): `unlisted: true`, in no set.
