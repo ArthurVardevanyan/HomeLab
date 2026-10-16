@@ -1,0 +1,23 @@
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: argocd-apps
+  namespace: argocd-apps
+spec:
+  parentRefs:
+    - group: gateway.networking.k8s.io
+      kind: Gateway
+      name: https-gateway
+      namespace: openshift-ingress
+
+    - group: gateway.networking.k8s.io
+      kind: ListenerSet
+      name: argocd-apps
+      namespace: argocd-apps
+  hostnames: ["https-gateway"]
+  rules:
+    - backendRefs:
+        - group: ""
+          kind: Service
+          name: argocd-apps
