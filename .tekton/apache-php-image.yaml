@@ -11,6 +11,7 @@ metadata:
     pipelinesascode.tekton.dev/task: "https://raw.githubusercontent.com/ArthurVardevanyan/HomeLab/main/tekton/tasks/git-clone/0.9.1/git-clone.yaml"
     pipelinesascode.tekton.dev/task-1: "tekton/tasks/buildah/0.7.1/buildah.yaml"
     pipelinesascode.tekton.dev/task-2: "tekton/base/clair-action/clair-action-task.yaml"
+    pipelinesascode.tekton.dev/task-3: "tekton/base/sbom/sbom-task.yaml"
 spec:
   params:
     - name: git-url
@@ -41,10 +42,23 @@ spec:
         name: SCAN_OUTPUT
         value: $(tasks.clair-action.results.SCAN_OUTPUT)
         type: string
+      - description: The full image reference built by buildah
+        name: IMAGE_URL
+        value: $(tasks.buildah.results.IMAGE_URL)
+        type: string
+      - description: The image digest built by buildah
+        name: IMAGE_DIGEST
+        value: $(tasks.buildah.results.IMAGE_DIGEST)
+        type: string
+      - description: URL to the SBOM in the OCI image repository
+        name: LINK_TO_SBOM
+        value: $(tasks.sbom.results.LINK_TO_SBOM)
+        type: string
 
     workspaces:
       - name: data
       - name: git_auth_secret
+      - name: dockerconfig
 
     tasks:
       - name: git-clone
@@ -76,6 +90,8 @@ spec:
         workspaces:
           - name: source
             workspace: data
+          - name: dockerconfig
+            workspace: dockerconfig
 
       - name: clair-action
         runAfter:
@@ -86,6 +102,21 @@ spec:
         params:
           - name: IMAGE
             value: $(params.IMAGE)
+
+      - name: sbom
+        runAfter:
+          - buildah
+        taskRef:
+          name: sbom
+          kind: Task
+        params:
+          - name: IMAGE
+            value: "$(tasks.buildah.results.IMAGE_URL)@$(tasks.buildah.results.IMAGE_DIGEST)"
+        workspaces:
+          - name: dockerconfig
+            workspace: dockerconfig
+          - name: output
+            workspace: data
 
   taskRunTemplate:
     serviceAccountName: pipeline
@@ -106,3 +137,6 @@ spec:
     - name: git_auth_secret
       secret:
         secretName: "{{ git_auth_secret }}"
+    - name: dockerconfig
+      secret:
+        secretName: homelab-push-pull-secret

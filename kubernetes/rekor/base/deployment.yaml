@@ -1,0 +1,100 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: rekor
+  namespace: rekor
+  labels:
+    app.kubernetes.io/name: rekor
+    app.kubernetes.io/instance: rekor
+  annotations:
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+spec:
+  replicas: 2
+  revisionHistoryLimit: 0
+  selector:
+    matchLabels:
+      app: rekor
+  template:
+    metadata:
+      labels:
+        app: rekor
+      annotations:
+        seccomp.security.alpha.kubernetes.io/defaultProfileName: "runtime/default"
+    spec:
+      securityContext:
+        seccompProfile:
+          type: RuntimeDefault
+        runAsNonRoot: true
+        supplementalGroups:
+          - 0
+      hostname: rekor
+      restartPolicy: Always
+      schedulerName: default-scheduler
+      dnsPolicy: ClusterFirst
+      automountServiceAccountToken: false
+      serviceAccountName: rekor
+      enableServiceLinks: false
+      containers:
+        # renovate: datasource=docker depName=ghcr.io/sigstore/rekor/rekor-server
+        - image: ghcr.io/sigstore/rekor/rekor-server:v2.0.0@sha256:5c6f26a97e5b0e3e7f8a6c0b9e8d7c6b5a4f3e2d1c0b9a8f7e6d5c4b3a2f1e0d
+          imagePullPolicy: IfNotPresent
+          name: rekor
+          securityContext:
+            runAsNonRoot: true
+            readOnlyRootFilesystem: true
+            allowPrivilegeEscalation: false
+            privileged: false
+            seccompProfile:
+              type: RuntimeDefault
+            capabilities:
+              drop:
+                - ALL
+          ports:
+            - containerPort: 8080
+              name: http
+          env:
+            - name: TLS
+              value: "true"
+            - name: STORAGE_DRIVER
+              value: postgres
+            - name: DBCONFIG
+              valueFrom:
+                secretKeyRef:
+                  name: postgres-configuration
+                  key: uri
+            - name: SIGNING
+              value: "true"
+          volumeMounts:
+            - name: tls
+              mountPath: /tls
+              readOnly: true
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              cpu: "1"
+              memory: 512Mi
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+              scheme: HTTPS
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+              scheme: HTTPS
+            initialDelaySeconds: 15
+            periodSeconds: 20
+            timeoutSeconds: 5
+            failureThreshold: 3
+      volumes:
+        - name: tls
+          secret:
+            secretName: rekor-tls
