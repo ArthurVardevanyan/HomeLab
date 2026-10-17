@@ -17,4 +17,3 @@ ko-build:
 ko-build-pipeline:
 	ko build ./cmd/llama-swap-metrics-exporter --bare --sbom none \
 	  --image-label quay.expires-after="${EXPIRE}" --tags "${TAG}"
-	printf "%s" "${KO_DOCKER_REPO}:${TAG}" > "${WORKSPACE_RESULTS_PATH}"

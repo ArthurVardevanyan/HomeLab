@@ -1,0 +1,109 @@
+---
+apiVersion: tekton.dev/v1
+kind: Task
+metadata:
+  name: sbom
+  namespace: homelab
+  labels:
+    app: homelab
+    app.kubernetes.io/instance: homelab
+  annotations:
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+spec:
+  params:
+    - description: Image reference (registry/ns/repo@sha256:...) to generate SBOM for
+      name: IMAGE
+      type: string
+    - description: Registry hostname (e.g. registry.arthurvardevanyan.com)
+      name: REGISTRY_HOST
+      type: string
+      default: "registry.arthurvardevanyan.com"
+
+  results:
+    - description: URL to the SBOM in the OCI image repository
+      name: LINK_TO_SBOM
+      type: string
+
+  workspaces:
+    - name: dockerconfig
+      description: A workspace with a .docker/config.json file for registry access
+    - name: output
+      description: Workspace for intermediate SBOM data
+
+  steps:
+    - name: sbom-generate
+      image: "registry.arthurvardevanyan.com/homelab/toolbox:not_latest"
+      computeResources:
+        limits:
+          cpu: 1000m
+          memory: 1Gi
+        requests:
+          cpu: 250m
+          memory: 256Mi
+      securityContext:
+        runAsNonRoot: true
+        privileged: false
+        readOnlyRootFilesystem: true
+        allowPrivilegeEscalation: false
+        seccompProfile:
+          type: RuntimeDefault
+        capabilities:
+          drop:
+            - ALL
+      env:
+        - name: IMAGE
+          value: $(params.IMAGE)
+        - name: REGISTRY_HOST
+          value: $(params.REGISTRY_HOST)
+        - name: COSIGN_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: cosign-keys
+              key: cosign.password
+        - name: DOCKER_CONFIG
+          value: $(workspaces.dockerconfig.path)
+        - name: OUTPUT_PATH
+          value: $(workspaces.output.path)
+        - name: LINK_TO_SBOM
+          value: $(results.LINK_TO_SBOM.path)
+      volumeMounts:
+        - name: cosign-key
+          mountPath: /etc/cosign
+      script: |
+        #!/usr/bin/env bash
+        set -o errexit -o nounset -o pipefail
+
+        # Declare variables injected by Tekton as env vars to satisfy shellcheck SC2154
+        : "${IMAGE:=""}"
+        : "${REGISTRY_HOST:=""}"
+        : "${DOCKER_CONFIG:=""}"
+        : "${COSIGN_PASSWORD:=""}"
+        : "${OUTPUT_PATH:=""}"
+        : "${LINK_TO_SBOM:=""}"
+
+        # Extract repo name from image reference (registry/ns/repo@sha256:...)
+        REPO=$(echo "${IMAGE}" | sed 's|^[^/]*/||' | sed 's|@.*||')
+
+        # Generate SBOM using syft
+        echo "Generating SBOM for ${IMAGE}..."
+        syft "${IMAGE}" -o cyclonedx-json > "${OUTPUT_PATH}/sbom.cyclonedx.json"
+
+        # Attest SBOM using cosign
+        echo "Attesting SBOM to ${IMAGE}..."
+        cosign attest --type sbom \
+          --key "file:///etc/cosign/cosign.key" \
+          --password "${COSIGN_PASSWORD}" \
+          --yes \
+          --image "${IMAGE}" \
+          "${OUTPUT_PATH}/sbom.cyclonedx.json"
+
+        # Write the LINK_TO_SBOM result
+        echo "https://${REGISTRY_HOST}/homelab/${REPO}" > "${LINK_TO_SBOM}"
+
+        echo "SBOM generated and attested."
+        echo "Link: https://${REGISTRY_HOST}/homelab/${REPO}"
+
+  volumes:
+    - name: cosign-key
+      secret:
+        secretName: cosign-keys
