@@ -1,0 +1,12 @@
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: rekor-app
+  namespace: rekor
+spec:
+  unhealthyPodEvictionPolicy: AlwaysAllow
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: rekor
