@@ -1,0 +1,28 @@
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: rekor
+  namespace: rekor
+  annotations:
+    externaldns.k8s.io: unifi
+spec:
+  parentRefs:
+    - group: gateway.networking.k8s.io
+      kind: Gateway
+      name: https-gateway
+      namespace: openshift-ingress
+  hostnames:
+    - "rekor.arthurvardevanyan.com"
+  rules:
+    - backendRefs:
+        - group: ""
+          kind: Service
+          name: rekor
+          namespace: rekor
+          port: 8080
+          weight: 1
+      matches:
+        - path:
+            type: PathPrefix
+            value: /
