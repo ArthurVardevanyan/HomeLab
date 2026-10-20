@@ -1,0 +1,21 @@
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: netbox-cert
+  namespace: netbox
+  annotations:
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+spec:
+  secretName: netbox-cert
+  duration: 1080h
+  renewBeforePercentage: 50
+  privateKey:
+    rotationPolicy: Always
+    algorithm: ECDSA
+    size: 256
+  dnsNames:
+    - netbox.okd.homelab.arthurvardevanyan.com
+  issuerRef:
+    kind: ClusterIssuer
+    name: letsencrypt

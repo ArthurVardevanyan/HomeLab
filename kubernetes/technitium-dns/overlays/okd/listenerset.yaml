@@ -12,7 +12,20 @@ spec:
     namespace: openshift-ingress
   listeners:
     - name: https-dns
-      hostname: technitium-okd.dns.arthurvardevanyan.com
+      hostname: "technitium-okd.dns.arthurvardevanyan.com"
+      protocol: HTTPS
+      port: 443
+      allowedRoutes:
+        namespaces:
+          from: Same
+      tls:
+        mode: Terminate
+        certificateRefs:
+          - group: ""
+            kind: Secret
+            name: technitium-dns-cert
+    - name: https
+      hostname: "technitium.okd.homelab.arthurvardevanyan.com"
       protocol: HTTPS
       port: 443
       allowedRoutes:
