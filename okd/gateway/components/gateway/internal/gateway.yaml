@@ -117,6 +117,19 @@ spec:
           - group: ""
             kind: Secret
             name: ingress-certificate
+    - name: gateway
+      protocol: HTTPS
+      port: 443
+      hostname: "internal.gateway.okd.homelab.arthurvardevanyan.com"
+      allowedRoutes:
+        namespaces:
+          from: Same
+      tls:
+        mode: Terminate
+        certificateRefs:
+          - group: ""
+            kind: Secret
+            name: internal-gateway-cert
   infrastructure:
     labels:
       coraza: internal-ruleset
