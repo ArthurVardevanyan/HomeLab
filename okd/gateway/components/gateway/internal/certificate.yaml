@@ -2,20 +2,66 @@
 apiVersion: cert-manager.io/v1
 kind: Certificate
 metadata:
-  name: internal-gateway-cert
+  name: arthurvardevanyan-cert
   namespace: openshift-ingress
   annotations:
     argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
 spec:
-  secretName: internal-gateway-cert
+  secretName: arthurvardevanyan-cert
   duration: 1080h # 45d
   renewBeforePercentage: 50
   privateKey:
     rotationPolicy: Always
     algorithm: ECDSA
-    size: 256
+    size: 384
   dnsNames:
-    - "*.internal.gateway.okd.homelab.arthurvardevanyan.com"
+    - "*.arthurvardevanyan.com"
+    - "*.dns.arthurvardevanyan.com"
+  issuerRef:
+    kind: ClusterIssuer
+    name: letsencrypt
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: cluster-cert
+  namespace: openshift-ingress
+  annotations:
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+spec:
+  secretName: cluster-cert
+  duration: 1080h # 45d
+  renewBeforePercentage: 50
+  privateKey:
+    rotationPolicy: Always
+    algorithm: ECDSA
+    size: 384
+  dnsNames:
+    - "*.okd.homelab.arthurvardevanyan.com"
+  issuerRef:
+    kind: ClusterIssuer
+    name: letsencrypt
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: unas-cert
+  namespace: openshift-ingress
+  annotations:
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+spec:
+  secretName: unas-cert
+  duration: 1080h # 45d
+  renewBeforePercentage: 50
+  privateKey:
+    rotationPolicy: Always
+    algorithm: ECDSA
+    size: 384
+  dnsNames:
+    - "*.unas.arthurvardevanyan.com"
+    - "*.s3.unas.arthurvardevanyan.com"
+    - "*.ssd.unas.arthurvardevanyan.com"
+    - "*.s3.ssd.unas.arthurvardevanyan.com"
   issuerRef:
     kind: ClusterIssuer
     name: letsencrypt

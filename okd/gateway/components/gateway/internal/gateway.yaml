@@ -15,7 +15,7 @@ spec:
     - name: https
       protocol: HTTPS
       port: 443
-      hostname: "*.internal.gateway.okd.homelab.arthurvardevanyan.com"
+      hostname: "*.arthurvardevanyan.com"
       allowedRoutes:
         namespaces:
           from: All
@@ -24,7 +24,99 @@ spec:
         certificateRefs:
           - group: ""
             kind: Secret
-            name: internal-gateway-cert
+            name: arthurvardevanyan-cert
+    - name: https-dns
+      protocol: HTTPS
+      port: 443
+      hostname: "*.dns.arthurvardevanyan.com"
+      allowedRoutes:
+        namespaces:
+          from: All
+      tls:
+        mode: Terminate
+        certificateRefs:
+          - group: ""
+            kind: Secret
+            name: arthurvardevanyan-cert
+    - name: https-cluster
+      protocol: HTTPS
+      port: 443
+      hostname: "*.okd.homelab.arthurvardevanyan.com"
+      allowedRoutes:
+        namespaces:
+          from: All
+      tls:
+        mode: Terminate
+        certificateRefs:
+          - group: ""
+            kind: Secret
+            name: cluster-cert
+    - name: https-unas
+      protocol: HTTPS
+      port: 443
+      hostname: "*.unas.arthurvardevanyan.com"
+      allowedRoutes:
+        namespaces:
+          from: All
+      tls:
+        mode: Terminate
+        certificateRefs:
+          - group: ""
+            kind: Secret
+            name: unas-cert
+    - name: https-s3-unas
+      protocol: HTTPS
+      port: 443
+      hostname: "*.s3.unas.arthurvardevanyan.com"
+      allowedRoutes:
+        namespaces:
+          from: All
+      tls:
+        mode: Terminate
+        certificateRefs:
+          - group: ""
+            kind: Secret
+            name: unas-cert
+    - name: https-ssd-unas
+      protocol: HTTPS
+      port: 443
+      hostname: "*.ssd.unas.arthurvardevanyan.com"
+      allowedRoutes:
+        namespaces:
+          from: All
+      tls:
+        mode: Terminate
+        certificateRefs:
+          - group: ""
+            kind: Secret
+            name: unas-cert
+    - name: https-s3-ssd-unas
+      protocol: HTTPS
+      port: 443
+      hostname: "*.s3.ssd.unas.arthurvardevanyan.com"
+      allowedRoutes:
+        namespaces:
+          from: All
+      tls:
+        mode: Terminate
+        certificateRefs:
+          - group: ""
+            kind: Secret
+            name: unas-cert
+
+    - name: https-ingress
+      protocol: HTTPS
+      port: 443
+      hostname: "*.apps.okd.homelab.arthurvardevanyan.com"
+      allowedRoutes:
+        namespaces:
+          from: All
+      tls:
+        mode: Terminate
+        certificateRefs:
+          - group: ""
+            kind: Secret
+            name: ingress-certificate
   infrastructure:
     labels:
       coraza: internal-ruleset
