@@ -12,7 +12,12 @@ spec:
       kind: Gateway
       name: https-gateway-external
       namespace: openshift-ingress
-  hostnames: ["pr-agent.arthurvardevanyan.com"]
+    - group: gateway.networking.k8s.io
+      kind: ListenerSet
+      name: pr-agent
+      namespace: pr-agent
+  hostnames:
+    - pr-agent.arthurvardevanyan.com
   rules:
     - backendRefs:
         - group: ""

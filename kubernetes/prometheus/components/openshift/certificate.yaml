@@ -8,14 +8,17 @@ metadata:
     argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
 spec:
   secretName: prometheus-cert
-  duration: 1080h # 45d
+  duration: 1080h
   renewBeforePercentage: 50
   privateKey:
     rotationPolicy: Always
     algorithm: ECDSA
     size: 256
   dnsNames:
-    - "prometheus.okd.homelab.arthurvardevanyan.com"
+    - prometheus.okd.homelab.arthurvardevanyan.com
+    - prometheus-ceph.okd.homelab.arthurvardevanyan.com
+    - prometheus-nas.okd.homelab.arthurvardevanyan.com
+    - thanos-querier.okd.homelab.arthurvardevanyan.com
   issuerRef:
     kind: ClusterIssuer
     name: letsencrypt
