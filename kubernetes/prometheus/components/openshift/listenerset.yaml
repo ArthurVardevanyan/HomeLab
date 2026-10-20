@@ -1,0 +1,65 @@
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: ListenerSet
+metadata:
+  name: prometheus
+  namespace: prometheus
+spec:
+  parentRef:
+    group: gateway.networking.k8s.io
+    kind: Gateway
+    name: https-gateway
+    namespace: openshift-ingress
+  listeners:
+    - name: https
+      hostname: "prometheus.okd.homelab.arthurvardevanyan.com"
+      protocol: HTTPS
+      port: 443
+      allowedRoutes:
+        namespaces:
+          from: Same
+      tls:
+        mode: Terminate
+        certificateRefs:
+          - group: ""
+            kind: Secret
+            name: prometheus-cert
+    - name: prometheus-ceph
+      hostname: "prometheus-ceph.okd.homelab.arthurvardevanyan.com"
+      protocol: HTTPS
+      port: 443
+      allowedRoutes:
+        namespaces:
+          from: Same
+      tls:
+        mode: Terminate
+        certificateRefs:
+          - group: ""
+            kind: Secret
+            name: prometheus-cert
+    - name: prometheus-nas
+      hostname: "prometheus-nas.okd.homelab.arthurvardevanyan.com"
+      protocol: HTTPS
+      port: 443
+      allowedRoutes:
+        namespaces:
+          from: Same
+      tls:
+        mode: Terminate
+        certificateRefs:
+          - group: ""
+            kind: Secret
+            name: prometheus-cert
+    - name: thanos-querier
+      hostname: "thanos-querier.okd.homelab.arthurvardevanyan.com"
+      protocol: HTTPS
+      port: 443
+      allowedRoutes:
+        namespaces:
+          from: Same
+      tls:
+        mode: Terminate
+        certificateRefs:
+          - group: ""
+            kind: Secret
+            name: prometheus-cert
