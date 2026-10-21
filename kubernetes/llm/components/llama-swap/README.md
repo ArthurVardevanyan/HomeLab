@@ -30,8 +30,9 @@ llama-server (llama.cpp SYCL).
     - [Known Gaps](#known-gaps)
   - [Memory model](#memory-model)
     - [Per-GPU VRAM (static at load)](#per-gpu-vram-static-at-load)
-    - [Host RAM (anonymous, per-instance)](#host-ram-anonymous-per-instance)
+    - [Host RAM](#host-ram)
     - [Summary](#summary)
+  - [CPU KV Offloading (27b-gpu0/35b-gpu1)](#cpu-kv-offloading-27b-gpu035b-gpu1)
   - [GPU Backend: SYCL (not Vulkan)](#gpu-backend-sycl-not-vulkan)
     - [Image tag](#image-tag)
     - [Preload times](#preload-times)
@@ -39,6 +40,7 @@ llama-server (llama.cpp SYCL).
   - [Metrics](#metrics)
     - [Proxy metrics](#proxy-metrics)
     - [Embedding model metrics (llama.cpp, via metrics-exporter sidecar)](#embedding-model-metrics-llamacpp-via-metrics-exporter-sidecar)
+  - [LMCache MP Fallback (contingency)](#lmcache-mp-fallback-contingency)
   - [References](#references)
 
 ## Model Matrix
@@ -513,6 +515,15 @@ plus the absence of TP/cross-card communication overhead.
    `unloadTimeout`, `--sleep-level` dropped from the 27B macros). The
    documentation above (wake sequence, backend liveness, preload times,
    compatibility investigation) is relevant only if it is re-enabled.
+9. **CPU KV offloading for hidden models only (27b-gpu0/35b-gpu1)** — 27B:
+   8 GiB, 35B: 4 GiB pinned host RAM each (12 GiB upper bound on the ~76 GiB
+   gpu-1 node).
+   The production pair (35b-gpu0/27b-gpu1) does not have offloading yet.
+   The native `OffloadingConnector` in v0.32.0 subclasses `SupportsHMA` so the
+   hybrid KV cache manager stays enabled, but the `--no-disable-hybrid-kv-cache-manager`
+   flag is a startup-fail guard for future vLLM that may drop HMA support.
+   See [LMCache MP Fallback (contingency)](#lmcache-mp-fallback-contingency)
+   for the `lmcache` backend switch if native block-split assertions appear.
 
 ## Memory model
 
@@ -542,18 +553,48 @@ VRAM headroom accounts for SYCL runtime (~1–2 GB) and vLLM engine overhead
 (tokenizer, scheduler, KV cache manager). If the pod OOMs on model load or
 pushes VRAM over 32 GB, reduce `--gpu-memory-utilization`, `--max-num-batched-tokens`, or `--max-model-len`.
 
-### Host RAM (anonymous, per-instance)
+### Host RAM
 
-| Component                                       | Size       | Behavior                                                                                      |
-| ----------------------------------------------- | ---------- | --------------------------------------------------------------------------------------------- |
-| Baseline (SYCL/Level-Zero runtime, vLLM engine) | ~2–4 GiB   | Allocated at load, stays flat                                                                 |
-| PyTorch staging buffers                         | 0 → ~8 GiB | climbs with session load, plateaus                                                            |
-| Freed on unload                                 | yes        | When the child process is killed (model swap), all anonymous memory is returned to the cgroup |
+| Component                                               | Size       | Behavior                                                                                      |
+| ------------------------------------------------------- | ---------- | --------------------------------------------------------------------------------------------- |
+| Baseline (SYCL/Level-Zero runtime, vLLM engine)         | ~2–4 GiB   | Allocated at load, stays flat                                                                 |
+| PyTorch staging buffers                                 | 0 → ~8 GiB | climbs with session load, plateaus                                                            |
+| KV offload buffer (pinned host RAM, hidden models only) | ~4–8 GiB   | 35b-gpu1: 4 GiB, 27b-gpu0: 8 GiB (one instance only under current matrix)                     |
+| Freed on unload                                         | yes        | When the child process is killed (model swap), all anonymous memory is returned to the cgroup |
 
 ### Summary
 
 - VRAM: static ~22–24 GiB per GPU for chat models at load. No spillover.
 - Host anonymous: bounded by usage high-water mark; freed on model unload.
+  - KV offload buffer (pinned host RAM, 27b-gpu0/35b-gpu1 only): 27B: 8 GiB,
+    35B: 4 GiB per instance, retained while running. Under the current matrix
+    only one of these hidden models is resident at a time → ~8 GiB (27B) or
+    ~4 GiB (35B) pinned (12 GiB upper bound on the ~76 GiB gpu-1 node).
+
+## CPU KV Offloading (27b-gpu0/35b-gpu1)
+
+The `27b-gpu0` and `35b-gpu1` models (hidden, `unlisted: true`) are configured
+with **CPU KV cache offloading** to safely cache inactive/evicted multi-turn
+contexts into pinned host RAM while maintaining full-speed VRAM execution for
+active decode tokens.
+
+- `--kv-cache-memory-bytes`: renames `--kv-cache-memory` (v0.32.0). Caps the
+  GPU KV pool to skip startup profiling.
+- `--mamba-cache-mode align`: snapshots GDN recurrent state at block boundaries
+  — required for 1,600-token hash grouping under MTP k=3. The v0.32.0 default
+  is `none` and no auto-switch occurs; this flag is what activates align mode.
+- `--no-disable-hybrid-kv-cache-manager`: startup-fail guard. v0.32.0's
+  `OffloadingConnector` subclasses `SupportsHMA` so HMA stays on by default,
+  but a future vLLM that drops HMA support for the offload connector will hard-
+  error instead of silently degrading the GDN models.
+- `--kv-offloading-backend native --kv-offloading-size 4` (35b-gpu1): 4 GiB
+  pinned host RAM per instance.
+- `--kv-offloading-backend native --kv-offloading-size 8` (27b-gpu0): 8 GiB
+  pinned host RAM per instance (12 GiB upper bound on the ~76 GiB gpu-1 node
+  if both are requested concurrently).
+
+The production chat pair (`35b-gpu0`/`27b-gpu1`) does **not** have CPU
+offloading yet; offloading is only on the hidden models as requested.
 
 ## GPU Backend: SYCL (not Vulkan)
 
@@ -576,11 +617,10 @@ Zero path via PyTorch/XPU. No Mesa/Vulkan userspace is needed.
 
 ### Image tag
 
-The custom image is
-`registry.arthurvardevanyan.com/homelab/llama-swap:v264-intel-b11580-<sha>` —
-the tag encodes the llama-swap version (`v264`), the vLLM XPU base image
-build (`intel-b11580`), and a short commit SHA of the containerfile/patches.
-Renovate-managed; the PaC build (Tekton) pushes on PR merge.
+The custom image tag is managed by Renovate and referenced in
+`deployment.yaml`. The tag encodes the llama-swap version, the vLLM XPU base
+image build, and a short commit SHA of the containerfile/patches. The PaC build
+(Tekton) pushes on PR merge.
 
 ### Preload times
 
@@ -692,6 +732,23 @@ endpoint is proxied through llama-swap when the model is loaded. Includes
 `gpu_memory_utilization`) and `vllm:num_requests_waiting_by_reason`
 (`capacity` = waiting for a free `max-num-seqs` slot, `deferred` = blocked
 by other transient constraints).
+
+## LMCache MP Fallback (contingency)
+
+If the native `OffloadingConnector` backend triggers group block-split runtime
+assertions at startup, switch to the LMCache `LMCacheMPConnector` with a shared
+`--separate-object-groups` RPC server as a contingency:
+
+1. Change `--kv-offloading-backend native` → `--kv-offloading-backend lmcache`
+2. Start the LMCache MP connector server with `--separate-object-groups`
+3. The `lmcache` backend does not propagate `--kv-offloading-size` — capacity
+   is managed by the standalone LMCache server process (default
+   `tcp://localhost:5555`)
+4. Remove `--no-disable-hybrid-kv-cache-manager` if needed (LMCache connector
+   may or may not support HMA depending on the connector version)
+
+This requires a separate LMCache server deployment and is a one-line flag change
+from the native configuration when the native assertions appear.
 
 ## References
 
