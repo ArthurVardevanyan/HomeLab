@@ -3525,6 +3525,30 @@
       }
     },
     {
+      "title": "MTP: Acceptance Rate per Draft Position",
+      "type": "timeseries",
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 52
+      },
+      "id": 509,
+      "description": "rate(vllm:spec_decode_num_accepted_tokens_per_pos_total) / rate(vllm:spec_decode_num_drafts_total) - fraction of verification steps in which the token at each draft position was accepted. Use it to compare MTP depth or INT4 draft head A/Bs over time; the bar gauge above is an all-time cumulative sum.",
+      "targets": [
+        {
+          "expr": "sum by (model, position) (rate(vllm:spec_decode_num_accepted_tokens_per_pos_total{model=~\"$model\"}[$__rate_interval])) / on(model) group_left sum by (model) (rate(vllm:spec_decode_num_drafts_total{model=~\"$model\"}[$__rate_interval]))",
+          "legendFormat": "{{model}} pos {{position}}",
+          "refId": "A",
+          "unit": "percentunit"
+        }
+      ],
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
+      }
+    },
+    {
       "title": "Requests Running",
       "type": "timeseries",
       "gridPos": {
