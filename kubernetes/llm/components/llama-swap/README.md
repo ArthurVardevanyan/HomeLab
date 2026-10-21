@@ -161,8 +161,8 @@ Per-model specifics:
   `--tool-call-parser qwen3_coder`. The MoE's ~2.3B activated params per
   token make it fast to decode but expensive to spec-decode (expert union on
   verify batch). MTP3 + fp8 KV + 0.93 util fits comfortably in 32 GB.
-- **27B dense**: `--tool-call-parser qwen3_xml`, `--max-model-len 194560`
-  (190K). The dense model is simpler (no expert routing) and runs alongside
+- **27B dense**: `--tool-call-parser qwen3_xml`, `--max-model-len 172032`
+  (168K). The dense model is simpler (no expert routing) and runs alongside
   the 35B at the same context window.
 
 ### MTP Speculative Decoding (vLLM)
@@ -626,8 +626,10 @@ active decode tokens.
 - `--kv-cache-memory-bytes`: renames `--kv-cache-memory` (v0.32.0). Caps the
   GPU KV pool to skip startup profiling.
 - `--mamba-cache-mode align`: snapshots GDN recurrent state at block boundaries
-  — required for 1,600-token hash grouping under MTP k=3. The v0.32.0 default
-  is `none` and no auto-switch occurs; this flag is what activates align mode.
+  — required for 1,600-token hash grouping under MTP k=3. vLLM v0.32.0 already
+  switches to `align` by itself when prefix caching is enabled (startup log:
+  `Mamba cache mode is set to 'align' ... by default`), so the explicit flag on
+  the hidden models is redundant but harmless.
 - `--no-disable-hybrid-kv-cache-manager`: startup-fail guard. v0.32.0's
   `OffloadingConnector` subclasses `SupportsHMA` so HMA stays on by default,
   but a future vLLM that drops HMA support for the offload connector will hard-
