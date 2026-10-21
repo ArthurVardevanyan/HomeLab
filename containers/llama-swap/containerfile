@@ -2,6 +2,11 @@
 #
 # Base: vLLM XPU (v0.31.0 + SYCL 9) + llama-swap v264 SYCL binaries
 #       + cookbook MTP + APC + GDN + backward-copy + eagle-drop patches
+#
+# Note: The full Intel oneAPI toolkit (~9.5 GB) from llama-swap-bin is
+# intentionally NOT present in the final image. llama.cpp uses the vendored
+# /app/rt runtime; vLLM uses its own Intel runtime wheels from /opt/venv/lib.
+#
 # renovate: datasource=docker depName=vllm/vllm-openai-xpu versioning=loose
 FROM docker.io/vllm/vllm-openai-xpu:v0.31.0@sha256:95ac815038c4b3537b173798bfe3b89bdf525a52bd653cd14d4deb01f1062be7 AS vllm-base
 FROM ghcr.io/mostlygeek/llama-swap:v264-intel-b11580@sha256:3b341c2cfa8f90d5a40bbfb56aa7158d4fc8417b8e7f0f38cdfb6a39b42a5eec AS llama-swap-bin
@@ -21,6 +26,28 @@ RUN set -eux; \
   git apply /tmp/patches/vllm-wrapper-combined.diff && \
   CGO_ENABLED=0 go build -trimpath -o /usr/local/bin/vllm-wrapper ./cmd/vllm-wrapper
 
+# Vendored Intel runtime for llama.cpp — built from llama-swap-bin which has
+# the full oneAPI toolkit, but only the vendored libraries end up in the
+# final image (keep the image from carrying ~9.5 GB of unused oneAPI files).
+FROM llama-swap-bin AS rt-vendor
+RUN set -eux; \
+  mkdir -p /app/rt; \
+  ONEAPI=/opt/intel/oneapi; \
+  PROBE="$(find "${ONEAPI}" -maxdepth 4 -type d -name lib | sort | tr '\n' ':')/app"; \
+  vendor() { \
+  LD_LIBRARY_PATH="${PROBE}" ldd "$@" \
+  | awk '$2 == "=>" && $3 ~ "^/opt/intel/oneapi/" {print $1, $3}' \
+  | sort -u \
+  | while read -r name path; do cp -L "${path}" "/app/rt/${name}"; done; \
+  }; \
+  vendor /app/llama-server /app/libggml-sycl.so; \
+  for name in libur_adapter_level_zero.so.0 libur_adapter_level_zero_v2.so.0 libur_adapter_opencl.so.0; do \
+  src="$(find "${ONEAPI}" -name "${name}" | sort | head -n1)"; \
+  test -n "${src}"; \
+  cp -L "${src}" "/app/rt/${name}"; \
+  vendor "/app/rt/${name}"; \
+  done
+
 # Final image — use vllm-base (has python3, curl, vLLM libs) and overlay llama-swap binaries
 FROM vllm-base
 
@@ -33,7 +60,11 @@ COPY --from=llama-swap-bin /app/llama-server /app/llama-server
 COPY --from=llama-swap-bin /app/*.so* /app/
 COPY --from=llama-swap-bin /app/libllama* /app/
 # Complete OneAPI runtime (SYCL, MKL, OpenMP, SVML, etc.)
-COPY --from=llama-swap-bin /opt/intel/oneapi /opt/intel/oneapi
+# ~9.5 GB, intentionally NOT copied — llama.cpp uses the vendored /app/rt
+# runtime (rt-vendor stage below); vLLM uses its own Intel runtime wheels
+# from /opt/venv/lib. Uncomment for in-container sycl-ls / oneAPI debugging.
+# COPY --from=llama-swap-bin /opt/intel/oneapi /opt/intel/oneapi
+COPY --from=rt-vendor /app/rt /app/rt
 COPY --from=vllm-wrapper-build /usr/local/bin/vllm-wrapper /app/vllm-wrapper
 
 # Hermetic Intel runtime for llama.cpp, vendored into /app/rt/.
@@ -71,23 +102,12 @@ COPY --from=vllm-wrapper-build /usr/local/bin/vllm-wrapper /app/vllm-wrapper
 # libhwloc, libOpenCL) is resolved the same way. Deliberately NOT vendored
 # (must resolve from the host GPU stack): libze_loader.so.1,
 # libze_intel_gpu.so.1, libigc.so.2, libopencl-clang2.so.17.
+#
+# NOTE: The vendoring step has been moved to the `rt-vendor` stage so the
+# full oneAPI toolkit (~9.5 GB) stays in that intermediate layer and is NOT
+# copied into the final image.
+#
 RUN set -eux; \
-  mkdir -p /app/rt; \
-  ONEAPI=/opt/intel/oneapi; \
-  PROBE="$(find "${ONEAPI}" -maxdepth 4 -type d -name lib | sort | tr '\n' ':')/app"; \
-  vendor() { \
-  LD_LIBRARY_PATH="${PROBE}" ldd "$@" \
-  | awk '$2 == "=>" && $3 ~ "^/opt/intel/oneapi/" {print $1, $3}' \
-  | sort -u \
-  | while read -r name path; do cp -L "${path}" "/app/rt/${name}"; done; \
-  }; \
-  vendor /app/llama-server /app/libggml-sycl.so; \
-  for name in libur_adapter_level_zero.so.0 libur_adapter_level_zero_v2.so.0 libur_adapter_opencl.so.0; do \
-  src="$(find "${ONEAPI}" -name "${name}" | sort | head -n1)"; \
-  test -n "${src}"; \
-  cp -L "${src}" "/app/rt/${name}"; \
-  vendor "/app/rt/${name}"; \
-  done; \
   ! LD_LIBRARY_PATH=/app/rt:/app ldd /app/llama-server | grep -E "not found|/opt/venv|/opt/intel"; \
   ! LD_LIBRARY_PATH=/app/rt:/app ldd /app/libggml-sycl.so | grep -E "not found|/opt/venv|/opt/intel"; \
   for f in /app/rt/libur_adapter_*.so.0; do \
@@ -95,11 +115,10 @@ RUN set -eux; \
   done
 
 # vllm-device-wrapper — ensures ONEAPI env vars are exported for child processes
-COPY vllm-device-wrapper.sh /app/vllm-device-wrapper.sh
+COPY --chmod=755 vllm-device-wrapper.sh /app/vllm-device-wrapper.sh
 # llama-device-wrapper — pins llama.cpp to the hermetic /app/rt runtime so it
 # never binds vLLM's SYCL 9 / venv OpenMP stack (see /app/rt comment above).
-COPY llama-device-wrapper.sh /app/llama-device-wrapper.sh
-RUN chmod +x /app/vllm-device-wrapper.sh /app/llama-device-wrapper.sh
+COPY --chmod=755 llama-device-wrapper.sh /app/llama-device-wrapper.sh
 
 # Cookbook patches (vendor + apply at build time)
 COPY patches/ /tmp/patches/
@@ -107,8 +126,7 @@ COPY patches/ /tmp/patches/
 # Each patch is idempotent (checks for marker before applying)
 # renovate: datasource=github-releases depName=SergiioB/intel-arc-pro-b70-inference-cookbook
 RUN set -eux; \
-  VLLM_PKG=$(python3 -c "import vllm; print(vllm.__file__.replace('__init__.py',''))" 2>/dev/null || echo "/opt/venv/lib/python3.12/site-packages/vllm"); \
-  echo "Patching vllm at: ${VLLM_PKG}"; \
+  echo "Patching vllm at: $(python3 -c "import vllm; print(vllm.__file__.replace('__init__.py',''))" 2>/dev/null || echo '/opt/venv/lib/python3.12/site-packages/vllm')"; \
   echo "=== patch_mtp_nightly ===" && \
   python3 /tmp/patches/patch_mtp_nightly.py; \
   echo "=== patch_mtp_boundary ===" && \
@@ -143,10 +161,7 @@ ENV XDG_CACHE_HOME=/tmp \
 # llama.cpp does NOT use this LD_LIBRARY_PATH — llama-swap always launches it
 # through llama-device-wrapper.sh, which overrides LD_LIBRARY_PATH to the
 # hermetic /app/rt runtime (see /app/rt COPY block above) instead of
-# inheriting this one. Do not remove /opt/intel/oneapi/... entries below on
-# the assumption they are dead weight for llama.cpp — some non-llama.cpp
-# tooling (e.g. sycl-ls, oneAPI CLI utilities) still relies on them for
-# manual debugging inside the container.
+# inheriting this one.
 ENV VLLM_TARGET_DEVICE=xpu \
   VLLM_XPU_ENABLE_XPU_GRAPH=1 \
   ONEAPI_DEVICE_SELECTOR=level_zero:* \
@@ -157,13 +172,14 @@ ENV VLLM_TARGET_DEVICE=xpu \
   B70_MTP_BF16_DRAFT=1 \
   PYTORCH_ALLOC_CONF=expandable_segments:True \
   VLLM_SERVER_DEV_MODE=1 \
-  LD_LIBRARY_PATH=/opt/venv/lib:/opt/ucx/lib:/usr/local/lib:/app:/opt/intel/oneapi/compiler/2026.1/lib:/opt/intel/oneapi/mkl/2026.1/lib:/opt/intel/oneapi/tbb/2023.1/lib:/opt/intel/oneapi/dnnl/2026.0/lib
+  LD_LIBRARY_PATH=/opt/venv/lib:/opt/ucx/lib:/usr/local/lib:/app
 
-# Verify torch/vllm imports and llama-server SYCL linkage
+# Verify torch/vllm imports, llama-server SYCL linkage, and no venv libs resolve to missing
 RUN set -eux; \
   python3 -c "import torch, vllm"; \
-  ! ldd /app/libggml-sycl.so | grep "not found"; \
-  /app/llama-server --version
+  ! LD_LIBRARY_PATH=/app/rt:/app ldd /app/libggml-sycl.so | grep "not found"; \
+  /app/llama-device-wrapper.sh --version; \
+  find /opt/venv -name '*.so' -print0 2>/dev/null | xargs -0 -I{} sh -c 'LD_LIBRARY_PATH=/opt/venv/lib ldd "{}" | grep "not found"' | head -1 | read line && echo "FAIL: venv .so resolution failed: $line" && exit 1 || true
 
 # llama-swap: health endpoint
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
