@@ -912,10 +912,12 @@ Live config: `B70_DRAFT_LMHEAD_INT4=1` on `35b-gpu0` and `27b-gpu1`;
 > have this problem, because it only changes `compute_logits`, which is
 > outside the compiled graph.
 
-Not tried on the 35B: `B70_DRAFT_MTP_INT4`. The 35B's draft layer is a MoE
-layer, and the patch only handles `fc`, the attention projections and a dense
-`gate_up_proj` / `down_proj`; it has not been checked against the MoE
-module layout and may fail or skip layers.
+Not tried on the 35B: `B70_DRAFT_MTP_INT4`. Skipped on purpose, not
+tested. The 35B's draft MLP is a sparse MoE block, which has no dense
+`gate_up_proj` / `down_proj`, so the patch would only convert `fc`, `qkv_proj`
+and `o_proj` (about 70 MB of BF16 per pass against roughly 10 GB read per
+step, so an expected gain well under 1%). The experts would stay BF16. It is
+only worth revisiting if the patch is extended to the MoE experts.
 
 ### 27B `--max-num-seqs` 3 vs 4 (2026-10-21)
 
