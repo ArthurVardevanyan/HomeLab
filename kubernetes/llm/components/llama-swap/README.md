@@ -167,10 +167,13 @@ Per-model specifics:
 
 MTP replaces the old llama.cpp n-gram speculation. The cookbook's
 `patch_mtp_nightly.py` gates unquantized draft MoE/linear layer construction
-on `B70_MTP_BF16_DRAFT=1`. Additional patches applied at build time:
+on `B70_MTP_BF16_DRAFT=1`. The image (`containers/llama-swap/containerfile`)
+applies these patches to vLLM v0.32.0 at build time; each is idempotent and
+fails the build if its anchor no longer matches:
 
-- `patch_mtp_boundary.py` — handles partial final speculative groups at
-  max-model-len boundaries (XPU GDN kernel requirement)
+Applied:
+
+- `patch_mtp_nightly.py` — BF16 draft layers behind `B70_MTP_BF16_DRAFT=1`
 - `patch_gdn_mixed_split_v5.py` — splits spec/non-spec tokens for the
   fused GDN attention kernel (causal_conv1d exclusive on spec XOR non-spec)
 - `patch_fix_accepted_sync.py` — ports vllm#53919 (num_accepted_tokens D2H
@@ -180,8 +183,23 @@ on `B70_MTP_BF16_DRAFT=1`. Additional patches applied at build time:
 - `patch_fix_eagle_drop.py` — ports vllm#48375 (EAGLE/MTP cache pollution,
   fails closed)
 
+Skipped on v0.32.0 (the build prints `SKIP ...`; the files stay in
+`containers/llama-swap/patches/` for reference):
+
+- `patch_mtp_boundary.py` — GDN metadata was refactored, so its anchor is
+  gone. It reclassified a partial final speculative group (a request that
+  reaches exactly `max-model-len`) as non-spec prefill, because the XPU GDN
+  kernel needs complete groups. Whether v0.32.0 handles that case itself is
+  **unverified** (the "complete groups only" kernel requirement is still in
+  `_xpu_ops.py`); no failure has been seen, but nothing has filled a context
+  window to its limit either.
+- `patch_fix_xpu_sleep.py` — its `use_memory_pool` anchor is gone. Sleep mode
+  is disabled on every model anyway.
+- `patch_qwen_triton_warmup_xpu.py` — v0.32.0 GDN was refactored.
+
 See the [Cookbook image patch matrix](https://github.com/SergiioB/intel-arc-pro-b70-inference-cookbook)
-for SHA-256 hashes of each patch against the f01e24f6 vllm source.
+for SHA-256 hashes of each patch against the f01e24f6 vllm source (that is the
+older base the patches were written for, not v0.32.0).
 
 > Measured acceptance rates and decode throughput from this MTP configuration
 > are in [Measured Performance (2026-09-10)](#measured-performance-2026-09-10)
@@ -846,10 +864,26 @@ without hurting the concurrent run. Neither did, so **both models stay at MTP
 ### Not yet tried
 
 - **Draft-only INT4 `lm_head` / MTP head** (the cookbook's
-  `patch_draft_lmhead_int4.py` and `patch_draft_mtp_int4.py`, also used by the
-  b70 lab with a token-frequency shortlist). It needs an image rebuild, and the
-  patches were written against an older vLLM, so check they apply to v0.32.0
-  first.
+  `patch_draft_lmhead_int4.py` and `patch_draft_mtp_int4.py`). Both are now
+  vendored in `containers/llama-swap/patches/` and applied in the image build,
+  but **off by default**: they only act when `B70_DRAFT_LMHEAD_INT4=1` /
+  `B70_DRAFT_MTP_INT4=1` is set in a model's `env:`. Status:
+  - Both anchors match v0.32.0's `qwen3_5_mtp.py` (checked against a copy of
+    the file from the running pod; the patched copy compiles). The
+    `int4_gemm_w4a16` op exists in the image with the signature the patches
+    call. Nothing has been run on the GPUs yet.
+  - Both are TP1-only (they fail closed under TP>1), which matches this setup.
+  - **Known gap:** `lm_head` INT4 hooks `compute_logits`. The v0.32.0 proposer
+    only calls it for greedy draft sampling when
+    `use_local_argmax_reduction` is false (the default), so it is on the
+    path here, but the hook has not been confirmed to fire on a live model.
+    Check for the `[B70] draft LM head INT4: listo` log line.
+  - The patch authors gate acceptance on a drop of at most 0.03 per draft
+    position; compare `vllm:spec_decode_num_accepted_tokens_per_pos` before
+    and after (baseline above: 27B 0.83/0.64/0.50, 35B 0.83/0.65/0.49).
+  - Keep-bar for the A/B: median decode tok/s at least +5% with no
+    acceptance regression. Test one model at a time, and only after the image
+    is built and pinned.
 - **`UR_L0_ENABLE_RELAXED_ALLOCATION_LIMITS=1`** (chriswagner) lifts the 4 GB
   single-allocation limit. The current KV pools (4.2-6.9 GB) already allocate,
   so this is only a fallback if a larger pool fails.

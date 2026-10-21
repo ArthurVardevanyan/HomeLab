@@ -79,6 +79,10 @@ RUN set -eux; \
   echo "SKIP patch_fix_xpu_sleep (use_memory_pool anchor gone in v0.32.0)"; \
   echo "=== patch_qwen_triton_warmup_xpu ===" && \
   echo "SKIP patch_qwen_triton_warmup_xpu (v0.32.0 GDN refactored)"; \
+  echo "=== patch_draft_lmhead_int4 (runtime-gated: B70_DRAFT_LMHEAD_INT4=1) ===" && \
+  python3 /tmp/patches/patch_draft_lmhead_int4.py; \
+  echo "=== patch_draft_mtp_int4 (runtime-gated: B70_DRAFT_MTP_INT4=1) ===" && \
+  python3 /tmp/patches/patch_draft_mtp_int4.py; \
   rm -rf /tmp/patches
 
 # llama-swap binary + llama-server (SYCL build) + vllm-wrapper
