@@ -161,8 +161,8 @@ Per-model specifics:
   `--tool-call-parser qwen3_coder`. The MoE's ~2.3B activated params per
   token make it fast to decode but expensive to spec-decode (expert union on
   verify batch). MTP3 + fp8 KV + 0.93 util fits comfortably in 32 GB.
-- **27B dense**: `--tool-call-parser qwen3_xml`, `--max-model-len 194560`
-  (190K). The dense model is simpler (no expert routing) and runs alongside
+- **27B dense**: `--tool-call-parser qwen3_xml`, `--max-model-len 172032`
+  (168K). The dense model is simpler (no expert routing) and runs alongside
   the 35B at the same context window.
 
 ### MTP Speculative Decoding (vLLM)
