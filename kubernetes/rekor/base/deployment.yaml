@@ -55,7 +55,7 @@ spec:
               name: http
           env:
             - name: TLS
-              value: "true"
+              value: "false"
             - name: STORAGE_DRIVER
               value: postgres
             - name: DBCONFIG
@@ -65,10 +65,7 @@ spec:
                   key: uri
             - name: SIGNING
               value: "true"
-          volumeMounts:
-            - name: tls
-              mountPath: /tls
-              readOnly: true
+          volumeMounts: []
           resources:
             requests:
               cpu: 100m
@@ -80,7 +77,7 @@ spec:
             httpGet:
               path: /healthz
               port: http
-              scheme: HTTPS
+              scheme: HTTP
             initialDelaySeconds: 10
             periodSeconds: 10
             timeoutSeconds: 5
@@ -89,12 +86,8 @@ spec:
             httpGet:
               path: /healthz
               port: http
-              scheme: HTTPS
+              scheme: HTTP
             initialDelaySeconds: 15
             periodSeconds: 20
             timeoutSeconds: 5
             failureThreshold: 3
-      volumes:
-        - name: tls
-          secret:
-            secretName: rekor-tls
