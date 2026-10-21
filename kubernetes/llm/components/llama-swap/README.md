@@ -896,8 +896,10 @@ non-thinking `30` answer to that last prompt is the quantization weakness
 noted earlier and is unchanged. KV pool sizes did not change (27B 176,504
 tokens, 35B 331,535).
 
-Live config: `B70_DRAFT_LMHEAD_INT4=1` on `35b-gpu0` and `27b-gpu1`;
-`B70_DRAFT_MTP_INT4=1` on `27b-gpu1` only.
+Config: `B70_DRAFT_LMHEAD_INT4=1` on every vLLM model; `B70_DRAFT_MTP_INT4=1`
+(with the dedicated `VLLM_CACHE_ROOT`) on both 27B models. Only `35b-gpu0` and
+`27b-gpu1` were benchmarked; the hidden `35b-gpu1` and `27b-gpu0` mirror them
+and have not been run.
 
 > **Compile cache gotcha.** `B70_DRAFT_MTP_INT4` empties the draft's BF16
 > linear weights at load time, but vLLM's `torch.compile` cache key does not
@@ -941,7 +943,8 @@ With 4 slots all four decode together at 63-77 tok/s each. At 5 requests the
 (`1 2 4 8 12 16`); with 4 seqs and MTP 3 a full batch is 16 tokens, so size 12
 no longer covers it. Graph capture took 0.11 GiB, KV pool size is unchanged
 (176,504 tokens), no preemptions, and GPU 1 stayed around 30.5 GiB of 32.
-Applies to `27b-gpu1` only; `27b-gpu0` is hidden and unchanged.
+Benchmarked on `27b-gpu1` only; the hidden `27b-gpu0` mirrors it
+(unbenchmarked, and with CPU KV offloading on).
 
 ### Not yet tried
 
