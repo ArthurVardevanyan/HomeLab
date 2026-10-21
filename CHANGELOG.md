@@ -8,25 +8,26 @@ This document analyzes the git history of the HomeLab project, grouping changes 
 
 ## Summary
 
-| Era                 | Timeframe  | Orchestration      | Management               | CI/CD & Source Control | Storage           | Observability              | Networking                    | Security & Identity |
-| :------------------ | :--------- | :----------------- | :----------------------- | :--------------------- | :---------------- | :------------------------- | :---------------------------- | :------------------ |
-| **Windows Server**  | Early 2016 | -                  | RDP, GUI                 | -                      | NTFS              | -                          | -                             | Active Directory    |
-| **Vmware/Windows**  | Late 2016  | VMware Workstation | GUI                      | -                      | Local vmdk        | -                          | Bridged/NAT                   | -                   |
-| **Vmware/Linux**    | 2017-2018  | Systemd/Manual     | Shell, Webmin            | -                      | FreeNAS           | -                          | pfSense                       | -                   |
-| **Storage**         | 2019       | VMs                | Shell                    | -                      | FreeNAS           | -                          | pfSense (VM)                  | -                   |
-| **VFIO**            | 2020       | KVM / VMware       | Shell                    | -                      | TrueNAS Core      | -                          |                               | -                   |
-| **Docker**          | Early 2021 | Docker Compose     | Shell Scripts, Portainer | GitLab                 | Local Bind Mounts | -                          | MacVLAN (L2), ISP Router      | -                   |
-| **K3s**             | Late 2021  | K3s                | Ansible (IaC)            | GitLab CI              | Longhorn (Block)  | Prometheus, Grafana        | Traefik, Flannel              | Vault, Bitwarden    |
-| **OKD**             | Early 2022 | OKD (OpenShift)    | ArgoCD (GitOps)          | Tekton, Gitea, Quay    | MinIO, ODF (Rook) | -                          | SDN, Routes, MetalLB, pfSense | -                   |
-| **Security**        | Late 2022  | OKD                | ArgoCD                   | Tekton, Gitea          | Ceph / ODF        | Stackrox, Smoke Tests      | SDN, Routes, pfSense          | Clair               |
-| **Identity**        | Early 2023 | OKD                | ArgoCD                   | Tekton, Gitea          | Ceph / ODF        | Network Observability      | SDN, Routes, pfSense          | Zitadel (OIDC)      |
-| **DevExp**          | Late 2023  | OKD                | ArgoCD                   | Tekton, Gitea          | Ceph / ODF        | -                          | SDN, Routes, pfSense          | Kyverno             |
-| **Network/Storage** | Early 2024 | OKD                | ArgoCD                   | Tekton, Gitea          | Ceph / ODF        | -                          | Kube-VIP, UniFi               | External Secrets    |
-| **Virt**            | Late 2024  | OKD / MicroShift   | AWX, Netbox              | Tekton, Gitea          | Ceph, LVM         | Loki, Logging              | Cloudflare DDNS               | -                   |
-| **Bare Metal**      | Early 2025 | OKD IPI / SNO      | Agent Installer          | Tekton, Gitea          | Ceph, LVM         | Power Monitoring           | OVN-K8s                       | KFCA                |
-| **Accel**           | Late 2025  | OKD IPI            | Agent Installer          | Tekton, Gitea          | Ceph, LVM         | VictoriaMetrics, Dragonfly | Gateway API, Service Mesh     | NetworkPolicy       |
-| **Resilience**      | Early 2026 | OKD IPI            | Renovate (GitHub App)    | Tekton, Gitea          | Ceph, CNPG        | Wire-Tap                   | BGP, Gateway API              | Coraza WAF          |
-| **AI, LLM & GPU**   | Mid 2026   | OKD IPI            | Renovate + gitops-ci     | Tekton, Gitea          | Ceph, CNPG        | VictoriaMetrics, Dragonfly | BGP, Gateway API              | NetworkPolicy, WAF  |
+| Era                 | Timeframe  | Orchestration      | Management               | CI/CD & Source Control | Storage           | Observability                          | Networking                                     | Security & Identity                    |
+| :------------------ | :--------- | :----------------- | :----------------------- | :--------------------- | :---------------- | :------------------------------------- | :--------------------------------------------- | :------------------------------------- |
+| **Windows Server**  | Early 2016 | -                  | RDP, GUI                 | -                      | NTFS              | -                                      | -                                              | Active Directory                       |
+| **Vmware/Windows**  | Late 2016  | VMware Workstation | GUI                      | -                      | Local vmdk        | -                                      | Bridged/NAT                                    | -                                      |
+| **Vmware/Linux**    | 2017-2018  | Systemd/Manual     | Shell, Webmin            | -                      | FreeNAS           | -                                      | pfSense                                        | -                                      |
+| **Storage**         | 2019       | VMs                | Shell                    | -                      | FreeNAS           | -                                      | pfSense (VM)                                   | -                                      |
+| **VFIO**            | 2020       | KVM / VMware       | Shell                    | -                      | TrueNAS Core      | -                                      |                                                | -                                      |
+| **Docker**          | Early 2021 | Docker Compose     | Shell Scripts, Portainer | GitLab                 | Local Bind Mounts | -                                      | MacVLAN (L2), ISP Router                       | -                                      |
+| **K3s**             | Late 2021  | K3s                | Ansible (IaC)            | GitLab CI              | Longhorn (Block)  | Prometheus, Grafana                    | Traefik, Flannel                               | Vault, Bitwarden                       |
+| **OKD**             | Early 2022 | OKD (OpenShift)    | ArgoCD (GitOps)          | Tekton, Gitea, Quay    | MinIO, ODF (Rook) | -                                      | SDN, Routes, MetalLB, pfSense                  | -                                      |
+| **Security**        | Late 2022  | OKD                | ArgoCD                   | Tekton, Gitea          | Ceph / ODF        | Stackrox, Smoke Tests                  | SDN, Routes, pfSense                           | Clair                                  |
+| **Identity**        | Early 2023 | OKD                | ArgoCD                   | Tekton, Gitea          | Ceph / ODF        | Network Observability                  | SDN, Routes, pfSense                           | Zitadel (OIDC)                         |
+| **DevExp**          | Late 2023  | OKD                | ArgoCD                   | Tekton, Gitea          | Ceph / ODF        | -                                      | SDN, Routes, pfSense                           | Kyverno                                |
+| **Network/Storage** | Early 2024 | OKD                | ArgoCD                   | Tekton, Gitea          | Ceph / ODF        | -                                      | Kube-VIP, UniFi                                | External Secrets                       |
+| **Virt**            | Late 2024  | OKD / MicroShift   | AWX, Netbox              | Tekton, Gitea          | Ceph, LVM         | Loki, Logging                          | Cloudflare DDNS                                | -                                      |
+| **Bare Metal**      | Early 2025 | OKD IPI / SNO      | Agent Installer          | Tekton, Gitea          | Ceph, LVM         | Power Monitoring                       | OVN-K8s                                        | KFCA                                   |
+| **Accel**           | Late 2025  | OKD IPI            | Agent Installer          | Tekton, Gitea          | Ceph, LVM         | VictoriaMetrics, Dragonfly             | Gateway API, Service Mesh                      | NetworkPolicy                          |
+| **Resilience**      | Early 2026 | OKD IPI            | Renovate (GitHub App)    | Tekton, Gitea          | Ceph, CNPG        | Wire-Tap                               | BGP, Gateway API                               | Coraza WAF                             |
+| **AI, LLM & GPU**   | Mid 2026   | OKD IPI            | Renovate + gitops-ci     | Tekton, Gitea          | Ceph, CNPG        | VictoriaMetrics, Dragonfly             | BGP, Gateway API                               | NetworkPolicy, WAF                     |
+| **OKD 5.0**         | Late 2026  | OKD IPI 5.0        | gitops-operator (GitOps) | Tekton, Gitea, Chains  | Ceph 1.20, CNPG   | VictoriaMetrics, Dragonfly, Lightspeed | Gateway ListenerSets, BGP, Sable DNS (planned) | NetworkPolicy, cosign + SBOM (planned) |
 
 - [Changelog](#changelog)
   - [Overview](#overview)
@@ -72,6 +73,9 @@ This document analyzes the git history of the HomeLab project, grouping changes 
   - [17. AI, LLM \& GPU (Mid 2026)](#17-ai-llm--gpu-mid-2026)
     - [Key Characteristics](#key-characteristics-11)
     - [Major Milestones](#major-milestones-11)
+  - [18. OKD 5.0 (Late 2026)](#18-okd-50-late-2026)
+    - [Key Characteristics](#key-characteristics-12)
+    - [Major Milestones](#major-milestones-12)
 
 ## 1. Windows Server (Early 2016)
 
@@ -402,4 +406,38 @@ Focus on AI hardware acceleration, LLM infrastructure, CI pipeline modernization
 - **August 22, 2026**: **session ID propagation** Open WebUI → llama-swap; OpenShift Logging **VPA** + namespace + inotify collector fix. (#654, #653)
 - **August 23, 2026**: **KubeVirt on GPU node** — VM scheduling + NetStateConfig `nncp-gpu`; **cross-CPU-generation live migration**; inotify limits via **TuneD + MachineConfig** (+ GPU crio/sysctl limit files). (#658, #659, #655, #656)
 - **August 24, 2026**: **LLM security hardening** (DB password auth, tightened egress, ESO secrets, sync waves); **GPU power tuning + power manager DaemonSet**; OKD **4.22.0-okd-scos.X**; DNS operator tolerations on tainted nodes; **CNPG `wal_keep_size`** raise across all clusters. (#662, #663, #664, #665, #666, #667, #668)
-- **September 10-11, 2026**: **llama-swap tuning pass** — gpu-memory-utilization 0.88 → 0.93; 35B max-model-len 196K → 256K (+max-num-seqs 4→6); 27B max-model-len 131K → 190K (+max-num-seqs 4→3); embed-spread preloaded with --split-mode + --tensor-split 1,1 + ctx-size expansion; pr-agent concurrency bumped to 3 workers; opencode context limits unified to 194560/186368/8192.
+- **September 10-11, 2026**: **llama-swap tuning pass** — chat models migrated to **vLLM XPU** with MTP/APC patches (#715); gpu-memory-utilization 0.88 → 0.93; 35B max-model-len 196K → 256K (+max-num-seqs 4→6); 27B max-model-len 131K → 190K (+max-num-seqs 4→3); embed-spread preloaded with --split-mode + --tensor-split 1,1 + ctx-size expansion; pr-agent concurrency bumped to 3 workers; opencode context limits unified to 194560/186368/8192.
+
+## 18. OKD 5.0 (Late 2026)
+
+The cluster crosses into **OKD 5.0** and the platform converges onto first-party, operator-managed primitives: Red Hat GitOps Operator, per-app Gateway ListenerSets, Ceph 1.20. The LLM stack completes its move to **vLLM on Intel XPU**, and the era is closing with **Sable DNS** and a **Tekton Chains** supply chain (SBOM + cosign) — both planned for Q4 2026.
+
+### Key Characteristics
+
+- **Platform:** OKD upgraded **4.22 → 5.0** (z-streams .0/.1/.2), remaining on the stable channel.
+- **GitOps:** ArgoCD migrated to the **Red Hat openshift-gitops-operator** (GitOpsService); community admin-plugin decommissioned, manifests restructured under `components/`.
+- **Networking:** **per-app Gateway ListenerSets** (Gateway + HTTPRoute + Certificate per app) with slimmed gateways; **VLAN 111 decommissioned** (TrueNAS IP re-pointed); static route for 10.101.2.0/24.
+- **DNS (planned):** **Sable DNS** replacing Technitium (PR #747) — parallel deploy on OKD + MicroShift, runbook-driven cutover, `sabledns.io` UniFi records via DNSEndpoint; Technitium decommissioned post-cutover.
+- **Supply Chain (planned):** **SBOM + cosign** image signing via **Tekton Chains** / OpenShift Pipelines 1.22 (PR #778).
+- **LLM:** vLLM XPU maturation — XPU allocator regression fix + vLLM backend liveness monitoring; **flash-next** model; 27B/35B sleep policy; **llama-swap v0.31.0** base image rebuild; **LiteLLM** session-kill protection (cooldowns, health checks, repeat guard); Open WebUI **MODEL_CONFIGS** + DEFAULT_MODEL_ORDER.
+- **Storage:** **Ceph 1.20** operator upgrade; **CVE-2026-54330** SigV4 breakage workaround (`rgw_sigv4_insecure`); **MinIO** moved from quay.io to private registry (MicroShift overlays re-pointed); CNPG **`wal_keep_size` 4GB** + walStorage PVC resize; **pg_dump** sequential, fault-tolerant uploads.
+- **Workloads:** **media-ingest** — GPU-accelerated AV1 video ingestion pipeline; **Immich** — Zitadel SSO, sync job moved to its own namespace (UNAS/NFS dependency dropped), network policies + SELinux; **OpenShift Lightspeed** VPA + resource requests; Home Assistant unprivileged ICMP + s6 `/run` capability hardening; gpu-1 Realtek NIC **EEE/PCIe power management** disabled.
+
+### Major Milestones
+
+- **September 12, 2026**: **Ceph 1.20** operator upgrade. (#723)
+- **September 17, 2026**: OKD **5.0.0-okd-scos.0** — first 5.0 z-stream. (#729)
+- **September 17, 2026**: llama-swap **XPU allocator regression fix** + **vLLM backend liveness monitoring**. (#726)
+- **September 21, 2026**: **media-ingest** — GPU-accelerated **AV1 video ingestion pipeline**. (#737)
+- **September 24, 2026**: **MinIO** migrated from quay.io to **private registry**; MicroShift overlay redirect. (#741)
+- **October 1, 2026**: Ceph `rgw_sigv4_insecure` workaround for **CVE-2026-54330** SigV4 breakage. (#749)
+- **October 2, 2026**: Open WebUI **MODEL_CONFIGS** for all three chat models + DEFAULT_MODEL_ORDER.
+- **October 6, 2026**: **ArgoCD migrated to Red Hat openshift-gitops-operator** — GitOpsService, admin-plugin decommissioned, components/ restructure, egress firewall + network policies (#751); **pg_dump** sequential fault-tolerant uploads. (#752)
+- **October 8, 2026**: **Home Assistant** unprivileged ICMP ping + s6 `/run` capability hardening. (#757)
+- **October 9, 2026**: **Immich** — Zitadel SSO + network policies + SELinux, sync job moved to immich namespace (UNAS/NFS dropped), rclone secret consolidation (#764, #765, #766, #761); **herdr** terminal config + Ansible playbook for desktop/laptop/vscode-server (#759); **OpenShift Lightspeed** VPA + resource requests (#760); **VLAN 111 decommissioned** + TrueNAS IP reference updated (#767); gpu-1 Realtek **EEE/PCIe power management** disabled (#758).
+- **October 12, 2026**: **LiteLLM** session-kill prevention — cooldowns, health checks, repeat guard. (#769)
+- **October 13, 2026**: OKD **5.0.0-okd-scos.2** (#773); **flash-next** model + 27B sleep mode disabled (#772); **llama-swap v0.31.0** base image rebuild (#771).
+- **October 15, 2026**: CNPG **`wal_keep_size` 4GB** + walStorage PVC resize (#774); static route 10.101.2.0/24 via enp2s0.
+- **October 20, 2026**: **Gateway API rework 2** — per-app **ListenerSets** migration + gateway slim-down. (#768)
+- **Planned (Q4 2026)**: **Sable DNS** — Technitium → Sable migration, parallel deploy on both clusters, runbook cutover, `sabledns.io` UniFi records. (#747)
+- **Planned (Q4 2026)**: **SBOM + cosign** image signing via **Tekton Chains** (OpenShift Pipelines 1.22 supply chain). (#778)
