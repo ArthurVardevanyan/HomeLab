@@ -42,6 +42,11 @@ llama-server (llama.cpp SYCL).
     - [Proxy metrics](#proxy-metrics)
     - [Embedding model metrics (llama.cpp, via metrics-exporter sidecar)](#embedding-model-metrics-llamacpp-via-metrics-exporter-sidecar)
   - [LMCache MP Fallback (contingency)](#lmcache-mp-fallback-contingency)
+  - [Community References and Tuning Checks](#community-references-and-tuning-checks)
+    - [Community repositories](#community-repositories)
+    - [Community claims checked against this cluster](#community-claims-checked-against-this-cluster)
+    - [MTP depth A/B (2026-10-21)](#mtp-depth-ab-2026-10-21)
+    - [Not yet tried](#not-yet-tried)
   - [References](#references)
 
 ## Model Matrix
@@ -506,15 +511,18 @@ plus the absence of TP/cross-card communication overhead.
 ### Known Gaps
 
 1. **Position-4 MTP acceptance is weak** (often 0.13–0.40, one 0.000).
-   Testing `num_speculative_tokens: 3` vs `4` is the obvious tuning lever.
+   Tested on 2026-10-21: 35B at 4 and 27B at 2 were both no faster than 3
+   (see [MTP depth A/B](#mtp-depth-ab-2026-10-21)). Keep 3 on both.
 2. **No long-running decay test yet** — sessions measured were ~4–5 minutes.
    Session 2 showed no decay through 77–81% KV cache, but a 30+ minute
    session is needed to characterize decode decay near KV exhaustion.
 3. **35B-A3B sample is small** — only 3–4 true clean-decode windows measured.
    Numbers are directional; need a longer dedicated 35B session for
    confidence.
-4. **Concurrency untested** — only single-stream tested (`--max-num-seqs 4`,
-   1 running req). Multi-stream throughput is unmeasured.
+4. **Concurrency barely tested** — the original run was single-stream
+   (`--max-num-seqs 4`, 1 running req). The 2026-10-21 A/B added a
+   2-concurrent-request pass (aggregate 114 tok/s on 27B, 257 tok/s on 35B),
+   but higher concurrency is unmeasured.
 5. **No Prometheus percentiles** — data above is from 10-second-window
    averages in vLLM engine logs. True p50/p99/p999 inter-token latency would
    require querying the vLLM `/metrics` endpoint directly.
@@ -767,11 +775,95 @@ assertions at startup, switch to the LMCache `LMCacheMPConnector` with a shared
 This requires a separate LMCache server deployment and is a one-line flag change
 from the native configuration when the native assertions appear.
 
+## Community References and Tuning Checks
+
+Other people run vLLM and llama.cpp on Arc Pro B70 cards. This section records
+what each public repo is useful for, which of their claims were tested here, and
+what was measured. Most of their headline numbers use tensor parallelism across
+2-4 cards with different quantizations and patched images, so they are not
+drop-in comparisons for this one-model-per-GPU (TP1) GPTQ setup.
+
+### Community repositories
+
+| Repository                                                                                                        | Useful for                                                                                                                               | Fit here                                                                                                 |
+| ----------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------- |
+| [SergiioB/intel-arc-pro-b70-inference-cookbook](https://github.com/SergiioB/intel-arc-pro-b70-inference-cookbook) | Source of the image patches (`containers/llama-swap/patches/`), Qwen 35B/27B recipes, image and patch matrix, known issues. Very active. | High. The image's patch set comes from here.                                                             |
+| [steveseguin/b70-optimization-lab](https://github.com/steveseguin/b70-optimization-lab)                           | Strict benchmarking and validation method, XPU graph and inductor settings, draft-only INT4 `lm_head` idea. Unlicense.                   | Medium. Headline results are TP2/TP4 with AutoRound or FP8 on 16-bit KV and its own patched images.      |
+| [chriswagner-ai/intel-arc-b70-vllm-multi-gpu](https://github.com/chriswagner-ai/intel-arc-b70-vllm-multi-gpu)     | Bare-metal debugging tables (xe `force_probe`, Level Zero errors), BIOS notes, quant-format matrix. MIT.                                 | Low. Targets vLLM 0.20.2, so its "GPTQ does not load" verdict is outdated. Use for troubleshooting only. |
+
+### Community claims checked against this cluster
+
+Checked on 2026-10-21 against the running `27b-gpu1` and `35b-gpu0`
+(GPTQ-Int4, fp8 KV, MTP 3, prefix caching on), image
+`v265-intel-b11749-647a77d4`.
+
+| Claim                                                                                                  | Source      | Result here                                                                                                                                                                                                                                         |
+| ------------------------------------------------------------------------------------------------------ | ----------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Qwen3.8 27B W4A16/GPTQ gives a wrong answer (`30` instead of `14`) for `sum(i*i for i in range(4))`    | Cookbook    | Reproduced with thinking off, temp 0: `27b-gpu1` returns `30` 3 of 3 times. The 35B also returns `30` 3 of 3, so it is not specific to the 27B. With thinking on, both answer `14`. 17\*23 and "capital of Australia" are correct on both.          |
+| Qwen3.8 27B W4A16 with `--enable-prefix-caching` degenerates into token salad on shared-prefix prompts | Cookbook    | Not reproduced. A 3.8K-token shared prefix sent 4 times to each model gave coherent output (identical repeats on the 35B; one wording difference on the 27B). vLLM reports ~60% (35B) and ~57% (27B) of prompt tokens served from the prefix cache. |
+| 262K context kills the 35B EngineCore on vLLM GPTQ                                                     | Cookbook    | Not applicable. The 35B runs at `--max-model-len 262144` here.                                                                                                                                                                                      |
+| XPU graph plus MTP corrupts output                                                                     | b70 lab     | Not seen. Graph and MTP are both on here, and output was coherent in every check above. That report was on an AutoRound TP1 nightly.                                                                                                                |
+| MTP2 beats MTP3/MTP4 on the 35B                                                                        | Cookbook    | Not supported here. See the A/B below.                                                                                                                                                                                                              |
+| GPTQ does not load on XPU; int4 needs `--enforce-eager`                                                | chriswagner | Not applicable. Reported on vLLM 0.20.2; GPTQ runs here on v0.32.0 with graphs.                                                                                                                                                                     |
+
+The "30" result is a quantization weakness for non-thinking arithmetic, not a
+serving bug. Use thinking mode for anything where exact arithmetic or code
+tracing matters.
+
+### MTP depth A/B (2026-10-21)
+
+Method: 5 fixed prompts (code, explanation, refactor, JSON, prose), 512 max
+tokens, temperature 0, thinking off, streamed, each run twice (10 requests per
+model), plus one pass with 2 concurrent requests. Decode speed is the median
+tokens per second after the first token. Acceptance comes from the deltas of
+vLLM's `spec_decode_num_*` Prometheus counters over the run. Both chat models
+were changed in the same run by editing the mounted ConfigMap, which made
+llama-swap hot-reload (all three models restarted, about 6 minutes to ready).
+The original ConfigMap was restored afterwards.
+
+| Model      | MTP | Median decode (tok/s) | 2-concurrent aggregate (tok/s) | Accept rate | Tokens per step | Accept per draft position |
+| ---------- | --- | --------------------- | ------------------------------ | ----------- | --------------- | ------------------------- |
+| `27b-gpu1` | 3   | 62.9                  | 113.8                          | 0.656       | 2.97            | 0.83 / 0.64 / 0.50        |
+| `27b-gpu1` | 2   | 60.7 (-3.5%)          | 117.9 (+3.6%)                  | 0.778       | 2.56            | 0.87 / 0.69               |
+| `35b-gpu0` | 3   | 175.3                 | 256.5                          | 0.655       | 2.97            | 0.83 / 0.65 / 0.49        |
+| `35b-gpu0` | 4   | 167.8 (-4.3%)         | 252.1 (-1.7%)                  | 0.550       | 3.20            | 0.81 / 0.61 / 0.44 / 0.34 |
+
+Decision rule: keep a change only if median decode improves by at least 5%
+without hurting the concurrent run. Neither did, so **both models stay at MTP
+3**.
+
+- 27B at MTP 2: the extra acceptance per draft does not make up for one less
+  drafted token per step. Single-stream is slightly slower, and the concurrent
+  gain (+3.6%) is within run-to-run noise (one 27B request in the MTP 2 run
+  dropped to 42 tok/s).
+- 35B at MTP 4: the fourth draft is accepted only 34% of the time and yields
+  +0.23 tokens per step, which does not cover its verify cost, so decode is
+  slower. This confirms the earlier Known Gap #1 finding on the current image.
+- Output speed varies much more with the prompt than with MTP depth: prose
+  (story) is the slowest on both models (about 45-49 tok/s on 27B, 102-128 on
+  35B) and code refactoring is the fastest.
+
+### Not yet tried
+
+- **Draft-only INT4 `lm_head` / MTP head** (the cookbook's
+  `patch_draft_lmhead_int4.py` and `patch_draft_mtp_int4.py`, also used by the
+  b70 lab with a token-frequency shortlist). It needs an image rebuild, and the
+  patches were written against an older vLLM, so check they apply to v0.32.0
+  first.
+- **`UR_L0_ENABLE_RELAXED_ALLOCATION_LIMITS=1`** (chriswagner) lifts the 4 GB
+  single-allocation limit. The current KV pools (4.2-6.9 GB) already allocate,
+  so this is only a fallback if a larger pool fails.
+- **EXL3 route for the 27B** (cookbook, `0xsero/exl3xpu`). A different engine
+  with native MTP 3 and 262K context; a large change, so treat it as a future
+  evaluation rather than a tweak.
+
 ## References
 
 - [vLLM](https://github.com/vllm-project/vllm)
 - [llama-swap](https://github.com/llama-swap/llama-swap)
 - [Intel Arc B70 Inference Cookbook](https://github.com/SergiioB/intel-arc-pro-b70-inference-cookbook)
 - [Intel Level Zero](https://github.com/oneapi-src/level-zero)
+- [B70 Optimization Lab](https://github.com/steveseguin/b70-optimization-lab)
+- [Intel Arc B70 vLLM multi-GPU](https://github.com/chriswagner-ai/intel-arc-b70-vllm-multi-gpu)
 - [75 t/s on a single B70 (Reddit)](https://www.reddit.com/r/IntelArc/comments/1u3l4zx/qwen3635ba3b_at_75_tokens_per_second_on_a_single/)
 - [Puget Systems — Multi-GPU B70 inference](https://www.pugetsystems.com/labs/articles/intel-arc-pro-b70-multi-gpu-ai-inference-performance/) — vLLM XPU TP=4 baseline (no MTP), cited in [SaaS Comparison](#saas-comparison)
