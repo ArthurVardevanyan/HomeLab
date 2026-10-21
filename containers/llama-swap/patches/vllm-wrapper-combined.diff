@@ -1,8 +1,8 @@
 diff --git a/cmd/vllm-wrapper/main.go b/cmd/vllm-wrapper/main.go
-index 81536c6..c004ada 100644
+index 3dd626f..7a5fae8 100644
 --- a/cmd/vllm-wrapper/main.go
 +++ b/cmd/vllm-wrapper/main.go
-@@ -1,9 +1,11 @@
+@@ -1,10 +1,12 @@
  package main
  
  import (
@@ -14,7 +14,8 @@ index 81536c6..c004ada 100644
 +	"io"
  	"log"
  	"net/http"
-@@ -13,11 +15,140 @@ import (
+ 	"net/http/httputil"
+@@ -12,11 +14,140 @@ import (
  	"os"
  	"os/exec"
  	"os/signal"
@@ -155,7 +156,7 @@ index 81536c6..c004ada 100644
  // sleepLevel represents the vLLM sleep level.
  type sleepLevel int
  
-@@ -79,6 +210,26 @@ func serveCmd(args []string) {
+@@ -78,6 +209,26 @@ func serveCmd(args []string) {
  	// Ensure vLLM URL does not have trailing slash.
  	vllmURL = strings.TrimRight(vllmURL, "/")
  
@@ -182,7 +183,7 @@ index 81536c6..c004ada 100644
  	journalCtx, stopJournal := context.WithCancel(context.Background())
  	defer stopJournal()
  	if journalUnit != "" {
-@@ -87,35 +238,114 @@ func serveCmd(args []string) {
+@@ -86,35 +237,114 @@ func serveCmd(args []string) {
  		}
  	}
  
@@ -313,7 +314,7 @@ index 81536c6..c004ada 100644
  		}
  	}
  
-@@ -150,10 +380,25 @@ func serveCmd(args []string) {
+@@ -135,11 +365,22 @@ func serveCmd(args []string) {
  		return nil
  	}
  
@@ -331,15 +332,14 @@ index 81536c6..c004ada 100644
  	// Create HTTP server.
  	srv := &http.Server{
  		Addr: listenAddr,
- 		Handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-+			if controlPaths[r.URL.Path] {
-+				http.NotFound(w, r)
-+				return
-+			}
- 			proxy.ServeHTTP(w, r)
+-		Handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+-			proxy.ServeHTTP(w, r)
++		Handler: newHandler(proxy, controlPaths, func() error {
++			return checkHealthy(vllmURL, healthPath)
  		}),
  	}
-@@ -166,12 +411,27 @@ func serveCmd(args []string) {
+ 
+@@ -151,12 +392,27 @@ func serveCmd(args []string) {
  		}
  	}()
  
@@ -367,7 +367,7 @@ index 81536c6..c004ada 100644
  	if sig == syscall.SIGTERM {
  		log.Printf("SIGTERM received, putting vLLM to sleep (level %d)", sleepLevel)
  		if err := sleepVLLM(vllmURL, sleepLevel); err != nil {
-@@ -190,6 +450,177 @@ func serveCmd(args []string) {
+@@ -175,6 +431,177 @@ func serveCmd(args []string) {
  	log.Println("Server stopped")
  }
  
@@ -545,7 +545,7 @@ index 81536c6..c004ada 100644
  // sleepCmd implements the sleep subcommand.
  func sleepCmd(args []string) {
  	var (
-@@ -208,15 +639,15 @@ func sleepCmd(args []string) {
+@@ -193,15 +620,15 @@ func sleepCmd(args []string) {
  	}
  	vllmURL = strings.TrimRight(vllmURL, "/")
  
@@ -568,7 +568,7 @@ index 81536c6..c004ada 100644
  	if err != nil {
  		log.Fatalf("Failed to send sleep request: %v", err)
  	}
-@@ -237,14 +668,16 @@ func sleepCmd(args []string) {
+@@ -222,14 +649,16 @@ func sleepCmd(args []string) {
  }
  
  // sleepVLLM sends a POST to /sleep to put the vLLM daemon to sleep.
@@ -591,9 +591,37 @@ index 81536c6..c004ada 100644
  	if err != nil {
  		return fmt.Errorf("failed to send sleep request: %w", err)
  	}
-@@ -306,6 +739,14 @@ func waitForHealthyWithPath(vllmURL string, healthPath string, timeout time.Dura
+@@ -290,7 +719,42 @@ func waitForHealthyWithPath(vllmURL string, healthPath string, timeout time.Dura
+ 	return ctx.Err()
  }
  
++// newHandler builds the public handler of vllm-wrapper serve.
++//
++//   - GET/HEAD / is answered by the wrapper itself: 200 when healthy() passes,
++//     503 otherwise. vLLM has no "/" route (it returns 404), and llama-swap's
++//     startup preload sends GET / through the proxy and logs any status >= 400
++//     as "failed to preload model". POST / and every other path still go to
++//     the proxy.
++//   - controlPaths (/sleep, /wake_up, ...) are hidden with 404.
++//   - everything else is reverse-proxied to vLLM.
++func newHandler(proxy http.Handler, controlPaths map[string]bool, healthy func() error) http.Handler {
++	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
++		if r.URL.Path == "/" && (r.Method == http.MethodGet || r.Method == http.MethodHead) {
++			if err := healthy(); err != nil {
++				http.Error(w, "vLLM not healthy: "+err.Error(), http.StatusServiceUnavailable)
++				return
++			}
++			w.WriteHeader(http.StatusOK)
++			return
++		}
++		if controlPaths[r.URL.Path] {
++			http.NotFound(w, r)
++			return
++		}
++		proxy.ServeHTTP(w, r)
++	})
++}
++
  // checkHealthy sends a GET request to the health path and returns nil if the response status is 200 OK.
 +//
 +// NOTE: HTTP 200 here only proves *some* vLLM daemon is answering on this
@@ -606,7 +634,7 @@ index 81536c6..c004ada 100644
  func checkHealthy(vllmURL string, healthPath string) error {
  	resp, err := http.Get(vllmURL + healthPath)
  	if err != nil {
-@@ -318,6 +759,67 @@ func checkHealthy(vllmURL string, healthPath string) error {
+@@ -303,6 +767,67 @@ func checkHealthy(vllmURL string, healthPath string) error {
  	return nil
  }
  
@@ -674,7 +702,7 @@ index 81536c6..c004ada 100644
  // startJournalForwarder forwards new log entries from a user systemd unit to stdout.
  func startJournalForwarder(ctx context.Context, unit string) error {
  	cmd := exec.CommandContext(
-@@ -346,23 +848,84 @@ func startJournalForwarder(ctx context.Context, unit string) error {
+@@ -331,23 +856,84 @@ func startJournalForwarder(ctx context.Context, unit string) error {
  	return nil
  }
  
@@ -769,10 +797,10 @@ index 81536c6..c004ada 100644
  	return nil
  }
 diff --git a/cmd/vllm-wrapper/main_test.go b/cmd/vllm-wrapper/main_test.go
-index 65ddf9e..ac01d0b 100644
+index 65ddf9e..99f47da 100644
 --- a/cmd/vllm-wrapper/main_test.go
 +++ b/cmd/vllm-wrapper/main_test.go
-@@ -2,12 +2,13 @@ package main
+@@ -2,12 +2,15 @@ package main
  
  import (
  	"context"
@@ -780,6 +808,8 @@ index 65ddf9e..ac01d0b 100644
 +	"fmt"
  	"net/http"
  	"net/http/httptest"
++	"net/http/httputil"
++	"net/url"
  	"os"
  	"path/filepath"
  	"strings"
@@ -787,7 +817,7 @@ index 65ddf9e..ac01d0b 100644
  	"testing"
  	"time"
  )
-@@ -74,25 +75,112 @@ func TestWaitForHealthy(t *testing.T) {
+@@ -74,25 +77,112 @@ func TestWaitForHealthy(t *testing.T) {
  	}
  }
  
@@ -910,7 +940,7 @@ index 65ddf9e..ac01d0b 100644
  	if err == nil {
  		t.Fatalf("startDaemon expected error but got nil")
  	}
-@@ -105,6 +193,7 @@ func TestStartDaemon(t *testing.T) {
+@@ -105,6 +195,7 @@ func TestStartDaemon(t *testing.T) {
  func TestStartDaemonArgv(t *testing.T) {
  	tmpDir := t.TempDir()
  	argvFile := filepath.Join(tmpDir, "argv.txt")
@@ -918,7 +948,7 @@ index 65ddf9e..ac01d0b 100644
  
  	script := filepath.Join(tmpDir, "write-argv.sh")
  	if err := os.WriteFile(script, []byte(
-@@ -113,7 +202,7 @@ func TestStartDaemonArgv(t *testing.T) {
+@@ -113,7 +204,7 @@ func TestStartDaemonArgv(t *testing.T) {
  		t.Fatalf("write helper script: %v", err)
  	}
  
@@ -927,7 +957,7 @@ index 65ddf9e..ac01d0b 100644
  	if err == nil {
  		t.Fatal("expected error (health check fails)")
  	}
-@@ -133,3 +222,80 @@ func TestStartDaemonArgv(t *testing.T) {
+@@ -133,3 +224,163 @@ func TestStartDaemonArgv(t *testing.T) {
  		}
  	}
  }
@@ -1006,5 +1036,88 @@ index 65ddf9e..ac01d0b 100644
 +	if diedAtFailures != backendLivenessFailureThreshold {
 +		t.Errorf("expected onDead to fire at exactly %d consecutive failures, got %d",
 +			backendLivenessFailureThreshold, diedAtFailures)
++	}
++}
++
++func newTestHandler(t *testing.T, healthy func() error) (http.Handler, *int32) {
++	t.Helper()
++	var proxied int32
++	backend := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
++		atomic.AddInt32(&proxied, 1)
++		w.Header().Set("X-Backend-Path", r.URL.Path)
++		w.Header().Set("X-Backend-Method", r.Method)
++		w.WriteHeader(http.StatusTeapot)
++	}))
++	t.Cleanup(backend.Close)
++	u, _ := url.Parse(backend.URL)
++	controlPaths := map[string]bool{"/sleep": true, "/wake_up": true, "/is_sleeping": true, "/collective_rpc": true}
++	return newHandler(httputil.NewSingleHostReverseProxy(u), controlPaths, healthy), &proxied
++}
++
++func TestHandlerRootHealthy(t *testing.T) {
++	for _, method := range []string{http.MethodGet, http.MethodHead} {
++		h, proxied := newTestHandler(t, func() error { return nil })
++		rr := httptest.NewRecorder()
++		h.ServeHTTP(rr, httptest.NewRequest(method, "/", nil))
++		if rr.Code != http.StatusOK {
++			t.Errorf("%s / healthy: got %d, want 200", method, rr.Code)
++		}
++		if rr.Body.Len() != 0 {
++			t.Errorf("%s / healthy: expected empty body, got %q", method, rr.Body.String())
++		}
++		if n := atomic.LoadInt32(proxied); n != 0 {
++			t.Errorf("%s / must not reach the backend, got %d requests", method, n)
++		}
++	}
++}
++
++func TestHandlerRootUnhealthy(t *testing.T) {
++	for _, method := range []string{http.MethodGet, http.MethodHead} {
++		h, proxied := newTestHandler(t, func() error { return fmt.Errorf("down") })
++		rr := httptest.NewRecorder()
++		h.ServeHTTP(rr, httptest.NewRequest(method, "/", nil))
++		if rr.Code != http.StatusServiceUnavailable {
++			t.Errorf("%s / unhealthy: got %d, want 503", method, rr.Code)
++		}
++		if n := atomic.LoadInt32(proxied); n != 0 {
++			t.Errorf("%s / must not reach the backend, got %d requests", method, n)
++		}
++	}
++}
++
++func TestHandlerProxiesOtherRequests(t *testing.T) {
++	h, proxied := newTestHandler(t, func() error { return fmt.Errorf("down") })
++	cases := []struct{ method, path string }{
++		{http.MethodPost, "/"},
++		{http.MethodGet, "/v1/models"},
++		{http.MethodGet, "/health"},
++		{http.MethodPost, "/v1/chat/completions"},
++	}
++	for i, c := range cases {
++		rr := httptest.NewRecorder()
++		h.ServeHTTP(rr, httptest.NewRequest(c.method, c.path, nil))
++		if rr.Code != http.StatusTeapot {
++			t.Errorf("%s %s: got %d, want proxied 418", c.method, c.path, rr.Code)
++		}
++		if got := rr.Header().Get("X-Backend-Path"); got != c.path {
++			t.Errorf("%s %s: backend saw path %q", c.method, c.path, got)
++		}
++		if n := int(atomic.LoadInt32(proxied)); n != i+1 {
++			t.Errorf("%s %s: expected %d backend requests, got %d", c.method, c.path, i+1, n)
++		}
++	}
++}
++
++func TestHandlerHidesControlPaths(t *testing.T) {
++	h, proxied := newTestHandler(t, func() error { return nil })
++	for _, path := range []string{"/sleep", "/wake_up", "/is_sleeping", "/collective_rpc"} {
++		rr := httptest.NewRecorder()
++		h.ServeHTTP(rr, httptest.NewRequest(http.MethodPost, path, nil))
++		if rr.Code != http.StatusNotFound {
++			t.Errorf("%s: got %d, want 404", path, rr.Code)
++		}
++	}
++	if n := atomic.LoadInt32(proxied); n != 0 {
++		t.Errorf("control paths leaked to backend: %d requests", n)
 +	}
 +}

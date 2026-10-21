@@ -19,6 +19,7 @@ llama-server (llama.cpp SYCL).
     - [Level 2: PVC-backed (weights discarded)](#level-2-pvc-backed-weights-discarded)
     - [Wake sequence](#wake-sequence)
     - [Backend liveness monitoring](#backend-liveness-monitoring)
+    - [Startup preload and `GET /`](#startup-preload-and-get-)
     - [Preload times (with vllm-wrapper)](#preload-times-with-vllm-wrapper)
     - [Sleep mode compatibility investigation](#sleep-mode-compatibility-investigation)
   - [Measured Performance (2026-09-10)](#measured-performance-2026-09-10)
@@ -267,6 +268,22 @@ unexpectedly" path), so the next request triggers a normal cold start
 instead of proxying into a permanently broken 502. The monitor is cancelled
 before `vllm-wrapper`'s own intentional sleep/shutdown sequence runs, so a
 normal TTL-triggered sleep is never mistaken for a crash.
+
+### Startup preload and `GET /`
+
+llama-swap v265 `hooks.on_startup.preload` warms each listed model by sending
+`GET /` through the proxy and logs any status >= 400 as
+`failed to preload model <id>: status 404`. vLLM has no `/` route, so every
+vLLM model produced that error even though it had loaded fine (llama.cpp
+serves a UI at `/`, so `embed-spread` was unaffected). The error was cosmetic:
+the model was still `loaded` and served requests normally.
+
+`vllm-wrapper serve` therefore answers `GET`/`HEAD /` itself: `200` when the
+backend health endpoint passes, `503` otherwise. Every other request
+(including `POST /`) is still proxied, and the control paths (`/sleep`,
+`/wake_up`, `/is_sleeping`, `/collective_rpc`) stay hidden with `404`. The
+change lives in `containers/llama-swap/patches/vllm-wrapper-combined.diff` and
+is covered by the `TestHandler*` tests it adds.
 
 ### Preload times (with vllm-wrapper)
 
