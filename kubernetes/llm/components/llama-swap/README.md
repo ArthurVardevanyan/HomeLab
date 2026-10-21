@@ -47,6 +47,7 @@ llama-server (llama.cpp SYCL).
     - [Community claims checked against this cluster](#community-claims-checked-against-this-cluster)
     - [MTP depth A/B (2026-10-21)](#mtp-depth-ab-2026-10-21)
     - [INT4 draft head A/B (2026-10-21)](#int4-draft-head-ab-2026-10-21)
+    - [27B `--max-num-seqs` 3 vs 4 (2026-10-21)](#27b---max-num-seqs-3-vs-4-2026-10-21)
     - [Not yet tried](#not-yet-tried)
   - [References](#references)
 
@@ -915,6 +916,27 @@ Not tried on the 35B: `B70_DRAFT_MTP_INT4`. The 35B's draft layer is a MoE
 layer, and the patch only handles `fc`, the attention projections and a dense
 `gate_up_proj` / `down_proj`; it has not been checked against the MoE
 module layout and may fail or skip layers.
+
+### 27B `--max-num-seqs` 3 vs 4 (2026-10-21)
+
+Measured on `27b-gpu1` with the INT4 draft head live (N concurrent streams,
+512 tokens each, temperature 0, two reps, aggregate tok/s):
+
+| Concurrent requests | `--max-num-seqs 3` | `--max-num-seqs 4` |
+| ------------------- | ------------------ | ------------------ |
+| 1                   | 88-90              | 79-90              |
+| 2                   | 138-150            | 143-144            |
+| 3                   | 196-201            | 180-202            |
+| 4                   | 162-163            | **235-247**        |
+| 5                   | 160-180            | 162-167            |
+
+With 3 slots the 4th request queues until a slot frees (TTFT about 7 s).
+With 4 slots all four decode together at 63-77 tok/s each. At 5 requests the
+5th still queues either way. Cudagraph capture sizes gained a `16` entry
+(`1 2 4 8 12 16`); with 4 seqs and MTP 3 a full batch is 16 tokens, so size 12
+no longer covers it. Graph capture took 0.11 GiB, KV pool size is unchanged
+(176,504 tokens), no preemptions, and GPU 1 stayed around 30.5 GiB of 32.
+Applies to `27b-gpu1` only; `27b-gpu0` is hidden and unchanged.
 
 ### Not yet tried
 

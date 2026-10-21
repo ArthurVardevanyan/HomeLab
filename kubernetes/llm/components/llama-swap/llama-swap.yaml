@@ -164,7 +164,11 @@ models:
   27b-gpu1:
     # --cudagraph-capture-sizes 1 2 4 8 12: see 27b-gpu0 above for the full
     # rationale (identical --max-num-seqs 3 / MTP config on this model).
-    cmd: '${cmd_base_vllm_27b_gpu1} /data/models/Qwen3.8-27B-GPTQ-Int4 --host 127.0.0.1 --port 8003 --quantization gptq --dtype float16 --max-model-len 175104 --gpu-memory-utilization 0.86 --kv-cache-dtype fp8 --enable-prefix-caching --enable-auto-tool-choice --tool-call-parser qwen3_xml --reasoning-parser qwen3 --speculative-config ''{"method": "mtp", "num_speculative_tokens": 3}'' --max-num-seqs 3 --max-num-batched-tokens 8192 --served-model-name 27b-gpu1 --kv-cache-memory 7047184611 --cudagraph-capture-sizes 1 2 4 8 12' # --gpu-memory-utilization 0.93
+    # --max-num-seqs 4 + cudagraph size 16 (2026-10-21, with the INT4 draft head):
+    # 4 concurrent requests aggregate 241 tok/s vs 162 at --max-num-seqs 3 (the
+    # 4th request used to queue ~7 s); 1-3 streams unchanged. No extra GPU
+    # memory at the pinned KV pool size. 27b-gpu0 is unchanged (hidden model).
+    cmd: '${cmd_base_vllm_27b_gpu1} /data/models/Qwen3.8-27B-GPTQ-Int4 --host 127.0.0.1 --port 8003 --quantization gptq --dtype float16 --max-model-len 175104 --gpu-memory-utilization 0.86 --kv-cache-dtype fp8 --enable-prefix-caching --enable-auto-tool-choice --tool-call-parser qwen3_xml --reasoning-parser qwen3 --speculative-config ''{"method": "mtp", "num_speculative_tokens": 3}'' --max-num-seqs 4 --max-num-batched-tokens 8192 --served-model-name 27b-gpu1 --kv-cache-memory 7047184611 --cudagraph-capture-sizes 1 2 4 8 12 16' # --gpu-memory-utilization 0.93
     env:
       # See 27b-gpu0 above re: ONEAPI_DEVICE_SELECTOR removal and sleep mode.
       - "SYCL_PI_LEVEL_ZERO_USE_IMMEDIATE_COMMANDLISTS=1"
