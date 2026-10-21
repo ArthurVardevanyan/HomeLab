@@ -81,6 +81,9 @@ models:
       # actually needs to be set here.
       - "SYCL_PI_LEVEL_ZERO_USE_IMMEDIATE_COMMANDLISTS=1"
       - "ZE_AFFINITY_MASK=0"
+      # Draft-only INT4 lm_head (image patch_draft_lmhead_int4.py): ~+24% decode
+      # on this model, acceptance unchanged. See README "INT4 draft head A/B".
+      - "B70_DRAFT_LMHEAD_INT4=1"
     ttl: 0
     sleepLevel: 0
 
@@ -166,6 +169,15 @@ models:
       # See 27b-gpu0 above re: ONEAPI_DEVICE_SELECTOR removal and sleep mode.
       - "SYCL_PI_LEVEL_ZERO_USE_IMMEDIATE_COMMANDLISTS=1"
       - "ZE_AFFINITY_MASK=1"
+      # Draft-only INT4 lm_head + MTP layer (image patches): +35% decode, MTP
+      # acceptance within 0.01 of baseline. B70_DRAFT_MTP_INT4 empties the
+      # draft's BF16 weights at load time, and vLLM's torch.compile cache key
+      # does NOT include B70_* env: a draft graph compiled without it fails
+      # with "assert_size_stride ... wrong number of dimensions". Hence the
+      # dedicated VLLM_CACHE_ROOT. Remove both together, never one alone.
+      - "B70_DRAFT_LMHEAD_INT4=1"
+      - "B70_DRAFT_MTP_INT4=1"
+      - "VLLM_CACHE_ROOT=/var/lib/vllm-cache/mtp-int4"
     ttl: 0
     sleepLevel: 0
 

@@ -46,6 +46,7 @@ llama-server (llama.cpp SYCL).
     - [Community repositories](#community-repositories)
     - [Community claims checked against this cluster](#community-claims-checked-against-this-cluster)
     - [MTP depth A/B (2026-10-21)](#mtp-depth-ab-2026-10-21)
+    - [INT4 draft head A/B (2026-10-21)](#int4-draft-head-ab-2026-10-21)
     - [Not yet tried](#not-yet-tried)
   - [References](#references)
 
@@ -861,29 +862,62 @@ without hurting the concurrent run. Neither did, so **both models stay at MTP
   (story) is the slowest on both models (about 45-49 tok/s on 27B, 102-128 on
   35B) and code refactoring is the fastest.
 
+### INT4 draft head A/B (2026-10-21)
+
+The cookbook's `patch_draft_lmhead_int4.py` and `patch_draft_mtp_int4.py` are
+vendored in `containers/llama-swap/patches/` and applied at image build. Each
+only acts when its env var is set per model in `llama-swap.yaml`, and each
+fails closed under TP>1 (this setup is TP1). Only the draft's copy of the
+weights is quantized (INT4 g128 symmetric, via the existing
+`int4_gemm_w4a16` op). The target model is untouched and still verifies every
+draft token, so output stays the target's.
+
+Why it helps: at batch size 1 decode is memory-bandwidth bound, and every
+MTP step runs the draft's 248K-row `lm_head` three times. On the 27B that is
+about 7.6 GB of reads per step in fp16, versus about 2 GB in INT4.
+
+Same benchmark as above (5 prompts x 2 runs, 512 tokens, temperature 0,
+thinking off), median decode tok/s, MTP 3:
+
+| Model | Config                     | Decode tok/s | vs baseline | Acceptance per draft position |
+| ----- | -------------------------- | ------------ | ----------- | ----------------------------- |
+| 27B   | baseline                   | 62.9         |             | 0.83 / 0.64 / 0.50            |
+| 27B   | INT4 `lm_head`             | 78.9         | +25%        | 0.83 / 0.63 / 0.49            |
+| 27B   | INT4 `lm_head` + MTP layer | 84.7         | +35%        | 0.84 / 0.63 / 0.48            |
+| 35B   | baseline                   | 175.3        |             | 0.83 / 0.65 / 0.49            |
+| 35B   | INT4 `lm_head`             | 217.6        | +24%        | 0.83 / 0.63 / 0.48            |
+
+Two concurrent requests on the 27B went from 113.8 to 155.8 tok/s in total.
+Acceptance moved by at most 0.02 at any position (the patch authors' limit is
+0.03). Spot checks on both models gave correct answers (capital, `is_prime`,
+and `sum(i*i for i in range(4))` with thinking on gives 14). The
+non-thinking `30` answer to that last prompt is the quantization weakness
+noted earlier and is unchanged. KV pool sizes did not change (27B 176,504
+tokens, 35B 331,535).
+
+Live config: `B70_DRAFT_LMHEAD_INT4=1` on `35b-gpu0` and `27b-gpu1`;
+`B70_DRAFT_MTP_INT4=1` on `27b-gpu1` only.
+
+> **Compile cache gotcha.** `B70_DRAFT_MTP_INT4` empties the draft's BF16
+> linear weights at load time, but vLLM's `torch.compile` cache key does not
+> include `B70_*` env vars. A draft graph cached before the flag was set is
+> loaded as-is and the engine then dies during memory profiling with
+> `assert_size_stride(... (5120, 10240) ...) wrong number of dimensions` in
+> `Qwen3_5MTP.forward`. `27b-gpu1` therefore sets
+> `VLLM_CACHE_ROOT=/var/lib/vllm-cache/mtp-int4` (a subdirectory of the same
+> PVC) so it never shares compiled graphs with a run that has the flag off.
+> The first start with a fresh cache recompiles and is slower. Remove the
+> flag and the cache root together, never just one. The `lm_head` flag does not
+> have this problem, because it only changes `compute_logits`, which is
+> outside the compiled graph.
+
+Not tried on the 35B: `B70_DRAFT_MTP_INT4`. The 35B's draft layer is a MoE
+layer, and the patch only handles `fc`, the attention projections and a dense
+`gate_up_proj` / `down_proj`; it has not been checked against the MoE
+module layout and may fail or skip layers.
+
 ### Not yet tried
 
-- **Draft-only INT4 `lm_head` / MTP head** (the cookbook's
-  `patch_draft_lmhead_int4.py` and `patch_draft_mtp_int4.py`). Both are now
-  vendored in `containers/llama-swap/patches/` and applied in the image build,
-  but **off by default**: they only act when `B70_DRAFT_LMHEAD_INT4=1` /
-  `B70_DRAFT_MTP_INT4=1` is set in a model's `env:`. Status:
-  - Both anchors match v0.32.0's `qwen3_5_mtp.py` (checked against a copy of
-    the file from the running pod; the patched copy compiles). The
-    `int4_gemm_w4a16` op exists in the image with the signature the patches
-    call. Nothing has been run on the GPUs yet.
-  - Both are TP1-only (they fail closed under TP>1), which matches this setup.
-  - **Known gap:** `lm_head` INT4 hooks `compute_logits`. The v0.32.0 proposer
-    only calls it for greedy draft sampling when
-    `use_local_argmax_reduction` is false (the default), so it is on the
-    path here, but the hook has not been confirmed to fire on a live model.
-    Check for the `[B70] draft LM head INT4: listo` log line.
-  - The patch authors gate acceptance on a drop of at most 0.03 per draft
-    position; compare `vllm:spec_decode_num_accepted_tokens_per_pos` before
-    and after (baseline above: 27B 0.83/0.64/0.50, 35B 0.83/0.65/0.49).
-  - Keep-bar for the A/B: median decode tok/s at least +5% with no
-    acceptance regression. Test one model at a time, and only after the image
-    is built and pinned.
 - **`UR_L0_ENABLE_RELAXED_ALLOCATION_LIMITS=1`** (chriswagner) lifts the 4 GB
   single-allocation limit. The current KV pools (4.2-6.9 GB) already allocate,
   so this is only a fallback if a larger pool fails.
