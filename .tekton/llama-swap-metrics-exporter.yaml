@@ -33,8 +33,8 @@ spec:
         value: $(tasks.clair-action.results.SCAN_OUTPUT)
         type: string
       - description: The full image reference built by ko
-        name: IMAGE
-        value: $(tasks.ko-build.results.IMAGE)
+        name: IMAGE_URL
+        value: $(tasks.ko-build.results.IMAGE_URL)
         type: string
       - description: The image digest built by ko
         name: IMAGE_DIGEST
@@ -76,7 +76,7 @@ spec:
             workspace: dockerconfig
         taskSpec:
           results:
-            - name: IMAGE
+            - name: IMAGE_URL
             - name: IMAGE_DIGEST
           workspaces:
             - name: output
@@ -106,7 +106,7 @@ spec:
                     - ALL
               env:
                 - name: WORKSPACE_RESULTS_PATH
-                  value: $(results.IMAGE.path)
+                  value: $(results.IMAGE_URL.path)
                 - name: WORKSPACE_DIGEST_PATH
                   value: $(results.IMAGE_DIGEST.path)
                 - name: DOCKER_CONFIG
@@ -147,7 +147,7 @@ spec:
           kind: Task
         params:
           - name: IMAGE
-            value: $(tasks.ko-build.results.IMAGE)
+            value: $(tasks.ko-build.results.IMAGE_URL)
 
       - name: sbom
         runAfter:
@@ -157,7 +157,7 @@ spec:
           kind: Task
         params:
           - name: IMAGE
-            value: "$(tasks.ko-build.results.IMAGE)@$(tasks.ko-build.results.IMAGE_DIGEST)"
+            value: "$(tasks.ko-build.results.IMAGE_URL)@$(tasks.ko-build.results.IMAGE_DIGEST)"
         workspaces:
           - name: dockerconfig
             workspace: dockerconfig
@@ -185,4 +185,7 @@ spec:
         secretName: "{{ git_auth_secret }}"
     - name: dockerconfig
       secret:
-        secretName: homelab-dockerconfig
+        secretName: homelab-push-pull-secret
+        items:
+          - key: .dockerconfigjson
+            path: config.json

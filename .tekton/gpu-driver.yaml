@@ -50,6 +50,7 @@ spec:
 
     workspaces:
       - name: data
+      - name: dockerconfig
       - name: git_auth_secret
 
     tasks:
@@ -95,6 +96,21 @@ spec:
           - name: IMAGE
             value: $(params.IMAGE):$(params.DRIVER_VERSION)-$(params.KERNEL_VERSION)-$(params.OS)
 
+      - name: sbom
+        runAfter:
+          - clair-action
+        taskRef:
+          name: sbom
+          kind: Task
+        params:
+          - name: IMAGE
+            value: "$(tasks.buildah.results.IMAGE_URL)@$(tasks.buildah.results.IMAGE_DIGEST)"
+        workspaces:
+          - name: dockerconfig
+            workspace: dockerconfig
+          - name: output
+            workspace: data
+
   taskRunTemplate:
     serviceAccountName: pipeline
   workspaces:
@@ -114,3 +130,9 @@ spec:
     - name: git_auth_secret
       secret:
         secretName: "{{ git_auth_secret }}"
+    - name: dockerconfig
+      secret:
+        secretName: homelab-push-pull-secret
+        items:
+          - key: .dockerconfigjson
+            path: config.json

@@ -37,7 +37,7 @@ spec:
       computeResources:
         limits:
           cpu: 1000m
-          memory: 1Gi
+          memory: 4Gi
         requests:
           cpu: 250m
           memory: 256Mi
@@ -100,10 +100,10 @@ spec:
           "${IMAGE}"
 
         # Write the LINK_TO_SBOM result
-        echo "https://${REGISTRY_HOST}/homelab/${REPO}" > "${LINK_TO_SBOM}"
+        echo "https://${REGISTRY_HOST}/repository/${REPO}?tab=tags" > "${LINK_TO_SBOM}"
 
         echo "SBOM generated and attested."
-        echo "Link: https://${REGISTRY_HOST}/homelab/${REPO}"
+        echo "Link: https://${REGISTRY_HOST}/repository/${REPO}?tab=tags"
 
   volumes:
     - name: cosign-key

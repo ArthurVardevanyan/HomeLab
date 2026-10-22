@@ -24,7 +24,7 @@ spec:
     artifacts.taskrun.storage: "tekton,oci"
     artifacts.pipelinerun.storage: "tekton,oci"
     artifacts.pipelinerun.format: in-toto
-    transparency.enabled: "true"
+    transparency.enabled: "false"
     artifacts.taskrun.format: in-toto
     artifacts.oci.signer: x509
     artifacts.oci.storage: oci
@@ -32,7 +32,20 @@ spec:
     artifacts.pipelinerun.signer: x509
     disabled: false
     artifacts.oci.format: simplesigning
-    options: {}
+    options:
+      deployments:
+        tekton-chains-controller:
+          spec:
+            template:
+              spec:
+                containers:
+                  - name: tekton-chains-controller
+                    resources:
+                      requests:
+                        cpu: 50m
+                        memory: 256Mi
+                      limits:
+                        memory: 512Mi
     artifacts.taskrun.signer: x509
     artifacts.pipelinerun.enable-deep-inspection: "true"
   dashboard:
