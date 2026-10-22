@@ -1,0 +1,43 @@
+---
+apiVersion: machineconfiguration.openshift.io/v1
+kind: MachineConfig
+metadata:
+  labels:
+    machineconfiguration.openshift.io/role: worker
+  name: 98-worker-nic-pm-fix
+spec:
+  config:
+    ignition:
+      version: 3.2.0
+    storage:
+      files:
+        - path: /etc/udev/rules.d/98-worker-nic-pm.rules
+          mode: 0644
+          overwrite: true
+          contents:
+            source: data:text/plain;charset=utf-8;base64,QUNUSU9OPWFkZCwgU1VCU1lTVEVNPXBjaSwgQVRUUnd2ZW5kb3J9PT0weDEwZWMsIEFUUnF7ZGV2aWNlfT09MHg4MTI1LCBBVFRRe2xpbmsvY2xrcG19PTAiLCBBVFRRe2xpbmsvbDFfYXNwbX09IjAiLCBBVFRRe3Bvd2VyL2NvbnRyb2x9PSJvbiIK
+
+    systemd:
+      units:
+        - name: disable-nic-eee.service
+          enabled: true
+          contents: |
+            [Unit]
+            Description=Disable EEE and clkpm on Realtek NICs (enp3s0, enp4s0)
+            Wants=network-pre.target
+            Before=network-pre.target
+            After=sys-subsystem-net-devices-enp3s0.device sys-subsystem-net-devices-enp4s0.device
+            Requires=sys-subsystem-net-devices-enp3s0.device sys-subsystem-net-devices-enp4s0.device
+
+            [Service]
+            Type=oneshot
+            # Re-fire the udev "add" event for all Realtek NICs, so the clkpm rule
+            # is applied even if the link/ sysfs attrs were missing at first add.
+            ExecStart=-/usr/sbin/udevadm trigger --action=add --subsystem-match=pci --attr-match=vendor=0x10ec --attr-match=device=0x8125
+            ExecStart=-/usr/sbin/udevadm settle --timeout=10
+            ExecStart=-/usr/sbin/ethtool --set-eee enp3s0 eee off
+            ExecStart=-/usr/sbin/ethtool --set-eee enp4s0 eee off
+            RemainAfterExit=yes
+
+            [Install]
+            WantedBy=multi-user.target
