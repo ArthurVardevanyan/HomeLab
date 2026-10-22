@@ -1,0 +1,24 @@
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: rekor-cert
+  namespace: rekor
+  labels:
+    app.kubernetes.io/instance: rekor
+  annotations:
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+    argocd.argoproj.io/sync-wave: "1"
+spec:
+  secretName: rekor-tls
+  duration: 8760h # 1y
+  renewBeforePercentage: 30
+  privateKey:
+    rotationPolicy: Always
+    algorithm: ECDSA
+    size: 256
+  dnsNames:
+    - "rekor.arthurvardevanyan.com"
+  issuerRef:
+    kind: ClusterIssuer
+    name: letsencrypt

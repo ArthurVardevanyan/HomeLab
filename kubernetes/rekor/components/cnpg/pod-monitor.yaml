@@ -1,0 +1,17 @@
+---
+apiVersion: monitoring.coreos.com/v1
+kind: PodMonitor
+metadata:
+  name: cnpg
+  namespace: rekor
+  labels:
+    app.kubernetes.io/instance: rekor
+spec:
+  selector:
+    matchLabels:
+      cnpg.io/cluster: rekor
+  namespaceSelector:
+    matchNames:
+      - rekor
+  podMetricsEndpoints:
+    - port: metrics
