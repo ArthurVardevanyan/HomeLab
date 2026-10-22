@@ -1,0 +1,153 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: pxe-server
+  annotations:
+    checkov.io/skip1: CKV_K8S_40=OpenShift Injects Random UID
+    checkov.io/skip2: CKV_K8S_38=Operator Requires use of Tokens
+  name: pxe-server
+  namespace: pxe-server
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: pxe-server
+  template:
+    metadata:
+      labels:
+        app: pxe-server
+    spec:
+      hostNetwork: true
+      nodeSelector:
+        node-role.kubernetes.io/control-plane: ""
+      restartPolicy: Always
+      schedulerName: default-scheduler
+      dnsPolicy: ClusterFirstWithHostNet
+      securityContext:
+        seccompProfile:
+          type: RuntimeDefault
+      topologySpreadConstraints:
+        - maxSkew: 1
+          topologyKey: topology.kubernetes.io/zone
+          whenUnsatisfiable: ScheduleAnyway
+          labelSelector:
+            matchLabels:
+              app: pxe-server
+        - maxSkew: 1
+          topologyKey: kubernetes.io/hostname
+          whenUnsatisfiable: DoNotSchedule
+          labelSelector:
+            matchLabels:
+              app: pxe-server
+      containers:
+        # renovate: datasource=docker depName=registry.arthurvardevanyan.com/homelab/pxe-server versioning=loose
+        - image: registry.arthurvardevanyan.com/homelab/pxe-server:v0.1.0@sha256:PLACEHOLDER
+          name: pxe-server
+          resizePolicy:
+            - resourceName: cpu
+              restartPolicy: NotRequired
+            - resourceName: memory
+              restartPolicy: NotRequired
+          volumeMounts:
+            - name: pxe-server-config
+              mountPath: /etc/pxe-server
+              readOnly: true
+            - name: cache
+              mountPath: /var/cache/pxe-server
+          env:
+            - name: PXE_SERVER_WORKERS_CONFIG
+              valueFrom:
+                configMapKeyRef:
+                  name: pxe-server-config
+                  key: workers.json
+            - name: PXE_SERVER_WORKER_DATA_DIR
+              valueFrom:
+                configMapKeyRef:
+                  name: pxe-server-config
+                  key: worker-data-dir
+            - name: PXE_SERVER_COREOS_BOOTIMAGES_CONFIGMAP
+              value: coreos-bootimages
+            - name: PXE_SERVER_CACHE_DIR
+              value: /var/cache/pxe-server
+          args:
+            - --listen
+            - :8080
+            - --listen-udp
+            - :69
+            - --cache-dir
+            - /var/cache/pxe-server
+            - --workers-config
+            - /etc/pxe-server/workers.json
+            - --worker-data-dir
+            - /etc/pxe-server
+            - --coreos-bootimages-configmap
+            - coreos-bootimages
+          ports:
+            - containerPort: 8080
+              name: http
+              protocol: TCP
+            - containerPort: 443
+              name: https
+              protocol: TCP
+            - containerPort: 69
+              name: tftp
+              protocol: UDP
+          livenessProbe:
+            httpGet:
+              path: /livez
+              port: http
+            initialDelaySeconds: 1
+            timeoutSeconds: 1
+            periodSeconds: 30
+            successThreshold: 1
+            failureThreshold: 1
+          readinessProbe:
+            httpGet:
+              path: /readyz
+              port: http
+            initialDelaySeconds: 1
+            timeoutSeconds: 5
+            periodSeconds: 30
+            successThreshold: 2
+            failureThreshold: 1
+          startupProbe:
+            httpGet:
+              path: /startupz
+              port: http
+            initialDelaySeconds: 2
+            timeoutSeconds: 5
+            periodSeconds: 1
+            successThreshold: 1
+            failureThreshold: 3
+          resources:
+            limits:
+              cpu: 10m
+              memory: 128Mi
+            requests:
+              cpu: 5m
+              memory: 16Mi
+          securityContext:
+            runAsNonRoot: false
+            readOnlyRootFilesystem: true
+            allowPrivilegeEscalation: true
+            privileged: true
+            seccompProfile:
+              type: RuntimeDefault
+            capabilities:
+              drop:
+                - ALL
+      volumes:
+        - name: pxe-server-config
+          configMap:
+            name: pxe-server-config
+            optional: false
+        - name: cache
+          emptyDir:
+            medium: ""
+            sizeLimit: 2Gi
+      serviceAccountName: pxe-server
+      terminationGracePeriodSeconds: 10
+      automountServiceAccountToken: true
+      enableServiceLinks: false

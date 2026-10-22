@@ -931,15 +931,127 @@ delete_okd_bm() {
 }
 
 okd_bm_worker_shutdown() {
-  kubectl patch machineset okd-4ww5p-worker-1 -n openshift-machine-api --type='merge' -p '{"spec": {"replicas": 0}}'
-  kubectl patch machineset okd-4ww5p-worker-2 -n openshift-machine-api --type='merge' -p '{"spec": {"replicas": 0}}'
-  kubectl patch machineset okd-4ww5p-worker-3 -n openshift-machine-api --type='merge' -p '{"spec": {"replicas": 0}}'
+  export KUBECONFIG=${KUBECONFIG:-$HOME/.kube/okd}
+  for WORKER in worker-1 worker-2 worker-3; do
+    echo -e "\n${BLUE}Shutting down ${WORKER} (PXE wipe + power off):${NC}"
+
+    # 1. Scale down MachineSet (this triggers BMH to power off the host)
+    echo "Scaling down MachineSet for ${WORKER}..."
+    kubectl patch machineset "okd-4ww5p-${WORKER}" -n openshift-machine-api --type='merge' -p '{"spec": {"replicas": 0}}'
+
+    # 2. Wait for the node to be deleted
+    echo "Waiting for node ${WORKER} to be deleted..."
+    local max_wait=120
+    local waited=0
+    while [[ "${waited}" -lt "${max_wait}" ]]; do
+      if ! kubectl get node "${WORKER}" --no-headers 2>/dev/null | grep -q "${WORKER}"; then
+        echo "Node ${WORKER} deleted."
+        break
+      fi
+      sleep 5
+      waited=$((waited + 5))
+    done
+    if [[ "${waited}" -ge "${max_wait}" ]]; then
+      echo "Warning: Node ${WORKER} not deleted within timeout, continuing..."
+    fi
+
+    # 3. Wait for Machine to be deleted
+    echo "Waiting for Machine ${WORKER} to be deleted..."
+    local max_wait=120
+    local waited=0
+    while [[ "${waited}" -lt "${max_wait}" ]]; do
+      local machine_phase
+      machine_phase=$(kubectl get machine -n openshift-machine-api -l machine.openshift.io/cluster-api-machineset="okd-4ww5p-${WORKER}" -o jsonpath='{.items[0].status.phase}' 2>/dev/null || echo "")
+      if [[ -z "${machine_phase}" ]]; then
+        echo "Machine ${WORKER} deleted."
+        break
+      fi
+      sleep 5
+      waited=$((waited + 5))
+    done
+
+    # 4. Set BMH PXE mode to wipe
+    echo "Setting PXE mode to wipe for ${WORKER}..."
+    kubectl patch bmh "${WORKER}" -n openshift-machine-api --type merge -p '{"metadata":{"annotations":{"homelab.arthurvardevanyan.com/pxe-mode":"wipe"}}}'
+
+    # 5. Set BMH online (to boot from PXE)
+    echo "Pinging PXE server for ${WORKER}..."
+    kubectl patch bmh "${WORKER}" -n openshift-machine-api --type json -p '[{"op": "replace", "path": "/spec/online", "value": true}]'
+
+    # 6. Wait for PXE wipe to complete (BMH to be cleaned)
+    echo "Waiting for PXE wipe to complete for ${WORKER}..."
+    local max_wait=900
+    local waited=0
+    while [[ "${waited}" -lt "${max_wait}" ]]; do
+      # Check if BMH is in Clean state
+      local bmh_state
+      bmh_state=$(kubectl get bmh "${WORKER}" -n openshift-machine-api -o jsonpath='{.status.provisioning.state}' 2>/dev/null || echo "")
+      if [[ "${bmh_state}" == "clean" || "${bmh_state}" == "registered" ]]; then
+        echo "BMH ${WORKER} wiped and cleaned."
+        break
+      fi
+      sleep 10
+      waited=$((waited + 10))
+    done
+
+    # 7. Set PXE mode back to disk (default)
+    echo "Setting PXE mode to disk for ${WORKER}..."
+    kubectl patch bmh "${WORKER}" -n openshift-machine-api --type merge -p '{"metadata":{"annotations":{"homelab.arthurvardevanyan.com/pxe-mode":"disk"}}}'
+
+    # 8. Set BMH offline
+    echo "Setting BMH ${WORKER} offline..."
+    kubectl patch bmh "${WORKER}" -n openshift-machine-api --type json -p '[{"op": "replace", "path": "/spec/online", "value": false}]'
+
+    echo -e "\n${BLUE}Done: ${WORKER} wiped and powered off.${NC}\n"
+  done
 }
 
 okd_bm_worker_startup() {
-  kubectl patch machineset okd-4ww5p-worker-1 -n openshift-machine-api --type='merge' -p '{"spec": {"replicas": 1}}'
-  kubectl patch machineset okd-4ww5p-worker-2 -n openshift-machine-api --type='merge' -p '{"spec": {"replicas": 1}}'
-  kubectl patch machineset okd-4ww5p-worker-3 -n openshift-machine-api --type='merge' -p '{"spec": {"replicas": 1}}'
+  export KUBECONFIG=${KUBECONFIG:-$HOME/.kube/okd}
+  for WORKER in worker-1 worker-2 worker-3; do
+    echo -e "\n${BLUE}Starting ${WORKER} (fresh PXE install):${NC}"
+
+    # 1. Set BMH PXE mode to install
+    echo "Setting PXE mode to install for ${WORKER}..."
+    kubectl patch bmh "${WORKER}" -n openshift-machine-api --type merge -p '{"metadata":{"annotations":{"homelab.arthurvardevanyan.com/pxe-mode":"install"}}}'
+
+    # 2. Scale up MachineSet (this triggers the machine controller to create a Machine)
+    echo "Scaling up MachineSet for ${WORKER}..."
+    kubectl patch machineset "okd-4ww5p-${WORKER}" -n openshift-machine-api --type='merge' -p '{"spec": {"replicas": 1}}'
+
+    # 3. Wait for the node to be Ready (up to 30 min)
+    echo "Waiting for node ${WORKER} to be Ready..."
+    local max_wait=1800
+    local waited=0
+    while [[ "${waited}" -lt "${max_wait}" ]]; do
+      local node_status
+      node_status=$(kubectl get node "${WORKER}" -o jsonpath='{.status.conditions[?(@.type=="Ready")].status}' 2>/dev/null || echo "")
+      if [[ "${node_status}" == "True" ]]; then
+        echo "Node ${WORKER} is Ready."
+        break
+      fi
+      sleep 10
+      waited=$((waited + 10))
+    done
+    if [[ "${waited}" -ge "${max_wait}" ]]; then
+      echo "Warning: Node ${WORKER} did not become Ready within timeout, proceeding anyway..."
+    fi
+
+    # 4. Read BMH IP/MAC from API (skip manual patching)
+    WORKER_IP=$(kubectl get bmh "${WORKER}" -n openshift-machine-api -o jsonpath='{.status.provisioning.addresses[0].ip}' 2>/dev/null || echo "")
+    WORKER_MAC=$(kubectl get bmh "${WORKER}" -n openshift-machine-api -o jsonpath='{.spec.bootMACAddress}' 2>/dev/null || echo "")
+    if [[ -n "${WORKER_IP}" && -n "${WORKER_MAC}" ]]; then
+      kubectl patch bmh "${WORKER}" -n openshift-machine-api --type merge --subresource status --patch "{\"status\":{\"hardware\":{\"nics\":[{\"ip\":\"${WORKER_IP}\",\"mac\":\"${WORKER_MAC}\",\"name\":\"primary\"}]}}}" || echo "BMH status patch skipped"
+    else
+      echo "Warning: Could not read BMH ${WORKER} IP/MAC from API, skipping status patch"
+    fi
+
+    # 5. Set PXE mode back to disk (so future boots use local disk)
+    echo "Setting PXE mode to disk for ${WORKER}..."
+    kubectl patch bmh "${WORKER}" -n openshift-machine-api --type merge -p '{"metadata":{"annotations":{"homelab.arthurvardevanyan.com/pxe-mode":"disk"}}}'
+
+    echo -e "\n${BLUE}Done: ${WORKER} started.${NC}\n"
+  done
 }
 
 generate_node_iso() {

@@ -62,6 +62,40 @@ The Machine should have `PHASE: Running` and a `NODE` name.
 
 Workers use per-node MachineSets with `replicas: 0` — they exist as declarative records only. ArgoCD ignores the replicas field via `ignoreDifferences`, so scaling a MachineSet to 1 later (e.g., for node replacement) is safe.
 
+## PXE Lifecycle
+
+Workers can be PXE-reprovisioned (fresh install) instead of booting from existing disk. This is useful for node replacement or full deprovisioning.
+
+### Prerequisites
+
+- BIOS on each worker: network boot first, then disk
+- UniFi DHCP: per-MAC reservation with TFTP server = `10.101.9.250`, filename = `ipxe.efi`
+
+### Usage
+
+```bash
+# Shutdown (wipe + power off):
+bash main.bash okd_bm_worker_shutdown
+
+# Startup (fresh install + join cluster):
+bash main.bash okd_bm_worker_startup
+```
+
+### PXE Modes
+
+Modes are stored as annotations on BMHs: `homelab.arthurvardevanyan.com/pxe-mode`
+
+- **`disk`** (default): boot from local disk
+- **`install`**: fresh install from network
+- **`wipe`**: wipe disks and power off
+- **`off`**: power off only
+
+### Troubleshooting
+
+- If the node doesn't PXE-boot: check BIOS boot order, UniFi DHCP settings, and the BMH annotation
+- If the install hangs: check the PXE server logs for errors, verify the SCOS files are cached
+- If the node boots from disk instead of PXE: ensure `ipxe.efi` is served correctly and the firmware supports `exit` to boot next device
+
 ## Destructive Scaling Warning
 
 Scaling a per-node MachineSet to 1 **power-cycles the physical host**. This is destructive for hosts that are live cluster members:
