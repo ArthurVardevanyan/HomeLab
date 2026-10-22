@@ -9,6 +9,7 @@ metadata:
     app.kubernetes.io/instance: rekor
   annotations:
     argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+    argocd.argoproj.io/sync-wave: "2"
 spec:
   replicas: 2
   revisionHistoryLimit: 0
@@ -37,7 +38,7 @@ spec:
       enableServiceLinks: false
       containers:
         # renovate: datasource=docker depName=ghcr.io/sigstore/rekor/rekor-server
-        - image: ghcr.io/sigstore/rekor/rekor-server:v2.0.0@sha256:5c6f26a97e5b0e3e7f8a6c0b9e8d7c6b5a4f3e2d1c0b9a8f7e6d5c4b3a2f1e0d
+        - image: ghcr.io/sigstore/rekor/rekor-server:v1.5.5@sha256:83ce4593db1b2d4c71598f66023ef283ef4f6c73293017095ad5dd4f982b0
           imagePullPolicy: IfNotPresent
           name: rekor
           securityContext:

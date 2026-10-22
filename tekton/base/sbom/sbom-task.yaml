@@ -70,6 +70,8 @@ spec:
       volumeMounts:
         - name: cosign-key
           mountPath: /etc/cosign
+        - name: tmp
+          mountPath: /tmp
       script: |
         #!/usr/bin/env bash
         set -o errexit -o nounset -o pipefail
@@ -108,3 +110,5 @@ spec:
     - name: cosign-key
       secret:
         secretName: cosign-keys
+    - name: tmp
+      emptyDir: {}
