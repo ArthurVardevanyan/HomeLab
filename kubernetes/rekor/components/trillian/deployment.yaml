@@ -1,0 +1,136 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: trillian
+  namespace: rekor
+  annotations:
+    argocd.argoproj.io/sync-wave: "2"
+  labels:
+    app.kubernetes.io/instance: rekor
+spec:
+  replicas: 1
+  revisionHistoryLimit: 0
+  selector:
+    matchLabels:
+      app: trillian
+  template:
+    metadata:
+      labels:
+        app: trillian
+    spec:
+      securityContext:
+        seccompProfile:
+          type: RuntimeDefault
+        runAsNonRoot: true
+        supplementalGroups:
+          - 0
+      restartPolicy: Always
+      schedulerName: default-scheduler
+      dnsPolicy: ClusterFirst
+      automountServiceAccountToken: false
+      enableServiceLinks: false
+      containers:
+        - image: ghcr.io/sigstore/scaffolding/trillian_log_server:v1.8.0@sha256:32ee491f4d005eac128203e52e5057f9cf6d8901c5df790619a9da24c000bd97
+          imagePullPolicy: IfNotPresent
+          name: trillian-log-server
+          securityContext:
+            runAsNonRoot: true
+            readOnlyRootFilesystem: true
+            allowPrivilegeEscalation: false
+            privileged: false
+            seccompProfile:
+              type: RuntimeDefault
+            capabilities:
+              drop:
+                - ALL
+          args:
+            - --quota_system=noop
+            - --storage_system=postgresql
+            - --postgresql_uri=$(POSTGRESQL_URI)
+            - --rpc_endpoint=0.0.0.0:8090
+            - --http_endpoint=0.0.0.0:8091
+            - --alsologtostderr
+          env:
+            - name: POSTGRESQL_URI
+              valueFrom:
+                secretKeyRef:
+                  name: trillian-app
+                  key: uri
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              cpu: "1"
+              memory: 512Mi
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: 8091
+              scheme: HTTP
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: 8091
+              scheme: HTTP
+            initialDelaySeconds: 15
+            periodSeconds: 20
+            timeoutSeconds: 5
+            failureThreshold: 3
+        - image: ghcr.io/sigstore/scaffolding/trillian_log_signer:v1.8.0@sha256:3d0152303816e88374c62c0faaf5179cb9c3a867fb5e3547e83c6d92f05c33dc97
+          imagePullPolicy: IfNotPresent
+          name: trillian-log-signer
+          securityContext:
+            runAsNonRoot: true
+            readOnlyRootFilesystem: true
+            allowPrivilegeEscalation: false
+            privileged: false
+            seccompProfile:
+              type: RuntimeDefault
+            capabilities:
+              drop:
+                - ALL
+          args:
+            - --quota_system=noop
+            - --storage_system=postgresql
+            - --postgresql_uri=$(POSTGRESQL_URI)
+            - --rpc_endpoint=0.0.0.0:8090
+            - --http_endpoint=0.0.0.0:8091
+            - --force_master
+            - --alsologtostderr
+          env:
+            - name: POSTGRESQL_URI
+              valueFrom:
+                secretKeyRef:
+                  name: trillian-app
+                  key: uri
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              cpu: "1"
+              memory: 512Mi
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: 8091
+              scheme: HTTP
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: 8091
+              scheme: HTTP
+            initialDelaySeconds: 15
+            periodSeconds: 20
+            timeoutSeconds: 5
+            failureThreshold: 3
