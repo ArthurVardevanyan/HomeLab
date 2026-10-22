@@ -37,9 +37,11 @@ spec:
       computeResources:
         limits:
           cpu: 1000m
+          ephemeral-storage: 20Gi
           memory: 4Gi
         requests:
           cpu: 250m
+          ephemeral-storage: 5Gi
           memory: 256Mi
       securityContext:
         runAsNonRoot: true
@@ -110,4 +112,5 @@ spec:
       secret:
         secretName: cosign-keys
     - name: tmp
-      emptyDir: {}
+      emptyDir:
+        sizeLimit: 20Gi
