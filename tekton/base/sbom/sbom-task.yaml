@@ -93,11 +93,11 @@ spec:
 
         # Attest SBOM using cosign
         echo "Attesting SBOM to ${IMAGE}..."
-        cosign attest --type sbom \
+        cat "${OUTPUT_PATH}/sbom.cyclonedx.json" | cosign attest \
+          --type sbom \
           --key "file:///etc/cosign/cosign.key" \
           --yes \
-          --image "${IMAGE}" \
-          "${OUTPUT_PATH}/sbom.cyclonedx.json"
+          -- "${IMAGE}"
 
         # Write the LINK_TO_SBOM result
         echo "https://${REGISTRY_HOST}/homelab/${REPO}" > "${LINK_TO_SBOM}"
