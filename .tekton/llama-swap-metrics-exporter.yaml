@@ -11,6 +11,7 @@ metadata:
     pipelinesascode.tekton.dev/target-namespace: "homelab"
     pipelinesascode.tekton.dev/task: "https://raw.githubusercontent.com/ArthurVardevanyan/HomeLab/main/tekton/tasks/git-clone/0.9.1/git-clone.yaml"
     pipelinesascode.tekton.dev/task-1: "tekton/base/clair-action/clair-action-task.yaml"
+    pipelinesascode.tekton.dev/task-2: "tekton/base/sbom/sbom-task.yaml"
 spec:
   params:
     - name: git-url
@@ -31,10 +32,23 @@ spec:
         name: SCAN_OUTPUT
         value: $(tasks.clair-action.results.SCAN_OUTPUT)
         type: string
+      - description: The full image reference built by ko
+        name: IMAGE_URL
+        value: $(tasks.ko-build.results.IMAGE_URL)
+        type: string
+      - description: The image digest built by ko
+        name: IMAGE_DIGEST
+        value: $(tasks.ko-build.results.IMAGE_DIGEST)
+        type: string
+      - description: URL to the SBOM in the OCI image repository
+        name: LINK_TO_SBOM
+        value: $(tasks.sbom.results.LINK_TO_SBOM)
+        type: string
 
     workspaces:
       - name: data
       - name: git_auth_secret
+      - name: dockerconfig
 
     tasks:
       - name: git-clone
@@ -58,11 +72,15 @@ spec:
         workspaces:
           - name: output
             workspace: data
+          - name: dockerconfig
+            workspace: dockerconfig
         taskSpec:
           results:
-            - name: IMAGE
+            - name: IMAGE_URL
+            - name: IMAGE_DIGEST
           workspaces:
             - name: output
+            - name: dockerconfig
           steps:
             - name: ko-build
               image: registry.arthurvardevanyan.com/homelab/toolbox:not_latest
@@ -88,7 +106,11 @@ spec:
                     - ALL
               env:
                 - name: WORKSPACE_RESULTS_PATH
-                  value: $(results.IMAGE.path)
+                  value: $(results.IMAGE_URL.path)
+                - name: WORKSPACE_DIGEST_PATH
+                  value: $(results.IMAGE_DIGEST.path)
+                - name: DOCKER_CONFIG
+                  value: $(workspaces.dockerconfig.path)
               volumeMounts:
                 - name: go
                   mountPath: /go
@@ -101,9 +123,16 @@ spec:
                 set -o pipefail
 
                 TAG="$(date -u +%Y.%m.%d.%H%M%S)"
-                make ko-build-pipeline TAG="${TAG}"
-                IMAGE="$(cat "${WORKSPACE_RESULTS_PATH}" | tr -d '[:space:]')"
+                IMAGE_REF="$(make ko-build-pipeline TAG="${TAG}" 2>/dev/null | tail -1 | tr -d '[:space:]')"
+                if [[ "$IMAGE_REF" == *"@"* ]]; then
+                  IMAGE="${IMAGE_REF%%@*}"
+                  IMAGE_DIGEST="${IMAGE_REF#*@}"
+                else
+                  IMAGE="${IMAGE_REF}"
+                  IMAGE_DIGEST=""
+                fi
                 echo -n "${IMAGE}" > "${WORKSPACE_RESULTS_PATH}"
+                echo -n "${IMAGE_DIGEST}" > "${WORKSPACE_DIGEST_PATH}"
           volumes:
             - name: go
               emptyDir: {}
@@ -118,7 +147,22 @@ spec:
           kind: Task
         params:
           - name: IMAGE
-            value: $(tasks.ko-build.results.IMAGE)
+            value: $(tasks.ko-build.results.IMAGE_URL)
+
+      - name: sbom
+        runAfter:
+          - ko-build
+        taskRef:
+          name: sbom
+          kind: Task
+        params:
+          - name: IMAGE
+            value: "$(tasks.ko-build.results.IMAGE_URL)@$(tasks.ko-build.results.IMAGE_DIGEST)"
+        workspaces:
+          - name: dockerconfig
+            workspace: dockerconfig
+          - name: output
+            workspace: data
 
   taskRunTemplate:
     serviceAccountName: pipeline
@@ -139,3 +183,9 @@ spec:
     - name: git_auth_secret
       secret:
         secretName: "{{ git_auth_secret }}"
+    - name: dockerconfig
+      secret:
+        secretName: homelab-push-pull-secret
+        items:
+          - key: .dockerconfigjson
+            path: config.json
