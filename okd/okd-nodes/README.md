@@ -10,7 +10,7 @@ Each node follows a three-resource flow:
 BareMetalHost (metal3.io) → Machine (machine.openshift.io) → MachineSet (machine.openshift.io)
 ```
 
-- **BareMetalHost (BMH)** — declares BMC address, boot MAC, credentials, and `externallyProvisioned: true`
+- **BareMetalHost (BMH)** — declares BMC address, boot MAC, credentials, and `externallyProvisioned: false`
 - **Machine** — minimal resource with `clusterName: okd-4ww5p`; the Machine API Operator links it to the BMH
 - **MachineSet** — carries the role label, instance-type, zone, taints, `hostSelector`, and user data
 
@@ -62,39 +62,22 @@ The Machine should have `PHASE: Running` and a `NODE` name.
 
 Workers use per-node MachineSets with `replicas: 0` — they exist as declarative records only. ArgoCD ignores the replicas field via `ignoreDifferences`, so scaling a MachineSet to 1 later (e.g., for node replacement) is safe.
 
-## PXE Lifecycle
+## Native Provisioning
 
-Workers can be PXE-reprovisioned (fresh install) instead of booting from existing disk. This is useful for node replacement or full deprovisioning.
+Workers use `externallyProvisioned: false` on their `BareMetalHost` resources. The BMH controller manages provisioning automatically through the MachineSet lifecycle:
 
-### Prerequisites
-
-- BIOS on each worker: network boot first, then disk
-- UniFi DHCP: per-MAC reservation with TFTP server = `10.101.9.250`, filename = `ipxe.efi`
+- **Scale down** (`replicas: 0`) → Machine deleted → BMH controller deprovisions (wipes disk, powers off host)
+- **Scale up** (`replicas: 1`) → Machine recreated → BMH controller provisions (installs OS from `userData`, joins cluster)
 
 ### Usage
 
 ```bash
-# Shutdown (wipe + power off):
+# Scale down (deprovisions + powers off):
 bash main.bash okd_bm_worker_shutdown
 
-# Startup (fresh install + join cluster):
+# Scale up (provisions + joins cluster):
 bash main.bash okd_bm_worker_startup
 ```
-
-### PXE Modes
-
-Modes are stored as annotations on BMHs: `homelab.arthurvardevanyan.com/pxe-mode`
-
-- **`disk`** (default): boot from local disk
-- **`install`**: fresh install from network
-- **`wipe`**: wipe disks and power off
-- **`off`**: power off only
-
-### Troubleshooting
-
-- If the node doesn't PXE-boot: check BIOS boot order, UniFi DHCP settings, and the BMH annotation
-- If the install hangs: check the PXE server logs for errors, verify the SCOS files are cached
-- If the node boots from disk instead of PXE: ensure `ipxe.efi` is served correctly and the firmware supports `exit` to boot next device
 
 ## Destructive Scaling Warning
 
