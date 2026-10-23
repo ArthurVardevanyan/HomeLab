@@ -942,6 +942,80 @@ okd_bm_worker_startup() {
   kubectl patch machineset okd-4ww5p-worker-3 -n openshift-machine-api --type='merge' -p '{"spec": {"replicas": 1}}'
 }
 
+generate_node_iso() {
+  local arg="${1:-}"
+  local HOMELAB="${HOMELAB:-${PWD}}"
+
+  if [[ -z "${arg}" || "${arg}" == "all" ]]; then
+    local yaml_files=("${HOMELAB}"/okd/node-config/*.yaml)
+  elif [[ "${arg}" == "workers" ]]; then
+    local yaml_files=("${HOMELAB}"/okd/node-config/worker-*.yaml)
+  elif [[ -f "${arg}" ]]; then
+    local yaml_files=("${arg}")
+  else
+    echo "Error: Invalid argument '${arg}'. Usage: generate_node_iso <path> | workers | all" >&2
+    return 1
+  fi
+
+  if [[ ${#yaml_files[@]} -eq 0 ]]; then
+    echo "Error: No YAML files found for '${arg}'" >&2
+    return 1
+  fi
+
+  local dest_dir="${HOMELAB}/notes/iso"
+  mkdir -p "${dest_dir}"
+
+  export KUBECONFIG=/home/arthur/.kube/okd
+
+  for node_yaml in "${yaml_files[@]}"; do
+    if [[ ! -f "${node_yaml}" ]]; then
+      continue
+    fi
+
+    echo -e "\n${BLUE}Generating node ISO from: ${node_yaml}${NC}"
+
+    local node_name=""
+    node_name=$(grep -m1 'hostname:' "${node_yaml}" | sed -E 's/.*hostname:[[:space:]]*//; s/[[:space:]]*$//')
+    if [[ -z "${node_name}" ]]; then
+      echo "  WARNING: Could not extract hostname from '${node_yaml}', skipping" >&2
+      continue
+    fi
+    echo "  Node name: ${node_name}"
+
+    local node_ip=""
+    node_ip=$(grep -m1 'ip:' "${node_yaml}" | sed -E 's/.*ip:[[:space:]]*//; s/[[:space:]]*$//')
+    if [[ -z "${node_ip}" ]]; then
+      echo "  WARNING: Could not extract IP from '${node_yaml}', scp output will be incomplete" >&2
+    fi
+
+    local tmp_dir
+    tmp_dir=$(mktemp -d)
+    cp "${node_yaml}" "${tmp_dir}/nodes-config.yaml"
+
+    echo "  Node IP: ${node_ip:-?}"
+
+    if ! oc adm node-image create --dir="${tmp_dir}" -o="${node_name}.iso"; then
+      echo "Error: oc adm node-image create failed for ${node_yaml}" >&2
+      rm -rf "${tmp_dir}"
+      continue
+    fi
+
+    mv "${tmp_dir}/${node_name}.iso" "${dest_dir}/${node_name}.iso"
+    rm -rf "${tmp_dir}"
+
+    echo -e "${BLUE}ISO generated: ${dest_dir}/${node_name}.iso${NC}"
+
+    # Print scp command
+    if [[ -n "${node_ip}" ]]; then
+      echo "  scp arthur@10.101.11.7:/home/arthur/Projects/HomeLab/notes/iso/${node_name}.iso ./"
+    fi
+  done
+
+  # Bulk pull command — run from your laptop
+  echo ""
+  echo "  # Pull entire ISO folder from this machine:"
+  echo "  scp -r arthur@10.101.11.7:/home/arthur/Projects/HomeLab/notes/iso/ ./"
+}
 
 install_okd_prep() {
 
