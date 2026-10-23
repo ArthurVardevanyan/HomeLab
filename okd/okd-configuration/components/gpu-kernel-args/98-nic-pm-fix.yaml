@@ -15,7 +15,12 @@ spec:
           mode: 0644
           overwrite: true
           contents:
-            source: data:text/plain;charset=utf-8;base64,QUNUSU9OPT0iYWRkIiwgU1VCU1lTVEVNPT0icGNpIiwgQVRUUnt2ZW5kb3J9PT0iMHgxMGVjIiwgQVRUUntkZXZpY2V9PT0iMHg4MTI1IiwgQVRUUntsaW5rL2Nsa3BtfT0iMCIsIEFUVFJ7bGluay9sMV9hc3BtfT0iMCIsIEFUVFJ7cG93ZXIvY29udHJvbH09Im9uIgo=
+            source: data:text/plain;charset=utf-8;base64,QUNUSU9OPT0iYWRkIiwgU1VCU1lTVEVNPT0icGNpIiwgQVRUUnt2ZW5kb3J9PT0iMHgxMGVjIiwgQVRUUnd0ZGV2aWNlfT09IjB4ODEyNSIsIEFUVFJ7bGluay9jbGtwbX09IjAiLCBBVFRSe2xpbmsvbDFfYXNwbX09IjAiLCBBVFRSe3Bvd2VyL2NvbnRyb2x9PSJvbiIK
+        - path: /etc/udev/rules.d/99-nic-eee.rules
+          mode: 0644
+          overwrite: true
+          contents:
+            source: data:text/plain;charset=utf-8;base64,QUNUSU9OPT0iY2hhbmdlIiwgU1VCU1lTVEVNPT0ibmV0IiwgRFJJVkVSPT0icjgxNjkiLCBBVFRSe2NhcnJpZXJ9PT0iMSIsIFJVTis9Ii91c3Ivc2Jpbi9ldGh0b29sIC0tc2V0LWVlZSAlayBlZWUgb2ZmIg==
     systemd:
       units:
         - name: disable-nic-eee.service
@@ -23,10 +28,8 @@ spec:
           contents: |
             [Unit]
             Description=Disable EEE and clkpm on Realtek NICs (GPU + Worker)
-            Wants=network-pre.target
-            Before=network-pre.target
-            After=sys-subsystem-net-devices-enp42s0.device sys-subsystem-net-devices-enp3s0.device sys-subsystem-net-devices-enp4s0.device
-            Requires=sys-subsystem-net-devices-enp42s0.device sys-subsystem-net-devices-enp3s0.device sys-subsystem-net-devices-enp4s0.device
+            After=network-online.target
+            Requires=network-online.target
 
             [Service]
             Type=oneshot
@@ -38,7 +41,7 @@ spec:
             ExecStart=-/usr/sbin/udevadm trigger --action=add --subsystem-match=pci --attr-match=vendor=0x10ec --attr-match=device=0x8125
             ExecStart=-/usr/sbin/udevadm settle --timeout=10
             # Worker nodes (enp3s0 + enp4s0) + GPU node (enp42s0)
-            # The "-" prefix on ExecStart means "ignore failure" — if a NIC
+            # The "-" prefix on ExecStart means "ignore failure" - if a NIC
             # does not exist on a given node the command is harmless.
             ExecStart=-/usr/sbin/ethtool --set-eee enp3s0 eee off
             ExecStart=-/usr/sbin/ethtool --set-eee enp4s0 eee off
