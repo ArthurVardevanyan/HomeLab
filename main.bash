@@ -931,7 +931,7 @@ delete_okd_bm() {
 }
 
 okd_bm_worker_shutdown() {
-  export KUBECONFIG=${KUBECONFIG:-$HOME/.kube/okd}
+  export KUBECONFIG="${KUBECONFIG:-${HOME}/.kube/okd}"
   for WORKER in worker-1 worker-2 worker-3; do
     echo -e "\n${BLUE}Scaling down ${WORKER}:${NC}"
     kubectl patch machineset "okd-4ww5p-${WORKER}" -n openshift-machine-api --type='merge' -p '{"spec":{"replicas":0}}'
@@ -939,7 +939,7 @@ okd_bm_worker_shutdown() {
 }
 
 okd_bm_worker_startup() {
-  export KUBECONFIG=${KUBECONFIG:-$HOME/.kube/okd}
+  export KUBECONFIG="${KUBECONFIG:-${HOME}/.kube/okd}"
   for WORKER in worker-1 worker-2 worker-3; do
     echo -e "\n${BLUE}Scaling up ${WORKER}:${NC}"
     kubectl patch machineset "okd-4ww5p-${WORKER}" -n openshift-machine-api --type='merge' -p '{"spec":{"replicas":1}}'
