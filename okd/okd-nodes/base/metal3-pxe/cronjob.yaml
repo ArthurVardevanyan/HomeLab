@@ -1,0 +1,208 @@
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: metal3-pxe-sync
+  namespace: openshift-machine-api
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: metal3-pxe-sync
+  namespace: openshift-machine-api
+rules:
+  - apiGroups:
+      - ""
+    resources:
+      - pods
+    verbs:
+      - get
+      - list
+      - delete
+  - apiGroups:
+      - metal3.io
+    resources:
+      - baremetalhosts
+    verbs:
+      - get
+      - list
+  - apiGroups:
+      - ""
+    resources:
+      - pods/exec
+    verbs:
+      - create
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: metal3-pxe-sync
+  namespace: openshift-machine-api
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: metal3-pxe-sync
+subjects:
+  - kind: ServiceAccount
+    name: metal3-pxe-sync
+    namespace: openshift-machine-api
+---
+# metal3 keeps /shared/tftpboot in an emptyDir and generates image aliases that
+# can dangle (ironic-python-agent.rootfs -> coreos10-unknown-rootfs.img). This job
+# re-applies both fixes whenever the metal3 pod is recreated. If ironic started
+# while the alias was dangling, ironic.conf lacks ignition.firstboot and the
+# agent boots without Ignition; the job then recreates the pod once the links are
+# repaired (only while no BareMetalHost is mid-operation, as Ironic's DB is an
+# emptyDir).
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: metal3-pxe-sync
+  namespace: openshift-machine-api
+  annotations:
+    checkov.io/skip1: CKV_K8S_40=OpenShift Injects Random UID
+    checkov.io/skip2: CKV_K8S_43=Don't Mind Tag for This
+    gitops-ci.k8s.io/exempt-image-checksum: "registry.arthurvardevanyan.com/homelab/toolbox:not_latest"
+  labels:
+    app: metal3-pxe-sync
+spec:
+  schedule: "*/10 * * * *"
+  suspend: false
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 1
+  failedJobsHistoryLimit: 1
+  jobTemplate:
+    spec:
+      backoffLimit: 0
+      ttlSecondsAfterFinished: 600
+      template:
+        metadata:
+          labels:
+            app: metal3-pxe-sync
+        spec:
+          restartPolicy: Never
+          activeDeadlineSeconds: 120
+          serviceAccountName: metal3-pxe-sync
+          automountServiceAccountToken: true
+          enableServiceLinks: false
+          schedulerName: default-scheduler
+          dnsPolicy: ClusterFirst
+          securityContext:
+            runAsNonRoot: true
+            seccompProfile:
+              type: RuntimeDefault
+          containers:
+            - name: sync
+              imagePullPolicy: IfNotPresent
+              image: registry.arthurvardevanyan.com/homelab/toolbox:not_latest
+              securityContext:
+                runAsNonRoot: true
+                privileged: false
+                readOnlyRootFilesystem: true
+                allowPrivilegeEscalation: false
+                seccompProfile:
+                  type: RuntimeDefault
+                capabilities:
+                  drop:
+                    - ALL
+              resources:
+                requests:
+                  cpu: 10m
+                  ephemeral-storage: 16Mi
+                  memory: 32Mi
+                limits:
+                  cpu: 200m
+                  ephemeral-storage: 64Mi
+                  memory: 128Mi
+              volumeMounts:
+                - name: assets
+                  mountPath: /assets
+                  readOnly: true
+                - name: tmp
+                  mountPath: /tmp
+              command:
+                - bash
+                - -c
+                - |
+                  set -o errexit
+                  set -o nounset
+                  set -o pipefail
+
+                  NS=openshift-machine-api
+                  EFI=snponly-homelab.efi
+
+                  POD="$(kubectl -n "${NS}" get pods -l k8s-app=metal3 \
+                    --field-selector=status.phase=Running \
+                    -o jsonpath='{.items[0].metadata.name}')"
+                  if [ -z "${POD}" ]; then
+                    echo "no running metal3 pod found"
+                    exit 1
+                  fi
+                  echo "metal3 pod: ${POD}"
+
+                  mexec() { kubectl -n "${NS}" exec -i "${POD}" -c metal3-httpd -- "$@"; }
+
+                  # 1. Custom iPXE binary in the TFTP root (emptyDir, lost on pod restart)
+                  base64 -d "/assets/${EFI}.b64" >"/tmp/${EFI}"
+                  want="$(sha256sum "/tmp/${EFI}" | cut -d' ' -f1)"
+                  have="$(mexec sh -c "sha256sum /shared/tftpboot/${EFI} 2>/dev/null | cut -d' ' -f1" || true)"
+                  if [ "${want}" != "${have}" ]; then
+                    echo "installing ${EFI} (have='${have}' want='${want}')"
+                    mexec sh -c "cat > /shared/tftpboot/.${EFI}.tmp \
+                      && chmod 644 /shared/tftpboot/.${EFI}.tmp \
+                      && mv -f /shared/tftpboot/.${EFI}.tmp /shared/tftpboot/${EFI}" \
+                      <"/tmp/${EFI}"
+                  else
+                    echo "${EFI} up to date"
+                  fi
+
+                  # 2. Repair dangling image aliases (…-unknown-… -> …-x86_64-…)
+                  mexec sh -s <<'REMOTE'
+                  set -eu
+                  cd /shared/html/images
+                  for link in *; do
+                    [ -L "${link}" ] || continue
+                    [ ! -e "${link}" ] || continue
+                    target="$(readlink "${link}")"
+                    fixed="$(printf '%s' "${target}" | sed 's/unknown/x86_64/')"
+                    if [ "${fixed}" != "${target}" ] && [ -e "${fixed}" ]; then
+                      echo "relinking ${target} -> ${fixed}"
+                      ln -sfn "${fixed}" "${target}"
+                    fi
+                  done
+                  REMOTE
+
+                  # 3. If ironic generated its config while the rootfs alias was
+                  # dangling, it dropped the Ignition kernel args. Restart it
+                  # now that the alias resolves.
+                  if ! mexec test -f /shared/html/images/ironic-python-agent.rootfs; then
+                    echo "ironic-python-agent.rootfs still unresolved, not restarting"
+                    exit 0
+                  fi
+                  if kubectl -n "${NS}" exec "${POD}" -c metal3-ironic -- \
+                    grep -q 'ignition.firstboot' /conf/ironic/ironic.conf; then
+                    echo "ironic.conf has ignition.firstboot, nothing to do"
+                    exit 0
+                  fi
+                  started="$(kubectl -n "${NS}" get pod "${POD}" -o jsonpath='{.metadata.creationTimestamp}')"
+                  age=$(($(date +%s) - $(date -d "${started}" +%s)))
+                  if [ "${age}" -lt 180 ]; then
+                    echo "pod is only ${age}s old, retrying next run"
+                    exit 0
+                  fi
+                  busy="$(kubectl -n "${NS}" get baremetalhosts \
+                    -o jsonpath='{range .items[*]}{.metadata.name}={.status.provisioning.state}{"\n"}{end}' |
+                    grep -E '=(inspecting|preparing|provisioning|deprovisioning)$' || true)"
+                  if [ -n "${busy}" ]; then
+                    echo "BareMetalHosts busy, not restarting: ${busy}"
+                    exit 0
+                  fi
+                  echo "ironic.conf lacks ignition.firstboot but the rootfs resolves; recreating ${POD}"
+                  kubectl -n "${NS}" delete pod "${POD}" --wait=false
+          volumes:
+            - name: assets
+              configMap:
+                name: metal3-pxe-assets
+            - name: tmp
+              emptyDir:
+                sizeLimit: 16Mi
