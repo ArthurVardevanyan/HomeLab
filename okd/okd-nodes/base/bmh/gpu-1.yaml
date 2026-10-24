@@ -4,15 +4,25 @@ kind: BareMetalHost
 metadata:
   name: gpu-1
   namespace: openshift-machine-api
+  # annotations:
+  #   baremetalhost.metal3.io/boot-interface: "ipxe"
 spec:
   bmc:
+    # redfish+http
     address: redfish-virtualmedia+http://bmc-shim.bmc-shim.svc.cluster.local:8080/redfish/v1/Systems/7
     credentialsName: "gpu-1-bmc-secret"
   bootMACAddress: 2c:f0:5d:83:73:a2
+  # architecture: x86_64
   automatedCleaningMode: metadata
   bootMode: UEFI
-  externallyProvisioned: true
+  externallyProvisioned: true # false
+  # Hardware details are not needed (bmc-shim, fixed hardware); skip IPA inspection
+  # inspectionMode: disabled
   online: true
+  # Inspection is disabled, so BMO falls back to the default /dev/sda hint; the only disk is NVMe
+  # rootDeviceHints:
+  #   deviceName: /dev/nvme0n1
+  #preprovisioningNetworkDataName: gpu-1-network-data
   # userData:
   #   name: worker-user-data
   #   namespace: openshift-machine-api

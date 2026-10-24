@@ -4,15 +4,24 @@ kind: BareMetalHost
 metadata:
   name: worker-2
   namespace: openshift-machine-api
+  annotations:
+    baremetalhost.metal3.io/boot-interface: "ipxe"
 spec:
   bmc:
-    address: redfish-virtualmedia+http://bmc-shim.bmc-shim.svc.cluster.local:8080/redfish/v1/Systems/5
+    address: redfish+http://bmc-shim.bmc-shim.svc.cluster.local:8080/redfish/v1/Systems/5
     credentialsName: "worker-2-bmc-secret"
   bootMACAddress: 58:47:CA:7C:4C:BF
+  architecture: x86_64
   automatedCleaningMode: metadata
   bootMode: UEFI
   externallyProvisioned: false
+  # Hardware details are not needed (bmc-shim, fixed hardware); skip IPA inspection
+  inspectionMode: disabled
   online: true
+  # Inspection is disabled, so BMO falls back to the default /dev/sda hint; the only disk is NVMe
+  rootDeviceHints:
+    deviceName: /dev/nvme0n1
+  preprovisioningNetworkDataName: worker-2-network-data
   # userData:
   #   name: worker-user-data
   #   namespace: openshift-machine-api
