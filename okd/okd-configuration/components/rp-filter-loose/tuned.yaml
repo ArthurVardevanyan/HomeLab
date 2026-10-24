@@ -1,0 +1,32 @@
+---
+apiVersion: tuned.openshift.io/v1
+kind: Tuned
+metadata:
+  name: rp-filter-loose
+  namespace: openshift-cluster-node-tuning-operator
+spec:
+  profile:
+    - data: |
+        [main]
+        summary=Control plane profile with loose reverse path filtering
+        include=openshift-control-plane
+        [sysctl]
+        # metal3 listens on the provisioning IP (prov-shim, VLAN 11) while
+        # the PXE hosts live on 10.101.10.0/24, whose route back is br-ex.
+        # Strict mode (1) drops that asymmetric traffic. Loose mode (2) only
+        # requires the source to be reachable on some interface.
+        # The effective value is max(all, <interface>), so setting "all"
+        # covers interfaces that nmstate recreates (br4.11, prov-shim).
+        net.ipv4.conf.all.rp_filter=2
+      name: rp-filter-loose
+  recommend:
+    - profile: rp-filter-loose
+      # Lower number wins; the built-in openshift-control-plane is 30.
+      priority: 20
+      operand:
+        tunedConfig:
+          # Keep the 50-redhat.conf glob (net.ipv4.conf.*.rp_filter = 1)
+          # from being re-applied over the profile.
+          reapply_sysctl: false
+      match:
+        - label: node-role.kubernetes.io/master
