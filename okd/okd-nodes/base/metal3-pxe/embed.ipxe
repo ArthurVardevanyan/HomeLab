@@ -1,0 +1,25 @@
+#!ipxe
+echo === homelab embedded iPXE ===
+:retry
+dhcp || goto retry
+echo IP ${ip} via ${netX/mac}
+
+# Chain only the per-MAC config Ironic writes for this host. Unlike metal3's
+# boot.ipxe there is NO fallback to inspector.ipxe, which would PXE boot the
+# agent again instead of the installed OS when no per-MAC config exists.
+set netid:int32 -1
+:loop
+inc netid
+isset ${net${netid}/mac} || goto done
+echo Trying ${net${netid}/mac:hexhyp}
+chain --autofree http://10.101.11.250:6180/pxelinux.cfg/${net${netid}/mac:hexhyp} || goto loop
+
+# The per-MAC script returned (after a finished deploy Ironic leaves just
+# 'sanboot --no-describe || exit 0'). Return an ERROR so the UEFI boot manager
+# falls through to the next boot option (the installed OS on NVMe). Returning
+# success makes the firmware restart its boot sequence and loop on PXE forever.
+exit 1
+
+:done
+echo No Ironic config for any NIC, exiting to the next boot device
+exit 1

@@ -4,15 +4,24 @@ kind: BareMetalHost
 metadata:
   name: worker-3
   namespace: openshift-machine-api
+  annotations:
+    baremetalhost.metal3.io/boot-interface: "ipxe"
 spec:
   bmc:
-    address: redfish-virtualmedia+http://bmc-shim.bmc-shim.svc.cluster.local:8080/redfish/v1/Systems/6
+    address: redfish+http://bmc-shim.bmc-shim.svc.cluster.local:8080/redfish/v1/Systems/6
     credentialsName: "worker-3-bmc-secret"
   bootMACAddress: 58:47:CA:7A:76:2B
+  architecture: x86_64
   automatedCleaningMode: metadata
   bootMode: UEFI
-  externallyProvisioned: true
+  # externallyProvisioned: false # API default; the field is dropped on write, so declaring it is a permanent ArgoCD OutOfSync
+  # Hardware details are not needed (bmc-shim, fixed hardware); skip IPA inspection
+  inspectionMode: disabled
   online: true
+  # Inspection is disabled, so BMO falls back to the default /dev/sda hint; the only disk is NVMe
+  rootDeviceHints:
+    deviceName: /dev/nvme0n1
+  preprovisioningNetworkDataName: worker-3-network-data
   # userData:
   #   name: worker-user-data
   #   namespace: openshift-machine-api

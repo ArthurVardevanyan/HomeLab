@@ -931,15 +931,19 @@ delete_okd_bm() {
 }
 
 okd_bm_worker_shutdown() {
-  kubectl patch machineset okd-4ww5p-worker-1 -n openshift-machine-api --type='merge' -p '{"spec": {"replicas": 0}}'
-  kubectl patch machineset okd-4ww5p-worker-2 -n openshift-machine-api --type='merge' -p '{"spec": {"replicas": 0}}'
-  kubectl patch machineset okd-4ww5p-worker-3 -n openshift-machine-api --type='merge' -p '{"spec": {"replicas": 0}}'
+  export KUBECONFIG="${KUBECONFIG:-${HOME}/.kube/okd}"
+  for WORKER in worker-1 worker-2 worker-3; do
+    echo -e "\n${BLUE}Scaling down ${WORKER}:${NC}"
+    kubectl patch machineset "okd-4ww5p-${WORKER}" -n openshift-machine-api --type='merge' -p '{"spec":{"replicas":0}}'
+  done
 }
 
 okd_bm_worker_startup() {
-  kubectl patch machineset okd-4ww5p-worker-1 -n openshift-machine-api --type='merge' -p '{"spec": {"replicas": 1}}'
-  kubectl patch machineset okd-4ww5p-worker-2 -n openshift-machine-api --type='merge' -p '{"spec": {"replicas": 1}}'
-  kubectl patch machineset okd-4ww5p-worker-3 -n openshift-machine-api --type='merge' -p '{"spec": {"replicas": 1}}'
+  export KUBECONFIG="${KUBECONFIG:-${HOME}/.kube/okd}"
+  for WORKER in worker-1 worker-2 worker-3; do
+    echo -e "\n${BLUE}Scaling up ${WORKER}:${NC}"
+    kubectl patch machineset "okd-4ww5p-${WORKER}" -n openshift-machine-api --type='merge' -p '{"spec":{"replicas":1}}'
+  done
 }
 
 generate_node_iso() {

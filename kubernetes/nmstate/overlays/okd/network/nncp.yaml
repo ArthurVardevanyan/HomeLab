@@ -110,12 +110,17 @@ spec:
           id: 11
         mtu: 9000
       - name: br4.11
-        description: OVS bridge with bond4.11 as a port
-        type: ovs-bridge
+        description: Local routing interface for the OVS bridge
+        type: ovs-interface
         state: up
         ipv4:
           dhcp: true
           enabled: true
+        mtu: 9000
+      - name: br4.11
+        description: OVS bridge
+        type: ovs-bridge
+        state: up
         bridge:
           allow-extra-patch-ports: true
           options:
@@ -124,9 +129,32 @@ spec:
             mcast-snooping-enable: true
           port:
             - name: bond4.11
-        mtu: 9000
+            - name: prov-shim
+            - name: br4.11
+      - name: prov-shim
+        description: Sacrificial interface for metal3 provisioning IP
+        type: ovs-interface
+        state: up
+        ipv4:
+          enabled: false
+          dhcp: false
+        ipv6:
+          enabled: false
     ovn:
       bridge-mappings:
         - localnet: br4.11
           bridge: br4.11
           state: present
+    routes:
+      config:
+        - destination: 10.101.11.0/24
+          next-hop-interface: br4.11
+          table-id: 111
+        - destination: 0.0.0.0/0
+          next-hop-address: 10.101.11.1
+          next-hop-interface: br4.11
+          table-id: 111
+    route-rules:
+      config:
+        - ip-from: 10.101.11.200/32
+          route-table: 111
