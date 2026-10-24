@@ -18,7 +18,9 @@ Per-node `BareMetalHost` + `Machine` + `MachineSet` definitions for the OKD clus
   - [Rollout and End-to-End Test](#rollout-and-end-to-end-test)
   - [Known Issues](#known-issues)
   - [Destructive Scaling Warning](#destructive-scaling-warning)
-  - [Node Maintenance & Troubleshooting](#node-maintenance--troubleshooting)
+  - [Node Maintenance \& Troubleshooting](#node-maintenance--troubleshooting)
+    - [XFS Filesystem Corruption Repair (`nvme0n1p4`)](#xfs-filesystem-corruption-repair-nvme0n1p4)
+    - [NIC Speed Negotiation](#nic-speed-negotiation)
   - [Adding a New Node](#adding-a-new-node)
   - [Bmc-shim Integration](#bmc-shim-integration)
   - [Validation](#validation)
@@ -31,7 +33,7 @@ Each node follows a three-resource flow:
 BareMetalHost (metal3.io) → Machine (machine.openshift.io) → MachineSet (machine.openshift.io)
 ```
 
-- **BareMetalHost (BMH)** — declares BMC address, boot MAC, credentials, and `externallyProvisioned` (`false` for the natively provisioned workers, `true` for the masters and gpu-1)
+- **BareMetalHost (BMH)** — declares BMC address, boot MAC, credentials, and `externallyProvisioned` (`true` for the masters and gpu-1; omitted, meaning `false`, for the natively provisioned workers)
 - **Machine** — minimal resource with `clusterName: okd-4ww5p`; the Machine API Operator links it to the BMH
 - **MachineSet** — carries the role label, instance-type, zone, taints, `hostSelector`, and user data
 
@@ -53,7 +55,7 @@ Workers use per-node MachineSets. The replica count is not in git and ArgoCD ign
 
 ## Native Provisioning
 
-worker-1, worker-2 and worker-3 use `externallyProvisioned: false`, so metal3/Ironic installs the OS itself over PXE. gpu-1 and the masters stay `externallyProvisioned: true` (gpu-1 carries commented-out native settings in `bmh/gpu-1.yaml` for later).
+worker-1, worker-2 and worker-3 are natively provisioned (`externallyProvisioned` is `false`), so metal3/Ironic installs the OS itself over PXE. The field is **commented out** in `bmh/worker-*.yaml`: `false` is the API default and is dropped when the object is written, so declaring it leaves ArgoCD permanently OutOfSync. gpu-1 and the masters stay `externallyProvisioned: true` (gpu-1 carries commented-out native settings in `bmh/gpu-1.yaml` for later).
 
 - **Scale up** (`replicas: 1`) → Machine created and claims the BMH → Ironic cleans the disk, PXE boots the agent and runs `install_coreos` with the `worker-user-data-managed` Ignition → node joins the cluster.
 - **Scale down** (`replicas: 0`) → Machine deleted → BMH deprovisions (cleaning with `automatedCleaningMode: metadata`) and powers off.
@@ -185,13 +187,13 @@ ArgoCD syncs the `okd-nodes`, `nmstate`, `okd-configuration` and `bmc-shim` appl
 
 6. **Test on one worker first.** Scale `okd-4ww5p-worker-1` to 1 and watch:
 
-   | Expected step                          | How to see it                                                                        |
-   | -------------------------------------- | ------------------------------------------------------------------------------------ |
-   | BMH `provisioning` then `provisioned`  | `kubectl -n openshift-machine-api get bmh -w`                                        |
-   | Host fetches the EFI and deploy kernel | `metal3-dnsmasq` and `metal3-httpd` logs                                             |
-   | Host reboots into the installed OS     | Pings on `10.101.10.104`. If it loops, see the "Boot Option Restoration" known issue |
-   | Node `Ready`, no pending CSRs          | `kubectl get nodes; kubectl get csr`                                                 |
-   | Machine linked                         | Apply the [status patch](#manual-bmh-status-patching); Machine gets a `nodeRef`      |
+   | Expected step                                                   | How to see it                                                                        |
+   | --------------------------------------------------------------- | ------------------------------------------------------------------------------------ |
+   | BMH `provisioning` then `provisioned` (10–15 min from scale-up) | `kubectl -n openshift-machine-api get bmh -w`                                        |
+   | Host fetches the EFI and deploy kernel                          | `metal3-dnsmasq` and `metal3-httpd` logs                                             |
+   | Host reboots into the installed OS                              | Pings on `10.101.10.104`. If it loops, see the "Boot Option Restoration" known issue |
+   | Node `Ready`, no pending CSRs                                   | `kubectl get nodes; kubectl get csr`                                                 |
+   | Machine linked                                                  | Apply the [status patch](#manual-bmh-status-patching); Machine gets a `nodeRef`      |
 
 7. **Test teardown** by scaling back to 0. The host must clean and power off, which also proves PXE is still first in the boot order.
 8. Then repeat for worker-2 and worker-3, or use `okd_bm_worker_startup`.
@@ -204,7 +206,7 @@ If a host ends up in `error`, check `kubectl -n openshift-machine-api get bmh <h
 - **Status patch is not in git.** `BMH.status.hardware.nics` must be re-applied after a reprovision or a metal3 restart.
 - **bmc-shim reports plug state, not machine state.** `PowerState` can say `On` while the host is shut down. Boot override state is also per replica and is not applied to the machine.
 - **Ironic state is in an `emptyDir`.** A metal3 pod restart loses Ironic's database and the PXE binary until the CronJob restores it. The CronJob only recreates the pod when no BMH is mid-operation.
-- **worker-1/2 `externallyProvisioned`.** Both are `false` in git. Syncing `okd-nodes` registers them and, once a MachineSet is scaled to 1, wipes the disk. gpu-1 stays `true`.
+- **worker-1/2/3 are natively provisioned by default.** `externallyProvisioned` is omitted (so `false`). Syncing `okd-nodes` registers them and, once a MachineSet is scaled to 1, wipes the disk. gpu-1 stays `true`.
 - **Untested on real hardware:** a full deprovision after the "Always continue boot" click, and whether PXE stays first in the boot order afterwards.
 
 ## Destructive Scaling Warning
