@@ -226,29 +226,29 @@ _image_version = $(shell cat $(_version_file) 2>/dev/null | tr '-' '_' || echo "
 # ==============================================================================
 push: image
 	@if [ -z "$(IMAGE_TAG)" ]; then \
-		export IMAGE_TAG="$(_image_version)"; \
-		echo "Auto-detected version from $(_version_file): $$IMAGE_TAG"; \
+		echo "Auto-detected version from $(_version_file): $(_image_version)"; \
 	fi
-	@IMAGE_REF="$(IMAGE_NAME):$(IMAGE_TAG)"; \
+	@IMAGE_REF="$(IMAGE_NAME):$(if $(IMAGE_TAG),$(IMAGE_TAG),$(_image_version))"; \
 	echo "Pushing '$$IMAGE_REF' to $(PUSH_REGISTRY)/$(PUSH_ORG)/..." ; \
 	podman tag "localhost/microshift-bootc:latest" "$$IMAGE_REF" ; \
 	podman push "$$IMAGE_REF"
-
 # ==============================================================================
 # Create a bootable ISO from the built image
 # ==============================================================================
 iso: image
 	@mkdir -p "$(ISO_OUTPUT_DIR)"
-	@echo "Creating bootable ISO from image '$(IMAGE_NAME):$(IMAGE_TAG)'..."
-	@IMAGE_REF="$(IMAGE_NAME):$(IMAGE_TAG)"; \
-	\
+	@IMAGE_REF="$(IMAGE_NAME):$(if $(IMAGE_TAG),$(IMAGE_TAG),$(_image_version))" ; \
+	if [ -z "$(IMAGE_TAG)" ]; then echo "Auto-detected version from $(_version_file): $(_image_version)"; fi ; \
+	echo "Creating bootable ISO from image '$$IMAGE_REF'..." ; \
 	echo "  [1/4] Pulling image locally..." ; \
-	podman pull "$$IMAGE_REF" ; \
+	if ! podman inspect "$$IMAGE_REF" >/dev/null 2>&1; then \
+		podman pull "$$IMAGE_REF" ; \
+	fi ; \
 	\
 	echo "  [2/4] Creating temporary rootfs..." ; \
 	TEMP_ROOTFS=$$(mktemp -d /tmp/microshift-iso-XXXXXX) ; \
 	podman create --name microshift-iso-tmp "$$IMAGE_REF" ; \
-	podman export "$$IMAGE_REF" | tar -C "$$TEMP_ROOTFS" -x ; \
+	podman export microshift-iso-tmp | tar -C "$$TEMP_ROOTFS" -x ; \
 	podman rm microshift-iso-tmp ; \
 	\
 	echo "  [3/4] Preparing ISO contents..." ; \
@@ -257,13 +257,11 @@ iso: image
 	\
 	echo "    Extracting kernel..." ; \
 	kernel_dir="$$TEMP_ROOTFS/usr/lib/modules" ; \
-	if [ -d "$$kernel_dir" ]; then \
-		for kf in $$(find $$kernel_dir -name 'vmlinuz-*' 2>/dev/null | head -1); do \
-			kernel_name=$$(basename "$$kf") ; \
-			cp "$$kf" "$$ISO_DIR/efi/vmlinuz" ; \
-			echo "    Kernel: $$kf" ; \
-		done ; \
-	fi ; \
+	for kf in $$(find $$kernel_dir -name 'vmlinuz*' 2>/dev/null | head -1); do \
+		kernel_name=$$(basename "$$kf") ; \
+		cp "$$kf" "$$ISO_DIR/efi/vmlinuz" ; \
+		echo "    Kernel: $$kf" ; \
+	done ; \
 	\
 	for it in $$(find $$TEMP_ROOTFS/usr/lib/modules -name 'initramfs*' 2>/dev/null | head -1); do \
 		init_name=$$(basename "$$it") ; \

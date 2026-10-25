@@ -103,17 +103,29 @@ make clean          # Clean up build artifacts and temp clone
 
 ## Pull from VM
 
-After building the image on the VM, pull it to your laptop:
+After building the image on the VM, pull the ISO to your laptop:
 
 ```bash
 # Pull microshift BootC image from VM to laptop
 main.bash microshift-bootc-pull
 ```
 
-This generates the following scp command:
+This generates the following scp command (ISO only, build artifacts are not needed):
 
 ```bash
-scp -r arthur@10.101.11.7:/home/arthur/Projects/HomeLab/containers/microshift-bootc/output/ ./
+scp arthur@10.101.11.7:/home/arthur/Projects/HomeLab/containers/microshift-bootc/output/microshift.iso ./
+```
+
+## Burn to Flash Drive
+
+Once the ISO is on your laptop:
+
+```bash
+# Using dd (most reliable)
+sudo dd if=microshift.iso of=/dev/sdX bs=4M status=progress oflag=sync
+
+# Or using cpimagewriter (Fedora)
+cpimagewriter microshift.iso
 ```
 
 ## Variables
