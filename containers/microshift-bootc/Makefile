@@ -55,6 +55,7 @@ EMBED_TEST_IMAGE  ?= 1
 PUSH_REGISTRY ?= registry.arthurvardevanyan.com
 PUSH_ORG      ?= homelab
 IMAGE_TAG     ?=
+IMAGE_SUFFIX  ?= $(shell date +%Y-%m-%d_%H%M%S)
 
 # --- Build mode (local, copr, or release) ---
 BUILD_MODE ?= local
@@ -224,11 +225,17 @@ _image_version = $(shell cat $(_version_file) 2>/dev/null | tr '-' '_' || echo "
 # ==============================================================================
 # Push image to registry
 # ==============================================================================
+# IMAGE_SUFFIX: Datetime suffix appended to pushed image tag (default: yyyy-MM-dd_HHmmss)
+# Use IMAGE_SUFFIX="" to disable suffix
+# ==============================================================================
 push: image
 	@if [ -z "$(IMAGE_TAG)" ]; then \
 		echo "Auto-detected version from $(_version_file): $(_image_version)"; \
 	fi
 	@IMAGE_REF="$(IMAGE_NAME):$(if $(IMAGE_TAG),$(IMAGE_TAG),$(_image_version))"; \
+	if [ -n "$(IMAGE_SUFFIX)" ]; then \
+		IMAGE_REF="$$IMAGE_REF-$(IMAGE_SUFFIX)"; \
+	fi ; \
 	echo "Pushing '$$IMAGE_REF' to $(PUSH_REGISTRY)/$(PUSH_ORG)/..." ; \
 	podman tag "localhost/microshift-bootc:latest" "$$IMAGE_REF" ; \
 	podman push "$$IMAGE_REF"
