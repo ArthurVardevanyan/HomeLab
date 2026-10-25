@@ -22,15 +22,13 @@
 #   ISO_OUTPUT_DIR      Output directory for ISO (default: ./output)
 #   PUSH_REGISTRY       Registry host (default: registry.arthurvardevanyan.com)
 #   PUSH_ORG            Registry org (default: homelab)
-#   BUILD_MODE          RPM source: "local" (build), "copr", or "release"
+#   BUILD_MODE          RPM source: "local" (build) or "release" (pre-built)
 #
 # Build Modes:
 #   BUILD_MODE=local  (default) Builds RPMs from source using `make rpm`
 #                     Takes 15-20 minutes (Go compilation required)
-#   BUILD_MODE=copr   Downloads pre-built RPMs from COPR repository
-#                     Takes ~2 minutes (no compilation required)
 #   BUILD_MODE=release Downloads pre-built RPMs from GitHub releases
-#                     Takes ~2 minutes (pre-built, no compilation, fastest download)
+#                     Takes ~2 minutes (pre-built, no compilation, fastest)
 #
 # All modes produce RPMs in: _output/rpmbuild/RPMS/
 # ==============================================================================
@@ -124,11 +122,11 @@ srpm: _clone-assets
 # ==============================================================================
 rpm: _clone
 	@if [ "$(BUILD_MODE)" = "copr" ]; then \
-		echo "Using pre-built RPMs from COPR..."; \
-		$(MAKE) -f "$(CLONE_DIR)/Makefile" rpm-copr || { echo "ERROR: COPR RPMs not available for this architecture"; exit 1; }; \
+		echo "ERROR: BUILD_MODE=copr has been removed. Use BUILD_MODE=release instead."; \
+		exit 1; \
 	elif [ "$(BUILD_MODE)" = "release" ]; then \
 		echo "Using pre-built RPMs from GitHub releases..."; \
-		$(MAKE) rpm-release; \
+		$(MAKE) rpm-copr; \
 	else \
 		echo "Building RPMs from source (BUILD_MODE=local)..."; \
 		cd "$(CLONE_DIR)" && \
@@ -150,9 +148,9 @@ rpm: _clone
 # ==============================================================================
 # COPR/Release RPMs download
 # ==============================================================================
-# NOTE: The current "copr" target actually downloads from GitHub releases,
-# which is the fastest option. COPR downloads are slower due to additional
-# infrastructure overhead.
+# ==============================================================================
+# RPM download from GitHub releases (fastest option)
+# ==============================================================================
 rpm-copr: _clone
 	@echo "Downloading pre-built RPMs from GitHub releases..." ; \
 	mkdir -p "$(CLONE_DIR)/_output/rpmbuild/RPMS/" ; \
@@ -171,30 +169,9 @@ rpm-copr: _clone
 	fi ; \
 	rm -rf "$${TEMP_DIR}"
 
-# Alias: rpm-release is the preferred name for downloading from GitHub releases
+# Alias: rpm-release is a pure alias for rpm-copr (no recipe, just depends on it)
 .PHONY: rpm-release
 rpm-release: rpm-copr
-
-# ==============================================================================
-# RPM download from GitHub releases (direct download - fastest option)
-# ==============================================================================
-rpm-release: _clone
-	@echo "Downloading pre-built RPMs from GitHub releases..." ; \
-	mkdir -p "$(CLONE_DIR)/_output/rpmbuild/RPMS/" ; \
-	TEMP_DIR=$$(mktemp -d) ; \
-	curl -fsSL --retry 3 -L "https://github.com/microshift-io/microshift/releases/latest/download/microshift-rpms-$(shell uname -m).tgz" -o "$${TEMP_DIR}/rpms.tgz" ; \
-	tar -xzf "$${TEMP_DIR}/rpms.tgz" -C "$${TEMP_DIR}/" ; \
-	find "$${TEMP_DIR}" -name "*.rpm" -exec mv {} "$(CLONE_DIR)/_output/rpmbuild/RPMS/" \; ; \
-	find "$(CLONE_DIR)/_output/rpmbuild/RPMS/" -type d -empty -not -path "$(CLONE_DIR)/_output/rpmbuild/RPMS/" -exec rmdir {} \; 2>/dev/null || true ; \
-	VERSION=$$(curl -fsSL --max-time 10 "https://api.github.com/repos/microshift-io/microshift/releases/latest" | grep '"tag_name"' | head -1 | awk -F'"' '{print $$4}'); \
-	if [ -n "$${VERSION}" ]; then \
-		echo "$${VERSION}" > "$(CLONE_DIR)/_output/rpmbuild/RPMS/version.txt"; \
-		echo "Pre-built RPMs downloaded successfully (version: $$VERSION)"; \
-	else \
-		echo "WARNING: Could not determine version from GitHub API"; \
-		echo "unknown" > "$(CLONE_DIR)/_output/rpmbuild/RPMS/version.txt"; \
-	fi ; \
-	rm -rf "$${TEMP_DIR}"
 
 # ==============================================================================
 # BootC image build (using custom Containerfile with baked-in configs)

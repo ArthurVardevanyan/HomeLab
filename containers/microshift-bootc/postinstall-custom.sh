@@ -101,7 +101,8 @@ install_cni_plugins() {
   # Set the package version and name
   CNP_VER=v1.8.0
   CNP_PKG="cni-plugins-linux-amd64-${CNP_VER}.tgz"
-  if [[ "$(uname -m)" = "aarch64" ]]; then
+  arch="$(uname -m)"
+  if [[ "${arch}" = "aarch64" ]]; then
     CNP_PKG="cni-plugins-linux-arm64-${CNP_VER}.tgz"
   fi
 
@@ -172,7 +173,7 @@ generate_subject_alt_names_config
 # 6. Create link to default kubeconfig
 if [[ ! -f /root/.kube/config ]] ; then
   root_dir="$(readlink -f /root)"
-  mkdir -p "$root_dir/.kube"
+  mkdir -p "${root_dir}/.kube"
   ln -sf /var/lib/microshift/resources/kubeadmin/kubeconfig /root/.kube/config
 fi
 

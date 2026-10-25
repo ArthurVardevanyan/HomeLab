@@ -10,7 +10,7 @@
 # Build Args:
 #   COCKPIT       Enable Cockpit installation (default: 0)
 #   DOMAIN        Domain for API server (default: microshift.dc2.vardevanyan.com)
-#   BUILD_MODE    RPM source mode: local, copr, or release (default: release)
+#   BUILD_MODE    RPM source mode: local or release (default: release)
 # ==============================================================================
 
 FROM quay.io/centos/centos:stream9-minimal AS builder
@@ -92,17 +92,15 @@ RUN if [ "$BUILD_MODE" = "local" ]; then \
       fi && \
       rm -rf "$TEMP_DIR"; \
     elif [ "$BUILD_MODE" = "copr" ]; then \
-      echo "Downloading pre-built RPMs from COPR..."; \
-      mkdir -p "$CLONE_DIR/_output/rpmbuild/RPMS/" && \
-      TEMP_DIR=$(mktemp -d) && \
-      curl -fsSL --retry 3 -L "https://copr.fedoraproject.org/coprs/microshift/microshift/build_*/result/" -o "$TEMP_DIR/latest.html" 2>/dev/null || echo "COPR download may require additional setup"; \
+      echo "ERROR: BUILD_MODE=copr is not supported. Use BUILD_MODE=release instead."; \
+      exit 1; \
     fi; \
     echo "RPMs are ready in $CLONE_DIR/_output/rpmbuild/RPMS/"
 
 # ==============================================================================
 # Final image
 # ==============================================================================
-FROM quay.io/centos-bootc/centos-bootc:stream9
+FROM quay.io/centos-bootc/centos-bootc:stream10
 
 LABEL org.opencontainers.image.source="https://github.com/ArthurVardevanyan/HomeLab" \
   org.opencontainers.image.title="MicroShift BootC" \
