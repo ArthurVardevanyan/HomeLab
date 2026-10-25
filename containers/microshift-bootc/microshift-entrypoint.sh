@@ -41,29 +41,29 @@ log_error() { echo -e "${RED}[ERROR]${NC} $1"; }
 
 check_image_change() {
   # Detect if the image SHA has changed since last run
-  if [ -f "$LAST_IMAGE_FILE" ]; then
+  if [[ -f "${LAST_IMAGE_FILE}" ]] ; then
     local old_image
-    old_image=$(cat "$LAST_IMAGE_FILE")
+    old_image=$(cat "${LAST_IMAGE_FILE}")
     
     # Get the current image SHA (extracted from the container's image reference)
     local current_image
-    current_image=$(podman inspect "$CONTAINER_NAME" --format '{{.Image}}' 2>/dev/null || echo "")
+    current_image=$(podman inspect "${CONTAINER_NAME}" --format '{{.Image}}' 2>/dev/null || echo "")
     
-    if [ -n "$current_image" ] && [ "$current_image" != "$old_image" ]; then
+    if [[ -n "${current_image}" ]] && [[ "${current_image}" != "${old_image}" ]] ; then
       log_warn "Image change detected!"
-      log_warn "  Old: $old_image"
-      log_warn "  New: $current_image"
-      echo "$current_image" > "$LAST_IMAGE_FILE"
+      log_warn "  Old: ${old_image}"
+      log_warn "  New: ${current_image}"
+      echo "${current_image}" > "${LAST_IMAGE_FILE}"
       return 0  # Image changed
     fi
   fi
   
   # Store current image SHA
-  mkdir -p "$(dirname "$LAST_IMAGE_FILE")"
+  mkdir -p "$(dirname "${LAST_IMAGE_FILE}")"
   local current_image
-  current_image=$(podman inspect "$CONTAINER_NAME" --format '{{.Image}}' 2>/dev/null || echo "")
-  if [ -n "$current_image" ]; then
-    echo "$current_image" > "$LAST_IMAGE_FILE"
+  current_image=$(podman inspect "${CONTAINER_NAME}" --format '{{.Image}}' 2>/dev/null || echo "")
+  if [[ -n "${current_image}" ]] ; then
+    echo "${current_image}" > "${LAST_IMAGE_FILE}"
   fi
   
   return 1  # No change
@@ -73,7 +73,7 @@ validate_dns() {
   # Validate DNS resolution inside container
   log_info "Validating DNS resolution..."
   
-  if ! podman exec "$CONTAINER_NAME" getent hosts quay.io &>/dev/null; then
+  if ! podman exec "${CONTAINER_NAME}" getent hosts quay.io &>/dev/null; then
     log_error "DNS resolution for 'quay.io' failed inside the container."
     log_info "MicroShift pods will not be able to pull container images."
     echo ""
@@ -94,16 +94,16 @@ extract_kubeconfig() {
   
   log_info "Extracting kubeconfig..."
   
-  mkdir -p "$(dirname "$kubeconfig_local")"
+  mkdir -p "$(dirname "${kubeconfig_local}")"
   
   # Copy kubeconfig from container
-  podman cp "$CONTAINER_NAME:$KUBECONFIG" "$kubeconfig_local" 2>/dev/null
+  podman cp "${CONTAINER_NAME}:${KUBECONFIG}" "${kubeconfig_local}" 2>/dev/null
   
   # Fix permissions
-  chmod 600 "$kubeconfig_local"
-  chown "${USER}:${USER}" "$kubeconfig_local" 2>/dev/null || true
+  chmod 600 "${kubeconfig_local}"
+  chown "${USER}:${USER}" "${kubeconfig_local}" 2>/dev/null || true
   
-  log_success "Kubeconfig extracted to: $kubeconfig_local"
+  log_success "Kubeconfig extracted to: ${kubeconfig_local}"
 }
 
 verify_health() {
@@ -118,7 +118,7 @@ verify_health() {
 
 install_cockpit() {
   # Install and configure Cockpit (opt-in)
-  if [ "$COCKPIT" -eq 1 ]; then
+  if [[ "${COCKPIT}" -eq 1 ]] ; then
     log_info "Installing Cockpit..."
     
     # Install cockpit and dependencies
@@ -127,14 +127,14 @@ install_cockpit() {
     # Create cockpit config directory
     local cockpit_conf_dir="/etc/cockpit/conf.d"
     local machines_d="/etc/cockpit/machines.d"
-    mkdir -p "$cockpit_conf_dir" "$machines_d"
+    mkdir -p "${cockpit_conf_dir}" "${machines_d}"
     
     # Create 99-webui.json config
-    if [ ! -f "$machines_d/99-webui.json" ]; then
-      cat > "$machines_d/99-webui.json" <<EOF
+    if [[ ! -f "${machines_d}/99-webui.json" ]] ; then
+      cat > "${machines_d}/99-webui.json" <<EOF
 {
   "name": "MicroShift Cluster",
-  "url": "https://$DOMAIN:6443",
+  "url": "https://${DOMAIN}:6443",
   "token": "",
   "image": "default",
   "os": "Red Hat Enterprise Linux",
@@ -142,7 +142,7 @@ install_cockpit() {
   "icon": "system"
 }
 EOF
-      log_success "Cockpit cluster config created: $machines_d/99-webui.json"
+      log_success "Cockpit cluster config created: ${machines_d}/99-webui.json"
     fi
     
     # Start and enable cockpit
@@ -164,13 +164,13 @@ show_instructions() {
   echo -e "${BLUE}  MicroShift bootc deployment completed successfully!${NC}"
   echo -e "${BLUE}========================================================================${NC}"
   echo ""
-  echo "CONTAINER:    $CONTAINER_NAME"
-  echo "DOMAIN:       $DOMAIN"
-  echo "LVM DISK:     $LVM_DISK ($LVM_VOLSIZE)"
-  echo "VG NAME:      $VG_NAME"
+  echo "CONTAINER:    ${CONTAINER_NAME}"
+  echo "DOMAIN:       ${DOMAIN}"
+  echo "LVM DISK:     ${LVM_DISK} (${LVM_VOLSIZE})"
+  echo "VG NAME:      ${VG_NAME}"
   echo ""
   echo "To access the container:"
-  echo "  sudo podman exec -it $CONTAINER_NAME /bin/bash -l"
+  echo "  sudo podman exec -it ${CONTAINER_NAME} /bin/bash -l"
   echo ""
   echo "To verify pods are running:"
   echo "  kubectl get pods -A"
@@ -203,17 +203,17 @@ kubeconfig="/var/lib/microshift/resources/kubeadmin/kubeconfig"
 max_wait=300
 waited=0
 
-while [ "$waited" -lt "$max_wait" ]; do
-  if podman exec "$CONTAINER_NAME" /bin/test -f "$kubeconfig" &>/dev/null; then
+while [[ "${waited}" -lt "${max_wait}" ]] ; do
+  if podman exec "${CONTAINER_NAME}" /bin/test -f "${kubeconfig}" &>/dev/null; then
     break
   fi
   sleep 1
   waited=$((waited + 1))
 done
 
-if [ "$waited" -ge "$max_wait" ]; then
+if [[ "${waited}" -ge "${max_wait}" ]] ; then
   log_error "Timed out waiting for MicroShift to start after ${max_wait}s"
-  log_warn "Container still running. Check logs: podman logs $CONTAINER_NAME --tail=100"
+  log_warn "Container still running. Check logs: podman logs ${CONTAINER_NAME} --tail=100"
   exit 1
 fi
 

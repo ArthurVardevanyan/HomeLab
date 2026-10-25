@@ -23,7 +23,7 @@ check_prerequisites() {
   log_info "Checking prerequisites..."
 
   # Check if running as root
-  if [ "$(id -u)" -ne 0 ]; then
+  if [[ "$(id -u)" -ne 0 ]] ; then
     log_error "This script must be run as root (use sudo)"
     exit 1
   fi
@@ -31,8 +31,8 @@ check_prerequisites() {
   # Check required tools
   local tools=("podman" "vgcreate" "losetup" "truncate" "lvcreate")
   for tool in "${tools[@]}"; do
-    if ! command -v "$tool" &>/dev/null; then
-      log_error "'$tool' is not installed."
+    if ! command -v "${tool}" &>/dev/null; then
+      log_error "'${tool}' is not installed."
       exit 1
     fi
   done
@@ -45,30 +45,30 @@ prepare_lvm_disk() {
   local vg_name="$2"
   local volsize="$3"
 
-  if [ -f "$lvm_disk" ]; then
-    log_warn "LVM disk already exists: $lvm_disk"
+  if [[ -f "${lvm_disk}" ]] ; then
+    log_warn "LVM disk already exists: ${lvm_disk}"
     log_info "LVM disk will be reused (data preserved)."
     return 0
   fi
 
-  log_info "Creating LVM disk: $lvm_disk ($volsize)..."
+  log_info "Creating LVM disk: ${lvm_disk} (${volsize})..."
 
   # Create directory if needed
-  mkdir -p "$(dirname "$lvm_disk")"
+  mkdir -p "$(dirname "${lvm_disk}")"
 
   # Create disk image
-  truncate --size="$volsize" "$lvm_disk"
+  truncate --size="${volsize}" "${lvm_disk}"
 
   # Set up loop device
   local device_name
-  device_name=$(losetup --find --show --nooverlap "$lvm_disk")
+  device_name=$(losetup --find --show --nooverlap "${lvm_disk}")
 
   # Create volume group
-  vgcreate -f -y "$vg_name" "$device_name"
+  vgcreate -f -y "${vg_name}" "${device_name}"
 
-  log_info "LVM disk created: $lvm_disk ($volsize) at VG: $vg_name"
-  log_info "Device: $device_name"
-  log_info "Volume Group: $vg_name"
+  log_info "LVM disk created: ${lvm_disk} (${volsize}) at VG: ${vg_name}"
+  log_info "Device: ${device_name}"
+  log_info "Volume Group: ${vg_name}"
 }
 
 setup_lvm_service() {
@@ -93,9 +93,9 @@ show_instructions() {
   echo "  LVM setup completed successfully!"
   echo "========================================================================"
   echo ""
-  echo "LVM DISK:  $LVM_DISK"
-  echo "LVM SIZE:  $LVM_VOLSIZE"
-  echo "VG NAME:   $VG_NAME"
+  echo "LVM DISK:  ${LVM_DISK}"
+  echo "LVM SIZE:  ${LVM_VOLSIZE}"
+  echo "VG NAME:   ${VG_NAME}"
   echo ""
   echo "To verify LVM setup:"
   echo "  vgs"
@@ -103,9 +103,9 @@ show_instructions() {
   echo "  pvs"
   echo ""
   echo "To clean up:"
-  echo "  lvremove -y $VG_NAME"
+  echo "  lvremove -y ${VG_NAME}"
   echo "  losetup -D"
-  echo "  rm -f $LVM_DISK"
+  echo "  rm -f ${LVM_DISK}"
   echo ""
   echo "========================================================================"
 }
@@ -113,7 +113,7 @@ show_instructions() {
 # ---- Main Execution ----
 
 check_prerequisites
-prepare_lvm_disk "$LVM_DISK" "$VG_NAME" "$LVM_VOLSIZE"
+prepare_lvm_disk "${LVM_DISK}" "${VG_NAME}" "${LVM_VOLSIZE}"
 setup_lvm_service
 show_instructions
 

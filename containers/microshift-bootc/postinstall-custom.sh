@@ -53,7 +53,7 @@ EOF
 }
 
 install_cockpit() {
-  if [ "${COCKPIT}" != "1" ]; then
+  if [[ "${COCKPIT}" != "1" ]] ; then
     log_info "Skipping Cockpit installation (COCKPIT=0)"
     return 0
   fi
@@ -101,7 +101,7 @@ install_cni_plugins() {
   # Set the package version and name
   CNP_VER=v1.8.0
   CNP_PKG="cni-plugins-linux-amd64-${CNP_VER}.tgz"
-  [ "$(uname -m)" = "aarch64" ] && CNP_PKG="cni-plugins-linux-arm64-${CNP_VER}.tgz"
+  [[ "$(uname -m)" = "aarch64" ]] && CNP_PKG="cni-plugins-linux-arm64-${CNP_VER}.tgz"
 
   # Download the package
   curl -fsSL --retry 5 -o "/tmp/${CNP_PKG}" \
@@ -128,9 +128,9 @@ generate_subject_alt_names_config() {
     host_fqdn=$(hostname)
   fi
 
-  mkdir -p "$(dirname "$config_path")"
+  mkdir -p "$(dirname "${config_path}")"
 
-  cat > "$config_path" <<EOF
+  cat > "${config_path}" <<EOF
 apiServer:
   subjectAltNames:
     - ${domain}
@@ -139,7 +139,7 @@ apiServer:
     - localhost
 EOF
 
-  log_success "SubjectAltNames config generated: $config_path"
+  log_success "SubjectAltNames config generated: ${config_path}"
 }
 
 # ---- Main Execution ----
@@ -168,7 +168,7 @@ install_cockpit
 generate_subject_alt_names_config
 
 # 6. Create link to default kubeconfig
-if [ ! -f /root/.kube/config ]; then
+if [[ ! -f /root/.kube/config ]] ; then
   mkdir -p "$(readlink -f /root)/.kube"
   ln -sf /var/lib/microshift/resources/kubeadmin/kubeconfig /root/.kube/config
 fi
