@@ -284,7 +284,7 @@ iso: image
 	grub2-mkrescue -o "$$ISO_DIR/microshift.iso" "$$ISO_DIR/" 2>/dev/null || \
 	{ \
 		echo "  [4/4] Fallback: creating basic ISO with grub2-mkrescue..." ; \
-		grub2-mkrescue -o "$$ISO_DIR/microshift.iso" "$$ISO_DIR/" 2>/dev/null 
+		grub2-mkrescue -o "$$ISO_DIR/microshift.iso" "$$ISO_DIR/" 2>/dev/null ; \
 	} ; \
 	\
 	rm -rf "$$TEMP_ROOTFS" ; \
