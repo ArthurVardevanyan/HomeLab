@@ -23,7 +23,8 @@ check_prerequisites() {
   log_info "Checking prerequisites..."
 
   # Check if running as root
-  if [[ "$(id -u)" -ne 0 ]] ; then
+  user_id="$(id -u)"
+  if [[ $user_id -ne 0 ]] ; then
     log_error "This script must be run as root (use sudo)"
     exit 1
   fi

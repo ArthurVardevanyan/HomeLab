@@ -1046,7 +1046,7 @@ microshift-bootc-pull() {
   # Get version from version.txt if available
   local CLONE_DIR="/tmp/microshift-main"
   if [[ -f "${CLONE_DIR}/_output/rpmbuild/RPMS/version.txt" ]]; then
-    IMAGE_TAG=$(cat "${CLONE_DIR}/_output/rpmbuild/RPMS/version.txt" | tr '-' '_')
+    IMAGE_TAG=$(tr '-' '_' < "${CLONE_DIR}/_output/rpmbuild/RPMS/version.txt")
   else
     IMAGE_TAG="latest"
   fi

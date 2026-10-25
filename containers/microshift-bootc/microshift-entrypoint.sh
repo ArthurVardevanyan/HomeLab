@@ -187,6 +187,7 @@ show_instructions() {
 log_info "Starting MicroShift bootc entrypoint..."
 
 # 1. Check for image changes and handle graceful restart
+# shellcheck disable=SC2310
 if check_image_change; then
   log_warn "Image changed - initiating graceful restart..."
   systemctl restart microshift.service
