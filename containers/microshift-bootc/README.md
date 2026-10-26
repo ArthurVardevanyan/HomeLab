@@ -147,6 +147,14 @@ cpimagewriter microshift.iso
 # balenaEtcher microshift.iso
 ```
 
+## Hardware Notes
+
+### MinisForum S100 UFS Support
+
+The MinisForum S100 uses UFS (Universal Flash Storage) instead of traditional NVMe/SATA. Without UFS kernel modules in the initramfs, the system cannot boot from internal storage. This image automatically injects `ufshcd` and `ufshcd-pci` kernel modules into the initramfs via dracut configuration for S100 compatibility.
+
+For more details, see [MinisForum S100 UFS Support](../../notes/minisforum-s100-ufssupport.md).
+
 ## Variables
 
 | Variable              | Default                                           | Description                                    |

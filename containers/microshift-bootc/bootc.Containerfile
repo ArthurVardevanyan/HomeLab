@@ -177,8 +177,6 @@ RUN \
     cri-tools \
     openshift-clients \
     openvswitch3.4 \
-    nvme-cli \
-    linux-firmware && \
   if [ "${WITH_KINDNET}" = "1" ] ; then \
     dnf install -y microshift-kindnet microshift-kindnet-release-info ; \
   else \
@@ -210,6 +208,14 @@ RUN mkdir -p /var/lib/microshift-okd
 
 # Set up MicroShift directories
 RUN mkdir -p /var/lib/microshift/resources/kubeadmin
+
+# Configure dracut to include UFS kernel modules in initramfs (MinisForum S100 fix)
+# Without this, the system cannot boot from UFS storage on MinisForum S100
+# Reference: https://www.reddit.com/r/MiniPCs/comments/1eb8dgv/minisforum_s100_only_runs_windows_anyone_else/
+# Reference: https://askubuntu.com/questions/1446115/install-ubuntu-22-10-on-the-computer-with-ufs-universal-flash-storage-showing-t
+RUN mkdir -p /etc/dracut.conf.d && \
+  echo 'add_drivers+="ufshcd ufshcd-pci"' > /etc/dracut.conf.d/ufshcd.conf && \
+  echo 'add_dracutmodules+="dm"' >> /etc/dracut.conf.d/ufshcd.conf
 
 # Set entrypoint and command
 ENTRYPOINT ["/usr/local/bin/microshift-entrypoint.sh"]
