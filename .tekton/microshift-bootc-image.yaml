@@ -11,7 +11,7 @@ metadata:
     pipelinesascode.tekton.dev/task: "https://raw.githubusercontent.com/ArthurVardevanyan/HomeLab/main/tekton/tasks/git-clone/0.9.1/git-clone.yaml"
     pipelinesascode.tekton.dev/task-1: "tekton/tasks/buildah/0.7.1/buildah.yaml"
     pipelinesascode.tekton.dev/task-2: "tekton/base/clair-action/clair-action-task.yaml"
-    gitops-ci.k8s.io/exempt-image-checksum: "registry.arthurvardevanyan.com/homelab/microshift-bootc:not_latest"
+    gitops-ci.k8s.io/exempt-image-checksum: "registry.arthurvardevanyan.com/homelab/microshift-bootc,registry.arthurvardevanyan.com/homelab/toolbox:not_latest"
     pipelinesascode.tekton.dev/task-3: "tekton/base/sbom/sbom-task.yaml"
 spec:
   params:
@@ -23,8 +23,8 @@ spec:
       value: "./bootc.Containerfile"
     - name: CONTEXT
       value: "./containers/microshift-bootc"
-    - name: IMAGE
-      value: "registry.arthurvardevanyan.com/homelab/microshift-bootc:not_latest"
+    - name: IMAGE_REPO
+      value: "registry.arthurvardevanyan.com/homelab/microshift-bootc"
     - name: BUILD_MODE
       value: "release"
     - name: GH_TOKEN
@@ -43,8 +43,8 @@ spec:
         type: string
       - name: git-commit
         type: string
-      - name: IMAGE
-        description: Reference of the image buildah will produce.
+      - name: IMAGE_REPO
+        description: "Registry + repo (no tag); the tag is composed from the detected version at runtime."
       - name: DOCKERFILE
         description: Path to the Containerfile to build.
         type: string
@@ -99,6 +99,26 @@ spec:
       - name: dockerconfig
 
     tasks:
+      - name: detect-version
+        taskSpec:
+          results:
+            - name: VERSION
+              description: Auto-detected MicroShift version (tag_name with dashes replaced by underscores).
+            - name: DATETIME
+              description: Build datetime in the same format as the local IMAGE_SUFFIX (YYYY-MM-DD_HHMMSS).
+          steps:
+            - name: detect
+              image: registry.arthurvardevanyan.com/homelab/toolbox:not_latest
+              script: |
+                # Detect version from microshift GitHub releases — mirrors the Makefile exactly.
+                URL="https://api.github.com/repos/microshift-io/microshift/releases/latest"
+                V=$(curl -fsSL --max-time 20 "$URL" | grep '"tag_name"' | head -1 | awk -F'"' '{print $4}')
+                [ -n "$V" ] || V="unknown"
+                V=$(echo "$V" | tr '-' '_')
+                echo "$V" > "$(results.VERSION.path)"
+                # Datetime suffix: matches the local IMAGE_SUFFIX default (YYYY-MM-DD_HHMMSS)
+                date -u +%Y-%m-%d_%H%M%S > "$(results.DATETIME.path)"
+
       - name: git-clone
         taskRef:
           name: git-clone
@@ -117,12 +137,13 @@ spec:
       - name: buildah
         runAfter:
           - git-clone
+          - detect-version
         taskRef:
           name: buildah
           kind: Task
         params:
           - name: IMAGE
-            value: $(params.IMAGE)
+            value: "$(params.IMAGE_REPO):$(tasks.detect-version.results.VERSION)"
           - name: DOCKERFILE
             value: $(params.DOCKERFILE)
           - name: CONTEXT
@@ -135,6 +156,8 @@ spec:
               --build-arg COCKPIT=$(params.COCKPIT)
               --build-arg Domain=$(params.Domain)
               --build-arg GH_TOKEN=$(params.GH_TOKEN)
+          - name: EXTRA_TAGS
+            value: "$(params.IMAGE_REPO):$(tasks.detect-version.results.VERSION)-$(tasks.detect-version.results.DATETIME)"
         workspaces:
           - name: source
             workspace: data
@@ -144,12 +167,13 @@ spec:
       - name: clair-action
         runAfter:
           - buildah
+          - detect-version
         taskRef:
           name: clair-action
           kind: Task
         params:
           - name: IMAGE
-            value: $(params.IMAGE)
+            value: $(tasks.buildah.results.IMAGE_URL)
 
       - name: sbom
         runAfter:

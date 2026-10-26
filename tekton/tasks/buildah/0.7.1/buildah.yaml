@@ -64,6 +64,12 @@ spec:
           .ssh-keys/authorized_keys=ZWNkYXMtc2hhMi1uaXN0cDI1NiBBQUFBRTI=
         Empty or unset means no injection.
       default: ""
+    - name: EXTRA_TAGS
+      description: |
+        Additional tags for the same image to push after the primary push.
+        Format: comma-separated full image refs (e.g. `repo:tag1,repo:tag2`).
+        Empty or unset means no extra tags.
+      default: ""
   workspaces:
     - name: source
       optional: true
@@ -129,6 +135,22 @@ spec:
           echo "Push attempt $i/$RETRIES failed, retrying..." >&2
           sleep 5
         done
+        # push additional tags for the same built image (EXTRA_TAGS: comma-separated refs)
+        if [ -n "$(params.EXTRA_TAGS)" ]; then
+          for extra in $(echo "$(params.EXTRA_TAGS)" | tr ',' '\n'); do
+            [ -z "$extra" ] && continue
+            EXTRA_RETRIES=3
+            for j in $(seq 1 $EXTRA_RETRIES); do
+              if buildah ${CERT_DIR_FLAG} "--storage-driver=$(params.STORAGE_DRIVER)" push $(params.PUSH_EXTRA_ARGS) \
+                  "--tls-verify=$(params.TLSVERIFY)" "$(params.IMAGE)" "docker://$extra"; then
+                break
+              fi
+              [ "$j" -eq "$EXTRA_RETRIES" ] && echo "Extra-tag push failed for $extra after $EXTRA_RETRIES attempts" >&2 && exit 1
+              echo "Extra-tag push attempt $j/$EXTRA_RETRIES failed for $extra, retrying..." >&2
+              sleep 5
+            done
+          done
+        fi
         tee "$(results.IMAGE_DIGEST.path)" < /tmp/image-digest
         printf '%s' "$(params.IMAGE)" | tee "$(results.IMAGE_URL.path)"
       volumeMounts:
