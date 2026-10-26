@@ -289,11 +289,11 @@ INSTALL_DISK ?= /dev/sda
 install-live:
 	@echo "From a Fedora Live USB, run (DESTROYS all data on $(INSTALL_DISK)):"
 	@echo ""
-	@echo "  sudo podman run --rm --privileged --pid=host \\"
+	@echo "  sudo podman run --rm --privileged --pid=host --entrypoint bootc \\"
 	@echo "    -v /dev:/dev -v /var/lib/containers:/var/lib/containers \\"
 	@echo "    --security-opt label=type:unconfined_t \\"
 	@echo "    $(IMAGE_NAME):$(if $(IMAGE_TAG),$(IMAGE_TAG),$(_image_version)) \\"
-	@echo "    bootc install to-disk --wipe $(INSTALL_DISK)"
+	@echo "    install to-disk --wipe $(INSTALL_DISK)"
 	@echo ""
 	@echo "The image must be built with WITH_UFS=1 (default) so its initramfs has the UFS modules."
 	@echo "See notes/minisforum-s100-ufssupport.md."

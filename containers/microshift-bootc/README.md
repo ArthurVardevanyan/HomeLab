@@ -1,6 +1,6 @@
 # MicroShift BootC
 
-Builds a MicroShift BootC image with OS-level configs baked in (firewall, sysctl, cockpit) and a custom entrypoint with image SHA detection and DNS validation. Uses `bootc-image-builder` (BIB) to produce Anaconda-installer ISOs.
+Builds a MicroShift BootC image with OS-level configs baked in (firewall, sysctl, cockpit) and MicroShift enabled as a host systemd service. Uses `bootc-image-builder` (BIB) to produce Anaconda-installer ISOs.
 
 ## Table of Contents
 
@@ -92,7 +92,7 @@ make clean          # Clean up build artifacts and temp clone
 │  6. Install optional components (Kindnet, TopoLVM,  │
 │     OLM, Multus)                                    │
 │  7. Cleanup caches and docs                        │
-│  8. Copy entrypoint scripts + systemd service      │
+│  8. Copy helper scripts, enable microshift.service │
 │  9. Set up LVM/MicroShift directories              │
 └─────────────────────────────────────────────────────┘
 ```

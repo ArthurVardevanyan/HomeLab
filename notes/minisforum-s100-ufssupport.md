@@ -104,14 +104,17 @@ install from a Fedora Live USB, whose kernel does:
 2. Install the image straight to disk:
 
    ```bash
-   sudo podman run --rm --privileged --pid=host \
+   sudo podman run --rm --privileged --pid=host --entrypoint bootc \
      -v /dev:/dev -v /var/lib/containers:/var/lib/containers \
      --security-opt label=type:unconfined_t \
      <registry>/homelab/microshift-bootc:<tag> \
-     bootc install to-disk --wipe /dev/sda
+     install to-disk --wipe /dev/sda
    ```
 
    `make install-live` in `containers/microshift-bootc/` prints this command.
+   `--entrypoint bootc` is required for images built before the image's
+   `ENTRYPOINT` was removed; otherwise podman runs the old entrypoint script and
+   hangs on "Waiting for MicroShift to start".
 3. Reboot. The installed system boots with its own kernel, whose initramfs
    now contains the UFS modules.
 
