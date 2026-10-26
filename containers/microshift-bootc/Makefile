@@ -13,6 +13,7 @@
 #   make image          Build BootC image (depends on rpm)
 #   make push           Push image to registry
 #   make iso            Build Anaconda-installer ISO using bootc-image-builder
+#   make install-live   Print bootc install command for a Fedora Live USB (UFS hardware)
 #   make clean          Clean up build artifacts and temp clone
 #
 # Variables:
@@ -23,6 +24,8 @@
 #   PUSH_REGISTRY       Registry host (default: registry.arthurvardevanyan.com)
 #   PUSH_ORG            Registry org (default: homelab)
 #   BUILD_MODE          RPM source: "local" (build) or "release" (pre-built)
+#   WITH_UFS            1 (default) builds UFS modules + initramfs for MinisForum S100; 0 skips
+#   INSTALL_DISK        Target disk printed by install-live (default: /dev/sda)
 #
 # Build Modes:
 #   BUILD_MODE=local  (default) Builds RPMs from source using `make rpm`
@@ -71,7 +74,7 @@ IMAGE_NAME = $(PUSH_REGISTRY)/$(PUSH_ORG)/microshift-bootc
 
 BIB_IMAGE ?= quay.io/centos-bootc/bootc-image-builder:latest
 
-.PHONY: _clone _clone-assets _ensure-sha fetch-sha srpm rpm rpm-copr image push iso clean
+.PHONY: _clone _clone-assets _ensure-sha fetch-sha srpm rpm rpm-copr image push iso install-live clean
 
 # SSH keys (collect user's ~/.ssh/*.pub for root SSH access on booted node)
 SSH_KEY_FILE ?= $(shell pwd)/.ssh-keys/authorized_keys
@@ -196,6 +199,7 @@ image: $(SSH_KEY_FILE) rpm
 		podman build -f "$(shell pwd)/bootc.Containerfile" \
 		--build-arg BUILD_MODE="$(BUILD_MODE)" \
 		--build-arg COCKPIT="${COCKPIT:-0}" \
+		--build-arg WITH_UFS="${WITH_UFS:-1}" \
 		--build-arg Domain="${DOMAIN:-microshift.dc2.vardevanyan.com}" \
 		$(PODMAN_OPTS) \
 		-t "microshift-bootc:$(BOOTC_IMAGE_TAG)" \
@@ -273,6 +277,26 @@ iso: image push
 	@echo "    install to disk → reboot → persistent MicroShift node"
 	@echo ""
 	@echo "  Size: 1-2 GB | Build: ~5-30 min (depsolving installer package set)"
+
+# ==============================================================================
+# Print install instructions for hardware the CentOS kernel can't see (UFS)
+# ==============================================================================
+# Run the printed command from a Fedora Live USB (kernel has UFS support).
+# INSTALL_DISK defaults to /dev/sda (MinisForum S100 UFS disk).
+# ==============================================================================
+INSTALL_DISK ?= /dev/sda
+
+install-live:
+	@echo "From a Fedora Live USB, run (DESTROYS all data on $(INSTALL_DISK)):"
+	@echo ""
+	@echo "  sudo podman run --rm --privileged --pid=host \\"
+	@echo "    -v /dev:/dev -v /var/lib/containers:/var/lib/containers \\"
+	@echo "    --security-opt label=type:unconfined_t \\"
+	@echo "    $(IMAGE_NAME):$(if $(IMAGE_TAG),$(IMAGE_TAG),$(_image_version)) \\"
+	@echo "    bootc install to-disk --wipe $(INSTALL_DISK)"
+	@echo ""
+	@echo "The image must be built with WITH_UFS=1 (default) so its initramfs has the UFS modules."
+	@echo "See notes/minisforum-s100-ufssupport.md."
 
 # ==============================================================================
 # Cleanup

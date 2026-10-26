@@ -100,7 +100,27 @@ RUN if [ "$BUILD_MODE" = "local" ]; then \
 # ==============================================================================
 # Final image
 # ==============================================================================
-FROM quay.io/centos-bootc/centos-bootc:stream10
+FROM quay.io/centos-bootc/centos-bootc:stream10 AS os-base
+
+# Update the OS (and therefore the kernel) once, here, so the UFS modules built
+# in the next stage always match the kernel that ships in the final image.
+RUN dnf -y update && dnf clean all && rm -rf /var/cache/*
+
+# ==============================================================================
+# UFS modules (MinisForum S100). The CentOS Stream 10 kernel ships without
+# CONFIG_SCSI_UFSHCD, so build ufshcd-{core,pci,pltfrm} against its exact version.
+# Set WITH_UFS=0 to skip.
+# ==============================================================================
+FROM os-base AS ufs-builder
+ARG WITH_UFS=1
+ENV WITH_UFS=${WITH_UFS}
+COPY build-ufs-modules.sh /usr/local/bin/build-ufs-modules.sh
+RUN /usr/local/bin/build-ufs-modules.sh
+
+# ==============================================================================
+# Final image
+# ==============================================================================
+FROM os-base
 
 LABEL org.opencontainers.image.source="https://github.com/ArthurVardevanyan/HomeLab" \
   org.opencontainers.image.title="MicroShift BootC" \
@@ -150,7 +170,6 @@ RUN \
   # Import EPEL GPG key and install EPEL repo
   rpm --import https://dl.fedoraproject.org/pub/epel/RPM-GPG-KEY-EPEL-9 && \
   rpm -Uvh https://dl.fedoraproject.org/pub/epel/epel-release-latest-9.noarch.rpm && \
-  dnf -y update && \
   # Install createrepo_c and ca-certificates for repo creation
   dnf install -y createrepo_c ca-certificates && \
   # Create local MicroShift repo and index it
@@ -207,13 +226,25 @@ RUN mkdir -p /var/lib/microshift-okd
 # Set up MicroShift directories
 RUN mkdir -p /var/lib/microshift/resources/kubeadmin
 
-# Configure dracut to include UFS kernel modules in initramfs (MinisForum S100 fix)
-# Without this, the system cannot boot from UFS storage on MinisForum S100
-# Reference: https://www.reddit.com/r/MiniPCs/comments/1eb8dgv/minisforum_s100_only_runs_windows_anyone_else/
-# Reference: https://askubuntu.com/questions/1446115/install-ubuntu-22-10-on-the-computer-with-ufs-universal-flash-storage-showing-t
-RUN mkdir -p /etc/dracut.conf.d && \
-  echo 'add_drivers+="ufshcd ufshcd-pci"' > /etc/dracut.conf.d/ufshcd.conf && \
-  echo 'add_dracutmodules+="dm"' >> /etc/dracut.conf.d/ufshcd.conf
+# Install the out-of-tree UFS modules (MinisForum S100) and rebuild the initramfs
+# so the machine can see its internal UFS disk at boot. Modules are unsigned, so
+# Secure Boot must be off. No-op when WITH_UFS=0.
+ARG WITH_UFS=1
+COPY --from=ufs-builder /out/ /tmp/ufs-out/
+RUN set -eux; \
+  if [ "${WITH_UFS}" = "1" ]; then \
+    KVER=$(find /usr/lib/modules -mindepth 1 -maxdepth 1 -type d -printf '%f\n'); \
+    [ "$(echo "${KVER}" | wc -l)" -eq 1 ]; \
+    [ "$(cat /tmp/ufs-out/kver)" = "${KVER}" ] || { echo "UFS modules were built for a different kernel than the final image"; exit 1; }; \
+    mkdir -p "/usr/lib/modules/${KVER}/extra/ufs" /etc/dracut.conf.d; \
+    cp /tmp/ufs-out/ufs/*.ko "/usr/lib/modules/${KVER}/extra/ufs/"; \
+    depmod -a "${KVER}"; \
+    echo 'add_drivers+=" ufshcd-core ufshcd-pci "' > /etc/dracut.conf.d/ufshcd.conf; \
+    dracut -vf --no-hostonly "/usr/lib/modules/${KVER}/initramfs.img" "${KVER}"; \
+    chmod 0644 "/usr/lib/modules/${KVER}/initramfs.img"; \
+    lsinitrd "/usr/lib/modules/${KVER}/initramfs.img" | grep -q 'ufshcd-pci'; \
+  fi; \
+  rm -rf /tmp/ufs-out
 
 # Set entrypoint and command
 ENTRYPOINT ["/usr/local/bin/microshift-entrypoint.sh"]
