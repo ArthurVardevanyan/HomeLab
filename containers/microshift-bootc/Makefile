@@ -216,9 +216,14 @@ push: image
 	if [ -n "$(IMAGE_SUFFIX)" ]; then \
 		IMAGE_REF="$$IMAGE_REF-$(IMAGE_SUFFIX)"; \
 	fi ; \
-	echo "Pushing '$$IMAGE_REF' to $(PUSH_REGISTRY)/$(PUSH_ORG)/..." ; \
-	podman tag "localhost/microshift-bootc:latest" "$$IMAGE_REF" ; \
-	podman push "$$IMAGE_REF"
+	PLAIN_REF="$(IMAGE_NAME):$(if $(IMAGE_TAG),$(IMAGE_TAG),$(_image_version))"; \
+	echo "Pushing plain '$$PLAIN_REF' (+ suffixed '$$IMAGE_REF') to $(PUSH_REGISTRY)/$(PUSH_ORG)/..." ; \
+	podman tag "localhost/microshift-bootc:latest" "$$PLAIN_REF" ; \
+	podman push "$$PLAIN_REF" ; \
+	if [ -n "$(IMAGE_SUFFIX)" ]; then \
+		podman tag "localhost/microshift-bootc:latest" "$$IMAGE_REF" ; \
+		podman push "$$IMAGE_REF" ; \
+	fi
 # ==============================================================================
 # Create a bootable Anaconda-installer ISO using bootc-image-builder
 # ==============================================================================
