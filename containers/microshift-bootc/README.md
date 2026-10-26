@@ -152,7 +152,7 @@ cpimagewriter microshift.iso
 
 ### MinisForum S100 UFS Support
 
-The MinisForum S100 uses UFS (Universal Flash Storage) instead of NVMe/SATA, and the CentOS Stream 10 kernel is built without UFS support. The image build therefore compiles `ufshcd-core`, `ufshcd-pci` and `ufshcd-pltfrm` against the image's exact kernel (`build-ufs-modules.sh`), installs them, and regenerates the initramfs. Set `WITH_UFS=0` to skip. The modules are unsigned, so Secure Boot must be disabled.
+The MinisForum S100 uses UFS (Universal Flash Storage) instead of NVMe/SATA, and the CentOS Stream 10 kernel is built without UFS support. The image build therefore compiles `ufshcd-core`, `ufshcd-pci` and `ufshcd-pltfrm` against the image's exact kernel using the distro's `kernel-devel` package (`build-ufs-modules.sh`), and fails the build if a module's layout differs from the kernel's, installs them, and regenerates the initramfs. Set `WITH_UFS=0` to skip. The modules are unsigned, so Secure Boot must be disabled.
 
 The Anaconda ISO cannot see the disk either, so install from a Fedora Live USB with `make install-live`, which prints the commands: mount tmpfs for container storage (the live root is too small for the image), `podman pull`, then `bootc install to-disk`. `STORE_SIZE` (default `6G`) sets the tmpfs size.
 

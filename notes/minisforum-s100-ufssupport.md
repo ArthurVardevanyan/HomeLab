@@ -73,30 +73,49 @@ in the image:
 
 1. `os-base` stage runs `dnf -y update` once, so every later stage sees the
    same kernel.
-2. `ufs-builder` stage runs `build-ufs-modules.sh`: downloads the matching
-   kernel source RPM from CentOS Stream, enables
-   `CONFIG_SCSI_UFSHCD{,_PCI,_PLATFORM}=m` on top of the image's own kernel
-   config, and builds `drivers/ufs` with `KERNELRELEASE` set so the vermagic
-   matches. It drops the Kconfig `select PM_DEVFREQ` because the CentOS kernel
-   has no devfreq/OPP (otherwise modpost reports unresolved symbols).
+2. `ufs-builder` stage runs `build-ufs-modules.sh`, which installs
+   `kernel-devel-<kver>` (the distro's exact `.config`, `Module.symvers` and
+   generated headers), downloads the matching kernel source RPM, extracts only
+   `drivers/ufs` and `include/ufs`, and builds with
+   `make -C /usr/src/kernels/<kver> M=<src>/drivers/ufs CONFIG_SCSI_UFSHCD=m ...`.
+   The CentOS kernel has no devfreq/OPP; the driver compiles cleanly without
+   them against these headers.
 3. Final stage copies the `.ko` files to
    `/usr/lib/modules/<kver>/extra/ufs/`, runs `depmod`, writes
-   `/usr/lib/dracut/dracut.conf.d/99-ufs.conf` and regenerates the image's initramfs with
-   `dracut --no-hostonly`. The drop-in lives at
-   `/usr/lib/dracut/dracut.conf.d/99-ufs.conf`. The build fails if `ufshcd-pci`
-   is not in the initramfs, or if the modules were built for a different kernel.
+   `/usr/lib/dracut/dracut.conf.d/99-ufs.conf` and regenerates the image's
+   initramfs with `dracut --no-hostonly`.
 
-`WITH_UFS` must be `0` or `1`; any other value (including empty) fails the
-build rather than silently skipping. `make image` also checks the built image's
-initramfs. Build with `WITH_UFS=0` to skip all of this (e.g. for hardware that does not
-need it). Modules are **unsigned**, so Secure Boot must be off (it is on the
-S100). Because the modules are rebuilt on every image build, `bootc upgrade`
-keeps them in sync with whatever kernel the new image carries.
+Build-time guards (any failure stops the build):
 
-Caveat: the source RPM is fetched from `mirror.stream.centos.org`, falling
-back to `composes.stream.centos.org`. The mirror only keeps a few recent
-kernels and can lag behind the base image, so a build can fail if neither has
-the exact kernel version. Re-run once the mirror catches up.
+- `WITH_UFS` must be `0` or `1`; empty or other values fail rather than silently
+  skipping. `make image` also checks the built image's initramfs for
+  `ufshcd-core` and `ufshcd-pci`.
+- `kernel-devel-<kver>` must exist for the image's exact kernel. There is no
+  fallback to a regenerated config or a different kernel. If the mirror lags
+  behind the base image's kernel, the build fails with a clear message; retry
+  once it catches up.
+- Each module's vermagic must equal the kernel version, and its
+  `.gnu.linkonce.this_module` ELF section size must equal that of a stock module
+  from the same kernel (the check the kernel makes when loading).
+
+Build with `WITH_UFS=0` to skip all of this. Modules are **unsigned**, so Secure
+Boot must be off (it is on the S100). Because the modules are rebuilt on every
+image build, `bootc upgrade` keeps them in sync with whatever kernel the new
+image carries.
+
+Caveat: the kernel source RPM is fetched from `mirror.stream.centos.org`,
+falling back to `composes.stream.centos.org`.
+
+#### Past failure: `.gnu.linkonce.this_module section size must match`
+
+The first working-looking build copied the kernel's `.config` out of
+`/usr/lib/modules` and ran `make olddefconfig` in a source tree. The build
+container had no `pahole`, so `CONFIG_DEBUG_INFO_BTF` turned itself off, which
+in turn dropped `CONFIG_SCHED_CLASS_EXT` / `CONFIG_EXT_GROUP_SCHED`. Those
+change `sizeof(struct module)`: our modules had a 0x540-byte `this_module`
+section versus 0x580 in stock CentOS modules, so the kernel refused to load
+them at boot even though the version string matched. Building against
+`kernel-devel` avoids regenerating the config altogether.
 
 ### Install workflow (Fedora Live + `bootc install`)
 
@@ -143,15 +162,33 @@ install from a Fedora Live USB, whose kernel does:
 
 ### Verify
 
+Check the image contents:
+
 ```bash
-podman run --rm localhost/microshift-bootc:latest bash -c '
+podman run --rm --entrypoint bash localhost/microshift-bootc:latest -c '
   K=$(ls /usr/lib/modules)
   modinfo -k "$K" -F depends ufshcd-pci
   lsinitrd /usr/lib/modules/$K/initramfs.img | grep ufshcd'
 ```
 
-The first real test is booting the S100 from `/dev/sda`; this has been
-verified at image-build level only.
+Boot the image's own kernel and initramfs against an emulated UFS controller
+(QEMU `-device ufs`, PCI `1b36:0013`, handled by `ufshcd-pci`). Extract with
+`podman cp` from a `podman create`d container, then:
+
+```bash
+truncate -s 1G ufs.img
+qemu-system-x86_64 -enable-kvm -cpu host -m 2G -nographic -no-reboot \
+  -kernel vmlinuz -initrd initramfs.img \
+  -append "console=ttyS0 root=UUID=00000000-dead-beef-0000-000000000000 rd.timeout=15 loglevel=7" \
+  -drive file=ufs.img,if=none,id=lu0,format=raw \
+  -device ufs,id=ufs0 -device ufs-lu,drive=lu0,bus=ufs0,lun=0
+```
+
+Expect `scsi host2: ufshcd`, `sd 2:0:0:0: [sda] Attached SCSI disk` and no
+`size must match` error. The dracut timeout waiting for the fake root UUID is
+expected. QEMU's emulated controller logs some `dme-get ... failed` lines that
+real hardware will not. This was run on the build host (QEMU from a Fedora
+container with `--device /dev/kvm`); real S100 hardware is still the final test.
 
 ## Kernel Support Notes
 
