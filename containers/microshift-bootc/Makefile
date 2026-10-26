@@ -12,7 +12,7 @@
 #   make rpm-release    Download pre-built RPMs from GitHub releases (fastest)
 #   make image          Build BootC image (depends on rpm)
 #   make push           Push image to registry
-#   make iso            Create a bootable ISO from the image
+#   make iso            Build Anaconda-installer ISO using bootc-image-builder
 #   make clean          Clean up build artifacts and temp clone
 #
 # Variables:
@@ -63,10 +63,13 @@ CLONE_DIR      ?= /tmp/microshift-$(shell echo $(USHIFT_GITREF) | tr '/-' '__')
 ASSETS_TMP_DIR ?= /tmp/microshift-assets-$(shell echo $(USHIFT_GITREF) | tr '/-' '__')
 SHA_CACHE_FILE ?= $(shell pwd)/stream10.sha
 ISO_OUTPUT_DIR ?= $(shell pwd)/output
+BIB_OUT        ?= $(ISO_OUTPUT_DIR)/bib-out
 OKD_VERSION_TAG ?= $(shell test -f "$(CLONE_DIR)/src/okd/get_version.sh" && "$(CLONE_DIR)/src/okd/get_version.sh" latest-amd64 2>/dev/null || echo "")
 
 # --- Derived image name ---
 IMAGE_NAME = $(PUSH_REGISTRY)/$(PUSH_ORG)/microshift-bootc
+
+BIB_IMAGE ?= quay.io/centos-bootc/bootc-image-builder:latest
 
 .PHONY: _clone _clone-assets _ensure-sha fetch-sha srpm rpm rpm-copr image push iso clean
 
@@ -217,64 +220,47 @@ push: image
 	podman tag "localhost/microshift-bootc:latest" "$$IMAGE_REF" ; \
 	podman push "$$IMAGE_REF"
 # ==============================================================================
-# Create a bootable ISO from the built image
+# Create a bootable Anaconda-installer ISO using bootc-image-builder
 # ==============================================================================
-iso: image
-	@mkdir -p "$(ISO_OUTPUT_DIR)"
-	@IMAGE_REF="$(IMAGE_NAME):$(if $(IMAGE_TAG),$(IMAGE_TAG),$(_image_version))" ; \
-	if [ -z "$(IMAGE_TAG)" ]; then echo "Auto-detected version from $(_version_file): $(_image_version)"; fi ; \
-	echo "Creating bootable ISO from image '$$IMAGE_REF'..." ; \
-	echo "  [1/4] Pulling image locally..." ; \
-	if ! podman inspect "$$IMAGE_REF" >/dev/null 2>&1; then \
-		podman pull "$$IMAGE_REF" ; \
-	fi ; \
-	\
-	echo "  [2/4] Creating temporary rootfs..." ; \
-	TEMP_ROOTFS=$$(mktemp -d /tmp/microshift-iso-XXXXXX) ; \
-	podman create --name microshift-iso-tmp "$$IMAGE_REF" ; \
-	podman export microshift-iso-tmp | tar -C "$$TEMP_ROOTFS" -x ; \
-	podman rm microshift-iso-tmp ; \
-	\
-	echo "  [3/4] Preparing ISO contents..." ; \
-	ISO_DIR=$(ISO_OUTPUT_DIR) ; \
-	mkdir -p "$$ISO_DIR"/{efi,isolinux} ; \
-	\
-	echo "    Extracting kernel..." ; \
-	kernel_dir="$$TEMP_ROOTFS/usr/lib/modules" ; \
-	for kf in $$(find $$kernel_dir -name 'vmlinuz*' 2>/dev/null | head -1); do \
-		kernel_name=$$(basename "$$kf") ; \
-		cp "$$kf" "$$ISO_DIR/efi/vmlinuz" ; \
-		echo "    Kernel: $$kf" ; \
-	done ; \
-	\
-	for it in $$(find $$TEMP_ROOTFS/usr/lib/modules -name 'initramfs*' 2>/dev/null | head -1); do \
-		init_name=$$(basename "$$it") ; \
-		cp "$$it" "$$ISO_DIR/efi/initrd.img" ; \
-		echo "    Initramfs: $$it" ; \
-	done ; \
-	\
-	if [ ! -f "$$ISO_DIR/efi/vmlinuz" ] || [ ! -f "$$ISO_DIR/efi/initrd.img" ]; then \
-		echo "ERROR: Kernel or initramfs not found in image!" ; \
-		rm -rf "$$TEMP_ROOTFS" ; \
-		exit 1 ; \
-	fi ; \
-	\
-	echo "    Extracting bootc bootloader..." ; \
-	cp /usr/share/grub/contents/grub.cfg "$$ISO_DIR/grub.cfg" 2>/dev/null || \
-		echo "menuentry 'MicroShift BootC' { \\\n\tlinux /efi/vmlinuz root=/dev/sr0 \\\n\tinitrd /efi/initrd.img \n}" > "$$ISO_DIR/grub.cfg" ; \
-	\
-	echo "    Creating bootable ISO image..." ; \
-	grub2-mkrescue -o "$$ISO_DIR/microshift.iso" -c "$$ISO_DIR/grub.cfg" -b isolinux/isolinux.bin -eltorito-alt-boot "$$"ISO_DIR/ 2>/dev/null || \
-	grub2-mkrescue -o "$$ISO_DIR/microshift.iso" "$$ISO_DIR/" 2>/dev/null || \
-	{ \
-		echo "  [4/4] Fallback: creating basic ISO with grub2-mkrescue..." ; \
-		grub2-mkrescue -o "$$ISO_DIR/microshift.iso" "$$ISO_DIR/" 2>/dev/null ; \
-	} ; \
-	\
-	rm -rf "$$TEMP_ROOTFS" ; \
-	\
-	echo "" ; \
-	echo "ISO created: $$ISO_DIR/microshift.iso"
+#
+# Produces an Anaconda-installer ISO:
+#   1. Burns to USB → boot → Anaconda installer → install to disk → reboot
+#   2. Embedded MicroShift bootc image (self-upgrading via `bootc upgrade`)
+#
+# Boot flow:
+#   Burn ISO → boot USB → Anaconda text installer → follow prompts →
+#   install to disk → reboot → persistent MicroShift node
+#
+# Variables:
+#   BIB_IMAGE     bootc-image-builder container (default: latest)
+#   BIB_OUT       temporary build dir inside ISO_OUTPUT_DIR
+#   PUSH_REGISTRY / PUSH_ORG / IMAGE_TAG / IMAGE_SUFFIX (same as push)
+# ==============================================================================
+iso: image push
+	@mkdir -p "$(BIB_OUT)"
+	@echo "Staging image into rootful store..."
+	@podman save $(IMAGE_NAME):$(if $(IMAGE_TAG),$(IMAGE_TAG),$(_image_version)) -o $(ISO_OUTPUT_DIR)/bootc-image.tar
+	@sudo podman load -i $(ISO_OUTPUT_DIR)/bootc-image.tar
+	@sudo rm -f $(ISO_OUTPUT_DIR)/bootc-image.tar
+	@echo "Building ISO with bootc-image-builder..."
+	@sudo podman run --rm --privileged --pull=newer \
+		-v $(BIB_OUT):/output \
+		-v /var/lib/containers/storage:/var/lib/containers/storage:z \
+		$(BIB_IMAGE) --type anaconda-iso --output /output \
+		$(IMAGE_NAME):$(if $(IMAGE_TAG),$(IMAGE_TAG),$(_image_version))
+	@mv $(BIB_OUT)/bootiso/install.iso $(ISO_OUTPUT_DIR)/microshift.iso
+	@sudo rm -rf $(BIB_OUT)
+	@echo ""
+	@echo "=== ISO: $(ISO_OUTPUT_DIR)/microshift.iso ==="
+	@echo ""
+	@echo "  Burn to USB:"
+	@echo "    sudo dd if=$(ISO_OUTPUT_DIR)/microshift.iso of=/dev/sdX bs=4M status=progress oflag=sync"
+	@echo ""
+	@echo "  Boot flow:"
+	@echo "    Burn ISO → boot USB → Anaconda installer → follow prompts →"
+	@echo "    install to disk → reboot → persistent MicroShift node"
+	@echo ""
+	@echo "  Size: 1-2 GB | Build: ~5-30 min (depsolving installer package set)"
 
 # ==============================================================================
 # Cleanup

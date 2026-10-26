@@ -1069,7 +1069,6 @@ microshift-bootc-pull() {
   echo "  # Cleanup on VM:"
   echo "  ssh arthur@10.101.11.7 'rm -f /home/arthur/Projects/HomeLab/containers/microshift-bootc/microshift-bootc-${IMAGE_TAG}.tar'"
   echo ""
-  echo "  # Or pull the entire build directory (includes logs, etc):"
   echo "  # Or pull just the ISO (recommended):"
   echo "  scp arthur@10.101.11.7:/home/arthur/Projects/HomeLab/containers/microshift-bootc/output/microshift.iso ./"
 }
