@@ -5,6 +5,7 @@
 # This script runs during container build to configure:
 # - Firewalld rules for pod networks and services
 # - Sysctl settings for MicroShift
+# - CRI-O policy.json and registries.d (required by el9 crio on CentOS 10)
 # - Cockpit installation (opt-in)
 # - DNS configuration
 # - Additional utilities
@@ -90,6 +91,27 @@ EOF
   log_success "Cockpit installed and configured."
 }
 
+setup_crio_policy() {
+  log_info "Configuring CRI-O image policy..."
+
+  # CRI-O (built for el9) only checks /etc/containers/policy.json, but
+  # CentOS 10's containers-common-6.0 moved it to /usr/share/containers/.
+  if [ ! -f /etc/containers/policy.json ] && [ -f /usr/share/containers/policy.json ]; then
+    cp /usr/share/containers/policy.json /etc/containers/policy.json
+  fi
+
+  # Same for registries.d: without these files, CRI-O does not look up
+  # the sigstore signatures that policy.json requires for the Red Hat registry.
+  mkdir -p /etc/containers/registries.d
+  for f in /usr/share/containers/registries.d/*.yaml; do
+    if [ -f "$f" ] && [ ! -f "/etc/containers/registries.d/$(basename "$f")" ]; then
+      cp "$f" /etc/containers/registries.d/
+    fi
+  done
+
+  log_success "CRI-O policy configured."
+}
+
 install_cni_plugins() {
   # Check if containernetworking-plugins is already installed
   if rpm -q containernetworking-plugins &>/dev/null; then
@@ -155,7 +177,10 @@ setup_sysctl
 # 2. Setup firewall rules
 setup_firewall_rules
 
-# 3. Install CNI plugins (if kindnet is present)
+# 3. Configure CRI-O policy.json (required for el9 crio on CentOS 10)
+setup_crio_policy
+
+# 4. Install CNI plugins (if kindnet is present)
 if rpm -q microshift-kindnet &>/dev/null; then
   # Disable openvswitch and systemd-resolved when kindnet is present
   systemctl disable openvswitch &>/dev/null || true
@@ -164,20 +189,20 @@ if rpm -q microshift-kindnet &>/dev/null; then
   install_cni_plugins
 fi
 
-# 4. Install Cockpit (opt-in)
+# 5. Install Cockpit (opt-in)
 install_cockpit
 
-# 5. Generate subjectAltNames config (for API server)
+# 6. Generate subjectAltNames config (for API server)
 generate_subject_alt_names_config
 
-# 6. Create link to default kubeconfig
+# 7. Create link to default kubeconfig
 if [[ ! -f /root/.kube/config ]] ; then
   root_dir="$(readlink -f /root)"
   mkdir -p "${root_dir}/.kube"
   ln -sf /var/lib/microshift/resources/kubeadmin/kubeconfig /root/.kube/config
 fi
 
-# 7. Enable MicroShift service
+# 8. Enable MicroShift service
 systemctl enable microshift
 
 log_success "Post-install customizations completed."
