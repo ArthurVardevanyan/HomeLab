@@ -64,6 +64,7 @@ make rpm-release    # Download pre-built RPMs from GitHub releases
 make image          # Build BootC image (depends on rpm)
 make push           # Push image to registry
 make iso            # Build Anaconda-installer ISO with bootc-image-builder (uses iso)
+make install-live   # Print bootc install command for Fedora Live USB (UFS hardware)
 make clean          # Clean up build artifacts and temp clone
 ```
 
@@ -151,27 +152,30 @@ cpimagewriter microshift.iso
 
 ### MinisForum S100 UFS Support
 
-The MinisForum S100 uses UFS (Universal Flash Storage) instead of traditional NVMe/SATA. Without UFS kernel modules in the initramfs, the system cannot boot from internal storage. This image automatically injects `ufshcd` and `ufshcd-pci` kernel modules into the initramfs via dracut configuration for S100 compatibility.
+The MinisForum S100 uses UFS (Universal Flash Storage) instead of NVMe/SATA, and the CentOS Stream 10 kernel is built without UFS support. The image build therefore compiles `ufshcd-core`, `ufshcd-pci` and `ufshcd-pltfrm` against the image's exact kernel (`build-ufs-modules.sh`), installs them, and regenerates the initramfs. Set `WITH_UFS=0` to skip. The modules are unsigned, so Secure Boot must be disabled.
+
+The Anaconda ISO cannot see the disk either, so install from a Fedora Live USB with `make install-live`, which prints the `bootc install to-disk` command.
 
 For more details, see [MinisForum S100 UFS Support](../../notes/minisforum-s100-ufssupport.md).
 
 ## Variables
 
-| Variable              | Default                                           | Description                                    |
-| --------------------- | ------------------------------------------------- | ---------------------------------------------- |
-| `BUILD_MODE`          | `local`                                           | RPM source mode: `local`, `copr`, or `release` |
-| `USHIFT_GITREF`       | `main`                                            | Git ref/branch/~~tag~~ for upstream repo       |
-| ~~`BOOTC_IMAGE_TAG`~~ | auto-fetched                                      | Base image SHA override                        |
-| `PUSH_REGISTRY`       | `~~registry~~.arthurvardevanyan.com`              | Target registry host                           |
-| `PUSH_ORG`            | `homelab`                                         | Target registry org                            |
-| `WITH_KINDNET`        | 1                                                 | Install Kindnet CNI                            |
-| `WITH_TOPOLVM`        | 1                                                 | Install TopoLVM storage                        |
-| `WITH_OLM`            | 1                                                 | Install OLM operator lifecycle manager         |
-| `WITH_MULTUS`         | 1                                                 | Install Multus CNI                             |
-| `COCKPIT`             | 0                                                 | Enable Cockpit web console                     |
-| `DOMAIN`              | `microshift.dc2.vardevanyan.com`                  | Domain for API server                          |
-| `BIB_IMAGE`           | `quay.io/centos-bootc/bootc-image-builder:latest` | bootc-image-builder container image            |
-| `BIB_OUT`             | `./output/bib-out`                                | Temporary build directory for ISO              |
+| Variable              | Default                                           | Description                                     |
+| --------------------- | ------------------------------------------------- | ----------------------------------------------- |
+| `BUILD_MODE`          | `local`                                           | RPM source mode: `local`, `copr`, or `release`  |
+| `USHIFT_GITREF`       | `main`                                            | Git ref/branch/~~tag~~ for upstream repo        |
+| ~~`BOOTC_IMAGE_TAG`~~ | auto-fetched                                      | Base image SHA override                         |
+| `PUSH_REGISTRY`       | `~~registry~~.arthurvardevanyan.com`              | Target registry host                            |
+| `PUSH_ORG`            | `homelab`                                         | Target registry org                             |
+| `WITH_KINDNET`        | 1                                                 | Install Kindnet CNI                             |
+| `WITH_TOPOLVM`        | 1                                                 | Install TopoLVM storage                         |
+| `WITH_OLM`            | 1                                                 | Install OLM operator lifecycle manager          |
+| `WITH_MULTUS`         | 1                                                 | Install Multus CNI                              |
+| `COCKPIT`             | 0                                                 | Enable Cockpit web console                      |
+| `WITH_UFS`            | 1                                                 | Build UFS modules + initramfs (MinisForum S100) |
+| `DOMAIN`              | `microshift.dc2.vardevanyan.com`                  | Domain for API server                           |
+| `BIB_IMAGE`           | `quay.io/centos-bootc/bootc-image-builder:latest` | bootc-image-builder container image             |
+| `BIB_OUT`             | `./output/bib-out`                                | Temporary build directory for ISO               |
 
 ## Troubleshooting
 
