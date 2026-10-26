@@ -137,10 +137,6 @@ COPY setup-lvm.sh /usr/local/bin/setup-lvm.sh
 COPY postinstall-custom.sh /usr/local/bin/postinstall-custom.sh
 COPY microshift-entrypoint.service /etc/systemd/system/microshift-entrypoint.service
 
-# Copy SSH public keys for root SSH access
-COPY .ssh-keys/authorized_keys /root/.ssh/authorized_keys
-RUN chmod 600 /root/.ssh/authorized_keys
-
 # Copy RPMs from builder stage (do NOT use upstream create_repos.sh — it has version detection bugs)
 COPY --from=builder /tmp/microshift-build/_output/rpmbuild/RPMS/ /tmp/microshift-rpms/
 

@@ -20,7 +20,9 @@ spec:
     - name: git-commit
       value: "{{ revision }}"
     - name: DOCKERFILE
-      value: "./containers/microshift-bootc/bootc.Containerfile"
+      value: "./bootc.Containerfile"
+    - name: CONTEXT
+      value: "./containers/microshift-bootc"
     - name: IMAGE
       value: "registry.arthurvardevanyan.com/homelab/microshift-bootc:not_latest"
     - name: BUILD_MODE
@@ -45,6 +47,10 @@ spec:
         description: Path to the Containerfile to build.
         type: string
         default: ./Dockerfile
+      - name: CONTEXT
+        description: Path to the directory to use as build context.
+        type: string
+        default: "."
       - name: BUILD_MODE
         description: "RPM source mode: local or release (default: release)."
         type: string
@@ -111,6 +117,8 @@ spec:
             value: $(params.IMAGE)
           - name: DOCKERFILE
             value: $(params.DOCKERFILE)
+          - name: CONTEXT
+            value: $(params.CONTEXT)
           - name: BUILD_EXTRA_ARGS
             value: >-
               --build-arg BUILD_MODE=$(params.BUILD_MODE)
