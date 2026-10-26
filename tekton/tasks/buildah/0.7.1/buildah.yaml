@@ -56,8 +56,17 @@ spec:
     - name: SKIP_PUSH
       description: Skip pushing the built image
       default: "false"
+    - name: INJECT_FILES
+      description: |
+        Files to inject into the build context before build.
+        Format: each line is `path relative to CONTEXT=base64content`.
+        Example:
+          .ssh-keys/authorized_keys=ZWNkYXMtc2hhMi1uaXN0cDI1NiBBQUFBRTI=
+        Empty or unset means no injection.
+      default: ""
   workspaces:
     - name: source
+      optional: true
     - name: sslcertdir
       optional: true
     - name: dockerconfig
@@ -91,6 +100,17 @@ spec:
 
         [ "$(workspaces.sslcertdir.bound)" = "true" ] && CERT_DIR_FLAG="--cert-dir=$(workspaces.sslcertdir.path)"
         [ "$(workspaces.dockerconfig.bound)" = "true" ] && DOCKER_CONFIG="$(workspaces.dockerconfig.path)" && export DOCKER_CONFIG
+        # inject files (INJECT_FILES format: path relative to CONTEXT=base64content)
+        if [ -n "$(params.INJECT_FILES)" ]; then
+          echo "$(params.INJECT_FILES)" | while IFS= read -r line; do
+            [ -z "$line" ] && continue
+            INJECT_PATH="${line%%=*}"
+            INJECT_CONTENT="${line#*=}"
+            mkdir -p "$(params.CONTEXT)/$(dirname "$INJECT_PATH")"
+            echo "$INJECT_CONTENT" | base64 -d > "$(params.CONTEXT)/$INJECT_PATH"
+            chmod 600 "$(params.CONTEXT)/$INJECT_PATH"
+          done
+        fi
         # build the image (CERT_DIR_FLAG should be omitted if empty and BUILD_EXTRA_ARGS can contain multiple args)
         # shellcheck disable=SC2046,SC2086
         buildah ${CERT_DIR_FLAG} "--storage-driver=$(params.STORAGE_DRIVER)" bud $(params.BUILD_EXTRA_ARGS) \
