@@ -189,7 +189,7 @@ RUN \
   fi && \
   # Cleanup
   rm -rf /tmp/microshift-rpms && \
-  rm -f /etc/yum.repos.d/microshift-deps.repo && \
+  rm -f /etc/yum.repos.d/microshift-local.repo /etc/yum.repos.d/microshift-deps.repo && \
   dnf clean all && rm -rf /var/cache/* && \
   rm -rf /usr/share/doc/* /usr/share/man/* /usr/share/info/*
 
