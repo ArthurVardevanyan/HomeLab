@@ -62,6 +62,11 @@ IMAGE_SUFFIX  ?= $(shell date +%Y-%m-%d_%H%M%S)
 # --- Build mode (local, copr, or release) ---
 BUILD_MODE ?= local
 
+# --- Image build args (must be Make variables: ${VAR:-x} shell syntax expands to "" in Make) ---
+WITH_UFS ?= 1
+COCKPIT ?= 0
+DOMAIN ?= microshift.dc2.vardevanyan.com
+
 # --- Internal ---
 CLONE_DIR      ?= /tmp/microshift-$(shell echo $(USHIFT_GITREF) | tr '/-' '__')
 ASSETS_TMP_DIR ?= /tmp/microshift-assets-$(shell echo $(USHIFT_GITREF) | tr '/-' '__')
@@ -194,18 +199,25 @@ image: $(SSH_KEY_FILE) rpm
 	@echo "Building BootC image using custom Containerfile..."
 	@BOOTC_IMAGE_TAG="$(BOOTC_IMAGE_TAG)" \
 		BUILD_MODE="$(BUILD_MODE)" \
-		COCKPIT="${COCKPIT:-0}" \
-		Domain="${DOMAIN:-microshift.dc2.vardevanyan.com}" \
-		PODMAN_OPTS="${PODMAN_OPTS:--no-cache}" \
+		COCKPIT="$(COCKPIT)" \
+		DOMAIN="$(DOMAIN)" \
+		WITH_UFS="$(WITH_UFS)" \
 		podman build -f "$(shell pwd)/bootc.Containerfile" \
 		--build-arg BUILD_MODE="$(BUILD_MODE)" \
-		--build-arg COCKPIT="${COCKPIT:-0}" \
-		--build-arg WITH_UFS="${WITH_UFS:-1}" \
-		--build-arg Domain="${DOMAIN:-microshift.dc2.vardevanyan.com}" \
+		--build-arg COCKPIT="$(COCKPIT)" \
+		--build-arg WITH_UFS="$(WITH_UFS)" \
+		--build-arg DOMAIN="$(DOMAIN)" \
 		$(PODMAN_OPTS) \
 		-t "microshift-bootc:$(BOOTC_IMAGE_TAG)" \
 		-t "localhost/microshift-bootc:latest" \
 		.
+	@if [ "$(WITH_UFS)" = "1" ]; then \
+		echo "Verifying UFS modules are in the initramfs..."; \
+		podman run --rm --entrypoint bash localhost/microshift-bootc:latest -c \
+			'lsinitrd /usr/lib/modules/*/initramfs.img 2>/dev/null | grep -q ufshcd-pci && lsinitrd /usr/lib/modules/*/initramfs.img 2>/dev/null | grep -q ufshcd-core' \
+			|| { echo "ERROR: ufshcd-core/ufshcd-pci missing from initramfs"; exit 1; }; \
+		echo "UFS modules present in initramfs."; \
+	fi
 	@echo "BootC image built successfully."
 
 # ==============================================================================

@@ -8,16 +8,23 @@
 # Modules are unsigned, so Secure Boot must be disabled on the target.
 #
 # Env:
-#   WITH_UFS=0   skip the build and emit an empty /out
+#   WITH_UFS     1 builds the modules, 0 skips (empty /out); anything else is an error
 set -o errexit -o nounset -o pipefail
 
 OUT=/out
 mkdir -p "${OUT}/ufs"
 
-if [ "${WITH_UFS:-1}" != "1" ]; then
-  echo "WITH_UFS!=1, skipping UFS module build"
-  exit 0
-fi
+case "${WITH_UFS:-}" in
+  1) ;;
+  0)
+    echo "WITH_UFS=0, skipping UFS module build"
+    exit 0
+    ;;
+  *)
+    echo "ERROR: WITH_UFS must be 0 or 1, got '${WITH_UFS:-}'" >&2
+    exit 1
+    ;;
+esac
 
 KVER=$(find /usr/lib/modules -mindepth 1 -maxdepth 1 -type d -printf '%f\n')
 if [ "$(echo "${KVER}" | wc -l)" -ne 1 ]; then

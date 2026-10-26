@@ -81,11 +81,14 @@ in the image:
    has no devfreq/OPP (otherwise modpost reports unresolved symbols).
 3. Final stage copies the `.ko` files to
    `/usr/lib/modules/<kver>/extra/ufs/`, runs `depmod`, writes
-   `/etc/dracut.conf.d/ufshcd.conf` and regenerates the image's initramfs with
-   `dracut --no-hostonly`. The build fails if `ufshcd-pci` is not in the
-   initramfs, or if the modules were built for a different kernel.
+   `/usr/lib/dracut/dracut.conf.d/99-ufs.conf` and regenerates the image's initramfs with
+   `dracut --no-hostonly`. The drop-in lives at
+   `/usr/lib/dracut/dracut.conf.d/99-ufs.conf`. The build fails if `ufshcd-pci`
+   is not in the initramfs, or if the modules were built for a different kernel.
 
-Build with `WITH_UFS=0` to skip all of this (e.g. for hardware that does not
+`WITH_UFS` must be `0` or `1`; any other value (including empty) fails the
+build rather than silently skipping. `make image` also checks the built image's
+initramfs. Build with `WITH_UFS=0` to skip all of this (e.g. for hardware that does not
 need it). Modules are **unsigned**, so Secure Boot must be off (it is on the
 S100). Because the modules are rebuilt on every image build, `bootc upgrade`
 keeps them in sync with whatever kernel the new image carries.

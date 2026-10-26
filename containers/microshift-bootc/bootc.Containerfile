@@ -232,14 +232,15 @@ RUN mkdir -p /var/lib/microshift/resources/kubeadmin
 ARG WITH_UFS=1
 COPY --from=ufs-builder /out/ /tmp/ufs-out/
 RUN set -eux; \
+  case "${WITH_UFS}" in 0|1) ;; *) echo "ERROR: WITH_UFS must be 0 or 1, got '${WITH_UFS}'"; exit 1;; esac; \
   if [ "${WITH_UFS}" = "1" ]; then \
     KVER=$(find /usr/lib/modules -mindepth 1 -maxdepth 1 -type d -printf '%f\n'); \
     [ "$(echo "${KVER}" | wc -l)" -eq 1 ]; \
     [ "$(cat /tmp/ufs-out/kver)" = "${KVER}" ] || { echo "UFS modules were built for a different kernel than the final image"; exit 1; }; \
-    mkdir -p "/usr/lib/modules/${KVER}/extra/ufs" /etc/dracut.conf.d; \
+    mkdir -p "/usr/lib/modules/${KVER}/extra/ufs" /usr/lib/dracut/dracut.conf.d; \
     cp /tmp/ufs-out/ufs/*.ko "/usr/lib/modules/${KVER}/extra/ufs/"; \
     depmod -a "${KVER}"; \
-    echo 'add_drivers+=" ufshcd-core ufshcd-pci "' > /etc/dracut.conf.d/ufshcd.conf; \
+    echo 'add_drivers+=" ufshcd-core ufshcd-pci "' > /usr/lib/dracut/dracut.conf.d/99-ufs.conf; \
     dracut -vf --no-hostonly "/usr/lib/modules/${KVER}/initramfs.img" "${KVER}"; \
     chmod 0644 "/usr/lib/modules/${KVER}/initramfs.img"; \
     lsinitrd "/usr/lib/modules/${KVER}/initramfs.img" | grep -q 'ufshcd-pci'; \
