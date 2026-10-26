@@ -253,7 +253,7 @@ iso: image push
 		-v /var/lib/containers/storage:/var/lib/containers/storage:z \
 		$(BIB_IMAGE) --type anaconda-iso --output /output \
 		$(IMAGE_NAME):$(if $(IMAGE_TAG),$(IMAGE_TAG),$(_image_version))
-	@mv $(BIB_OUT)/bootiso/install.iso $(ISO_OUTPUT_DIR)/microshift.iso
+	@sudo mv $(BIB_OUT)/bootiso/install.iso $(ISO_OUTPUT_DIR)/microshift.iso
 	@sudo rm -rf $(BIB_OUT)
 	@echo ""
 	@echo "=== ISO: $(ISO_OUTPUT_DIR)/microshift.iso ==="
