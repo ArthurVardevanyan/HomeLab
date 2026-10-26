@@ -66,11 +66,6 @@ spec:
         for Buildah to access the container registry.
         The file should be placed at the root of the Workspace with name config.json.
       optional: true
-    - name: ssh-key
-      description: >-
-        An optional workspace for injecting files into the build context
-        (e.g. SSH keys at .ssh-keys/authorized_keys for bootc builds).
-      optional: true
   results:
     - name: IMAGE_DIGEST
       description: Digest of the image just built.
@@ -96,7 +91,6 @@ spec:
 
         [ "$(workspaces.sslcertdir.bound)" = "true" ] && CERT_DIR_FLAG="--cert-dir=$(workspaces.sslcertdir.path)"
         [ "$(workspaces.dockerconfig.bound)" = "true" ] && DOCKER_CONFIG="$(workspaces.dockerconfig.path)" && export DOCKER_CONFIG
-        [ "$(workspaces.ssh-key.bound)" = "true" ] && SSH_KEY_DIR=$(workspaces.ssh-key.path)
         # build the image (CERT_DIR_FLAG should be omitted if empty and BUILD_EXTRA_ARGS can contain multiple args)
         # shellcheck disable=SC2046,SC2086
         buildah ${CERT_DIR_FLAG} "--storage-driver=$(params.STORAGE_DRIVER)" bud $(params.BUILD_EXTRA_ARGS) \
@@ -134,8 +128,6 @@ spec:
           mountPath: /var/cache
         - name: networks # TODO Circle Back to This.
           mountPath: /etc/containers/networks
-        - name: ssh-key
-          mountPath: /workspace/ssh-key
       securityContext:
         # runAsNonRoot: true
         runAsUser: 0 #1000 # 65532

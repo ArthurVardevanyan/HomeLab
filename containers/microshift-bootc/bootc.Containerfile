@@ -163,7 +163,6 @@ RUN \
   for f in /tmp/microshift-rpms/microshift-4*.rpm; do basename "$f" | cut -d- -f2 | cut -d. -f1,2 > /tmp/ms-ver.txt; break; done && \
   MS_VER=$(cat /tmp/ms-ver.txt) && \
   echo "Detected MicroShift version: ${MS_VER}" && \
-  if [ -z "${MS_VER}" ]; then MS_VER="4.21"; fi && \
   echo "[openshift-mirror-beta]" > /etc/yum.repos.d/microshift-deps.repo && \
   echo "name=OpenShift Mirror Beta Repository" >> /etc/yum.repos.d/microshift-deps.repo && \
   echo "baseurl=https://mirror.openshift.com/pub/openshift-v4/dependencies/rpms/${MS_VER}-el9-beta/" >> /etc/yum.repos.d/microshift-deps.repo && \
@@ -176,26 +175,24 @@ RUN \
     cri-o \
     cri-tools \
     openshift-clients \
-    openvswitch3.4 \
-  if [ "${WITH_KINDNET}" = "1" ] ; then \
-    dnf install -y microshift-kindnet microshift-kindnet-release-info ; \
-  else \
-    dnf install -y microshift-networking ; \
-  fi && \
-  if [ "${WITH_TOPOLVM}" = "1" ] ; then \
-    dnf install -y microshift-topolvm microshift-topolvm-release-info ; \
-  fi && \
-  if [ "${WITH_OLM}" = "1" ] ; then \
-    dnf install -y microshift-olm microshift-olm-release-info ; \
-  fi && \
-  if [ "${WITH_MULTUS}" = "1" ] ; then \
-    dnf install -y microshift-multus microshift-multus-release-info ; \
-  fi && \
+    openvswitch3.4 && \
   # Cleanup
   rm -rf /tmp/microshift-rpms && \
   rm -f /etc/yum.repos.d/microshift-local.repo /etc/yum.repos.d/microshift-deps.repo && \
   dnf clean all && rm -rf /var/cache/* && \
   rm -rf /usr/share/doc/* /usr/share/man/* /usr/share/info/*
+
+# Install Kindnet CNI
+RUN if [ "${WITH_KINDNET}" = "1" ]; then dnf install -y microshift-networking; fi
+
+# Install TopoLVM storage if enabled (disabled - package not in repos)
+# RUN if [ "${WITH_TOPOLVM}" = "1" ]; then dnf install -y microshift-topolvm microshift-topolvm-release-info; fi
+
+# Install OLM operator lifecycle manager if enabled (disabled - package not in repos)
+# RUN if [ "${WITH_OLM}" = "1" ]; then dnf install -y microshift-olm microshift-olm-release-info; fi
+
+# Install Multus CNI if enabled (disabled - package not in repos)
+# RUN if [ "${WITH_MULTUS}" = "1" ]; then dnf install -y microshift-multus microshift-multus-release-info; fi
 
 # Make scripts executable
 RUN chmod +x /usr/local/bin/microshift-entrypoint.sh /usr/local/bin/setup-lvm.sh /usr/local/bin/postinstall-custom.sh
