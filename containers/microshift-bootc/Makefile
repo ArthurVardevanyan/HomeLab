@@ -73,6 +73,12 @@ BIB_IMAGE ?= quay.io/centos-bootc/bootc-image-builder:latest
 
 .PHONY: _clone _clone-assets _ensure-sha fetch-sha srpm rpm rpm-copr image push iso clean
 
+# SSH keys (collect user's ~/.ssh/*.pub for root SSH access on booted node)
+SSH_KEY_FILE ?= $(shell pwd)/.ssh-keys/authorized_keys
+$(SSH_KEY_FILE):
+	@mkdir -p $(shell dirname "$@")
+	@if ls ~/.ssh/*.pub 2>/dev/null; then cat ~/.ssh/*.pub | sort -u > "$@"; else touch "$@"; fi
+
 # ==============================================================================
 # SHA auto-fetch: query quay.io API for the latest stream10 SHA
 # ==============================================================================
@@ -179,7 +185,8 @@ rpm-release: rpm-copr
 # ==============================================================================
 # BootC image build (using custom Containerfile with baked-in configs)
 # ==============================================================================
-image: rpm
+image: $(SSH_KEY_FILE) rpm
+	@test -f $(SSH_KEY_FILE) || touch $(SSH_KEY_FILE)
 	@echo "Building BootC image using custom Containerfile..."
 	@BOOTC_IMAGE_TAG="$(BOOTC_IMAGE_TAG)" \
 		BUILD_MODE="$(BUILD_MODE)" \
