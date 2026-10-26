@@ -101,7 +101,27 @@ The Anaconda ISO still cannot see the disk (installer kernel has no UFS), so
 install from a Fedora Live USB, whose kernel does:
 
 1. Boot a Fedora Live USB on the S100.
-2. Install the image straight to disk:
+2. Keep container storage in RAM. The live root is a small overlay and cannot
+   hold the ~2.4 GB image. Mount tmpfs at the **default** paths so nothing else
+   needs to change, then pull as root:
+
+   ```bash
+   sudo mkdir -p /var/lib/containers /var/tmp
+   sudo mount -t tmpfs -o size=6G tmpfs /var/lib/containers
+   sudo mount -t tmpfs -o size=2G tmpfs /var/tmp   # podman stages layers here
+   sudo podman pull <registry>/homelab/microshift-bootc:<tag>
+   ```
+
+   tmpfs only consumes RAM as it fills. Always use `sudo`: rootless podman
+   stores images under `~/.local/share/containers`, which `bootc` cannot see.
+
+   The storage location and the `-v ...:/var/lib/containers` mount in the next
+   step must point at the same place. If you use a custom root instead (for
+   example `sudo podman --root /dev/shm/podman-ram ...`), pass `--root` to both
+   the pull and the run, and mount `-v /dev/shm/podman-ram:/var/lib/containers`.
+   Otherwise `bootc` sees an empty store. Note `/dev/shm` is capped at half of
+   RAM by default.
+3. Install the image straight to disk:
 
    ```bash
    sudo podman run --rm --privileged --pid=host --entrypoint bootc \
@@ -115,7 +135,7 @@ install from a Fedora Live USB, whose kernel does:
    `--entrypoint bootc` is required for images built before the image's
    `ENTRYPOINT` was removed; otherwise podman runs the old entrypoint script and
    hangs on "Waiting for MicroShift to start".
-3. Reboot. The installed system boots with its own kernel, whose initramfs
+4. Reboot. The installed system boots with its own kernel, whose initramfs
    now contains the UFS modules.
 
 ### Verify

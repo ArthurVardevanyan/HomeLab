@@ -26,6 +26,7 @@
 #   BUILD_MODE          RPM source: "local" (build) or "release" (pre-built)
 #   WITH_UFS            1 (default) builds UFS modules + initramfs for MinisForum S100; 0 skips
 #   INSTALL_DISK        Target disk printed by install-live (default: /dev/sda)
+#   STORE_SIZE          tmpfs size for container storage in install-live (default: 6G)
 #
 # Build Modes:
 #   BUILD_MODE=local  (default) Builds RPMs from source using `make rpm`
@@ -285,10 +286,21 @@ iso: image push
 # INSTALL_DISK defaults to /dev/sda (MinisForum S100 UFS disk).
 # ==============================================================================
 INSTALL_DISK ?= /dev/sda
+STORE_SIZE ?= 6G
 
 install-live:
 	@echo "From a Fedora Live USB, run (DESTROYS all data on $(INSTALL_DISK)):"
 	@echo ""
+	@echo "  # 1. Keep container storage in RAM (the live root is too small for the image)."
+	@echo "  #    Must be the default paths so bootc finds the image via the -v mount below."
+	@echo "  sudo mkdir -p /var/lib/containers /var/tmp"
+	@echo "  sudo mount -t tmpfs -o size=$(STORE_SIZE) tmpfs /var/lib/containers"
+	@echo "  sudo mount -t tmpfs -o size=2G tmpfs /var/tmp"
+	@echo ""
+	@echo "  # 2. Pull the image (as root, so it lands in /var/lib/containers)."
+	@echo "  sudo podman pull $(IMAGE_NAME):$(if $(IMAGE_TAG),$(IMAGE_TAG),$(_image_version))"
+	@echo ""
+	@echo "  # 3. Install to disk."
 	@echo "  sudo podman run --rm --privileged --pid=host --entrypoint bootc \\"
 	@echo "    -v /dev:/dev -v /var/lib/containers:/var/lib/containers \\"
 	@echo "    --security-opt label=type:unconfined_t \\"
