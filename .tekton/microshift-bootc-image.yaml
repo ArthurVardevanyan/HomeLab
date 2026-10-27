@@ -31,7 +31,7 @@ spec:
       value: ""
     - name: COCKPIT
       value: "0"
-    - name: Domain
+    - name: DOMAIN
       value: "microshift.dc2.vardevanyan.com"
     - name: INJECT_FILES
       valueFrom:
@@ -67,7 +67,7 @@ spec:
         description: "Enable Cockpit installation (default: 0)."
         type: string
         default: "0"
-      - name: Domain
+      - name: DOMAIN
         description: Domain for API server.
         type: string
         default: "microshift.dc2.vardevanyan.com"
@@ -157,7 +157,7 @@ spec:
             value: >-
               --build-arg BUILD_MODE=$(params.BUILD_MODE)
               --build-arg COCKPIT=$(params.COCKPIT)
-              --build-arg Domain=$(params.Domain)
+              --build-arg DOMAIN=$(params.DOMAIN)
               --build-arg GH_TOKEN=$(params.GH_TOKEN)
           - name: EXTRA_TAGS
             value: "$(params.IMAGE_REPO):$(tasks.detect-version.results.VERSION)-$(tasks.detect-version.results.DATETIME)"
