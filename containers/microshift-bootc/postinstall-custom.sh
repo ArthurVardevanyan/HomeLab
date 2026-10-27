@@ -159,8 +159,6 @@ apiServer:
   subjectAltNames:
     - ${domain}
     - ${node_hostname}
-    - 127.0.0.1
-    - localhost
 EOF
 
   log_success "SubjectAltNames config generated: ${config_path}"

@@ -174,7 +174,7 @@ sudo bootc status    # Booted digest should match the registry
 
 Image configuration lives in `/etc` or `/usr` so upgrades deliver it. Anything under `/var` or `/root` is only populated on first install, so the root kubeconfig symlink is created by a `tmpfiles.d` rule (`/usr/lib/tmpfiles.d/microshift-bootc.conf`), which also restores CRI-O's `policy.json` and `registries.d` if missing.
 
-- **API server SANs**: `/etc/microshift/config.d/10-san.yaml`, generated from `DOMAIN` and `NODE_HOSTNAME` at build time.
+- **API server SANs**: `/etc/microshift/config.d/10-san.yaml`, generated from `DOMAIN` and `NODE_HOSTNAME` at build time (127.0.0.1/localhost are excluded — MicroShift rejects them in `subjectAltNames`).
 - **Greenboot**: `/etc/greenboot/greenboot.conf` sets `MICROSHIFT_WAIT_TIMEOUT_SEC=1200` and `GREENBOOT_MAX_BOOT_ATTEMPTS=3`. A deployment that is not healthy after three boots is rolled back automatically.
 
 ## Variables
