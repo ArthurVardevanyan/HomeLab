@@ -10,7 +10,6 @@
 # Build Args:
 #   COCKPIT       Enable Cockpit installation (default: 0)
 #   DOMAIN        Domain for API server (default: microshift.dc2.vardevanyan.com)
-#   NODE_HOSTNAME Short hostname of the node, added to API SANs (default: microshift)
 #   BUILD_MODE    RPM source mode: local or release (default: release)
 # ==============================================================================
 
@@ -129,7 +128,6 @@ LABEL org.opencontainers.image.source="https://github.com/ArthurVardevanyan/Home
   org.opencontainers.image.licenses="Apache-2.0"
 
 ARG DOMAIN=microshift.dc2.vardevanyan.com
-ARG NODE_HOSTNAME=microshift
 ARG COCKPIT=0
 ARG WITH_KINDNET=1
 ARG WITH_TOPOLVM=1
@@ -143,7 +141,6 @@ ENV \
   VG_NAME=myvg1 \
   EXTRA_CONFIG=/etc/microshift/config.d/10-san.yaml \
   DOMAIN=${DOMAIN} \
-  NODE_HOSTNAME=${NODE_HOSTNAME} \
   API_SERVER_PORT=6443 \
   KUBECONFIG=/var/lib/microshift/resources/kubeadmin/kubeconfig \
   LAST_IMAGE_FILE=/var/lib/microshift-okd/.last_image \

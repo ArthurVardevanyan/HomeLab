@@ -24,7 +24,6 @@
 #   PUSH_REGISTRY       Registry host (default: registry.arthurvardevanyan.com)
 #   PUSH_ORG            Registry org (default: homelab)
 #   BUILD_MODE          RPM source: "local" (build) or "release" (pre-built)
-#   NODE_HOSTNAME       Short node hostname added to API SANs (default: microshift)
 #   WITH_UFS            1 (default) builds UFS modules + initramfs for MinisForum S100; 0 skips
 #   INSTALL_DISK        Target disk printed by install-live (default: /dev/sda)
 #   STORE_SIZE          tmpfs size for container storage in install-live (default: 6G)
@@ -68,8 +67,6 @@ BUILD_MODE ?= local
 WITH_UFS ?= 1
 COCKPIT ?= 0
 DOMAIN ?= microshift.dc2.vardevanyan.com
-NODE_HOSTNAME ?= microshift
-
 # --- Extra podman build flags (e.g. --no-cache for clean rebuilds) ---
 PODMAN_OPTS ?=
 
@@ -207,14 +204,12 @@ image: $(SSH_KEY_FILE) rpm
 		BUILD_MODE="$(BUILD_MODE)" \
 		COCKPIT="$(COCKPIT)" \
 		DOMAIN="$(DOMAIN)" \
-		NODE_HOSTNAME="$(NODE_HOSTNAME)" \
 		WITH_UFS="$(WITH_UFS)" \
 		podman build -f "$(shell pwd)/bootc.Containerfile" \
 		--build-arg BUILD_MODE="$(BUILD_MODE)" \
 		--build-arg COCKPIT="$(COCKPIT)" \
 		--build-arg WITH_UFS="$(WITH_UFS)" \
 		--build-arg DOMAIN="$(DOMAIN)" \
-		--build-arg NODE_HOSTNAME="$(NODE_HOSTNAME)" \
 		$(PODMAN_OPTS) \
 		-t "microshift-bootc:$(BOOTC_IMAGE_TAG)" \
 		-t "localhost/microshift-bootc:latest" \
