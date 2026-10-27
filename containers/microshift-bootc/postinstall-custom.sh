@@ -3,12 +3,13 @@
 # Post-install Customizations for MicroShift BootC
 # ==============================================================================
 # This script runs during container build to configure:
-# - Firewalld rules for pod networks and services
 # - Sysctl settings for MicroShift
 # - CRI-O policy.json and registries.d (required by el9 crio on CentOS 10)
 # - Cockpit installation (opt-in)
 # - DNS configuration
 # - Additional utilities
+# Note: kubeconfig symlink is handled via /etc/tmpfiles.d/microshift-bootc.conf
+#       (persistent across bootc upgrades; target file created at runtime).
 # ==============================================================================
 
 set -euo pipefail
@@ -54,7 +55,7 @@ EOF
 }
 
 install_cockpit() {
-  if [[ "${COCKPIT}" != "1" ]] ; then
+  if [[ "${COCKPIT}" != "1" ]]; then
     log_info "Skipping Cockpit installation (COCKPIT=0)"
     return 0
   fi
@@ -96,7 +97,7 @@ setup_crio_policy() {
 
   # CRI-O (built for el9) only checks /etc/containers/policy.json, but
   # CentOS 10's containers-common-6.0 moved it to /usr/share/containers/.
-  if [ ! -f /etc/containers/policy.json ] && [ -f /usr/share/containers/policy.json ]; then
+  if [[ ! -f /etc/containers/policy.json && -f /usr/share/containers/policy.json ]]; then
     cp /usr/share/containers/policy.json /etc/containers/policy.json
   fi
 
@@ -104,8 +105,8 @@ setup_crio_policy() {
   # the sigstore signatures that policy.json requires for the Red Hat registry.
   mkdir -p /etc/containers/registries.d
   for f in /usr/share/containers/registries.d/*.yaml; do
-    if [ -f "$f" ] && [ ! -f "/etc/containers/registries.d/$(basename "$f")" ]; then
-      cp "$f" /etc/containers/registries.d/
+    if [[ -f "${f}" && ! -f "/etc/containers/registries.d/$(basename "${f}")" ]]; then
+      cp "${f}" /etc/containers/registries.d/
     fi
   done
 
@@ -195,12 +196,8 @@ install_cockpit
 # 6. Generate subjectAltNames config (for API server)
 generate_subject_alt_names_config
 
-# 7. Create link to default kubeconfig
-if [[ ! -f /root/.kube/config ]] ; then
-  root_dir="$(readlink -f /root)"
-  mkdir -p "${root_dir}/.kube"
-  ln -sf /var/lib/microshift/resources/kubeadmin/kubeconfig /root/.kube/config
-fi
+# Note: kubeconfig symlink is handled via /etc/tmpfiles.d/microshift-bootc.conf
+#       (persistent across bootc upgrades; target file created at runtime).
 
 # 8. Enable MicroShift service
 systemctl enable microshift

@@ -35,7 +35,8 @@ case "${WITH_UFS:-}" in
 esac
 
 KVER=$(find /usr/lib/modules -mindepth 1 -maxdepth 1 -type d -printf '%f\n')
-if [ "$(echo "${KVER}" | wc -l)" -ne 1 ]; then
+KVER_LINES=$(echo "${KVER}" | wc -l)
+if [[ ${KVER_LINES} -ne 1 ]]; then
   echo "ERROR: expected exactly one kernel in /usr/lib/modules, found:" >&2
   echo "${KVER}" >&2
   exit 1
@@ -55,10 +56,10 @@ if ! dnf -y install gcc make elfutils-libelf-devel openssl-devel bc flex bison \
   exit 1
 fi
 KDEVEL="/usr/src/kernels/${KVER}"
-[ -f "${KDEVEL}/.config" ] || {
+if [[ ! -f "${KDEVEL}/.config" ]]; then
   echo "ERROR: ${KDEVEL}/.config not found after installing kernel-devel" >&2
   exit 1
-}
+fi
 
 WORK=$(mktemp -d)
 cd "${WORK}"
@@ -72,20 +73,21 @@ for base in \
   fi
   rm -f "${SRPM}"
 done
-[ -s "${SRPM}" ] || {
+if [[ ! -s "${SRPM}" ]]; then
   echo "ERROR: could not download ${SRPM}" >&2
   exit 1
-}
+fi
 
 # Only the UFS driver sources are needed, not the whole tree.
 rpm2cpio "${SRPM}" | cpio -idm --quiet "linux-*.tar.xz"
 tar -xf linux-*.tar.xz --wildcards '*/drivers/ufs' '*/include/ufs'
 # Directories only: the tarball ("linux-*.tar.xz") sits next to the source dir.
 SRC=$(find "${WORK}" -mindepth 1 -maxdepth 1 -type d -name 'linux-*')
-[ "$(echo "${SRC}" | wc -l)" -eq 1 ] && [ -d "${SRC}/drivers/ufs" ] || {
+SRC_COUNT=$(echo "${SRC}" | wc -l)
+if [[ ${SRC_COUNT} -ne 1 || ! -d "${SRC}/drivers/ufs" ]]; then
   echo "ERROR: expected exactly one extracted kernel source dir with drivers/ufs, got: '${SRC}'" >&2
   exit 1
-}
+fi
 
 # ufs_trace.h is included via a path relative to the kernel build tree, so add
 # the driver directory to the include path.
@@ -95,10 +97,10 @@ KCPPFLAGS="-I${SRC}/drivers/ufs" make -C "${KDEVEL}" M="${SRC}/drivers/ufs" \
 
 # Reference module from the same kernel, to compare struct module layout.
 STOCK_XZ=$(find "/usr/lib/modules/${KVER}/kernel/drivers/scsi" -name 'sd_mod.ko*' -print -quit)
-[ -n "${STOCK_XZ}" ] || {
+if [[ -z "${STOCK_XZ}" ]]; then
   echo "ERROR: no stock reference module found" >&2
   exit 1
-}
+fi
 STOCK="${WORK}/stock.ko"
 case "${STOCK_XZ}" in
   *.xz) xz -dc "${STOCK_XZ}" >"${STOCK}" ;;
@@ -113,17 +115,17 @@ this_module_size() {
     END { if (size != "") print size }'
 }
 WANT=$(this_module_size "${STOCK}")
-[ -n "${WANT}" ] || {
+if [[ -z "${WANT}" ]]; then
   echo "ERROR: could not read this_module size from stock module" >&2
   exit 1
-}
+fi
 
 for m in core/ufshcd-core host/ufshcd-pci host/ufshcd-pltfrm; do
   ko="${SRC}/drivers/ufs/${m}.ko"
-  [ -f "${ko}" ] || {
+  if [[ ! -f "${ko}" ]]; then
     echo "ERROR: ${ko} was not built" >&2
     exit 1
-  }
+  fi
   vm=$(modinfo -F vermagic "${ko}")
   case "${vm}" in
     "${KVER} "*) ;;
@@ -135,7 +137,7 @@ for m in core/ufshcd-core host/ufshcd-pci host/ufshcd-pltfrm; do
   # This is the exact check the kernel performs at load time (ELF struct module
   # size). A mismatch means the module build config differs from the kernel's.
   got=$(this_module_size "${ko}")
-  if [ "${got}" != "${WANT}" ]; then
+  if [[ "${got}" != "${WANT}" ]]; then
     echo "ERROR: ${ko} this_module size 0x${got} != kernel's 0x${WANT}" >&2
     echo "The module was built with a config that differs from the kernel's." >&2
     exit 1

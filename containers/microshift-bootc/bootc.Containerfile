@@ -226,6 +226,19 @@ RUN mkdir -p /var/lib/microshift-okd
 # Set up MicroShift directories
 RUN mkdir -p /var/lib/microshift/resources/kubeadmin
 
+# Run post-install script to configure sysctl, firewalld, CRI-O policy, DNS, etc.
+RUN if [ -x /usr/local/bin/postinstall-custom.sh ]; then /usr/local/bin/postinstall-custom.sh; fi
+
+# Configure tmpfiles.d for kubeconfig symlink — persistent across bootc upgrades
+# because it is in /etc which is part of the bootc config layer.
+# The target file does not exist at build time; it is created when MicroShift starts.
+RUN mkdir -p /etc/tmpfiles.d && \
+  cat > /etc/tmpfiles.d/microshift-bootc.conf <<'EOF'
+# Symlink root user's kubeconfig to MicroShift's admin kubeconfig
+# Created via tmpfiles.d so it persists across bootc upgrades
+L /root/.kube/config - - - - /var/lib/microshift/resources/kubeadmin/kubeconfig
+EOF
+
 # Install the out-of-tree UFS modules (MinisForum S100) and rebuild the initramfs
 # so the machine can see its internal UFS disk at boot. Modules are unsigned, so
 # Secure Boot must be off. No-op when WITH_UFS=0.

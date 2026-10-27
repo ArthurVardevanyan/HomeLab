@@ -115,12 +115,12 @@ spec:
               script: |
                 # Detect version from microshift GitHub releases — mirrors the Makefile exactly.
                 URL="https://api.github.com/repos/microshift-io/microshift/releases/latest"
-                V=$(curl -fsSL --max-time 20 "$URL" | grep '"tag_name"' | head -1 | awk -F'"' '{print $4}' | tr -d '\r\n')
+                V=$(curl -fsSL --max-time 20 "$URL" | grep '"tag_name"' | head -1 | awk -F'"' '{print $4}')
                 [ -n "$V" ] || V="unknown"
                 V=$(echo "$V" | tr '-' '_')
-                echo "$V" > "$(results.VERSION.path)"
+                printf '%s' "$V" > "$(results.VERSION.path)"
                 # Datetime suffix: matches the local IMAGE_SUFFIX default (YYYY-MM-DD_HHMMSS)
-                date -u +%Y-%m-%d_%H%M%S > "$(results.DATETIME.path)"
+                printf '%s' "$(date -u +%Y-%m-%d_%H%M%S)" > "$(results.DATETIME.path)"
 
       - name: git-clone
         taskRef:
