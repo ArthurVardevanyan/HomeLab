@@ -186,9 +186,9 @@ fi
 # 5. Install Cockpit (opt-in)
 install_cockpit
 
-# 6. Set system hostname (write to /etc/hostname so it persists;
-#    hostnamectl is not available during the build stage)
-echo "${DOMAIN}" > /etc/hostname
+# 6. The system hostname is NOT set here: buildah bind-mounts /etc/hostname
+#    during RUN steps, so writes never reach the image layer. It is set with
+#    a COPY in bootc.Containerfile instead.
 
 # 7. Generate subjectAltNames config (for API server)
 generate_subject_alt_names_config

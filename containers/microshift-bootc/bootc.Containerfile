@@ -226,6 +226,13 @@ RUN mkdir -p /var/lib/microshift-okd
 # Set up MicroShift directories
 RUN mkdir -p /var/lib/microshift/resources/kubeadmin
 
+# Persistent hostname. Must be COPY (not a RUN write): buildah bind-mounts
+# /etc/hostname, /etc/hosts and /etc/resolv.conf during RUN steps, so anything
+# written there is discarded and never lands in the image layer.
+COPY <<EOT /etc/hostname
+${DOMAIN}
+EOT
+
 # Run post-install script to configure sysctl, CRI-O policy, SANs, DNS, etc.
 # The build fails if the script is missing or its key outputs are not produced
 # (a missing policy.json otherwise only shows up on the node, as CRI-O pod
