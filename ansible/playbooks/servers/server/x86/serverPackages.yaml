@@ -80,3 +80,10 @@
           # renovate: datasource=pypi depName=jc
           - jc==1.26.0
         state: present
+
+    - name: Download Gitea CLI
+      ansible.builtin.get_url:
+        # renovate: custom-github-release depName=gitea/gitea-cli
+        url: https://dl.gitea.com/gitea-cli/0.2.0/gitea-cli-0.2.0-linux-amd64
+        dest: /usr/local/bin/gitea-cli
+        mode: "0755"

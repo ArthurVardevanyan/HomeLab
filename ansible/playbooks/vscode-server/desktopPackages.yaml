@@ -79,24 +79,31 @@
           - unzip # 6.0-63.fc43
           # TODO: renovate: datasource=repology depName=fedora_43/butane
           - butane # 0.21.0-1.fc43
-          # TODO: renovate: datasource=repology depName=fedora_43/nmstate
-          - nmstatectl # 2.2.24-1.fc43
+          # TODO: renovate: datasource=repology depName=fedora_43/networkmanager-tui
+          - nmstate # 2.2.43-1.fc43
           # TODO: renovate: datasource=repology depName=fedora_43/traceroute
           - traceroute # 2.1.5-1.fc43
           # TODO: renovate: datasource=repology depName=fedora_43/rust:coreos-installer
           - coreos-installer # 0.25.0-2.fc43
-          # TODO: renovate: datasource=repology depName=fedora_43/bind
-          - dig # 9.18.26-1.fc43
+          # TODO: renovate: datasource=repology depName=fedora_43/bind-utils
+          - bind-utils # 9.21.12-1.fc43
           # TODO: renovate: datasource=repology depName=fedora_43/iperf3
           - iperf3 # 3.16-2.fc43
-          # TODO: renovate: datasource=repology depName=fedora_43/ntpsec
-          - ntpdate # 4.2.8p18-1.fc43
+          # TODO: renovate: datasource=repology depName=fedora_43/chrony
+          - chrony # 4.4.0-1.fc43
 
     - name: Download YQ
       ansible.builtin.get_url:
         # renovate: custom-github-release depName=mikefarah/yq
         url: https://github.com/mikefarah/yq/releases/download/v4.54.1/yq_linux_amd64
         dest: /usr/local/bin/yq
+        mode: "0755"
+
+    - name: Download Gitea CLI
+      ansible.builtin.get_url:
+        # renovate: custom-github-release depName=gitea/gitea-cli
+        url: https://dl.gitea.com/gitea-cli/0.2.0/gitea-cli-0.2.0-linux-amd64
+        dest: /usr/local/bin/gitea-cli
         mode: "0755"
 
     - name: Download ArgoCD Vault Plugin
@@ -108,7 +115,8 @@
 
     - name: Download Minio Client
       ansible.builtin.get_url:
-        url: https://dl.min.io/client/mc/release/linux-amd64/mc
+        # renovate: custom-github-release depName=minio/mc
+        url: https://github.com/minio/mc/releases/download/RELEASE.2025-08-13T08-35-41Z/mc.linux-amd64.RELEASE.2025-08-13T08-35-41Z
         dest: /usr/local/bin/mc
         mode: "0755"
 
