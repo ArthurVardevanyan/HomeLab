@@ -336,6 +336,9 @@ initContainers:
       memory: 64Mi
 
 # Configure commit/action signing prerequisites
+# NOTE: reference only, manifests under base/ are rendered by hand. The real
+# signing config lives in base/secret.yaml (repository.signing) and
+# base/deployment.yaml (configure-gpg-environment init container).
 ## @section Signing
 #
 ## @param signing.enabled Enable commit/action signing
@@ -343,14 +346,9 @@ initContainers:
 ## @param signing.privateKey Inline private gpg key for signed Gitea actions
 ## @param signing.existingSecret Use an existing secret to store the value of `signing.privateKey`
 signing:
-  enabled: false
+  enabled: true
   gpgHome: /data/git/.gnupg
-  privateKey: ""
-  # privateKey: |-
-  #   -----BEGIN PGP PRIVATE KEY BLOCK-----
-  #   ...
-  #   -----END PGP PRIVATE KEY BLOCK-----
-  existingSecret: ""
+  existingSecret: gitea-signing-key
 
 ## @section Gitea
 #
