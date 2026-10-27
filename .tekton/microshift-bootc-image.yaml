@@ -33,11 +33,6 @@ spec:
       value: "0"
     - name: DOMAIN
       value: "microshift.dc2.vardevanyan.com"
-    - name: INJECT_FILES
-      valueFrom:
-        secretKeyRef:
-          name: microshift-bootc-inject
-          key: authorized_keys
 
   pipelineSpec:
     params:
@@ -71,12 +66,6 @@ spec:
         description: Domain for API server.
         type: string
         default: "microshift.dc2.vardevanyan.com"
-      - name: INJECT_FILES
-        description: |
-          Files to inject into the build context.
-          Format: `path relative to CONTEXT=base64content`.
-        type: string
-        default: ""
 
     results:
       - description: The common vulnerabilities and exposures (CVE) result
@@ -122,6 +111,28 @@ spec:
                 # Datetime suffix: matches the local IMAGE_SUFFIX default (YYYY-MM-DD_HHMMSS)
                 printf '%s' "$(date -u +%Y-%m-%d_%H%M%S)" > "$(results.DATETIME.path)"
 
+      # PipelineRun params cannot use valueFrom, so read the Secret in a step env
+      # and hand it to buildah as an INJECT_FILES result (`path=base64content`).
+      # The content is a public key, so exposing it as a result is fine.
+      - name: read-inject-files
+        taskSpec:
+          results:
+            - name: INJECT_FILES
+              description: "buildah INJECT_FILES value: .ssh-keys/authorized_keys=<base64>."
+          steps:
+            - name: read
+              image: registry.arthurvardevanyan.com/homelab/toolbox:not_latest
+              env:
+                - name: AUTHORIZED_KEYS
+                  valueFrom:
+                    secretKeyRef:
+                      name: microshift-bootc-inject
+                      key: authorized_keys
+              script: |
+                set -o errexit -o nounset -o pipefail
+                [ -n "$AUTHORIZED_KEYS" ] || { echo "authorized_keys secret is empty" >&2; exit 1; }
+                printf '%s' ".ssh-keys/authorized_keys=$(printf '%s\n' "$AUTHORIZED_KEYS" | base64 -w0)" > "$(results.INJECT_FILES.path)"
+
       - name: git-clone
         taskRef:
           name: git-clone
@@ -141,6 +152,7 @@ spec:
         runAfter:
           - git-clone
           - detect-version
+          - read-inject-files
         taskRef:
           name: buildah
           kind: Task
@@ -152,7 +164,7 @@ spec:
           - name: CONTEXT
             value: $(params.CONTEXT)
           - name: INJECT_FILES
-            value: $(params.INJECT_FILES)
+            value: $(tasks.read-inject-files.results.INJECT_FILES)
           - name: BUILD_EXTRA_ARGS
             value: >-
               --build-arg BUILD_MODE=$(params.BUILD_MODE)
