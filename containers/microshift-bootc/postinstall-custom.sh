@@ -186,7 +186,11 @@ fi
 # 5. Install Cockpit (opt-in)
 install_cockpit
 
-# 6. Generate subjectAltNames config (for API server)
+# 6. Set system hostname (write to /etc/hostname so it persists;
+#    hostnamectl is not available during the build stage)
+echo "${DOMAIN}" > /etc/hostname
+
+# 7. Generate subjectAltNames config (for API server)
 generate_subject_alt_names_config
 
 # Note: kubeconfig symlink is handled via /etc/tmpfiles.d/microshift-bootc.conf
