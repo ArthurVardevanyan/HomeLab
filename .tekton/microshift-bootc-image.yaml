@@ -115,7 +115,7 @@ spec:
               script: |
                 # Detect version from microshift GitHub releases — mirrors the Makefile exactly.
                 URL="https://api.github.com/repos/microshift-io/microshift/releases/latest"
-                V=$(curl -fsSL --max-time 20 "$URL" | grep '"tag_name"' | head -1 | awk -F'"' '{print $4}')
+                V=$(curl -fsSL --max-time 20 "$URL" | grep '"tag_name"' | head -1 | awk -F'"' '{print $4}' | tr -d '\r\n')
                 [ -n "$V" ] || V="unknown"
                 V=$(echo "$V" | tr '-' '_')
                 echo "$V" > "$(results.VERSION.path)"

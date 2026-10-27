@@ -27,6 +27,7 @@
 #   WITH_UFS            1 (default) builds UFS modules + initramfs for MinisForum S100; 0 skips
 #   INSTALL_DISK        Target disk printed by install-live (default: /dev/sda)
 #   STORE_SIZE          tmpfs size for container storage in install-live (default: 6G)
+#   PODMAN_OPTS         Extra podman build flags (e.g. --no-cache for clean rebuilds)
 #
 # Build Modes:
 #   BUILD_MODE=local  (default) Builds RPMs from source using `make rpm`
@@ -66,6 +67,9 @@ BUILD_MODE ?= local
 WITH_UFS ?= 1
 COCKPIT ?= 0
 DOMAIN ?= microshift.dc2.vardevanyan.com
+
+# --- Extra podman build flags (e.g. --no-cache for clean rebuilds) ---
+PODMAN_OPTS ?=
 
 # --- Internal ---
 CLONE_DIR      ?= /tmp/microshift-$(shell echo $(USHIFT_GITREF) | tr '/-' '__')
