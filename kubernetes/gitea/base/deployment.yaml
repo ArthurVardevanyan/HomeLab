@@ -42,45 +42,33 @@ spec:
       # securityContext:
       #   fsGroup: 1000
       initContainers:
-        # - name: init-directories
-        #   image: "docker.io/gitea/gitea:1.22.1-rootless@sha256:b993066ee54589fd9d7598995d835f0702ced992bab64e329e9d8ea010ee994f"
-        #   imagePullPolicy: IfNotPresent
-        #   command: ["/usr/sbin/init_directory_structure.sh"]
-        #   env:
-        #     - name: GITEA_APP_INI
-        #       value: /data/gitea/conf/app.ini
-        #     - name: GITEA_CUSTOM
-        #       value: /data/gitea
-        #     - name: GITEA_WORK_DIR
-        #       value: /data
-        #     - name: GITEA_TEMP
-        #       value: /tmp/gitea
-        #   volumeMounts:
-        #     - name: init
-        #       mountPath: /usr/sbin
-        #     - name: temp
-        #       mountPath: /tmp
-        #     - name: data
-        #       mountPath: /data
-        #     - mountPath: /cert
-        #       name: gitea-cert
-        #   securityContext:
-        #     allowPrivilegeEscalation: false
-        #     capabilities:
-        #       drop:
-        #         - ALL
-        #     privileged: false
-        #     readOnlyRootFilesystem: true
-        #     runAsNonRoot: true
-        #     seccompProfile:
-        #       type: RuntimeDefault
-        #   resources:
-        #     limits:
-        #       cpu: 250m
-        #       memory: 128Mi
-        #     requests:
-        #       cpu: 10m
-        #       memory: 64Mi
+        - name: configure-gpg-environment
+          image: docker.io/gitea/gitea:28.1.0-rootless@sha256:b1a90409ae9afcd5a5725404c3639da7245248848b99e35332968891290b953e
+          imagePullPolicy: IfNotPresent
+          command: ["/usr/sbin/configure_gpg_environment.sh"]
+          volumeMounts:
+            - name: init
+              mountPath: /usr/sbin
+            - name: signing-key
+              mountPath: /raw
+              readOnly: true
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+            privileged: false
+            readOnlyRootFilesystem: true
+            runAsNonRoot: true
+            seccompProfile:
+              type: RuntimeDefault
+          resources:
+            limits:
+              cpu: 250m
+              memory: 128Mi
+            requests:
+              cpu: 10m
+              memory: 64Mi
         - name: init-app-ini
           # renovate: datasource=docker depName=docker.io/gitea/gitea
           image: docker.io/gitea/gitea:28.1.0-rootless@sha256:b1a90409ae9afcd5a5725404c3639da7245248848b99e35332968891290b953e
@@ -194,6 +182,8 @@ spec:
               value: /tmp/gitea
             - name: HOME
               value: /data/gitea/git
+            - name: GNUPGHOME
+              value: /data/git/.gnupg
           ports:
             - name: ssh
               containerPort: 2222
@@ -247,6 +237,10 @@ spec:
             - mountPath: /cert
               name: gitea-cert
       volumes:
+        - name: signing-key
+          secret:
+            secretName: gitea-signing-key
+            defaultMode: 288
         - name: init
           secret:
             secretName: gitea-init
