@@ -20,7 +20,8 @@ VG_NAME="${VG_NAME:-myvg1}"
 log_info() { echo "[INFO] $1"; }
 log_error() { echo "[ERROR] $1" >&2; }
 
-if [[ "$(id -u)" -ne 0 ]]; then
+uid="$(id -u)"
+if [[ "${uid}" -ne 0 ]]; then
   log_error "This script must be run as root"
   exit 1
 fi

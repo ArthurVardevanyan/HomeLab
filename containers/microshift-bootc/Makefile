@@ -323,7 +323,7 @@ install-live:
 	@echo "    install to-disk --wipe $(INSTALL_DISK)"
 	@echo ""
 	@echo "The image must be built with WITH_UFS=1 (default) so its initramfs has the UFS modules."
-	@echo "See notes/minisforum-s100-ufssupport.md."
+	@echo "See the "MinisForum S100 UFS Support" section of containers/microshift-bootc/README.md."
 
 # ==============================================================================
 # Cleanup
