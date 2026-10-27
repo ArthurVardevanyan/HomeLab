@@ -88,13 +88,14 @@ make clean          # Clean up build artifacts and temp clone
 │  2. Create local MicroShift repo + index it         │
 │  3. Auto-detect MicroShift version from RPM name   │
 │  4. Configure OpenShift mirror repo URL            │
-│  5. Install microshift + deps (cri-o, cri-tools,   │
-│     openshift-clients, openvswitch3.4)             │
-│  6. Install optional components (Kindnet, TopoLVM,  │
-│     OLM, Multus)                                    │
-│  7. Cleanup caches and docs                        │
-│  8. Copy helper scripts, enable microshift.service │
-│  9. Set up LVM/MicroShift directories              │
+│  5. Install microshift + microshift-networking     │
+│     (OVN-K) + deps (cri-o, cri-tools,              │
+│     openshift-clients, openvswitch3.4) and the      │
+│     optional components (TopoLVM, OLM, Multus)      │
+│  6. Cleanup caches and docs                        │
+│  7. Copy helper scripts, enable microshift.service │
+│  8. Write /etc/topolvm/lvmd.yaml, enable            │
+│     microshift-lvm.service (loop-backed VG)         │
 └─────────────────────────────────────────────────────┘
 ```
 
@@ -104,6 +105,7 @@ make clean          # Clean up build artifacts and temp clone
 
 - `microshift` — Core MicroShift package
 - `microshift-release-info` — Release metadata
+- `microshift-networking` — OVN-Kubernetes CNI (Kindnet is not used)
 - `cri-o` — Container runtime
 - `cri-tools` — CLI tools for CRI
 - `openshift-clients` — oc CLI
@@ -113,11 +115,29 @@ make clean          # Clean up build artifacts and temp clone
 
 | Flag           | Default | Package              |
 | -------------- | ------- | -------------------- |
-| `WITH_KINDNET` | 1       | `microshift-kindnet` |
+| `WITH_KINDNET` | 1       | unused (OVN-K stays) |
 | `WITH_TOPOLVM` | 1       | `microshift-topolvm` |
 | `WITH_OLM`     | 1       | `microshift-olm`     |
 | `WITH_MULTUS`  | 1       | `microshift-multus`  |
 | `COCKPIT`      | 0       | `cockpit`            |
+
+### Storage (TopoLVM)
+
+`microshift-topolvm` provides the default `topolvm-provisioner` StorageClass. It
+needs an LVM volume group, `myvg1`, which `microshift-lvm.service` creates at
+every boot, before `microshift.service`:
+
+- A sparse backing file `/var/lib/microshift-okd/lvmdisk.image` of `LVM_VOLSIZE`
+  (75G) is created if missing and attached to a loop device.
+- The VG is created only when the device has no signature. An existing VG is just
+  activated. The script refuses to reformat a device that has a signature but no VG.
+- `/etc/topolvm/lvmd.yaml` (baked in the image) points the default device class at
+  `myvg1`.
+
+The size is only read when the file is first created. To resize later, grow the file
+(`truncate -s <new> <file>`), `losetup -c <loop>`, then `pvresize <loop>`. To start over:
+`systemctl stop microshift`, `lvremove -y myvg1`, `vgremove myvg1`, `losetup -D`,
+`rm /var/lib/microshift-okd/lvmdisk.image`, then reboot.
 
 ## Pull from VM
 
@@ -186,7 +206,7 @@ Image configuration lives in `/etc` or `/usr` so upgrades deliver it. Anything u
 | ~~`BOOTC_IMAGE_TAG`~~ | auto-fetched                                      | Base image SHA override                         |
 | `PUSH_REGISTRY`       | `~~registry~~.arthurvardevanyan.com`              | Target registry host                            |
 | `PUSH_ORG`            | `homelab`                                         | Target registry org                             |
-| `WITH_KINDNET`        | 1                                                 | Install Kindnet CNI                             |
+| `WITH_KINDNET`        | 1                                                 | Unused; the CNI stays OVN-Kubernetes            |
 | `WITH_TOPOLVM`        | 1                                                 | Install TopoLVM storage                         |
 | `WITH_OLM`            | 1                                                 | Install OLM operator lifecycle manager          |
 | `WITH_MULTUS`         | 1                                                 | Install Multus CNI                              |

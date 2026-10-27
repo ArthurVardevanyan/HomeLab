@@ -1,121 +1,73 @@
 #!/bin/bash
 # ==============================================================================
-# Setup LVM for MicroShift BootC (Host-side provisioning)
+# Provision the TopoLVM backing volume group for MicroShift BootC
 # ==============================================================================
-# This script runs on the host to:
-# - Create LVM disk image file
-# - Set up LVM volume group
-# - Prepare for TopoLVM CSI
+# Runs at every boot from microshift-lvm.service (before microshift.service).
+# Idempotent and non-destructive:
+#   - sparse image file is created only if it does not exist
+#   - loop device is attached (or reused if already attached)
+#   - the VG is created ONLY when the device carries no signature at all;
+#     an existing VG is just activated, never reformatted
+# Can also be run by hand as root.
 # ==============================================================================
 
 set -euo pipefail
 
-# ---- Configuration ----
 LVM_DISK="${LVM_DISK:-/var/lib/microshift-okd/lvmdisk.image}"
-LVM_VOLSIZE="${LVM_VOLSIZE:-100G}"
+LVM_VOLSIZE="${LVM_VOLSIZE:-75G}"
 VG_NAME="${VG_NAME:-myvg1}"
 
-log_info() { echo -e "[INFO] $1"; }
-log_warn() { echo -e "[WARN] $1"; }
-log_error() { echo -e "[ERROR] $1"; }
+log_info() { echo "[INFO] $1"; }
+log_error() { echo "[ERROR] $1" >&2; }
 
-check_prerequisites() {
-  log_info "Checking prerequisites..."
+if [[ "$(id -u)" -ne 0 ]]; then
+  log_error "This script must be run as root"
+  exit 1
+fi
 
-  # Check if running as root
-  user_id="$(id -u)"
-  if [[ ${user_id} -ne 0 ]] ; then
-    log_error "This script must be run as root (use sudo)"
+for tool in truncate losetup vgcreate vgchange vgs blkid lvmdevices; do
+  if ! command -v "${tool}" &>/dev/null; then
+    log_error "'${tool}' is not installed."
     exit 1
   fi
+done
 
-  # Check required tools
-  local tools=("podman" "vgcreate" "losetup" "truncate" "lvcreate")
-  for tool in "${tools[@]}"; do
-    if ! command -v "${tool}" &>/dev/null; then
-      log_error "'${tool}' is not installed."
-      exit 1
-    fi
-  done
+mkdir -p "$(dirname "${LVM_DISK}")"
 
-  log_info "All prerequisites satisfied."
-}
+# 1. Backing file (sparse; only allocates space as TopoLVM uses it)
+if [[ ! -f "${LVM_DISK}" ]]; then
+  log_info "Creating sparse backing file ${LVM_DISK} (${LVM_VOLSIZE})"
+  truncate --size="${LVM_VOLSIZE}" "${LVM_DISK}"
+else
+  log_info "Reusing backing file ${LVM_DISK}"
+fi
 
-prepare_lvm_disk() {
-  local lvm_disk="$1"
-  local vg_name="$2"
-  local volsize="$3"
+# 2. Loop device (reuse an existing attachment)
+loop_dev="$(losetup -j "${LVM_DISK}" | head -n1 | cut -d: -f1)"
+if [[ -z "${loop_dev}" ]]; then
+  loop_dev="$(losetup --find --show --nooverlap "${LVM_DISK}")"
+  log_info "Attached ${LVM_DISK} to ${loop_dev}"
+else
+  log_info "${LVM_DISK} already attached to ${loop_dev}"
+fi
 
-  if [[ -f "${lvm_disk}" ]] ; then
-    log_warn "LVM disk already exists: ${lvm_disk}"
-    log_info "LVM disk will be reused (data preserved)."
-    return 0
-  fi
+# 3. Volume group
+if ! vgs "${VG_NAME}" &>/dev/null; then
+  # LVM ignores devices that are not in /etc/lvm/devices/system.devices.
+  lvmdevices --adddev "${loop_dev}" &>/dev/null || true
+fi
 
-  log_info "Creating LVM disk: ${lvm_disk} (${volsize})..."
+if vgs "${VG_NAME}" &>/dev/null; then
+  log_info "Volume group ${VG_NAME} exists, activating"
+  vgchange -ay "${VG_NAME}"
+elif blkid -p "${loop_dev}" &>/dev/null; then
+  # The device has a signature but no usable VG: refuse to destroy it.
+  log_error "${loop_dev} carries an existing signature but VG ${VG_NAME} was not found; refusing to reformat"
+  blkid -p "${loop_dev}" >&2 || true
+  exit 1
+else
+  log_info "Creating volume group ${VG_NAME} on ${loop_dev}"
+  vgcreate -y "${VG_NAME}" "${loop_dev}"
+fi
 
-  # Create directory if needed
-  mkdir -p "$(dirname "${lvm_disk}")"
-
-  # Create disk image
-  truncate --size="${volsize}" "${lvm_disk}"
-
-  # Set up loop device
-  local device_name
-  device_name=$(losetup --find --show --nooverlap "${lvm_disk}")
-
-  # Create volume group
-  vgcreate -f -y "${vg_name}" "${device_name}"
-
-  log_info "LVM disk created: ${lvm_disk} (${volsize}) at VG: ${vg_name}"
-  log_info "Device: ${device_name}"
-  log_info "Volume Group: ${vg_name}"
-}
-
-setup_lvm_service() {
-  log_info "Setting up LVM service configuration..."
-
-  # Create systemd drop-in for MicroShift service
-  mkdir -p /etc/systemd/system/microshift.service.d
-
-  cat > /etc/systemd/system/microshift.service.d/99-lvm-config.conf <<EOF
-[Service]
-ExecStartPre=/bin/bash -c 'vgs "${VG_NAME}" || vgcreate -f -y "${VG_NAME}" "\$(losetup --find --show --nooverlap "${LVM_DISK}")"'
-EOF
-
-  systemctl daemon-reload
-
-  log_info "LVM service configuration set up."
-}
-
-show_instructions() {
-  echo ""
-  echo "========================================================================"
-  echo "  LVM setup completed successfully!"
-  echo "========================================================================"
-  echo ""
-  echo "LVM DISK:  ${LVM_DISK}"
-  echo "LVM SIZE:  ${LVM_VOLSIZE}"
-  echo "VG NAME:   ${VG_NAME}"
-  echo ""
-  echo "To verify LVM setup:"
-  echo "  vgs"
-  echo "  lvs"
-  echo "  pvs"
-  echo ""
-  echo "To clean up:"
-  echo "  lvremove -y ${VG_NAME}"
-  echo "  losetup -D"
-  echo "  rm -f ${LVM_DISK}"
-  echo ""
-  echo "========================================================================"
-}
-
-# ---- Main Execution ----
-
-check_prerequisites
-prepare_lvm_disk "${LVM_DISK}" "${VG_NAME}" "${LVM_VOLSIZE}"
-setup_lvm_service
-show_instructions
-
-exit 0
+vgs "${VG_NAME}"

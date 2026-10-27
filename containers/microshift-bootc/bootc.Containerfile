@@ -25,7 +25,7 @@ ENV \
   CLONE_DIR=/tmp/microshift-build \
   ASSETS_TMP_DIR=/tmp/microshift-assets \
   LVM_DISK=/var/lib/microshift-okd/lvmdisk.image \
-  LVM_VOLSIZE=100G \
+  LVM_VOLSIZE=75G \
   VG_NAME=myvg1 \
   EXTRA_CONFIG=/etc/microshift/config.d/10-san.yaml \
   DOMAIN=microshift.dc2.vardevanyan.com \
@@ -137,7 +137,7 @@ ARG WITH_MULTUS=1
 ENV \
   CONTAINER_NAME=microshift-okd \
   LVM_DISK=/var/lib/microshift-okd/lvmdisk.image \
-  LVM_VOLSIZE=100G \
+  LVM_VOLSIZE=75G \
   VG_NAME=myvg1 \
   EXTRA_CONFIG=/etc/microshift/config.d/10-san.yaml \
   DOMAIN=${DOMAIN} \
@@ -186,34 +186,47 @@ RUN \
   echo "baseurl=https://mirror.openshift.com/pub/openshift-v4/dependencies/rpms/${MS_VER}-el9-beta/" >> /etc/yum.repos.d/microshift-deps.repo && \
   echo "enabled=1" >> /etc/yum.repos.d/microshift-deps.repo && \
   echo "gpgcheck=0" >> /etc/yum.repos.d/microshift-deps.repo && \
+  # Optional components. They MUST be installed in this same RUN: the local RPM repo
+  # is deleted at the end of it, so a later `dnf install` cannot find them.
+  # CNI stays OVN-Kubernetes (microshift-networking); WITH_KINDNET is intentionally unused.
+  OPTIONAL_PKGS="" && \
+  if [ "${WITH_TOPOLVM}" = "1" ]; then OPTIONAL_PKGS="${OPTIONAL_PKGS} microshift-topolvm microshift-topolvm-release-info"; fi && \
+  if [ "${WITH_OLM}" = "1" ]; then OPTIONAL_PKGS="${OPTIONAL_PKGS} microshift-olm microshift-olm-release-info"; fi && \
+  if [ "${WITH_MULTUS}" = "1" ]; then OPTIONAL_PKGS="${OPTIONAL_PKGS} microshift-multus microshift-multus-release-info"; fi && \
+  echo "Optional MicroShift packages:${OPTIONAL_PKGS:- (none)}" && \
   # Install MicroShift and its OpenShift dependencies from the configured repos
+  # shellcheck disable=SC2086
   dnf install -y \
     microshift \
     microshift-release-info \
+    microshift-networking \
     cri-o \
     cri-tools \
     openshift-clients \
-    openvswitch3.4 && \
+    openvswitch3.4 \
+    ${OPTIONAL_PKGS} && \
   # Cleanup
   rm -rf /tmp/microshift-rpms && \
   rm -f /etc/yum.repos.d/microshift-local.repo /etc/yum.repos.d/microshift-deps.repo && \
   dnf clean all && rm -rf /var/cache/* && \
   rm -rf /usr/share/doc/* /usr/share/man/* /usr/share/info/*
 
-# Install Kindnet CNI
-RUN if [ "${WITH_KINDNET}" = "1" ]; then dnf install -y microshift-networking; fi
-
-# Install TopoLVM storage if enabled (disabled - package not in repos)
-# RUN if [ "${WITH_TOPOLVM}" = "1" ]; then dnf install -y microshift-topolvm microshift-topolvm-release-info; fi
-
-# Install OLM operator lifecycle manager if enabled (disabled - package not in repos)
-# RUN if [ "${WITH_OLM}" = "1" ]; then dnf install -y microshift-olm microshift-olm-release-info; fi
-
-# Install Multus CNI if enabled (disabled - package not in repos)
-# RUN if [ "${WITH_MULTUS}" = "1" ]; then dnf install -y microshift-multus microshift-multus-release-info; fi
-
 # Make scripts executable
 RUN chmod +x /usr/local/bin/setup-lvm.sh /usr/local/bin/postinstall-custom.sh
+
+# TopoLVM: lvmd device class on the loop-backed VG that microshift-lvm.service creates
+# at boot. MicroShift creates the default `topolvm-provisioner` StorageClass from this.
+# Written with COPY (not a RUN redirect) so it is certain to land in the image layer.
+COPY <<EOT /etc/topolvm/lvmd.yaml
+socket-name: /run/topolvm/lvmd.sock
+device-classes:
+  - default: true
+    name: ssd
+    spare-gb: 0
+    volume-group: ${VG_NAME}
+EOT
+COPY microshift-lvm.service /usr/lib/systemd/system/microshift-lvm.service
+RUN systemctl enable microshift-lvm.service
 
 # MicroShift runs on the host as microshift.service (enabled below); this is a
 # bootc image booted via systemd, so no ENTRYPOINT/CMD is set. Setting one makes
@@ -241,7 +254,12 @@ RUN /usr/local/bin/postinstall-custom.sh && \
   test -f /etc/containers/policy.json && \
   test -d /etc/containers/registries.d && \
   test -f /etc/sysctl.d/99-microshift.conf && \
-  test -f "${EXTRA_CONFIG}"
+  test -f "${EXTRA_CONFIG}" && \
+  rpm -q microshift-networking && \
+  { [ "${WITH_TOPOLVM}" != "1" ] || { rpm -q microshift-topolvm && test -f /etc/topolvm/lvmd.yaml; }; } && \
+  { [ "${WITH_OLM}" != "1" ] || rpm -q microshift-olm; } && \
+  { [ "${WITH_MULTUS}" != "1" ] || rpm -q microshift-multus; } && \
+  systemctl is-enabled microshift-lvm.service
 
 # tmpfiles.d rules shipped from /usr/lib (always taken from the image, so node-side
 # /etc drift cannot disable them; /root and /var are not populated on bootc upgrades):

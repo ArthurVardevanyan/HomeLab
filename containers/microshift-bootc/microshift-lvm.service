@@ -1,0 +1,15 @@
+[Unit]
+Description=Provision TopoLVM loop-backed volume group for MicroShift
+Documentation=file:///usr/local/bin/setup-lvm.sh
+After=local-fs.target systemd-udevd.service
+Before=microshift.service
+RequiresMountsFor=/var/lib/microshift-okd
+ConditionPathExists=/etc/topolvm/lvmd.yaml
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/usr/local/bin/setup-lvm.sh
+
+[Install]
+WantedBy=microshift.service
