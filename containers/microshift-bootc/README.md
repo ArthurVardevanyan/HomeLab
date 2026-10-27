@@ -11,6 +11,7 @@ Builds a MicroShift BootC image with OS-level configs baked in (firewall, sysctl
 - [Architecture](#architecture)
 - [Components](#components)
 - [Pull from VM](#pull-from-vm)
+- [Upgrading a Node](#upgrading-a-node)
 - [Variables](#variables)
 - [Troubleshooting](#troubleshooting)
 
@@ -158,6 +159,24 @@ The Anaconda ISO cannot see the disk either, so install from a Fedora Live USB w
 
 For more details, see [MinisForum S100 UFS Support](../../notes/minisforum-s100-ufssupport.md).
 
+## Upgrading a Node
+
+Each push publishes two tags: a floating `<version>` tag and an immutable `<version>-<datetime>` tag. Install from and follow the **floating** tag. A node tracking a dated tag never sees new builds with `bootc upgrade`.
+
+```bash
+# One-time: point the node at the floating tag and reboot into it
+sudo bootc switch --apply registry.arthurvardevanyan.com/homelab/microshift-bootc:<version>
+
+# Afterwards
+sudo bootc upgrade --apply
+sudo bootc status    # Booted digest should match the registry
+```
+
+Image configuration lives in `/etc` or `/usr` so upgrades deliver it. Anything under `/var` or `/root` is only populated on first install, so the root kubeconfig symlink is created by a `tmpfiles.d` rule (`/usr/lib/tmpfiles.d/microshift-bootc.conf`), which also restores CRI-O's `policy.json` and `registries.d` if missing.
+
+- **API server SANs**: `/etc/microshift/config.d/10-san.yaml`, generated from `DOMAIN` and `NODE_HOSTNAME` at build time.
+- **Greenboot**: `/etc/greenboot/greenboot.conf` sets `MICROSHIFT_WAIT_TIMEOUT_SEC=1200` and `GREENBOOT_MAX_BOOT_ATTEMPTS=3`. A deployment that is not healthy after three boots is rolled back automatically.
+
 ## Variables
 
 | Variable              | Default                                           | Description                                     |
@@ -174,6 +193,7 @@ For more details, see [MinisForum S100 UFS Support](../../notes/minisforum-s100-
 | `COCKPIT`             | 0                                                 | Enable Cockpit web console                      |
 | `WITH_UFS`            | 1                                                 | Build UFS modules + initramfs (MinisForum S100) |
 | `DOMAIN`              | `microshift.dc2.vardevanyan.com`                  | Domain for API server                           |
+| `NODE_HOSTNAME`       | `microshift`                                      | Short node hostname added to API server SANs    |
 | `BIB_IMAGE`           | `quay.io/centos-bootc/bootc-image-builder:latest` | bootc-image-builder container image             |
 | `BIB_OUT`             | `./output/bib-out`                                | Temporary build directory for ISO               |
 
@@ -194,6 +214,29 @@ Use `PODMAN_OPTS="--no-cache"` to force a fresh build:
 ```bash
 PODMAN_OPTS="--no-cache" make image BUILD_MODE=release
 ```
+
+### Node stays on the old image (greenboot fallback)
+
+Symptom: `bootc switch`/`upgrade` succeeds and `ostree admin status` shows the new deployment as `(pending)`, but every reboot comes back on the old one.
+
+Cause: greenboot's boot counter ran out (the previous deployment failed MicroShift health checks, e.g. missing CRI-O `policy.json`), and GRUB is pinned to the rollback entry (`set default=1`).
+
+```bash
+grub2-editenv list    # boot_success=0 and boot_counter=-1 confirms it
+grep -o 'ostree=[^ ]*' /proc/cmdline
+
+# Clear it (/boot is read-only; the remount may report "busy", which is harmless)
+sudo mount -o remount,rw /boot
+sudo grub2-editenv - unset boot_counter
+sudo grub2-editenv - set boot_success=1
+sudo systemctl reboot
+```
+
+If the new image also fails its health check, it will count down and fall back again. Check `journalctl -b -u greenboot-healthcheck` and `journalctl -b -u microshift` before the attempts run out.
+
+### CRI-O: no policy.json file found
+
+Pods stuck with `no policy.json file found at ... /etc/containers/policy.json`. The el9 CRI-O only looks in `/etc/containers`, while CentOS 10 ships the file in `/usr/share/containers`. The image build copies it and fails if it is missing. If you see this on a node, it is running an image built before that fix (see `sudo bootc status`).
 
 ### ISO build fails with SELinux denials
 

@@ -21,6 +21,7 @@ log_error() { echo -e "[ERROR] $1"; }
 
 # ---- Configuration ----
 DOMAIN="${DOMAIN:-microshift.dc2.vardevanyan.com}"
+NODE_HOSTNAME="${NODE_HOSTNAME:-microshift}"
 COCKPIT="${COCKPIT:-0}"
 
 # ---- Helper Functions ----
@@ -144,15 +145,12 @@ install_cni_plugins() {
 }
 
 generate_subject_alt_names_config() {
-  local config_path="${EXTRA_CONFIG:-/var/lib/microshift-okd/custom_config.yaml}"
+  # MicroShift merges /etc/microshift/config.d/*.yaml over its defaults, and /etc
+  # is delivered on bootc upgrades (unlike /var). The node's hostname is set
+  # explicitly: `hostname -f` at build time would return the build container's.
+  local config_path="${EXTRA_CONFIG:-/etc/microshift/config.d/10-san.yaml}"
   local domain="${DOMAIN}"
-
-  local host_fqdn
-  if hostname -f &>/dev/null; then
-    host_fqdn=$(hostname -f)
-  else
-    host_fqdn=$(hostname)
-  fi
+  local node_hostname="${NODE_HOSTNAME}"
 
   mkdir -p "$(dirname "${config_path}")"
 
@@ -160,7 +158,7 @@ generate_subject_alt_names_config() {
 apiServer:
   subjectAltNames:
     - ${domain}
-    - ${host_fqdn}
+    - ${node_hostname}
     - 127.0.0.1
     - localhost
 EOF

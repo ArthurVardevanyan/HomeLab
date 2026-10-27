@@ -10,6 +10,7 @@
 # Build Args:
 #   COCKPIT       Enable Cockpit installation (default: 0)
 #   DOMAIN        Domain for API server (default: microshift.dc2.vardevanyan.com)
+#   NODE_HOSTNAME Short hostname of the node, added to API SANs (default: microshift)
 #   BUILD_MODE    RPM source mode: local or release (default: release)
 # ==============================================================================
 
@@ -27,7 +28,7 @@ ENV \
   LVM_DISK=/var/lib/microshift-okd/lvmdisk.image \
   LVM_VOLSIZE=100G \
   VG_NAME=myvg1 \
-  EXTRA_CONFIG=/var/lib/microshift-okd/custom_config.yaml \
+  EXTRA_CONFIG=/etc/microshift/config.d/10-san.yaml \
   DOMAIN=microshift.dc2.vardevanyan.com \
   API_SERVER_PORT=6443 \
   KUBECONFIG=/var/lib/microshift/resources/kubeadmin/kubeconfig \
@@ -128,6 +129,7 @@ LABEL org.opencontainers.image.source="https://github.com/ArthurVardevanyan/Home
   org.opencontainers.image.licenses="Apache-2.0"
 
 ARG DOMAIN=microshift.dc2.vardevanyan.com
+ARG NODE_HOSTNAME=microshift
 ARG COCKPIT=0
 ARG WITH_KINDNET=1
 ARG WITH_TOPOLVM=1
@@ -139,8 +141,9 @@ ENV \
   LVM_DISK=/var/lib/microshift-okd/lvmdisk.image \
   LVM_VOLSIZE=100G \
   VG_NAME=myvg1 \
-  EXTRA_CONFIG=/var/lib/microshift-okd/custom_config.yaml \
+  EXTRA_CONFIG=/etc/microshift/config.d/10-san.yaml \
   DOMAIN=${DOMAIN} \
+  NODE_HOSTNAME=${NODE_HOSTNAME} \
   API_SERVER_PORT=6443 \
   KUBECONFIG=/var/lib/microshift/resources/kubeadmin/kubeconfig \
   LAST_IMAGE_FILE=/var/lib/microshift-okd/.last_image \
@@ -226,18 +229,33 @@ RUN mkdir -p /var/lib/microshift-okd
 # Set up MicroShift directories
 RUN mkdir -p /var/lib/microshift/resources/kubeadmin
 
-# Run post-install script to configure sysctl, firewalld, CRI-O policy, DNS, etc.
-RUN if [ -x /usr/local/bin/postinstall-custom.sh ]; then /usr/local/bin/postinstall-custom.sh; fi
+# Run post-install script to configure sysctl, CRI-O policy, SANs, DNS, etc.
+# The build fails if the script is missing or its key outputs are not produced
+# (a missing policy.json otherwise only shows up on the node, as CRI-O pod
+# sandbox failures and a greenboot rollback).
+RUN /usr/local/bin/postinstall-custom.sh && \
+  test -f /etc/containers/policy.json && \
+  test -d /etc/containers/registries.d && \
+  test -f /etc/sysctl.d/99-microshift.conf && \
+  test -f "${EXTRA_CONFIG}"
 
-# Configure tmpfiles.d for kubeconfig symlink — persistent across bootc upgrades
-# because it is in /etc which is part of the bootc config layer.
-# The target file does not exist at build time; it is created when MicroShift starts.
-RUN mkdir -p /etc/tmpfiles.d && \
-  cat > /etc/tmpfiles.d/microshift-bootc.conf <<'EOF'
-# Symlink root user's kubeconfig to MicroShift's admin kubeconfig
-# Created via tmpfiles.d so it persists across bootc upgrades
+# tmpfiles.d rules shipped from /usr/lib (always taken from the image, so node-side
+# /etc drift cannot disable them; /root and /var are not populated on bootc upgrades):
+#  - L: symlink root's kubeconfig to MicroShift's admin kubeconfig (created at runtime)
+#  - C: restore CRI-O's policy.json and registries.d from /usr/share/containers if
+#    missing from /etc (CRI-O el9 build only looks in /etc/containers)
+RUN cat > /usr/lib/tmpfiles.d/microshift-bootc.conf <<'EOF'
 L /root/.kube/config - - - - /var/lib/microshift/resources/kubeadmin/kubeconfig
+C /etc/containers/policy.json - - - - /usr/share/containers/policy.json
+C /etc/containers/registries.d - - - - /usr/share/containers/registries.d
 EOF
+
+# Greenboot: MicroShift on first boot (image pulls, OVN, cert generation) can take
+# longer than the 600s default on this hardware. A too-short timeout burns the boot
+# counter and pins the node to the rollback deployment. Keep rollback enabled.
+RUN sed -i -E '/^#?\s*(MICROSHIFT_WAIT_TIMEOUT_SEC|GREENBOOT_MAX_BOOT_ATTEMPTS)=/d' /etc/greenboot/greenboot.conf && \
+  printf '%s\n' 'GREENBOOT_MAX_BOOT_ATTEMPTS=3' 'MICROSHIFT_WAIT_TIMEOUT_SEC=1200' >> /etc/greenboot/greenboot.conf && \
+  grep -E '^(GREENBOOT_MAX_BOOT_ATTEMPTS|MICROSHIFT_WAIT_TIMEOUT_SEC)=' /etc/greenboot/greenboot.conf
 
 # Install the out-of-tree UFS modules (MinisForum S100) and rebuild the initramfs
 # so the machine can see its internal UFS disk at boot. Modules are unsigned, so
