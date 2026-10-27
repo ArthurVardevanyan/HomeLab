@@ -1018,7 +1018,59 @@ generate_node_iso() {
   # Bulk pull command — run from your laptop
   echo ""
   echo "  # Pull entire ISO folder from this machine:"
-  echo "  scp -r arthur@10.101.11.7:/home/arthur/Projects/HomeLab/notes/iso/ ./"
+   echo "  scp -r arthur@10.101.11.7:/home/arthur/Projects/HomeLab/notes/iso/ ./"
+}
+
+# ==============================================================================
+# MicroShift BootC Image Pull
+# ==============================================================================
+# Builds the microshift BootC image on the VM and outputs the scp command to
+# pull the image tarball to the local laptop. Follows the same pattern as
+# generate_node_iso but outputs image pull commands instead.
+#
+# Usage:
+#   main.bash microshift-bootc-pull   # Pull from default VM (10.101.11.7)
+#
+# This function:
+#   1. Builds the image (make image BUILD_MODE=release)
+#   2. Saves the image to a tarball
+#   3. Outputs the scp command to pull the tarball to your laptop
+# ==============================================================================
+microshift-bootc-pull() {
+  local arg="${1:-}"
+  local HOMELAB="${HOMELAB:-${PWD}}"
+  local BUILD_MODE="${BUILD_MODE:-release}"
+  local IMAGE_TAG
+  # IMAGE_NAME used below for podman tag / save
+
+  # Get version from version.txt if available
+  local CLONE_DIR="/tmp/microshift-main"
+  if [[ -f "${CLONE_DIR}/_output/rpmbuild/RPMS/version.txt" ]]; then
+    IMAGE_TAG=$(tr '-' '_' < "${CLONE_DIR}/_output/rpmbuild/RPMS/version.txt")
+  else
+    IMAGE_TAG="latest"
+  fi
+
+  echo -e "\n${BLUE}MicroShift BootC Pull Instructions:${NC}"
+  echo "  BUILD_MODE=${BUILD_MODE}"
+  echo "  IMAGE_TAG=${IMAGE_TAG}"
+  echo ""
+  echo "  # Build image on VM (if not already built):"
+  echo "  ssh arthur@10.101.11.7 'cd /home/arthur/Projects/HomeLab/containers/microshift-bootc && make image BUILD_MODE=${BUILD_MODE}'"
+  echo ""
+  echo "  # Tag and save image on VM:"
+  echo "  ssh arthur@10.101.11.7 'cd /home/arthur/Projects/HomeLab/containers/microshift-bootc && podman tag localhost/microshift-bootc:latest localhost/microshift-bootc:${IMAGE_TAG}'"
+  echo "  ssh arthur@10.101.11.7 'cd /home/arthur/Projects/HomeLab/containers/microshift-bootc && podman save -o microshift-bootc-${IMAGE_TAG}.tar localhost/microshift-bootc:${IMAGE_TAG}'"
+  echo ""
+  echo "  # Pull image tarball to your laptop:"
+  echo "  scp arthur@10.101.11.7:/home/arthur/Projects/HomeLab/containers/microshift-bootc/microshift-bootc-${IMAGE_TAG}.tar ."
+  echo "  podman load -i microshift-bootc-${IMAGE_TAG}.tar"
+  echo ""
+  echo "  # Cleanup on VM:"
+  echo "  ssh arthur@10.101.11.7 'rm -f /home/arthur/Projects/HomeLab/containers/microshift-bootc/microshift-bootc-${IMAGE_TAG}.tar'"
+  echo ""
+  echo "  # Or pull just the ISO (recommended):"
+  echo "  scp arthur@10.101.11.7:/home/arthur/Projects/HomeLab/containers/microshift-bootc/output/microshift.iso ./"
 }
 
 install_okd_prep() {

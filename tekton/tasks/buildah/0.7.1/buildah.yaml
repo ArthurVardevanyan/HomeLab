@@ -56,8 +56,23 @@ spec:
     - name: SKIP_PUSH
       description: Skip pushing the built image
       default: "false"
+    - name: INJECT_FILES
+      description: |
+        Files to inject into the build context before build.
+        Format: each line is `path relative to CONTEXT=base64content`.
+        Example:
+          .ssh-keys/authorized_keys=ZWNkYXMtc2hhMi1uaXN0cDI1NiBBQUFBRTI=
+        Empty or unset means no injection.
+      default: ""
+    - name: EXTRA_TAGS
+      description: |
+        Additional tags for the same image to push after the primary push.
+        Format: comma-separated full image refs (e.g. `repo:tag1,repo:tag2`).
+        Empty or unset means no extra tags.
+      default: ""
   workspaces:
     - name: source
+      optional: true
     - name: sslcertdir
       optional: true
     - name: dockerconfig
@@ -91,6 +106,17 @@ spec:
 
         [ "$(workspaces.sslcertdir.bound)" = "true" ] && CERT_DIR_FLAG="--cert-dir=$(workspaces.sslcertdir.path)"
         [ "$(workspaces.dockerconfig.bound)" = "true" ] && DOCKER_CONFIG="$(workspaces.dockerconfig.path)" && export DOCKER_CONFIG
+        # inject files (INJECT_FILES format: path relative to CONTEXT=base64content)
+        if [ -n "$(params.INJECT_FILES)" ]; then
+          echo "$(params.INJECT_FILES)" | while IFS= read -r line; do
+            [ -z "$line" ] && continue
+            INJECT_PATH="${line%%=*}"
+            INJECT_CONTENT="${line#*=}"
+            mkdir -p "$(params.CONTEXT)/$(dirname "$INJECT_PATH")"
+            echo "$INJECT_CONTENT" | base64 -d > "$(params.CONTEXT)/$INJECT_PATH"
+            chmod 600 "$(params.CONTEXT)/$INJECT_PATH"
+          done
+        fi
         # build the image (CERT_DIR_FLAG should be omitted if empty and BUILD_EXTRA_ARGS can contain multiple args)
         # shellcheck disable=SC2046,SC2086
         buildah ${CERT_DIR_FLAG} "--storage-driver=$(params.STORAGE_DRIVER)" bud $(params.BUILD_EXTRA_ARGS) \
@@ -109,6 +135,22 @@ spec:
           echo "Push attempt $i/$RETRIES failed, retrying..." >&2
           sleep 5
         done
+        # push additional tags for the same built image (EXTRA_TAGS: comma-separated refs)
+        if [ -n "$(params.EXTRA_TAGS)" ]; then
+          for extra in $(echo "$(params.EXTRA_TAGS)" | tr ',' '\n'); do
+            [ -z "$extra" ] && continue
+            EXTRA_RETRIES=3
+            for j in $(seq 1 $EXTRA_RETRIES); do
+              if buildah ${CERT_DIR_FLAG} "--storage-driver=$(params.STORAGE_DRIVER)" push $(params.PUSH_EXTRA_ARGS) \
+                  "--tls-verify=$(params.TLSVERIFY)" "$(params.IMAGE)" "docker://$extra"; then
+                break
+              fi
+              [ "$j" -eq "$EXTRA_RETRIES" ] && echo "Extra-tag push failed for $extra after $EXTRA_RETRIES attempts" >&2 && exit 1
+              echo "Extra-tag push attempt $j/$EXTRA_RETRIES failed for $extra, retrying..." >&2
+              sleep 5
+            done
+          done
+        fi
         tee "$(results.IMAGE_DIGEST.path)" < /tmp/image-digest
         printf '%s' "$(params.IMAGE)" | tee "$(results.IMAGE_URL.path)"
       volumeMounts:
