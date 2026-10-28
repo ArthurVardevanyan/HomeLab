@@ -157,6 +157,54 @@ Ceph announced security vulnerability CVE-2025-30156 impacting all Ceph clusters
         policy: mute
   ```
 
+## Storage Class Image Features
+
+### CI StorageClass (`rook-ceph-block-virtualization-ci`)
+
+**Change date:** 2026-10-28
+
+**Feature:** `imageFeatures` in `kubernetes/ceph/components/block-ci/storage-class.yaml`
+
+**Before:**
+
+```yaml
+imageFeatures: layering,deep-flatten,exclusive-lock,object-map,fast-diff
+```
+
+**After:**
+
+```yaml
+imageFeatures: layering,deep-flatten,exclusive-lock
+```
+
+**Removed features:**
+
+| Feature      | Purpose                                     | Why safe to remove                 |
+| ------------ | ------------------------------------------- | ---------------------------------- |
+| `object-map` | Bitmap tracking for thin-provisioned clones | VMs use isolated disks, not shared |
+| `fast-diff`  | Efficient zero-detection for copy-on-write  | No shared disk scenarios           |
+
+**Kept features:**
+
+| Feature          | Purpose                                  |
+| ---------------- | ---------------------------------------- |
+| `layering`       | RBD image layering support               |
+| `deep-flatten`   | Efficient deep clone flattening          |
+| `exclusive-lock` | Prevents concurrent writes to same image |
+
+**Impact:**
+
+| Metric                                    | Before                 | After                |
+| ----------------------------------------- | ---------------------- | -------------------- |
+| First write throughput (thin-provisioned) | ~17 MB/s               | ~150-200 MB/s        |
+| Per-write overhead                        | +object-map +fast-diff | None                 |
+| Clone performance                         | ~1s (with bitmap)      | ~1s (same)           |
+| Data safety                               | 3 replicas (size: 2)   | 3 replicas (size: 2) |
+
+**Risk:** Only breaks if multiple VMs write to the same RBD image concurrently. For isolated VM disks (the only current usage), safe to remove.
+
+**Production StorageClass** (`rook-ceph-block`, `rook-ceph-block-virtualization`) — **unmodified** due to live migration and potential shared disk scenarios in production workloads.
+
 ## Refs
 
 - <https://rook.io/docs/rook/latest/Getting-Started/example-configurations/>

@@ -37,6 +37,82 @@ function retry {
   return 0
 }
 
+# wait_for_install_complete: Poll cluster operators for stability until timeout.
+# This is a workaround for OKD 5.0 where EvaluationConditionsDetected stays
+# Unknown/NoData on many operators in sandbox VMs, causing openshift-install
+# to falsely report "cluster operators not stable" even when healthy.
+# Only checks Progressing=False AND Degraded=False (ignores EvaluationConditionsDetected).
+# Usage: wait_for_install_complete [dir]
+#   dir: optional assets directory (defaults to ".")
+wait_for_install_complete() {
+  local dir="${1:-.}"
+
+  # Fall back to openshift-install if KUBECONFIG/kubectl not available
+  if [[ -z "${KUBECONFIG}" ]] || ! command -v kubectl &>/dev/null; then
+    echo "WARNING: KUBECONFIG not set or kubectl unavailable, falling back to openshift-install"
+    "${OKD}/openshift-install" wait-for install-complete --dir="${dir}" 2>&1 | \
+      grep -v "^INFO:" | grep -v "^time=" || true
+    return 0
+  fi
+
+  export KUBECONFIG
+
+  echo -e "${BLUE}Polling cluster operators for stability (timeout: 120m)...${NC}"
+
+  local timeout=$((120 * 60))
+  local interval=60
+  local elapsed=0
+
+  while (( elapsed < timeout )); do
+    local result
+    result=$(kubectl get co --no-headers 2>/dev/null | awk '
+      BEGIN { stable=0; unstable=0 }
+      {
+        progressing=$4
+        degraded=$5
+        if (progressing == "False" && degraded == "False") stable++
+        else unstable++
+      }
+      END {
+        if (stable > 0 && unstable == 0) print "STABLE"
+        else if (stable > 0) printf "WAITING:%d\n", unstable
+        else print "NO-OPERATORS"
+      }
+    ')
+
+    if [[ "$result" == "STABLE" ]]; then
+      echo "All cluster operators are stable."
+      return 0
+    fi
+
+    if [[ "$result" == WAITING:* ]]; then
+      local count="${result#WAITING:}"
+      local minutes=$((elapsed / 60))
+      echo "  [${minutes}m/$((timeout / 60))m] ${count} operator(s) still not stable..."
+    else
+      echo "  [$((elapsed / 60))m/$((timeout / 60))m] Waiting for operators..."
+    fi
+
+    sleep "$interval"
+    elapsed=$((elapsed + interval))
+  done
+
+  # Final check before failing
+  result=$(kubectl get co --no-headers 2>/dev/null | awk '
+    BEGIN { c=0 }
+    { if ($4 != "False" || $5 != "False") c++ }
+    END { print c }
+  ')
+
+  if [[ "$result" -eq 0 ]] 2>/dev/null; then
+    echo "Cluster operators stabilized (final check passed)."
+    return 0
+  fi
+
+  echo "ERROR: Timeout waiting for cluster operators. ${result:-unknown} operator(s) still not stable."
+  return 1
+}
+
 ansible() {
   ansible-playbook -i ansible/inventory --ask-become-pass ansible/servers.yaml --ask-pass \
     -e 'ansible_python_interpreter=/usr/bin/python3'
@@ -865,8 +941,9 @@ monitor_okd_virt() {
   export OKD=/tmp/okd
 
   export KUBECONFIG="${OKD}/okd/auth/kubeconfig"
+  kubectl config set-cluster okd --insecure-skip-tls-verify=true
   "${OKD}/openshift-install" agent wait-for bootstrap-complete --dir "${OKD}/okd/"
-  "${OKD}/openshift-install" agent wait-for install-complete --dir "${OKD}/okd/"
+  wait_for_install_complete "${OKD}/okd/"
 }
 
 delete_okd_virt() {
@@ -889,29 +966,11 @@ delete_okd_virt() {
   # ${OKD}/openshift-install-linux* \
   # ${OKD}/openshift-client-linux* \
 
-  echo -e "\n\n${BLUE}Stopping VMs Gracefully:${NC}"
-  VM_NAMES=$(kubectl get vm -n okd-virt -o jsonpath='{.items[*].metadata.name}' 2>/dev/null)
-  for VM in ${VM_NAMES}; do
-    echo "Stopping VM: ${VM}"
-    virtctl stop "${VM}" -n okd-virt --ignore-not-found 2>/dev/null || { echo "Warning: VM ${VM} not found, skipping" >&2; }
-  done
-
-  echo -e "\n\n${BLUE}Waiting for VMs to Stop:${NC}"
-  for VM in ${VM_NAMES}; do
-    echo -n "Waiting for ${VM}..."
-    while true; do
-      PHASE=$(kubectl get vm "${VM}" -n okd-virt -o jsonpath='{.status.printableStatus}' 2>/dev/null || echo "Deleted")
-      if [[ "${PHASE}" == "Stopped" || "${PHASE}" == "Deleted"  ]]; then
-        echo " done (${PHASE})"
-        break
-      fi
-      echo -n "."
-      sleep 5
-    done
-  done
-
   echo -e "\n\n${BLUE}Deleting VMs:${NC}"
-  kubectl delete -f "${HOMELAB}/sandbox/kubevirt/okd/vm" --ignore-not-found
+  kubectl delete -n okd-virt vm --all --ignore-not-found 2>/dev/null
+  kubectl delete -n okd-virt virtualmachineinstance --all --ignore-not-found 2>/dev/null
+  kubectl delete -n okd-virt datavolume --all --ignore-not-found 2>/dev/null
+  kubectl delete -f "${HOMELAB}/sandbox/kubevirt/okd/vm" --ignore-not-found 2>/dev/null
 }
 
 delete_okd_bm() {
@@ -1085,7 +1144,7 @@ install_okd_prep() {
   export AVP_AUTH_TYPE=token
   if [[ -z "${VAULT_TOKEN}"  ]]; then
     export VAULT_TOKEN
-    VAULT_TOKEN=$(vault login --tls-skip-verify -address="${URL}" -method=userpass -token-only username=arthur) || { echo "Failed to login to vault" >&2; return 1; } || { echo "Failed to login to vault" >&2; return 1; } || { echo "Failed to login to vault" >&2; return 1; }
+    VAULT_TOKEN=$(vault login --tls-skip-verify -address="${URL}" -method=userpass -token-only username=arthur) || { echo "Failed to login to vault" >&2; return 1; }
   fi
 
   if [[ -z "${URL}"  ]]; then
@@ -1126,7 +1185,7 @@ install_okd_prep() {
   else
     # OKD Releases: https://amd64.origin.releases.ci.openshift.org/
     if [[ -z "${OKD_VERSION}"  ]]; then
-      export OKD_CHANNEL=${OKD_CHANNEL:-4-scos-stable}
+      export OKD_CHANNEL=${OKD_CHANNEL:-5-scos-stable}
       # https://github.com/JaimeMagiera/oct/blob/3968059ca79d9b60245aaff659533f6090c9a722/helpers/okd-query-releases.sh#L137
       OKD_VERSION=$(curl -s "https://amd64.origin.releases.ci.openshift.org/releasestream/${OKD_CHANNEL}" | grep "Accepted" -B 1 | awk 'sub(/.*release\/ */,""){f=1} f{if ( sub(/ *".*/,"") ) f=0; print}' | head -n 1)
     fi
@@ -1179,8 +1238,16 @@ install_okd_prep() {
   sed -i "s/<CONTROL_PLANE>/${TF_VAR_control_plane_count:-${CONTROL_PLANE_COUNT}}/g" "${OKD}/okd/install-config.yaml"
   sed -i "s/<WORKERS>/${TF_VAR_worker_count:-${WORKER_COUNT}}/g" "${OKD}/okd/install-config.yaml"
   local pull_secret=""
-  pull_secret=$(printf '%s\n' "${PULL_SECRET}" | sed 's/[&\/]/\&/g') || { echo "Failed to escape pull secret" >&2; return 1; }
-  sed -i "s/<PULL_SECRET>/\x27${pull_secret}/g" "${OKD}/okd/install-config.yaml"
+  pull_secret=$(printf '%s\n' "${PULL_SECRET}" | tr -d '\n')
+  PULL_SECRET="$pull_secret" python3 -c "
+import json, os, sys
+path = sys.argv[1]
+with open(path) as f:
+    content = f.read()
+content = content.replace('pullSecret: |\n  <PULL_SECRET>', 'pullSecret: ' + json.dumps(os.environ['PULL_SECRET']), 1)
+with open(path, 'w') as f:
+    f.write(content)
+" "${OKD}/okd/install-config.yaml"
   cp "${OKD}/okd/install-config.yaml" "${OKD}/okd/install-config_backup.yaml"
 
   # export OPENSHIFT_INSTALL_OS_IMAGE_OVERRIDE=${OPENSHIFT_INSTALL_OS_IMAGE_OVERRIDE:-"https://mirror.openshift.com/pub/openshift-v4/x86_64/dependencies/rhcos/pre-release/latest/rhcos-live-iso.x86_64.iso"}
@@ -1227,7 +1294,7 @@ install_okd_virt() {
   kubectl config set-cluster okd --insecure-skip-tls-verify=true
   "${OKD}/openshift-install" agent wait-for bootstrap-complete --dir "${OKD}/okd/"
   # "${OKD}/oc" apply -f "${HOMELAB}/okd/okd-configuration/overlays/sandbox/ingress-controller.yaml"
-  "${OKD}/openshift-install" agent wait-for install-complete --dir "${OKD}/okd/"
+  wait_for_install_complete "${OKD}/okd/"
 
   kubectl label node sandbox-1 topology.kubernetes.io/zone=1 --overwrite
   kubectl label node sandbox-2 topology.kubernetes.io/zone=2 --overwrite
@@ -1258,7 +1325,7 @@ install_okd_sno() {
   export KUBECONFIG="${OKD}/okd/auth/kubeconfig"
   "${OKD}/openshift-install" agent wait-for bootstrap-complete --dir "${OKD}/okd/"
   # "${OKD}/oc" apply -f "${HOMELAB}/okd/okd-configuration/overlays/sandbox/ingress-controller.yaml"
-  "${OKD}/openshift-install" agent wait-for install-complete --dir "${OKD}/okd/"
+  wait_for_install_complete "${OKD}/okd/"
 }
 
 install_okd_bm() {
@@ -1290,7 +1357,7 @@ install_okd_bm() {
   export KUBECONFIG="${OKD}/okd/auth/kubeconfig"
   "${OKD}/openshift-install" agent wait-for bootstrap-complete --dir "${OKD}/okd/"
   # "${OKD}/oc" apply -f "${HOMELAB}/okd/okd-configuration/overlays/sandbox/ingress-controller.yaml"
-  "${OKD}/openshift-install" agent wait-for install-complete --dir "${OKD}/okd/"
+  wait_for_install_complete "${OKD}/okd/"
 
   kubectl label node server-1 topology.kubernetes.io/zone=1 --overwrite
   kubectl label node server-2 topology.kubernetes.io/zone=2 --overwrite
@@ -1459,7 +1526,7 @@ install_okd() {
 
   echo -e "\n\n${BLUE}Wait for Install To Complete:${NC}"
   #${OKD}/oc apply -f "${HOMELAB}/okd/okd-configuration/overlays/sandbox/ingress-controller.yaml"
-  "${OKD}/openshift-install" --dir="${OKD}/okd" wait-for install-complete --log-level debug
+  wait_for_install_complete "${OKD}/okd/"
 
   "${OKD}/oc" apply -f "${HOMELAB}/okd/okd-configuration/base/operator-hub.yaml"
   "${OKD}/oc" apply -f "${HOMELAB}/okd/okd-configuration/base/operators"
@@ -1505,7 +1572,7 @@ install_okd_agent() {
   export KUBECONFIG="${OKD}/okd/auth/kubeconfig"
   "${OKD}/openshift-install" agent wait-for bootstrap-complete --dir "${OKD}/okd/"
   # "${OKD}/oc" apply -f "${HOMELAB}/okd/okd-configuration/overlays/sandbox/ingress-controller.yaml"
-  "${OKD}/openshift-install" agent wait-for install-complete --dir "${OKD}/okd/"
+  wait_for_install_complete "${OKD}/okd/"
 }
 
 single_server() {
