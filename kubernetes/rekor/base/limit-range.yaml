@@ -1,0 +1,19 @@
+---
+apiVersion: v1
+kind: LimitRange
+metadata:
+  name: rekor-lr
+  namespace: rekor
+  labels:
+    app.kubernetes.io/instance: rekor
+spec:
+  limits:
+    - type: Container
+      default:
+        cpu: 100m
+        memory: 256Mi
+        ephemeral-storage: 256Mi
+      defaultRequest:
+        cpu: 50m
+        memory: 128Mi
+        ephemeral-storage: 128Mi
