@@ -2,7 +2,7 @@ terraform {
   required_providers {
     google = {
       source  = "hashicorp/google"
-      version = "8.7.0"
+      version = "8.9.0"
     }
     vault = {
       source  = "hashicorp/vault"
@@ -15,7 +15,7 @@ terraform {
     }
     http = {
       source  = "hashicorp/http"
-      version = "3.6.2"
+      version = "3.6.3"
     }
     # truenas = {
     #   source  = "dariusbakunas/truenas"
