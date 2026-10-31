@@ -67,6 +67,7 @@ BUILD_MODE ?= local
 WITH_UFS ?= 1
 COCKPIT ?= 0
 DOMAIN ?= microshift.dc2.vardevanyan.com
+NODE_IP ?= 10.102.1.7
 # --- Extra podman build flags (e.g. --no-cache for clean rebuilds) ---
 PODMAN_OPTS ?=
 
@@ -204,12 +205,14 @@ image: $(SSH_KEY_FILE) rpm
 		BUILD_MODE="$(BUILD_MODE)" \
 		COCKPIT="$(COCKPIT)" \
 		DOMAIN="$(DOMAIN)" \
+		NODE_IP="$(NODE_IP)" \
 		WITH_UFS="$(WITH_UFS)" \
 		podman build -f "$(shell pwd)/bootc.Containerfile" \
 		--build-arg BUILD_MODE="$(BUILD_MODE)" \
 		--build-arg COCKPIT="$(COCKPIT)" \
 		--build-arg WITH_UFS="$(WITH_UFS)" \
 		--build-arg DOMAIN="$(DOMAIN)" \
+		--build-arg NODE_IP="$(NODE_IP)" \
 		$(PODMAN_OPTS) \
 		-t "microshift-bootc:$(BOOTC_IMAGE_TAG)" \
 		-t "localhost/microshift-bootc:latest" \

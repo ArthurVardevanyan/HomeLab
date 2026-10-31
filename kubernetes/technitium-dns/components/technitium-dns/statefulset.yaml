@@ -76,6 +76,8 @@ spec:
               value: "technitium"
             - name: DNS_SERVER_LOG_USING_LOCAL_TIME
               value: "true"
+            - name: DNS_SERVER_LOG_DIR
+              value: "/etc/dns/logs"
             - name: DNS_SERVER_FORWARDERS
               value: "10.101.10.1"
           ports:
@@ -106,6 +108,8 @@ spec:
           volumeMounts:
             - name: technitium-dns-config
               mountPath: /etc/dns
+            - name: technitium-dns-config
+              mountPath: /var/log/technitium
             - name: technitium-dns-cert
               mountPath: /etc/tls
               readOnly: true

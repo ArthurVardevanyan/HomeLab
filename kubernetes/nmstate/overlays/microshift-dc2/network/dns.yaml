@@ -1,0 +1,19 @@
+---
+apiVersion: nmstate.io/v1
+kind: NodeNetworkConfigurationPolicy
+metadata:
+  annotations:
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+  name: dns
+spec:
+  desiredState:
+    dns-resolver:
+      config:
+        search:
+          - vardevanyan.com
+        server:
+          - 10.101.1.4
+          - 10.101.9.254
+          - 10.101.1.1
+  nodeSelector:
+    kubernetes.io/hostname: dc2.vardevanyan.com

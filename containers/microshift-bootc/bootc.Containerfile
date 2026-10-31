@@ -129,6 +129,7 @@ LABEL org.opencontainers.image.source="https://github.com/ArthurVardevanyan/Home
 
 ARG DOMAIN=microshift.dc2.vardevanyan.com
 ARG COCKPIT=0
+ARG NODE_IP=10.102.1.7
 ARG WITH_KINDNET=1
 ARG WITH_TOPOLVM=1
 ARG WITH_OLM=1
@@ -141,6 +142,7 @@ ENV \
   VG_NAME=myvg1 \
   EXTRA_CONFIG=/etc/microshift/config.d/10-san.yaml \
   DOMAIN=${DOMAIN} \
+  NODE_IP=${NODE_IP} \
   API_SERVER_PORT=6443 \
   KUBECONFIG=/var/lib/microshift/resources/kubeadmin/kubeconfig \
   LAST_IMAGE_FILE=/var/lib/microshift-okd/.last_image \
