@@ -17,6 +17,17 @@ patches:
       name: kube-vip-ds
   - patch: |-
       - op: add
+        path: /spec/template/spec/containers/0/env/-
+        value:
+          name: vip_nodename
+          valueFrom:
+            fieldRef:
+              fieldPath: spec.nodeName
+    target:
+      kind: DaemonSet
+      name: kube-vip-ds
+  - patch: |-
+      - op: add
         path: /spec/egress/-
         value:
           to:
