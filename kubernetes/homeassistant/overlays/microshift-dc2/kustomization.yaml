@@ -337,6 +337,21 @@ patches:
       - op: add
         path: /spec/template/spec/hostNetwork
         value: true
+      - op: add
+        path: /spec/template/spec/dnsPolicy
+        value: ClusterFirstWithHostNet
+      - op: add
+        path: /spec/template/spec/volumes/-
+        value:
+          name: dbus
+          hostPath:
+            path: /var/run/dbus
+            type: ""
+      - op: add
+        path: /spec/template/spec/containers/0/volumeMounts/-
+        value:
+          name: dbus
+          mountPath: /var/run/dbus
     target:
       kind: StatefulSet
       name: homeassistant
