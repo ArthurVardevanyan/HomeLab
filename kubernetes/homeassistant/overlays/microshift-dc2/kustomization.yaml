@@ -352,6 +352,24 @@ patches:
         value:
           name: dbus
           mountPath: /var/run/dbus
+      - op: replace
+        path: /spec/template/spec/securityContext/runAsNonRoot
+        value: false
+      - op: replace
+        path: /spec/template/spec/containers/0/securityContext/runAsUser
+        value: 0
+      - op: replace
+        path: /spec/template/spec/containers/0/securityContext/runAsNonRoot
+        value: false
+      - op: replace
+        path: /spec/template/spec/containers/0/livenessProbe/httpGet/scheme
+        value: HTTP
+      - op: replace
+        path: /spec/template/spec/containers/0/readinessProbe/httpGet/scheme
+        value: HTTP
+      - op: replace
+        path: /spec/template/spec/containers/0/startupProbe/httpGet/scheme
+        value: HTTP
     target:
       kind: StatefulSet
       name: homeassistant
