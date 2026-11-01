@@ -1,0 +1,17 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: topolvm-lvmd-0
+  namespace: topolvm-system
+data:
+  lvmd.yaml: |
+    socket-name: /run/topolvm/lvmd.sock
+    device-classes:
+      - name: ssd
+        default: true
+        spare-gb: 0
+        type: thin
+        volume-group: myvg1
+        thin-pool:
+          name: thin-pool-1
+          overprovision-ratio: 2

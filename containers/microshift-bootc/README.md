@@ -96,8 +96,8 @@ make clean          # Clean up build artifacts and temp clone
 │     optional components (TopoLVM, OLM, Multus)      │
 │  6. Cleanup caches and docs                        │
 │  7. Copy helper scripts, enable microshift.service │
-│  8. Write /etc/topolvm/lvmd.yaml, enable            │
-│     microshift-lvm.service (loop-backed VG)         │
+│  8. Patch TopoLVM ConfigMap so lvmd uses        │
+│     thin provisioning (see Storage section)       │
 └─────────────────────────────────────────────────────┘
 ```
 
@@ -126,18 +126,22 @@ make clean          # Clean up build artifacts and temp clone
 ### Storage (TopoLVM)
 
 `microshift-topolvm` provides the default `topolvm-provisioner` StorageClass. It
-needs an LVM volume group, `myvg1`, which `microshift-lvm.service` creates at
-every boot, before `microshift.service`:
+needs an LVM volume group, `myvg1`, and a thin pool, `thin-pool-1`, which
+`microshift-lvm.service` provisions at every boot, before `microshift.service`:
 
 - A sparse backing file `/var/lib/microshift-okd/lvmdisk.image` of `LVM_VOLSIZE`
   (75G) is created if missing and attached to a loop device.
 - The VG is created only when the device has no signature. An existing VG is just
   activated. The script refuses to reformat a device that has a signature but no VG.
-- `/etc/topolvm/lvmd.yaml` (baked in the image) points the default device class at
-  `myvg1`.
+- Thin pool `thin-pool-1` (90% of VG, 2x overprovision ratio) is created if missing.
+- The build-time `topolvm-lvmd-thin-patch.yaml` is applied as a strategic-merge
+  patch to the RPM's Helm-rendered ConfigMap `topolvm-lvmd-0`, so lvmd gets a
+  `type: thin` device class that provisions thin LVs under `thin-pool-1`. The
+  RPM release predates upstream's host-file config support (PR #257), so the
+  ConfigMap is the only path for this release.
 
-The size is only read when the file is first created. To resize later, grow the file
-(`truncate -s <new> <file>`), `losetup -c <loop>`, then `pvresize <loop>`. To start over:
+The thin-pool size is 90% of the VG and is set at build time via
+`setup-lvm.sh`. To grow the backing disk, create a new VG + thin pool:
 `systemctl stop microshift`, `lvremove -y myvg1`, `vgremove myvg1`, `losetup -D`,
 `rm /var/lib/microshift-okd/lvmdisk.image`, then reboot.
 
@@ -412,7 +416,11 @@ sudo bootc upgrade --apply
 sudo bootc status    # Booted digest should match the registry
 ```
 
-Image configuration lives in `/etc` or `/usr` so upgrades deliver it. Anything under `/var` or `/root` is only populated on first install, so the root kubeconfig symlink is created by a `tmpfiles.d` rule (`/usr/lib/tmpfiles.d/microshift-bootc.conf`), which also restores CRI-O's `policy.json` and `registries.d` if missing.
+Image configuration lives in `/usr` (delivered by upgrades) and `/etc`
+(preserved by bootc, not overwritten on upgrade). Anything under `/var` or
+`/root` is only populated on first install, so the root kubeconfig symlink is
+created by a `tmpfiles.d` rule (`/usr/lib/tmpfiles.d/microshift-bootc.conf`),
+which also restores CRI-O's `policy.json` and `registries.d` if missing.
 
 - **API server SANs**: `/etc/microshift/config.d/10-san.yaml`, generated from `DOMAIN` at build time (127.0.0.1/localhost are excluded — MicroShift rejects them in `subjectAltNames`).
 - **Greenboot**: `/etc/greenboot/greenboot.conf` sets `MICROSHIFT_WAIT_TIMEOUT_SEC=1200` and `GREENBOOT_MAX_BOOT_ATTEMPTS=3`. A deployment that is not healthy after three boots is rolled back automatically.
