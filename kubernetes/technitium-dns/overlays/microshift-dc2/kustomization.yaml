@@ -1,0 +1,59 @@
+---
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - ./service.yaml
+  - ../../base
+components:
+  - ../../components/technitium-dns
+  - ../../components/ingress
+patches:
+  - patch: |-
+      - op: replace
+        path: /spec/storageClassName
+        value: topolvm-provisioner
+    target:
+      kind: PersistentVolumeClaim
+  - patch: |-
+      - op: remove
+        path: /spec/ingressClassName
+    target:
+      kind: Ingress
+  - patch: |-
+      - op: replace
+        path: /spec/rules/0/host
+        value: technitium.dc2.vardevanyan.com
+      - op: replace
+        path: /spec/rules/1/host
+        value: technitium.dns.dc2.vardevanyan.com
+      - op: replace
+        path: /spec/tls/0/hosts/0
+        value: technitium.dc2.vardevanyan.com
+      - op: replace
+        path: /spec/tls/0/hosts/1
+        value: technitium.dns.dc2.vardevanyan.com
+    target:
+      kind: Ingress
+      name: technitium-dns
+  - patch: |-
+      - op: replace
+        path: /spec/dnsNames/0
+        value: technitium.dc2.vardevanyan.com
+      - op: replace
+        path: /spec/dnsNames/1
+        value: technitium.dns.dc2.vardevanyan.com
+    target:
+      kind: Certificate
+      name: technitium-dns-cert
+  - patch: |-
+      - op: replace
+        path: /spec/template/spec/containers/0/env/0/value
+        value: "technitium-dc2"
+    target:
+      kind: StatefulSet
+  - patch: |-
+      - op: replace
+        path: /spec/resources/requests/storage
+        value: 5Gi
+    target:
+      kind: PersistentVolumeClaim

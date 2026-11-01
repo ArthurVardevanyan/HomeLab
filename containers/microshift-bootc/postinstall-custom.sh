@@ -21,6 +21,7 @@ log_error() { echo -e "[ERROR] $1"; }
 
 # ---- Configuration ----
 DOMAIN="${DOMAIN:-microshift.dc2.vardevanyan.com}"
+NODE_IP="${NODE_IP:-10.102.1.7}"
 COCKPIT="${COCKPIT:-0}"
 
 # ---- Helper Functions ----
@@ -37,6 +38,7 @@ setup_firewall_rules() {
   firewall-offline-cmd --zone=public --add-service=https 2>/dev/null || true
   firewall-offline-cmd --zone=public --add-port=5353/udp 2>/dev/null || true
   firewall-offline-cmd --zone=public --add-port=6443/tcp 2>/dev/null || true
+  firewall-offline-cmd --zone=public --add-port=10250/tcp 2>/dev/null || true
   firewall-offline-cmd --zone=public --add-port=30000-32767/tcp 2>/dev/null || true
 
   log_success "Firewalld rules configured."
@@ -149,6 +151,7 @@ generate_subject_alt_names_config() {
   # excluded — MicroShift rejects them in subjectAltNames.
   local config_path="${EXTRA_CONFIG:-/etc/microshift/config.d/10-san.yaml}"
   local domain="${DOMAIN}"
+  local ip="${NODE_IP}"
 
   mkdir -p "$(dirname "${config_path}")"
 
@@ -156,6 +159,7 @@ generate_subject_alt_names_config() {
 apiServer:
   subjectAltNames:
     - ${domain}
+    - ${ip}
 EOF
 
   log_success "SubjectAltNames config generated: ${config_path}"

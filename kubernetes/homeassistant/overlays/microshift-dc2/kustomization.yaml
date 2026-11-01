@@ -1,0 +1,467 @@
+---
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - ../../base
+  - ./scc-clusterrole.yaml
+  - ./scc-grant.yaml
+components:
+  - ../../components/cnpg
+  - ../../components/ingress
+patches:
+  - patch: |-
+      $patch: delete
+      apiVersion: networking.k8s.io/v1
+      kind: NetworkPolicy
+      metadata:
+        name: deny-all
+        namespace: homeassistant
+    target:
+      kind: NetworkPolicy
+      name: deny-all
+  - patch: |-
+      $patch: delete
+      apiVersion: networking.k8s.io/v1
+      kind: NetworkPolicy
+      metadata:
+        name: allow-from-openshift-ingress
+        namespace: homeassistant
+    target:
+      kind: NetworkPolicy
+      name: allow-from-openshift-ingress
+  - patch: |-
+      $patch: delete
+      apiVersion: networking.k8s.io/v1
+      kind: NetworkPolicy
+      metadata:
+        name: allow-dns-traffic
+        namespace: homeassistant
+    target:
+      kind: NetworkPolicy
+      name: allow-dns-traffic
+  - patch: |-
+      $patch: delete
+      apiVersion: networking.k8s.io/v1
+      kind: NetworkPolicy
+      metadata:
+        name: allow-victoria-metrics-insert-egress
+        namespace: homeassistant
+    target:
+      kind: NetworkPolicy
+      name: allow-victoria-metrics-insert-egress
+  - patch: |-
+      $patch: delete
+      apiVersion: networking.k8s.io/v1
+      kind: NetworkPolicy
+      metadata:
+        name: allow-victoria-metrics-insert-ingress
+        namespace: homeassistant
+    target:
+      kind: NetworkPolicy
+      name: allow-victoria-metrics-insert-ingress
+  - patch: |-
+      $patch: delete
+      apiVersion: networking.k8s.io/v1
+      kind: NetworkPolicy
+      metadata:
+        name: allow-victoria-metrics-storage-egress
+        namespace: homeassistant
+    target:
+      kind: NetworkPolicy
+      name: allow-victoria-metrics-storage-egress
+  - patch: |-
+      $patch: delete
+      apiVersion: networking.k8s.io/v1
+      kind: NetworkPolicy
+      metadata:
+        name: allow-victoria-metrics-storage-ingress
+        namespace: homeassistant
+    target:
+      kind: NetworkPolicy
+      name: allow-victoria-metrics-storage-ingress
+  - patch: |-
+      $patch: delete
+      apiVersion: networking.k8s.io/v1
+      kind: NetworkPolicy
+      metadata:
+        name: allow-internet-egress
+        namespace: homeassistant
+    target:
+      kind: NetworkPolicy
+      name: allow-internet-egress
+  - patch: |-
+      $patch: delete
+      apiVersion: networking.k8s.io/v1
+      kind: NetworkPolicy
+      metadata:
+        name: allow-openshift-monitoring
+        namespace: homeassistant
+    target:
+      kind: NetworkPolicy
+      name: allow-openshift-monitoring
+  - patch: |-
+      $patch: delete
+      apiVersion: networking.k8s.io/v1
+      kind: NetworkPolicy
+      metadata:
+        name: allow-grafana-victoria-metrics
+        namespace: homeassistant
+    target:
+      kind: NetworkPolicy
+      name: allow-grafana-victoria-metrics
+  - patch: |-
+      $patch: delete
+      apiVersion: networking.k8s.io/v1
+      kind: NetworkPolicy
+      metadata:
+        name: cnpg-homeassistant-app
+        namespace: homeassistant
+    target:
+      kind: NetworkPolicy
+      name: cnpg-homeassistant-app
+  - patch: |-
+      $patch: delete
+      apiVersion: networking.k8s.io/v1
+      kind: NetworkPolicy
+      metadata:
+        name: cnpg-homeassistant-app-egress
+        namespace: homeassistant
+    target:
+      kind: NetworkPolicy
+      name: cnpg-homeassistant-app-egress
+  - patch: |-
+      $patch: delete
+      apiVersion: networking.k8s.io/v1
+      kind: NetworkPolicy
+      metadata:
+        name: cnpg-homeassistant-cluster
+        namespace: homeassistant
+    target:
+      kind: NetworkPolicy
+      name: cnpg-homeassistant-cluster
+  - patch: |-
+      $patch: delete
+      apiVersion: networking.k8s.io/v1
+      kind: NetworkPolicy
+      metadata:
+        name: cnpg-homeassistant-webhook
+        namespace: homeassistant
+    target:
+      kind: NetworkPolicy
+      name: cnpg-homeassistant-webhook
+  - patch: |-
+      $patch: delete
+      apiVersion: networking.k8s.io/v1
+      kind: NetworkPolicy
+      metadata:
+        name: cnpg-homeassistant-api-server
+        namespace: homeassistant
+    target:
+      kind: NetworkPolicy
+      name: cnpg-homeassistant-api-server
+  - patch: |-
+      $patch: delete
+      apiVersion: networking.k8s.io/v1
+      kind: NetworkPolicy
+      metadata:
+        name: cnpg-homeassistant-dns
+        namespace: homeassistant
+    target:
+      kind: NetworkPolicy
+      name: cnpg-homeassistant-dns
+  - patch: |-
+      $patch: delete
+      apiVersion: networking.k8s.io/v1
+      kind: NetworkPolicy
+      metadata:
+        name: cnpg-homeassistant-monitoring
+        namespace: homeassistant
+    target:
+      kind: NetworkPolicy
+      name: cnpg-homeassistant-monitoring
+  - patch: |-
+      $patch: delete
+      apiVersion: networking.k8s.io/v1
+      kind: NetworkPolicy
+      metadata:
+        name: cnpg-homeassistant-pgdump-ingress
+        namespace: homeassistant
+    target:
+      kind: NetworkPolicy
+      name: cnpg-homeassistant-pgdump-ingress
+  - patch: |-
+      $patch: delete
+      apiVersion: networking.k8s.io/v1
+      kind: NetworkPolicy
+      metadata:
+        name: cnpg-homeassistant-cnpg-operator
+        namespace: homeassistant
+    target:
+      kind: NetworkPolicy
+      name: cnpg-homeassistant-cnpg-operator
+  - patch: |-
+      $patch: delete
+      apiVersion: networking.k8s.io/v1
+      kind: NetworkPolicy
+      metadata:
+        name: cnpg-homeassistant-pgadmin
+        namespace: homeassistant
+    target:
+      kind: NetworkPolicy
+      name: cnpg-homeassistant-pgadmin
+  - patch: |-
+      $patch: delete
+      apiVersion: operator.victoriametrics.com/v1beta1
+      kind: VMCluster
+      metadata:
+        name: homeassistant
+        namespace: homeassistant
+    target:
+      kind: VMCluster
+      name: homeassistant
+  - patch: |-
+      $patch: delete
+      apiVersion: monitoring.coreos.com/v1
+      kind: ServiceMonitor
+      metadata:
+        name: vm-vminsert
+        namespace: homeassistant
+    target:
+      kind: ServiceMonitor
+      name: vm-vminsert
+  - patch: |-
+      $patch: delete
+      apiVersion: monitoring.coreos.com/v1
+      kind: ServiceMonitor
+      metadata:
+        name: vm-vmselect
+        namespace: homeassistant
+    target:
+      kind: ServiceMonitor
+      name: vm-vmselect
+  - patch: |-
+      $patch: delete
+      apiVersion: monitoring.coreos.com/v1
+      kind: ServiceMonitor
+      metadata:
+        name: vm-vmstorage
+        namespace: homeassistant
+    target:
+      kind: ServiceMonitor
+      name: vm-vmstorage
+  - patch: |-
+      $patch: delete
+      apiVersion: autoscaling.k8s.io/v1
+      kind: VerticalPodAutoscaler
+      metadata:
+        name: homeassistant
+        namespace: homeassistant
+    target:
+      kind: VerticalPodAutoscaler
+      name: homeassistant
+  - patch: |-
+      $patch: delete
+      apiVersion: autoscaling.k8s.io/v1
+      kind: VerticalPodAutoscaler
+      metadata:
+        name: vminsert-homeassistant
+        namespace: homeassistant
+    target:
+      kind: VerticalPodAutoscaler
+      name: vminsert-homeassistant
+  - patch: |-
+      $patch: delete
+      apiVersion: autoscaling.k8s.io/v1
+      kind: VerticalPodAutoscaler
+      metadata:
+        name: vmselect-homeassistant
+        namespace: homeassistant
+    target:
+      kind: VerticalPodAutoscaler
+      name: vmselect-homeassistant
+  - patch: |-
+      $patch: delete
+      apiVersion: autoscaling.k8s.io/v1
+      kind: VerticalPodAutoscaler
+      metadata:
+        name: vmstorage-homeassistant
+        namespace: homeassistant
+    target:
+      kind: VerticalPodAutoscaler
+      name: vmstorage-homeassistant
+  - patch: |-
+      $patch: delete
+      apiVersion: velero.io/v1
+      kind: Schedule
+      metadata:
+        name: homeassistant
+        namespace: velero
+    target:
+      kind: Schedule
+      name: homeassistant
+  - patch: |-
+      $patch: delete
+      apiVersion: monitoring.coreos.com/v1
+      kind: ServiceMonitor
+      metadata:
+        name: homeassistant
+        namespace: homeassistant
+    target:
+      kind: ServiceMonitor
+      name: homeassistant
+  - patch: |-
+      $patch: delete
+      apiVersion: external-secrets.io/v1
+      kind: ExternalSecret
+      metadata:
+        name: long-lived-creds
+        namespace: homeassistant
+    target:
+      kind: ExternalSecret
+      name: long-lived-creds
+  - patch: |-
+      $patch: delete
+      apiVersion: monitoring.coreos.com/v1
+      kind: PodMonitor
+      metadata:
+        name: cnpg-homeassistant
+        namespace: homeassistant
+    target:
+      kind: PodMonitor
+      name: cnpg-homeassistant
+  - patch: |-
+      - op: remove
+        path: /spec/template/metadata/annotations/k8s.v1.cni.cncf.io~1networks
+      - op: remove
+        path: /spec/template/spec/securityContext/sysctls
+      - op: add
+        path: /spec/template/spec/hostNetwork
+        value: true
+      - op: add
+        path: /spec/template/spec/dnsPolicy
+        value: ClusterFirstWithHostNet
+      - op: add
+        path: /spec/template/spec/volumes/-
+        value:
+          name: dbus
+          hostPath:
+            path: /var/run/dbus
+            type: ""
+      - op: add
+        path: /spec/template/spec/containers/0/volumeMounts/-
+        value:
+          name: dbus
+          mountPath: /var/run/dbus
+      - op: replace
+        path: /spec/template/spec/securityContext/runAsNonRoot
+        value: false
+      - op: replace
+        path: /spec/template/spec/containers/0/securityContext/runAsUser
+        value: 0
+      - op: replace
+        path: /spec/template/spec/containers/0/securityContext/runAsNonRoot
+        value: false
+      - op: replace
+        path: /spec/template/spec/containers/0/livenessProbe/httpGet/scheme
+        value: HTTP
+      - op: replace
+        path: /spec/template/spec/containers/0/readinessProbe/httpGet/scheme
+        value: HTTP
+      - op: replace
+        path: /spec/template/spec/containers/0/startupProbe/httpGet/scheme
+        value: HTTP
+      - op: add
+        path: /spec/template/spec/containers/0/securityContext/capabilities/add/-
+        value: NET_ADMIN
+      - op: add
+        path: /spec/template/spec/containers/0/securityContext/capabilities/add/-
+        value: NET_RAW
+    target:
+      kind: StatefulSet
+      name: homeassistant
+  - patch: |-
+      - op: replace
+        path: /spec/storageClassName
+        value: topolvm-provisioner
+    target:
+      kind: PersistentVolumeClaim
+      name: homeassistant
+  - patch: |-
+      - op: replace
+        path: /spec/instances
+        value: 1
+      - op: replace
+        path: /spec/minSyncReplicas
+        value: 0
+      - op: replace
+        path: /spec/maxSyncReplicas
+        value: 0
+      - op: replace
+        path: /spec/storage/storageClass
+        value: topolvm-provisioner
+      - op: replace
+        path: /spec/storage/size
+        value: 10Gi
+      - op: replace
+        path: /spec/walStorage/storageClass
+        value: topolvm-provisioner
+      - op: replace
+        path: /spec/walStorage/size
+        value: 5Gi
+      - op: remove
+        path: /spec/backup
+    target:
+      kind: Cluster
+      name: homeassistant
+  - patch: |-
+      - op: replace
+        path: /spec/dnsNames/0
+        value: home.dc2.vardevanyan.com
+      - op: replace
+        path: /spec/duration
+        value: 2160h # 90d
+    target:
+      kind: Certificate
+      name: homeassistant-cert
+  - patch: |-
+      - op: replace
+        path: /metadata/labels/pod-security.kubernetes.io~1enforce
+        value: privileged
+      - op: replace
+        path: /metadata/labels/pod-security.kubernetes.io~1enforce-version
+        value: latest
+      - op: replace
+        path: /metadata/labels/pod-security.kubernetes.io~1warn
+        value: privileged
+      - op: replace
+        path: /metadata/labels/pod-security.kubernetes.io~1warn-version
+        value: latest
+      - op: replace
+        path: /metadata/labels/pod-security.kubernetes.io~1audit
+        value: privileged
+      - op: replace
+        path: /metadata/labels/pod-security.kubernetes.io~1audit-version
+        value: latest
+    target:
+      kind: Namespace
+      name: homeassistant
+  - patch: |-
+      - op: remove
+        path: /spec/ingressClassName
+    target:
+      kind: Ingress
+      name: homeassistant
+  - patch: |-
+      - op: replace
+        path: /spec/rules/0/host
+        value: home.dc2.vardevanyan.com
+    target:
+      kind: Ingress
+      name: homeassistant
+  - patch: |-
+      - op: replace
+        path: /spec/tls/0/hosts/0
+        value: home.dc2.vardevanyan.com
+    target:
+      kind: Ingress
+      name: homeassistant

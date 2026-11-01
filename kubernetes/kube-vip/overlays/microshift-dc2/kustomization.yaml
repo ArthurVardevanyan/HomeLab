@@ -1,0 +1,60 @@
+---
+kind: Kustomization
+apiVersion: kustomize.config.k8s.io/v1beta1
+resources:
+  - ../../base
+    # - ./vlan3.yaml
+components:
+  - ../../components/l2
+  - ../../components/rollout
+patches:
+  - patch: |-
+      - op: add
+        path: /spec/template/spec/containers/0/env/0
+        value: { "name": "prometheus_server", "value": ":2113" }
+    target:
+      kind: DaemonSet
+      name: kube-vip-ds
+  - patch: |-
+      - op: add
+        path: /spec/template/spec/containers/0/env/-
+        value:
+          name: vip_nodename
+          valueFrom:
+            fieldRef:
+              fieldPath: spec.nodeName
+    target:
+      kind: DaemonSet
+      name: kube-vip-ds
+  - patch: |-
+      - op: add
+        path: /spec/egress/-
+        value:
+          to:
+            - ipBlock:
+                cidr: 10.44.0.0/32
+          ports:
+            - protocol: TCP
+              port: 6443
+    target:
+      kind: NetworkPolicy
+      name: allow-api-server
+  - patch: |-
+      - op: replace
+        path: /spec/replicas
+        value: 1
+      - op: replace
+        path: /spec/strategy
+        value: { "type": "Recreate" }
+    target:
+      kind: Deployment
+      name: kube-vip-cloud-provider
+  - patch: |-
+      - op: add
+        path: /spec/template/spec/containers/0/env/-
+        value: { "name": "egress_podcidr", "value": "10.42.0.0/16" }
+      - op: add
+        path: /spec/template/spec/containers/0/env/-
+        value: { "name": "egress_servicecidr", "value": "10.43.0.0/16" }
+    target:
+      kind: DaemonSet

@@ -86,6 +86,31 @@ path "auth/token/create" {
 export VAULT_TOKEN=$(vault login --tls-skip-verify -address=https://vault.arthurvardevanyan.com -method=userpass -token-only username=arthur)
 ```
 
+## DC2 Vault Setup
+
+DC2 cluster requires Vault integration for External Secrets Operator. Due to the one-way tunnel setup, Vault on OKD cannot call back to DC2 cluster to verify Kubernetes tokens until the tunnel becomes bidirectional.
+
+```bash
+# Microshift DC2 (external cluster) requires CA cert and token reviewer JWT
+MICROSHIFT_DC2_CA=$(KUBECONFIG=~/.kube/microshift kubectl config view --raw -o jsonpath='{.clusters[0].cluster.certificate-authority-data}' | base64 -d)
+MICROSHIFT_DC2_JWT=$(KUBECONFIG=~/.kube/microshift kubectl create token argocd -n argocd --duration=87600h)
+
+vault write auth/microshift-dc2/config \
+  kubernetes_host="https://microshift.dc2.vardevanyan.com:6443" \
+  kubernetes_ca_cert="${MICROSHIFT_DC2_CA}" \
+  token_reviewer_jwt="${MICROSHIFT_DC2_JWT}" \
+  disable_iss_validation=true
+
+vault write auth/microshift-dc2/login role=argocd jwt=$(cat /var/run/secrets/kubernetes.io/serviceaccount/token)
+
+# Create role for DC2 argocd service account
+vault write auth/microshift-dc2/role/dc2-argocd \
+    bound_service_account_names=argocd \
+    bound_service_account_namespaces=argocd \
+    policies=argocd \
+    ttl=1h
+```
+
 ## REF
 
 - <https://holdmybeersecurity.com/2021/03/04/gitlab-ci-cd-pipeline-with-vault-secrets/>

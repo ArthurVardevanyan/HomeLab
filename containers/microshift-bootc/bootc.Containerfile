@@ -129,6 +129,7 @@ LABEL org.opencontainers.image.source="https://github.com/ArthurVardevanyan/Home
 
 ARG DOMAIN=microshift.dc2.vardevanyan.com
 ARG COCKPIT=0
+ARG NODE_IP=10.102.1.7
 ARG WITH_KINDNET=1
 ARG WITH_TOPOLVM=1
 ARG WITH_OLM=1
@@ -141,6 +142,7 @@ ENV \
   VG_NAME=myvg1 \
   EXTRA_CONFIG=/etc/microshift/config.d/10-san.yaml \
   DOMAIN=${DOMAIN} \
+  NODE_IP=${NODE_IP} \
   API_SERVER_PORT=6443 \
   KUBECONFIG=/var/lib/microshift/resources/kubeadmin/kubeconfig \
   LAST_IMAGE_FILE=/var/lib/microshift-okd/.last_image \
@@ -214,17 +216,25 @@ RUN \
 # Make scripts executable
 RUN chmod +x /usr/local/bin/setup-lvm.sh /usr/local/bin/postinstall-custom.sh
 
-# TopoLVM: lvmd device class on the loop-backed VG that microshift-lvm.service creates
-# at boot. MicroShift creates the default `topolvm-provisioner` StorageClass from this.
-# Written with COPY (not a RUN redirect) so it is certain to land in the image layer.
-COPY <<EOT /etc/topolvm/lvmd.yaml
-socket-name: /run/topolvm/lvmd.sock
-device-classes:
-  - default: true
-    name: ssd
-    spare-gb: 0
-    volume-group: ${VG_NAME}
-EOT
+# TopoLVM: patch the RPM's ConfigMap so lvmd uses a thin pool instead of
+# the default thick (volume-group) device class.  The RPM renders its
+# manifests from a Helm chart, and the DaemonSet mounts the ConfigMap.
+# Host-file support is not available in this RPM release yet, so we
+# patch the ConfigMap at build time and apply the patch through
+# kustomize on the RPM's own kustomization directory.
+COPY topolvm-lvmd-thin-patch.yaml /usr/share/microshift-bootc/
+RUN if [ "${WITH_TOPOLVM}" = "1" ]; then \
+      mkdir -p /usr/lib/microshift/manifests.d/001-microshift-topolvm; \
+      cp /usr/share/microshift-bootc/topolvm-lvmd-thin-patch.yaml \
+        /usr/lib/microshift/manifests.d/001-microshift-topolvm/; \
+      # Append the patch path to the RPM kustomization.yaml (patches: is the
+      # last key, so a list-item append is safe and idempotent). \
+      echo '  - path: topolvm-lvmd-thin-patch.yaml' \
+        >> /usr/lib/microshift/manifests.d/001-microshift-topolvm/kustomization.yaml; \
+      # Build the patched manifests and verify thin-pool config landed. \
+      oc kustomize /usr/lib/microshift/manifests.d/001-microshift-topolvm \
+        | grep -q 'type: thin'; \
+    fi
 COPY microshift-lvm.service /usr/lib/systemd/system/microshift-lvm.service
 RUN systemctl enable microshift-lvm.service
 
@@ -256,7 +266,7 @@ RUN /usr/local/bin/postinstall-custom.sh && \
   test -f /etc/sysctl.d/99-microshift.conf && \
   test -f "${EXTRA_CONFIG}" && \
   rpm -q microshift-networking && \
-  { [ "${WITH_TOPOLVM}" != "1" ] || { rpm -q microshift-topolvm && test -f /etc/topolvm/lvmd.yaml; }; } && \
+  { [ "${WITH_TOPOLVM}" != "1" ] || { rpm -q microshift-topolvm && oc kustomize /usr/lib/microshift/manifests.d/001-microshift-topolvm | grep -q 'type: thin'; }; } && \
   { [ "${WITH_OLM}" != "1" ] || rpm -q microshift-olm; } && \
   { [ "${WITH_MULTUS}" != "1" ] || rpm -q microshift-multus; } && \
   systemctl is-enabled microshift-lvm.service

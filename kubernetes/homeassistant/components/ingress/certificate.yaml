@@ -1,0 +1,23 @@
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: homeassistant-cert
+  namespace: homeassistant
+  annotations:
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+  labels:
+    app.kubernetes.io/instance: homeassistant
+spec:
+  secretName: homeassistant-cert
+  duration: 2160h # 90d
+  renewBeforePercentage: 50
+  privateKey:
+    rotationPolicy: Always
+    algorithm: ECDSA
+    size: 256
+  dnsNames:
+    - home.arthurvardevanyan.com
+  issuerRef:
+    kind: ClusterIssuer
+    name: letsencrypt
