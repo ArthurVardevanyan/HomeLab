@@ -383,3 +383,25 @@ patches:
     target:
       kind: Certificate
       name: homeassistant-cert
+  - patch: |-
+      - op: replace
+        path: /metadata/labels/pod-security.kubernetes.io~1enforce
+        value: privileged
+      - op: replace
+        path: /metadata/labels/pod-security.kubernetes.io~1enforce-version
+        value: latest
+      - op: replace
+        path: /metadata/labels/pod-security.kubernetes.io~1warn
+        value: privileged
+      - op: replace
+        path: /metadata/labels/pod-security.kubernetes.io~1warn-version
+        value: latest
+      - op: replace
+        path: /metadata/labels/pod-security.kubernetes.io~1audit
+        value: privileged
+      - op: replace
+        path: /metadata/labels/pod-security.kubernetes.io~1audit-version
+        value: latest
+    target:
+      kind: Namespace
+      name: homeassistant
