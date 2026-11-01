@@ -4,6 +4,7 @@ kind: Kustomization
 resources:
   - ../../base
   - ./certificate.yaml
+  - ./scc-grant.yaml
 components:
   - ../../components/cnpg
 patches:
@@ -330,6 +331,8 @@ patches:
   - patch: |-
       - op: remove
         path: /spec/template/metadata/annotations/k8s.v1.cni.cncf.io~1networks
+      - op: remove
+        path: /spec/template/spec/securityContext/sysctls
       - op: add
         path: /spec/template/spec/hostNetwork
         value: true
