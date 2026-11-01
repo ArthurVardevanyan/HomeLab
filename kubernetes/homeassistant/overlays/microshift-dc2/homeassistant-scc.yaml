@@ -4,29 +4,37 @@ kind: SecurityContextConstraints
 apiVersion: security.openshift.io/v1
 metadata:
   name: homeassistant-scc
-allowPrivilegedContainer: true
-allowHostNetwork: true
-allowHostPorts: true
-allowHostPID: false
+allowHostDirVolumePlugin: false
 allowHostIPC: false
-readOnlyRootFilesystem: false
-requiredDropCapabilities: []
+allowHostNetwork: true
+allowHostPID: false
+allowHostPorts: true
+allowPrivilegedContainer: true
 allowedCapabilities:
   - CHOWN
   - DAC_OVERRIDE
   - FOWNER
   - SETUID
   - SETGID
-allowedVolumeTypes:
+defaultAddCapabilities: null
+fsGroup:
+  type: RunAsAny
+groups: []
+seLinuxContext:
+  type: RunAsAny
+supplementalGroups:
+  type: RunAsAny
+users:
+  - system:serviceaccount:homeassistant:homeassistant-sa
+volumes:
   - configMap
   - emptyDir
   - persistentVolumeClaim
   - secret
 runAsUser:
   type: RunAsAny
-fsGroup:
-  type: RunAsAny
-supplementalGroups:
-  type: RunAsAny
-users:
-  - system:serviceaccount:homeassistant:homeassistant-sa
+seccompProfiles:
+  - runtime/default
+readOnlyRootFilesystem: false
+requiredDropCapabilities: []
+priority: null

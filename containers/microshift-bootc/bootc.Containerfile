@@ -227,7 +227,7 @@ device-classes:
     spare-gb: 0
     thin-pool: thin-pool-1
     thin-pool-config:
-      overprovision-ratio: 10
+      overprovision-ratio: 2
 EOT
 COPY microshift-lvm.service /usr/lib/systemd/system/microshift-lvm.service
 RUN systemctl enable microshift-lvm.service
