@@ -74,9 +74,12 @@ fi
 # 4. Thin pool (idempotent)
 if ! lvs "${VG_NAME}/thin-pool-1" &>/dev/null; then
   log_info "Creating thin pool thin-pool-1 (90% of VG)"
+  vg_size_mb=$(vgs --noheadings --nosuffix --units m -o vg_size "${VG_NAME}" | awk '{print $1}')
+  pool_size_mb=$(awk "BEGIN {printf \"%.0f\", ${vg_size_mb} * 0.9}")
+  log_info "VG size ${vg_size_mb}M, thin-pool size ${pool_size_mb}M"
   lvcreate --yes --type thin-pool \
     --name thin-pool-1 \
-    --size 90%VG \
+    --size "${pool_size_mb}m" \
     "${VG_NAME}"
 else
   log_info "Thin pool thin-pool-1 already exists"
