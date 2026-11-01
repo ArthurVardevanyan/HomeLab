@@ -225,7 +225,9 @@ device-classes:
   - default: true
     name: ssd
     spare-gb: 0
-    volume-group: ${VG_NAME}
+    thin-pool: thin-pool-1
+    thin-pool-config:
+      overprovision-ratio: 10
 EOT
 COPY microshift-lvm.service /usr/lib/systemd/system/microshift-lvm.service
 RUN systemctl enable microshift-lvm.service

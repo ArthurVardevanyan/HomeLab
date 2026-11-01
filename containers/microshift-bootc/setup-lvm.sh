@@ -26,7 +26,7 @@ if [[ "${uid}" -ne 0 ]]; then
   exit 1
 fi
 
-for tool in truncate losetup vgcreate vgchange vgs blkid lvmdevices; do
+for tool in truncate losetup vgcreate vgchange vgs lvs blkid lvmdevices lvcreate; do
   if ! command -v "${tool}" &>/dev/null; then
     log_error "'${tool}' is not installed."
     exit 1
@@ -71,4 +71,16 @@ else
   vgcreate -y "${VG_NAME}" "${loop_dev}"
 fi
 
+# 4. Thin pool (idempotent)
+if ! lvs "${VG_NAME}/thin-pool-1" &>/dev/null; then
+  log_info "Creating thin pool thin-pool-1 (90% of VG)"
+  lvcreate --yes --type thin-pool \
+    --name thin-pool-1 \
+    --size 90%VG \
+    "${VG_NAME}"
+else
+  log_info "Thin pool thin-pool-1 already exists"
+fi
+
 vgs "${VG_NAME}"
+lvs "${VG_NAME}"
