@@ -14,3 +14,10 @@ resources:
 components:
   - ../../components/technitium-dns
   - ../../components/openshift
+patches:
+  - patch: |-
+      - op: replace
+        path: /spec/resources/requests/storage
+        value: 5Gi
+    target:
+      kind: PersistentVolumeClaim

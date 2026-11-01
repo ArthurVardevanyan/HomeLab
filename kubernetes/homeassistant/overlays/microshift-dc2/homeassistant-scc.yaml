@@ -1,0 +1,32 @@
+---
+# Custom SCC for HomeAssistant pod (hostNetwork + required capabilities)
+kind: SecurityContextConstraints
+apiVersion: security.openshift.io/v1
+metadata:
+  name: homeassistant-scc
+allowPrivilegedContainer: true
+allowHostNetwork: true
+allowHostPorts: true
+allowHostPID: false
+allowHostIPC: false
+readOnlyRootFilesystem: false
+requiredDropCapabilities: []
+allowedCapabilities:
+  - CHOWN
+  - DAC_OVERRIDE
+  - FOWNER
+  - SETUID
+  - SETGID
+allowedVolumeTypes:
+  - configMap
+  - emptyDir
+  - persistentVolumeClaim
+  - secret
+runAsUser:
+  type: RunAsAny
+fsGroup:
+  type: RunAsAny
+supplementalGroups:
+  type: RunAsAny
+users:
+  - system:serviceaccount:homeassistant:homeassistant-sa
