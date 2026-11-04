@@ -29,6 +29,7 @@ to convert its answer, and returns that schema-enforced JSON instead.
 import copy
 import json
 import re
+import shlex
 from typing import Any
 
 from litellm._logging import verbose_proxy_logger as logger
@@ -65,7 +66,7 @@ MAX_COMPLETION_TOKENS = 8192
 # model tends to keep calling skill scripts instead of concluding. Count the
 # tool-calling turns so far, ask the model to wrap up, and past a point remove
 # the tools so it has to answer (the JSON conversion then runs as usual).
-NUDGE_AFTER_TURNS = 15
+NUDGE_AFTER_TURNS = 20
 FORCE_FINISH_AFTER_TURNS = 25
 NUDGE_NOTE = (
     "[Investigation budget: you have used {turns} tool-calling steps. Wrap up "
@@ -110,23 +111,35 @@ SHELL_TOOL_TARGET = "exec_command"
 SHELL_CMD_KEYS = ("command", "script", "code", "cmd_str", "commandline")
 
 
-def _script_call(name: str, arguments: str | None) -> tuple[str, str]:
-    """The model used a skill script name (get_events.sh) as the tool name."""
-    extra = ""
+SCRIPT_NAME_RE = re.compile(r"^[A-Za-z0-9._/-]+$")
+
+
+def _script_call(name: str, arguments: str | None) -> tuple[str, str] | None:
+    """The model used a skill script name (get_events.sh) as the tool name.
+
+    Only plain file names are rewritten, and the name and every argument are
+    shell-quoted, so model output cannot inject extra shell syntax.
+    """
+    if not SCRIPT_NAME_RE.match(name):
+        return None
     try:
         parsed = json.loads(arguments or "")
     except ValueError:
         parsed = (arguments or "").strip()
     if isinstance(parsed, dict):
-        extra = " ".join(str(v) for v in parsed.values() if isinstance(v, (str, int)))
+        args = [str(v) for v in parsed.values() if isinstance(v, (str, int))]
     elif isinstance(parsed, list):
-        extra = " ".join(str(v) for v in parsed)
-    elif isinstance(parsed, str):
-        extra = parsed
-    if "/" in name:
-        cmd = f"bash {name} {extra}"
+        args = [str(v) for v in parsed]
+    elif isinstance(parsed, str) and parsed:
+        args = shlex.split(parsed) if parsed.count('"') % 2 == 0 and parsed.count("'") % 2 == 0 else [parsed]
     else:
-        cmd = f'bash "$(find / -name {name} -path "*skills*" 2>/dev/null | head -1)" {extra}'
+        args = []
+    quoted_args = " ".join(shlex.quote(a) for a in args)
+    if "/" in name:
+        cmd = f"bash {shlex.quote(name)} {quoted_args}"
+    else:
+        finder = f"find / -name {shlex.quote(name)} -path '*skills*' 2>/dev/null | head -1"
+        cmd = f'bash "$({finder})" {quoted_args}'
     return SHELL_TOOL_TARGET, json.dumps({"cmd": cmd.strip()})
 
 
@@ -453,6 +466,10 @@ def _drop_empty_rbac(text: str) -> str:
 
 async def _convert_to_json(request_data: dict, response_format: dict, answer: str) -> str:
     """Second call: no tools, schema enforced, convert the final answer."""
+    # There is no public API to access the router; this internal import is the
+    # only way. The image is pinned by digest via Renovate, so the module
+    # path is stable. If the import fails the hook already returns the
+    # original answer (the caller wraps this in a try/except).
     from litellm.proxy.proxy_server import llm_router
 
     if llm_router is None:
