@@ -1898,8 +1898,30 @@ approve_install_plans() {
 
   while IFS=$'\t' read -r NAMESPACE NAME CSV; do
     [[ -z "${NAMESPACE}" ]] && continue
+    # Strip hidden characters (CR, whitespace)
+    NAMESPACE=$(printf '%s' "${NAMESPACE}" | tr -d '\r' | xargs)
+    CSV=$(printf '%s' "${CSV}" | tr -d '\r' | xargs)
     echo "  Approving ${NAME} (${CSV}) in ${NAMESPACE}"
     kubectl patch installplan "${NAME}" -n "${NAMESPACE}" --type merge --patch '{"spec":{"approved":true}}'
+
+    # Find and update the subscription file matching this namespace
+    SUB_FILE=$(grep -rl "namespace: ${NAMESPACE}" --include="subscription.yaml" kubernetes/ 2>/dev/null | head -1)
+
+    if [[ -z "${SUB_FILE}" ]]; then
+      echo "    WARNING: No subscription file found for namespace '${NAMESPACE}'"
+      continue
+    fi
+
+    # Get current startingCSV from the file
+    CURRENT_CSV=$(grep 'startingCSV:' "${SUB_FILE}" | sed 's/.*startingCSV:[[:space:]]*//' | tr -d '"' | tr -d "'" | tr -d '\r' | awk '{print $1}')
+
+    if [[ "${CURRENT_CSV}" == "${CSV}" ]]; then
+      echo "    Already up to date: ${SUB_FILE} (${CSV})"
+    else
+      echo "    Updating ${SUB_FILE}"
+      echo "      ${CURRENT_CSV} -> ${CSV}"
+      sed -i "s|startingCSV:.*|startingCSV: ${CSV}|" "${SUB_FILE}"
+    fi
   done <<< "${PENDING}"
 
   echo -e "\n${BLUE}Done approving InstallPlans!${NC}"
