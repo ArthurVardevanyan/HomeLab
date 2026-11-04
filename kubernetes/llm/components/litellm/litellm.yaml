@@ -31,6 +31,23 @@ model_list:
   #     input_cost_per_token: 0.000000013
   #     output_cost_per_token: 0.000000013
 
+  # --- Qwen 35B for OpenShift Lightspeed agentic runs ---
+  # Same backend as qwen3.6-35b-a3b. The "-agentic" suffix makes
+  # strip_agentic_params.py drop response_format and tools[].function.strict,
+  # which otherwise stop vLLM from emitting tool calls (vllm#39929, vllm#55152).
+  - model_name: qwen3.6-35b-a3b-agentic
+    model_info:
+      disable_background_health_check: true
+    litellm_params:
+      model: openai/35b-gpu0
+      api_base: http://llama-swap-svc.llm.svc.cluster.local.:8080/v1
+      api_key: "dummy"
+      input_cost_per_token: 0.000000013
+      output_cost_per_token: 0.000000013
+      timeout: 7200
+      num_retries: 8
+      retry_after: 15
+
   # --- Public Model Alias 4: Qwen 27B
   - model_name: qwen3.8-27b
     model_info:
@@ -151,6 +168,7 @@ litellm_settings:
   enable_redis_auth_cache: true
   callbacks:
     - prometheus
+    - strip_agentic_params.proxy_handler_instance
   router_settings:
     redis_host: litellm-dragonfly.llm.svc.cluster.local
     redis_port: 6379

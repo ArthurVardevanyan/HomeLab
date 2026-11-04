@@ -1,0 +1,14 @@
+---
+apiVersion: agentic.openshift.io/v1alpha1
+kind: LLMProvider
+metadata:
+  name: litellm
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+spec:
+  type: OpenAI
+  openAI:
+    url: "http://litellm-svc.llm.svc:4000"
+    credentialsSecret:
+      name: lightspeed-llm-credentials

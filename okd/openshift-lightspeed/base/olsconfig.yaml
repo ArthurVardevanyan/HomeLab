@@ -89,7 +89,11 @@ spec:
             cpu: 1
             memory: 2Gi
       mcpServer:
-        replicas: 2
+        # Must stay at 1: MCP streamable-HTTP sessions are held in memory by a
+        # single pod and the operator-managed Service has no sessionAffinity,
+        # so with >1 replica the follow-up requests of a session hit another
+        # pod and get 404 (agentic sandbox then drops the MCP server).
+        replicas: 1
         resources:
           requests:
             cpu: 50m

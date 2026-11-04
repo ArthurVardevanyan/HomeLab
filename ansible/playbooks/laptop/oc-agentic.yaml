@@ -1,0 +1,36 @@
+---
+- name: Install oc-agentic CLI
+  hosts: lenovo
+  gather_facts: false
+  become: true
+  user: arthur
+  vars:
+    oc_agentic_version: latest
+  tasks:
+    - name: Download oc-agentic
+      ansible.builtin.get_url:
+        url: "https://github.com/openshift/lightspeed-agentic-operator/releases/download/{{ oc_agentic_version }}/oc-agentic_linux_arm64.tar.gz"
+        dest: /tmp/oc-agentic_linux_arm64.tar.gz
+        mode: "0644"
+      check_mode: false
+
+    - name: oc-agentic Dir
+      ansible.builtin.file:
+        path: /tmp/oc-agentic
+        state: directory
+        mode: "0755"
+      check_mode: false
+
+    - name: Extract oc-agentic
+      ansible.builtin.unarchive:
+        src: /tmp/oc-agentic_linux_arm64.tar.gz
+        dest: /tmp/oc-agentic
+        remote_src: true
+      check_mode: false
+
+    - name: Install oc-agentic to /usr/local/bin
+      ansible.builtin.copy:
+        src: /tmp/oc-agentic/oc-agentic
+        dest: /usr/local/bin/oc-agentic
+        mode: "0755"
+        remote_src: true

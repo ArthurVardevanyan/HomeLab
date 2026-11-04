@@ -129,6 +129,7 @@ spec:
   policyTypes:
     - Ingress
   ingress:
+    # OLS app-server (existing)
     - from:
         - namespaceSelector:
             matchLabels:
@@ -136,6 +137,37 @@ spec:
           podSelector:
             matchLabels:
               app.kubernetes.io/name: lightspeed-service-api
+      ports:
+        - port: 4000
+          protocol: TCP
+    # Agentic sandbox pods (step label key-presence)
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: openshift-lightspeed
+          podSelector:
+            matchExpressions:
+              - key: agentic.openshift.io/step
+                operator: Exists
+      ports:
+        - port: 4000
+          protocol: TCP
+    # Agentic operator controller-manager (preflight probes + LLM client)
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: openshift-lightspeed
+          podSelector:
+            matchLabels:
+              control-plane: agentic-controller-manager
+      ports:
+        - port: 4000
+          protocol: TCP
+    # Label-less pods (agentic sandbox pods without step label)
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: openshift-lightspeed
       ports:
         - port: 4000
           protocol: TCP
