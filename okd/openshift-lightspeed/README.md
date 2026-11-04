@@ -11,6 +11,7 @@
     - [How to Apply/Reapply](#how-to-applyreapply)
     - [Verification](#verification)
     - [Operator Safety](#operator-safety)
+  - [Tool-Result Inspection Guardrail (disabled)](#tool-result-inspection-guardrail-disabled)
   - [Directory Structure](#directory-structure)
   - [Components](#components)
   - [ArgoCD](#argocd)
@@ -31,11 +32,13 @@
     - [9. Console "Loading logs..." never finishes (open, upstream)](#9-console-loading-logs-never-finishes-open-upstream)
     - [10. `disable_auth` patch lost on reconcile (replaced)](#10-disable_auth-patch-lost-on-reconcile-replaced)
     - [11. MCP tools filtered (open, not analyzed)](#11-mcp-tools-filtered-open-not-analyzed)
+    - [12. Chat tool result fails the safety inspection (workaround)](#12-chat-tool-result-fails-the-safety-inspection-workaround)
   - [Troubleshooting](#troubleshooting)
     - [Console shows "Loading logs..." forever for an AgenticRun](#console-shows-loading-logs-forever-for-an-agenticrun)
     - [`ValueError: Invalid user ID`](#valueerror-invalid-user-id)
     - [Operator reverting ConfigMap changes](#operator-reverting-configmap-changes)
     - [No User/Identity objects created](#no-useridentity-objects-created)
+    - ["A tool result failed the safety inspection"](#a-tool-result-failed-the-safety-inspection)
 
 ## Overview
 
@@ -86,6 +89,44 @@ kubectl logs -l app.kubernetes.io/name=lightspeed-service-api -n openshift-light
 ### Operator Safety
 
 The OLS operator does not support `authentication_config` in the CRD yet (confirmed in upstream code). The operator stays at 0 replicas and must stay that way.
+
+## Tool-Result Inspection Guardrail (disabled)
+
+**The problem.** Once the token flow works (see [OIDC Auth Fix](#oidc-auth-fix)), chat MCP tools run and return cluster data. OLS then runs a tool-result inspection guardrail: an LLM classifier that screens each tool result for prompt injection before the model sees it. The classifier calls the **plain** `qwen3.6-35b-a3b` model with `response_format: json_schema` and no tools. The LiteLLM `strip_agentic_params` hook (see [issue 5](#5-model-never-calls-tools-vllm-bugs-workaround)) only strips `response_format` for the `-agentic` alias, so the request reaches vLLM unchanged. vLLM does not handle this structured output request correctly for this model, so the classifier fails all three retries (`outcome=classifier_error` in the `tool_result.inspection` span) and OLS aborts the turn with:
+
+> Lightspeed stopped the operation because a tool result failed the safety inspection.
+
+The guardrail itself is working as designed. The failure comes from the homelab vLLM backend, the same limitation as issue 5 showing up in a second, non-agentic consumer.
+
+**The fix.** Set `ols_config.guardrails.tool_result_inspection.enabled: false` in the `olsconfig` ConfigMap. This is the only flag that controls the classifier (it is built in `docs_summarizer.py` and only when the flag is `true`). As with the auth fix, the operator must stay at 0 replicas or it reverts the change (see [issue 10](#10-disable_auth-patch-lost-on-reconcile-replaced)).
+
+**Apply/reapply.** The whole config is a single string in the ConfigMap, so replace just the one block (this keeps comments and other keys intact):
+
+```bash
+export KUBECONFIG=$HOME/.kube/okd
+kubectl get configmap olsconfig -n openshift-lightspeed -o json > /tmp/olsconfig-cm.json
+python3 - <<'PY'
+import json
+d = json.load(open('/tmp/olsconfig-cm.json'))
+s = d['data']['olsconfig.yaml']
+old = "  guardrails:\n    tool_result_inspection:\n      enabled: true"
+assert s.count(old) == 1, f"expected 1 match, got {s.count(old)}"
+d['data']['olsconfig.yaml'] = s.replace(old, old.replace("true", "false"))
+for k in ('resourceVersion', 'uid', 'creationTimestamp'):
+    d['metadata'].pop(k, None)
+json.dump(d, open('/tmp/olsconfig-cm-new.json', 'w'), indent=2)
+PY
+kubectl apply -f /tmp/olsconfig-cm-new.json
+kubectl rollout restart deployment/lightspeed-app-server -n openshift-lightspeed
+```
+
+Verify: after sending one chat query, the app server logs `Tool-result inspection enabled=False` (the line is only logged per query) and never logs `Tool-result classifier initialized`:
+
+```bash
+kubectl logs -l app.kubernetes.io/name=lightspeed-service-api -n openshift-lightspeed --tail=200 | grep "Tool-result"
+```
+
+**Security tradeoff.** With the guardrail off, tool results (pod names, labels, annotations, command output) are not screened for prompt injection before reaching the model. The cluster content here is our own, so the residual risk is low. The durable fix is to make the vLLM backend honor `response_format: json_schema` for this model (or point the classifier at a model that does), then set the flag back to `true`.
 
 ## Directory Structure
 
@@ -216,6 +257,7 @@ Findings from bringing up agentic runs on OKD 5.0 (tech preview). Each entry say
 | 9   | Console "Loading logs..." never finishes            | Open (upstream)    | None                                                                |
 | 10  | `disable_auth` patch lost on OLS operator reconcile | Replaced           | `noop-with-token` auth module (see [OIDC Auth Fix](#oidc-auth-fix)) |
 | 11  | MCP tools `helm_install` and `pods_run` filtered    | Open, not analyzed | None                                                                |
+| 12  | Chat tool result fails the safety inspection        | Workaround         | `olsconfig` ConfigMap (`guardrails.tool_result_inspection.enabled`) |
 
 ### 1. Missing `lightspeed-agent` RBAC (fixed)
 
@@ -326,6 +368,10 @@ Resolved by switching to `noop-with-token` auth module (see [OIDC Auth Fix](#oid
 
 The sandbox logs `Filtered MCP tool server=openshift tool=helm_install ... reason=missing_rbac_metadata` (also `pods_run`). The full list of tools that survive the filter was not captured, so it is not known whether `resources_list` (the tool the model mentions) is available to the agent.
 
+### 12. Chat tool result fails the safety inspection (workaround)
+
+See [Tool-Result Inspection Guardrail](#tool-result-inspection-guardrail-disabled). Symptom: a chat query that triggers an MCP tool ends with "Lightspeed stopped the operation because a tool result failed the safety inspection." The classifier's structured output request (`response_format: json_schema`, plain `qwen3.6-35b-a3b`) fails on vLLM, so every tool result is rejected. Workaround: `guardrails.tool_result_inspection.enabled: false`.
+
 ## Troubleshooting
 
 ### Console shows "Loading logs..." forever for an AgenticRun
@@ -350,3 +396,7 @@ The `olsconfig` ConfigMap is operator-managed, so the operator overwrites hand e
 ### No User/Identity objects created
 
 OKD 5.x `type: OIDC` does not create OpenShift User/Identity objects. The upstream OIDC `sub` flows directly through the TokenReview, which is why the UUID check fails.
+
+### "A tool result failed the safety inspection"
+
+See [Tool-Result Inspection Guardrail](#tool-result-inspection-guardrail-disabled). The tool-result classifier cannot run against the homelab vLLM backend, so it is disabled in the ConfigMap. If you re-enable it and this error returns, the backend still does not honor `response_format: json_schema` for the model.
