@@ -39,10 +39,11 @@ RUN echo 10 > /etc/dnf/vars/releasever_major && \
   rpm -Uvh https://dl.fedoraproject.org/pub/epel/epel-release-latest-10.noarch.rpm && \
   rpm -Uvh https://download.postgresql.org/pub/repos/yum/reporpms/EL-10-x86_64/pgdg-redhat-repo-latest.noarch.rpm && \
   rpm -ivh https://github.com/opentofu/opentofu/releases/download/v${OPENTOFU_VERSION}/tofu_${OPENTOFU_VERSION}_amd64.rpm && \
+  rm -f /etc/yum.repos.d/pgdg*.repo && \
   microdnf -y update && \
   microdnf -y install --refresh --nodocs --setopt=install_weak_deps=0 \
   aria2 libpmem tcpdump sshpass rsync rclone git jq unzip tar make ShellCheck diffutils findutils gawk \
-  fio postgresql18 python3 python3-pip procps libatomic iperf3 skopeo openssl gcc glibc-langpack-en && \
+  fio python3 python3-pip procps libatomic iperf3 skopeo openssl gcc glibc-langpack-en && \
   ln -sf /usr/bin/python3 /usr/local/bin/python && \
   microdnf clean all && rm -rf /var/cache/* && \
   rm -rf /usr/share/doc/* /usr/share/man/* /usr/share/info/*
@@ -170,7 +171,7 @@ ENV GIT_CLIFF_VERSION=2.14.2
 # renovate: datasource=github-releases depName=go-task/task
 ENV TASK_VERSION=3.54.0
 # renovate: datasource=github-releases depName=ArthurVardevanyan/k8s-gitops-ci
-ENV K8S_GITOPS_CI_VERSION=0.62.12
+ENV K8S_GITOPS_CI_VERSION=0.63.0
 RUN curl -fL --retry 5 --retry-all-errors --retry-delay 2 -o "goreleaser_Linux_x86_64.tar.gz" \
   "https://github.com/goreleaser/goreleaser/releases/download/v${GORELEASER_VERSION}/goreleaser_Linux_x86_64.tar.gz" && \
   curl -fL --retry 5 --retry-all-errors --retry-delay 2 -o goreleaser-checksums.txt \

@@ -1,0 +1,21 @@
+---
+apiVersion: agentic.openshift.io/v1alpha1
+kind: ApprovalPolicy
+metadata:
+  name: cluster
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+spec:
+  maxConcurrentRuns: 5
+  stages:
+    # Analysis: auto-approve (investigation reads only)
+    - name: Analysis
+      approval: Automatic
+    # Execution: manual (cluster mutations require human sign-off)
+    - name: Execution
+      approval: Manual
+    # Verification: auto-approve (verifies analysis recommendations)
+    - name: Verification
+      approval: Automatic
+    # Escalation: defaults to Automatic (read-only, no list needed)

@@ -10,12 +10,15 @@ metadata:
 data:
   config.yaml: |
     pollInterval: 30s
+    preRunDelay: 10m
     postRunDelay: 1h
-
-    # Per-step tool overrides for analysis-only workflow
-    analysis:
-      tools:
-        skills:
-          - image: quay.io/openshiftanalytics/agentic-skills:latest
-            paths:
-              - /skills/cluster-troubleshoot/investigate-alert
+    filtering:
+      allowedReceivers:
+        - lightspeed
+    agent:
+      default: default
+    tools:
+      skills:
+        - image: quay.io/openshiftanalytics/agentic-skills:latest
+          paths:
+            - /skills/cluster-troubleshoot/investigate-alert

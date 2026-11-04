@@ -1,0 +1,17 @@
+---
+apiVersion: agentic.openshift.io/v1alpha1
+kind: Agent
+metadata:
+  name: default
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+spec:
+  llmProvider:
+    name: litellm
+  model: qwen3.6-35b-a3b-agentic
+  maxTurns: 40
+  timeouts:
+    analysisSeconds: 900
+    executionSeconds: 300
+    verificationSeconds: 180

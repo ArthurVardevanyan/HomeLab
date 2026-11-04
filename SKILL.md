@@ -51,6 +51,42 @@ Both kubeconfigs grant **cluster-admin**. Caution rules:
   correct fix is almost always a PR to [kubernetes/](kubernetes/), not a
   live `kubectl` change.
 
+### Debug and ad-hoc pods
+
+Every pod you create by hand (`kubectl run`, `kubectl debug`, throwaway
+`kubectl apply`) must satisfy the OpenShift `restricted-v2` SCC and the
+`restricted` PodSecurity profile. Most namespaces audit or enforce
+`restricted`, so a non-compliant pod triggers the "workload did not match the
+PodSecurity restricted profile" alert or is rejected. Required settings:
+
+- Pod level: `runAsNonRoot: true` and `seccompProfile.type: RuntimeDefault`.
+- Every container (including init containers):
+  `allowPrivilegeEscalation: false` and `capabilities.drop: ["ALL"]`.
+- Do **not** set `runAsUser`, `runAsGroup`, `fsGroup`, or `seLinuxOptions`.
+  `restricted-v2` assigns them from the namespace UID range, and values
+  outside that range are rejected.
+- No `privileged`, `hostNetwork`, `hostPID`, `hostIPC`, `hostPath`, host
+  ports, or added capabilities. Use an image that runs as an arbitrary
+  non-root UID (for example the `toolbox` image from
+  [containers/](containers/)), not one that needs root.
+- Name the pod `debug-<purpose>`, use `--rm` and `--restart=Never`, and
+  delete it when done.
+
+Template (the container name must equal the pod name so `--overrides` merges
+into the generated container; set the command inside the override because
+`--overrides` drops a trailing `-- sh`):
+
+```bash
+kubectl run debug-<purpose> -n <namespace> --rm -it --restart=Never \
+  --image=<image> \
+  --overrides='{"spec":{"securityContext":{"runAsNonRoot":true,"seccompProfile":{"type":"RuntimeDefault"}},"containers":[{"name":"debug-<purpose>","image":"<image>","command":["sh"],"stdin":true,"tty":true,"securityContext":{"allowPrivilegeEscalation":false,"capabilities":{"drop":["ALL"]}}}]}}'
+```
+
+After creating a pod, check `kubectl get pod <name> -o jsonpath='{.metadata.annotations.openshift\.io/scc}'`
+returns `restricted-v2`. If it is anything else, delete the pod and fix the
+spec. Only use `oc debug node/` when node access is genuinely required, and
+confirm with the user first.
+
 ## Repository Workflow
 
 ### Adding or editing a Kubernetes app
