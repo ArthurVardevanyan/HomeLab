@@ -28,12 +28,11 @@ to convert its answer, and returns that schema-enforced JSON instead.
 
 import copy
 import json
-import logging
+import re
 from typing import Any
 
+from litellm._logging import verbose_proxy_logger as logger
 from litellm.integrations.custom_logger import CustomLogger
-
-logger = logging.getLogger("strip_agentic_params")
 
 AGENTIC_SUFFIX = "-agentic"
 METADATA_KEY = "agentic_response_format"
@@ -57,6 +56,28 @@ ELIDED_NOTE = (
     "if you still need this data.]"
 )
 
+# A single turn (reasoning + tool call) is normally well under 4K tokens. With no
+# cap and a 262K context, one degenerate generation can run for many minutes and
+# hold the whole run until AgentTimeout, so cap every agentic request.
+MAX_COMPLETION_TOKENS = 8192
+
+# Turn steering. The sandbox's own max-turns cap just fails the run, and the
+# model tends to keep calling skill scripts instead of concluding. Count the
+# tool-calling turns so far, ask the model to wrap up, and past a point remove
+# the tools so it has to answer (the JSON conversion then runs as usual).
+NUDGE_AFTER_TURNS = 15
+FORCE_FINISH_AFTER_TURNS = 25
+NUDGE_NOTE = (
+    "[Investigation budget: you have used {turns} tool-calling steps. Wrap up "
+    "soon. Only run another command if it is essential to the diagnosis, then "
+    "write your final analysis.]"
+)
+FORCE_NOTE = (
+    "[Investigation budget exhausted after {turns} steps. Tools are no longer "
+    "available. Write your final analysis now from the evidence gathered so far, "
+    "and state clearly anything you could not verify.]"
+)
+
 CONVERT_INSTRUCTION = (
     "Convert your final answer above into the required JSON structure. Keep "
     "every finding, diagnosis, and remediation action. Every remediation plan "
@@ -71,6 +92,166 @@ def _truncate(text: str) -> str:
     return text[:MAX_TOOL_RESULT_CHARS] + note
 
 
+# Shell tool names models invent. The Lightspeed sandbox only registers the
+# shell capability as `exec_command` with a `cmd` argument, and the openai-agents
+# SDK treats any unknown tool name as fatal. The `investigate-alert` skill tells
+# the model to run `bash scripts/query-alert.sh ...`, so Qwen calls a tool named
+# `bash` (or even a tool whose *name* is the whole command line).
+SHELL_TOOL_NAMES = frozenset(
+    ("bash", "shell", "sh", "zsh", "fish", "run_shell", "execute_command", "run_command")
+)
+# Qwen sometimes puts the whole command line in the tool name, with its own
+# tool-call markup leaking in (`oc get pdb -n argocd -o yaml\n</parameter>`).
+CLI_COMMANDS = frozenset(
+    ("oc", "kubectl", "jq", "find", "ls", "cat", "grep", "curl", "head", "tail", "echo", "awk", "sed")
+)
+MARKUP_RE = re.compile(r"</?(?:parameter|function|tool_call|invoke)[^>]*>")
+SHELL_TOOL_TARGET = "exec_command"
+SHELL_CMD_KEYS = ("command", "script", "code", "cmd_str", "commandline")
+
+
+def _script_call(name: str, arguments: str | None) -> tuple[str, str]:
+    """The model used a skill script name (get_events.sh) as the tool name."""
+    extra = ""
+    try:
+        parsed = json.loads(arguments or "")
+    except ValueError:
+        parsed = (arguments or "").strip()
+    if isinstance(parsed, dict):
+        extra = " ".join(str(v) for v in parsed.values() if isinstance(v, (str, int)))
+    elif isinstance(parsed, list):
+        extra = " ".join(str(v) for v in parsed)
+    elif isinstance(parsed, str):
+        extra = parsed
+    if "/" in name:
+        cmd = f"bash {name} {extra}"
+    else:
+        cmd = f'bash "$(find / -name {name} -path "*skills*" 2>/dev/null | head -1)" {extra}'
+    return SHELL_TOOL_TARGET, json.dumps({"cmd": cmd.strip()})
+
+
+def _normalize_shell_call(name: str | None, arguments: str | None) -> tuple[str, str] | None:
+    """Return (exec_command, arguments_json) for a shell-style tool call.
+
+    Returns None when the call is not shell-style, or already correct.
+    """
+    name = (name or "").strip()
+    if not name or name == SHELL_TOOL_TARGET:
+        return None
+    first = name.split(None, 1)[0].lower()
+    if first in CLI_COMMANDS and first not in SHELL_TOOL_NAMES:
+        cmd = MARKUP_RE.sub("", name).strip()
+        return SHELL_TOOL_TARGET, json.dumps({"cmd": cmd})
+    if " " not in name and (name.endswith(".sh") or "/" in name):
+        return _script_call(name, arguments)
+    if first not in SHELL_TOOL_NAMES:
+        return None
+
+    raw = (arguments or "").strip()
+    parsed: Any = None
+    if raw:
+        try:
+            parsed = json.loads(raw)
+        except ValueError:
+            parsed = raw  # plain text arguments, treat as the command itself
+
+    if " " in name:
+        # The model put the whole command line in the tool name.
+        args: dict = {"cmd": name}
+        if isinstance(parsed, dict):
+            for key, value in parsed.items():
+                if key not in SHELL_CMD_KEYS and key != "cmd":
+                    args[key] = value
+    elif isinstance(parsed, dict):
+        args = dict(parsed)
+        for key in SHELL_CMD_KEYS:
+            if key in args and "cmd" not in args:
+                args["cmd"] = args.pop(key)
+            else:
+                args.pop(key, None)
+    elif isinstance(parsed, list):
+        args = {"cmd": " ".join(str(part) for part in parsed)}
+    elif isinstance(parsed, str):
+        args = {"cmd": parsed}
+    else:
+        return None  # nothing to run
+
+    if isinstance(args.get("cmd"), list):
+        args["cmd"] = " ".join(str(part) for part in args["cmd"])
+    return SHELL_TOOL_TARGET, json.dumps(args)
+
+
+def _patch_message_tool_calls(message: Any) -> int:
+    """Non-streaming: rewrite shell-style tool calls on a response message."""
+    patched = 0
+    for call in getattr(message, "tool_calls", None) or []:
+        function = getattr(call, "function", None)
+        if function is None:
+            continue
+        result = _normalize_shell_call(getattr(function, "name", None), getattr(function, "arguments", None))
+        if result:
+            logger.warning("rewrote shell tool call %r to %s", (function.name or "")[:80], result[0])
+            function.name, function.arguments = result
+            patched += 1
+    return patched
+
+
+def _patch_stream_tool_calls(chunks: list) -> int:
+    """Streaming: rebuild each tool call from all its chunks, then rewrite it.
+
+    A tool call's name and arguments are split across chunks, so it can only be
+    judged once the whole turn is buffered. The corrected name and arguments are
+    written into the first chunk of the call and later chunks are blanked.
+    """
+    calls: dict[int, dict] = {}
+    for chunk in chunks:
+        choice = _first_choice(chunk)
+        delta = getattr(choice, "delta", None) if choice else None
+        for call in getattr(delta, "tool_calls", None) or []:
+            function = getattr(call, "function", None)
+            if function is None:
+                continue
+            index = getattr(call, "index", 0) or 0
+            entry = calls.setdefault(index, {"name": "", "args": "", "first": function, "rest": []})
+            if getattr(function, "name", None):
+                entry["name"] += function.name
+            if getattr(function, "arguments", None):
+                entry["args"] += function.arguments
+            if function is not entry["first"]:
+                entry["rest"].append(function)
+
+    patched = 0
+    for entry in calls.values():
+        result = _normalize_shell_call(entry["name"], entry["args"])
+        if not result:
+            continue
+        logger.warning("rewrote shell tool call %r to %s", entry["name"][:80], result[0])
+        entry["first"].name, entry["first"].arguments = result
+        for function in entry["rest"]:
+            function.arguments = ""
+        patched += 1
+    return patched
+
+
+async def _collect_stream(response: Any) -> tuple[list, bool, list[str]]:
+    """Buffer a streamed turn. Returns (chunks, has_tool_calls, answer_parts)."""
+    chunks: list[Any] = []
+    has_tool_calls = False
+    answer_parts: list[str] = []
+    async for chunk in response:
+        chunks.append(chunk)
+        choice = _first_choice(chunk)
+        delta = getattr(choice, "delta", None) if choice else None
+        if delta is None:
+            continue
+        if getattr(delta, "tool_calls", None):
+            has_tool_calls = True
+        if getattr(delta, "content", None):
+            answer_parts.append(delta.content)
+    return chunks, has_tool_calls, answer_parts
+
+
+# --- Streaming path ---
 def _truncate_tool_results(messages: list) -> None:
     for message in messages:
         if not isinstance(message, dict) or message.get("role") != "tool":
@@ -133,6 +314,32 @@ def _saved_response_format(request_data: dict) -> Any:
     return None
 
 
+def _rbac_rules() -> dict:
+    str_list = {"type": "array", "items": {"type": "string"}, "minItems": 1}
+    rule = {
+        "type": "object",
+        "properties": {
+            "apiGroups": {"type": "array", "items": {"type": "string"}, "minItems": 1},
+            "resources": str_list,
+            "verbs": str_list,
+            "resourceNames": str_list,
+            "namespace": {"type": "string"},
+            "justification": {"type": "string", "minLength": 1},
+        },
+        "required": ["apiGroups", "resources", "verbs", "justification"],
+        "additionalProperties": False,
+    }
+    return {"type": "array", "items": rule}
+
+
+# The CRD only accepts these two keys. The model invented `clusterRoles`, which
+# the API server prunes, leaving an empty rbac object and a 422.
+RBAC_SCHEMA = {
+    "type": "object",
+    "properties": {"namespaceScoped": _rbac_rules(), "clusterScoped": _rbac_rules()},
+    "additionalProperties": False,
+}
+
 RISK = {"type": "string", "enum": ["Low", "Medium", "High", "Critical"]}
 CONFIDENCE = {"type": "string", "enum": ["Low", "Medium", "High"]}
 
@@ -163,6 +370,7 @@ def _match_crd(response_format: dict) -> dict:
         options = schema["properties"]["options"]
         options.setdefault("maxItems", 10)
         option = options["items"]["properties"]
+        option["rbac"] = copy.deepcopy(RBAC_SCHEMA)
         plan = option["remediationPlan"]
         plan["properties"]["actions"].setdefault("minItems", 1)
         plan["properties"]["actions"].setdefault("maxItems", 50)
@@ -170,13 +378,47 @@ def _match_crd(response_format: dict) -> dict:
         _close_object(option["diagnosis"], {"confidence": CONFIDENCE})
         if isinstance(schema["properties"].get("diagnosis"), dict):
             _close_object(schema["properties"]["diagnosis"], {"confidence": CONFIDENCE})
-    except (KeyError, TypeError):
-        pass
+    except (KeyError, TypeError) as exc:
+        logger.warning("could not align response_format with the CRD (%r); keys: %s", exc,
+                       list(((response_format.get("json_schema") or {}).get("schema") or {}).get("properties", {})))
     return fixed
 
 
+def _prune_empty(value: Any) -> Any:
+    """Recursively drop None and empty lists/dicts; empty-string dict values too.
+
+    Empty strings inside lists are kept: the core API group is `[""]` and the
+    CRD accepts it.
+    """
+    if isinstance(value, dict):
+        for key in list(value):
+            value[key] = _prune_empty(value[key])
+            if value[key] in (None, "", [], {}):
+                del value[key]
+    elif isinstance(value, list):
+        value[:] = [item for item in (_prune_empty(i) for i in value) if item not in (None, [], {})]
+    return value
+
+
+RBAC_REQUIRED = ("apiGroups", "resources", "verbs", "justification")
+
+
+def _rbac_rule_complete(rule: Any) -> bool:
+    """The CRD requires these four fields, each non-empty."""
+    if not isinstance(rule, dict):
+        return False
+    pruned = _prune_empty(dict(rule))
+    return all(pruned.get(key) for key in RBAC_REQUIRED)
+
+
 def _drop_empty_rbac(text: str) -> str:
-    """Remove `rbac: {}` from options; the CRD rejects empty rbac objects."""
+    """Remove empty/null rbac content from options.
+
+    The CRD requires `options[].rbac` to have at least one property, but the
+    model emits `rbac: {}` or `rbac: {"clusterScoped": null}`. The sandbox only
+    strips empty values, not nulls, and the API server drops nulls before it
+    validates, so an all-null rbac fails with HTTP 422.
+    """
     try:
         parsed = json.loads(text)
         options = parsed.get("options") if isinstance(parsed, dict) else None
@@ -184,9 +426,26 @@ def _drop_empty_rbac(text: str) -> str:
             return text
         changed = False
         for option in options:
-            if isinstance(option, dict) and option.get("rbac") == {}:
-                del option["rbac"]
-                changed = True
+            if isinstance(option, dict) and "rbac" in option:
+                before = json.dumps(option["rbac"], sort_keys=True)
+                rbac = option["rbac"]
+                if isinstance(rbac, dict):
+                    unknown = [k for k in rbac if k not in RBAC_SCHEMA["properties"]]
+                    if unknown:
+                        logger.warning("dropping rbac keys the CRD does not allow: %s", unknown)
+                    for key in unknown:
+                        del rbac[key]
+                if isinstance(rbac, dict):
+                    for scope in ("namespaceScoped", "clusterScoped"):
+                        rules = rbac.get(scope)
+                        if isinstance(rules, list):
+                            rbac[scope] = [r for r in rules if _rbac_rule_complete(r)]
+                rbac = _prune_empty(rbac)
+                if not rbac:
+                    del option["rbac"]
+                    changed = True
+                elif json.dumps(rbac, sort_keys=True) != before:
+                    changed = True
         return json.dumps(parsed) if changed else text
     except (ValueError, AttributeError):
         return text
@@ -208,7 +467,45 @@ async def _convert_to_json(request_data: dict, response_format: dict, answer: st
         response_format=response_format,
         stream=False,
     )
-    return _drop_empty_rbac(response.choices[0].message.content or "")
+    raw = response.choices[0].message.content or ""
+    cleaned = _drop_empty_rbac(raw)
+    try:
+        options = json.loads(cleaned).get("options") or []
+        logger.debug(
+            "agentic conversion: %d options, rbac per option (raw -> cleaned): %s -> %s",
+            len(options),
+            [json.dumps(o.get("rbac"))[:80] for o in json.loads(raw).get("options") or []],
+            [json.dumps(o.get("rbac"))[:80] for o in options],
+        )
+    except (ValueError, AttributeError):
+        logger.warning("agentic conversion returned non-JSON (%d chars)", len(raw))
+    return cleaned
+
+
+def _count_tool_turns(messages: list) -> int:
+    """Number of assistant turns that made at least one tool call."""
+    return sum(
+        1
+        for m in messages
+        if isinstance(m, dict) and m.get("role") == "assistant" and m.get("tool_calls")
+    )
+
+
+def _steer_turns(data: dict) -> None:
+    """Nudge the model to wrap up, and past a limit take its tools away."""
+    messages = data.get("messages")
+    if not isinstance(messages, list):
+        return
+    turns = _count_tool_turns(messages)
+    if turns >= FORCE_FINISH_AFTER_TURNS:
+        logger.warning("agentic run at %d tool turns: removing tools to force a final answer", turns)
+        data.pop("tools", None)
+        data.pop("tool_choice", None)
+        data.pop("parallel_tool_calls", None)
+        messages.append({"role": "user", "content": FORCE_NOTE.format(turns=turns)})
+    elif turns >= NUDGE_AFTER_TURNS:
+        logger.warning("agentic run at %d tool turns: asking the model to wrap up", turns)
+        messages.append({"role": "user", "content": NUDGE_NOTE.format(turns=turns)})
 
 
 def _first_choice(chunk: Any) -> Any:
@@ -229,6 +526,19 @@ class StripAgenticParams(CustomLogger):
         if not model.endswith(AGENTIC_SUFFIX) or not tools:
             return data
 
+        for key in ("max_tokens", "max_completion_tokens"):
+            value = data.get(key)
+            if isinstance(value, int) and value > MAX_COMPLETION_TOKENS:
+                data[key] = MAX_COMPLETION_TOKENS
+        if not data.get("max_tokens") and not data.get("max_completion_tokens"):
+            data["max_tokens"] = MAX_COMPLETION_TOKENS
+
+        extra_body = data.get("extra_body")
+        if not isinstance(extra_body, dict):
+            extra_body = {}
+            data["extra_body"] = extra_body
+        extra_body.setdefault("chat_template_kwargs", {}).setdefault("enable_thinking", False)
+
         response_format = data.pop("response_format", None)
         if isinstance(response_format, dict) and response_format.get("type") == "json_schema":
             metadata = data.get("metadata")
@@ -245,6 +555,7 @@ class StripAgenticParams(CustomLogger):
             function = tool.get("function") if isinstance(tool, dict) else None
             if isinstance(function, dict):
                 function.pop("strict", None)
+        _steer_turns(data)
         return data
 
     async def async_post_call_streaming_iterator_hook(
@@ -253,29 +564,19 @@ class StripAgenticParams(CustomLogger):
         response: Any,
         request_data: dict,
     ):
-        response_format = _saved_response_format(request_data)
-        if not response_format:
+        if not str(request_data.get("model") or "").endswith(AGENTIC_SUFFIX):
             async for chunk in response:
                 yield chunk
             return
 
-        # Buffer the turn: we only know it is the final answer once the stream
-        # ends without any tool call.
-        chunks = []
-        has_tool_calls = False
-        answer = []
-        async for chunk in response:
-            chunks.append(chunk)
-            choice = _first_choice(chunk)
-            delta = getattr(choice, "delta", None) if choice else None
-            if delta is None:
-                continue
-            if getattr(delta, "tool_calls", None):
-                has_tool_calls = True
-            if getattr(delta, "content", None):
-                answer.append(delta.content)
-
+        # Buffer the turn: shell tool calls are only judgeable once complete, and
+        # a turn is the final answer only if it ends without any tool call.
+        chunks, has_tool_calls, answer = await _collect_stream(response)
         if has_tool_calls:
+            _patch_stream_tool_calls(chunks)
+
+        response_format = _saved_response_format(request_data)
+        if has_tool_calls or not response_format:
             for chunk in chunks:
                 yield chunk
             return
@@ -308,12 +609,19 @@ class StripAgenticParams(CustomLogger):
         user_api_key_dict: Any,
         response: Any,
     ) -> Any:
+        if not str(data.get("model") or "").endswith(AGENTIC_SUFFIX):
+            return response
         response_format = _saved_response_format(data)
         choices = getattr(response, "choices", None)
-        if not response_format or not choices:
+        if not choices:
             return response
         message = getattr(choices[0], "message", None)
-        if message is None or getattr(message, "tool_calls", None):
+        if message is None:
+            return response
+        if getattr(message, "tool_calls", None):
+            _patch_message_tool_calls(message)
+            return response
+        if not response_format:
             return response
         try:
             message.content = await _convert_to_json(data, response_format, message.content or "")
