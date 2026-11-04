@@ -5,22 +5,43 @@
 - [OpenShift Lightspeed](#openshift-lightspeed)
   - [Table of Contents](#table-of-contents)
   - [Overview](#overview)
-  - [OIDC Auth Workaround](#oidc-auth-workaround)
+  - [OIDC Auth Fix](#oidc-auth-fix)
+    - [The Problem](#the-problem)
+    - [The Fix](#the-fix)
+    - [How to Apply/Reapply](#how-to-applyreapply)
+    - [Verification](#verification)
+    - [Operator Safety](#operator-safety)
   - [Directory Structure](#directory-structure)
   - [Components](#components)
   - [ArgoCD](#argocd)
   - [Agentic (Tech Preview)](#agentic-tech-preview)
-    - [Alert-triggered runs](#alert-triggered-runs)
     - [Giving agentic runs tools (MCP)](#giving-agentic-runs-tools-mcp)
+    - [Chat tools (MCP)](#chat-tools-mcp)
     - [Agent Sandbox (evaluated, not used)](#agent-sandbox-evaluated-not-used)
+    - [Alert-triggered runs](#alert-triggered-runs)
   - [Known Issues](#known-issues)
+    - [1. Missing `lightspeed-agent` RBAC (fixed)](#1-missing-lightspeed-agent-rbac-fixed)
+    - [2. Sandbox pods cannot reach LiteLLM (fixed)](#2-sandbox-pods-cannot-reach-litellm-fixed)
+    - [3. MCP session 404 with multiple replicas (fixed, inferred)](#3-mcp-session-404-with-multiple-replicas-fixed-inferred)
+    - [4. Chat has no tools by default (workaround)](#4-chat-has-no-tools-by-default-workaround)
+    - [5. Model never calls tools (vLLM bugs, workaround)](#5-model-never-calls-tools-vllm-bugs-workaround)
+    - [6. `result CR missing options` (open)](#6-result-cr-missing-options-open)
+    - [7. `tokenUsage` always 0 (open)](#7-tokenusage-always-0-open)
+    - [8. Sandbox pod and logs deleted immediately (open)](#8-sandbox-pod-and-logs-deleted-immediately-open)
+    - [9. Console "Loading logs..." never finishes (open, upstream)](#9-console-loading-logs-never-finishes-open-upstream)
+    - [10. `disable_auth` patch lost on reconcile (replaced)](#10-disable_auth-patch-lost-on-reconcile-replaced)
+    - [11. MCP tools filtered (open, not analyzed)](#11-mcp-tools-filtered-open-not-analyzed)
   - [Troubleshooting](#troubleshooting)
+    - [Console shows "Loading logs..." forever for an AgenticRun](#console-shows-loading-logs-forever-for-an-agenticrun)
+    - [`ValueError: Invalid user ID`](#valueerror-invalid-user-id)
+    - [Operator reverting ConfigMap changes](#operator-reverting-configmap-changes)
+    - [No User/Identity objects created](#no-useridentity-objects-created)
 
 ## Overview
 
 OpenShift Lightspeed (OLS) is an AI assistant deployed on OKD 5.x. It provides a chat UI and, as a tech preview, agentic runs that investigate the cluster and propose fixes. Both use LLMs served through LiteLLM (currently qwen3.6-35b-a3b on vLLM).
 
-## OIDC Auth Workaround
+## OIDC Auth Fix
 
 ### The Problem
 
@@ -30,38 +51,41 @@ OKD 5.x uses `type: OIDC` for authentication (not `type: OpenID`). This means up
 ValueError: Invalid user ID 305070630980550817
 ```
 
+Additionally, the `k8s` auth module was dropping the user token when `disable_auth: true` was set (returns `NO_USER_TOKEN`), which prevented MCP tools from being able to access the cluster.
+
 ### The Fix
 
-`dev_config.disable_auth: true` in the `olsconfig` ConfigMap disables OLS auth checks, assigning a fixed default UUID user ID instead of rejecting the snowflake.
+Changed `authentication_config.module` from `k8s` to `noop-with-token` in the `olsconfig` ConfigMap:
 
-This workaround is applied as a **hand-edit** on the operator-managed ConfigMap. The operator will overwrite it on the next reconciliation (triggered by OLSConfig CR changes or periodic resync).
+- The `noop-with-token` module passes the token through to MCP servers
+- It sets `skip_userid_check: True`, bypassing the UUID validation that rejects ZITADEL snowflake IDs
+- It is no less secure: the app server is only reachable through the console's OAuth-protected proxy
 
 ### How to Apply/Reapply
 
 ```bash
-# Patch the ConfigMap
+# Patch the ConfigMap with the patched YAML content
 kubectl patch configmap olsconfig -n openshift-lightspeed \
-  --type=merge \
-  -p '{"data":{"olsconfig.yaml":"dev_config:\n  disable_auth: true\n"}}'
+  --type=json \
+  --patch-file=/tmp/olsconfig-patched.yaml
 
 # Restart OLS API pods to pick up the change
 kubectl rollout restart deployment lightspeed-app-server -n openshift-lightspeed
 
 # Verify
-kubectl logs -l app.kubernetes.io/name=lightspeed-service-api -n openshift-lightspeed --tail=20 | grep "Auth checks disabled"
+kubectl logs -l app.kubernetes.io/name=lightspeed-service-api -n openshift-lightspeed --tail=20 | grep "Authentication retrieval for module noop-with-token"
 ```
 
-To undo (re-enable auth): remove the `dev_config` block from the ConfigMap and restart.
+### Verification
 
-### Limitations
+1. Check ConfigMap: `authentication_config.module: noop-with-token`
+2. App server logs show: `Authentication retrieval for module noop-with-token`
+3. No more `MCP server openshift requires kubernetes token but none available` warnings
+4. Chat queries now use MCP tools to access cluster resources
 
-- All users share one identity (`00000000-0000-0000-0000-000000000000`)
-- No per-user conversation isolation or history partitioning
-- Auth bypass — unauthenticated requests are accepted
+### Operator Safety
 
-### Why Not a Permanent Fix
-
-A durable fix requires patching the OLS operator or API image to handle non-UUID (OIDC) user IDs — either by deriving `user_id` from the OpenShift User object's `metadata.uid` (a real UUID) or relaxing the UUID check. This is a more involved effort (image build + operator override) and has not yet been pursued.
+The OLS operator does not support `authentication_config` in the CRD yet (confirmed in upstream code). The operator stays at 0 replicas and must stay that way.
 
 ## Directory Structure
 
@@ -90,7 +114,7 @@ okd/openshift-lightspeed/
 
 The tree above says what each file is. Notes that are not obvious from the names:
 
-- **olsconfig.yaml**: controls the OLS app, LLM provider, MCP servers and deployment resources. The operator is kept at 0 replicas, so changes here need the procedure in [issue 10](#10-disable_auth-patch-lost-on-reconcile-known-manual).
+- **olsconfig.yaml**: controls the OLS app, LLM provider, MCP servers and deployment resources. The operator is kept at 0 replicas, so changes here need the procedure in [issue 10](#10-disable_auth-patch-lost-on-reconcile-replaced).
 - **operatorgroup.yaml + subscription.yaml**: install the lightspeed operator (v2.0.0). `installplan-approver.yaml` approves its OLM install plans.
 - **alerts-run-tools.yaml**: Kyverno ClusterPolicy that injects MCP servers into alert-triggered AgenticRuns (see [Alert-triggered runs](#alert-triggered-runs)).
 
@@ -134,6 +158,18 @@ spec:
               type: ServiceAccountToken
 ```
 
+### Chat tools (MCP)
+
+The console plugin proxies your token to the app server via `authorization: UserToken`. The `noop-with-token` auth module passes this token through to MCP servers, enabling cluster access for chat queries.
+
+Verify it's working:
+
+1. Open the Lightspeed console plugin
+2. Ask: _"list pods in openshift-lightspeed"_
+3. The AI should now be able to see and list the pods using MCP tools
+
+If the chat still has no tools, check the app server logs for `MCP server openshift requires kubernetes token but none available`. This indicates the token is not being passed through correctly.
+
 ### Agent Sandbox (evaluated, not used)
 
 The Red Hat build of Agent Sandbox (`agent-sandbox-operator`, channel `preview-0.9`) was installed and removed again. It provides the `Sandbox`, `SandboxClaim`, `SandboxTemplate` and `SandboxWarmPool` CRDs, and the agentic operator can use them instead of bare pods via `OLSConfig.spec.agenticOLS.sandboxMode: sandbox-claim` (default `bare-pod`).
@@ -148,7 +184,7 @@ The Red Hat build of Agent Sandbox (`agent-sandbox-operator`, channel `preview-0
 The `lightspeed-agentic-alerts-adapter` polls AlertManager every 30s and creates `AgenticRun` CRs when alerts fire. It is configured through three pieces:
 
 - **AlertManager route** in `okd/openshift-monitoring/overlays/okd/alertmanager.yaml`. Critical and warning alerts (excluding `Watchdog` and `InfoInhibitor`) are routed to a dedicated `lightspeed` receiver. The `continue: true` flag ensures they still reach Discord too.
-- **Adapter config** in `base/alerts-adapter-config.yaml`. The `filtering.allowedReceivers` list gates which alerts produce runs. Set to `[lightspeed]`. The `agent.default` and `tools.skills` settings apply to every run.
+- **Adapter config** in `base/alerts-adapter-config.yaml`. The `filtering.allowedReceivers` list gates which alerts produce runs. Set to `[lightspeed]`. The `agent.default` and `tools.skills` settings apply to every run. The alert route excludes `Watchdog`, `InfoInhibitor`, `ArgoCDSyncAlert` and `InstallPlanStepAppliedWithWarnings`; the latter fires during operator upgrades and is almost always noise.
 - **Kyverno ClusterPolicy** in `base/alerts-run-tools.yaml`. The Kyverno policy matches AgenticRuns created by the adapter (label `agentic.openshift.io/source=alertmanager`) and merges `spec.tools.mcpServers` with the existing skills. Without it, alert runs would get skills only and the agent would have no cluster access — the same symptom as issue 4.
 
 Approval policy stays the same: Analysis and Verification are automatic, Execution is manual. Only investigations start without your sign-off.
@@ -167,19 +203,19 @@ kubectl get agenticruns -l agentic.openshift.io/source=alertmanager -n openshift
 
 Findings from bringing up agentic runs on OKD 5.0 (tech preview). Each entry says whether it was verified or is an inference.
 
-| #   | Issue                                               | Status             | Where it is fixed                                               |
-| --- | --------------------------------------------------- | ------------------ | --------------------------------------------------------------- |
-| 1   | Sandbox claim rejected: no `lightspeed-agent` RBAC  | Fixed              | `components/agentic/{serviceaccount,rbac}.yaml`                 |
-| 2   | Sandbox pods cannot reach LiteLLM                   | Fixed              | `kubernetes/llm/base/network-policy.yaml`                       |
-| 3   | MCP session 404 with 2 MCP replicas                 | Fixed (inferred)   | `base/olsconfig.yaml` (`mcpServer.replicas: 1`)                 |
-| 4   | Runs have no tools unless `spec.tools` is set       | Workaround         | See [Giving agentic runs tools](#giving-agentic-runs-tools-mcp) |
-| 5   | Model never calls tools (vLLM bugs)                 | Workaround         | `kubernetes/llm/components/litellm/strip_agentic_params.py`     |
-| 6   | Run fails: `result CR missing options`              | Open               | None                                                            |
-| 7   | `tokenUsage` always 0                               | Open               | None                                                            |
-| 8   | Sandbox pod and logs deleted immediately            | Open               | None                                                            |
-| 9   | Console "Loading logs..." never finishes            | Open (upstream)    | None                                                            |
-| 10  | `disable_auth` patch lost on OLS operator reconcile | Known, manual      | See [OIDC Auth Workaround](#oidc-auth-workaround)               |
-| 11  | MCP tools `helm_install` and `pods_run` filtered    | Open, not analyzed | None                                                            |
+| #   | Issue                                               | Status             | Where it is fixed                                                   |
+| --- | --------------------------------------------------- | ------------------ | ------------------------------------------------------------------- |
+| 1   | Sandbox claim rejected: no `lightspeed-agent` RBAC  | Fixed              | `components/agentic/{serviceaccount,rbac}.yaml`                     |
+| 2   | Sandbox pods cannot reach LiteLLM                   | Fixed              | `kubernetes/llm/base/network-policy.yaml`                           |
+| 3   | MCP session 404 with 2 MCP replicas                 | Fixed (inferred)   | `base/olsconfig.yaml` (`mcpServer.replicas: 1`)                     |
+| 4   | Chat has no tools unless `spec.tools` is set        | Workaround         | See [Chat tools](#chat-tools-mcp)                                   |
+| 5   | Model never calls tools (vLLM bugs)                 | Workaround         | `kubernetes/llm/components/litellm/strip_agentic_params.py`         |
+| 6   | Run fails: `result CR missing options`              | Open               | None                                                                |
+| 7   | `tokenUsage` always 0                               | Open               | None                                                                |
+| 8   | Sandbox pod and logs deleted immediately            | Open               | None                                                                |
+| 9   | Console "Loading logs..." never finishes            | Open (upstream)    | None                                                                |
+| 10  | `disable_auth` patch lost on OLS operator reconcile | Replaced           | `noop-with-token` auth module (see [OIDC Auth Fix](#oidc-auth-fix)) |
+| 11  | MCP tools `helm_install` and `pods_run` filtered    | Open, not analyzed | None                                                                |
 
 ### 1. Missing `lightspeed-agent` RBAC (fixed)
 
@@ -195,9 +231,9 @@ With 2 `openshift-mcp-server` replicas and `sessionAffinity: None` on the operat
 
 The Service belongs to the operator, so affinity cannot be set from this repo. Keep `deployment.mcpServer.replicas: 1` in `base/olsconfig.yaml`. The classic OLS chat uses the same MCP server and may also have been affected by this.
 
-### 4. Runs have no tools by default (workaround)
+### 4. Chat has no tools by default (workaround)
 
-See [Giving agentic runs tools](#giving-agentic-runs-tools-mcp). Symptom: the model answers "No available MCP tools or `oc`/`kubectl` commands were provided", and `AgenticRun.spec.tools` is empty (`kubectl get agenticruns -o custom-columns=NAME:.metadata.name,TOOLS:.spec.tools`).
+See [Giving chat tools](#chat-tools-mcp). Symptom: the model answers "No available MCP tools or `oc`/`kubectl` commands were provided", and `AgenticRun.spec.tools` is empty (`kubectl get agenticruns -o custom-columns=NAME:.metadata.name,TOOLS:.spec.tools`).
 
 ### 5. Model never calls tools (vLLM bugs, workaround)
 
@@ -282,31 +318,9 @@ The agentic operator also logs the full result payload (`audit.analysis.complete
 
 See [Troubleshooting](#console-shows-loading-logs-forever-for-an-agenticrun). A consequence of issue 8: the console plugin tries to tail a pod that no longer exists.
 
-### 10. `disable_auth` patch lost on reconcile (known, manual)
+### 10. `disable_auth` patch lost on reconcile (replaced)
 
-The OLS operator (`lightspeed-operator-controller-manager`) is kept at 0 replicas so it does not overwrite the hand-patched `olsconfig` ConfigMap. That also means changes to the `OLSConfig` CR in git (for example `mcpServer.replicas`) do not take effect until the operator is briefly scaled up.
-
-Procedure used to apply `OLSConfig` changes:
-
-```bash
-export KUBECONFIG=$HOME/.kube/okd
-N=openshift-lightspeed
-# 1. Save the patched ConfigMap
-kubectl get cm olsconfig -n $N -o jsonpath='{.data.olsconfig\.yaml}' > /tmp/olsconfig-before.yaml
-# 2. Let the operator reconcile (wait for the Deployment change and the app-server rollout)
-kubectl scale deploy lightspeed-operator-controller-manager -n $N --replicas=1
-kubectl rollout status deploy/lightspeed-operator-controller-manager -n $N
-kubectl rollout status deploy/lightspeed-app-server -n $N
-# 3. Scale back down and restore the ConfigMap
-kubectl scale deploy lightspeed-operator-controller-manager -n $N --replicas=0
-python3 -c "import json; print(json.dumps({'data': {'olsconfig.yaml': open('/tmp/olsconfig-before.yaml').read()}}))" > /tmp/patch.json
-kubectl patch cm olsconfig -n $N --type=merge --patch-file /tmp/patch.json
-kubectl rollout restart deploy/lightspeed-app-server -n $N
-```
-
-OLM can scale the operator back up on its own. While removing the Agent Sandbox operator the Deployment returned to 1 replica twice within minutes, each time resetting the `olsconfig` ConfigMap and recreating the app-server pods. The CSV logged `InstallWaiting ... Deployment does not have minimum availability` just before. The cause is not confirmed (OLM reverting `spec.replicas` after CSV or Subscription changes is the likely one), so after any OLM activity in the cluster, check `kubectl get deploy lightspeed-operator-controller-manager -n openshift-lightspeed` and that `disable_auth` is still in the ConfigMap.
-
-The `Auth checks disabled` log line mentioned in [How to Apply/Reapply](#how-to-applyreapply) was not seen after the last restore, even though the mounted `/etc/ols/olsconfig.yaml` contained both `dev_config` blocks. Confirm the workaround in the UI rather than relying on that log line.
+Resolved by switching to `noop-with-token` auth module (see [OIDC Auth Fix](#oidc-auth-fix)). The auth module now passes the user token through to MCP servers, so they can access the cluster.
 
 ### 11. MCP tools filtered (open, not analyzed)
 
@@ -327,11 +341,11 @@ kubectl get analysisresult <name> -n openshift-lightspeed -o yaml
 
 ### `ValueError: Invalid user ID`
 
-See [OIDC Auth Workaround](#oidc-auth-workaround) above.
+See [OIDC Auth Fix](#oidc-auth-fix).
 
 ### Operator reverting ConfigMap changes
 
-The `olsconfig` ConfigMap is operator-managed, so the operator overwrites hand edits to `dev_config` on its next reconciliation. Keep the operator scaled to `0` (see [issue 10](#10-disable_auth-patch-lost-on-reconcile-known-manual), which also covers applying `OLSConfig` changes from git). A durable fix needs the patched image described in [Why Not a Permanent Fix](#why-not-a-permanent-fix).
+The `olsconfig` ConfigMap is operator-managed, so the operator overwrites hand edits on its next reconciliation. Keep the operator scaled to `0` to prevent this. A durable fix needs the `noop-with-token` auth module to be supported by the OLS operator.
 
 ### No User/Identity objects created
 
