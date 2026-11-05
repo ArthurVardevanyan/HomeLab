@@ -58,7 +58,9 @@ Additionally, the `k8s` auth module was dropping the user token when `disable_au
 
 ### The Fix
 
-Changed `authentication_config.module` from `k8s` to `noop-with-token` in the `olsconfig` ConfigMap:
+Changed `authentication_config.module` from `k8s` to `noop-with-token` in the `olsconfig` ConfigMap. **Important**: `authentication_config` must be nested inside `ols_config`, not at the top level. The OLS config model only looks for it there.
+
+Additionally, `dev_config.disable_auth: true` must be set at the top level of the ConfigMap. This disables auth checks and is required for the noop-with-token module to work correctly.
 
 - The `noop-with-token` module passes the token through to MCP servers
 - It sets `skip_userid_check: True`, bypassing the UUID validation that rejects ZITADEL snowflake IDs
@@ -66,29 +68,77 @@ Changed `authentication_config.module` from `k8s` to `noop-with-token` in the `o
 
 ### How to Apply/Reapply
 
+- Confirm the operator is scaled to 0: `kubectl get deploy lightspeed-operator-controller-manager -n openshift-lightspeed`
+- Export the config, patch it, and write it back:
+
 ```bash
-# Patch the ConfigMap with the patched YAML content
-kubectl patch configmap olsconfig -n openshift-lightspeed \
-  --type=json \
-  --patch-file=/tmp/olsconfig-patched.yaml
+kubectl get configmap olsconfig -n openshift-lightspeed -o json | \
+  python3 -c "
+import sys,json
+d=json.load(sys.stdin)
+raw=d['data']['olsconfig.yaml']
+lines=raw.split('\n')
+out=[]
+i=0
+skip_dev=False
+while i<len(lines):
+  l=lines[i]
+  if l.startswith('dev_config:') or (not l.startswith(' ') and l.strip()==''):
+    if not l.startswith(' ') and l.strip()!='':
+      out.append(l)
+    else:
+      skip_dev=True
+  else:
+    if skip_dev:
+      if l.startswith('  ') or l.strip()=='':
+        i+=1
+        continue
+      else:
+        skip_dev=False
+    out.append(l)
+  i+=1
 
-# Restart OLS API pods to pick up the change
-kubectl rollout restart deployment lightspeed-app-server -n openshift-lightspeed
+# Ensure authentication_config is nested inside ols_config
+import yaml
+config=yaml.safe_load('\n'.join(out))
+if 'authentication_config' in config and 'ols_config' in config:
+  config['ols_config']['authentication_config']=config.pop('authentication_config')
+if 'dev_config' not in config:
+  config['dev_config']={}
+config['dev_config']['disable_auth']=True
 
-# Verify
-kubectl logs -l app.kubernetes.io/name=lightspeed-service-api -n openshift-lightspeed --tail=20 | grep "Authentication retrieval for module noop-with-token"
+lines_out=yaml.dump(config,default_flow_style=False,sort_keys=False).split('\n')
+d['data']['olsconfig.yaml']='\n'.join(lines_out)
+print(json.dumps(d))
+" | kubectl replace -n openshift-lightspeed -f - --force
 ```
+
+- Restart the API pods:
+
+```bash
+kubectl rollout restart deployment lightspeed-app-server -n openshift-lightspeed
+kubectl rollout status deployment lightspeed-app-server -n openshift-lightspeed
+```
+
+- Verify the module is `noop-with-token`:
+
+```bash
+kubectl logs -l app.kubernetes.io/name=lightspeed-service-api -n openshift-lightspeed --tail=20 | grep "Authentication retrieval for module"
+```
+
+If the pods still show `module k8s`, check that `authentication_config` is nested inside `ols_config` in the ConfigMap (it must not be a top-level key).
 
 ### Verification
 
-1. Check ConfigMap: `authentication_config.module: noop-with-token`
-2. App server logs show: `Authentication retrieval for module noop-with-token`
-3. No more `MCP server openshift requires kubernetes token but none available` warnings
-4. Chat queries now use MCP tools to access cluster resources
+- ConfigMap has `authentication_config` nested inside `ols_config` with `module: noop-with-token`
+- ConfigMap has `dev_config:\n  disable_auth: true` at the top level
+- App server logs show: `Authentication retrieval for module noop-with-token`
+- No more `MCP server openshift requires kubernetes token but none available` warnings
+- Chat queries now use MCP tools to access cluster resources
 
 ### Operator Safety
 
-The OLS operator does not support `authentication_config` in the CRD yet (confirmed in upstream code). The operator stays at 0 replicas and must stay that way.
+The OLS operator does not support `authentication_config` in the CRD yet (confirmed in upstream code). The operator stays at 0 replicas and must stay that way, otherwise it will overwrite the ConfigMap on its next reconciliation.
 
 ## Tool-Result Inspection Guardrail (disabled)
 
