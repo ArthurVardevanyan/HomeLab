@@ -113,5 +113,16 @@ resource "zitadel_application_oidc" "okd_mcp" {
   skip_native_app_success_page = true
 }
 
+resource "google_secret_manager_secret" "zitadel_okd_mcp" {
+  project   = "homelab-${local.project_id}"
+  secret_id = "zitadel_okd_mcp"
 
+  replication {
+    auto {}
+  }
+}
 
+resource "google_secret_manager_secret_version" "zitadel_okd_mcp" {
+  secret      = google_secret_manager_secret.zitadel_okd_mcp.id
+  secret_data = zitadel_application_oidc.okd_mcp.client_secret
+}
