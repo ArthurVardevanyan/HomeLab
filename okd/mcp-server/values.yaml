@@ -1,0 +1,22 @@
+---
+openshift: true
+fullnameOverride: openshift-mcp-server
+config:
+  toolsets:
+    - config
+    - core
+    - helm
+    - kcp
+    - kubevirt
+    - metrics
+    - netedge
+    - openshift
+    - tekton
+ingress:
+  enabled: false
+rbac:
+  extraClusterRoleBindings:
+    - name: use-view-role
+      roleRef:
+        name: view
+        external: true

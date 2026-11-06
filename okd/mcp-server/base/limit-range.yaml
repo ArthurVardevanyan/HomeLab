@@ -1,0 +1,19 @@
+---
+apiVersion: v1
+kind: LimitRange
+metadata:
+  name: openshift-mcp-server-lr
+  namespace: openshift-mcp-server
+  labels:
+    app.kubernetes.io/instance: openshift-mcp-server
+spec:
+  limits:
+    - type: Container
+      default:
+        cpu: 100m
+        memory: 128Mi
+        ephemeral-storage: 256Mi
+      defaultRequest:
+        cpu: 10m
+        memory: 32Mi
+        ephemeral-storage: 64Mi
