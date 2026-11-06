@@ -86,3 +86,28 @@ resource "google_secret_manager_secret" "zitadel_okd_cli" {
     auto {}
   }
 }
+
+resource "zitadel_application_oidc" "okd_mcp" {
+  project_id = zitadel_project.okd.id
+  org_id     = zitadel_org.zitadel.id
+
+  name = "okd-mcp"
+  redirect_uris = [
+    "http://localhost:*",
+  ]
+  response_types               = ["OIDC_RESPONSE_TYPE_CODE"]
+  grant_types                  = ["OIDC_GRANT_TYPE_AUTHORIZATION_CODE"]
+  app_type                     = "OIDC_APP_TYPE_NATIVE"
+  auth_method_type             = "OIDC_AUTH_METHOD_TYPE_NONE"
+  version                      = "OIDC_VERSION_1_0"
+  clock_skew                   = "0s"
+  dev_mode                     = true
+  access_token_type            = "OIDC_TOKEN_TYPE_JWT"
+  access_token_role_assertion  = false
+  id_token_role_assertion      = false
+  id_token_userinfo_assertion  = true
+  additional_origins           = []
+  skip_native_app_success_page = true
+}
+
+

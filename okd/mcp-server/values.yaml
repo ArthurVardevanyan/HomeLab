@@ -1,15 +1,19 @@
 ---
 openshift: true
-# Keep resource names short and stable (otherwise "<release>-redhat-openshift-mcp-server")
 fullnameOverride: openshift-mcp-server
 config:
-  # ossm omitted: it requires [toolset_configs.kiali].url and Kiali is not installed
+  clusterProvider: openshift-mcp
   toolsets:
+    - config
     - core
-    - ovn-kubernetes
-    - cni-diagnostics
+    - helm
+    - kcp
+    - kubevirt
+    - metrics
     - netedge
-# Exposed through Gateway API (components/gateway), not the chart's Ingress/Route
+    - openshift
+    - ossm
+    - tekton
 ingress:
   enabled: false
 rbac:
