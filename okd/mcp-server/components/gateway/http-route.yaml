@@ -1,0 +1,29 @@
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: openshift-mcp-server
+  namespace: openshift-mcp-server
+  labels:
+    app.kubernetes.io/instance: openshift-mcp-server
+  annotations:
+    externaldns.k8s.io: unifi
+spec:
+  parentRefs:
+    - group: gateway.networking.k8s.io
+      kind: ListenerSet
+      name: openshift-mcp-server
+      namespace: openshift-mcp-server
+  hostnames: ["mcp.okd.homelab.arthurvardevanyan.com"]
+  rules:
+    - backendRefs:
+        - group: ""
+          kind: Service
+          name: openshift-mcp-server
+          namespace: openshift-mcp-server
+          port: 8080
+          weight: 1
+      matches:
+        - path:
+            type: PathPrefix
+            value: /

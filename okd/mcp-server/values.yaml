@@ -1,0 +1,20 @@
+---
+openshift: true
+# Keep resource names short and stable (otherwise "<release>-redhat-openshift-mcp-server")
+fullnameOverride: openshift-mcp-server
+config:
+  # ossm omitted: it requires [toolset_configs.kiali].url and Kiali is not installed
+  toolsets:
+    - core
+    - ovn-kubernetes
+    - cni-diagnostics
+    - netedge
+# Exposed through Gateway API (components/gateway), not the chart's Ingress/Route
+ingress:
+  enabled: false
+rbac:
+  extraClusterRoleBindings:
+    - name: use-view-role
+      roleRef:
+        name: view
+        external: true
