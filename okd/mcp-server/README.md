@@ -59,9 +59,21 @@ ConfigMap is intentionally not used. The `oauth_audience` value is an
 argocd-vault-plugin placeholder, resolved at sync time by the
 `argocd-vault-plugin-kustomize` plugin on the ArgoCD Application.
 
-All 10 available toolsets are enabled by default:
-`config`, `core`, `helm`, `kcp`, `kubevirt`, `metrics`, `netedge`, `openshift`,
-`ossm`, `tekton`.
+Nine of the ten available toolsets are enabled: `config`, `core`, `helm`,
+`kcp`, `kubevirt`, `metrics`, `netedge`, `openshift`, `tekton`.
+
+`ossm` is intentionally omitted. It needs a Kiali instance
+(`[toolset_configs.kiali].url`), which this cluster does not run; without one
+its tools fail with `kiali server URL not configured`. Add `ossm` back to
+`toolsets` and set that URL if Kiali is installed.
+
+The `metrics` toolset defaults to `http://localhost:9090`, which does not exist
+in the pod. `[toolset_configs.metrics]` in `config.toml` points it at the
+in-cluster Thanos Querier and Alertmanager over HTTPS. With passthrough, the
+user's own token is forwarded to them. The pod trusts the service CA through the
+`openshift-service-ca.crt` ConfigMap mounted under `SSL_CERT_DIR`, and the
+`allow-monitoring-egress` NetworkPolicy opens TCP 9091 to Thanos and 9095 to
+Alertmanager (the container port behind the service's 9094).
 
 To narrow toolsets, edit `toolsets` in `okd/mcp-server/base/config.toml`:
 

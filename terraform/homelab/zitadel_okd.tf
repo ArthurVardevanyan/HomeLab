@@ -95,6 +95,10 @@ resource "zitadel_application_oidc" "okd_mcp" {
   redirect_uris = [
     "http://127.0.0.1:19876/mcp/oauth/callback",
   ]
+  # Zitadel cannot clear this list once set ("No changes" error), keep it.
+  post_logout_redirect_uris = [
+    "http://127.0.0.1:19876/mcp/oauth/callback",
+  ]
   response_types               = ["OIDC_RESPONSE_TYPE_CODE"]
   grant_types                  = ["OIDC_GRANT_TYPE_AUTHORIZATION_CODE", "OIDC_GRANT_TYPE_REFRESH_TOKEN"]
   app_type                     = "OIDC_APP_TYPE_NATIVE"
@@ -108,4 +112,33 @@ resource "zitadel_application_oidc" "okd_mcp" {
   id_token_userinfo_assertion  = true
   additional_origins           = []
   skip_native_app_success_page = true
+}
+
+# Zitadel omits preferred_username from JWT access tokens (it is only present in
+# userinfo/id_token). The OKD kube-apiserver maps usernames from this claim, so
+# add it to the access token for per-user passthrough (e.g. the MCP server).
+resource "zitadel_action" "okd_preferred_username" {
+  org_id          = zitadel_org.zitadel.id
+  name            = "preferredUsernameClaim"
+  allowed_to_fail = true
+  timeout         = "10s"
+  script          = <<-JS
+    function preferredUsernameClaim(ctx, api) {
+      // Only the okd-mcp app; other apps' access tokens stay unchanged.
+      if (ctx.v1.application.getClientId() !== '${zitadel_application_oidc.okd_mcp.client_id}') {
+        return;
+      }
+      var user = ctx.v1.getUser();
+      if (user.username) {
+        api.v1.claims.setClaim('preferred_username', user.username);
+      }
+    }
+  JS
+}
+
+resource "zitadel_trigger_actions" "okd_preferred_username" {
+  org_id       = zitadel_org.zitadel.id
+  flow_type    = "FLOW_TYPE_CUSTOMISE_TOKEN"
+  trigger_type = "TRIGGER_TYPE_PRE_ACCESS_TOKEN_CREATION"
+  action_ids   = [zitadel_action.okd_preferred_username.id]
 }
