@@ -43,7 +43,8 @@ for line in sys.stdin:
 docs=yaml_doc.split('\\n---\\n')
 for d in docs:
     k=re.search(r'^kind: (\\S+)',d.strip(),re.M).group(1)
-    n={'Deployment':'deployment','ConfigMap':'config-map','ServiceAccount':'service-account','ClusterRoleBinding':'cluster-role-binding','Service':'service','Pod':'pod'}.get(k,k).lower()+'.yaml'
+    if k=='ConfigMap': continue  # generated from base/config.toml by configMapGenerator
+    n={'Deployment':'deployment','ServiceAccount':'service-account','ClusterRoleBinding':'cluster-role-binding','Service':'service','Pod':'pod'}.get(k,k).lower()+'.yaml'
     open(f'okd/mcp-server/base/{n}','w').write('---\\n'+d.strip()+'\\n')
     print(n, k)
 "
@@ -51,21 +52,25 @@ for d in docs:
 
 ## Configuring Toolsets
 
-`okd/mcp-server/values.yaml` controls the toolsets via `config.toolsets`.
+The server config is [base/config.toml](base/config.toml), turned into the
+`openshift-mcp-server` ConfigMap by a `configMapGenerator` in
+[base/kustomization.yaml](base/kustomization.yaml). The Helm-rendered
+ConfigMap is intentionally not used. The `oauth_audience` value is an
+argocd-vault-plugin placeholder, resolved at sync time by the
+`argocd-vault-plugin-kustomize` plugin on the ArgoCD Application.
+
 All 10 available toolsets are enabled by default:
 `config`, `core`, `helm`, `kcp`, `kubevirt`, `metrics`, `netedge`, `openshift`,
 `ossm`, `tekton`.
 
-To narrow toolsets, edit `okd/mcp-server/values.yaml`:
+To narrow toolsets, edit `toolsets` in `okd/mcp-server/base/config.toml`:
 
-```yaml
-config:
-  toolsets:
-    - core
-    - netedge
+```toml
+toolsets = ["core", "netedge"]
 ```
 
-Then re-render per the section above.
+`port = "8080"` must stay set. Without it the server starts in stdio mode,
+which disables OAuth and rejects the auth options.
 
 ## Deploy
 
@@ -163,8 +168,11 @@ remain a singleton with a single route and no HA.
 
 - Separate from the Lightspeed-operator managed `openshift-mcp-server` in
   the `openshift-lightspeed` namespace, which OLSConfig uses.
-- The `clusterProvider` is set to `openshift-mcp` so that OpenShift's own
-  tools (like `oc` CLI tools) become available via the `openshift` toolset.
-- The server uses its ServiceAccount, bound to the `view` ClusterRole.
-- The route has no authentication by default. Verify exposure is acceptable
-  (LAN only) before enabling the `openshift-mcp` entry in `opencode.json`.
+- `cluster_provider_strategy = "in-cluster"` and
+  `cluster_auth_mode = "passthrough"`: requests to the cluster use the
+  caller's own Zitadel token, so users need their own RBAC bindings.
+- `require_oauth = true`: the route requires a valid Zitadel JWT whose
+  audience is the `okd-mcp` client ID.
+- The ServiceAccount `view` binding is only used for the server's own
+  in-cluster access, not for user requests.
+- Egress to Zitadel goes through the cluster ingress (`allow-zitadel-egress`).

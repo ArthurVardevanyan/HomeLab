@@ -6,10 +6,14 @@ resources:
   - limit-range.yaml
   - network-policy.yaml
   - service-account.yaml
-  - config-map.yaml
   - cluster-role-binding.yaml
   - service.yaml
   - deployment.yaml
   - vpa.yaml
 patches:
   - path: deployment-patch.yaml
+configMapGenerator:
+  - files:
+      - config.toml
+    name: openshift-mcp-server
+    namespace: openshift-mcp-server
