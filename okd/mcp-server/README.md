@@ -98,9 +98,9 @@ resource "zitadel_application_oidc" "okd_mcp" {
   org_id     = zitadel_org.zitadel.id
 
   name = "okd-mcp"
-  redirect_uris = ["http://localhost:*"]
+  redirect_uris = ["http://127.0.0.1:19876/mcp/oauth/callback"]
   response_types               = ["OIDC_RESPONSE_TYPE_CODE"]
-  grant_types                  = ["OIDC_GRANT_TYPE_AUTHORIZATION_CODE"]
+  grant_types                  = ["OIDC_GRANT_TYPE_AUTHORIZATION_CODE", "OIDC_GRANT_TYPE_REFRESH_TOKEN"]
   app_type                     = "OIDC_APP_TYPE_NATIVE"
   auth_method_type             = "OIDC_AUTH_METHOD_TYPE_NONE"
   version                      = "OIDC_VERSION_1_0"
@@ -115,8 +115,10 @@ resource "zitadel_application_oidc" "okd_mcp" {
 }
 ```
 
-The Terraform resource writes the client secret to Google Secret Manager.
-Copy the client ID to Vault for the cluster `Authentication` config.
+There is no client secret. opencode runs on the user's machine, so the client
+is public and PKCE protects the code exchange. The user's own access token is
+what the MCP server passes to the cluster. Copy the client ID to Vault for the
+server's `oauth_audience` and the cluster `Authentication` config.
 
 ### Cluster OIDC Configuration
 
@@ -133,7 +135,11 @@ The cluster `Authentication` config uses the placeholder
 
 ### opencode.json
 
-The `openshift-mcp` entry in `opencode.json` requires the OAuth `clientId`:
+The `openshift-mcp` entry in `opencode.json` requires the OAuth `clientId`
+and the scopes to request (Zitadel rejects the request without them).
+Zitadel has no dynamic client registration, so the client ID is set
+explicitly. opencode's default callback
+(`http://127.0.0.1:19876/mcp/oauth/callback`) matches the Terraform redirect URI.
 
 ```json
 "openshift-mcp": {
@@ -141,7 +147,8 @@ The `openshift-mcp` entry in `opencode.json` requires the OAuth `clientId`:
   "url": "https://mcp.okd.homelab.arthurvardevanyan.com/mcp",
   "enabled": false,
   "oauth": {
-    "clientId": "<your-zitadel-mcp-client-id>"
+    "clientId": "<your-zitadel-mcp-client-id>",
+    "scope": "openid profile email offline_access"
   }
 }
 ```
