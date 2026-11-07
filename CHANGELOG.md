@@ -361,7 +361,7 @@ Focus on AI hardware acceleration, LLM infrastructure, CI pipeline modernization
 
 - **AI Hardware:** **Dual Intel Arc Pro B70** (Battlemage) replacing NVIDIA, with GPU power tuning.
 - **LLM Stack:** **llama-swap** (Vulkan → SYCL → **vLLM XPU**), **LiteLLM**, **Open WebUI** and **SearXNG**.
-- **CI/CD:** **gitops-ci** and **git-clift** semantic releaser.
+- **CI/CD:** **gitops-ci** ([k8s-gitops-ci](https://github.com/ArthurVardevanyan/k8s-gitops-ci), an open-source single-binary GitOps CI) and **git-clift** semantic releaser.
 - **Virtualization:** **KubeVirt on GPU node** with cross-CPU live migration.
 - **Identity & Observability:** **OIDC CLI (PKCE)** and **NetObserv Loki** re-inception.
 - **Slimming:** **Service Mesh** removed.
@@ -369,7 +369,7 @@ Focus on AI hardware acceleration, LLM infrastructure, CI pipeline modernization
 ### Major Milestones
 
 - **July 30, 2026**: **git-clift** semantic releaser inception, **Service Mesh** removed.
-- **July 31, 2026**: **gitops-ci** inception.
+- **July 31, 2026**: **gitops-ci** ([k8s-gitops-ci](https://github.com/ArthurVardevanyan/k8s-gitops-ci)) inception, a single Go binary replacing the multi-task Tekton CI.
 - **August 11, 2026**: **Intel Arc B70** inception, LLM inference replacing NVIDIA.
 - **August 14, 2026**: **Dual Intel Arc Pro B70** upgrade with **LiteLLM**, **llama-swap**, **Open WebUI** and **SearXNG**.
 - **August 21, 2026**: **OIDC CLI (PKCE)** and **NetObserv Loki** re-inception.
@@ -389,7 +389,7 @@ The platform crosses into **OKD 5.0** and converges on first-party operators, wi
 - **Storage:** **Ceph 1.20**.
 - **Supply Chain:** **Tekton Chains** SBOM and image signing, **Gitea GPG** commit signing.
 - **Provisioning & Edge:** **metal3 + iPXE** worker provisioning, **MicroShift BootC**, and the **DC2 MicroShift cluster**.
-- **Workloads:** **media-ingest** (AV1) and the **OpenShift Lightspeed** agentic runtime.
+- **Workloads:** **media-ingest** (AV1), the **OpenShift Lightspeed** agentic runtime and the **OpenShift MCP Server**.
 
 ### Major Milestones
 
@@ -403,3 +403,4 @@ The platform crosses into **OKD 5.0** and converges on first-party operators, wi
 - **October 27, 2026**: **MicroShift BootC** image and **Gitea GPG** commit signing.
 - **November 1, 2026**: **DC2 MicroShift cluster** inception.
 - **November 4, 2026**: **OpenShift Lightspeed** agentic runtime.
+- **November 6, 2026**: **OpenShift MCP Server** deployed via Helm-kustomize, exposed through Gateway API with **Zitadel** OIDC (PKCE).

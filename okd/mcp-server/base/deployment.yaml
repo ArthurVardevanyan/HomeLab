@@ -1,0 +1,84 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: openshift-mcp-server
+  namespace: openshift-mcp-server
+  labels:
+    helm.sh/chart: redhat-openshift-mcp-server-0.3.0
+    app.kubernetes.io/name: redhat-openshift-mcp-server
+    app.kubernetes.io/instance: openshift-mcp-server
+    app.kubernetes.io/version: "latest"
+    app.kubernetes.io/managed-by: Helm
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: redhat-openshift-mcp-server
+      app.kubernetes.io/instance: openshift-mcp-server
+  template:
+    metadata:
+      annotations:
+        checksum/config: 30632c0cf575701f19f9ab79d9c40745f008a047ea124aed5c78699e72cd2149
+      labels:
+        helm.sh/chart: redhat-openshift-mcp-server-0.3.0
+        app.kubernetes.io/name: redhat-openshift-mcp-server
+        app.kubernetes.io/instance: openshift-mcp-server
+        app.kubernetes.io/version: "latest"
+        app.kubernetes.io/managed-by: Helm
+    spec:
+      serviceAccountName: openshift-mcp-server
+      automountServiceAccountToken: true
+      securityContext:
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: redhat-openshift-mcp-server
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+            readOnlyRootFilesystem: true
+            runAsNonRoot: true
+          # renovate: datasource=docker depName=registry.redhat.io/openshift-mcp-tech-preview/openshift-mcp-server-rhel9 versioning=loose
+          image: registry.redhat.io/openshift-mcp-tech-preview/openshift-mcp-server-rhel9:0.3@sha256:c40701208a6e1a2012f54027c1839b88e798df32761aaba950bc3e3abc0c49fd
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: 8080
+              protocol: TCP
+          args:
+            - "--config"
+            - "/etc/openshift-mcp-server/config.toml"
+          env:
+            - name: POD_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+          resources:
+            limits:
+              cpu: 100m
+              memory: 128Mi
+            requests:
+              cpu: 100m
+              memory: 128Mi
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+            - name: config
+              mountPath: /etc/openshift-mcp-server
+      volumes:
+        - name: tmp
+          emptyDir: {}
+        - name: config
+          configMap:
+            name: openshift-mcp-server
