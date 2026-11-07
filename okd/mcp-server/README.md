@@ -73,7 +73,7 @@ in-cluster Thanos Querier and Alertmanager over HTTPS. With passthrough, the
 user's own token is forwarded to them. The pod trusts the service CA through the
 `openshift-service-ca.crt` ConfigMap mounted under `SSL_CERT_DIR`, and the
 `allow-monitoring-egress` NetworkPolicy opens TCP 9091 to Thanos and 9095 to
-Alertmanager (the container port behind the service's 9094).
+Alertmanager.
 
 To narrow toolsets, edit `toolsets` in `okd/mcp-server/base/config.toml`:
 
@@ -195,3 +195,9 @@ remain a singleton with a single route and no HA.
 - The ServiceAccount `view` binding is only used for the server's own
   in-cluster access, not for user requests.
 - Egress to Zitadel goes through the cluster ingress (`allow-zitadel-egress`).
+
+- Netedge probe tools (`probe_ping`, `probe_tcp`, `probe_http`, `probe_dns`,
+  `probe_latency`) are enabled. Egress is restricted to private CIDRs
+  (`10.0.0.0/8`, `172.16.0.0/12`, `192.168.0.0/16`, and OpenShift service
+  networks via the `allow-netedge-egress` NetworkPolicy). Egress to the
+  public internet is **not** allowed and probes to public IPs will time out.
