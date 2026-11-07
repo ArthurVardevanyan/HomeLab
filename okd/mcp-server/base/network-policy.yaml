@@ -156,3 +156,51 @@ spec:
       ports:
         - protocol: TCP
           port: 9095
+---
+# Netedge probe traffic — local/private CIDRs only.
+# Internet egress is intentionally blocked; probes to public IPs will time out.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-netedge-egress
+  namespace: openshift-mcp-server
+  annotations:
+    argocd.argoproj.io/sync-wave: "0"
+spec:
+  podSelector: {}
+  policyTypes:
+    - Egress
+  egress:
+    # Private RFC 1918 ranges
+    - to:
+        - ipBlock:
+            cidr: 10.0.0.0/8
+      ports:
+        - protocol: TCP
+        - protocol: UDP
+    - to:
+        - ipBlock:
+            cidr: 172.16.0.0/12
+      ports:
+        - protocol: TCP
+        - protocol: UDP
+    - to:
+        - ipBlock:
+            cidr: 192.168.0.0/16
+      ports:
+        - protocol: TCP
+        - protocol: UDP
+    # OpenShift service network (OVN-Kubernetes default)
+    - to:
+        - ipBlock:
+            cidr: 100.64.0.0/10
+      ports:
+        - protocol: TCP
+        - protocol: UDP
+    # OpenShift pod network (if separate from pod IP ranges)
+    - to:
+        - ipBlock:
+            cidr: 100.128.0.0/9
+      ports:
+        - protocol: TCP
+        - protocol: UDP
