@@ -99,6 +99,18 @@ model_list:
       num_retries: 3
       retry_after: 3
 
+  # --- Flash-Next (External OpenAI-Compatible) ---
+  - model_name: qwen3.8-flash-next
+    litellm_params:
+      model: openai/flash-next
+      api_base: "<path:secret/data/homelab/llm/nh#url>"
+      api_key: "<path:secret/data/homelab/llm/nh#api-key>"
+      input_cost_per_token: 0.000000013
+      output_cost_per_token: 0.000000013
+      timeout: 900
+      num_retries: 2
+      retry_after: 15
+
 general_settings:
   forward_client_headers_to_llm_api: true
   health_check_interval: 300
