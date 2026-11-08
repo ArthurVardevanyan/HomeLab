@@ -67,6 +67,14 @@ spec:
               value: /app/backend/open_webui/static
             - name: TMPDIR
               value: /tmp
+            # Cap stream idle gap to fail-fast on true stalls (no chunk for >5 min).
+            # A healthy stream ticks sub-second; even 157k-token prefill finishes
+            # in well under 60s. Total cap (code default 300) is raised here
+            # in case the chat-stream path actually uses the shared session pool.
+            - name: AIOHTTP_CLIENT_STREAM_IDLE_TIMEOUT
+              value: "300"
+            - name: AIOHTTP_CLIENT_TIMEOUT
+              value: "3600"
             # Disable huggingface_hub Xet protocol to use classic LFS HTTP
             # (already allow-listed in EgressFirewall; Xet CAS domains are not)
             - name: HF_HUB_DISABLE_XET
@@ -143,7 +151,7 @@ spec:
             # all 3 models: qwen3.6-35b-a3b,
             # qwen3.6-35b-a3b-spread, qwen3.8-27b.
             - name: DEFAULT_MODEL_PARAMS
-              value: '{"function_calling":"native"}'
+              value: '{"function_calling":"native","thinking":true}'
             # orjson provides a faster JSON encoder/decoder than the stdlib
             # json module. Open WebUI falls back to stdlib for rejected
             # payloads, so risk is minimal. Worth enabling on Redis-backed

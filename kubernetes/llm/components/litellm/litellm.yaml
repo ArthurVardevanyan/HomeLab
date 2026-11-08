@@ -20,8 +20,8 @@ model_list:
       api_key: "dummy"
       input_cost_per_token: 0.000000013
       output_cost_per_token: 0.000000013
-      timeout: 7200
-      num_retries: 8
+      timeout: 900
+      num_retries: 2
       retry_after: 15
   # - model_name: qwen3.6-35b-a3b
   #   litellm_params:
@@ -44,8 +44,8 @@ model_list:
       api_key: "dummy"
       input_cost_per_token: 0.000000013
       output_cost_per_token: 0.000000013
-      timeout: 7200
-      num_retries: 8
+      timeout: 900
+      num_retries: 2
       retry_after: 15
 
   # --- Public Model Alias 4: Qwen 27B
@@ -58,8 +58,8 @@ model_list:
       api_key: "dummy"
       input_cost_per_token: 0.000000013
       output_cost_per_token: 0.000000013
-      timeout: 7200
-      num_retries: 8
+      timeout: 900
+      num_retries: 2
       retry_after: 15
   # - model_name: qwen3.8-27b
   #   litellm_params:
@@ -82,8 +82,8 @@ model_list:
   #     api_key: "dummy"
   #     input_cost_per_token: 0.000000013
   #     output_cost_per_token: 0.000000013
-  #     timeout: 7200
-  #     num_retries: 8
+  #     timeout: 900
+  #     num_retries: 2
   #     retry_after: 15
 
   # --- Embed Spread (0.6B, both GPUs) ---
@@ -153,10 +153,13 @@ router_general_settings:
   #  # local backend than LiteLLM's default 3-failures/5-second cooldown, which
   #  # is designed for multi-provider failover and can false-positive on normal
   #  # long-generation timeouts or client-aborted streams.
-  disable_cooldowns: true
+  # disable_cooldowns: true
+  # Previously required by the llama-swap-affinity plugin (currently commented out).
+  # Cooldowns can safely be re-enabled; with only one deployment per model, a
+  # cooldown produces a clean failure instead of an 8×15s retry loop.
 
 litellm_settings:
-  request_timeout: 1800
+  request_timeout: 900
   cache: true
   cache_params:
     type: redis
