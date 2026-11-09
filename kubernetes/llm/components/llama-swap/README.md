@@ -176,6 +176,9 @@ fails the build if its anchor no longer matches:
 Applied:
 
 - `patch_mtp_nightly.py` — BF16 draft layers behind `B70_MTP_BF16_DRAFT=1`
+- `patch_mtp_boundary.py` — reclassifies a partial final speculative group
+  (a request that reaches exactly `max-model-len`) as stateful non-spec
+  prefill, because the XPU GDN kernel needs complete groups
 - `patch_gdn_mixed_split_v5.py` — splits spec/non-spec tokens for the
   fused GDN attention kernel (causal_conv1d exclusive on spec XOR non-spec)
 - `patch_fix_accepted_sync.py` — ports vllm#53919 (num_accepted_tokens D2H
@@ -183,21 +186,28 @@ Applied:
 - `patch_fix_backward_copy.py` — guards against destructive Mamba state
   backward copies (vllm#53505, fail-closed)
 - `patch_fix_eagle_drop.py` — ports vllm#48375 (EAGLE/MTP cache pollution,
-  fails closed)
+  fails closed; v0.33.0 still ignores `drop_eagle_block` in
+  `MambaManager.find_longest_cache_hit`)
+- `patch_fix_xpu_sleep.py` — flips `expandable_segments` off only for the
+  duration of the sleep-mode pool context (pytorch#147851, see
+  [SYCL / Level Zero env](#sycl--level-zero-env) below). Self-gating: inert
+  unless expandable segments are configured. Sleep mode is currently off on
+  every model; this patch is the safety net for when it is re-enabled
+- `patch_qwen_triton_warmup_xpu.py` — fixes the CUDA-only device-sync no-op
+  in `qwen_triton_warmup.py` so warmup kernel launches are actually waited
+  for on XPU
+- `patch_draft_lmhead_int4.py` / `patch_draft_mtp_int4.py` — runtime-gated
+  INT4 draft head (`B70_DRAFT_LMHEAD_INT4=1` / `B70_DRAFT_MTP_INT4=1`), see
+  [INT4 draft head A/B](#int4-draft-head-ab-2026-10-21) below
 
-Skipped on v0.33.0 (the build prints `SKIP ...`; the files stay in
-`containers/llama-swap/patches/` for reference):
-
-- `patch_mtp_boundary.py` — GDN metadata was refactored, so its anchor is
-  gone. It reclassified a partial final speculative group (a request that
-  reaches exactly `max-model-len`) as non-spec prefill, because the XPU GDN
-  kernel needs complete groups. Whether v0.33.0 handles that case itself is
-  **unverified** (the "complete groups only" kernel requirement is still in
-  `_xpu_ops.py`); no failure has been seen, but nothing has filled a context
-  window to its limit either.
-- `patch_fix_xpu_sleep.py` — its `use_memory_pool` anchor is gone. Sleep mode
-  is disabled on every model anyway.
-- `patch_qwen_triton_warmup_xpu.py` — v0.33.0 GDN was refactored.
+v0.33.0 anchor notes: `patch_mtp_boundary.py` was re-anchored (upstream
+switched the pure-spec state gather to a slice and split the finalize into
+pure-spec/mixed branches); `patch_fix_xpu_sleep.py` was re-anchored onto the
+new pool-retention body of `use_memory_pool`;
+`patch_qwen_triton_warmup_xpu.py` anchors were confirmed unchanged. Upstream
+`draft_lm_head_quantization` (vllm#59973, in v0.33.0) does not replace
+`patch_draft_lmhead_int4.py`: it only quantizes drafters that _share_ the
+target's `lm_head`, while the MTP drafter builds its own fp16 head.
 
 See the [Cookbook image patch matrix](https://github.com/SergiioB/intel-arc-pro-b70-inference-cookbook)
 for SHA-256 hashes of each patch against the f01e24f6 vllm source (that is the

@@ -68,7 +68,7 @@ RUN set -eux; \
   echo "=== patch_mtp_nightly ===" && \
   python3 /tmp/patches/patch_mtp_nightly.py; \
   echo "=== patch_mtp_boundary ===" && \
-  echo "SKIP patch_mtp_boundary (GDN backend refactored in v0.33.0)"; \
+  python3 /tmp/patches/patch_mtp_boundary.py; \
   echo "=== patch_gdn_mixed_split_v5 ===" && \
   python3 /tmp/patches/patch_gdn_mixed_split_v5.py; \
   echo "=== patch_fix_accepted_sync ===" && \
@@ -78,9 +78,9 @@ RUN set -eux; \
   echo "=== patch_fix_eagle_drop ===" && \
   python3 /tmp/patches/patch_fix_eagle_drop.py; \
   echo "=== patch_fix_xpu_sleep ===" && \
-  echo "SKIP patch_fix_xpu_sleep (use_memory_pool anchor gone in v0.33.0)"; \
+  python3 /tmp/patches/patch_fix_xpu_sleep.py; \
   echo "=== patch_qwen_triton_warmup_xpu ===" && \
-  echo "SKIP patch_qwen_triton_warmup_xpu (v0.33.0 GDN refactored)"; \
+  python3 /tmp/patches/patch_qwen_triton_warmup_xpu.py; \
   echo "=== patch_draft_lmhead_int4 (runtime-gated: B70_DRAFT_LMHEAD_INT4=1) ===" && \
   python3 /tmp/patches/patch_draft_lmhead_int4.py; \
   echo "=== patch_draft_mtp_int4 (runtime-gated: B70_DRAFT_MTP_INT4=1) ===" && \
