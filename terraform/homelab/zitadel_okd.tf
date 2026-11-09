@@ -93,11 +93,13 @@ resource "zitadel_application_oidc" "okd_mcp" {
 
   name = "okd-mcp"
   redirect_uris = [
-    "http://127.0.0.1:19876/mcp/oauth/callback",
+    "http://127.0.0.1:*/mcp/oauth/callback",
+    "http://127.0.0.1:*/callback",
   ]
   # Zitadel cannot clear this list once set ("No changes" error), keep it.
   post_logout_redirect_uris = [
-    "http://127.0.0.1:19876/mcp/oauth/callback",
+    "http://127.0.0.1:*/mcp/oauth/callback",
+    "http://127.0.0.1:*/callback",
   ]
   response_types               = ["OIDC_RESPONSE_TYPE_CODE"]
   grant_types                  = ["OIDC_GRANT_TYPE_AUTHORIZATION_CODE", "OIDC_GRANT_TYPE_REFRESH_TOKEN"]
