@@ -1,0 +1,34 @@
+---
+# ConsolePlugin integrates ACS vulnerability management view into the
+# OpenShift web console. It is cluster-scoped and requires the console
+# operator to reference it in its spec.plugins list (see README.md).
+# Only renders on OpenShift 4.19+ / Kubernetes 1.32+ (see upstream gate).
+apiVersion: console.openshift.io/v1
+kind: ConsolePlugin
+metadata:
+  name: advanced-cluster-security
+  labels:
+    app.kubernetes.io/component: console-plugin
+    app.kubernetes.io/instance: stackrox-secured-cluster-services
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/name: stackrox
+    app.kubernetes.io/part-of: stackrox-secured-cluster-services
+    app.kubernetes.io/version: "4.10"
+spec:
+  displayName: Red Hat Advanced Cluster Security for OpenShift
+  backend:
+    type: Service
+    service:
+      name: sensor-proxy
+      namespace: stackrox
+      port: 443
+      basePath: /proxy/central/static/ocp-plugin
+  proxy:
+    - alias: api-service
+      authorization: UserToken
+      endpoint:
+        type: Service
+        service:
+          name: sensor-proxy
+          namespace: stackrox
+          port: 443
