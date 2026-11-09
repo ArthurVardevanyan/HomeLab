@@ -11,19 +11,24 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: stackrox
     app.kubernetes.io/part-of: stackrox-secured-cluster-services
-    app.kubernetes.io/version: 4.10.2
-    helm.sh/chart: stackrox-secured-cluster-services-400.10.2
+    app.kubernetes.io/version: 5.0.0
+    helm.sh/chart: stackrox-secured-cluster-services-500.0.0
     auto-upgrade.stackrox.io/component: sensor
   annotations:
     email: support@stackrox.com
     meta.helm.sh/release-name: stackrox-secured-cluster-services
     meta.helm.sh/release-namespace: stackrox
     owner: stackrox
+    service.beta.openshift.io/serving-cert-secret-name: admission-control-monitoring-tls
 spec:
   ports:
     - name: https
       port: 443
       targetPort: webhook
+      protocol: TCP
+    - name: monitoring-tls
+      port: 9091
+      targetPort: monitoring-tls
       protocol: TCP
   selector:
     app: admission-control
@@ -42,8 +47,8 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: stackrox
     app.kubernetes.io/part-of: stackrox-secured-cluster-services
-    app.kubernetes.io/version: 4.10.2
-    helm.sh/chart: stackrox-secured-cluster-services-400.10.2
+    app.kubernetes.io/version: 5.0.0
+    helm.sh/chart: stackrox-secured-cluster-services-500.0.0
     auto-upgrade.stackrox.io/component: sensor
   annotations:
     email: support@stackrox.com
@@ -78,8 +83,9 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: stackrox
     app.kubernetes.io/part-of: stackrox-secured-cluster-services
-    app.kubernetes.io/version: 4.10.2
-    helm.sh/chart: stackrox-secured-cluster-services-400.10.2
+    app.kubernetes.io/version: 5.0.0
+    helm.sh/chart: stackrox-secured-cluster-services-500.0.0
+    auto-upgrade.stackrox.io/component: sensor
   annotations:
     email: support@stackrox.com
     meta.helm.sh/release-name: stackrox-secured-cluster-services
@@ -108,8 +114,8 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: stackrox
     app.kubernetes.io/part-of: stackrox-secured-cluster-services
-    app.kubernetes.io/version: 4.10.2
-    helm.sh/chart: stackrox-secured-cluster-services-400.10.2
+    app.kubernetes.io/version: 5.0.0
+    helm.sh/chart: stackrox-secured-cluster-services-500.0.0
     auto-upgrade.stackrox.io/component: sensor
   annotations:
     email: support@stackrox.com

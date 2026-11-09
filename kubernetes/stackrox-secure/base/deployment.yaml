@@ -11,8 +11,8 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: stackrox
     app.kubernetes.io/part-of: stackrox-secured-cluster-services
-    app.kubernetes.io/version: 4.10.2
-    helm.sh/chart: stackrox-secured-cluster-services-400.10.2
+    app.kubernetes.io/version: 5.0.0
+    helm.sh/chart: stackrox-secured-cluster-services-500.0.0
     app: admission-control
     auto-upgrade.stackrox.io/component: sensor
   annotations:
@@ -44,15 +44,15 @@ spec:
         app.kubernetes.io/managed-by: Helm
         app.kubernetes.io/name: stackrox
         app.kubernetes.io/part-of: stackrox-secured-cluster-services
-        app.kubernetes.io/version: 4.10.2
-        helm.sh/chart: stackrox-secured-cluster-services-400.10.2
+        app.kubernetes.io/version: 5.0.0
+        helm.sh/chart: stackrox-secured-cluster-services-500.0.0
+        sidecar.istio.io/inject: "false"
       annotations:
         email: support@stackrox.com
         meta.helm.sh/release-name: stackrox-secured-cluster-services
         meta.helm.sh/release-namespace: stackrox
         openshift.io/required-scc: restricted-v2
         owner: stackrox
-        traffic.sidecar.istio.io/excludeInboundPorts: "8443"
     spec:
       affinity:
         nodeAffinity:
@@ -77,7 +77,7 @@ spec:
       restartPolicy: Always
       schedulerName: default-scheduler
       containers:
-        - image: quay.io/stackrox-io/main:4.10.2@sha256:8f483d29437b6425475e9dd1d032ac01579904b7103fc765c25e71ee58071ec8
+        - image: quay.io/stackrox-io/main:5.0.0@sha256:6b9c59d72f693f2a374e27766d22cef31c7e1a1ba3b69c240b96867b53b81824
           imagePullPolicy: IfNotPresent
           name: admission-control
           readinessProbe:
@@ -91,6 +91,8 @@ spec:
           ports:
             - containerPort: 8443
               name: webhook
+            - containerPort: 9091
+              name: monitoring-tls
           command:
             - admission-control
           resources:
@@ -136,6 +138,10 @@ spec:
                   fieldPath: metadata.name
             - name: ROX_SENSOR_ENDPOINT
               value: sensor.stackrox.svc:443
+            - name: ROX_ENABLE_SECURE_METRICS
+              value: "true"
+            - name: ROX_ADMISSION_CONTROL_IMAGE_CACHE_MAX_SIZE
+              value: "200"
           volumeMounts:
             - name: config
               mountPath: /run/config/stackrox.io/admission-control/config/
@@ -157,6 +163,9 @@ spec:
               readOnly: true
             - name: trusted-ca-volume
               mountPath: /etc/pki/injected-ca-trust/
+              readOnly: true
+            - name: monitoring-tls
+              mountPath: /run/secrets/stackrox.io/monitoring-tls
               readOnly: true
       volumes:
         - name: certs
@@ -187,6 +196,9 @@ spec:
               - key: ca-bundle.crt
                 path: tls-ca-bundle.pem
             optional: true
+        - name: monitoring-tls
+          secret:
+            secretName: admission-control-monitoring-tls
 ---
 # Source: stackrox-secured-cluster-services/templates/sensor.yaml
 apiVersion: apps/v1
@@ -200,8 +212,8 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: stackrox
     app.kubernetes.io/part-of: stackrox-secured-cluster-services
-    app.kubernetes.io/version: 4.10.2
-    helm.sh/chart: stackrox-secured-cluster-services-400.10.2
+    app.kubernetes.io/version: 5.0.0
+    helm.sh/chart: stackrox-secured-cluster-services-500.0.0
     app: sensor
     auto-upgrade.stackrox.io/component: sensor
   annotations:
@@ -234,10 +246,10 @@ spec:
         app.kubernetes.io/managed-by: Helm
         app.kubernetes.io/name: stackrox
         app.kubernetes.io/part-of: stackrox-secured-cluster-services
-        app.kubernetes.io/version: 4.10.2
-        helm.sh/chart: stackrox-secured-cluster-services-400.10.2
+        app.kubernetes.io/version: 5.0.0
+        helm.sh/chart: stackrox-secured-cluster-services-500.0.0
+        sidecar.istio.io/inject: "false"
       annotations:
-        traffic.sidecar.istio.io/excludeInboundPorts: 8443,9443
         email: support@stackrox.com
         meta.helm.sh/release-name: stackrox-secured-cluster-services
         meta.helm.sh/release-namespace: stackrox
@@ -277,7 +289,7 @@ spec:
       schedulerName: default-scheduler
       # initContainers: null
       containers:
-        - image: quay.io/stackrox-io/main:4.10.2@sha256:8f483d29437b6425475e9dd1d032ac01579904b7103fc765c25e71ee58071ec8
+        - image: quay.io/stackrox-io/main:5.0.0@sha256:6b9c59d72f693f2a374e27766d22cef31c7e1a1ba3b69c240b96867b53b81824
           imagePullPolicy: IfNotPresent
           name: sensor
           readinessProbe:
@@ -345,10 +357,20 @@ spec:
               value: central.stackrox.svc:443
             - name: ROX_ADVERTISED_ENDPOINT
               value: sensor.stackrox.svc:443
+            - name: ROX_SENSOR_ENDPOINT
+              value: sensor.stackrox.svc:443
             - name: GRPC_ENFORCE_ALPN_ENABLED
               value: "false"
             - name: ROX_OPENSHIFT_API
               value: "true"
+            - name: ROX_VIRTUAL_MACHINES
+              value: "true"
+            - name: ROX_VIRTUAL_MACHINES_SCRAPER_CONCURRENCY
+              value: "20"
+            - name: ROX_VIRTUAL_MACHINES_PULL_MAX_RESPONSE_SIZE_KB
+              value: "16384"
+            - name: ROX_VIRTUAL_MACHINES_SCRAPER_POLL_INTERVAL
+              value: 4h
             # - name: ROX_HELM_CLUSTER_CONFIG_FP
             # valueFrom:
             #   secretKeyRef:

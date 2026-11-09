@@ -7,6 +7,7 @@ kubectl create ns stackrox
 export ADMIN_PASSWORD="$(vault kv get --field=admin-password secret/homelab/stackrox/common)"
 
 helm template -n stackrox --include-crds --create-namespace stackrox-central-services stackrox/stackrox-central-services \
+ --version 500.0.0 \
  --set imagePullSecrets.allowNone=true --set central.exposure.route.enabled=true --set env.openshift=4 \
  --set central.adminPassword.value="${ADMIN_PASSWORD}" --set image.registry="quay.io/stackrox-io" \
  --set central.db.external=true --set central.db.password.value="<path:secret/data/homelab/stackrox/db#password>" \
@@ -81,7 +82,7 @@ kubectl -n stackrox get secret central-tls -o jsonpath='{.data.cert\.pem}' \
 > kubectl -n stackrox rollout restart deploy/sensor deploy/admission-control ds/collector
 > ```
 
-## Renewing the Scanner / Scanner-V4 TLS certificates
+## Renewing the Scanner-V4 TLS certificates
 
 Unlike Central's leaf cert, the **scanner service leaf certs do not
 auto-rotate**. They are all signed by the StackRox CA (`common#ca-pem`, valid
@@ -99,8 +100,6 @@ Vault properties consumed by the scanner ExternalSecrets (`base/secret.yaml`):
 
 | Secret                   | Vault path                    | cert / key properties                  |
 | ------------------------ | ----------------------------- | -------------------------------------- |
-| `scanner-tls`            | `homelab/stackrox/central`    | `scanner-tls-cert-pem` / `-key-pem`    |
-| `scanner-db-tls`         | `homelab/stackrox/central`    | `scanner-db-tls-cert-pem` / `-key-pem` |
 | `scanner-v4-db-tls`      | `homelab/stackrox/scanner-v4` | `db-tls-cert` / `db-tls-key`           |
 | `scanner-v4-indexer-tls` | `homelab/stackrox/scanner-v4` | `indexer-tls-cert` / `indexer-tls-key` |
 | `scanner-v4-matcher-tls` | `homelab/stackrox/scanner-v4` | `matcher-tls-cert` / `matcher-tls-key` |
@@ -155,9 +154,3 @@ kubectl -n stackrox rollout restart deploy/scanner-v4-indexer deploy/scanner-v4-
 kubectl -n stackrox get secret scanner-v4-db-tls -o jsonpath='{.data.cert\.pem}' \
   | base64 -d | openssl x509 -noout -subject -enddate
 ```
-
-> The same `gen_cert` flow applies to the Scanner v2 certs (`scanner-tls`,
-> `scanner-db-tls`) — generate with CN `SCANNER_SERVICE: Scanner` /
-> `SCANNER_DB_SERVICE: Scanner DB` and SANs `scanner[-db].stackrox[.svc...]`,
-> then patch the `central#scanner-*-tls-*-pem` properties and roll
-> `deploy/scanner` + `deploy/scanner-db`.
