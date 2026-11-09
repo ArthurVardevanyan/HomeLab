@@ -20,9 +20,12 @@ model_list:
       api_key: "dummy"
       input_cost_per_token: 0.000000013
       output_cost_per_token: 0.000000013
-      timeout: 7200
-      num_retries: 8
+      timeout: 900
+      num_retries: 2
       retry_after: 15
+      # Pass client-sent chat_template_kwargs (enable_thinking toggle,
+      # e.g. the OpenCode #fast variant) through to vLLM as-is.
+      allowed_openai_params: ["chat_template_kwargs"]
   # - model_name: qwen3.6-35b-a3b
   #   litellm_params:
   #     model: openai/35b-gpu1
@@ -44,9 +47,12 @@ model_list:
       api_key: "dummy"
       input_cost_per_token: 0.000000013
       output_cost_per_token: 0.000000013
-      timeout: 7200
-      num_retries: 8
+      timeout: 900
+      num_retries: 2
       retry_after: 15
+      # Client chat_template_kwargs pass-through; strip_agentic_params still
+      # wins (its extra_body sets enable_thinking=false at send time).
+      allowed_openai_params: ["chat_template_kwargs"]
 
   # --- Public Model Alias 4: Qwen 27B
   - model_name: qwen3.8-27b
@@ -58,9 +64,12 @@ model_list:
       api_key: "dummy"
       input_cost_per_token: 0.000000013
       output_cost_per_token: 0.000000013
-      timeout: 7200
-      num_retries: 8
+      timeout: 900
+      num_retries: 2
       retry_after: 15
+      # Pass client-sent chat_template_kwargs (enable_thinking toggle,
+      # e.g. the OpenCode #fast variant) through to vLLM as-is.
+      allowed_openai_params: ["chat_template_kwargs"]
   # - model_name: qwen3.8-27b
   #   litellm_params:
   #     model: openai/27b-gpu0
@@ -80,10 +89,10 @@ model_list:
   #     model: openai/flash-next
   #     api_base: http://llama-swap-svc.llm.svc.cluster.local.:8080/v1
   #     api_key: "dummy"
-  #     input_cost_per_token: 0.000000013
-  #     output_cost_per_token: 0.000000013
-  #     timeout: 7200
-  #     num_retries: 8
+  #     input_cost_per_token: 0.0000000103
+  #     output_cost_per_token: 0.00000002624
+  #     timeout: 900
+  #     num_retries: 2
   #     retry_after: 15
 
   # --- Embed Spread (0.6B, both GPUs) ---
@@ -98,6 +107,18 @@ model_list:
       timeout: 600
       num_retries: 3
       retry_after: 3
+
+  # --- Flash-Next (External OpenAI-Compatible) ---
+  - model_name: qwen3.8-flash-next
+    litellm_params:
+      model: openai/flash-next
+      api_base: "<path:secret/data/homelab/llm/nh#url>"
+      api_key: "<path:secret/data/homelab/llm/nh#api-key>"
+      input_cost_per_token: 0.0000000103
+      output_cost_per_token: 0.00000002624
+      timeout: 900
+      num_retries: 2
+      retry_after: 15
 
 general_settings:
   forward_client_headers_to_llm_api: true
@@ -153,10 +174,13 @@ router_general_settings:
   #  # local backend than LiteLLM's default 3-failures/5-second cooldown, which
   #  # is designed for multi-provider failover and can false-positive on normal
   #  # long-generation timeouts or client-aborted streams.
-  disable_cooldowns: true
+  # disable_cooldowns: true
+  # Previously required by the llama-swap-affinity plugin (currently commented out).
+  # Cooldowns can safely be re-enabled; with only one deployment per model, a
+  # cooldown produces a clean failure instead of an 8×15s retry loop.
 
 litellm_settings:
-  request_timeout: 1800
+  request_timeout: 900
   cache: true
   cache_params:
     type: redis
