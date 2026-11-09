@@ -136,20 +136,19 @@ models:
     # Only needed if a client explicitly targets this model ID.
     # CPU KV offloading: 8 GiB pinned host RAM per instance. --kv-cache-memory-bytes
     # (renamed from --kv-cache-memory in v0.32.0) caps the GPU KV pool to skip
-    # profiling. --mamba-cache-mode align snapshots GDN recurrent state at block
-    # boundaries — vLLM enables this automatically when prefix caching is on
-    # (verified in startup logs: "Mamba cache mode is set to 'align' ... by default").
+    # profiling. --mamba-cache-mode is deprecated in v0.33.0 (removed this flag).
     # --no-disable-hybrid-kv-cache-manager
-    # is a startup-fail guard: v0.32.0's OffloadingConnector subclasses
-    # SupportsHMA so HMA stays on, but a future vLLM that drops HMA support
-    # will hard-error instead of silently degrading GDN models. Under the
+    # is a startup-fail guard: --mamba-cache-mode deprecated in v0.33.0;
+    # --no-disable-hybrid-kv-cache-manager remains as a guard against
+    # a future vLLM that drops HMA support hard-erroring instead of
+    # silently degrading GDN models. Under the
     # current matrix only one of these hidden models is resident at a time
     # → ~8 GiB pinned (16 GiB upper bound on the ~76 GiB gpu-1 node).
     unlisted: true
     # --cudagraph-capture-sizes 1 2 4 8 12 16: trims vLLM's auto-computed
     # cudagraph capture-size list (see 35b-gpu0 above for the full rationale).
     # --max-num-seqs 4 + size 16 mirror 27b-gpu1 (see its comment below).
-    cmd: '${cmd_base_vllm_27b_gpu0} /data/models/Qwen3.8-27B-GPTQ-Int4 --host 127.0.0.1 --port 8002 --quantization gptq --dtype float16 --max-model-len 172032 --gpu-memory-utilization 0.86 --kv-cache-dtype fp8 --enable-prefix-caching --enable-auto-tool-choice --tool-call-parser qwen3_xml --reasoning-parser qwen3 --speculative-config ''{"method": "mtp", "num_speculative_tokens": 3}'' --max-num-seqs 4 --max-num-batched-tokens 8192 --served-model-name 27b-gpu0 --kv-cache-memory-bytes 6942327011 --mamba-cache-mode align --no-disable-hybrid-kv-cache-manager --kv-offloading-backend native --kv-offloading-size 8 --cudagraph-capture-sizes 1 2 4 8 12 16' # --gpu-memory-utilization 0.93
+    cmd: '${cmd_base_vllm_27b_gpu0} /data/models/Qwen3.8-27B-GPTQ-Int4 --host 127.0.0.1 --port 8002 --quantization gptq --dtype float16 --max-model-len 172032 --gpu-memory-utilization 0.86 --kv-cache-dtype fp8 --enable-prefix-caching --enable-auto-tool-choice --tool-call-parser qwen3_xml --reasoning-parser qwen3 --speculative-config ''{"method": "mtp", "num_speculative_tokens": 3}'' --max-num-seqs 4 --max-num-batched-tokens 8192 --served-model-name 27b-gpu0 --kv-cache-memory-bytes 6942327011 --no-disable-hybrid-kv-cache-manager --kv-offloading-backend native --kv-offloading-size 8 --cudagraph-capture-sizes 1 2 4 8 12 16' # --gpu-memory-utilization 0.93
     env:
       # See 35b-gpu0 above re: ONEAPI_DEVICE_SELECTOR removal.
       # Sleep mode is disabled for 27B for now (see the macros comment). When

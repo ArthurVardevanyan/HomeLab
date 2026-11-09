@@ -45,8 +45,10 @@ spec:
       nodeSelector:
         feature.node.kubernetes.io/custom-intel.xe.gpu: "true"
       containers:
-        # Custom image = llama-swap v265 + vLLM XPU v0.32.0 + cookbook patches
+        # Custom image = llama-swap v271 + vLLM XPU v0.33.0 + cookbook patches
         # renovate: datasource=docker depName=registry.arthurvardevanyan.com/homelab/llama-swap versioning=loose
+        # TODO: Update image digest after rebuilding the Intel B70 v271 image
+        # image: registry.arthurvardevanyan.com/homelab/llama-swap:v271-intel-b11749-<GIT_COMMIT>@sha256:<DIGEST>
         - image: registry.arthurvardevanyan.com/homelab/llama-swap:v265-intel-b11749-98a6cc8a@sha256:50f4a1a0f4f2a6bab5e448c8170e0407d0b71c424d38f86116d0b2cab2dc6035
           imagePullPolicy: IfNotPresent
           name: llama-swap

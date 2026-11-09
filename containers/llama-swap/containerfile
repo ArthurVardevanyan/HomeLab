@@ -1,6 +1,6 @@
 # llama-swap orchestrator for Intel Arc Pro B70 (Battlemage / Xe2) with SYCL
 #
-# Base: vLLM XPU (v0.32.0 + SYCL 9) + llama-swap v265 SYCL binaries
+# Base: vLLM XPU (v0.33.0 + SYCL 9) + llama-swap v271 SYCL binaries
 #       + cookbook MTP + APC + GDN + backward-copy + eagle-drop patches
 #
 # Note: The full Intel oneAPI toolkit (~9.5 GB) from llama-swap-bin is
@@ -8,8 +8,10 @@
 # /app/rt runtime; vLLM uses its own Intel runtime wheels from /opt/venv/lib.
 #
 # renovate: datasource=docker depName=vllm/vllm-openai-xpu versioning=loose
-FROM docker.io/vllm/vllm-openai-xpu:v0.32.0@sha256:20509fabe50dda62c09c0786d1a6effa299d3dbdddcc49331b93e65144652a8c AS vllm-base
-FROM ghcr.io/mostlygeek/llama-swap:v265-intel-b11749@sha256:9c22e20974850d675bc2a962023d96ac96b19b65a856eeca779a3d56a55701d6 AS llama-swap-bin
+FROM docker.io/vllm/vllm-openai-xpu:v0.33.0@sha256:be3a9aea234be64ffc2816ac561c597e0f0b1f44a61a7f4912780e4d77450086 AS vllm-base
+# TODO: Update sha256 digest after rebuilding the Intel B70 v271 image
+# FROM ghcr.io/mostlygeek/llama-swap:v271-intel-b11749@sha256:<REPLACE> AS llama-swap-bin
+FROM ghcr.io/mostlygeek/llama-swap:v271-intel-b12199@sha256:a3103f61c6224499c2e659fc764b1db8bf1c1a01ae3256b10c3eb119dfdf4303 AS llama-swap-bin
 
 # vllm-wrapper — not shipped in llama-swap release archives, built from source
 #
@@ -17,16 +19,16 @@ FROM ghcr.io/mostlygeek/llama-swap:v265-intel-b11749@sha256:9c22e20974850d675bc2
 #       stage needs the patch too. Stages don't share filesystems (COPY in
 #       one stage does NOT reach another). So we copy the patch here.
 FROM docker.io/library/golang:1.27-bookworm AS vllm-wrapper-build
-ARG LS_VERSION=265
+ARG LS_VERSION=271
 # renovate: datasource=github-releases depName=mostlygeek/llama-swap
 COPY patches/vllm-wrapper-combined.diff /tmp/patches/vllm-wrapper-combined.diff
 RUN --mount=type=cache,target=/go/pkg/mod \
-    --mount=type=cache,target=/root/.cache/go-build \
-    set -eux; \
-    git clone --depth 1 --branch v${LS_VERSION} https://github.com/mostlygeek/llama-swap.git /src/llama-swap; \
-    cd /src/llama-swap && \
-    git apply /tmp/patches/vllm-wrapper-combined.diff && \
-    CGO_ENABLED=0 go build -trimpath -o /usr/local/bin/vllm-wrapper ./cmd/vllm-wrapper
+  --mount=type=cache,target=/root/.cache/go-build \
+  set -eux; \
+  git clone --depth 1 --branch v${LS_VERSION} https://github.com/mostlygeek/llama-swap.git /src/llama-swap; \
+  cd /src/llama-swap && \
+  git apply /tmp/patches/vllm-wrapper-combined.diff && \
+  CGO_ENABLED=0 go build -trimpath -o /usr/local/bin/vllm-wrapper ./cmd/vllm-wrapper
 
 # Vendored Intel runtime for llama.cpp — built from llama-swap-bin which has
 # the full oneAPI toolkit, but only the vendored libraries end up in the
@@ -66,7 +68,7 @@ RUN set -eux; \
   echo "=== patch_mtp_nightly ===" && \
   python3 /tmp/patches/patch_mtp_nightly.py; \
   echo "=== patch_mtp_boundary ===" && \
-  echo "SKIP patch_mtp_boundary (GDN backend refactored in v0.32.0)"; \
+  echo "SKIP patch_mtp_boundary (GDN backend refactored in v0.33.0)"; \
   echo "=== patch_gdn_mixed_split_v5 ===" && \
   python3 /tmp/patches/patch_gdn_mixed_split_v5.py; \
   echo "=== patch_fix_accepted_sync ===" && \
@@ -76,9 +78,9 @@ RUN set -eux; \
   echo "=== patch_fix_eagle_drop ===" && \
   python3 /tmp/patches/patch_fix_eagle_drop.py; \
   echo "=== patch_fix_xpu_sleep ===" && \
-  echo "SKIP patch_fix_xpu_sleep (use_memory_pool anchor gone in v0.32.0)"; \
+  echo "SKIP patch_fix_xpu_sleep (use_memory_pool anchor gone in v0.33.0)"; \
   echo "=== patch_qwen_triton_warmup_xpu ===" && \
-  echo "SKIP patch_qwen_triton_warmup_xpu (v0.32.0 GDN refactored)"; \
+  echo "SKIP patch_qwen_triton_warmup_xpu (v0.33.0 GDN refactored)"; \
   echo "=== patch_draft_lmhead_int4 (runtime-gated: B70_DRAFT_LMHEAD_INT4=1) ===" && \
   python3 /tmp/patches/patch_draft_lmhead_int4.py; \
   echo "=== patch_draft_mtp_int4 (runtime-gated: B70_DRAFT_MTP_INT4=1) ===" && \
@@ -186,7 +188,7 @@ RUN set -eux; \
   ! LD_LIBRARY_PATH=/app/rt:/app ldd /app/libggml-sycl.so | grep "not found"; \
   /app/llama-device-wrapper.sh --version; \
   { find /opt/venv -name '*.so' -print0 2>/dev/null | grep -ziE '/(sycl|level_zero|ur_loader|libze|mkl|libimf|libiomp5|libsvml|intel).*\.so$' \
-    | xargs -0 -r ldd 2>/dev/null | grep "not found"; } && \
+  | xargs -0 -r ldd 2>/dev/null | grep "not found"; } && \
   { echo "ERROR: unresolved venv dep (see above)"; exit 1; } || true
 
 # llama-swap: health endpoint

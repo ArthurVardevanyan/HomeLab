@@ -170,7 +170,7 @@ Per-model specifics:
 MTP replaces the old llama.cpp n-gram speculation. The cookbook's
 `patch_mtp_nightly.py` gates unquantized draft MoE/linear layer construction
 on `B70_MTP_BF16_DRAFT=1`. The image (`containers/llama-swap/containerfile`)
-applies these patches to vLLM v0.32.0 at build time; each is idempotent and
+applies these patches to vLLM v0.33.0 at build time; each is idempotent and
 fails the build if its anchor no longer matches:
 
 Applied:
@@ -185,23 +185,23 @@ Applied:
 - `patch_fix_eagle_drop.py` — ports vllm#48375 (EAGLE/MTP cache pollution,
   fails closed)
 
-Skipped on v0.32.0 (the build prints `SKIP ...`; the files stay in
+Skipped on v0.33.0 (the build prints `SKIP ...`; the files stay in
 `containers/llama-swap/patches/` for reference):
 
 - `patch_mtp_boundary.py` — GDN metadata was refactored, so its anchor is
   gone. It reclassified a partial final speculative group (a request that
   reaches exactly `max-model-len`) as non-spec prefill, because the XPU GDN
-  kernel needs complete groups. Whether v0.32.0 handles that case itself is
+  kernel needs complete groups. Whether v0.33.0 handles that case itself is
   **unverified** (the "complete groups only" kernel requirement is still in
   `_xpu_ops.py`); no failure has been seen, but nothing has filled a context
   window to its limit either.
 - `patch_fix_xpu_sleep.py` — its `use_memory_pool` anchor is gone. Sleep mode
   is disabled on every model anyway.
-- `patch_qwen_triton_warmup_xpu.py` — v0.32.0 GDN was refactored.
+- `patch_qwen_triton_warmup_xpu.py` — v0.33.0 GDN was refactored.
 
 See the [Cookbook image patch matrix](https://github.com/SergiioB/intel-arc-pro-b70-inference-cookbook)
 for SHA-256 hashes of each patch against the f01e24f6 vllm source (that is the
-older base the patches were written for, not v0.32.0).
+older base the patches were written for, not v0.33.0).
 
 > Measured acceptance rates and decode throughput from this MTP configuration
 > are in [Measured Performance (2026-09-10)](#measured-performance-2026-09-10)
@@ -296,7 +296,7 @@ normal TTL-triggered sleep is never mistaken for a crash.
 
 ### Startup preload and `GET /`
 
-llama-swap v265 `hooks.on_startup.preload` warms each listed model by sending
+llama-swap v271 `hooks.on_startup.preload` warms each listed model by sending
 `GET /` through the proxy and logs any status >= 400 as
 `failed to preload model <id>: status 404`. vLLM has no `/` route, so every
 vLLM model produced that error even though it had loaded fine (llama.cpp
@@ -564,7 +564,7 @@ plus the absence of TP/cross-card communication overhead.
    8 GiB, 35B: 4 GiB pinned host RAM each (12 GiB upper bound on the ~76 GiB
    gpu-1 node).
    The production pair (35b-gpu0/27b-gpu1) does not have offloading yet.
-   The native `OffloadingConnector` in v0.32.0 subclasses `SupportsHMA` so the
+   The native `OffloadingConnector` in v0.33.0 subclasses `SupportsHMA` so the
    hybrid KV cache manager stays enabled, but the `--no-disable-hybrid-kv-cache-manager`
    flag is a startup-fail guard for future vLLM that may drop HMA support.
    See [LMCache MP Fallback (contingency)](#lmcache-mp-fallback-contingency)

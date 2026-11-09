@@ -19,10 +19,10 @@
 # string as "unset" (see vllm/platforms/interface.py), but exporting an
 # empty value here would still shadow any broader ZE_AFFINITY_MASK set at
 # the container level, which is a behavior change we don't want to hide.
-if [ -n "${SYCL_PI_LEVEL_ZERO_USE_IMMEDIATE_COMMANDLISTS+x}" ]; then
+if [[ -n "${SYCL_PI_LEVEL_ZERO_USE_IMMEDIATE_COMMANDLISTS+x}" ]]; then
   export SYCL_PI_LEVEL_ZERO_USE_IMMEDIATE_COMMANDLISTS
 fi
-if [ -n "${ZE_AFFINITY_MASK+x}" ]; then
+if [[ -n "${ZE_AFFINITY_MASK+x}" ]]; then
   export ZE_AFFINITY_MASK
 fi
 
@@ -35,20 +35,20 @@ set -o pipefail
 
 LOG_DIR=/data/logs
 LOG_FILE="${LOG_DIR}/vllm-${1##*/}.log"
-mkdir -p "$LOG_DIR"
+mkdir -p "${LOG_DIR}"
 
 # Simple size-based rotation (3 files × 100 MiB max)
 rotate_logs() {
-  if [ -f "$LOG_FILE" ]; then
+  if [[ -f "${LOG_FILE}" ]]; then
     local size
-    size=$(stat -c%s "$LOG_FILE" 2>/dev/null || echo 0)
-    if [ "$size" -gt 104857600 ]; then
-      [ -f "${LOG_FILE}.2" ] && mv "${LOG_FILE}.2" "${LOG_FILE}.3"
-      [ -f "${LOG_FILE}.1" ] && mv "${LOG_FILE}.1" "${LOG_FILE}.2"
-      mv "$LOG_FILE" "${LOG_FILE}.1"
+    size=$(stat -c%s "${LOG_FILE}" 2>/dev/null || echo 0)
+    if [[ ${size} -gt 104857600 ]]; then
+      [[ -f "${LOG_FILE}.2" ]] && mv "${LOG_FILE}.2" "${LOG_FILE}.3"
+      [[ -f "${LOG_FILE}.1" ]] && mv "${LOG_FILE}.1" "${LOG_FILE}.2"
+      mv "${LOG_FILE}" "${LOG_FILE}.1"
     fi
   fi
 }
 
 rotate_logs
-exec /opt/venv/bin/vllm serve "$@" 2>&1 | tee -a "$LOG_FILE"
+exec /opt/venv/bin/vllm serve "$@" 2>&1 | tee -a "${LOG_FILE}"
