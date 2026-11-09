@@ -276,6 +276,12 @@ spec:
               value: http://rook-ceph-rgw-rook-ceph-obj.rook-ceph.svc:8080
             - name: S3_ADDRESSING_STYLE
               value: path
+            # --- External Tool Servers (MCP) ---
+            - name: ENABLE_TOOL_SERVERS
+              value: "true"
+            # Remote MCP over WAN through your egress path; 10s default is tight.
+            - name: MCP_INITIALIZE_TIMEOUT
+              value: "30"
           securityContext:
             runAsNonRoot: true
             readOnlyRootFilesystem: true
