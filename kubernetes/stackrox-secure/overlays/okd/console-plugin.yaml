@@ -2,6 +2,23 @@
 # ConsolePlugin integrates ACS vulnerability management view into the
 # OpenShift web console. It is cluster-scoped and requires the console
 # operator to reference it in its spec.plugins list (see README.md).
+#
+# Provenance:
+#   Derived from upstream helm-charts repo:
+#     stackrox/stackrox-secured-cluster-services
+#     templates/console-plugin.yaml (chart stackrox-400.x.y)
+#
+# This template is only rendered when installMethod == operator,
+# so we vendor it here for Helm/GitOps-only users.
+#
+# To update on StackRox version bumps:
+#   1. Diff this file against the upstream template
+#      in the community operator fork
+#      (stackrox-charts/stackrox helm-charts templates/console-plugin.yaml).
+#   2. Update displayName, basePath, proxy aliases if changed.
+#   3. Verify the sensor-proxy Service, proxy-https port (9444),
+#      and network policies are present in the base overlay.
+#
 # Only renders on OpenShift 4.19+ / Kubernetes 1.32+ (see upstream gate).
 apiVersion: console.openshift.io/v1
 kind: ConsolePlugin
