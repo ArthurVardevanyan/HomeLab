@@ -1,0 +1,61 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: openshift-mcp-server
+  namespace: openshift-mcp-server
+spec:
+  template:
+    spec:
+      containers:
+        # Rewrites "issuer" in the OAuth authorization-server metadata
+        # documents that the MCP server proxies from Zitadel. See the
+        # nginx.conf in this component for details.
+        - name: oauth-metadata-rewrite
+          # The unprivileged nginx image ships with no listening sockets
+          # below 1024 and runs as UID 101; OpenShift reassigns an
+          # arbitrary UID from the namespace range. sub_filter provides
+          # the response-body string replacement Caddy's standard build
+          # lacks.
+          # renovate: datasource=docker depName=docker.io/nginxinc/nginx-unprivileged
+          image: docker.io/nginxinc/nginx-unprivileged:1.31.7-alpine-slim@sha256:a8cb0f33d51fa107c96fd2bd3a71aaf564ec131e9d2bdf8700944f0ed8b170d7
+          ports:
+            - name: wellknown
+              containerPort: 8081
+              protocol: TCP
+          securityContext:
+            privileged: false
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+            readOnlyRootFilesystem: true
+            runAsNonRoot: true
+            seccompProfile:
+              type: RuntimeDefault
+          resources:
+            limits:
+              cpu: 100m
+              memory: 128Mi
+            requests:
+              cpu: 10m
+              memory: 32Mi
+          livenessProbe:
+            httpGet:
+              path: /_healthz
+              port: wellknown
+          readinessProbe:
+            httpGet:
+              path: /_healthz
+              port: wellknown
+          volumeMounts:
+            - name: rewrite-config
+              mountPath: /etc/nginx/nginx.conf
+              subPath: nginx.conf
+              readOnly: true
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: rewrite-config
+          configMap:
+            name: oauth-metadata-rewrite

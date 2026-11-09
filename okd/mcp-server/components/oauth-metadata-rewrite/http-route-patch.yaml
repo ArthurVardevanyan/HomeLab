@@ -1,0 +1,19 @@
+# Prepend a higher-priority rule (HTTPRoute rule order is priority) that
+# sends /.well-known/* to the oauth-metadata-rewrite sidecar port instead
+# of the MCP server. The path-suffixed PRM under /mcp/.well-known/* still
+# matches the catch-all rule below and reaches the server directly.
+---
+- op: add
+  path: /spec/rules/0
+  value:
+    matches:
+      - path:
+          type: PathPrefix
+          value: /.well-known/
+    backendRefs:
+      - group: ""
+        kind: Service
+        name: openshift-mcp-server
+        namespace: openshift-mcp-server
+        port: 8081
+        weight: 1
