@@ -12,6 +12,7 @@
     - [Zitadel App](#zitadel-app)
     - [Cluster OIDC Configuration](#cluster-oidc-configuration)
     - [Vault Setup](#vault-setup)
+    - [Authorization Server Metadata Rewrite](#authorization-server-metadata-rewrite)
     - [opencode.json](#opencodejson)
   - [High Availability](#high-availability)
   - [Notes](#notes)
@@ -145,6 +146,38 @@ The client ID must be added to Vault under the path
 The cluster `Authentication` config uses the placeholder
 `<path:secret/data/homelab/zitadel/okd-mcp#client_id>` to reference it.
 
+### Authorization Server Metadata Rewrite
+
+openshift-mcp-server 0.3 advertises itself (its `server_url`,
+`https://mcp.okd.homelab.arthurvardevanyan.com`) as the OAuth authorization
+server in its protected resource metadata, but serves the
+`/.well-known/{oauth-authorization-server,openid-configuration}` documents as
+verbatim proxies of Zitadel — keeping Zitadel's `issuer`
+(`https://zitadel.arthurvardevanyan.com`). Strict RFC 8414 §3.3 clients
+(opencode v2 and later; v1 did not check) reject that mismatch with
+"Issuer mismatch in authorization server metadata" and never start the
+authorization flow.
+
+The `components/oauth-metadata-rewrite` kustomize component (enabled in
+`overlays/okd`) works around this at the edge:
+
+- An unprivileged nginx sidecar in the MCP pod listens on 8081 and
+  reverse-proxies to the server on localhost:8080. For the two
+  authorization-server metadata paths it rewrites the `issuer` value to the
+  MCP URL via `sub_filter`; everything else passes through unchanged.
+- The gateway `HTTPRoute` gains a first (highest-priority) rule sending
+  `/.well-known/*` to Service port 8081. The protected-resource metadata,
+  including its path-suffixed `/mcp/.well-known/*` variants, still reaches
+  the server directly on 8080.
+- The `allow-gateway-wellknown` NetworkPolicy lets the ingress data plane
+  reach the sidecar port.
+
+The authorize/token endpoints in the metadata still point at Zitadel and
+tokens are untouched, so server-side validation is unaffected. There is no
+upstream knob for this; remove the component if
+`containers/kubernetes-mcp-server` ever rewrites the issuer of its proxied
+metadata itself.
+
 ### opencode.json
 
 The `openshift-mcp` entry in `opencode.json` requires the OAuth `clientId`
@@ -157,9 +190,9 @@ explicitly. opencode's default callback
 "openshift-mcp": {
   "type": "remote",
   "url": "https://mcp.okd.homelab.arthurvardevanyan.com/mcp",
-  "enabled": false,
+  "enabled": true,
   "oauth": {
-    "clientId": "<your-zitadel-mcp-client-id>",
+    "clientId": "398456311055988503",
     "scope": "openid profile email offline_access"
   }
 }
