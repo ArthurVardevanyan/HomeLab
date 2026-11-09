@@ -1,11 +1,16 @@
 {
   "$schema": "https://opencode.ai/config.json",
   // "plugin": ["opencode-snip@latest"],
-  "disabled_providers": ["opencode"],
   "lsp": true,
+  "policies": [
+    {
+      "action": "provider.use",
+      "resource": "opencode",
+      "effect": "deny"
+    }
+  ],
   "compaction": {
-    "auto": true,
-    "prune": true
+    "auto": true
   },
   "providers": {
     "llm": {
@@ -114,21 +119,33 @@
       }
     }
   },
-  "agent": {
+  "agents": {
     "plan": {
       "description": "High-level architectural planning.",
       "model": "llm/qwen3.6-35b-a3b",
-      "temperature": 0.2
+      "request": {
+        "body": {
+          "temperature": 0.2
+        }
+      }
     },
     "build": {
       "description": "Code generation.",
       "model": "llm/qwen3.6-35b-a3b",
-      "temperature": 0.1
+      "request": {
+        "body": {
+          "temperature": 0.1
+        }
+      }
     },
     "explore": {
       "description": "Fast codebase scouting/diagnostics.",
       "model": "llm/qwen3.6-35b-a3b",
-      "temperature": 0.55
+      "request": {
+        "body": {
+          "temperature": 0.55
+        }
+      }
     }
   }
 }
