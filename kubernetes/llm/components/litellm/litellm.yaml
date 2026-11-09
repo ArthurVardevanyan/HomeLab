@@ -23,6 +23,9 @@ model_list:
       timeout: 900
       num_retries: 2
       retry_after: 15
+      # Pass client-sent chat_template_kwargs (enable_thinking toggle,
+      # e.g. the OpenCode #fast variant) through to vLLM as-is.
+      allowed_openai_params: ["chat_template_kwargs"]
   # - model_name: qwen3.6-35b-a3b
   #   litellm_params:
   #     model: openai/35b-gpu1
@@ -47,6 +50,9 @@ model_list:
       timeout: 900
       num_retries: 2
       retry_after: 15
+      # Client chat_template_kwargs pass-through; strip_agentic_params still
+      # wins (its extra_body sets enable_thinking=false at send time).
+      allowed_openai_params: ["chat_template_kwargs"]
 
   # --- Public Model Alias 4: Qwen 27B
   - model_name: qwen3.8-27b
@@ -61,6 +67,9 @@ model_list:
       timeout: 900
       num_retries: 2
       retry_after: 15
+      # Pass client-sent chat_template_kwargs (enable_thinking toggle,
+      # e.g. the OpenCode #fast variant) through to vLLM as-is.
+      allowed_openai_params: ["chat_template_kwargs"]
   # - model_name: qwen3.8-27b
   #   litellm_params:
   #     model: openai/27b-gpu0

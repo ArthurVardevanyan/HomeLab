@@ -7,11 +7,11 @@
     "auto": true,
     "prune": true
   },
-  "provider": {
+  "providers": {
     "llm": {
       "name": "Local LLM (Open WebUI)",
-      "npm": "@ai-sdk/openai-compatible",
-      "options": {
+      "package": "@opencode/ai/providers/openai-compatible",
+      "settings": {
         "baseURL": "https://ai.arthurvardevanyan.com/api"
       },
       "models": {
@@ -25,9 +25,26 @@
             "context": 172032,
             "input": 163840,
             "output": 16384
-          }
+          },
+          "compatibility": {
+            "reasoningField": "reasoning_content"
+          },
+          "body": {
+            "chat_template_kwargs": {
+              "enable_thinking": true
+            }
+          },
+          "variants": [
+            {
+              "id": "fast",
+              "body": {
+                "chat_template_kwargs": {
+                  "enable_thinking": false
+                }
+              }
+            }
+          ]
         },
-
         "qwen3.8-27b": {
           "name": "Qwen3.8 27B Dense",
           "cost": {
@@ -38,7 +55,25 @@
             "context": 172032,
             "input": 155648,
             "output": 16384
-          }
+          },
+          "compatibility": {
+            "reasoningField": "reasoning_content"
+          },
+          "body": {
+            "chat_template_kwargs": {
+              "enable_thinking": true
+            }
+          },
+          "variants": [
+            {
+              "id": "fast",
+              "body": {
+                "chat_template_kwargs": {
+                  "enable_thinking": false
+                }
+              }
+            }
+          ]
         },
         "claude-sonnet-5": {
           "name": "Claude Sonnet 5",
