@@ -12,7 +12,7 @@ kubectl kustomize kubernetes/renovate/overlays/okd | argocd-vault-plugin generat
 ## Image Audit
 
 - **Total Unique Managed:** 17
-- **Total Unique Unmanaged:** 72
+- **Total Unique Unmanaged:** 69
 
 ## Unmanaged Images (Potential Gaps)
 
@@ -72,13 +72,10 @@ These images were found in files but do not appear to be managed by Renovate (no
 | `quay.io/operator-framework/olm:v0.38.0@sha256:e5a20b421400b050a29fd0238a70b0e8f8fb8fc8a6e6153717294f7648cb403e`                                                                              |
 | `quay.io/operatorhubio/catalog:latest`                                                                                                                                                        |
 | `quay.io/rhobs/observability-operator-catalog:latest`                                                                                                                                         |
-| `quay.io/stackrox-io/collector:4.9.1@sha256:701a6166dbc38116587ec48c5c808a0545b342298f1b3fdcc45357f0a4baff86`                                                                                 |
-| `quay.io/stackrox-io/main:4.9.1@sha256:e042fb64ffe0a030baf0b8691a6aaa62d3e2b624bdced73ccdc6b4db7f69f7b5`                                                                                      |
-| `quay.io/stackrox-io/scanner-db:4.9.1@sha256:00d87b4bd33774834595adc6c19affe4fd61344d4cbab9222a45842cedd86ed9`                                                                                |
-| `quay.io/stackrox-io/scanner-slim:4.9.1@sha256:1dc3585a2a6ff8b061a422411409fc82d20b06da0c75c6209630d16f40eb445c`                                                                              |
-| `quay.io/stackrox-io/scanner-v4-db:4.9.1@sha256:6ccd6e64082d07b0646942113f9d1dd0e47c0365d879620b3b611712e8b91a8f`                                                                             |
-| `quay.io/stackrox-io/scanner-v4:4.9.1@sha256:da198a150e1eb3b1cbff1ce83fe6a4e575f1d4031b269a281fcd091b28c52522`                                                                                |
-| `quay.io/stackrox-io/scanner:4.9.1@sha256:2a2e1b9a8f8bc4db9249c7fdecdd70497e73a4b806c79db5cae57681d6fec4bc`                                                                                   |
+| `quay.io/stackrox-io/collector:5.0.0@sha256:e259acc148441023ff79608e17290ddf8622d97fb195a97b257f9b7b6953cfb0`                                                                                 |
+| `quay.io/stackrox-io/main:5.0.0@sha256:6b9c59d72f693f2a374e27766d22cef31c7e1a1ba3b69c240b96867b53b81824`                                                                                      |
+| `quay.io/stackrox-io/scanner-v4-db:5.0.0@sha256:235d21c08e7b6f8d2e1d15215b769fbbb831aa50a19d37fd7f1213b28a59a323`                                                                             |
+| `quay.io/stackrox-io/scanner-v4:5.0.0@sha256:3c8a7de0c39e661a0e699d76d74eadd1310bca587f3b11d2711978a1b68ccbfd`                                                                                |
 | `reg.kyverno.io/kyverno/kyverno:v1.16.0@sha256:2fad29572e08010884f0f89792af2c734fdf401c850dbeb1b610822980d9afdf`                                                                              |
 | `reg.kyverno.io/kyverno/kyvernopre:v1.16.0@sha256:65265d5012b9630bd4387d5eef1d58fa30c0cfad7ace485969e8da8d465bc128`                                                                           |
 | `registry.access.redhat.com/redhat/community-operator-index:v4.20`                                                                                                                            |

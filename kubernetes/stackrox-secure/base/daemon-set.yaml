@@ -9,8 +9,8 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: stackrox
     app.kubernetes.io/part-of: stackrox-secured-cluster-services
-    app.kubernetes.io/version: 4.10.2
-    helm.sh/chart: stackrox-secured-cluster-services-400.10.2
+    app.kubernetes.io/version: 5.0.0
+    helm.sh/chart: stackrox-secured-cluster-services-500.0.0
     service: collector
     app: collector
     auto-upgrade.stackrox.io/component: sensor
@@ -50,8 +50,9 @@ spec:
         app.kubernetes.io/managed-by: Helm
         app.kubernetes.io/name: stackrox
         app.kubernetes.io/part-of: stackrox-secured-cluster-services
-        app.kubernetes.io/version: 4.10.2
-        helm.sh/chart: stackrox-secured-cluster-services-400.10.2
+        app.kubernetes.io/version: 5.0.0
+        helm.sh/chart: stackrox-secured-cluster-services-500.0.0
+        sidecar.istio.io/inject: "false"
       annotations:
         email: support@stackrox.com
         meta.helm.sh/release-name: stackrox-secured-cluster-services
@@ -65,7 +66,7 @@ spec:
       automountServiceAccountToken: true
       containers:
         - name: collector
-          image: quay.io/stackrox-io/collector:4.10.2@sha256:b40dcbbaabe19631c1b33a3b4fd980165b6ff4c00d6e4e2ea491bad41a680e7d
+          image: quay.io/stackrox-io/collector:5.0.0@sha256:e259acc148441023ff79608e17290ddf8622d97fb195a97b257f9b7b6953cfb0
           imagePullPolicy: IfNotPresent
           env:
             - name: COLLECTOR_CONFIG
@@ -148,8 +149,6 @@ spec:
               valueFrom:
                 fieldRef:
                   fieldPath: metadata.namespace
-            - name: ROX_CALL_NODE_INVENTORY_ENABLED
-              value: "true"
             - name: ROX_NODE_INDEX_HOST_PATH
               value: /hostindex
             - name: ROX_METRICS_PORT
@@ -161,9 +160,11 @@ spec:
                   fieldPath: spec.nodeName
             - name: ROX_ADVERTISED_ENDPOINT
               value: sensor.stackrox.svc:443
+            - name: ROX_SENSOR_ENDPOINT
+              value: sensor.stackrox.svc:443
             - name: ROX_NODE_SCANNING_ENDPOINT
               value: 127.0.0.1:8444
-          image: quay.io/stackrox-io/main:4.10.2@sha256:8f483d29437b6425475e9dd1d032ac01579904b7103fc765c25e71ee58071ec8
+          image: quay.io/stackrox-io/main:5.0.0@sha256:6b9c59d72f693f2a374e27766d22cef31c7e1a1ba3b69c240b96867b53b81824
           imagePullPolicy: IfNotPresent
           name: compliance
           resources:
@@ -206,64 +207,11 @@ spec:
             - mountPath: /hostindex/usr/share
               name: usr-share-ro
               readOnly: true
+            - mountPath: /hostindex/usr/lib
+              name: usr-lib-ro
+              readOnly: true
             - mountPath: /tmp
               name: index-volume
-        - name: node-inventory
-          image: quay.io/stackrox-io/scanner-slim:4.10.2@sha256:14621db68ebbd4304b0fe4bd5fe876cd1ee35d85a6cdfb9c27c383ac39c05889
-          imagePullPolicy: IfNotPresent
-          command:
-            - /scanner
-            - --nodeinventory
-            - --config=
-            - ""
-          ports:
-            - containerPort: 8444
-              name: grpc
-          resources:
-            limits:
-              cpu: "20m"
-              memory: 144Mi
-            requests:
-              cpu: 10m
-              memory: 72Mi
-          resizePolicy:
-            - resourceName: cpu
-              restartPolicy: NotRequired
-            - resourceName: memory
-              restartPolicy: NotRequired
-          securityContext:
-            allowPrivilegeEscalation: true
-            capabilities:
-              drop:
-                - NET_RAW
-            privileged: true
-            readOnlyRootFilesystem: true
-            runAsNonRoot: false
-            seccompProfile:
-              type: RuntimeDefault
-          env:
-            - name: ROX_NODE_NAME
-              valueFrom:
-                fieldRef:
-                  apiVersion: v1
-                  fieldPath: spec.nodeName
-            - name: POD_NAME
-              valueFrom:
-                fieldRef:
-                  fieldPath: metadata.name
-            - name: POD_NAMESPACE
-              valueFrom:
-                fieldRef:
-                  fieldPath: metadata.namespace
-          volumeMounts:
-            - mountPath: /host
-              name: host-root-ro
-              readOnly: true
-              mountPropagation: HostToContainer
-            - mountPath: /tmp/
-              name: tmp-volume
-            - mountPath: /cache
-              name: cache-volume
       volumes:
         - hostPath:
             path: /proc
@@ -295,16 +243,15 @@ spec:
           emptyDir: {}
         - name: etc-pki-volume
           emptyDir: {}
-        - name: tmp-volume
-          emptyDir: {}
         - name: collector-profiles
           emptyDir: {}
-        - name: cache-volume
-          emptyDir:
-            sizeLimit: 200Mi
         - name: collector-config
           configMap:
             name: collector-config
+            optional: true
+        - name: fact-config
+          configMap:
+            name: fact-config
             optional: true
       dnsPolicy: ClusterFirst
       enableServiceLinks: false

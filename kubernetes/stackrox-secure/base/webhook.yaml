@@ -10,8 +10,8 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: stackrox
     app.kubernetes.io/part-of: stackrox-secured-cluster-services
-    app.kubernetes.io/version: 4.10.2
-    helm.sh/chart: stackrox-secured-cluster-services-400.10.2
+    app.kubernetes.io/version: 5.0.0
+    helm.sh/chart: stackrox-secured-cluster-services-500.0.0
     auto-upgrade.stackrox.io/component: sensor
   annotations:
     email: support@stackrox.com
@@ -46,7 +46,7 @@ webhooks:
           - deploymentconfigs
     namespaceSelector:
       matchExpressions:
-        - key: namespace.metadata.stackrox.io/name
+        - key: kubernetes.io/metadata.name
           operator: NotIn
           values:
             - stackrox
@@ -78,6 +78,7 @@ webhooks:
           - pods
           - pods/exec
           - pods/portforward
+          - pods/attach
     failurePolicy: Ignore
     clientConfig:
       caBundle: <path:secret/data/homelab/stackrox/common#ca-pem | base64encode>
