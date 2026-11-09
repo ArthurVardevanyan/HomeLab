@@ -86,7 +86,6 @@ These images were found in files but do not appear to be managed by Renovate (no
 | `registry.arthurvardevanyan.com/homelab/toolbox:not_latest`                                                                                                                                   |
 | `registry.arthurvardevanyan.com/homelab/udi:latest`                                                                                                                                           |
 | `registry.arthurvardevanyan.com/quay/container-security-operator-index@sha256:d86a998ecafa7cff7554df6b9c1075edb7b2d99a1018cf803c8cd8060068ac0c`                                               |
-| `registry.k8s.io/external-dns/external-dns:v0.19.0@sha256:ddc7f4212ed09a21024deb1f470a05240837712e74e4b9f6d1f2632ff10672e7`                                                                   |
 | `registry.redhat.io/openshift4/ose-node-feature-discovery-rhel9:v4.15.0-202510211321.p2.g68c4ba0.assembly.stream.el9@sha256:1bcf749fb1415d8d99d1352d8a917085d96a6390b32cbb7e6d62489404dd2e75` |
 | `registry.redhat.io/redhat/certified-operator-index:v4.20`                                                                                                                                    |
 | `registry.redhat.io/redhat/redhat-operator-index:v4.19`                                                                                                                                       |
