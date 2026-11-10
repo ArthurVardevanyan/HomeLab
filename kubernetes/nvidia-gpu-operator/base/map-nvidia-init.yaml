@@ -1,0 +1,57 @@
+---
+apiVersion: admissionregistration.k8s.io/v1
+kind: MutatingAdmissionPolicy
+metadata:
+  name: map-nvidia-init-containers
+spec:
+  reinvocationPolicy: Never
+  failurePolicy: Fail
+  matchConstraints:
+    matchPolicy: Equivalent
+    namespaceSelector: {}
+    objectSelector: {}
+    resourceRules:
+      - apiGroups:
+          - apps
+        apiVersions:
+          - v1
+        operations:
+          - CREATE
+          - UPDATE
+        resources:
+          - daemonsets
+        scope: Namespaced
+  mutations:
+    - jsonPatch:
+        expression: >-
+          object.spec.template.spec.initContainers
+            .filter(c,
+              c.name == 'k8s-driver-manager' ||
+              c.name == 'init-pod-nvidia-node-status-exporter' ||
+              c.name.contains('-validation')
+            )
+            .filter(c, !has(c.resources))
+            .map(c,
+              JSONPatch{
+                op: 'add',
+                path: '/spec/template/spec/initContainers/' +
+                  string(object.spec.template.spec.initContainers.indexOf(c)) +
+                  '/resources',
+                value: {
+                  "limits": {"cpu": '50m', "memory": '64Mi'},
+                  "requests": {"cpu": '10m', "memory": '32Mi'}
+                }
+              }
+            )
+      patchType: JSONPatch
+---
+apiVersion: admissionregistration.k8s.io/v1
+kind: MutatingAdmissionPolicyBinding
+metadata:
+  name: map-nvidia-init-containers-binding
+spec:
+  matchResources:
+    namespaceSelector:
+      matchLabels:
+        kubernetes.io/metadata.name: nvidia-gpu-operator
+  policyName: map-nvidia-init-containers

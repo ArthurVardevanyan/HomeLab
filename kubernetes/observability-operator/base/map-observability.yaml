@@ -1,0 +1,70 @@
+---
+apiVersion: admissionregistration.k8s.io/v1
+kind: MutatingAdmissionPolicy
+metadata:
+  name: map-observability-deployments
+spec:
+  reinvocationPolicy: Never
+  failurePolicy: Fail
+  matchConditions:
+    - expression: >-
+        has(object.metadata.labels)
+        && (
+          object.metadata.labels['app.kubernetes.io/instance'] == 'korrel8r' ||
+          object.metadata.labels['app.kubernetes.io/instance'] == 'logging' ||
+          object.metadata.labels['app.kubernetes.io/instance'] == 'observability-ui-dashboards' ||
+          object.metadata.labels['app.kubernetes.io/instance'] == 'troubleshooting-panel' ||
+          object.metadata.labels['app.kubernetes.io/instance'] == 'monitoring' ||
+          object.metadata.labels['app.kubernetes.io/instance'] == 'health-analyzer'
+        )
+      name: label-matches
+  matchConstraints:
+    matchPolicy: Equivalent
+    namespaceSelector: {}
+    objectSelector: {}
+    resourceRules:
+      - apiGroups:
+          - apps
+        apiVersions:
+          - v1
+        operations:
+          - CREATE
+          - UPDATE
+        resources:
+          - deployments
+        scope: Namespaced
+  mutations:
+    - jsonPatch:
+        expression: >-
+          object.spec.template.spec.containers
+            .filter(c,
+              (c.name == 'korrel8r' || c.name == 'logging' ||
+               c.name == 'observability-ui-dashboards' ||
+               c.name == 'troubleshooting-panel' ||
+               c.name == 'monitoring' || c.name == 'health-analyzer')
+              && (!has(c.resources) || !has(c.resources.limits))
+            )
+            .map(c,
+              JSONPatch{
+                op: 'add',
+                path: '/spec/template/spec/containers/' +
+                  string(object.spec.template.spec.containers.indexOf(c)) +
+                  '/resources',
+                value: {
+                  "limits": {"cpu": '250m', "memory": '256Mi'},
+                  "requests": {"cpu": '5m', "memory": '32Mi'}
+                }
+              }
+            )
+      patchType: JSONPatch
+---
+apiVersion: admissionregistration.k8s.io/v1
+kind: MutatingAdmissionPolicyBinding
+metadata:
+  name: map-observability-deployments-binding
+spec:
+  matchResources:
+    namespaceSelector:
+      matchLabels:
+        kubernetes.io/metadata.name: observability-operator
+  policyName: map-observability-deployments

@@ -31,37 +31,6 @@ spec:
 apiVersion: kyverno.io/v1
 kind: Policy
 metadata:
-  name: add-resource-limits
-  namespace: quay
-spec:
-  rules:
-    - name: add-cpu-memory-limits
-      skipBackgroundRequests: true
-      match:
-        resources:
-          kinds:
-            - Deployment
-          selector:
-            matchLabels:
-              quay-component: quay-mirror
-      mutate:
-        patchStrategicMerge:
-          spec:
-            template:
-              spec:
-                initContainers:
-                  - (name): "quay-mirror-init"
-                    resources:
-                      limits:
-                        cpu: 100m
-                        memory: 32Mi
-                      requests:
-                        cpu: 5m
-                        memory: 16Mi
----
-apiVersion: kyverno.io/v1
-kind: Policy
-metadata:
   name: override-clair-indexer-storage
   namespace: quay
 spec:
