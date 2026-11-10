@@ -215,6 +215,14 @@ Helm/Kustomize inputs are kept up to date by Renovate. Preserve the
 - Suspend stateful workloads for maintenance —
   `./main.bash stateful_workload_stop`.
 
+### PR Submission
+
+- All PRs for this repository must be submitted to GitHub:
+  `github.com/ArthurVardevanyan/HomeLab`.
+- Use `gh pr create --repo ArthurVardevanyan/HomeLab` (NOT `gt pr create`).
+- The default git remote for development/testing is the `gitea` remote, but
+  all final PRs go to GitHub.
+
 ## Before Committing
 
 - Validate changed files — see [CI Validation](#ci-validation-k8s-gitops-ci).
