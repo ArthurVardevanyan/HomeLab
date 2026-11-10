@@ -25,24 +25,44 @@ spec:
     - jsonPatch:
         expression: >-
           object.spec.template.spec.initContainers
-            .filter(c,
-              c.name == 'k8s-driver-manager' ||
-              c.name == 'init-pod-nvidia-node-status-exporter' ||
-              c.name.contains('-validation')
-            )
-            .filter(c, !has(c.resources))
-            .map(c,
-              JSONPatch{
-                op: 'add',
-                path: '/spec/template/spec/initContainers/' +
-                  string(object.spec.template.spec.initContainers.indexOf(c)) +
-                  '/resources',
-                value: {
-                  "limits": {"cpu": '50m', "memory": '64Mi'},
-                  "requests": {"cpu": '10m', "memory": '32Mi'}
-                }
-              }
-            )
+                      .filter(c, c.name == 'k8s-driver-manager' ||
+                        c.name == 'init-pod-nvidia-node-status-exporter' ||
+                        c.name.contains('-validation'))
+                      .map(c,
+                        !has(c.resources)
+                        ? [JSONPatch{op: 'add',
+                            path: '/spec/template/spec/initContainers/' +
+                              string(object.spec.template.spec.initContainers.indexOf(c)) +
+                              '/resources',
+                            value: {"limits": {"cpu": '50m', "memory": '64Mi'}, "requests": {"cpu": '10m', "memory": '32Mi'}}}]
+                        : ((has(c.resources.limits)
+                      ? [
+                        JSONPatch{op: 'add', path: '/spec/template/spec/initContainers/' +
+                              string(object.spec.template.spec.initContainers.indexOf(c)) +
+                              '/resources/limits/cpu', value: '50m'},
+                            JSONPatch{op: 'add', path: '/spec/template/spec/initContainers/' +
+                              string(object.spec.template.spec.initContainers.indexOf(c)) +
+                              '/resources/limits/memory', value: '64Mi'}]
+                      : [JSONPatch{op: 'add',
+                          path: '/spec/template/spec/initContainers/' +
+                              string(object.spec.template.spec.initContainers.indexOf(c)) +
+                              '/resources/limits',
+                          value: {"cpu": '50m', "memory": '64Mi'}}])
+                    + (has(c.resources.requests)
+                      ? [
+                        JSONPatch{op: 'add', path: '/spec/template/spec/initContainers/' +
+                              string(object.spec.template.spec.initContainers.indexOf(c)) +
+                              '/resources/requests/cpu', value: '10m'},
+                            JSONPatch{op: 'add', path: '/spec/template/spec/initContainers/' +
+                              string(object.spec.template.spec.initContainers.indexOf(c)) +
+                              '/resources/requests/memory', value: '32Mi'}]
+                      : [JSONPatch{op: 'add',
+                          path: '/spec/template/spec/initContainers/' +
+                              string(object.spec.template.spec.initContainers.indexOf(c)) +
+                              '/resources/requests',
+                          value: {"cpu": '10m', "memory": '32Mi'}}]))
+                      )
+                      .flatten()
       patchType: JSONPatch
 ---
 apiVersion: admissionregistration.k8s.io/v1
