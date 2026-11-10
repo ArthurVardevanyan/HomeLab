@@ -1,0 +1,53 @@
+---
+apiVersion: admissionregistration.k8s.io/v1
+kind: MutatingAdmissionPolicy
+metadata:
+  name: agenticrun-alert-tools
+spec:
+  reinvocationPolicy: Never
+  matchConstraints:
+    matchPolicy: Equivalent
+    namespaceSelector:
+      matchLabels:
+        kubernetes.io/metadata.name: openshift-lightspeed
+    objectSelector: {}
+    resourceRules:
+      - apiGroups: ["agentic.openshift.io"]
+        apiVersions: ["v1alpha1"]
+        operations: ["CREATE"]
+        resources: ["agenticruns"]
+        scope: Namespaced
+  matchConditions:
+    # Only AgenticRuns created by the alertmanager adapter.
+    - name: created-by-alertmanager
+      expression: >-
+        has(object.metadata.labels) &&
+        'agentic.openshift.io/source' in object.metadata.labels &&
+        object.metadata.labels['agentic.openshift.io/source'] == 'alertmanager'
+    # Idempotency guard: never touch an AgenticRun that already declares MCP
+    # servers (mirrors the Kyverno precondition).
+    - name: mcp-servers-absent
+      expression: >-
+        !has(object.spec.tools) ||
+        !('mcpServers' in object.spec.tools)
+  mutations:
+    - patchType: JSONPatch
+      jsonPatch:
+        # The mcpServers map literal is heterogeneous (string/int/list
+        # values), so every entry is wrapped in dyn(): the CEL checker
+        # otherwise unifies the literal to map(string, string) and rejects
+        # the policy at compile time. Expression verified via
+        # kubectl apply --dry-run=server against the cluster.
+        expression: >-
+          has(object.spec.tools) ? [JSONPatch{op: 'add', path:
+          '/spec/tools/mcpServers', value: dyn([dyn({"name": dyn("openshift"), "url":
+          dyn("https://openshift-mcp-server.openshift-lightspeed.svc:8443/mcp"),
+          "timeoutSeconds": dyn(60), "headers": dyn([dyn({"name":
+          dyn("Authorization"), "valueFrom": dyn({"type":
+          "ServiceAccountToken"})})])})])}] : [JSONPatch{op: 'add', path:
+          '/spec/tools', value: dyn({"mcpServers": dyn([dyn({"name": dyn("openshift"),
+          "url":
+          dyn("https://openshift-mcp-server.openshift-lightspeed.svc:8443/mcp"),
+          "timeoutSeconds": dyn(60), "headers": dyn([dyn({"name":
+          dyn("Authorization"), "valueFrom": dyn({"type":
+          "ServiceAccountToken"})})])})])})}]

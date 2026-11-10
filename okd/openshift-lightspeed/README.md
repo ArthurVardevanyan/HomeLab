@@ -133,7 +133,6 @@ kubectl logs -l app.kubernetes.io/name=lightspeed-service-api -n openshift-light
 okd/openshift-lightspeed/
 ├── base/
 │   ├── alerts-adapter-config.yaml    # Alerts adapter config ConfigMap
-│   ├── alerts-run-tools.yaml         # Kyverno ClusterPolicy for alert tools
 │   ├── external-secret-llm.yaml      # External secret for LLM credentials
 │   ├── installplan-approver.yaml     # OLM install plan approver
 │   ├── kustomization.yaml            # Base kustomization
@@ -156,7 +155,7 @@ The tree above says what each file is. Notes that are not obvious from the names
 
 - **olsconfig.yaml**: controls the OLS app, LLM provider, MCP servers, guardrails and deployment resources. The operator renders it into the `olsconfig` ConfigMap; never hand-edit that ConfigMap, the operator reverts it. Everything configurable lives in this CR (and what the CRD cannot express lives in cluster config, see [OIDC Auth Fix](#oidc-auth-fix)).
 - **operatorgroup.yaml + subscription.yaml**: install the lightspeed operator (v2.0.0). `installplan-approver.yaml` approves its OLM install plans.
-- **alerts-run-tools.yaml**: Kyverno ClusterPolicy that injects MCP servers into alert-triggered AgenticRuns (see [Alert-triggered runs](#alert-triggered-runs)).
+- **agenticrun-alert-tools.yaml** (in `components/agentic/`): MutatingAdmissionPolicy that injects MCP servers into alert-triggered AgenticRuns (see [Alert-triggered runs](#alert-triggered-runs)).
 
 ## ArgoCD
 
@@ -225,7 +224,7 @@ The `lightspeed-agentic-alerts-adapter` polls AlertManager every 30s and creates
 
 - **AlertManager route** in `okd/openshift-monitoring/overlays/okd/alertmanager.yaml`. Critical and warning alerts (excluding `Watchdog` and `InfoInhibitor`) are routed to a dedicated `lightspeed` receiver. The `continue: true` flag ensures they still reach Discord too.
 - **Adapter config** in `base/alerts-adapter-config.yaml`. The `filtering.allowedReceivers` list gates which alerts produce runs. Set to `[lightspeed]`. The `agent.default` and `tools.skills` settings apply to every run. The alert route excludes `Watchdog`, `InfoInhibitor`, `ArgoCDSyncAlert` and `InstallPlanStepAppliedWithWarnings`; the latter fires during operator upgrades and is almost always noise.
-- **Kyverno ClusterPolicy** in `base/alerts-run-tools.yaml`. The Kyverno policy matches AgenticRuns created by the adapter (label `agentic.openshift.io/source=alertmanager`) and merges `spec.tools.mcpServers` with the existing skills. Without it, alert runs would get skills only and the agent would have no cluster access — the same symptom as issue 4.
+- **agenticrun-alert-tools.yaml** (in `components/agentic/`): MutatingAdmissionPolicy that matches AgenticRuns created by the adapter (label `agentic.openshift.io/source=alertmanager`) and merges `spec.tools.mcpServers` with the existing skills. Without it, alert runs would get skills only and the agent would have no cluster access — the same symptom as issue 4.
 
 Approval policy stays the same: Analysis and Verification are automatic, Execution is manual. Only investigations start without your sign-off.
 
