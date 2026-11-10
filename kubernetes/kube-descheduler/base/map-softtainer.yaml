@@ -8,7 +8,7 @@ spec:
   failurePolicy: Fail
   matchConditions:
     - expression: >-
-        has(object.metadata.labels)
+        'app' in object.metadata.labels
         && object.metadata.labels['app'] == 'softtainer'
       name: label-matches
   matchConstraints:
@@ -30,22 +30,42 @@ spec:
     - jsonPatch:
         expression: >-
           object.spec.template.spec.containers
-            .filter(c,
-              c.name == 'openshift-softtainer'
-              && (!has(c.resources) || !has(c.resources.limits))
-            )
-            .map(c,
-              JSONPatch{
-                op: 'add',
-                path: '/spec/template/spec/containers/' +
-                  string(object.spec.template.spec.containers.indexOf(c)) +
-                  '/resources',
-                value: {
-                  "limits": {"cpu": '50m', "memory": '96Mi'},
-                  "requests": {"cpu": '10m', "memory": '64Mi'}
-                }
-              }
-            )
+                      .filter(c, c.name == 'openshift-softtainer')
+                      .map(c,
+                        !has(c.resources)
+                        ? [JSONPatch{op: 'add',
+                            path: '/spec/template/spec/containers/' +
+                              string(object.spec.template.spec.containers.indexOf(c)) +
+                              '/resources',
+                            value: {"limits": {"cpu": '50m', "memory": '96Mi'}, "requests": {"cpu": '10m', "memory": '64Mi'}}}]
+                        : ((has(c.resources.limits)
+                      ? [
+                        JSONPatch{op: 'add', path: '/spec/template/spec/containers/' +
+                              string(object.spec.template.spec.containers.indexOf(c)) +
+                              '/resources/limits/cpu', value: '50m'},
+                            JSONPatch{op: 'add', path: '/spec/template/spec/containers/' +
+                              string(object.spec.template.spec.containers.indexOf(c)) +
+                              '/resources/limits/memory', value: '96Mi'}]
+                      : [JSONPatch{op: 'add',
+                          path: '/spec/template/spec/containers/' +
+                              string(object.spec.template.spec.containers.indexOf(c)) +
+                              '/resources/limits',
+                          value: {"cpu": '50m', "memory": '96Mi'}}])
+                    + (has(c.resources.requests)
+                      ? [
+                        JSONPatch{op: 'add', path: '/spec/template/spec/containers/' +
+                              string(object.spec.template.spec.containers.indexOf(c)) +
+                              '/resources/requests/cpu', value: '10m'},
+                            JSONPatch{op: 'add', path: '/spec/template/spec/containers/' +
+                              string(object.spec.template.spec.containers.indexOf(c)) +
+                              '/resources/requests/memory', value: '64Mi'}]
+                      : [JSONPatch{op: 'add',
+                          path: '/spec/template/spec/containers/' +
+                              string(object.spec.template.spec.containers.indexOf(c)) +
+                              '/resources/requests',
+                          value: {"cpu": '10m', "memory": '64Mi'}}]))
+                      )
+                      .flatten()
       patchType: JSONPatch
 ---
 apiVersion: admissionregistration.k8s.io/v1
