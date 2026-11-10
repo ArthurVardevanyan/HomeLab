@@ -34,6 +34,15 @@ spec:
     maxIterations: 30
     logLevel: INFO
     credentialHotReload: false
+    # The tool-result inspection classifier calls the plain LLM with
+    # response_format: json_schema, which the homelab vLLM backend does not
+    # honor (README issue 5), so every chat tool result fails the safety
+    # inspection. Disabled until the backend supports structured output for
+    # this model; the operator renders this into the olsconfig ConfigMap, so
+    # the OLS operator can run with its normal replica count.
+    guardrails:
+      toolResultInspection:
+        enabled: false
     conversationCache:
       postgres:
         maxConnections: 2000
