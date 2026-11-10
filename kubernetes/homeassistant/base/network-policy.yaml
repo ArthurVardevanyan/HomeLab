@@ -280,3 +280,35 @@ spec:
       ports:
         - port: 8481
           protocol: TCP
+---
+# The Perses server (observability-operator namespace) executes datasource
+# queries server-side; let it query the vmselect cluster (paired with the
+# perses-to-vmselect egress policy in the observability-operator namespace).
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-perses-victoria-metrics
+  namespace: homeassistant
+  annotations:
+    argocd.argoproj.io/sync-wave: "0"
+  labels:
+    app.kubernetes.io/instance: homeassistant
+spec:
+  policyTypes:
+    - Ingress
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/instance: homeassistant
+      app.kubernetes.io/name: vmselect
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: observability-operator
+          podSelector:
+            matchLabels:
+              app.kubernetes.io/name: perses
+              app.kubernetes.io/part-of: perses-operator
+      ports:
+        - port: 8481
+          protocol: TCP

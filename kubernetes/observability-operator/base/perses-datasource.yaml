@@ -1,0 +1,31 @@
+---
+apiVersion: perses.dev/v1alpha2
+kind: PersesDatasource
+metadata:
+  name: vmselect
+  namespace: observability-operator
+  annotations:
+    argocd.argoproj.io/sync-wave: "10"
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+spec:
+  config:
+    # Not default: the monitoring UIPlugin (perses.enabled) creates its own
+    # default PrometheusDatasource ("accelerators-thanos-querier-datasource",
+    # Thanos Querier) in this same Perses project, and Perses allows only one
+    # default per project — two defaults make the operator reject the second
+    # one with HTTP 400. Dashboards that need VictoriaMetrics select this
+    # datasource explicitly.
+    default: false
+    display:
+      name: VictoriaMetrics (vmselect)
+    plugin:
+      kind: PrometheusDatasource
+      spec:
+        # Direct cross-namespace URL to the VictoriaMetrics cluster in the
+        # homeassistant namespace (headless service, port 8481, plain HTTP -
+        # no proxy secret needed). Same HTTPProxy form as the HCO-managed
+        # perses-thanos-datasource, minus the secret.
+        proxy:
+          kind: HTTPProxy
+          spec:
+            url: http://vmselect-homeassistant.homeassistant.svc.cluster.local:8481
