@@ -11,8 +11,8 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: stackrox
     app.kubernetes.io/part-of: stackrox-central-services
-    app.kubernetes.io/version: 4.10.1
-    helm.sh/chart: stackrox-central-services-400.10.1
+    app.kubernetes.io/version: 5.0.0
+    helm.sh/chart: stackrox-central-services-500.0.0
   annotations:
     email: support@stackrox.com
     meta.helm.sh/release-name: stackrox-central-services
@@ -31,64 +31,34 @@ spec:
     app: central
   type: ClusterIP
 ---
-# Source: stackrox-central-services/templates/02-scanner-07-service.yaml
+# Source: stackrox-central-services/templates/01-central-15-ocp-service.yaml
 apiVersion: v1
 kind: Service
 metadata:
-  name: scanner
+  name: central-ocp
   namespace: stackrox
   labels:
-    app.kubernetes.io/component: scanner
+    app.kubernetes.io/component: central
     app.kubernetes.io/instance: stackrox-central-services
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: stackrox
     app.kubernetes.io/part-of: stackrox-central-services
-    app.kubernetes.io/version: 4.10.1
-    helm.sh/chart: stackrox-central-services-400.10.1
+    app.kubernetes.io/version: 5.0.0
+    helm.sh/chart: stackrox-central-services-500.0.0
+    stackrox.io/ocp-api: "true"
   annotations:
     email: support@stackrox.com
     meta.helm.sh/release-name: stackrox-central-services
     meta.helm.sh/release-namespace: stackrox
     owner: stackrox
+    service.beta.openshift.io/serving-cert-secret-name: central-ocp-tls
 spec:
   ports:
-    - name: https-scanner
-      port: 8080
-      targetPort: https
-    - name: grpcs-scanner
-      port: 8443
-      targetPort: grpc
-
+    - name: https
+      port: 443
+      targetPort: api
   selector:
-    app: scanner
-  type: ClusterIP
----
-# Source: stackrox-central-services/templates/02-scanner-07-service.yaml
-apiVersion: v1
-kind: Service
-metadata:
-  name: scanner-db
-  namespace: stackrox
-  labels:
-    app.kubernetes.io/component: scanner
-    app.kubernetes.io/instance: stackrox-central-services
-    app.kubernetes.io/managed-by: Helm
-    app.kubernetes.io/name: stackrox
-    app.kubernetes.io/part-of: stackrox-central-services
-    app.kubernetes.io/version: 4.10.1
-    helm.sh/chart: stackrox-central-services-400.10.1
-  annotations:
-    email: support@stackrox.com
-    meta.helm.sh/release-name: stackrox-central-services
-    meta.helm.sh/release-namespace: stackrox
-    owner: stackrox
-spec:
-  ports:
-    - name: tcp-db
-      port: 5432
-      targetPort: tcp-postgresql
-  selector:
-    app: scanner-db
+    app: central
   type: ClusterIP
 ---
 # Source: stackrox-central-services/templates/02-scanner-v4-08-db-service.yaml
@@ -103,8 +73,8 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: stackrox
     app.kubernetes.io/part-of: stackrox-central-services
-    app.kubernetes.io/version: 4.10.1
-    helm.sh/chart: stackrox-central-services-400.10.1
+    app.kubernetes.io/version: 5.0.0
+    helm.sh/chart: stackrox-central-services-500.0.0
   annotations:
     email: support@stackrox.com
     meta.helm.sh/release-name: stackrox-central-services
@@ -131,8 +101,8 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: stackrox
     app.kubernetes.io/part-of: stackrox-central-services
-    app.kubernetes.io/version: 4.10.1
-    helm.sh/chart: stackrox-central-services-400.10.1
+    app.kubernetes.io/version: 5.0.0
+    helm.sh/chart: stackrox-central-services-500.0.0
   annotations:
     email: support@stackrox.com
     meta.helm.sh/release-name: stackrox-central-services
@@ -163,8 +133,8 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: stackrox
     app.kubernetes.io/part-of: stackrox-central-services
-    app.kubernetes.io/version: 4.10.1
-    helm.sh/chart: stackrox-central-services-400.10.1
+    app.kubernetes.io/version: 5.0.0
+    helm.sh/chart: stackrox-central-services-500.0.0
   annotations:
     email: support@stackrox.com
     meta.helm.sh/release-name: stackrox-central-services

@@ -2,29 +2,29 @@
 apiVersion: autoscaling.k8s.io/v1
 kind: VerticalPodAutoscaler
 metadata:
-  name: container-security-operator
-  namespace: container-security-operator
+  name: openshift-mcp-server
+  namespace: openshift-mcp-server
   annotations:
     argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
   labels:
-    app.kubernetes.io/instance: container-security-operator
+    app.kubernetes.io/instance: openshift-mcp-server
 spec:
   targetRef:
     apiVersion: apps/v1
     kind: Deployment
-    name: container-security-operator
+    name: openshift-mcp-server
   updatePolicy:
     updateMode: "InPlaceOrRecreate"
   resourcePolicy:
     containerPolicies:
-      - containerName: container-security-operator
+      - containerName: redhat-openshift-mcp-server
         minAllowed:
           cpu: 5m
           memory: 16Mi
         maxAllowed:
-          cpu: 150m
-          memory: 512Mi
+          cpu: "1"
+          memory: 1Gi
         controlledResources:
           - cpu
           - memory
-        controlledValues: "RequestsAndLimits" # RequestsOnly
+        controlledValues: RequestsOnly

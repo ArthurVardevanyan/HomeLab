@@ -10,8 +10,8 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: stackrox
     app.kubernetes.io/part-of: stackrox-central-services
-    app.kubernetes.io/version: 4.10.1
-    helm.sh/chart: stackrox-central-services-400.10.1
+    app.kubernetes.io/version: 5.0.0
+    helm.sh/chart: stackrox-central-services-500.0.0
     "config.openshift.io/inject-trusted-cabundle": "true"
   annotations:
     email: support@stackrox.com
@@ -31,8 +31,8 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: stackrox
     app.kubernetes.io/part-of: stackrox-central-services
-    app.kubernetes.io/version: 4.10.1
-    helm.sh/chart: stackrox-central-services-400.10.1
+    app.kubernetes.io/version: 5.0.0
+    helm.sh/chart: stackrox-central-services-500.0.0
   annotations:
     email: support@stackrox.com
     meta.helm.sh/release-name: stackrox-central-services
@@ -60,8 +60,8 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: stackrox
     app.kubernetes.io/part-of: stackrox-central-services
-    app.kubernetes.io/version: 4.10.1
-    helm.sh/chart: stackrox-central-services-400.10.1
+    app.kubernetes.io/version: 5.0.0
+    helm.sh/chart: stackrox-central-services-500.0.0
   annotations:
     email: support@stackrox.com
     meta.helm.sh/release-name: stackrox-central-services
@@ -85,8 +85,8 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: stackrox
     app.kubernetes.io/part-of: stackrox-central-services
-    app.kubernetes.io/version: 4.10.1
-    helm.sh/chart: stackrox-central-services-400.10.1
+    app.kubernetes.io/version: 5.0.0
+    helm.sh/chart: stackrox-central-services-500.0.0
   annotations:
     email: support@stackrox.com
     meta.helm.sh/release-name: stackrox-central-services
@@ -112,7 +112,8 @@ data:
     #   - listen: ":8444"
     #     tls:
     #       # Which TLS certificates to serve, possible values are 'service' (StackRox-generated service certificates)
-    #       # and 'default' (user-configured default TLS certificate). If unset or empty, assume both.
+    #       # and 'default' (user-configured default TLS certificate), and 'openshift' (OpenShift service-serving
+    #       # certificate for the central-ocp Service). If unset or empty, assume both default and service.
     #       serverCerts:
     #         - default
     #         - service
@@ -126,69 +127,6 @@ data:
     #         certAuthorities: # if not set, assume ["user", "service"]
     #           - service
 ---
-# Source: stackrox-central-services/templates/02-scanner-04-scanner-config.yaml
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: scanner-config
-  namespace: stackrox
-  labels:
-    app.kubernetes.io/component: scanner
-    app.kubernetes.io/instance: stackrox-central-services
-    app.kubernetes.io/managed-by: Helm
-    app.kubernetes.io/name: stackrox
-    app.kubernetes.io/part-of: stackrox-central-services
-    app.kubernetes.io/version: 4.10.1
-    helm.sh/chart: stackrox-central-services-400.10.1
-  annotations:
-    email: support@stackrox.com
-    meta.helm.sh/release-name: stackrox-central-services
-    meta.helm.sh/release-namespace: stackrox
-    owner: stackrox
-data:
-  config.yaml: |
-    # Configuration file for scanner.
-
-    scanner:
-      centralEndpoint: https://central.stackrox.svc
-      sensorEndpoint: https://sensor.stackrox.svc
-      database:
-        # Database driver
-        type: pgsql
-        options:
-          # PostgreSQL Connection string
-          # https://www.postgresql.org/docs/current/static/libpq-connect.html#LIBPQ-CONNSTRING
-          source: host=scanner-db.stackrox.svc port=5432 user=postgres sslmode=verify-full statement_timeout=60000
-
-          # Number of elements kept in the cache
-          # Values unlikely to change (e.g. namespaces) are cached in order to save prevent needless roundtrips to the database.
-          cachesize: 16384
-
-      api:
-        httpsPort: 8080
-        grpcPort: 8443
-
-      updater:
-        # Frequency with which the scanner will poll for vulnerability updates.
-        interval: 5m
-
-      logLevel: INFO
-
-      # The scanner intentionally avoids extracting or analyzing any files
-      # larger than the following default sizes to prevent DoS attacks.
-      # Leave these commented to use a reasonable default.
-
-      # The max size of files in images that are extracted.
-      # Increasing this number increases memory pressure.
-      # maxExtractableFileSizeMB: 200
-      # The max size of ELF executable files that are analyzed.
-      # Increasing this number may increase disk pressure.
-      # maxELFExecutableFileSizeMB: 800
-      # The max size of image file reader buffer. Image file data beyond this limit are overflowed to temporary files on disk.
-      # maxImageFileReaderBufferSizeMB: 100
-
-      exposeMonitoring: false
----
 # Source: stackrox-central-services/templates/02-scanner-v4-04-db-config.yaml
 apiVersion: v1
 kind: ConfigMap
@@ -201,8 +139,8 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: stackrox
     app.kubernetes.io/part-of: stackrox-central-services
-    app.kubernetes.io/version: 4.10.1
-    helm.sh/chart: stackrox-central-services-400.10.1
+    app.kubernetes.io/version: 5.0.0
+    helm.sh/chart: stackrox-central-services-500.0.0
   annotations:
     email: support@stackrox.com
     meta.helm.sh/release-name: stackrox-central-services
@@ -339,8 +277,8 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: stackrox
     app.kubernetes.io/part-of: stackrox-central-services
-    app.kubernetes.io/version: 4.10.1
-    helm.sh/chart: stackrox-central-services-400.10.1
+    app.kubernetes.io/version: 5.0.0
+    helm.sh/chart: stackrox-central-services-500.0.0
   annotations:
     email: support@stackrox.com
     meta.helm.sh/release-name: stackrox-central-services
@@ -389,8 +327,8 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: stackrox
     app.kubernetes.io/part-of: stackrox-central-services
-    app.kubernetes.io/version: 4.10.1
-    helm.sh/chart: stackrox-central-services-400.10.1
+    app.kubernetes.io/version: 5.0.0
+    helm.sh/chart: stackrox-central-services-500.0.0
   annotations:
     email: support@stackrox.com
     meta.helm.sh/release-name: stackrox-central-services

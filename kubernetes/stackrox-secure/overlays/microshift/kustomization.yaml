@@ -9,8 +9,6 @@ components:
 patches:
   - patch: |-
       - op: remove
-        path: /spec/template/spec/containers/2
-      - op: remove
         path: /spec/template/spec/containers/0
     target:
       kind: DaemonSet
@@ -20,10 +18,10 @@ patches:
         path: /spec/template/spec/containers/0/env/5
         value: { "name": "ROX_CENTRAL_ENDPOINT", "value": "central-stackrox.app.okd.homelab.arthurvardevanyan.com:443" }
       - op: replace
-        path: /spec/template/spec/containers/0/env/8
+        path: /spec/template/spec/containers/0/env/9
         value: { "name": "ROX_HELM_CLUSTER_CONFIG_FP", "value": "<path:secret/data/homelab/stackrox/microshift#config-fingerprint>" }
       - op: replace
-        path: /spec/template/spec/containers/0/env/7
+        path: /spec/template/spec/containers/0/env/8
         value: { "name": "ROX_OPENSHIFT_API", "value": "false" }
     target:
       kind: Deployment

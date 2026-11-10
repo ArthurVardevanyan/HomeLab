@@ -12,7 +12,7 @@ shopt -s failglob
 # syncs them back into the cluster.
 #
 # Background:
-#   - All StackRox service leaf certs (central, scanner, scanner-v4) share the
+#   - All StackRox service leaf certs (central, scanner-v4) share the
 #     same 1-year lifetime and expire together. The CA (common#ca-pem) is valid
 #     until 2030.
 #   - The RHACS UI "renew certificate" bundle only covers central-tls; the
@@ -25,7 +25,7 @@ shopt -s failglob
 # Usage:
 #   export KUBECONFIG="$HOME/.kube/okd"
 #   vault login ...
-#   ./kubernetes/stackrox-central/scripts.sh [central|scanner-v4|scanner|all]
+#   ./kubernetes/stackrox-central/scripts.sh [central|scanner-v4|all]
 #
 # Targets:
 #   central    Push Central's (auto-rotated) central-tls PEMs into Vault and
@@ -34,8 +34,7 @@ shopt -s failglob
 #              Optionally sourced from a downloaded RHACS bundle via
 #              CENTRAL_TLS_FILE=/path/to/central-tls.yaml
 #   scanner-v4 (default) Reissue scanner-v4 leaf certs from the CA.
-#   scanner    Reissue scanner (v2) + scanner-db leaf certs from the CA.
-#   all        central + scanner + scanner-v4.
+#   all        central + scanner-v4.
 #
 # Default target: scanner-v4
 
@@ -134,29 +133,6 @@ function renew_scanner_v4 {
     "scanner-v4-indexer scanner-v4-matcher" \
     "scanner-v4-db-tls"
   verify_expiry scanner-v4-db-tls
-}
-
-function renew_scanner {
-  log "Generating scanner (v2) leaf certificates"
-  gen_cert scanner "SCANNER_SERVICE: Scanner" \
-    "DNS:scanner.${NAMESPACE},DNS:scanner.${NAMESPACE}.svc,DNS:scanner.${NAMESPACE}.svc.cluster.local"
-  gen_cert scanner-db "SCANNER_DB_SERVICE: Scanner DB" \
-    "DNS:scanner-db.${NAMESPACE},DNS:scanner-db.${NAMESPACE}.svc,DNS:scanner-db.${NAMESPACE}.svc.cluster.local"
-
-  log "Pushing scanner certs into Vault"
-  vault kv patch secret/homelab/stackrox/central \
-    scanner-tls-cert-pem=@"${WORKDIR}/scanner-cert.pem" \
-    scanner-tls-key-pem=@"${WORKDIR}/scanner-key.pem" \
-    scanner-db-tls-cert-pem=@"${WORKDIR}/scanner-db-cert.pem" \
-    scanner-db-tls-key-pem=@"${WORKDIR}/scanner-db-key.pem" >/dev/null
-  ok "Vault updated (secret/homelab/stackrox/central)"
-
-  sync_and_roll \
-    "scanner-tls scanner-db-tls" \
-    "scanner-db" \
-    "scanner" \
-    "scanner-db-tls"
-  verify_expiry scanner-db-tls
 }
 
 function renew_central {
@@ -258,13 +234,11 @@ function main {
   case "${TARGET}" in
     central) renew_central ;;
     scanner-v4) renew_scanner_v4 ;;
-    scanner) renew_scanner ;;
     all)
       renew_central
       renew_scanner_v4
-      renew_scanner
       ;;
-    *) err "Unknown target '${TARGET}'. Use: central | scanner-v4 | scanner | all" ;;
+    *) err "Unknown target '${TARGET}'. Use: central | scanner-v4 | all" ;;
   esac
 
   ok "Done. Target: ${TARGET}"

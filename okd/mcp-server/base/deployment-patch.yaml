@@ -1,0 +1,49 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: openshift-mcp-server
+  namespace: openshift-mcp-server
+spec:
+  template:
+    spec:
+      enableServiceLinks: false
+      restartPolicy: Always
+      schedulerName: default-scheduler
+      dnsPolicy: ClusterFirst
+      securityContext:
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: redhat-openshift-mcp-server
+          securityContext:
+            privileged: false
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            runAsNonRoot: true
+            seccompProfile:
+              type: RuntimeDefault
+            capabilities:
+              drop:
+                - ALL
+          env:
+            # Go adds this directory to the default trust bundle; it lets the
+            # server trust the service-CA-signed Thanos/Alertmanager endpoints.
+            - name: SSL_CERT_DIR
+              value: /etc/openshift-service-ca
+          volumeMounts:
+            - name: service-ca
+              mountPath: /etc/openshift-service-ca
+              readOnly: true
+          resources:
+            limits:
+              cpu: "1"
+              memory: 1Gi
+            requests:
+              cpu: 100m
+              memory: 128Mi
+      volumes:
+        - name: service-ca
+          configMap:
+            name: openshift-service-ca.crt

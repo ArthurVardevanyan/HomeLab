@@ -12,6 +12,13 @@ and restores them on exit so pool allocations use the pluggable allocator
 (sleep frees weights correctly) while the default allocator keeps expandable
 segments for the KV-cache (anti-fragmentation, preserving the original
 PYTORCH_ALLOC_CONF intent).
+
+Anchor verified against vLLM v0.33.0: use_memory_pool now keeps every
+entry's pool alive (pytorch/pytorch#146431) via
+allocator_and_pools.setdefault(tag, []).append(data); the toggle logic is
+unchanged and self-gates on PYTORCH_ALLOC_CONF/PYTORCH_XPU_ALLOC_CONF
+containing expandable_segments:True, so it is inert unless expandable
+segments are actually configured.
 """
 from __future__ import annotations
 
@@ -39,7 +46,8 @@ OLD = '''    def use_memory_pool(self, tag: str | None = None):
                 self.python_malloc_callback,
                 self.python_free_callback,
             ) as data:
-                self.allocator_and_pools[tag] = data
+                # Keep every entry's pool alive (pytorch/pytorch#146431).
+                self.allocator_and_pools.setdefault(tag, []).append(data)
                 yield
         finally:
             self.current_tag = old_tag'''
@@ -70,7 +78,8 @@ NEW = '''    def use_memory_pool(self, tag: str | None = None):
                 self.python_malloc_callback,
                 self.python_free_callback,
             ) as data:
-                self.allocator_and_pools[tag] = data
+                # Keep every entry's pool alive (pytorch/pytorch#146431).
+                self.allocator_and_pools.setdefault(tag, []).append(data)
                 yield
         finally:
             self.current_tag = old_tag

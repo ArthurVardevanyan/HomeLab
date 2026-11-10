@@ -1,0 +1,19 @@
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: openshift-mcp-server-use-view-role
+  labels:
+    helm.sh/chart: redhat-openshift-mcp-server-0.3.0
+    app.kubernetes.io/name: redhat-openshift-mcp-server
+    app.kubernetes.io/instance: openshift-mcp-server
+    app.kubernetes.io/version: "latest"
+    app.kubernetes.io/managed-by: Helm
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: view
+subjects:
+  - kind: ServiceAccount
+    name: openshift-mcp-server
+    namespace: openshift-mcp-server

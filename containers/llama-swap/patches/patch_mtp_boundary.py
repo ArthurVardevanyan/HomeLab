@@ -6,6 +6,13 @@ num_speculative_tokens + 1 query tokens for the last speculative step. The XPU
 GDN kernel requires complete speculative groups. Reclassify only that partial
 pure-spec step as stateful non-spec prefill so the request can finish without
 padding beyond its configured sequence length.
+
+Anchors verified against vLLM v0.33.0: the pure-spec block (gdn_attn.py) and
+the finalize block, which v0.33.0 split into a [:num_spec_decodes] slice for
+the pure-spec case and a mask gather otherwise. The reclassification path
+clears spec_sequence_masks_cpu / num_accepted_tokens, so the whole finalize
+block is guarded on the masks being present (the reclassify path would
+otherwise trip the unconditional assert).
 """
 from __future__ import annotations
 
@@ -27,9 +34,10 @@ OLD = '''            if num_prefills == 0 and num_decodes == 0:
                 non_spec_token_indx = torch.empty(
                     0, dtype=torch.int32, device=query_start_loc.device
                 )
-                # Filter by spec_sequence_masks to exclude padded sequences
+                # Padded sequences trail the spec decodes, so slice them off
+                # rather than gather with the host mask (an H2D copy + a kernel).
                 spec_state_indices_tensor = block_table_tensor[
-                    spec_sequence_masks_cpu, : self.num_spec + 1
+                    :num_spec_decodes, : self.num_spec + 1
                 ]
                 non_spec_state_indices_tensor = None
                 # Padded sequences are always at the back, so the first
@@ -72,9 +80,11 @@ NEW = '''            if num_prefills == 0 and num_decodes == 0:
                     non_spec_token_indx = torch.empty(
                         0, dtype=torch.int32, device=query_start_loc.device
                     )
-                    # Filter by spec_sequence_masks to exclude padded sequences
+                    # Padded sequences trail the spec decodes, so slice them
+                    # off rather than gather with the host mask (an H2D copy +
+                    # a kernel).
                     spec_state_indices_tensor = block_table_tensor[
-                        spec_sequence_masks_cpu, : self.num_spec + 1
+                        :num_spec_decodes, : self.num_spec + 1
                     ]
                     non_spec_state_indices_tensor = None
                     # Padded sequences are always at the back, so the first
@@ -87,12 +97,20 @@ NEW = '''            if num_prefills == 0 and num_decodes == 0:
 '''
 
 OLD_FINALIZE = '''            assert num_accepted_tokens is not None
-            num_accepted_tokens = num_accepted_tokens[spec_sequence_masks_cpu]
+            if num_prefills == 0 and num_decodes == 0:
+                num_accepted_tokens = num_accepted_tokens[:num_spec_decodes]
+            else:
+                num_accepted_tokens = num_accepted_tokens[spec_sequence_masks_cpu]
 '''
 
-NEW_FINALIZE = '''            if spec_sequence_masks_cpu is not None:
+NEW_FINALIZE = '''            # B70_MTP_PARTIAL_FINAL_GROUP: the partial-group reclassification
+            # clears the spec masks and accepted tokens, so skip the slicing.
+            if spec_sequence_masks_cpu is not None:
                 assert num_accepted_tokens is not None
-                num_accepted_tokens = num_accepted_tokens[spec_sequence_masks_cpu]
+                if num_prefills == 0 and num_decodes == 0:
+                    num_accepted_tokens = num_accepted_tokens[:num_spec_decodes]
+                else:
+                    num_accepted_tokens = num_accepted_tokens[spec_sequence_masks_cpu]
 '''
 
 

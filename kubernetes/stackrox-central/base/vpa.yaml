@@ -62,36 +62,6 @@ spec:
 apiVersion: autoscaling.k8s.io/v1
 kind: VerticalPodAutoscaler
 metadata:
-  name: scanner-db
-  namespace: stackrox
-  annotations:
-    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
-  labels:
-    app.kubernetes.io/name: stackrox
-spec:
-  targetRef:
-    apiVersion: apps/v1
-    kind: Deployment
-    name: scanner-db
-  updatePolicy:
-    updateMode: "InPlaceOrRecreate"
-  resourcePolicy:
-    containerPolicies:
-      - containerName: db
-        minAllowed:
-          cpu: 5m
-          memory: 16Mi
-        maxAllowed:
-          cpu: 300m
-          memory: 3Gi
-        controlledResources:
-          - cpu
-          - memory
-        controlledValues: RequestsOnly # "RequestsAndLimits"
----
-apiVersion: autoscaling.k8s.io/v1
-kind: VerticalPodAutoscaler
-metadata:
   name: scanner-v4-db
   namespace: stackrox
   annotations:
@@ -114,36 +84,6 @@ spec:
         maxAllowed:
           cpu: 1000m
           memory: 4Gi
-        controlledResources:
-          - cpu
-          - memory
-        controlledValues: RequestsOnly # "RequestsAndLimits"
----
-apiVersion: autoscaling.k8s.io/v1
-kind: VerticalPodAutoscaler
-metadata:
-  name: scanner
-  namespace: stackrox
-  annotations:
-    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
-  labels:
-    app.kubernetes.io/name: stackrox
-spec:
-  targetRef:
-    apiVersion: apps/v1
-    kind: Deployment
-    name: scanner
-  updatePolicy:
-    updateMode: "InPlaceOrRecreate"
-  resourcePolicy:
-    containerPolicies:
-      - containerName: scanner
-        minAllowed:
-          cpu: 5m
-          memory: 16Mi
-        maxAllowed:
-          cpu: 500m
-          memory: 1Gi
         controlledResources:
           - cpu
           - memory

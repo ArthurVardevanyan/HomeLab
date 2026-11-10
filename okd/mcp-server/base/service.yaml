@@ -1,0 +1,22 @@
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: openshift-mcp-server
+  namespace: openshift-mcp-server
+  labels:
+    helm.sh/chart: redhat-openshift-mcp-server-0.3.0
+    app.kubernetes.io/name: redhat-openshift-mcp-server
+    app.kubernetes.io/instance: openshift-mcp-server
+    app.kubernetes.io/version: "latest"
+    app.kubernetes.io/managed-by: Helm
+spec:
+  type: ClusterIP
+  ports:
+    - port: 8080
+      targetPort: http
+      protocol: TCP
+      name: http
+  selector:
+    app.kubernetes.io/name: redhat-openshift-mcp-server
+    app.kubernetes.io/instance: openshift-mcp-server

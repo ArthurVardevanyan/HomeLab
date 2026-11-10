@@ -4,6 +4,7 @@ kind: Kustomization
 resources:
   - ../../base
   - ./cluster-name.yaml
+  - ./console-plugin.yaml
   - ./prometheusRule.yaml
   - ./serviceMonitor.yaml
   - ./vpa.yaml
@@ -15,10 +16,10 @@ patches:
         path: /spec/template/spec/containers/0/env/5
         value: { "name": "ROX_CENTRAL_ENDPOINT", "value": "central.stackrox.svc:443" }
       - op: replace
-        path: /spec/template/spec/containers/0/env/8
+        path: /spec/template/spec/containers/0/env/9
         value: { "name": "ROX_HELM_CLUSTER_CONFIG_FP", "value": "<path:secret/data/homelab/stackrox/homelab#config-fingerprint>" }
       - op: replace
-        path: /spec/template/spec/containers/0/env/7
+        path: /spec/template/spec/containers/0/env/8
         value: { "name": "ROX_OPENSHIFT_API", "value": "true" }
     target:
       kind: Deployment

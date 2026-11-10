@@ -2,7 +2,7 @@
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: container-security-operator
+  name: openshift-mcp-server
   namespace: argocd
   annotations:
     argocd.argoproj.io/sync-wave: "1"
@@ -15,13 +15,15 @@ metadata:
     app.kubernetes.io/instance: argocd
 spec:
   destination:
-    namespace: container-security-operator
+    namespace: openshift-mcp-server
     server: https://kubernetes.default.svc
   project: default
   source:
-    path: kubernetes/container-security/overlays/okd
+    path: okd/mcp-server/overlays/okd
     repoURL: https://git.arthurvardevanyan.com/ArthurVardevanyan/HomeLab
     targetRevision: HEAD
+    plugin:
+      name: argocd-vault-plugin-kustomize
   syncPolicy:
     syncOptions:
       - ServerSideApply=true
