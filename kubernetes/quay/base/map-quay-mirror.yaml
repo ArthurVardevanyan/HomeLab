@@ -1,0 +1,60 @@
+---
+apiVersion: admissionregistration.k8s.io/v1
+kind: MutatingAdmissionPolicy
+metadata:
+  name: map-quay-mirror
+spec:
+  reinvocationPolicy: Never
+  failurePolicy: Fail
+  matchConditions:
+    - expression: >-
+        has(object.metadata.labels)
+        && object.metadata.labels['quay-component'] == 'quay-mirror'
+      name: label-matches
+  matchConstraints:
+    matchPolicy: Equivalent
+    namespaceSelector: {}
+    objectSelector: {}
+    resourceRules:
+      - apiGroups:
+          - apps
+        apiVersions:
+          - v1
+        operations:
+          - CREATE
+          - UPDATE
+        resources:
+          - deployments
+        scope: Namespaced
+  mutations:
+    - jsonPatch:
+        expression: >-
+          object.spec.template.spec.initContainers
+            .filter(c,
+              c.name == 'quay-mirror-init'
+              && (!has(c.resources) || !has(c.resources.limits))
+            )
+            .map(c,
+              JSONPatch{
+                op: 'add',
+                path: '/spec/template/spec/initContainers/' +
+                  string(object.spec.template.spec.initContainers.indexOf(c)) +
+                  '/resources',
+                value: {
+                  "limits": {"cpu": '100m', "memory": '32Mi'},
+                  "requests": {"cpu": '5m', "memory": '16Mi'}
+                }
+              }
+            )
+      patchType: JSONPatch
+---
+apiVersion: admissionregistration.k8s.io/v1
+kind: MutatingAdmissionPolicyBinding
+metadata:
+  name: map-quay-mirror-binding
+spec:
+  matchResources:
+    namespaceSelector:
+      matchLabels:
+        kubernetes.io/metadata.name: quay
+  policyName: map-quay-mirror

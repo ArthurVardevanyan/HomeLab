@@ -1,0 +1,66 @@
+---
+apiVersion: admissionregistration.k8s.io/v1
+kind: MutatingAdmissionPolicy
+metadata:
+  name: map-ceph-watch-active
+spec:
+  reinvocationPolicy: Never
+  failurePolicy: Fail
+  matchConditions:
+    - expression: >-
+        has(object.metadata.labels)
+        && object.metadata.labels['app'] == 'rook-ceph-mgr'
+      name: label-matches
+    - expression: >-
+        has(object.spec.template)
+        && has(object.spec.template.spec)
+        && has(object.spec.template.spec.containers)
+        && object.spec.template.spec.containers
+          .filter(c,
+            c.name == 'watch-active'
+            && !has(c.resources)
+          )
+          .size() > 0
+      name: needs-patching
+  matchConstraints:
+    matchPolicy: Equivalent
+    namespaceSelector: {}
+    objectSelector: {}
+    resourceRules:
+      - apiGroups:
+          - apps
+        apiVersions:
+          - v1
+        operations:
+          - CREATE
+          - UPDATE
+        resources:
+          - deployments
+        scope: Namespaced
+  mutations:
+    - jsonPatch:
+        expression: >-
+          object.spec.template.spec.containers
+            .filter(c, c.name == 'watch-active' && !has(c.resources))
+            .map(c, JSONPatch{
+              op: 'replace',
+              path: '/spec/template/spec/containers/' +
+                string(object.spec.template.spec.containers.indexOf(c)) +
+                '/resources',
+              value: {
+                "limits": {"cpu": '150m', "memory": '128Mi'},
+                "requests": {"cpu": '15m', "memory": '32Mi'}
+              }
+            })
+      patchType: JSONPatch
+---
+apiVersion: admissionregistration.k8s.io/v1
+kind: MutatingAdmissionPolicyBinding
+metadata:
+  name: map-ceph-watch-active-binding
+spec:
+  matchResources:
+    namespaceSelector:
+      matchLabels:
+        kubernetes.io/metadata.name: rook-ceph
+  policyName: map-ceph-watch-active

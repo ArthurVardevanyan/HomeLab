@@ -1,0 +1,70 @@
+---
+apiVersion: admissionregistration.k8s.io/v1
+kind: MutatingAdmissionPolicy
+metadata:
+  name: map-frr
+spec:
+  reinvocationPolicy: Never
+  failurePolicy: Fail
+  matchConditions:
+    - expression: >-
+        has(object.metadata)
+        && object.metadata.name == 'frr-k8s'
+      name: name-matches
+  matchConstraints:
+    matchPolicy: Equivalent
+    namespaceSelector: {}
+    objectSelector: {}
+    resourceRules:
+      - apiGroups:
+          - apps
+        apiVersions:
+          - v1
+        operations:
+          - CREATE
+          - UPDATE
+        resources:
+          - daemonsets
+        scope: Namespaced
+  mutations:
+    - jsonPatch:
+        expression: >-
+          (has(object.spec.template.spec.containers)
+            && object.spec.template.spec.containers.size() > 0
+            && (!has(object.spec.template.spec.containers[0].resources)
+                || !has(object.spec.template.spec.containers[0].resources.limits))
+            ? [JSONPatch{
+                op: 'add',
+                path: '/spec/template/spec/containers/0/resources',
+                value: {
+                  "requests": {"cpu": '100m', "memory": '200Mi'},
+                  "limits": {"cpu": '300m', "memory": '400Mi'}
+                }
+              }]
+            : [])
+          +
+          (has(object.spec.template.spec.containers)
+            && object.spec.template.spec.containers.size() > 1
+            && (!has(object.spec.template.spec.containers[1].resources)
+                || !has(object.spec.template.spec.containers[1].resources.limits))
+            ? [JSONPatch{
+                op: 'add',
+                path: '/spec/template/spec/containers/1/resources',
+                value: {
+                  "requests": {"cpu": '100m', "memory": '200Mi'},
+                  "limits": {"cpu": '300m', "memory": '400Mi'}
+                }
+              }]
+            : [])
+      patchType: JSONPatch
+---
+apiVersion: admissionregistration.k8s.io/v1
+kind: MutatingAdmissionPolicyBinding
+metadata:
+  name: map-frr-binding
+spec:
+  matchResources:
+    namespaceSelector:
+      matchLabels:
+        kubernetes.io/metadata.name: openshift-frr-k8s
+  policyName: map-frr

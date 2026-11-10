@@ -1,0 +1,53 @@
+---
+apiVersion: admissionregistration.k8s.io/v1
+kind: MutatingAdmissionPolicy
+metadata:
+  name: map-logging-init-containers
+spec:
+  reinvocationPolicy: Never
+  failurePolicy: Fail
+  matchConstraints:
+    matchPolicy: Equivalent
+    namespaceSelector: {}
+    objectSelector: {}
+    resourceRules:
+      - apiGroups:
+          - apps
+        apiVersions:
+          - v1
+        operations:
+          - CREATE
+          - UPDATE
+        resources:
+          - deployments
+          - statefulsets
+        scope: Namespaced
+  mutations:
+    - jsonPatch:
+        expression: >-
+          object.spec.template.spec.initContainers
+            .filter(c, !has(c.resources))
+            .map(c,
+              JSONPatch{
+                op: 'add',
+                path: '/spec/template/spec/initContainers/' +
+                  string(object.spec.template.spec.initContainers.indexOf(c)) +
+                  '/resources',
+                value: {
+                  "limits": {"cpu": '100m', "memory": '32Mi'},
+                  "requests": {"cpu": '5m', "memory": '16Mi'}
+                }
+              }
+            )
+      patchType: JSONPatch
+---
+apiVersion: admissionregistration.k8s.io/v1
+kind: MutatingAdmissionPolicyBinding
+metadata:
+  name: map-logging-init-containers-binding
+spec:
+  matchResources:
+    namespaceSelector:
+      matchLabels:
+        kubernetes.io/metadata.name: openshift-logging
+  policyName: map-logging-init-containers

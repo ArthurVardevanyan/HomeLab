@@ -1,0 +1,60 @@
+---
+apiVersion: admissionregistration.k8s.io/v1
+kind: MutatingAdmissionPolicy
+metadata:
+  name: map-imagepuller
+spec:
+  reinvocationPolicy: Never
+  failurePolicy: Fail
+  matchConditions:
+    - expression: >-
+        has(object.metadata.labels)
+        && object.metadata.labels['app'] == 'kubernetes-image-puller'
+      name: label-matches
+  matchConstraints:
+    matchPolicy: Equivalent
+    namespaceSelector: {}
+    objectSelector: {}
+    resourceRules:
+      - apiGroups:
+          - apps
+        apiVersions:
+          - v1
+        operations:
+          - CREATE
+          - UPDATE
+        resources:
+          - deployments
+        scope: Namespaced
+  mutations:
+    - jsonPatch:
+        expression: >-
+          object.spec.template.spec.containers
+            .filter(c,
+              c.name == 'kubernetes-image-puller'
+              && (!has(c.resources) || !has(c.resources.limits))
+            )
+            .map(c,
+              JSONPatch{
+                op: 'add',
+                path: '/spec/template/spec/containers/' +
+                  string(object.spec.template.spec.containers.indexOf(c)) +
+                  '/resources',
+                value: {
+                  "limits": {"cpu": '10m', "memory": '32Mi'},
+                  "requests": {"cpu": '5m', "memory": '16Mi'}
+                }
+              }
+            )
+      patchType: JSONPatch
+---
+apiVersion: admissionregistration.k8s.io/v1
+kind: MutatingAdmissionPolicyBinding
+metadata:
+  name: map-imagepuller-binding
+spec:
+  matchResources:
+    namespaceSelector:
+      matchLabels:
+        kubernetes.io/metadata.name: kubernetes-imagepuller-operator
+  policyName: map-imagepuller

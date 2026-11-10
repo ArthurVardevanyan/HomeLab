@@ -1,0 +1,56 @@
+---
+apiVersion: admissionregistration.k8s.io/v1
+kind: MutatingAdmissionPolicy
+metadata:
+  name: map-netobserv-loki-opa
+spec:
+  reinvocationPolicy: Never
+  failurePolicy: Fail
+  matchConstraints:
+    matchPolicy: Equivalent
+    namespaceSelector: {}
+    objectSelector: {}
+    resourceRules:
+      - apiGroups:
+          - apps
+        apiVersions:
+          - v1
+        operations:
+          - CREATE
+          - UPDATE
+        resources:
+          - deployments
+          - statefulsets
+        scope: Namespaced
+  mutations:
+    - jsonPatch:
+        expression: >-
+          object.spec.template.spec.containers
+            .filter(c,
+              c.name == 'opa'
+              && (!has(c.resources) || !has(c.resources.limits))
+            )
+            .map(c,
+              JSONPatch{
+                op: 'add',
+                path: '/spec/template/spec/containers/' +
+                  string(object.spec.template.spec.containers.indexOf(c)) +
+                  '/resources',
+                value: {
+                  "limits": {"cpu": '150m', "memory": '128Mi'},
+                  "requests": {"cpu": '15m', "memory": '32Mi'}
+                }
+              }
+            )
+      patchType: JSONPatch
+---
+apiVersion: admissionregistration.k8s.io/v1
+kind: MutatingAdmissionPolicyBinding
+metadata:
+  name: map-netobserv-loki-opa-binding
+spec:
+  matchResources:
+    namespaceSelector:
+      matchLabels:
+        kubernetes.io/metadata.name: openshift-netobserv-loki
+  policyName: map-netobserv-loki-opa
