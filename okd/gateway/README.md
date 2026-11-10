@@ -20,10 +20,6 @@
   - [Observability](#observability)
     - [Wiretap](#wiretap)
   - [Kustomize and ArgoCD wiring](#kustomize-and-argocd-wiring)
-  - [Kyverno policies](#kyverno-policies)
-    - [`istiod-enable-listenersets`](#istiod-enable-listenersets)
-    - [`istiod-openshift`](#istiod-openshift)
-    - [Cleanup when ListenerSets is GA](#cleanup-when-listenersets-is-ga)
   - [Layout](#layout)
 
 ## Overview
@@ -223,36 +219,11 @@ The `okd-gateway` ArgoCD Application watches this overlay:
 - **Sync wave:** `1`
 - **Server Side Apply:** enabled
 
-## Kyverno policies
-
-There are two Kyverno policies in `base/`:
-
-### `istiod-enable-listenersets`
-
-Patches the `istiod` Deployment (`discovery` container) to set:
-
-- `PILOT_ENABLE_ALPHA_GATEWAY_API=true`
-- `PILOT_IGNORE_RESOURCES=""`
-
-This enables ListenerSet support in OpenShift's Istio. The policy lives in `okd/gateway/base/kyverno-listenerset.yaml`.
-
-### `istiod-openshift`
-
-Patches the `istiod-openshift-gateway` HPA to set `minReplicas: 2`.
-
-### Cleanup when ListenerSets is GA
-
-When ListenerSets reaches GA and Istio's native support is available:
-
-1. Delete the `istiod-enable-listenersets` Policy from `okd/gateway/base/kyverno-listenerset.yaml`
-2. Remove it from `okd/gateway/base/kustomization.yaml`
-3. Confirm no `allowedListeners` or ListenerSet parentRef issues in the gateway status
-
 ## Layout
 
 ```plaintext
 okd/gateway/
-├── base/                                  # Base manifests (gateway-class, PDB, VPA, Kyverno policies)
+├── base/                                  # Base manifests (gateway-class, PDB, VPA)
 ├── components/
 │   ├── gateway/
 │   │   ├── internal/                      # Internal gateway + cert + configmap

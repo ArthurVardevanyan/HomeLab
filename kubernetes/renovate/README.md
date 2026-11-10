@@ -76,8 +76,6 @@ These images were found in files but do not appear to be managed by Renovate (no
 | `quay.io/stackrox-io/main:5.0.0@sha256:6b9c59d72f693f2a374e27766d22cef31c7e1a1ba3b69c240b96867b53b81824`                                                                                      |
 | `quay.io/stackrox-io/scanner-v4-db:5.0.0@sha256:235d21c08e7b6f8d2e1d15215b769fbbb831aa50a19d37fd7f1213b28a59a323`                                                                             |
 | `quay.io/stackrox-io/scanner-v4:5.0.0@sha256:3c8a7de0c39e661a0e699d76d74eadd1310bca587f3b11d2711978a1b68ccbfd`                                                                                |
-| `reg.kyverno.io/kyverno/kyverno:v1.16.0@sha256:2fad29572e08010884f0f89792af2c734fdf401c850dbeb1b610822980d9afdf`                                                                              |
-| `reg.kyverno.io/kyverno/kyvernopre:v1.16.0@sha256:65265d5012b9630bd4387d5eef1d58fa30c0cfad7ace485969e8da8d465bc128`                                                                           |
 | `registry.access.redhat.com/redhat/community-operator-index:v4.20`                                                                                                                            |
 | `registry.arthurvardevanyan.com/homelab/argocd-operator@sha256:dc73eb66228dd189d2b672e04b78767a6f06220b92e68bbac2b2674f89766754`                                                              |
 | `registry.arthurvardevanyan.com/homelab/toolbox:not_latest`                                                                                                                                   |
