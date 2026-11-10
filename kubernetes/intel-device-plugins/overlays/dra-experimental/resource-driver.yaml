@@ -1,0 +1,199 @@
+---
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: intel-gpu-resource-driver-kubelet-plugin
+  namespace: intel-gpu-resource-driver
+  labels:
+    app: intel-gpu-resource-driver-kubelet-plugin
+  annotations:
+    checkov.io/skip1: CKV_K8S_10=GPU plugin requires dedicated CPU requests for device enumeration
+    checkov.io/skip2: CKV_K8S_11=GPU plugin requires dedicated CPU limits for device enumeration
+    checkov.io/skip3: CKV_K8S_12=GPU plugin requires dedicated memory requests for device enumeration
+    checkov.io/skip4: CKV_K8S_13=GPU plugin requires dedicated memory limits for device enumeration
+    checkov.io/skip5: CKV_K8S_16=GPU plugin requires privileged access to manage GPU devices
+    checkov.io/skip6: CKV_K8S_20=GPU plugin requires privilege escalation to bind devices via CDI
+    checkov.io/skip7: CKV_K8S_23=GPU plugin runs as root to manage device nodes
+    checkov.io/skip8: CKV_K8S_29=GPU plugin security context is configured inline
+    checkov.io/skip9: CKV_K8S_31=GPU plugin seccomp profile is configured inline
+    checkov.io/skip10: CKV_K8S_38=GPU plugin requires full service account token access to nodes
+    checkov.io/skip11: CKV_K8S_40=GPU plugin requires privileged access for GPU device enumeration
+    checkov.io/skip12: CKV_K8S_9=GPU plugin uses startupProbe instead of readinessProbe
+    checkov.io/skip13: CKV2_K8S_6=GPU plugin NetworkPolicy managed separately via NFD
+spec:
+  selector:
+    matchLabels:
+      app: intel-gpu-resource-driver-kubelet-plugin
+  template:
+    metadata:
+      labels:
+        app: intel-gpu-resource-driver-kubelet-plugin
+    spec:
+      serviceAccount: intel-gpu-resource-driver-service-account
+      serviceAccountName: intel-gpu-resource-driver-service-account
+      enableServiceLinks: false
+      restartPolicy: Always
+      automountServiceAccountToken: true
+      dnsPolicy: ClusterFirst
+      schedulerName: ""
+      containers:
+        - name: kubelet-plugin
+          # renovate: datasource=docker depName=ghcr.io/intel/intel-gpu-resource-driver
+          image: ghcr.io/intel/intel-gpu-resource-driver@sha256:5be06e1cf810c6091cec17ed78a775be64323f2084038c8840f283f643ce4207
+          command: ["/kubelet-gpu-plugin"]
+          ports:
+            - name: healthcheck
+              containerPort: 51516
+          startupProbe:
+            grpc:
+              port: 51516
+              service: liveness
+            failureThreshold: 60
+            periodSeconds: 10
+            timeoutSeconds: 10
+          livenessProbe:
+            grpc:
+              port: 51516
+              service: liveness
+            failureThreshold: 3
+            periodSeconds: 30
+            timeoutSeconds: 10
+          env:
+            - name: NODE_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: spec.nodeName
+            - name: POD_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+            - name: SYSFS_ROOT
+              value: "/sysfs"
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              cpu: "1"
+              memory: 512Mi
+          volumeMounts:
+            - name: plugins-registry
+              mountPath: /var/lib/kubelet/plugins_registry
+            - name: plugins
+              mountPath: /var/lib/kubelet/plugins
+            - name: cdi
+              mountPath: /etc/cdi
+            - name: varruncdi
+              mountPath: /var/run/cdi
+            - name: sysfs
+              mountPath: "/sysfs"
+            - name: xpumd-socket
+              mountPath: "/run/xpumd"
+          securityContext:
+            privileged: true
+            capabilities:
+              drop: ["ALL"]
+            readOnlyRootFilesystem: true
+            runAsUser: 0
+            allowPrivilegeEscalation: true
+            runAsNonRoot: false
+            # Note, OpenShift has 'runtime/default' as a default.
+            # See https://docs.redhat.com/en/documentation/openshift_container_platform/4.20/html/security_and_compliance/seccomp-profiles#custom-seccomp-profile
+            seccompProfile:
+              type: RuntimeDefault
+      volumes:
+        - name: plugins-registry
+          hostPath:
+            path: /var/lib/kubelet/plugins_registry
+        - name: plugins
+          hostPath:
+            path: /var/lib/kubelet/plugins
+        - name: cdi
+          hostPath:
+            path: /etc/cdi
+        - name: varruncdi
+          hostPath:
+            path: /var/run/cdi
+        - name: sysfs
+          hostPath:
+            path: /sys
+        - name: xpumd-socket
+          hostPath:
+            path: /run/xpumd
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: intel-gpu-resource-driver-service-account
+  namespace: intel-gpu-resource-driver
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: intel-gpu-resource-driver-role
+rules:
+  - apiGroups: [""]
+    resources: ["nodes"]
+    verbs: ["get"]
+  - apiGroups: ["resource.k8s.io"]
+    resources: ["resourceslices"]
+    verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+  - apiGroups: ["resource.k8s.io"]
+    resources: ["resourceclaims"]
+    verbs: ["get"]
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: intel-gpu-resource-driver-role-binding
+subjects:
+  - kind: ServiceAccount
+    name: intel-gpu-resource-driver-service-account
+    namespace: intel-gpu-resource-driver
+roleRef:
+  kind: ClusterRole
+  name: intel-gpu-resource-driver-role
+  apiGroup: rbac.authorization.k8s.io
+
+---
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingAdmissionPolicy
+metadata:
+  name: resourceslices-policy-dra-kubelet-plugin-gpu
+spec:
+  failurePolicy: Fail
+  matchConstraints:
+    resourceRules:
+      - apiGroups: ["resource.k8s.io"]
+        apiVersions: ["v1"]
+        operations: ["CREATE", "UPDATE", "DELETE"]
+        resources: ["resourceslices"]
+  matchConditions:
+    - name: isRestrictedUser
+      expression: >-
+        request.userInfo.username == "system:serviceaccount:intel-gpu-resource-driver:intel-gpu-resource-driver-service-account"
+  variables:
+    - name: userNodeName
+      expression: >-
+        request.userInfo.extra[?'authentication.kubernetes.io/node-name'][0].orValue('')
+    - name: objectNodeName
+      expression: >-
+        (request.operation == "DELETE" ? oldObject : object).spec.?nodeName.orValue("")
+  validations:
+    - expression: variables.userNodeName != ""
+      message: >-
+        no node association found for user, this user must run in a pod on a node and ServiceAccountTokenPodNodeInfo must be enabled
+    - expression: variables.userNodeName == variables.objectNodeName
+      messageExpression: >-
+        "this user running on node '"+variables.userNodeName+"' may not modify " +
+        (variables.objectNodeName == "" ?"cluster resourceslices" : "resourceslices on node '"+variables.objectNodeName+"'")
+---
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingAdmissionPolicyBinding
+metadata:
+  name: resourceslices-policy-dra-kubelet-plugin-gpu
+spec:
+  policyName: resourceslices-policy-dra-kubelet-plugin-gpu
+  validationActions: [Deny]
