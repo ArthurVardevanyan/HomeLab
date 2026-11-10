@@ -1,0 +1,46 @@
+---
+apiVersion: admissionregistration.k8s.io/v1
+kind: MutatingAdmissionPolicy
+metadata:
+  name: map-tekton-pipelines-controller
+spec:
+  reinvocationPolicy: Never
+  failurePolicy: Fail
+  matchConditions:
+    - expression: >-
+        'app.kubernetes.io/component' in object.metadata.labels && object.metadata.labels['app.kubernetes.io/component'] == 'controller' &&
+        'app.kubernetes.io/instance' in object.metadata.labels && object.metadata.labels['app.kubernetes.io/instance'] == 'default' &&
+        'app.kubernetes.io/name' in object.metadata.labels && object.metadata.labels['app.kubernetes.io/name'] == 'controller' &&
+        'app.kubernetes.io/part-of' in object.metadata.labels && object.metadata.labels['app.kubernetes.io/part-of'] == 'tekton-pipelines'
+      name: label-matches
+  matchConstraints:
+    matchPolicy: Equivalent
+    namespaceSelector: {}
+    objectSelector: {}
+    resourceRules:
+      - apiGroups:
+          - apps
+        apiVersions:
+          - v1
+        operations:
+          - CREATE
+          - UPDATE
+        resources:
+          - deployments
+        scope: Namespaced
+  mutations:
+    - jsonPatch:
+        expression: >-
+          object.spec.template.spec.containers
+            .filter(c, c.name == 'tekton-pipelines-controller')
+            .map(c, JSONPatch{
+              op: 'add',
+              path: '/spec/template/spec/containers/' +
+                string(object.spec.template.spec.containers.indexOf(c)) +
+                '/resources',
+              value: {
+                "limits": {"cpu": '250m', "memory": '256Mi'},
+                "requests": {"cpu": '25m', "memory": '192Mi'}
+              }
+            })
+      patchType: JSONPatch

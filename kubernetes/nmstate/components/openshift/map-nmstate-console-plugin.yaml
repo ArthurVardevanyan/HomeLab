@@ -1,0 +1,42 @@
+---
+apiVersion: admissionregistration.k8s.io/v1
+kind: MutatingAdmissionPolicy
+metadata:
+  name: map-nmstate-console-plugin
+  annotations:
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+spec:
+  reinvocationPolicy: Never
+  failurePolicy: Fail
+  matchConditions:
+    - expression: >-
+        has(object.spec.containers)
+      name: has-containers
+  matchConstraints:
+    matchPolicy: Equivalent
+    namespaceSelector: {}
+    objectSelector: {}
+    resourceRules:
+      - apiGroups:
+          - ""
+        apiVersions:
+          - v1
+        operations:
+          - CREATE
+          - UPDATE
+        resources:
+          - pods
+        scope: Namespaced
+  mutations:
+    - jsonPatch:
+        expression: >-
+          object.spec.containers
+            .filter(c, c.image == 'quay.io/nmstate/nmstate-console-plugin:release-1.0.0')
+            .map(c, JSONPatch{
+              op: 'replace',
+              path: '/spec/containers/' +
+                string(object.spec.containers.indexOf(c)) +
+                '/image',
+              value: 'quay.io/nmstate/nmstate-console-plugin:release-1.0.0@sha256:34b2ba0a80bec7f74c3b5c5f0e4900ed0c9be1cd0ef28ee0ffdc3bcb5e7fe793'
+            })
+      patchType: JSONPatch

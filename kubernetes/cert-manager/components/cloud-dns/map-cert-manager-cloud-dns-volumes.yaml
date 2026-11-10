@@ -1,0 +1,79 @@
+---
+apiVersion: admissionregistration.k8s.io/v1
+kind: MutatingAdmissionPolicy
+metadata:
+  name: map-cert-manager-cloud-dns-volumes
+  annotations:
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+spec:
+  reinvocationPolicy: Never
+  failurePolicy: Fail
+  matchConditions:
+    - expression: >-
+        'app' in object.metadata.labels &&
+        object.metadata.labels['app'] == 'cert-manager'
+      name: matches-label
+    - expression: >-
+        has(object.spec.template) &&
+        has(object.spec.template.spec) &&
+        has(object.spec.template.spec.containers)
+      name: has-containers
+  matchConstraints:
+    matchPolicy: Equivalent
+    namespaceSelector: {}
+    objectSelector: {}
+    resourceRules:
+      - apiGroups:
+          - apps
+        apiVersions:
+          - v1
+        operations:
+          - CREATE
+          - UPDATE
+        resources:
+          - deployments
+        scope: Namespaced
+  mutations:
+    - jsonPatch:
+        expression: >-
+          object.spec.template.spec.containers.exists(c, c.name == 'cert-manager-controller' && !has(c.volumeMounts))
+          ? [
+              JSONPatch{op: 'add', path: '/spec/template/spec/containers/' + string(object.spec.template.spec.containers.indexOf(object.spec.template.spec.containers.filter(c, c.name == 'cert-manager-controller')[0])) + '/volumeMounts', value: []},
+              JSONPatch{op: 'add', path: '/spec/template/spec/containers/' + string(object.spec.template.spec.containers.indexOf(object.spec.template.spec.containers.filter(c, c.name == 'cert-manager-controller')[0])) + '/volumeMounts/0', value: {"mountPath": '/var/run/secrets/google', "name": 'gcp-credentials-request'}},
+              JSONPatch{op: 'add', path: '/spec/template/spec/containers/' + string(object.spec.template.spec.containers.indexOf(object.spec.template.spec.containers.filter(c, c.name == 'cert-manager-controller')[0])) + '/volumeMounts/0/readOnly', value: true},
+              JSONPatch{op: 'add', path: '/spec/template/spec/containers/' + string(object.spec.template.spec.containers.indexOf(object.spec.template.spec.containers.filter(c, c.name == 'cert-manager-controller')[0])) + '/volumeMounts/1', value: {"mountPath": '/var/run/secrets/openshift/serviceaccount', "name": 'serviceaccount-token'}},
+              JSONPatch{op: 'add', path: '/spec/template/spec/containers/' + string(object.spec.template.spec.containers.indexOf(object.spec.template.spec.containers.filter(c, c.name == 'cert-manager-controller')[0])) + '/volumeMounts/1/readOnly', value: true}
+            ]
+          : []
+      patchType: JSONPatch
+    - jsonPatch:
+        expression: >-
+          !has(object.spec.template.spec.volumes)
+          ? [
+              JSONPatch{op: 'add', path: '/spec/template/spec/volumes', value: []},
+              JSONPatch{op: 'add', path: '/spec/template/spec/volumes/0', value: {"name": 'gcp-credentials-request'}},
+              JSONPatch{op: 'add', path: '/spec/template/spec/volumes/0/configMap', value: {}},
+              JSONPatch{op: 'add', path: '/spec/template/spec/volumes/0/configMap/name', value: 'gcp-credentials-request'},
+              JSONPatch{op: 'add', path: '/spec/template/spec/volumes/0/configMap/defaultMode', value: 420},
+              JSONPatch{op: 'add', path: '/spec/template/spec/volumes/1', value: {"name": 'serviceaccount-token'}},
+              JSONPatch{op: 'add', path: '/spec/template/spec/volumes/1/projected', value: {}},
+              JSONPatch{op: 'add', path: '/spec/template/spec/volumes/1/projected/defaultMode', value: 420},
+              JSONPatch{op: 'add', path: '/spec/template/spec/volumes/1/projected/sources', value: [{}]},
+              JSONPatch{op: 'add', path: '/spec/template/spec/volumes/1/projected/sources/0/serviceAccountToken', value: {"audience": 'openshift', "path": 'token'}},
+              JSONPatch{op: 'add', path: '/spec/template/spec/volumes/1/projected/sources/0/serviceAccountToken/expirationSeconds', value: 3600}
+            ]
+          : !object.spec.template.spec.volumes.exists(v, has(v.name) && v.name == 'gcp-credentials-request')
+            ? [
+                JSONPatch{op: 'add', path: '/spec/template/spec/volumes/' + string(object.spec.template.spec.volumes.size()), value: {"name": 'gcp-credentials-request'}},
+                JSONPatch{op: 'add', path: '/spec/template/spec/volumes/' + string(object.spec.template.spec.volumes.size()) + '/configMap', value: {}},
+                JSONPatch{op: 'add', path: '/spec/template/spec/volumes/' + string(object.spec.template.spec.volumes.size()) + '/configMap/name', value: 'gcp-credentials-request'},
+                JSONPatch{op: 'add', path: '/spec/template/spec/volumes/' + string(object.spec.template.spec.volumes.size()) + '/configMap/defaultMode', value: 420},
+                JSONPatch{op: 'add', path: '/spec/template/spec/volumes/' + string(object.spec.template.spec.volumes.size() + 1), value: {"name": 'serviceaccount-token'}},
+                JSONPatch{op: 'add', path: '/spec/template/spec/volumes/' + string(object.spec.template.spec.volumes.size() + 1) + '/projected', value: {}},
+                JSONPatch{op: 'add', path: '/spec/template/spec/volumes/' + string(object.spec.template.spec.volumes.size() + 1) + '/projected/defaultMode', value: 420},
+                JSONPatch{op: 'add', path: '/spec/template/spec/volumes/' + string(object.spec.template.spec.volumes.size() + 1) + '/projected/sources', value: [{}]},
+                JSONPatch{op: 'add', path: '/spec/template/spec/volumes/' + string(object.spec.template.spec.volumes.size() + 1) + '/projected/sources/0/serviceAccountToken', value: {"audience": 'openshift', "path": 'token'}},
+                JSONPatch{op: 'add', path: '/spec/template/spec/volumes/' + string(object.spec.template.spec.volumes.size() + 1) + '/projected/sources/0/serviceAccountToken/expirationSeconds', value: 3600}
+              ]
+            : []
+      patchType: JSONPatch

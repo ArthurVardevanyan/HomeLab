@@ -1,0 +1,42 @@
+---
+apiVersion: admissionregistration.k8s.io/v1
+kind: MutatingAdmissionPolicy
+metadata:
+  name: map-tekton-hpa
+spec:
+  reinvocationPolicy: Never
+  failurePolicy: Fail
+  matchConditions:
+    - expression: >-
+        object.kind == 'HorizontalPodAutoscaler' &&
+        object.metadata.name == 'tekton-pipelines-webhook'
+      name: matches-hpa
+  matchConstraints:
+    matchPolicy: Equivalent
+    namespaceSelector: {}
+    objectSelector: {}
+    resourceRules:
+      - apiGroups:
+          - autoscaling
+        apiVersions:
+          - v2
+        operations:
+          - CREATE
+          - UPDATE
+        resources:
+          - horizontalpodautoscalers
+        scope: Namespaced
+  mutations:
+    - jsonPatch:
+        expression: >-
+          [
+            JSONPatch{op: 'add', path: '/spec/minReplicas', value: 2},
+            JSONPatch{op: 'add', path: '/spec/metrics', value: []},
+            JSONPatch{op: 'add', path: '/spec/metrics/0', value: {"type": 'Resource'}},
+            JSONPatch{op: 'add', path: '/spec/metrics/0/resource', value: {}},
+            JSONPatch{op: 'add', path: '/spec/metrics/0/resource/name', value: 'cpu'},
+            JSONPatch{op: 'add', path: '/spec/metrics/0/resource/target', value: {}},
+            JSONPatch{op: 'add', path: '/spec/metrics/0/resource/target/type', value: 'Utilization'},
+            JSONPatch{op: 'add', path: '/spec/metrics/0/resource/target/averageUtilization', value: 150}
+          ]
+      patchType: JSONPatch

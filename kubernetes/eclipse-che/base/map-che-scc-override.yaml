@@ -1,0 +1,41 @@
+---
+apiVersion: admissionregistration.k8s.io/v1
+kind: MutatingAdmissionPolicy
+metadata:
+  name: map-che-scc-override
+spec:
+  reinvocationPolicy: Never
+  failurePolicy: Fail
+  matchConditions:
+    - expression: >-
+        object.kind == 'Pod'
+      name: matches-pod
+  matchConstraints:
+    matchPolicy: Equivalent
+    namespaceSelector: {}
+    objectSelector: {}
+    resourceRules:
+      - apiGroups:
+          - ""
+        apiVersions:
+          - v1
+        operations:
+          - CREATE
+          - UPDATE
+        resources:
+          - pods
+        scope: Namespaced
+  mutations:
+    - jsonPatch:
+        expression: >-
+          has(object.metadata.annotations)
+          ? [
+              JSONPatch{op: 'add', path: '/metadata/annotations/openshift.io~1required-scc', value: 'restricted-v2'},
+              JSONPatch{op: 'add', path: '/metadata/annotations/openshift.io~1scc', value: 'restricted-v2'}
+            ]
+          : [
+              JSONPatch{op: 'add', path: '/metadata/annotations', value: {}},
+              JSONPatch{op: 'add', path: '/metadata/annotations/openshift.io~1required-scc', value: 'restricted-v2'},
+              JSONPatch{op: 'add', path: '/metadata/annotations/openshift.io~1scc', value: 'restricted-v2'}
+            ]
+      patchType: JSONPatch
