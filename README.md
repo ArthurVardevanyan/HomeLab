@@ -378,7 +378,6 @@ end
   - **Cert-Manager**: Automated certificate management.
   - **External Secrets**: Syncing secrets from external providers.
   - **Coraza WAF**: Web application firewall.
-  - **Kyverno**: Kubernetes policy engine.
 - **Home Automation**:
   - **Home Assistant**: Central automation hub.
   - **ESPHome**: Microcontroller management.

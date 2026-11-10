@@ -101,14 +101,9 @@ Flow data (when Loki is enabled) is backed by a Rook/Ceph S3 bucket provisioned 
 
 All VPAs use `updateMode: InPlaceOrRecreate`.
 
-### Kyverno Resource Injection
-
-`netobserv-plugin-static` has `resources: {}` in its operator-managed Deployment. A namespaced Kyverno `Policy` in `openshift-netobserv-operator` injects resource requests/limits on admission:
-
-- **Requests**: 5m CPU / 32Mi memory
-- **Limits**: 100m CPU / 128Mi memory
-
-This is required for the VPA to function (VPA needs an existing resource spec to modify).
+`netobserv-plugin-static` has `resources: {}` in its operator-managed Deployment. The
+`map-netobserv` MutatingAdmissionPolicy injects resource requests/limits on admission,
+which is required for the VPA to function (VPA needs an existing resource spec to modify).
 
 ## Network Policies
 
@@ -132,7 +127,6 @@ network-observability/
 │   ├── flow-collector.yaml        # FlowCollector CR (v1beta2)
 │   ├── hpa.yaml                   # HPA for netobserv-plugin-static
 │   ├── installplan-approver.yaml  # Auto-approves manual InstallPlans
-│   ├── kyverno.yaml               # Resource injection for plugin-static
 │   ├── namespace.yaml             # All four namespaces
 │   ├── network-policy.yaml        # Policies for operator + netobserv ns
 │   ├── network-policy-priv.yaml   # Policies for privileged ns
@@ -140,7 +134,6 @@ network-observability/
 │   ├── operator-group.yaml
 │   ├── subscription.yaml          # OLM subscription (v1.11.0, manual)
 │   └── loki/
-│       ├── kyverno.yaml           # Resource limits for all Loki components
 │       ├── network-policy.yaml    # Policies for loki ns
 │       ├── rbac.yaml              # Loki reader/writer ClusterRoles
 │       └── secret.yaml            # Loki S3 credentials

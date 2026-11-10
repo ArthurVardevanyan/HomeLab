@@ -80,12 +80,12 @@ wait_for_install_complete() {
       }
     ')
 
-    if [[ "$result" == "STABLE" ]]; then
+    if [[ "${result}" == "STABLE" ]]; then
       echo "All cluster operators are stable."
       return 0
     fi
 
-    if [[ "$result" == WAITING:* ]]; then
+    if [[ "${result}" == WAITING:* ]]; then
       local count="${result#WAITING:}"
       local minutes=$((elapsed / 60))
       echo "  [${minutes}m/$((timeout / 60))m] ${count} operator(s) still not stable..."
@@ -93,7 +93,7 @@ wait_for_install_complete() {
       echo "  [$((elapsed / 60))m/$((timeout / 60))m] Waiting for operators..."
     fi
 
-    sleep "$interval"
+    sleep "${interval}"
     elapsed=$((elapsed + interval))
   done
 
@@ -104,7 +104,7 @@ wait_for_install_complete() {
     END { print c }
   ')
 
-  if [[ "$result" -eq 0 ]] 2>/dev/null; then
+  if [[ "${result}" -eq 0 ]] 2>/dev/null; then
     echo "Cluster operators stabilized (final check passed)."
     return 0
   fi
@@ -1239,7 +1239,7 @@ install_okd_prep() {
   sed -i "s/<WORKERS>/${TF_VAR_worker_count:-${WORKER_COUNT}}/g" "${OKD}/okd/install-config.yaml"
   local pull_secret=""
   pull_secret=$(printf '%s\n' "${PULL_SECRET}" | tr -d '\n')
-  PULL_SECRET="$pull_secret" python3 -c "
+  PULL_SECRET="${pull_secret}" python3 -c "
 import json, os, sys
 path = sys.argv[1]
 with open(path) as f:
@@ -1640,9 +1640,6 @@ install_addons_okd_virt() {
   while [[ "${mp_count}" -ne 1 ]]; do
     sleep 1
   done
-
-  echo -e "\n${BLUE}Kyverno:${NC}"
-  kubectl kustomize "${HOMELAB}"/kubernetes/kyverno/overlays/okd/ | argocd-vault-plugin generate - | kubectl apply -f - --server-side
 
   echo -e "\n${BLUE}Cert Manager:${NC}"
   local _cm
