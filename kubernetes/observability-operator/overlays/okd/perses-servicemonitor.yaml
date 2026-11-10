@@ -12,6 +12,13 @@ spec:
     - port: http
       interval: 30s
       path: /metrics
+      # The Perses instance managed by the Cluster Observability Operator's
+      # monitoring UIPlugin serves /metrics over HTTPS only (service serving
+      # cert signed by the cluster service CA).
+      scheme: https
+      tlsConfig:
+        caFile: /etc/prometheus/configmaps/serving-certs-ca-bundle/service-ca.crt
+        serverName: perses.observability-operator.svc
   namespaceSelector:
     matchNames:
       - observability-operator
