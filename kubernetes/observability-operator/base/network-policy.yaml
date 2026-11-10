@@ -185,3 +185,57 @@ spec:
       ports:
         - protocol: TCP
           port: 9091
+---
+# perses-operator and the UI plugins call the Perses server API to
+# register projects/datasources/dashboards; without this the deny-all
+# egress rule times out those calls.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-to-perses
+  namespace: observability-operator
+  annotations:
+    argocd.argoproj.io/sync-wave: "0"
+spec:
+  policyTypes:
+    - Egress
+  podSelector: {}
+  egress:
+    - to:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: perses
+              app.kubernetes.io/part-of: perses-operator
+      ports:
+        - protocol: TCP
+          port: 8080
+---
+# The Perses server queries its datasources server-side; the Home
+# Assistant VictoriaMetrics vmselect backend lives in another namespace.
+# (Thanos Querier egress is already covered by allow-to-openshift-monitoring.)
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: perses-to-vmselect
+  namespace: observability-operator
+  annotations:
+    argocd.argoproj.io/sync-wave: "0"
+spec:
+  policyTypes:
+    - Egress
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: perses
+      app.kubernetes.io/part-of: perses-operator
+  egress:
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: homeassistant
+          podSelector:
+            matchLabels:
+              app.kubernetes.io/name: vmselect
+              app.kubernetes.io/instance: homeassistant
+      ports:
+        - protocol: TCP
+          port: 8481
