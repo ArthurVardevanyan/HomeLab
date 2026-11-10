@@ -1,0 +1,40 @@
+---
+apiVersion: admissionregistration.k8s.io/v1
+kind: MutatingAdmissionPolicy
+metadata:
+  name: map-quay-mutate-tls-to-ssl
+spec:
+  reinvocationPolicy: Never
+  failurePolicy: Fail
+  matchConditions:
+    - expression: >-
+        object.kind == 'Secret' &&
+        object.metadata.name == 'quay-config-bundle'
+      name: matches-secret
+  matchConstraints:
+    matchPolicy: Equivalent
+    namespaceSelector: {}
+    objectSelector: {}
+    resourceRules:
+      - apiGroups:
+          - ""
+        apiVersions:
+          - v1
+        operations:
+          - CREATE
+          - UPDATE
+        resources:
+          - secrets
+        scope: Namespaced
+  mutations:
+    - jsonPatch:
+        expression: >-
+          has(object.data) &&
+          has(object.data['tls.crt']) &&
+          has(object.data['tls.key'])
+          ? [
+              JSONPatch{op: 'add', path: '/data/ssl.cert', value: object.data['tls.crt']},
+              JSONPatch{op: 'add', path: '/data/ssl.key', value: object.data['tls.key']}
+            ]
+          : []
+      patchType: JSONPatch

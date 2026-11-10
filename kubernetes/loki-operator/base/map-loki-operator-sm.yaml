@@ -1,0 +1,41 @@
+---
+apiVersion: admissionregistration.k8s.io/v1
+kind: MutatingAdmissionPolicy
+metadata:
+  name: map-loki-operator-sm
+spec:
+  reinvocationPolicy: Never
+  failurePolicy: Fail
+  matchConditions:
+    - expression: >-
+        object.kind == 'ServiceMonitor' &&
+        object.metadata.name == 'loki-operator-metrics-monitor'
+      name: matches-sm
+  matchConstraints:
+    matchPolicy: Equivalent
+    namespaceSelector: {}
+    objectSelector: {}
+    resourceRules:
+      - apiGroups:
+          - monitori.ng.oprator.openshift.io
+        apiVersions:
+          - v1
+        operations:
+          - CREATE
+          - UPDATE
+        resources:
+          - servicemonitors
+        scope: Namespaced
+  mutations:
+    - jsonPatch:
+        expression: >-
+          [
+            JSONPatch{op: 'add', path: '/spec/endpoints/0/authorization', value: {type: 'bearer', credentials: {key: 'token', name: 'loki-operator-controller-manager-metrics-token'}}},
+            JSONPatch{op: 'add', path: '/spec/endpoints/0/interval', value: '30s'},
+            JSONPatch{op: 'add', path: '/spec/endpoints/0/path', value: '/metrics'},
+            JSONPatch{op: 'add', path: '/spec/endpoints/0/scheme', value: 'https'},
+            JSONPatch{op: 'add', path: '/spec/endpoints/0/scrapeTimeout', value: '10s'},
+            JSONPatch{op: 'add', path: '/spec/endpoints/0/targetPort', value: 8443},
+            JSONPatch{op: 'add', path: '/spec/endpoints/0/tlsConfig', value: {ca: {secret: {key: 'service-ca.crt', name: 'loki-operator-controller-manager-metrics-token'}}, serverName: 'loki-operator-controller-manager-metrics-service.loki-operator.svc'}}
+          ]
+      patchType: JSONPatch

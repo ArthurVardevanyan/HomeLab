@@ -1,0 +1,76 @@
+---
+apiVersion: admissionregistration.k8s.io/v1
+kind: MutatingAdmissionPolicy
+metadata:
+  name: map-cert-manager-cloud-dns-volumes
+spec:
+  reinvocationPolicy: Never
+  failurePolicy: Fail
+  matchConditions:
+    - expression: >-
+        has(object.metadata.labels) &&
+        object.metadata.labels['app'] == 'cert-manager'
+      name: matches-label
+    - expression: >-
+        has(object.spec.template) &&
+        has(object.spec.template.spec) &&
+        has(object.spec.template.spec.containers)
+      name: has-containers
+  matchConstraints:
+    matchPolicy: Equivalent
+    namespaceSelector: {}
+    objectSelector: {}
+    resourceRules:
+      - apiGroups:
+          - apps
+        apiVersions:
+          - v1
+        operations:
+          - CREATE
+          - UPDATE
+        resources:
+          - deployments
+        scope: Namespaced
+  mutations:
+    - jsonPatch:
+        expression: >-
+          (
+            object.spec.template.spec.containers
+              .filter(c, c.name == 'cert-manager-controller' && !has(c.volumeMounts))
+              .map(c, JSONPatch{
+                op: 'add',
+                path: '/spec/template/spec/containers/' +
+                  string(object.spec.template.spec.containers.indexOf(c)) +
+                  '/volumeMounts',
+                value: [
+                  {name: 'gcp-credentials-request', readOnly: true, mountPath: '/var/run/secrets/google'},
+                  {name: 'serviceaccount-token', readOnly: true, mountPath: '/var/run/secrets/openshift/serviceaccount'}
+                ]
+              })
+            ),
+            (
+              !has(object.spec.template.spec.volumes)
+              ? [
+                  JSONPatch{
+                    op: 'add',
+                    path: '/spec/template/spec/volumes',
+                    value: [
+                      {name: 'gcp-credentials-request', configMap: {name: 'gcp-credentials-request', defaultMode: 420}},
+                      {name: 'serviceaccount-token', projected: {sources: [{serviceAccountToken: {audience: 'openshift', expirationSeconds: 3600, path: 'token'}}], defaultMode: 420}}
+                    ]
+                  }
+                ]
+              : [
+                  JSONPatch{
+                    op: 'add',
+                    path: '/spec/template/spec/volumes/0',
+                    value: {name: 'gcp-credentials-request', configMap: {name: 'gcp-credentials-request', defaultMode: 420}}
+                  },
+                  JSONPatch{
+                    op: 'add',
+                    path: '/spec/template/spec/volumes/0',
+                    value: {name: 'serviceaccount-token', projected: {sources: [{serviceAccountToken: {audience: 'openshift', expirationSeconds: 3600, path: 'token'}}], defaultMode: 420}}
+                  }
+                ]
+            )
+      patchType: JSONPatch
