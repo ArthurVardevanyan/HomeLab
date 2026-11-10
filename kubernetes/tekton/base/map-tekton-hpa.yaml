@@ -29,5 +29,14 @@ spec:
   mutations:
     - jsonPatch:
         expression: >-
-          [JSONPatch{op: 'add', path: '/spec/minReplicas', value: 2}]
+          [
+            JSONPatch{op: 'add', path: '/spec/minReplicas', value: 2},
+            JSONPatch{op: 'add', path: '/spec/metrics', value: []},
+            JSONPatch{op: 'add', path: '/spec/metrics/0', value: {"type": 'Resource'}},
+            JSONPatch{op: 'add', path: '/spec/metrics/0/resource', value: {}},
+            JSONPatch{op: 'add', path: '/spec/metrics/0/resource/name', value: 'cpu'},
+            JSONPatch{op: 'add', path: '/spec/metrics/0/resource/target', value: {}},
+            JSONPatch{op: 'add', path: '/spec/metrics/0/resource/target/type', value: 'Utilization'},
+            JSONPatch{op: 'add', path: '/spec/metrics/0/resource/target/averageUtilization', value: 150}
+          ]
       patchType: JSONPatch

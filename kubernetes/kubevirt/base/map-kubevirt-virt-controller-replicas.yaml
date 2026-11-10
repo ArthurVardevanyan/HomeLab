@@ -8,8 +8,7 @@ spec:
   failurePolicy: Fail
   matchConditions:
     - expression: >-
-        has(object.metadata.labels) &&
-        object.metadata.labels['kubevirt.io'] == 'virt-controller'
+        'kubevirt.io' in object.metadata.labels && object.metadata.labels['kubevirt.io'] == 'virt-controller'
       name: matches-label
   matchConstraints:
     matchPolicy: Equivalent

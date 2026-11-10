@@ -8,16 +8,20 @@ spec:
   failurePolicy: Fail
   matchConditions:
     - expression: >-
-        object.kind == 'ServiceMonitor' &&
-        object.metadata.name == 'loki-operator-metrics-monitor'
-      name: matches-sm
+        'app.kubernetes.io/name' in object.metadata.labels &&
+        object.metadata.labels['app.kubernetes.io/name'] == 'loki-operator' &&
+        'app.kubernetes.io/part-of' in object.metadata.labels &&
+        object.metadata.labels['app.kubernetes.io/part-of'] == 'loki-operator' &&
+        'app.kubernetes.io/managed-by' in object.metadata.labels &&
+        object.metadata.labels['app.kubernetes.io/managed-by'] == 'operator-lifecycle-manager'
+      name: matches-sm-labels
   matchConstraints:
     matchPolicy: Equivalent
     namespaceSelector: {}
     objectSelector: {}
     resourceRules:
       - apiGroups:
-          - monitori.ng.oprator.openshift.io
+          - monitoring.coreos.com
         apiVersions:
           - v1
         operations:
@@ -30,12 +34,16 @@ spec:
     - jsonPatch:
         expression: >-
           [
-            JSONPatch{op: 'add', path: '/spec/endpoints/0/authorization', value: {type: 'bearer', credentials: {key: 'token', name: 'loki-operator-controller-manager-metrics-token'}}},
+            JSONPatch{op: 'add', path: '/spec/endpoints/0/authorization', value: {}},
+            JSONPatch{op: 'add', path: '/spec/endpoints/0/authorization/type', value: 'bearer'},
+            JSONPatch{op: 'add', path: '/spec/endpoints/0/authorization/credentials', value: {"key": 'token', "name": 'loki-operator-controller-manager-metrics-token'}},
             JSONPatch{op: 'add', path: '/spec/endpoints/0/interval', value: '30s'},
             JSONPatch{op: 'add', path: '/spec/endpoints/0/path', value: '/metrics'},
             JSONPatch{op: 'add', path: '/spec/endpoints/0/scheme', value: 'https'},
             JSONPatch{op: 'add', path: '/spec/endpoints/0/scrapeTimeout', value: '10s'},
             JSONPatch{op: 'add', path: '/spec/endpoints/0/targetPort', value: 8443},
-            JSONPatch{op: 'add', path: '/spec/endpoints/0/tlsConfig', value: {ca: {secret: {key: 'service-ca.crt', name: 'loki-operator-controller-manager-metrics-token'}}, serverName: 'loki-operator-controller-manager-metrics-service.loki-operator.svc'}}
+            JSONPatch{op: 'add', path: '/spec/endpoints/0/tlsConfig', value: {}},
+            JSONPatch{op: 'add', path: '/spec/endpoints/0/tlsConfig/ca', value: {"secret": {"key": 'service-ca.crt', "name": 'loki-operator-controller-manager-metrics-token'}}},
+            JSONPatch{op: 'add', path: '/spec/endpoints/0/tlsConfig/serverName', value: 'loki-operator-controller-manager-metrics-service.loki-operator.svc'}
           ]
       patchType: JSONPatch

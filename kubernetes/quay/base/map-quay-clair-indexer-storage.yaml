@@ -29,25 +29,14 @@ spec:
   mutations:
     - jsonPatch:
         expression: >-
-          object.spec.template.spec.volumes
-            .filter(v, v.name == 'indexer-layer-storage')
-            .map(v, JSONPatch{
-              op: 'replace',
-              path: '/spec/template/spec/volumes/' +
-                string(object.spec.template.spec.volumes.indexOf(v)),
-              value: {
-                "ephemeral": {
-                  "volumeClaimTemplate": {
-                    "metadata": {},
-                    "spec": {
-                      "accessModes": ["ReadWriteOnce"],
-                      "resources": {"requests": {"storage": "50Gi"}},
-                      "storageClassName": "rook-ceph-block-ci",
-                      "volumeMode": "Filesystem"
-                    }
-                  }
-                },
-                "name": "indexer-layer-storage"
-              }
-            })
+          object.spec.template.spec.volumes.exists(v, v.name == 'indexer-layer-storage' && !has(v.ephemeral))
+          ? [
+              JSONPatch{op: 'add', path: '/spec/template/spec/volumes/' + string(object.spec.template.spec.volumes.indexOf(object.spec.template.spec.volumes.filter(v, v.name == 'indexer-layer-storage')[0])) + '/ephemeral', value: {}},
+              JSONPatch{op: 'add', path: '/spec/template/spec/volumes/' + string(object.spec.template.spec.volumes.indexOf(object.spec.template.spec.volumes.filter(v, v.name == 'indexer-layer-storage')[0])) + '/ephemeral/volumeClaimTemplate', value: {}},
+              JSONPatch{op: 'add', path: '/spec/template/spec/volumes/' + string(object.spec.template.spec.volumes.indexOf(object.spec.template.spec.volumes.filter(v, v.name == 'indexer-layer-storage')[0])) + '/ephemeral/volumeClaimTemplate/spec', value: {}},
+              JSONPatch{op: 'add', path: '/spec/template/spec/volumes/' + string(object.spec.template.spec.volumes.indexOf(object.spec.template.spec.volumes.filter(v, v.name == 'indexer-layer-storage')[0])) + '/ephemeral/volumeClaimTemplate/spec/resources', value: {}},
+              JSONPatch{op: 'add', path: '/spec/template/spec/volumes/' + string(object.spec.template.spec.volumes.indexOf(object.spec.template.spec.volumes.filter(v, v.name == 'indexer-layer-storage')[0])) + '/ephemeral/volumeClaimTemplate/spec/resources/requests', value: {"storage": "50Gi"}},
+              JSONPatch{op: 'add', path: '/spec/template/spec/volumes/' + string(object.spec.template.spec.volumes.indexOf(object.spec.template.spec.volumes.filter(v, v.name == 'indexer-layer-storage')[0])) + '/ephemeral/volumeClaimTemplate/spec/storageClassName', value: 'rook-ceph-block-ci'}
+            ]
+          : []
       patchType: JSONPatch

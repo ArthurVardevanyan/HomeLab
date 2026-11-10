@@ -3,12 +3,14 @@ apiVersion: admissionregistration.k8s.io/v1
 kind: MutatingAdmissionPolicy
 metadata:
   name: map-cert-manager-cloud-dns-env
+  annotations:
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
 spec:
   reinvocationPolicy: Never
   failurePolicy: Fail
   matchConditions:
     - expression: >-
-        has(object.metadata.labels) &&
+        'app' in object.metadata.labels &&
         object.metadata.labels['app'] == 'cert-manager'
       name: matches-label
     - expression: >-
@@ -42,7 +44,25 @@ spec:
                 path: '/spec/template/spec/containers/' +
                   string(object.spec.template.spec.containers.indexOf(c)) +
                   '/env',
-                value: [{name: 'GOOGLE_APPLICATION_CREDENTIALS', value: '/var/run/secrets/google/credentials_config.json'}]
+                value: [{"name": 'GOOGLE_APPLICATION_CREDENTIALS', "value": '/var/run/secrets/google/credentials_config.json'}]
+              })
+            )
+      patchType: JSONPatch
+    - jsonPatch:
+        expression: >-
+          (
+            object.spec.template.spec.containers
+              .filter(c,
+                c.name == 'cert-manager-controller'
+                && has(c.env)
+                && !c.env.exists(e, has(e.name) && e.name == 'GOOGLE_APPLICATION_CREDENTIALS')
+              )
+              .map(c, JSONPatch{
+                op: 'add',
+                path: '/spec/template/spec/containers/' +
+                  string(object.spec.template.spec.containers.indexOf(c)) +
+                  '/env/' + string(c.env.size()),
+                value: {"name": 'GOOGLE_APPLICATION_CREDENTIALS', "value": '/var/run/secrets/google/credentials_config.json'}
               })
             )
       patchType: JSONPatch

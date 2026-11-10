@@ -8,10 +8,9 @@ spec:
   failurePolicy: Fail
   matchConditions:
     - expression: >-
-        has(object.metadata.labels) &&
-        object.metadata.labels['app.kubernetes.io/managed-by'] == 'operator-lifecycle-manager' &&
-        object.metadata.labels['app.kubernetes.io/name'] == 'loki-operator' &&
-        object.metadata.labels['app.kubernetes.io/part-of'] == 'loki-operator'
+        'app.kubernetes.io/managed-by' in object.metadata.labels && object.metadata.labels['app.kubernetes.io/managed-by'] == 'operator-lifecycle-manager' &&
+        'app.kubernetes.io/name' in object.metadata.labels && object.metadata.labels['app.kubernetes.io/name'] == 'loki-operator' &&
+        'app.kubernetes.io/part-of' in object.metadata.labels && object.metadata.labels['app.kubernetes.io/part-of'] == 'loki-operator'
       name: matches-labels
   matchConstraints:
     matchPolicy: Equivalent
@@ -19,7 +18,7 @@ spec:
     objectSelector: {}
     resourceRules:
       - apiGroups:
-          - monitori.ng.oprator.openshift.io
+          - monitoring.coreos.com
         apiVersions:
           - v1
         operations:

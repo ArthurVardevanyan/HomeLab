@@ -3,6 +3,8 @@ apiVersion: admissionregistration.k8s.io/v1
 kind: MutatingAdmissionPolicy
 metadata:
   name: map-nmstate-handler
+  annotations:
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
 spec:
   reinvocationPolicy: Never
   failurePolicy: Fail

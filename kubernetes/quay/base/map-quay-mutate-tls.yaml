@@ -11,6 +11,9 @@ spec:
         object.kind == 'Secret' &&
         object.metadata.name == 'quay-config-bundle'
       name: matches-secret
+    - expression: >-
+        request.userInfo.username == 'system:serviceaccount:cert-manager:cert-manager'
+      name: matches-cert-manager-sa
   matchConstraints:
     matchPolicy: Equivalent
     namespaceSelector: {}
@@ -30,8 +33,8 @@ spec:
     - jsonPatch:
         expression: >-
           has(object.data) &&
-          has(object.data['tls.crt']) &&
-          has(object.data['tls.key'])
+          'tls.crt' in object.data &&
+          'tls.key' in object.data
           ? [
               JSONPatch{op: 'add', path: '/data/ssl.cert', value: object.data['tls.crt']},
               JSONPatch{op: 'add', path: '/data/ssl.key', value: object.data['tls.key']}

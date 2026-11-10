@@ -8,11 +8,10 @@ spec:
   failurePolicy: Fail
   matchConditions:
     - expression: >-
-        has(object.metadata.labels) &&
-        object.metadata.labels['app.kubernetes.io/component'] == 'controller' &&
-        object.metadata.labels['app.kubernetes.io/instance'] == 'default' &&
-        object.metadata.labels['app.kubernetes.io/name'] == 'controller' &&
-        object.metadata.labels['app.kubernetes.io/part-of'] == 'tekton-pipelines'
+        'app.kubernetes.io/component' in object.metadata.labels && object.metadata.labels['app.kubernetes.io/component'] == 'controller' &&
+        'app.kubernetes.io/instance' in object.metadata.labels && object.metadata.labels['app.kubernetes.io/instance'] == 'default' &&
+        'app.kubernetes.io/name' in object.metadata.labels && object.metadata.labels['app.kubernetes.io/name'] == 'controller' &&
+        'app.kubernetes.io/part-of' in object.metadata.labels && object.metadata.labels['app.kubernetes.io/part-of'] == 'tekton-pipelines'
       name: label-matches
   matchConstraints:
     matchPolicy: Equivalent

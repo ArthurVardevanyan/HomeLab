@@ -8,9 +8,8 @@ spec:
   failurePolicy: Fail
   matchConditions:
     - expression: >-
-        has(object.metadata.labels) &&
-        object.metadata.labels['app.kubernetes.io/component'] == 'ingester' &&
-        object.metadata.labels['app.kubernetes.io/created-by'] == 'lokistack-controller'
+        'app.kubernetes.io/component' in object.metadata.labels && object.metadata.labels['app.kubernetes.io/component'] == 'ingester' &&
+        'app.kubernetes.io/created-by' in object.metadata.labels && object.metadata.labels['app.kubernetes.io/created-by'] == 'lokistack-controller'
       name: matches-labels
   matchConstraints:
     matchPolicy: Equivalent
@@ -42,4 +41,40 @@ spec:
                 "requests": {"cpu": '25m', "memory": '6Gi'}
               }
             })
+      patchType: JSONPatch
+    - jsonPatch:
+        expression: |-
+          [
+          JSONPatch{op: 'add', path: '/spec/volumeClaimTemplates', value: []},
+          JSONPatch{op: 'add', path: '/spec/volumeClaimTemplates/0', value: {"apiVersion": 'v1', "kind": 'PersistentVolumeClaim'}},
+          JSONPatch{op: 'add', path: '/spec/volumeClaimTemplates/0/metadata', value: {}},
+          JSONPatch{op: 'add', path: '/spec/volumeClaimTemplates/0/metadata/name', value: 'storage'},
+          JSONPatch{op: 'add', path: '/spec/volumeClaimTemplates/0/metadata/labels', value: {}},
+          JSONPatch{op: 'add', path: '/spec/volumeClaimTemplates/0/metadata/labels/app.kubernetes.io~1component', value: 'ingester'},
+          JSONPatch{op: 'add', path: '/spec/volumeClaimTemplates/0/metadata/labels/app.kubernetes.io~1created-by', value: 'lokistack-controller'},
+          JSONPatch{op: 'add', path: '/spec/volumeClaimTemplates/0/metadata/labels/app.kubernetes.io~1instance', value: 'logging-loki'},
+          JSONPatch{op: 'add', path: '/spec/volumeClaimTemplates/0/metadata/labels/app.kubernetes.io~1managed-by', value: 'lokistack-controller'},
+          JSONPatch{op: 'add', path: '/spec/volumeClaimTemplates/0/metadata/labels/app.kubernetes.io~1name', value: 'lokistack'},
+          JSONPatch{op: 'add', path: '/spec/volumeClaimTemplates/0/spec', value: {}},
+          JSONPatch{op: 'add', path: '/spec/volumeClaimTemplates/0/spec/accessModes', value: ['ReadWriteOnce']},
+          JSONPatch{op: 'add', path: '/spec/volumeClaimTemplates/0/spec/resources', value: {}},
+          JSONPatch{op: 'add', path: '/spec/volumeClaimTemplates/0/spec/resources/requests', value: {"storage": '3Gi'}},
+          JSONPatch{op: 'add', path: '/spec/volumeClaimTemplates/0/spec/storageClassName', value: 'rook-ceph-block-ci'},
+          JSONPatch{op: 'add', path: '/spec/volumeClaimTemplates/0/spec/volumeMode', value: 'Filesystem'},
+          JSONPatch{op: 'add', path: '/spec/volumeClaimTemplates/1', value: {"apiVersion": 'v1', "kind": 'PersistentVolumeClaim'}},
+          JSONPatch{op: 'add', path: '/spec/volumeClaimTemplates/1/metadata', value: {}},
+          JSONPatch{op: 'add', path: '/spec/volumeClaimTemplates/1/metadata/name', value: 'wal'},
+          JSONPatch{op: 'add', path: '/spec/volumeClaimTemplates/1/metadata/labels', value: {}},
+          JSONPatch{op: 'add', path: '/spec/volumeClaimTemplates/1/metadata/labels/app.kubernetes.io~1component', value: 'ingester'},
+          JSONPatch{op: 'add', path: '/spec/volumeClaimTemplates/1/metadata/labels/app.kubernetes.io~1created-by', value: 'lokistack-controller'},
+          JSONPatch{op: 'add', path: '/spec/volumeClaimTemplates/1/metadata/labels/app.kubernetes.io~1instance', value: 'logging-loki'},
+          JSONPatch{op: 'add', path: '/spec/volumeClaimTemplates/1/metadata/labels/app.kubernetes.io~1managed-by', value: 'lokistack-controller'},
+          JSONPatch{op: 'add', path: '/spec/volumeClaimTemplates/1/metadata/labels/app.kubernetes.io~1name', value: 'lokistack'},
+          JSONPatch{op: 'add', path: '/spec/volumeClaimTemplates/1/spec', value: {}},
+          JSONPatch{op: 'add', path: '/spec/volumeClaimTemplates/1/spec/accessModes', value: ['ReadWriteOnce']},
+          JSONPatch{op: 'add', path: '/spec/volumeClaimTemplates/1/spec/resources', value: {}},
+          JSONPatch{op: 'add', path: '/spec/volumeClaimTemplates/1/spec/resources/requests', value: {"storage": '50Gi'}},
+          JSONPatch{op: 'add', path: '/spec/volumeClaimTemplates/1/spec/storageClassName', value: 'rook-ceph-block-ci'},
+          JSONPatch{op: 'add', path: '/spec/volumeClaimTemplates/1/spec/volumeMode', value: 'Filesystem'}
+          ]
       patchType: JSONPatch

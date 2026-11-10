@@ -1,0 +1,50 @@
+---
+apiVersion: admissionregistration.k8s.io/v1
+kind: MutatingAdmissionPolicy
+metadata:
+  name: map-kubevirt-linter-annotations
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+spec:
+  reinvocationPolicy: Never
+  failurePolicy: Fail
+  matchConstraints:
+    matchPolicy: Equivalent
+    namespaceSelector: {}
+    objectSelector: {}
+    resourceRules:
+      - apiGroups:
+          - apps
+        apiVersions:
+          - v1
+        operations:
+          - CREATE
+          - UPDATE
+        resources:
+          - deployments
+          - daemonsets
+        scope: Namespaced
+      - apiGroups:
+          - batch
+        apiVersions:
+          - v1
+        operations:
+          - CREATE
+          - UPDATE
+        resources:
+          - cronjobs
+        scope: Namespaced
+  mutations:
+    - jsonPatch:
+        expression: >-
+          has(object.metadata.annotations)
+          ? [
+              JSONPatch{op: 'add', path: '/metadata/annotations/ignore-check.kube-linter.io~1unset-cpu-requirements', value: 'true'},
+              JSONPatch{op: 'add', path: '/metadata/annotations/ignore-check.kube-linter.io~1unset-memory-requirements', value: 'true'}
+            ]
+          : [
+              JSONPatch{op: 'add', path: '/metadata/annotations', value: {}},
+              JSONPatch{op: 'add', path: '/metadata/annotations/ignore-check.kube-linter.io~1unset-cpu-requirements', value: 'true'},
+              JSONPatch{op: 'add', path: '/metadata/annotations/ignore-check.kube-linter.io~1unset-memory-requirements', value: 'true'}
+            ]
+      patchType: JSONPatch
