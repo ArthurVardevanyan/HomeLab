@@ -1,0 +1,103 @@
+---
+# Quay RBAC for cert-sync CronJob
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: quay-cert-sync
+  namespace: quay
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: quay-cert-sync
+  namespace: quay
+rules:
+  - apiGroups: [""]
+    resources: ["secrets"]
+    resourceNames: ["quay-config-bundle"]
+    verbs: ["get", "patch"]
+  - apiGroups: [""]
+    resources: ["secrets"]
+    verbs: ["list", "get"]
+  - apiGroups: ["apps"]
+    resources: ["deployments"]
+    resourceNames: ["quay-quay-app"]
+    verbs: ["patch"]
+  - apiGroups: ["apps"]
+    resources: ["deployments"]
+    verbs: ["get"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: quay-cert-sync
+  namespace: quay
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: quay-cert-sync
+subjects:
+  - kind: ServiceAccount
+    name: quay-cert-sync
+    namespace: quay
+---
+apiVersion: kyverno.io/v1
+kind: Policy
+metadata:
+  name: add-resource-limits
+  namespace: quay
+spec:
+  rules:
+    - name: add-cpu-memory-limits
+      skipBackgroundRequests: true
+      match:
+        resources:
+          kinds:
+            - Deployment
+          selector:
+            matchLabels:
+              quay-component: quay-mirror
+      mutate:
+        patchStrategicMerge:
+          spec:
+            template:
+              spec:
+                initContainers:
+                  - (name): "quay-mirror-init"
+                    resources:
+                      limits:
+                        cpu: 100m
+                        memory: 32Mi
+                      requests:
+                        cpu: 5m
+                        memory: 16Mi
+---
+apiVersion: kyverno.io/v1
+kind: Policy
+metadata:
+  name: override-clair-indexer-storage
+  namespace: quay
+spec:
+  rules:
+    - name: override-indexer-layer-storage
+      skipBackgroundRequests: true
+      match:
+        resources:
+          kinds:
+            - Deployment
+          names:
+            - quay-clair-app
+      mutate:
+        patchStrategicMerge:
+          spec:
+            template:
+              spec:
+                volumes:
+                  - (name): "indexer-layer-storage"
+                    ephemeral:
+                      volumeClaimTemplate:
+                        spec:
+                          resources:
+                            requests:
+                              storage: 50Gi
+                          storageClassName: rook-ceph-block-ci

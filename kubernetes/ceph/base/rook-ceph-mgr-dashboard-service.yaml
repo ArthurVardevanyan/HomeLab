@@ -1,0 +1,25 @@
+---
+# Managed by ArgoCD SSA, merged onto Rook-operator owned Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: rook-ceph-mgr-dashboard
+  namespace: rook-ceph
+  labels:
+    app: rook-ceph-mgr
+    rook_cluster: rook-ceph
+  annotations:
+    service.beta.openshift.io/serving-cert-secret-name: rook-ceph-mgr-dashboard-tls
+spec:
+  clusterIP: 10.101.19.37
+  ports:
+    - name: https-dashboard
+      port: 8443
+      protocol: TCP
+      targetPort: dashboard
+  selector:
+    app: rook-ceph-mgr
+    mgr_role: active
+    rook_cluster: rook-ceph
+  sessionAffinity: None
+  type: ClusterIP
