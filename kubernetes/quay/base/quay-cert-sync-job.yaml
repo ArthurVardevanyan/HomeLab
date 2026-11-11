@@ -1,0 +1,104 @@
+---
+# Syncs the service-CA serving cert (tls.crt/tls.key) into the
+# quay-config-bundle secret under ssl.cert/ssl.key and restarts
+# quay-quay-app so quayside serves the service-CA cert.
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: quay-cert-sync
+  namespace: quay
+  annotations:
+    checkov.io/skip1: CKV_K8S_40=OpenShift Injects Random UID
+    checkov.io/skip2: CKV_K8S_43=Don't Mind Tag for This
+    checkov.io/skip3: CKV_K8S_38=Require Use of Service Account Tokens
+    gitops-ci.k8s.io/exempt-image-checksum: "registry.arthurvardevanyan.com/homelab/toolbox:not_latest"
+spec:
+  schedule: "0 */6 * * *"
+  successfulJobsHistoryLimit: 1
+  failedJobsHistoryLimit: 1
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          serviceAccountName: quay-cert-sync
+          automountServiceAccountToken: true
+          enableServiceLinks: false
+          dnsPolicy: ClusterFirst
+          schedulerName: default-scheduler
+          securityContext:
+            runAsNonRoot: true
+            seccompProfile:
+              type: RuntimeDefault
+          containers:
+            - name: sync
+              image: registry.arthurvardevanyan.com/homelab/toolbox:not_latest
+              command:
+                - /bin/bash
+                - -c
+                - |
+                  set -o errexit -o nounset
+                  SRC_CERT=/var/run/secrets/cert-sync/tls.crt
+                  SRC_KEY=/var/run/secrets/cert-sync/tls.key
+                  # Skip until the service-ca operator issues the serving cert.
+                  if [ ! -s "$SRC_CERT" ] || [ ! -s "$SRC_KEY" ]; then
+                    echo "service-CA cert not available yet, skipping"
+                    exit 0
+                  fi
+                  # Build a merge patch moving the service-CA keys into the
+                  # ssl.cert/ssl.key entries of quay-config-bundle, but only
+                  # when they actually differ from what is already there.
+                  PATCH=$(kubectl get secret quay-config-bundle -n quay -o json | python3 -c "
+                    import json, sys, base64
+                    d = json.load(sys.stdin)
+                    new_cert = open('$SRC_CERT', 'rb').read()
+                    new_key = open('$SRC_KEY', 'rb').read()
+                    cur_cert = base64.b64decode(d['data'].get('ssl.cert', ''))
+                    cur_key = base64.b64decode(d['data'].get('ssl.key', ''))
+                    if (cur_cert, cur_key) == (new_cert, new_key):
+                        print('unchanged')
+                    else:
+                        d['data']['ssl.cert'] = base64.b64encode(new_cert).decode()
+                        d['data']['ssl.key'] = base64.b64encode(new_key).decode()
+                        print(json.dumps({'data': d['data']}))
+                  ")
+                  if [ "$PATCH" = "unchanged" ]; then
+                    echo "service-CA cert already in sync, skipping"
+                    exit 0
+                  fi
+                  kubectl patch secret quay-config-bundle -n quay --type merge -p "$PATCH"
+                  # Restart quay-quay-app so quayside picks up the new cert.
+                  kubectl rollout restart deployment/quay-quay-app -n quay
+              securityContext:
+                allowPrivilegeEscalation: false
+                capabilities:
+                  drop:
+                    - ALL
+                privileged: false
+                readOnlyRootFilesystem: true
+                runAsNonRoot: true
+                seccompProfile:
+                  type: RuntimeDefault
+              resources:
+                limits:
+                  cpu: 100m
+                  memory: 48Mi
+                requests:
+                  cpu: 10m
+                  memory: 24Mi
+              volumeMounts:
+                - mountPath: /var/run/secrets/cert-sync
+                  name: service-ca-cert
+                  readOnly: true
+              imagePullPolicy: IfNotPresent
+          volumes:
+            - name: service-ca-cert
+              secret:
+                secretName: quay-quay-app-tls
+                items:
+                  - key: tls.crt
+                    path: tls.crt
+                  - key: tls.key
+                    path: tls.key
+                optional: true
+          restartPolicy: Never
+          terminationGracePeriodSeconds: 30

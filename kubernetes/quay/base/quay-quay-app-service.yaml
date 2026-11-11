@@ -1,0 +1,42 @@
+---
+# Source: quay-quay-app-service (managed by ArgoCD SSA, merged onto Quay-operator owned Service)
+apiVersion: v1
+kind: Service
+metadata:
+  name: quay-quay-app
+  namespace: quay
+  labels:
+    app: quay
+    quay-component: quay
+    quay-operator/quayregistry: quay
+  annotations:
+    service.beta.openshift.io/serving-cert-secret-name: quay-quay-app-tls
+    # Quay-operator owned Service: the quay-app container does not declare
+    # named container ports, so the numeric targetPorts mirrored from the
+    # live Service spec cannot reference names.
+    gitops-ci.k8s.io/exempt-named-ports: "8443,8080,8081,55443"
+spec:
+  clusterIP: 10.101.19.146
+  ports:
+    - name: https
+      port: 443
+      protocol: TCP
+      targetPort: 8443
+    - name: http
+      port: 80
+      protocol: TCP
+      targetPort: 8080
+    - name: jwtproxy
+      port: 8081
+      protocol: TCP
+      targetPort: 8081
+    - name: grpc
+      port: 55443
+      protocol: TCP
+      targetPort: 55443
+  selector:
+    app: quay
+    quay-component: quay-app
+    quay-operator/quayregistry: quay
+  sessionAffinity: None
+  type: ClusterIP
