@@ -449,11 +449,6 @@ label_nodes() {
   kubectl label node k3s-worker-1 topology.kubernetes.io/zone=infra-kvm --overwrite
   kubectl label node k3s-worker-2 topology.kubernetes.io/zone=kvm --overwrite
 
-  # Longhorn Label
-  kubectl label node k3s-server-1 node.longhorn.io/create-default-disk=true --overwrite
-  kubectl label node k3s-worker-1 node.longhorn.io/create-default-disk=true --overwrite
-  kubectl label node k3s-worker-2 node.longhorn.io/create-default-disk=true --overwrite
-
   # #Drain DaemonSets Temporarily off a Node
   # kubectl taint node k3s-server- node-role.kubernetes.io/control-plane:NoExecute
   # kubectl taint node k3s-server- node-role.kubernetes.io/control-plane:NoExecute-
@@ -613,7 +608,6 @@ label_vms() {
         ZONE="ODD"
       fi
       kubectl label node "${PREFIX}${NODE}" topology.kubernetes.io/zone="${ZONE}" --overwrite
-      kubectl label node "${PREFIX}${NODE}" node.longhorn.io/create-default-disk=true --overwrite
     fi
   done
 
@@ -728,18 +722,6 @@ install_addons() {
   sed -i "s/<URL>/${URL}/g" /tmp/kubernetes/kubernetes-dashboard/kubernetes-dashboard-traefik.yaml
   kubectl apply -f /tmp/kubernetes/kubernetes-dashboard
 
-  echo -e "\n${BLUE}Longhorn:${NC}"
-  kubectl apply -f /tmp/kubernetes/longhorn/longhorn-namespace.yaml
-  sed -i "s/<URL>/${URL}/g" /tmp/kubernetes/longhorn/longhorn-traefik.yaml
-  kubectl apply -f /tmp/kubernetes/longhorn
-  kubectl patch daemonset -n longhorn-system longhorn-manager --type=json -p='[{"op": "remove", "path": "/spec/template/spec/tolerations"}]'
-
-  echo -e "\n${BLUE}Waiting for Longhorn to Boot:${NC}"
-  local lh_count=0
-  lh_count=$(kubectl get pods -n longhorn-system | grep -cv Running) || { echo "Failed to get Longhorn pods count" >&2; return 1; }
-  while [[ "${lh_count}" -ne 1 ]]; do
-    sleep 1
-  done
 
   echo -e "\n${BLUE}Prometheus:${NC}"
   kubectl apply -f /tmp/kubernetes/prometheus/prometheus-namespace.yaml
@@ -1716,25 +1698,10 @@ install_addons_okd() {
     sleep 30s
   done
 
-  oc debug node/worker-0 -t -- chroot /host sudo mkfs.ext4 -L longhorn /dev/vdb
-  oc debug node/worker-1 -t -- chroot /host sudo mkfs.ext4 -L longhorn /dev/vdb
-  oc debug node/worker-2 -t -- chroot /host sudo mkfs.ext4 -L longhorn /dev/vdb
-  oc debug node/worker-3 -t -- chroot /host sudo mkfs.ext4 -L longhorn /dev/vdb
-
   kubectl label node worker-0 topology.kubernetes.io/zone="even" --overwrite
   kubectl label node worker-1 topology.kubernetes.io/zone="odd" --overwrite
   kubectl label node worker-2 topology.kubernetes.io/zone="even" --overwrite
   kubectl label node worker-3 topology.kubernetes.io/zone="odd" --overwrite || { echo "Warning: kubectl label failed on worker-3" >&2; }
-
-  kubectl annotate node "worker-0" node.longhorn.io/default-disks-config='[{"path":"/var/mnt/longhorn","allowScheduling":true}]' --overwrite
-  kubectl annotate node "worker-1" node.longhorn.io/default-disks-config='[{"path":"/var/mnt/longhorn","allowScheduling":true}]' --overwrite
-  kubectl annotate node "worker-2" node.longhorn.io/default-disks-config='[{"path":"/var/mnt/longhorn","allowScheduling":true}]' --overwrite
-  kubectl annotate node "worker-3" node.longhorn.io/default-disks-config='[{"path":"/var/mnt/longhorn","allowScheduling":true}]' --overwrite || { echo "Warning: kubectl annotate failed on worker-3" >&2; }
-
-  kubectl label node "worker-0" node.longhorn.io/create-default-disk=config --overwrite
-  kubectl label node "worker-1" node.longhorn.io/create-default-disk=config --overwrite
-  kubectl label node "worker-2" node.longhorn.io/create-default-disk=config --overwrite
-  kubectl label node "worker-3" node.longhorn.io/create-default-disk=config --overwrite || { echo "Warning: kubectl label failed on worker-3" >&2; }
 
   kubectl label node "worker-0" node-role.kubernetes.io/infra="" --overwrite
   kubectl label node "worker-1" node-role.kubernetes.io/infra="" --overwrite
@@ -1742,7 +1709,6 @@ install_addons_okd() {
   kubectl label node "worker-3" node-role.kubernetes.io/infra="" --overwrite || { echo "Warning: kubectl label failed on worker-3" >&2; }
 
   kubectl apply -f "${HOMELAB}"/okd/okd-configuration/base/mcp.yaml
-  yq '.spec.config.systemd.units[1].enabled=false' "${HOMELAB}"/okd/okd-configuration/overlays/sandbox/longhorn-mc.yaml | kubectl apply -f -
 
   sleep 15s
   local mcp_infra_status=""
@@ -1750,24 +1716,6 @@ install_addons_okd() {
   while [[ "${mcp_infra_status}" == "True" ]]; do
     echo "Waiting for MCPs"
     sleep 30s
-  done
-
-  echo -e "\n${BLUE}Longhorn:${NC}"
-  local _lh
-  _lh=0
-  while [[ ${_lh} -lt 5 ]]; do
-    if kubectl kustomize "${HOMELAB}"/kubernetes/longhorn/overlays/okd-sandbox | argocd-vault-plugin generate - | kubectl apply -f -; then
-      break
-    fi
-    _lh=$((_lh + 1))
-    sleep $((5 ** _lh))
-  done
-
-  echo -e "\n${BLUE}Waiting for Longhorn to Boot:${NC}"
-  local lh_count2=0
-  lh_count2=$(kubectl get pods -n longhorn-system | grep -cv Running) || { echo "Failed to get Longhorn pods count" >&2; return 1; }
-  while [[ "${lh_count2}" -ne 1 ]]; do
-    sleep 1
   done
 
   echo -e "\n${BLUE}OKD Monitoring:${NC}"
