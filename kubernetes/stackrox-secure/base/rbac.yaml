@@ -1139,6 +1139,8 @@ roleRef:
   apiGroup: rbac.authorization.k8s.io
 ---
 # Cert auto-rotation RBAC: allows sensor SA to manage its own TLS certs for in-cluster self-rotation
+# Note: resourceNames does not work for create/delete verbs in Kubernetes RBAC,
+# so this grants broader secrets access within the stackrox namespace only.
 kind: Role
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
@@ -1158,12 +1160,6 @@ rules:
       - ""
     resources:
       - secrets
-    resourceNames:
-      - tls-cert-sensor
-      - tls-cert-collector
-      - tls-cert-admission-control
-      - tls-cert-scanner-v4-indexer
-      - tls-cert-scanner-v4-db
     verbs:
       - get
       - watch
