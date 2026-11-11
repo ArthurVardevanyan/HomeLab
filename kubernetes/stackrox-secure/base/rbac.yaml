@@ -254,6 +254,24 @@ rules:
       - get
       - watch
       - list
+  # CRD access for informer registration
+  - apiGroups:
+      - apiextensions.k8s.io
+    resources:
+      - customresourcedefinitions
+    verbs:
+      - get
+      - list
+      - watch
+  # OpenShift infrastructure access for cluster topology detection
+  - apiGroups:
+      - config.openshift.io
+    resources:
+      - infrastructures
+    verbs:
+      - get
+      - list
+      - watch
 ---
 # Source: stackrox-secured-cluster-services/templates/sensor-rbac.yaml
 kind: ClusterRole
@@ -1118,4 +1136,59 @@ subjects:
 roleRef:
   kind: Role
   name: edit
+  apiGroup: rbac.authorization.k8s.io
+---
+# Cert auto-rotation RBAC: allows sensor SA to manage its own TLS certs for in-cluster self-rotation
+# Note: resourceNames does not work for create/delete verbs in Kubernetes RBAC,
+# so this grants broader secrets access within the stackrox namespace only.
+kind: Role
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: stackrox:cert-auto-rotation
+  namespace: stackrox
+  labels:
+    app.kubernetes.io/component: sensor
+    app.kubernetes.io/instance: stackrox-secured-cluster-services
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: stackrox
+    app.kubernetes.io/part-of: stackrox-secured-cluster-services
+    app.kubernetes.io/version: 5.0.0
+    helm.sh/chart: stackrox-secured-cluster-services-500.0.0
+    auto-upgrade.stackrox.io/component: sensor
+rules:
+  - apiGroups:
+      - ""
+    resources:
+      - secrets
+    verbs:
+      - get
+      - watch
+      - list
+      - create
+      - update
+      - patch
+      - delete
+---
+# RoleBinding: grant cert-auto-rotation Role to sensor SA
+kind: RoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: stackrox:cert-auto-rotation-binding
+  namespace: stackrox
+  labels:
+    app.kubernetes.io/component: sensor
+    app.kubernetes.io/instance: stackrox-secured-cluster-services
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: stackrox
+    app.kubernetes.io/part-of: stackrox-secured-cluster-services
+    app.kubernetes.io/version: 5.0.0
+    helm.sh/chart: stackrox-secured-cluster-services-500.0.0
+    auto-upgrade.stackrox.io/component: sensor
+subjects:
+  - kind: ServiceAccount
+    name: sensor
+    namespace: stackrox
+roleRef:
+  kind: Role
+  name: stackrox:cert-auto-rotation
   apiGroup: rbac.authorization.k8s.io
