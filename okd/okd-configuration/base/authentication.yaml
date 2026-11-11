@@ -13,29 +13,17 @@ spec:
       claimMappings:
         groups:
           claim: roles
-        # OpenShift Lightspeed (OLS) validates the authenticated user with
-        # uuid.UUID(user.uid), but ZITADEL's `sub` is a decimal snowflake ID
-        # and OKD 5.x maps it to TokenReview user.uid unchanged, so every
-        # chat request failed with `ValueError: Invalid user ID ...`.
-        # Render uid as the zero-padded 32-char hex form of `sub` (decimal
-        # digits are a subset of hex, so uuid.UUID() parses it). Reversible
-        # stopgap: delete this `uid` mapping to re-default to `sub`, and
-        # retire it once lightspeed-service accepts non-UUID user IDs
-        # upstream. See okd/openshift-lightspeed/README.md (OIDC Auth Fix).
-        uid:
-          expression: "'00000000000000000000000000000000'.substring(0, 32 - claims['sub'].size()) + claims['sub']"
+        # The uid claim mapping (and its claimValidationRules) that padded
+        # ZITADEL's decimal `sub` into a UUID-shaped value for OLS is
+        # retired: lightspeed-service now accepts opaque non-UUID user IDs
+        # (openshift/lightspeed-service#3186), and the cluster runs that
+        # build via the operator image override in
+        # okd/openshift-lightspeed/overlays/okd. `user.uid` re-defaults to
+        # the raw `sub`. See okd/openshift-lightspeed/README.md
+        # (OIDC Auth Fix).
         username:
           claim: preferred_username
           prefixPolicy: NoPrefix
-      # Fail authentication cleanly for a `sub` that cannot be padded to a
-      # 32-char UUID (e.g. a non-numeric sub), instead of surfacing the
-      # breakage later as an OLS application error. ZITADEL user IDs are
-      # 18-19 digit decimals, so this never rejects a real user.
-      claimValidationRules:
-        - cel:
-            expression: "claims['sub'].matches('^[0-9]{1,32}$')"
-            message: "The 'sub' claim must be a decimal ID of at most 32 characters"
-          type: CEL
       issuer:
         audiences:
           - <path:secret/data/homelab/zitadel/okd#client_id>
