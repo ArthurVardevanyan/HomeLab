@@ -1,0 +1,10 @@
+---
+apiVersion: kustomize.config.k8s.io/v1alpha1
+kind: Component
+# Certificates for these workloads come from Vault through External Secrets,
+# so the vendored chart manifests must reference the manually-managed secret
+# names. Re-add this component after every re-vendor, or render with
+# `--set helmManaged=false`. See ../../README.md.
+patches:
+  - path: ./admission-control.yaml
+  - path: ./collector.yaml

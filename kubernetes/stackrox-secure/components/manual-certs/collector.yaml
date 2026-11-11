@@ -1,0 +1,31 @@
+---
+# Upstream `stackrox-secured-cluster-services` enables "secured cluster
+# certificate refresh" whenever the chart is rendered with `helmManaged=true`
+# (the default), which switches the collector to the Central-provisioned
+# `tls-cert-collector` secret. Nothing in this repository creates that secret,
+# so every collector pod fails with:
+#   MountVolume.SetUp failed for volume "certs": secret "tls-cert-collector" not found
+#
+# This patch restores the manifest the chart itself emits for
+# `helmManaged=false`, which reads `collector-tls` — the secret the
+# ExternalSecret in base/secret.yaml produces from Vault.
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: collector
+  namespace: stackrox
+spec:
+  template:
+    spec:
+      volumes:
+        - name: certs
+          secret:
+            secretName: collector-tls
+            optional: true
+            items:
+              - key: collector-cert.pem
+                path: cert.pem
+              - key: collector-key.pem
+                path: key.pem
+              - key: ca.pem
+                path: ca.pem

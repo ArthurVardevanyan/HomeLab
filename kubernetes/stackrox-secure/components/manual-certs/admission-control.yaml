@@ -1,0 +1,26 @@
+---
+# Same failure as collector.yaml: with certificate refresh enabled the chart
+# mounts the Central-provisioned `tls-cert-admission-control` secret, which
+# nothing here creates. This patch restores the `helmManaged=false` form,
+# which reads `admission-control-tls` from the ExternalSecret in
+# base/secret.yaml.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: admission-control
+  namespace: stackrox
+spec:
+  template:
+    spec:
+      volumes:
+        - name: certs
+          secret:
+            secretName: admission-control-tls
+            optional: true
+            items:
+              - key: admission-control-cert.pem
+                path: cert.pem
+              - key: admission-control-key.pem
+                path: key.pem
+              - key: ca.pem
+                path: ca.pem
