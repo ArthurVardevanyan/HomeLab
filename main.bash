@@ -1860,7 +1860,7 @@ update_install_plans() {
     echo -e "\nPending: ${CSV} in ${NAMESPACE}"
 
     # Find the subscription file matching this namespace
-    SUB_FILE=$(grep -rl "namespace: ${NAMESPACE}$" --include="subscription.yaml" kubernetes/ 2>/dev/null | head -1)
+    SUB_FILE=$(grep -rl "namespace: ${NAMESPACE}$" --include="subscription.yaml" kubernetes/ okd/ 2>/dev/null | head -1)
 
     if [[ -z "${SUB_FILE}"  ]]; then
       echo "  WARNING: No subscription file found for namespace '${NAMESPACE}'"
@@ -1902,7 +1902,7 @@ approve_install_plans() {
     kubectl patch installplan "${NAME}" -n "${NAMESPACE}" --type merge --patch '{"spec":{"approved":true}}'
 
     # Find and update the subscription file matching this namespace
-    SUB_FILE=$(grep -rl "namespace: ${NAMESPACE}" --include="subscription.yaml" kubernetes/ 2>/dev/null | head -1)
+    SUB_FILE=$(grep -rl "namespace: ${NAMESPACE}" --include="subscription.yaml" kubernetes/ okd/ 2>/dev/null | head -1)
 
     if [[ -z "${SUB_FILE}" ]]; then
       echo "    WARNING: No subscription file found for namespace '${NAMESPACE}'"
