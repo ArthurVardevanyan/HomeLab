@@ -10,6 +10,7 @@ shopt -s failglob # If no matches are found, an error message is printed and the
 # ANSIBLE CONFIG: /ansible/k3s.yaml
 
 BLUE='\033[1;34m'
+YELLOW='\033[1;33m'
 NC='\033[0m'
 
 # https://www.how2shout.com/linux/how-to-install-and-configure-kvm-on-debian-11-bullseye-linux/
@@ -948,11 +949,44 @@ delete_okd_virt() {
   # ${OKD}/openshift-install-linux* \
   # ${OKD}/openshift-client-linux* \
 
+  # Graceful shutdown first: `kubectl virt stop` asks the guest to power off
+  # (ACPI via the guest agent), then removes the VMI, so the virt-launcher
+  # pod exits through the normal path and kubelet unmounts/detaches the RBD
+  # volumes before anything is deleted. On a VM with runStrategy Always,
+  # stop patches it to Halted so it does not restart. Failures are not fatal
+  # (no guest agent, missing kubectl-virt plugin): VM deletion below still
+  # performs a graceful shutdown, it just does it inline.
+  echo -e "\n\n${BLUE}Stopping VMs:${NC}"
+  local vms vm left
+  vms=$(kubectl get vm -n okd-virt -o jsonpath='{.items[*].metadata.name}' 2>/dev/null || true)
+  for vm in ${vms}; do
+    kubectl virt stop --namespace okd-virt "${vm}" --timeout 120s || true
+  done
+
+  # Bounded wait for the VMIs to be gone: once they are, the RBD volumes have
+  # been unmounted and detached on the clean path. Keep going either way.
+  if [[ -n "${vms}" ]]; then
+    for _ in {1..24}; do
+      left=$(kubectl get virtualmachineinstance -n okd-virt -o name 2>/dev/null || true)
+      [[ -z "${left}" ]] && break
+      sleep 5
+    done
+    if [[ -n "${left}" ]]; then
+      echo -e "${YELLOW}VMs still stopping after 120s -- deleting anyway:${NC}"
+      echo "${left}"
+    fi
+  fi
+
+  # --wait=false: never block on finalizers. VM deletion already performs a
+  # graceful ACPI shutdown via the guest agent, and DataVolume deletion
+  # cascades to PVC -> CSI image deletion. Those chains can stall when a node
+  # or OSD is unhealthy, which previously left this function wedged (with
+  # errors hidden by 2>/dev/null) half-way through the sequence.
   echo -e "\n\n${BLUE}Deleting VMs:${NC}"
-  kubectl delete -n okd-virt vm --all --ignore-not-found 2>/dev/null
-  kubectl delete -n okd-virt virtualmachineinstance --all --ignore-not-found 2>/dev/null
-  kubectl delete -n okd-virt datavolume --all --ignore-not-found 2>/dev/null
-  kubectl delete -f "${HOMELAB}/sandbox/kubevirt/okd/vm" --ignore-not-found 2>/dev/null
+  kubectl delete -n okd-virt vm --all --ignore-not-found --wait=false
+  kubectl delete -n okd-virt virtualmachineinstance --all --ignore-not-found --wait=false
+  kubectl delete -n okd-virt datavolume --all --ignore-not-found --wait=false
+  kubectl delete -f "${HOMELAB}/sandbox/kubevirt/okd/vm" --ignore-not-found --wait=false
 }
 
 delete_okd_bm() {
