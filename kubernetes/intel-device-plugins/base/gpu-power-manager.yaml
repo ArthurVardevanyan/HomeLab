@@ -6,6 +6,7 @@ metadata:
   namespace: intel-device-plugins-operator
   annotations:
     gitops-ci.k8s.io/exempt-image-checksum: "registry.arthurvardevanyan.com/homelab/gpu-toolbox:not_latest"
+    argocd.argoproj.io/sync-wave: "2"
   labels:
     app: gpu-power-manager
 spec:
@@ -22,6 +23,7 @@ spec:
       enableServiceLinks: false
       restartPolicy: Always
       schedulerName: default-scheduler
+      serviceAccountName: gpu-power-manager
       containers:
         - name: power-manager
           # renovate: datasource=docker depName=registry.arthurvardevanyan.com/homelab versioning=loose
