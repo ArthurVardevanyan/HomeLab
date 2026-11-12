@@ -105,20 +105,13 @@ Flow data (when Loki is enabled) is backed by a Rook/Ceph S3 bucket provisioned 
 | `netobserv-index-gateway`      | `openshift-netobserv-loki`       | StatefulSet | 150m    | 256Mi      |
 | `netobserv-ingester`           | `openshift-netobserv-loki`       | StatefulSet | 500m    | 6Gi        |
 
-All VPAs use `updateMode: InPlaceOrRecreate`, which patches pods in place and never
-rewrites the target's pod template, so they cannot put an owning operator into a
-write conflict.
+All VPAs use `updateMode: InPlaceOrRecreate` and cannot conflict with operator writes.
 
-> **Note**: The old `map-netobserv` MutatingAdmissionPolicy is permanently removed and
-> must not come back: it force-injected resources into `netobserv-plugin-static` on
-> every operator write, fighting the StaticController, which re-applies that Deployment
-> with `resources: {}` (conflict loop). Admission policies must never mutate
-> operator-owned specs.
->
-> The `netobserv-plugin-static` VPA stays dormant until the operator bundles
-> [netobserv-operator#2892](https://github.com/netobserv/netobserv-operator/pull/2892),
-> which gives the static plugin resource requests (defaults 10m/64Mi, tunable via
-> `STATIC_PLUGIN_*` env vars on the Subscription). The VPA activates automatically then.
+> **Note**: The `map-netobserv` MutatingAdmissionPolicy was removed for fighting the
+> operator over `netobserv-plugin-static` — do not restore it. The static-plugin VPA
+> stays inactive until
+> [netobserv-operator#2892](https://github.com/netobserv/netobserv-operator/pull/2892)
+> ships, then activates automatically.
 
 ## Network Policies
 
