@@ -1,0 +1,20 @@
+---
+# Imported from the live cluster. controlPlaneHardwareSpeed: Slower relaxes
+# raft timings for the etcd disks on the masters (DRAM-less SSDs).
+# Ref: https://docs.okd.io/latest/etcd/etcd-performance.html
+apiVersion: operator.openshift.io/v1
+kind: Etcd
+metadata:
+  annotations:
+    include.release.openshift.io/self-managed-high-availability: "true"
+    include.release.openshift.io/single-node-developer: "true"
+    release.openshift.io/create-only: "true"
+  labels:
+    app.kubernetes.io/instance: okd-configuration
+  name: cluster
+spec:
+  backendQuotaGiB: 8
+  controlPlaneHardwareSpeed: Slower
+  logLevel: Normal
+  managementState: Managed
+  operatorLogLevel: Normal
