@@ -91,19 +91,34 @@ Flow data (when Loki is enabled) is backed by a Rook/Ceph S3 bucket provisioned 
 
 ### VPAs (OKD overlay)
 
-| Workload                       | Namespace                        | Kind       | Max CPU | Max Memory |
-| ------------------------------ | -------------------------------- | ---------- | ------- | ---------- |
-| `netobserv-controller-manager` | `openshift-netobserv-operator`   | Deployment | 100m    | 400Mi      |
-| `netobserv-plugin-static`      | `openshift-netobserv-operator`   | Deployment | 100m    | 256Mi      |
-| `netobserv-plugin`             | `openshift-netobserv`            | Deployment | 150m    | 256Mi      |
-| `flowlogs-pipeline`            | `openshift-netobserv`            | DaemonSet  | 300m    | 512Mi      |
-| `netobserv-ebpf-agent`         | `openshift-netobserv-privileged` | DaemonSet  | 300m    | 512Mi      |
+| Workload                       | Namespace                        | Kind        | Max CPU | Max Memory |
+| ------------------------------ | -------------------------------- | ----------- | ------- | ---------- |
+| `netobserv-controller-manager` | `openshift-netobserv-operator`   | Deployment  | 100m    | 400Mi      |
+| `netobserv-plugin-static`      | `openshift-netobserv-operator`   | Deployment  | 100m    | 256Mi      |
+| `netobserv-plugin`             | `openshift-netobserv`            | Deployment  | 150m    | 256Mi      |
+| `netobserv-ebpf-agent`         | `openshift-netobserv-privileged` | DaemonSet   | 300m    | 512Mi      |
+| `netobserv-distributor`        | `openshift-netobserv-loki`       | Deployment  | 200m    | 512Mi      |
+| `netobserv-gateway`            | `openshift-netobserv-loki`       | Deployment  | 100m    | 256Mi      |
+| `netobserv-querier`            | `openshift-netobserv-loki`       | Deployment  | 200m    | 512Mi      |
+| `netobserv-query-frontend`     | `openshift-netobserv-loki`       | Deployment  | 150m    | 256Mi      |
+| `netobserv-compactor`          | `openshift-netobserv-loki`       | Deployment  | 200m    | 512Mi      |
+| `netobserv-index-gateway`      | `openshift-netobserv-loki`       | StatefulSet | 150m    | 256Mi      |
+| `netobserv-ingester`           | `openshift-netobserv-loki`       | StatefulSet | 500m    | 6Gi        |
 
-All VPAs use `updateMode: InPlaceOrRecreate`.
+All VPAs use `updateMode: InPlaceOrRecreate`, which patches pods in place and never
+rewrites the target's pod template, so they cannot put an owning operator into a
+write conflict.
 
-`netobserv-plugin-static` has `resources: {}` in its operator-managed Deployment. The
-`map-netobserv` MutatingAdmissionPolicy injects resource requests/limits on admission,
-which is required for the VPA to function (VPA needs an existing resource spec to modify).
+> **Note**: The old `map-netobserv` MutatingAdmissionPolicy is permanently removed and
+> must not come back: it force-injected resources into `netobserv-plugin-static` on
+> every operator write, fighting the StaticController, which re-applies that Deployment
+> with `resources: {}` (conflict loop). Admission policies must never mutate
+> operator-owned specs.
+>
+> The `netobserv-plugin-static` VPA stays dormant until the operator bundles
+> [netobserv-operator#2892](https://github.com/netobserv/netobserv-operator/pull/2892),
+> which gives the static plugin resource requests (defaults 10m/64Mi, tunable via
+> `STATIC_PLUGIN_*` env vars on the Subscription). The VPA activates automatically then.
 
 ## Network Policies
 
@@ -142,7 +157,7 @@ network-observability/
         ├── egress-firewall.yaml   # OVN EgressFirewall (control-plane only)
         ├── flow-collector-patch.yaml  # Disables Loki (sets enable: false)
         ├── kustomization.yaml
-        └── vpa.yaml               # VPAs for all five workloads
+        └── vpa.yaml               # VPAs for netobserv + LokiStack workloads
 ```
 
 ## References
