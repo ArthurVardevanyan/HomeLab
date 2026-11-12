@@ -1,0 +1,66 @@
+---
+# MutatingAdmissionPolicy to override the lightspeed-service-api container
+# image with the user-ID-fix build (openshift/lightspeed-service#3186).
+#
+# Mutating the app-server Deployment causes a rolling loop: the operator
+# detects the template spec diverged from its desired image, bumps
+# `ols.openshift.io/force-reload`, rewrites the Deployment, and the MAP
+# catches the new pods, rewrites the image, which triggers another
+# operator reconciliation — repeat.  By mutating the Pod instead, the
+# operator creates the ReplicaSet/Deployment with the stock image
+# (happy path, no conflict loop), and the MAP intercepts each Pod CREATE
+# to rewrite the service image.  The operator never sees a mutated
+# Deployment spec and does not enter a rolling-restart loop.
+#
+# The Pod is selected declaratively with `objectSelector` (label set by the
+# operator on the app-server Pod template).  Do not gate on labels with a CEL
+# matchCondition: `object.metadata.labels['key']` *errors* when the key is
+# missing, matchCondition errors count as a match, and with failurePolicy=Fail
+# that denies CREATE of every unlabelled Pod in scope — including the
+# operator's own Pods (which is what wedged the namespace once).
+#
+# The mutation additionally requires the container to be named
+# `lightspeed-service-api` AND the image to start with the stock
+# `registry.redhat.io` prefix — this guards against double-mutation (the
+# policy rewrites stock to the fixed build; if someone already patched a Pod
+# to the fixed build the patch silently no-ops), and it ensures the exporter
+# container and other deployments in the namespace are untouched.
+#
+# Remove this file (and its binding) once a lightspeed-service build
+# containing the fix ships on registry.redhat.io.
+apiVersion: admissionregistration.k8s.io/v1
+kind: MutatingAdmissionPolicy
+metadata:
+  annotations:
+    argocd.argoproj.io/sync-wave: "2"
+  labels:
+    app.kubernetes.io/created-by: openshift-lightspeed
+  name: map-ols-service-image
+spec:
+  failurePolicy: Fail
+  reinvocationPolicy: Never
+  matchConstraints:
+    matchPolicy: Equivalent
+    namespaceSelector: {}
+    objectSelector:
+      matchLabels:
+        app.kubernetes.io/name: lightspeed-service-api
+    resourceRules:
+      - apiGroups:
+          - ""
+        apiVersions:
+          - v1
+        operations:
+          - CREATE
+        resources:
+          - pods
+  mutations:
+    - patchType: JSONPatch
+      jsonPatch:
+        expression: >-
+          object.spec.containers.size() > 0
+          && object.spec.containers[0].name == 'lightspeed-service-api'
+          && object.spec.containers[0].image.startsWith('registry.redhat.io/openshift-lightspeed/lightspeed-service-api-rhel9@')
+          ? [JSONPatch{op: 'replace', path: '/spec/containers/0/image',
+                       value: 'registry.arthurvardevanyan.com/homelab/ols-userid-fix@sha256:a122687e8df39c01339b703bb55c07ace5193317049889577a45512b91927674'}]
+          : []

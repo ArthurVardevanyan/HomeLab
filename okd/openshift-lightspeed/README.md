@@ -61,53 +61,99 @@ This cannot be fixed inside the OLS config:
 
 ### The Fix
 
-Map `user.uid` to a UUID-shaped value at the cluster authentication layer, which is GitOps-owned and reversible: [okd/okd-configuration/base/authentication.yaml](../okd-configuration/base/authentication.yaml).
+Run a lightspeed-service build whose user-ID validation accepts opaque
+IDs: [openshift/lightspeed-service#3186](https://github.com/openshift/lightspeed-service/pull/3186)
+relaxes `ols/utils/suid.py:check_user_id` to a bounded opaque string
+(`user_id` was already `text` in Postgres), so `ValueError: Invalid user
+ID` is gone without touching cluster authentication. OLS keeps the real
+`k8s` auth module with real TokenReviews: user tokens are validated as
+usual and passed through to MCP servers, so chat keeps cluster access.
 
-```yaml
-claimMappings:
-  uid:
-    expression: "'00000000000000000000000000000000'.substring(0, 32 - claims['sub'].size()) + claims['sub']"
-```
+Until the fix ships on `registry.redhat.io`, the custom build is forced
+through a **MutatingAdmissionPolicy**
+([`map-ols-service-image.yaml`](overlays/okd/map-ols-service-image.yaml)).
+Patching the operator Deployment's `--*-image` args proved GitOps-hostile:
+the OLM operator continuously reconciles its own Deployment back to the
+CSV spec, so any arg-level patch is reverted within seconds. Patching the
+app-server Deployment directly (with `images:` transformer) also loops:
+the operator sees the template spec differ from its desired image, bumps
+`force-reload`, rewrites the Deployment, and the loop continues. The
+admission policy intercepts each **Pod CREATE** (only when the stock
+`registry.redhat.io` image is present) and rewrites the
+`lightspeed-service-api` container image to the fixed build. The operator
+creates the ReplicaSet and Deployment with the stock image — a happy path
+with no conflict loop. The policy matches by label (`app.kubernetes.io/name:
+lightspeed-service-api`) on the Pod spec, so only the app-server pod is
+mutated; other pods and containers are untouched. Do not hand-patch the
+app-server Deployment or Pods; the policy owns the override.
 
-- The expression zero-pads `sub` to 32 characters. Decimal digits are a subset of hex, so `uuid.UUID('00000000000000305070630980550817')` parses and OLS accepts the user. The mapping is one-to-one, so the conversation cache keeps a stable per-user key.
-- OLS keeps the real `k8s` auth module with real TokenReviews: user tokens are validated as usual and passed through to MCP servers, so chat keeps cluster access.
-- A `claimValidationRules` guard rejects tokens whose `sub` is not a decimal ID of at most 32 characters, so a non-conforming identity fails at authentication time instead of breaking later inside OLS. ZITADEL user IDs are 18-19 digit decimals, so no real user is ever rejected.
-- Chain: Authentication CR → cluster-authentication-operator (validates the CEL) → kube-apiserver-operator sync → kube-apiserver `auth-config.json` (`jwt[0].claimMappings.uid`). The `ExternalOIDC` and `ExternalOIDCWithUIDAndExtraClaimMappings` feature gates are enabled on this cluster (v1.36).
-
-This is a stopgap, framed as such: retire it when upstream either makes the lightspeed-service user-ID check format-agnostic (it is hardcoded in `ols/utils/suid.py:check_suid`, and the `user_id` column is already `text`) or the operator gains an `authenticationConfig` passthrough. Both are planned upstream PRs.
+**History (retired 2026-11-11):** before the upstream fix merged, this
+repo carried a stopgap that mapped `user.uid` to the zero-padded 32-char
+hex form of `sub` in
+[okd/okd-configuration/base/authentication.yaml](../okd-configuration/base/authentication.yaml)
+(decimal digits are a subset of hex, so `uuid.UUID()` parsed it), plus a
+`claimValidationRules` guard rejecting non-decimal `sub`s. It was a
+pure workaround for the strict `uuid.UUID(user.uid)` check; with the
+relaxed validation deployed the mapping is removed and `user.uid` is the
+raw `sub` again. Re-add the mapping (git history) if you ever need to
+run a stock `registry.redhat.io` lightspeed-service build again.
 
 ### Rollout
 
-ArgoCD applies this from `okd/okd-configuration`. Editing the Authentication CR rolls the kube-apiservers one at a time (brief; existing console/CLI sessions stay logged in, and the `admin` context in `~/.kube/okd` uses a client certificate and is unaffected). After the sync:
+ArgoCD applies the MutatingAdmissionPolicy from the `openshift-lightspeed`
+app (`okd/openshift-lightspeed/overlays/okd`). Removing the retired uid
+claim mapping from the Authentication CR (`okd/okd-configuration` app)
+rolls the kube-apiservers one at a time (brief; existing console/CLI
+sessions stay logged in, and the `admin` context in `~/.kube/okd` uses a
+client certificate and is unaffected). After the sync:
 
-1. Wait for the rollout: `kubectl get co kube-apiserver` reaches `PROGRESSING=False`.
-2. Confirm the kube-apiserver picked the mapping up:
+1. Wait for the kube-apiserver rollout to finish:
+   `kubectl get co kube-apiserver` reaches `PROGRESSING=False`.
+2. Confirm the app server Deployment shows the **stock** image (the
+   operator creates it with the stock digest):
 
    ```bash
-   kubectl -n openshift-kube-apiserver get configmap auth-config \
-     -o jsonpath='{.data.auth-config\.json}' | jq '.jwt[0].claimMappings.uid'
+   kubectl -n openshift-lightspeed get deploy lightspeed-app-server \
+     -o jsonpath='{.spec.template.spec.containers[0].image}'
    ```
 
-3. Confirm the uid is padded: `kubectl auth whoami -o yaml` as a regular OIDC user shows `status.userInfo.uid` = `sub` zero-padded to 32 chars.
-4. Restore the OLS operator, which was scaled to 0 during the workaround:
+3. Confirm the **pod** shows the fixed image (admission policy rewrites
+   pods on CREATE):
 
    ```bash
-   kubectl scale deploy/lightspeed-operator-controller-manager \
-     -n openshift-lightspeed --replicas=1
+   kubectl -n openshift-lightspeed get pod -l app.kubernetes.io/name=lightspeed-service-api \
+     -o jsonpath='{.items[0].spec.containers[0].image}'
    ```
 
-It regenerates the `olsconfig` ConfigMap from the CR, which drops the hand-patched `disable_auth`/`noop-with-token` keys and renders the guardrails field (see below). App server pods restart with `module k8s`.
+4. Confirm the policy is active and matching:
+
+   ```bash
+   kubectl get mutatingadmissionpolicy map-ols-service-image -o wide
+   kubectl get mutatingadmissionpolicybinding map-ols-service-image-binding -o wide
+   ```
+
+**Expected:** `kubectl get deploy ...` shows `registry.redhat.io/...` and
+`kubectl get pod ...` shows `registry.arthurvardevanyan.com/homelab/...`.
+This is the expected behavior — the policy only rewrites pods at creation,
+so the Deployment never diverges from the operator's desired state.
 
 ### Verification
 
-- `kubectl auth whoami -o yaml` shows a 32-character uid for OIDC users.
+- `kubectl auth whoami -o yaml` shows the raw ZITADEL `sub` as the uid
+  for OIDC users (no padding).
 - App server logs show `Authentication retrieval for module k8s` (not `noop-with-token`).
 - A chat query that hits MCP tools succeeds: no `ValueError: Invalid user ID` and no `MCP server openshift requires kubernetes token but none available` log lines.
-- New conversation rows in the OLS database carry the padded uid in the `user_id` column (the column is `text`).
+- New conversation rows in the OLS database carry the raw `sub` in the `user_id` column (the column is `text`).
 
 ### Rollback
 
-Delete the `uid` mapping and the `claimValidationRules` block from the Authentication CR and sync. The cluster-authentication-operator re-defaults uid to the raw `sub` claim (another kube-apiserver roll). Nothing is needed on the OLS side; chat goes back to failing with `ValueError: Invalid user ID`, which is the pre-fix state.
+Remove the `map-ols-service-image*.yaml` files and their overlay entry
+from `kustomization.yaml` and sync: the admission policy is removed,
+so pods are no longer rewritten and revert to the stock image the
+operator creates them with. If the stock image is still the strict-UUID
+build, re-add the retired uid claim mapping to `okd/okd-configuration`
+as well (see [The Fix](#the-fix) history), or chat fails again with
+`ValueError: Invalid user ID`.
 
 ## Tool-Result Inspection Guardrail (disabled)
 
@@ -145,7 +191,9 @@ okd/openshift-lightspeed/
 │   └── agentic/                      # LLMProvider, Agent, ApprovalPolicy, RBAC
 ├── overlays/
 │   └── okd/
-│       └── kustomization.yaml        # OKD overlay
+│       ├── kustomization.yaml                        # OKD overlay
+│       ├── map-ols-service-image.yaml                # MAP: override service image on pods
+│       └── map-ols-service-image-binding.yaml        # MAP binding: activate for openshift-lights ns
 └── README.md                         # This file
 ```
 
@@ -154,6 +202,7 @@ okd/openshift-lightspeed/
 The tree above says what each file is. Notes that are not obvious from the names:
 
 - **olsconfig.yaml**: controls the OLS app, LLM provider, MCP servers, guardrails and deployment resources. The operator renders it into the `olsconfig` ConfigMap; never hand-edit that ConfigMap, the operator reverts it. Everything configurable lives in this CR (and what the CRD cannot express lives in cluster config, see [OIDC Auth Fix](#oidc-auth-fix)).
+- **map-ols-service-image.yaml + map-ols-service-image-binding.yaml** (in `overlays/okd/`): MutatingAdmissionPolicy that rewrites the `lightspeed-service-api` container image to the user-ID-fix build (see [OIDC Auth Fix](#oidc-auth-fix)) on Pod CREATE. The operator creates the Deployment with the stock image (happy path, no OLM churn), and the MAP rewrites the pod image on creation. Only fires when the pod has label `app.kubernetes.io/name: lightspeed-service-api` AND the image starts with the stock `registry.redhat.io` prefix — so it's a no-op if the image is already the fixed build or another image entirely. Remove once the stock image contains the upstream fix.
 - **operatorgroup.yaml + subscription.yaml**: install the lightspeed operator (v2.0.0). `installplan-approver.yaml` approves its OLM install plans.
 - **agenticrun-alert-tools.yaml** (in `components/agentic/`): MutatingAdmissionPolicy that injects MCP servers into alert-triggered AgenticRuns (see [Alert-triggered runs](#alert-triggered-runs)).
 
@@ -242,20 +291,20 @@ kubectl get agenticruns -l agentic.openshift.io/source=alertmanager -n openshift
 
 Findings from bringing up agentic runs on OKD 5.0 (tech preview). Each entry says whether it was verified or is an inference.
 
-| #   | Issue                                               | Status             | Where it is fixed                                                               |
-| --- | --------------------------------------------------- | ------------------ | ------------------------------------------------------------------------------- |
-| 1   | Sandbox claim rejected: no `lightspeed-agent` RBAC  | Fixed              | `components/agentic/{serviceaccount,rbac}.yaml`                                 |
-| 2   | Sandbox pods cannot reach LiteLLM                   | Fixed              | `kubernetes/llm/base/network-policy.yaml`                                       |
-| 3   | MCP session 404 with 2 MCP replicas                 | Fixed (inferred)   | `base/olsconfig.yaml` (`mcpServer.replicas: 1`)                                 |
-| 4   | Chat has no tools unless `spec.tools` is set        | Workaround         | See [Chat tools](#chat-tools-mcp)                                               |
-| 5   | Model never calls tools (vLLM bugs)                 | Workaround         | `kubernetes/llm/components/litellm/strip_agentic_params.py`                     |
-| 6   | Run fails: `result CR missing options`              | Open               | None                                                                            |
-| 7   | `tokenUsage` always 0                               | Open               | None                                                                            |
-| 8   | Sandbox pod and logs deleted immediately            | Open               | None                                                                            |
-| 9   | Console "Loading logs..." never finishes            | Open (upstream)    | None                                                                            |
-| 10  | `disable_auth` patch lost on OLS operator reconcile | Fixed              | `okd/okd-configuration` uid claim mapping (see [OIDC Auth Fix](#oidc-auth-fix)) |
-| 11  | MCP tools `helm_install` and `pods_run` filtered    | Open, not analyzed | None                                                                            |
-| 12  | Chat tool result fails the safety inspection        | Workaround         | `base/olsconfig.yaml` (`guardrails.toolResultInspection.enabled: false`)        |
+| #   | Issue                                               | Status             | Where it is fixed                                                                                                    |
+| --- | --------------------------------------------------- | ------------------ | -------------------------------------------------------------------------------------------------------------------- |
+| 1   | Sandbox claim rejected: no `lightspeed-agent` RBAC  | Fixed              | `components/agentic/{serviceaccount,rbac}.yaml`                                                                      |
+| 2   | Sandbox pods cannot reach LiteLLM                   | Fixed              | `kubernetes/llm/base/network-policy.yaml`                                                                            |
+| 3   | MCP session 404 with 2 MCP replicas                 | Fixed (inferred)   | `base/olsconfig.yaml` (`mcpServer.replicas: 1`)                                                                      |
+| 4   | Chat has no tools unless `spec.tools` is set        | Workaround         | See [Chat tools](#chat-tools-mcp)                                                                                    |
+| 5   | Model never calls tools (vLLM bugs)                 | Workaround         | `kubernetes/llm/components/litellm/strip_agentic_params.py`                                                          |
+| 6   | Run fails: `result CR missing options`              | Open               | None                                                                                                                 |
+| 7   | `tokenUsage` always 0                               | Open               | None                                                                                                                 |
+| 8   | Sandbox pod and logs deleted immediately            | Open               | None                                                                                                                 |
+| 9   | Console "Loading logs..." never finishes            | Open (upstream)    | None                                                                                                                 |
+| 10  | `disable_auth` patch lost on OLS operator reconcile | Fixed              | MAP image override on Pods + `okd/okd-configuration` uid claim mapping removal (see [OIDC Auth Fix](#oidc-auth-fix)) |
+| 11  | MCP tools `helm_install` and `pods_run` filtered    | Open, not analyzed | None                                                                                                                 |
+| 12  | Chat tool result fails the safety inspection        | Workaround         | `base/olsconfig.yaml` (`guardrails.toolResultInspection.enabled: false`)                                             |
 
 ### 1. Missing `lightspeed-agent` RBAC (fixed)
 
@@ -366,7 +415,7 @@ See [Troubleshooting](#console-shows-loading-logs-forever-for-an-agenticrun). A 
 
 ### 10. `disable_auth` patch lost on reconcile (fixed)
 
-Resolved properly by the uid claim mapping in the Authentication CR (see [OIDC Auth Fix](#oidc-auth-fix)). The OLS app server now runs the stock `k8s` auth module against real TokenReviews, so no `olsconfig` ConfigMap hand-patches are needed and the operator runs at its normal replica count again. The `noop-with-token` stopgap is retired: it also dropped the user token (`NO_USER_TOKEN`), which had broken MCP cluster access.
+Resolved properly: the cluster runs the lightspeed-service user-ID fix (see [OIDC Auth Fix](#oidc-auth-fix)), so the OLS app server runs the stock `k8s` auth module against real TokenReviews with no `olsconfig` ConfigMap hand-patches, at the operator's normal replica count. The `noop-with-token` stopgap is retired: it also dropped the user token (`NO_USER_TOKEN`), which had broken MCP cluster access.
 
 ### 11. MCP tools filtered (open, not analyzed)
 
@@ -391,7 +440,7 @@ kubectl get analysisresult <name> -n openshift-lightspeed -o yaml
 
 ### `ValueError: Invalid user ID`
 
-See [OIDC Auth Fix](#oidc-auth-fix). If it comes back, the uid mapping is missing: check the Authentication CR in `okd/okd-configuration/base/authentication.yaml` and confirm the kube-apiserver picked it up with `kubectl -n openshift-kube-apiserver get configmap auth-config -o jsonpath='{.data.auth-config\.json}' | jq '.jwt[0].claimMappings.uid'`.
+See [OIDC Auth Fix](#oidc-auth-fix). If it comes back, the admission policy is not matching — check `kubectl -n openshift-lightspeed get pod -l app.kubernetes.io/name=lightspeed-service-api -o jsonpath='{.items[0].spec.containers[0].image}'` and confirm it is running `registry.arthurvardevanyan.com/homelab/ols-userid-fix`; verify the MAP and binding are active (`kubectl get mutatingadmissionpolicy map-ols-service-image`).
 
 ### Operator reverting ConfigMap changes
 

@@ -1,0 +1,16 @@
+---
+# MutatingAdmissionPolicyBinding that activates map-ols-service-image
+# for the openshift-lightspeed namespace (the policy itself additionally
+# selects Pods labelled app.kubernetes.io/name=lightspeed-service-api).
+apiVersion: admissionregistration.k8s.io/v1
+kind: MutatingAdmissionPolicyBinding
+metadata:
+  labels:
+    app.kubernetes.io/created-by: openshift-lightspeed
+  name: map-ols-service-image-binding
+spec:
+  matchResources:
+    namespaceSelector:
+      matchLabels:
+        kubernetes.io/metadata.name: openshift-lightspeed
+  policyName: map-ols-service-image
