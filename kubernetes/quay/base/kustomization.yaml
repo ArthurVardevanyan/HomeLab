@@ -1,9 +1,6 @@
 ---
 apiVersion: kustomize.config.k8s.io/v1beta1
-kind:
-  Kustomization
-  # - ./minio/tenant.yaml
-  # - ./minio/pdb.yaml
+kind: Kustomization
 resources:
   - ./namespace.yaml
   - ./limit-range.yaml
@@ -28,6 +25,8 @@ resources:
   - ./hpa/clair.yaml
   - ./gateway
   - ./vpa.yaml
+  - ./quay-quay-app-service.yaml
+  - ./quay-cert-sync-job.yaml
 generatorOptions:
   disableNameSuffixHash: true
 secretGenerator:
