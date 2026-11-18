@@ -5,6 +5,7 @@
 - [CEPH](#ceph)
   - [Table of Contents](#table-of-contents)
   - [Networking Test](#networking-test)
+  - [Dashboard TLS](#dashboard-tls)
   - [Upgrades](#upgrades)
     - [Components tracked](#components-tracked)
     - [File classification](#file-classification)
@@ -90,6 +91,33 @@ subjects:
 ./notes/rook multus validation cleanup --namespace rook-ceph
 ```
 
+## Dashboard TLS
+
+The dashboard serving certificate is issued by the OpenShift service-CA
+operator and applied by Rook. A dedicated Service that only ArgoCD owns,
+`rook-ceph-mgr-dashboard-cert`
+(`base/rook-ceph-mgr-dashboard-cert-service.yaml`), carries the
+`service.beta.openshift.io/serving-cert-secret-name` annotation and exists
+only so the service-CA operator can maintain the
+`rook-ceph-mgr-dashboard-tls` Secret (a cert for
+`rook-ceph-mgr-dashboard-cert.rook-ceph.svc`). The annotation is not put on
+the real `rook-ceph-mgr-dashboard` Service, because Rook owns and reconciles
+that one and would drop foreign annotations — which would make the
+service-CA operator delete the issued secret.
+
+The CephCluster references the secret through
+`spec.dashboard.sslCertificateRef`, so Rook configures the dashboard with it
+and re-applies it automatically on rotation (Rook v1.21+) — no certificate
+rotation CronJob is needed. This replaced the old
+`ceph-dashboard-cert-rotate` CronJob, which copied the letsencrypt-issued
+`rook-ceph-cert` into the mgr config-key every 6 hours, and was deleted.
+The letsencrypt `rook-ceph-cert` Certificate itself stays: it is still the
+TLS termination cert for the public route
+(`base/gateway/listenerset.yaml`). The `BackendTLSPolicy` validates the
+backend against the cert Service's DNS name above, with the service CA fed
+into the `ca-bundle` by the trust-manager bundle in
+`kubernetes/cert-manager`.
+
 ## Upgrades
 
 Fast-track procedure for upgrading the Rook operator + Ceph daemons. Last run:
@@ -99,12 +127,12 @@ CSI sidecar images.
 
 ### Components tracked
 
-| Component            | Image (digest-pinned)                          | Local file(s)                                                        |
-| -------------------- | ---------------------------------------------- | -------------------------------------------------------------------- |
-| Rook Ceph operator   | `docker.io/rook/ceph:vX.Y.Z@sha256:...`        | `base/deployment.yaml`, `base/gateway/certificate-job.yaml` (2 refs) |
-| Ceph daemons         | `quay.io/ceph/ceph:vA.B.C-YYYYMMDD@sha256:...` | `base/ceph-cluster.yaml`, `base/toolbox.yaml`                        |
-| ceph-csi-operator    | `quay.io/cephcsi/ceph-csi-operator:vX@sha256`  | `base/csi/deployment.yaml`                                           |
-| 7 CSI sidecar images | tag-only upstream → **SHA-pinned locally**     | `base/csi/configmap.yaml`                                            |
+| Component            | Image (digest-pinned)                          | Local file(s)                                 |
+| -------------------- | ---------------------------------------------- | --------------------------------------------- |
+| Rook Ceph operator   | `docker.io/rook/ceph:vX.Y.Z@sha256:...`        | `base/deployment.yaml`                        |
+| Ceph daemons         | `quay.io/ceph/ceph:vA.B.C-YYYYMMDD@sha256:...` | `base/ceph-cluster.yaml`, `base/toolbox.yaml` |
+| ceph-csi-operator    | `quay.io/cephcsi/ceph-csi-operator:vX@sha256`  | `base/csi/deployment.yaml`                    |
+| 7 CSI sidecar images | tag-only upstream → **SHA-pinned locally**     | `base/csi/configmap.yaml`                     |
 
 ### File classification
 
@@ -131,7 +159,7 @@ changes, never replace the file):
 - `base/csi/deployment.yaml` — bump the csi-op image
 - `base/csi/configmap.yaml` — bump the 7 sidecar tags and re-pin digests
 - `base/ceph-cluster.yaml`, `base/toolbox.yaml` — Ceph daemon image
-- `base/trim-override.yaml`, `base/gateway/certificate-job.yaml`
+- `base/trim-override.yaml`
 - `components/*/storage-class.yaml` — new CSI `parameters`, if any
 
 ### Checklist

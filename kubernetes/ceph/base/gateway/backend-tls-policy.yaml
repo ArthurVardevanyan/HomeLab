@@ -15,4 +15,6 @@ spec:
       - group: ""
         kind: ConfigMap
         name: ca-bundle
-    hostname: ceph.okd.homelab.arthurvardevanyan.com
+    # The backend serves the service-CA-operator issued cert, which is
+    # scoped to the dedicated cert Service's DNS name, not the public route.
+    hostname: rook-ceph-mgr-dashboard-cert.rook-ceph.svc
