@@ -22,9 +22,9 @@ spec:
     # v19 is Squid, v20 is Tentacle
     # RECOMMENDATION: In production, use a specific version tag instead of the general v20 flag, which pulls the latest release and could result in different
     # versions running within the cluster. See tags available at https://hub.docker.com/r/ceph/ceph/tags/.
-    # If you want to be more precise, you can always use a timestamp tag such as quay.io/ceph/ceph:v20.2.4-20260818
+    # If you want to be more precise, you can always use a timestamp tag such as quay.io/ceph/ceph:v20.2.5-20261028
     # This tag might not contain a new Ceph version, just security fixes from the underlying operating system, which will reduce vulnerabilities
-    image: quay.io/ceph/ceph:v20.2.4@sha256:6bb1c8a42fbc0bf87938946990b65174466997bc11c31eb5a323225a779fd8f9
+    image: quay.io/ceph/ceph:v20.2.5-20261028@sha256:4337ac8ac81d40df136e5eac92ca53bb52360a5e039f3d1f7935e729eb5ef42c
     # Whether to allow unsupported versions of Ceph. Currently Squid and Tentacle are supported.
     # Future versions such as Umbrella (v21) would require this to be set to `true`.
     # Do not set to true in production.
@@ -94,6 +94,12 @@ spec:
     # port: 8443
     # serve the dashboard using SSL
     ssl: true
+    # The TLS secret (type kubernetes.io/tls) in this namespace that Rook
+    # uses for the dashboard. It is issued and rotated by the service-CA
+    # operator via the annotation in rook-ceph-mgr-dashboard-cert-service.yaml,
+    # and Rook re-applies it automatically when the secret changes, so no
+    # certificate rotation CronJob is needed.
+    sslCertificateRef: rook-ceph-mgr-dashboard-tls
     # The url of the Prometheus instance
     # prometheusEndpoint: <protocol>://<prometheus-host>:<port>
     prometheusEndpoint: http://prometheus-ceph-service.prometheus.svc.cluster.local:9090

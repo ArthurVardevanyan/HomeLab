@@ -1,5 +1,22 @@
 # CEPH
 
+## Table of Contents
+
+- [CEPH](#ceph)
+  - [Table of Contents](#table-of-contents)
+  - [Networking Test](#networking-test)
+  - [Dashboard TLS](#dashboard-tls)
+  - [Upgrades](#upgrades)
+    - [Components tracked](#components-tracked)
+    - [File classification](#file-classification)
+    - [Checklist](#checklist)
+  - [Known Issues](#known-issues)
+    - [S3 `PUT` → `403 Forbidden` — Ceph v20.2.4 SigV4 Hardening (CVE-2026-54330)](#s3-put--403-forbidden--ceph-v2024-sigv4-hardening-cve-2026-54330)
+    - [CephX Key Rotation (CVE-2025-30156)](#cephx-key-rotation-cve-2025-30156)
+  - [Storage Class Image Features](#storage-class-image-features)
+    - [CI StorageClass (`rook-ceph-block-virtualization-ci`)](#ci-storageclass-rook-ceph-block-virtualization-ci)
+  - [Refs](#refs)
+
 ```bash
 kubectl -n rook-ceph exec -it deploy/rook-ceph-tools -- bash
 
@@ -74,6 +91,133 @@ subjects:
 ./notes/rook multus validation cleanup --namespace rook-ceph
 ```
 
+## Dashboard TLS
+
+The dashboard serving certificate is issued by the OpenShift service-CA
+operator and applied by Rook. A dedicated Service that only ArgoCD owns,
+`rook-ceph-mgr-dashboard-cert`
+(`base/rook-ceph-mgr-dashboard-cert-service.yaml`), carries the
+`service.beta.openshift.io/serving-cert-secret-name` annotation and exists
+only so the service-CA operator can maintain the
+`rook-ceph-mgr-dashboard-tls` Secret (a cert for
+`rook-ceph-mgr-dashboard-cert.rook-ceph.svc`). The annotation is not put on
+the real `rook-ceph-mgr-dashboard` Service, because Rook owns and reconciles
+that one and would drop foreign annotations — which would make the
+service-CA operator delete the issued secret.
+
+The CephCluster references the secret through
+`spec.dashboard.sslCertificateRef`, so Rook configures the dashboard with it
+and re-applies it automatically on rotation (Rook v1.21+) — no certificate
+rotation CronJob is needed. This replaced the old
+`ceph-dashboard-cert-rotate` CronJob, which copied the letsencrypt-issued
+`rook-ceph-cert` into the mgr config-key every 6 hours, and was deleted.
+The letsencrypt `rook-ceph-cert` Certificate itself stays: it is still the
+TLS termination cert for the public route
+(`base/gateway/listenerset.yaml`). The `BackendTLSPolicy` validates the
+backend against the cert Service's DNS name above, with the service CA fed
+into the `ca-bundle` by the trust-manager bundle in
+`kubernetes/cert-manager`.
+
+## Upgrades
+
+Fast-track procedure for upgrading the Rook operator + Ceph daemons. Last run:
+**v1.20.7 → v1.21.2** (2026-11-18), which also bumped the Ceph daemons
+`v20.2.4 → v20.2.5-20261028`, ceph-csi-operator `v1.0.4 → v1.1.0`, and all 7
+CSI sidecar images.
+
+### Components tracked
+
+| Component            | Image (digest-pinned)                          | Local file(s)                                 |
+| -------------------- | ---------------------------------------------- | --------------------------------------------- |
+| Rook Ceph operator   | `docker.io/rook/ceph:vX.Y.Z@sha256:...`        | `base/deployment.yaml`                        |
+| Ceph daemons         | `quay.io/ceph/ceph:vA.B.C-YYYYMMDD@sha256:...` | `base/ceph-cluster.yaml`, `base/toolbox.yaml` |
+| ceph-csi-operator    | `quay.io/cephcsi/ceph-csi-operator:vX@sha256`  | `base/csi/deployment.yaml`                    |
+| 7 CSI sidecar images | tag-only upstream → **SHA-pinned locally**     | `base/csi/configmap.yaml`                     |
+
+### File classification
+
+**Wholesale-adopt from upstream** (rebuild, then apply the local transform):
+
+- `base/crds.yaml` ← `deploy/examples/crds.yaml`
+- `base/csi/rbac.yaml` ← CSI RBAC section of `deploy/examples/csi-operator.yaml`
+- `base/csi/crds.yaml` ← CSI CRD section of `deploy/examples/csi-operator.yaml`
+- `base/csi/network-policy.yaml` ← CSI NetworkPolicy from `deploy/examples/networkpolicy.yaml` (new in v1.21)
+
+Local transform: `---` at the top of the file, strip trailing
+`# namespace:operator` comments with `sed 's/ # namespace:operator$//'`,
+ensure trailing newline, `prettier --write`, and expand any
+kubebuilder-style `verbs: ["*"]` in unbound admin roles to an explicit verb
+list (the repo's RBAC wildcard check rejects `*`).
+
+**Delta-port** (heavily customized locally — cherry-pick only the upstream
+changes, never replace the file):
+
+- `base/deployment.yaml` — bump the operator image
+- `base/configmap.yaml` — new/changed `ROOK_*` env vars (diff upstream
+  `deploy/examples/common.yaml` against the old tag)
+- `base/rbac-ceph-cluster.yaml` — new verbs/resources in `rook-ceph-global`
+- `base/csi/deployment.yaml` — bump the csi-op image
+- `base/csi/configmap.yaml` — bump the 7 sidecar tags and re-pin digests
+- `base/ceph-cluster.yaml`, `base/toolbox.yaml` — Ceph daemon image
+- `base/trim-override.yaml`
+- `components/*/storage-class.yaml` — new CSI `parameters`, if any
+
+### Checklist
+
+1. **Fetch both tags:**
+   `git clone --branch v<old> --depth 1 https://github.com/rook/rook` (and the
+   same for the new tag), then diff `deploy/examples/` between the two checkouts.
+   Both v1.20.x and v1.21.x ship the sample manifests there. New CSI sidecar
+   tags are listed in `deploy/examples/images.txt`; note its Ceph daemon tag
+   may lag the latest point release, so pick the desired
+   `quay.io/ceph/ceph:vA.B.C-YYYYMMDD` tag from the [Ceph project](https://quay.io/organization/ceph)
+   instead.
+2. **Read the release notes** for both Rook and ceph-csi-operator for breaking
+   changes and flipped defaults (e.g. v1.21 defaults
+   `ROOK_REQUIRE_MSGR2`/`requireMsgr2` to `true` — we keep it `false`).
+3. **Rebuild the wholesale-adopt files** from the new tag, apply the local
+   transform, then verify the invariant: `diff` old-local vs new-local must be
+   exactly the upstream delta (no formatting noise).
+4. **Port the deltas** in the customized files.
+5. **Re-pin all digests** with `skopeo inspect docker://<ref>` (use the
+   top-level manifest-list digest) for rook/ceph, ceph/ceph, csi-op, and the
+   7 sidecars in `base/csi/configmap.yaml`.
+6. **StorageClass gotcha:** if the new CSI release adds `parameters` to the RBD
+   StorageClasses, the fields are immutable — **delete them by hand before the
+   ArgoCD sync** (the app uses server-side apply and would stall otherwise):
+
+   ```bash
+   kubectl -n rook-ceph get sc # confirm names
+   kubectl delete sc rook-ceph-block rook-ceph-block-ci rook-ceph-block-virtualization rook-ceph-block-virtualization-ci
+   ```
+
+   ArgoCD recreates them on sync; existing PVCs/PVs are not affected.
+
+7. **Validate locally** (see AGENTS.md for details):
+
+   ```bash
+   k8s-gitops-ci kustomize-fix -dir kubernetes/ceph
+   k8s-gitops-ci test --app kubernetes/ceph --assume-openshift --disable-checks avp
+   k8s-gitops-ci test --dirs "kubernetes/,tekton/,.tekton/,okd/" --assume-openshift --disable-checks avp
+   ```
+
+8. **Post-merge runbook** (in order):
+   1. Delete the 4 RBD StorageClasses (only if new `parameters` were added).
+   2. ArgoCD-sync the `ceph` app.
+   3. Verify:
+      - single operator version:
+        `kubectl -n rook-ceph get deployment -l rook_cluster=rook-ceph` → one
+        `rook-version=v<new>` per deployment
+      - `kubectl -n rook-ceph get cephcluster rook-ceph` → `Ready`,
+        `HEALTH_OK` (toolbox)
+      - CSI: `kubectl get csidriver`, csi-op pod on the new image, sidecar pods
+        on the new digests
+      - the 4 RBD StorageClasses are recreated with the new `parameters`
+      - if the RGW version changed, regression-test S3 `PUT` via thanos and
+        nextcloud (see Known Issues)
+   4. Expect brief mon/MDS flapping while the daemon image rolls — that is
+      normal for a Ceph point-release upgrade.
+
 ## Known Issues
 
 ### S3 `PUT` → `403 Forbidden` — Ceph v20.2.4 SigV4 Hardening (CVE-2026-54330)
@@ -121,10 +265,10 @@ where `Content-Type` is present but not signed. Per the AWS SigV4 spec
   > ClusterIP-only (no Route/Ingress), so exposure is limited to cluster-internal
   > attackers. Acceptable for a homelab.
 
-- **Pending:** upgrade to Ceph v20.2.5 (ceph PR #71364 fixes compatibility
-  while preserving CVE protection). Remove the `rgw_sigv4_insecure` override
-  and perform a rolling upgrade via Rook. v20.2.5 milestone is currently open
-  and 9+ days past its 2026-09-22 due date.
+- **Resolved (2026-11-18):** upgraded to Ceph `v20.2.5-20261028` alongside
+  Rook v1.21.2 (see [Upgrades](#upgrades)) and removed the
+  `rgw_sigv4_insecure` override from `base/trim-override.yaml`. S3 `PUT`
+  works again with the CVE-2026-54330 hardening re-enabled.
 
 ### CephX Key Rotation (CVE-2025-30156)
 

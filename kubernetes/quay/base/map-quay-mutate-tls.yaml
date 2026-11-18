@@ -7,9 +7,14 @@ spec:
   reinvocationPolicy: Never
   failurePolicy: Fail
   matchConditions:
+    # Use guarded request.name instead of object.metadata.name: cert-manager
+    # creates private-key secrets with generateName only, so the admission
+    # request has no name key at all. Accessing it without has() errors out,
+    # which denies issuance (failurePolicy: Fail) for those requests.
     - expression: >-
         object.kind == 'Secret' &&
-        object.metadata.name == 'quay-config-bundle'
+        has(request.name) &&
+        request.name == 'quay-config-bundle'
       name: matches-secret
     - expression: >-
         request.userInfo.username == 'system:serviceaccount:cert-manager:cert-manager'

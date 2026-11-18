@@ -1,0 +1,30 @@
+---
+# Standalone Service owned by ArgoCD, NOT merged onto the
+# Rook-operator-owned rook-ceph-mgr-dashboard Service: the operator
+# reconciles that one and would drop foreign annotations (which would
+# make the service-CA operator delete the issued secret). This Service
+# exists only so the service-CA operator can issue and rotate the
+# dashboard serving cert into rook-ceph-mgr-dashboard-tls, which the
+# CephCluster consumes via spec.dashboard.sslCertificateRef.
+# No traffic is routed to it.
+apiVersion: v1
+kind: Service
+metadata:
+  name: rook-ceph-mgr-dashboard-cert
+  namespace: rook-ceph
+  labels:
+    app.kubernetes.io/instance: ceph
+  annotations:
+    service.beta.openshift.io/serving-cert-secret-name: rook-ceph-mgr-dashboard-tls
+spec:
+  type: ClusterIP
+  selector:
+    app: rook-ceph-mgr
+    mgr_role: active
+    rook_cluster: rook-ceph
+  ports:
+    - name: https-dashboard
+      port: 8443
+      protocol: TCP
+      targetPort: dashboard
+  sessionAffinity: None

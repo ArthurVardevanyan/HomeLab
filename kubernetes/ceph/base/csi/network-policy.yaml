@@ -1,0 +1,15 @@
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: ceph-csi-ceph-csi-controller-manager
+  namespace: rook-ceph
+spec:
+  egress:
+    - {}
+  podSelector:
+    matchLabels:
+      control-plane: ceph-csi-op-controller-manager
+  policyTypes:
+    - Ingress
+    - Egress

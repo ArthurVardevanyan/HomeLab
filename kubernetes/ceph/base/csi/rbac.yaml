@@ -505,6 +505,8 @@ rules:
     verbs:
       - get
       - list
+      - watch
+      - update
   - apiGroups:
       - snapshot.storage.k8s.io
     resources:
@@ -672,9 +674,15 @@ rules:
       - ""
     resources:
       - persistentvolumes
+    verbs:
+      - get
+  - apiGroups:
+      - ""
+    resources:
       - persistentvolumeclaims
     verbs:
       - get
+      - patch
   - apiGroups:
       - authentication.k8s.io
     resources:
@@ -752,6 +760,83 @@ rules:
       - csi.ceph.io
     resources:
       - clientprofilemappings/status
+    verbs:
+      - get
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/name: ceph-csi-operator
+  name: ceph-csi-clientprofilereplication-admin-role
+rules:
+  - apiGroups:
+      - csi.ceph.io
+    resources:
+      - clientprofilereplications
+    verbs:
+      - create
+      - delete
+      - get
+      - list
+      - patch
+      - update
+      - watch
+  - apiGroups:
+      - csi.ceph.io
+    resources:
+      - clientprofilereplications/status
+    verbs:
+      - get
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/name: ceph-csi-operator
+  name: ceph-csi-clientprofilereplication-editor-role
+rules:
+  - apiGroups:
+      - csi.ceph.io
+    resources:
+      - clientprofilereplications
+    verbs:
+      - create
+      - delete
+      - get
+      - list
+      - patch
+      - update
+      - watch
+  - apiGroups:
+      - csi.ceph.io
+    resources:
+      - clientprofilereplications/status
+    verbs:
+      - get
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/name: ceph-csi-operator
+  name: ceph-csi-clientprofilereplication-viewer-role
+rules:
+  - apiGroups:
+      - csi.ceph.io
+    resources:
+      - clientprofilereplications
+    verbs:
+      - get
+      - list
+      - watch
+  - apiGroups:
+      - csi.ceph.io
+    resources:
+      - clientprofilereplications/status
     verbs:
       - get
 ---
@@ -871,14 +956,6 @@ rules:
       - update
       - watch
   - apiGroups:
-      - cbt.storage.k8s.io
-    resources:
-      - snapshotmetadataservices
-    verbs:
-      - get
-      - list
-      - watch
-  - apiGroups:
       - csi.ceph.io
     resources:
       - cephconnections
@@ -892,6 +969,7 @@ rules:
       - csi.ceph.io
     resources:
       - clientprofilemappings
+      - clientprofilereplications
       - clientprofiles
       - drivers
     verbs:
@@ -906,6 +984,7 @@ rules:
       - csi.ceph.io
     resources:
       - clientprofilemappings/finalizers
+      - clientprofilereplications/finalizers
       - clientprofiles/finalizers
       - drivers/finalizers
     verbs:
@@ -914,6 +993,7 @@ rules:
       - csi.ceph.io
     resources:
       - clientprofilemappings/status
+      - clientprofilereplications/status
       - clientprofiles/status
       - drivers/status
     verbs:
@@ -927,6 +1007,18 @@ rules:
     verbs:
       - get
       - list
+      - watch
+  - apiGroups:
+      - networking.k8s.io
+    resources:
+      - networkpolicies
+    verbs:
+      - create
+      - delete
+      - get
+      - list
+      - patch
+      - update
       - watch
   - apiGroups:
       - storage.k8s.io
@@ -1086,6 +1178,8 @@ rules:
     verbs:
       - get
       - list
+      - watch
+      - update
   - apiGroups:
       - ""
     resources:
@@ -1115,6 +1209,31 @@ rules:
       - get
       - list
       - watch
+  - apiGroups:
+      - groupsnapshot.storage.k8s.io
+    resources:
+      - volumegroupsnapshotclasses
+    verbs:
+      - get
+      - list
+      - watch
+  - apiGroups:
+      - groupsnapshot.storage.k8s.io
+    resources:
+      - volumegroupsnapshotcontents
+    verbs:
+      - get
+      - list
+      - watch
+      - update
+      - patch
+  - apiGroups:
+      - groupsnapshot.storage.k8s.io
+    resources:
+      - volumegroupsnapshotcontents/status
+    verbs:
+      - update
+      - patch
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
@@ -1218,6 +1337,90 @@ rules:
     verbs:
       - patch
   - apiGroups:
+      - snapshot.storage.k8s.io
+    resources:
+      - volumesnapshots
+    verbs:
+      - get
+      - list
+      - watch
+      - update
+  - apiGroups:
+      - snapshot.storage.k8s.io
+    resources:
+      - volumesnapshotclasses
+    verbs:
+      - get
+      - list
+      - watch
+  - apiGroups:
+      - snapshot.storage.k8s.io
+    resources:
+      - volumesnapshotcontents
+    verbs:
+      - get
+      - list
+      - watch
+      - patch
+      - update
+  - apiGroups:
+      - snapshot.storage.k8s.io
+    resources:
+      - volumesnapshotcontents/status
+    verbs:
+      - update
+      - patch
+  - apiGroups:
+      - groupsnapshot.storage.k8s.io
+    resources:
+      - volumegroupsnapshotclasses
+    verbs:
+      - get
+      - list
+      - watch
+  - apiGroups:
+      - groupsnapshot.storage.k8s.io
+    resources:
+      - volumegroupsnapshotcontents
+    verbs:
+      - get
+      - list
+      - watch
+      - update
+      - patch
+  - apiGroups:
+      - groupsnapshot.storage.k8s.io
+    resources:
+      - volumegroupsnapshotcontents/status
+    verbs:
+      - update
+      - patch
+  - apiGroups:
+      - groupsnapshot.storage.openshift.io
+    resources:
+      - volumegroupsnapshotclasses
+    verbs:
+      - get
+      - list
+      - watch
+  - apiGroups:
+      - groupsnapshot.storage.openshift.io
+    resources:
+      - volumegroupsnapshotcontents
+    verbs:
+      - get
+      - list
+      - watch
+      - update
+      - patch
+  - apiGroups:
+      - groupsnapshot.storage.openshift.io
+    resources:
+      - volumegroupsnapshotcontents/status
+    verbs:
+      - update
+      - patch
+  - apiGroups:
       - ""
     resources:
       - configmaps
@@ -1247,6 +1450,14 @@ rules:
       - subjectaccessreviews
     verbs:
       - create
+  - apiGroups:
+      - storage.k8s.io
+    resources:
+      - volumeattributesclasses
+    verbs:
+      - get
+      - list
+      - watch
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
@@ -1468,6 +1679,7 @@ rules:
       - get
       - list
       - watch
+      - update
   - apiGroups:
       - snapshot.storage.k8s.io
     resources:
@@ -1678,6 +1890,7 @@ rules:
       - persistentvolumeclaims
     verbs:
       - get
+      - patch
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
