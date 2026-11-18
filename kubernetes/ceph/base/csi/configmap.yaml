@@ -6,16 +6,19 @@
 # https://github.com/ceph/ceph-csi-operator/blob/main/docs/helm-charts/drivers-chart.md#configuration
 
 # ImageSet ConfigMap defines the container images used by the CSI drivers.
+# Values are explicitly (SHA-)pinned instead of leaving them empty, because the
+# ceph-csi-operator's built-in defaults are tag-only. See the Upgrades section
+# of ../README.md for how to bump these when upgrading.
 apiVersion: v1
 kind: ConfigMap
 metadata:
   name: rook-csi-operator-image-set-configmap
   namespace: rook-ceph
 data:
-  provisioner: "registry.k8s.io/sig-storage/csi-provisioner:v6.2.0"
-  attacher: "registry.k8s.io/sig-storage/csi-attacher:v4.12.0"
-  resizer: "registry.k8s.io/sig-storage/csi-resizer:v2.1.0"
-  snapshotter: "registry.k8s.io/sig-storage/csi-snapshotter:v8.5.0"
-  registrar: "registry.k8s.io/sig-storage/csi-node-driver-registrar:v2.17.0"
-  plugin: "quay.io/cephcsi/cephcsi:v3.17.1"
-  addons: "quay.io/csiaddons/k8s-sidecar:v0.14.0"
+  provisioner: "registry.k8s.io/sig-storage/csi-provisioner:v6.3.0@sha256:a4b0b1a37605b7b04a293e136edf7006ec1786a8eb3f4e5a945f81d667dcc371"
+  attacher: "registry.k8s.io/sig-storage/csi-attacher:v4.13.0@sha256:d1a26170efed45491074ca4545c81844eee2b9043fb885ac01fb4aed6f8b72d2"
+  resizer: "registry.k8s.io/sig-storage/csi-resizer:v2.2.1@sha256:ea1d25e23479000c7e8eeb92d827df66258df4e482ca054c5e7ce3fc0f5c41a5"
+  snapshotter: "registry.k8s.io/sig-storage/csi-snapshotter:v8.6.0@sha256:42af0929bcd60a43499825c078a60ff0534e08af8fbeb283aa391be40feb9f3e"
+  registrar: "registry.k8s.io/sig-storage/csi-node-driver-registrar:v2.18.0@sha256:b7fefd08651f00ac4df1a196ed4c621c2451fbb899297fe9fad9e36c667af0c0"
+  plugin: "quay.io/cephcsi/cephcsi:v3.18.1@sha256:a8c0653a9565049ee7b36a585753e5e0e8fe2e4e5a67e9db3a5f8d9d7e890635"
+  addons: "quay.io/csiaddons/k8s-sidecar:v0.15.1@sha256:f342ecd54c9c1ff7b42582c54f4deaa64310f96bcf73891d88744da0f72426b3"
