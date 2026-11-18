@@ -31,6 +31,13 @@ spec:
       requests:
         cpu: "75m"
         memory: 512Mi
+    # Workaround for minio-go v7.x SigV4 incompatibility with Ceph v20.2.4+
+    # RGW strict SigV4 enforcement rejects requests missing Content-Type in SignedHeaders.
+    # Setting to "false" relaxes this to warn-only until minio-go v7.x fix is released.
+    # See: https://github.com/minio/minio-go/pull/2301
+    # See: https://github.com/ceph/ceph/pull/71364
+    rgwConfig:
+      rgw_sig_v4_strict: "false"
     placement:
       nodeAffinity:
         requiredDuringSchedulingIgnoredDuringExecution:

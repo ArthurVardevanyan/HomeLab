@@ -9,3 +9,9 @@ data:
     [global]
     bdev_enable_discard = true
     bdev_async_discard = true
+    # Temporary workaround: v20.2.4's CVE-2026-54330 hardening rejects S3
+    # requests where Content-Type is not in SignedHeaders (minio-go streaming
+    # signer omits it), breaking PUTs. Disabling strict checks restores
+    # pre-CVE behavior. Remove after upgrading to v20.2.5+
+    # (ceph PR #71364 fixes compatibility while preserving CVE protection).
+    rgw_sigv4_insecure = true
