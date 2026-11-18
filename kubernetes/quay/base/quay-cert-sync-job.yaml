@@ -1,4 +1,48 @@
 ---
+# RBAC for the quay-cert-sync CronJob, which copies the service-CA
+# serving cert (quay-quay-app-tls) into the quay-config-bundle secret
+# and restarts quay-quay-app so quayside serves the service-CA cert.
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: quay-cert-sync
+  namespace: quay
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: quay-cert-sync
+  namespace: quay
+rules:
+  - apiGroups: [""]
+    resources: ["secrets"]
+    resourceNames: ["quay-config-bundle"]
+    verbs: ["get", "patch"]
+  - apiGroups: [""]
+    resources: ["secrets"]
+    verbs: ["list", "get"]
+  - apiGroups: ["apps"]
+    resources: ["deployments"]
+    resourceNames: ["quay-quay-app"]
+    verbs: ["patch"]
+  - apiGroups: ["apps"]
+    resources: ["deployments"]
+    verbs: ["get"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: quay-cert-sync
+  namespace: quay
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: quay-cert-sync
+subjects:
+  - kind: ServiceAccount
+    name: quay-cert-sync
+    namespace: quay
+---
 # Syncs the service-CA serving cert (tls.crt/tls.key) into the
 # quay-config-bundle secret under ssl.cert/ssl.key and restarts
 # quay-quay-app so quayside serves the service-CA cert.

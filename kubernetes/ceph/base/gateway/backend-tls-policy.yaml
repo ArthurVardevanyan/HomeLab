@@ -14,5 +14,7 @@ spec:
     caCertificateRefs:
       - group: ""
         kind: ConfigMap
-        name: openshift-service-ca.crt
-    hostname: rook-ceph-mgr-dashboard.rook-ceph.svc
+        name: ca-bundle
+    # The backend serves the service-CA-operator issued cert, which is
+    # scoped to the dedicated cert Service's DNS name, not the public route.
+    hostname: rook-ceph-mgr-dashboard-cert.rook-ceph.svc
