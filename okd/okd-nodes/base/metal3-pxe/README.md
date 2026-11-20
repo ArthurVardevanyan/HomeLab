@@ -148,6 +148,7 @@ The earlier note that `exit 0` made things loop was probably this same fallback 
 ## Gotchas
 
 - **Lost on pod restart.** If the metal3 pod is recreated the EFI is gone until the next CronJob run (up to 10 minutes). Hosts that PXE in that window get the stock binary.
+- **PXE TFTP times out but `:6180` works.** `br4.11` and `prov-shim` share VLAN 11, so the master answers ARP for `10.101.11.250` on both. `br4.11` wins, the router caches its MAC, and TFTP arrives on the interface dnsmasq is not bound to (`bind-dynamic` + `interface=prov-shim`), where it is dropped. `arping -c 3 -I br11 10.101.11.250` on the router shows two replies. Fix: `net.ipv4.conf.all.arp_ignore=1` on the masters, see [rp-filter-loose](../../../okd-configuration/components/rp-filter-loose/README.md).
 - **ArgoCD must have the files.** The cluster's `okd-nodes` Application syncs from the git remote. If `metal3-pxe/` is not pushed there, no CronJob or ConfigMap exists and the EFI only stays in the pod because it was copied by hand.
 - **Root device.** With `inspectionMode: disabled`, BMO defaults the root device hint to `/dev/sda`, which fails with `DeviceNotFound`. The BMHs set `rootDeviceHints.deviceName: /dev/nvme0n1` (the only disk in all four hosts).
 - **Hint changes mid-deploy are ignored.** Ironic does not pick up a changed BMH hint during a deploy. Fix the BMH first, then restart provisioning.
