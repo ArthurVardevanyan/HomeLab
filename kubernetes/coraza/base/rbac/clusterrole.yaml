@@ -5,29 +5,46 @@ kind: ClusterRole
 metadata:
   name: coraza-kubernetes-operator
   labels:
-    helm.sh/chart: coraza-kubernetes-operator-0.1.0
+    helm.sh/chart: coraza-kubernetes-operator-0.5.0
     app.kubernetes.io/name: coraza-kubernetes-operator
     app.kubernetes.io/instance: coraza-kubernetes-operator
     control-plane: coraza-controller-manager
-    app.kubernetes.io/version: "0.2.0"
+    app.kubernetes.io/version: "0.5.0"
     app.kubernetes.io/managed-by: Helm
 rules:
   - apiGroups:
       - ""
     resources:
-      - configmaps
+      - pods
     verbs:
-      - get
       - list
       - watch
   - apiGroups:
-      - "events.k8s.io"
       - ""
+    resources:
+      - serviceaccounts
+    verbs:
+      - get
+  - apiGroups:
+      - ""
+      - events.k8s.io
     resources:
       - events
     verbs:
       - create
       - patch
+  - apiGroups:
+      - authentication.k8s.io
+    resources:
+      - tokenreviews
+    verbs:
+      - create
+  - apiGroups:
+      - authorization.k8s.io
+    resources:
+      - subjectaccessreviews
+    verbs:
+      - create
   - apiGroups:
       - coordination.k8s.io
     resources:
@@ -41,9 +58,30 @@ rules:
       - update
       - watch
   - apiGroups:
-      - extensions.istio.io
+      - gateway.networking.k8s.io
     resources:
-      - wasmplugins
+      - gatewayclasses
+      - gateways
+    verbs:
+      - get
+      - list
+      - watch
+  - apiGroups:
+      - networking.istio.io
+    resources:
+      - envoyfilters
+    verbs:
+      - create
+      - delete
+      - get
+      - list
+      - patch
+      - update
+      - watch
+  - apiGroups:
+      - telemetry.istio.io
+    resources:
+      - telemetries
     verbs:
       - create
       - delete
@@ -66,39 +104,26 @@ rules:
   - apiGroups:
       - waf.k8s.coraza.io
     resources:
+      - engines/finalizers
+    verbs:
+      - update
+  - apiGroups:
+      - waf.k8s.coraza.io
+    resources:
       - engines/status
+      - ruledata/status
       - rulesets/status
+      - rulesources/status
     verbs:
       - get
       - patch
       - update
   - apiGroups:
-      - ""
-    resources:
-      - pods
-    verbs:
-      - get
-      - list
-      - watch
-  - apiGroups:
-      - ""
-    resources:
-      - secrets
-    verbs:
-      - get
-      - list
-      - watch
-  - apiGroups:
-      - gateway.networking.k8s.io
-    resources:
-      - gateways
-    verbs:
-      - get
-      - list
-      - watch
-  - apiGroups:
       - waf.k8s.coraza.io
     resources:
-      - engines/finalizers
+      - ruledata
+      - rulesources
     verbs:
-      - update
+      - get
+      - list
+      - watch

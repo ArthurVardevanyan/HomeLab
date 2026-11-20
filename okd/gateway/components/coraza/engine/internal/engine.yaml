@@ -9,14 +9,17 @@ metadata:
 spec:
   ruleSet:
     name: internal-ruleset
-  failurePolicy: fail
+  target:
+    type: Gateway
+    name: https-gateway
+    provider: Istio
+  # Start in Allow while dogfooding the envoy-coraza filter upstream hasn't
+  # re-baselined its conformance matrix (networking-incubator/coraza-kubernetes-operator#556).
+  # Flip to Fail once detection is verified in production logs.
+  failurePolicy: allow
   driver:
-    istio:
-      wasm:
-        image: "oci://ghcr.io/networking-incubator/coraza-proxy-wasm:1902646ac7391b65be092cdec9b47d29fa5724c7@sha256:8b4f77d853c6534a47317e72c764c01eeafb74d59aecc3fed960674451ac836a"
-        mode: gateway
-        workloadSelector:
-          matchLabels:
-            coraza: internal-ruleset
-        ruleSetCacheServer:
-          pollIntervalSeconds: 5
+    type: wasm
+    # Empty wasm config: the operator serves its bundled envoy-coraza module
+    # (CRS v4.30.0 embedded) to Envoy over ECDS/HTTPS. No image pin needed —
+    # the module version is tied to the operator image digest.
+    wasm: {}

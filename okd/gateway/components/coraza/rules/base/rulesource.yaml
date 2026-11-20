@@ -1,0 +1,17 @@
+---
+apiVersion: waf.k8s.coraza.io/v1alpha1
+kind: RuleSource
+metadata:
+  name: coraza-base-rules
+  namespace: openshift-ingress
+  annotations:
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+spec:
+  rules: |
+    SecRuleEngine On
+    SecDebugLogLevel 0
+    SecRequestBodyAccess On
+    SecResponseBodyAccess Off
+    SecAuditLog /dev/stdout
+    SecAuditLogFormat JSON
+    SecAuditEngine RelevantOnly

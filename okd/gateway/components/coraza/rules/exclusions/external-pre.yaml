@@ -1,9 +1,12 @@
-apiVersion: v1
-kind: ConfigMap
+---
+apiVersion: waf.k8s.coraza.io/v1alpha1
+kind: RuleSource
 metadata:
   name: coraza-rule-exclusions-external-pre
   namespace: openshift-ingress
-data:
+  annotations:
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+spec:
   rules: |
     # -- Pre-CRS Rule Exclusions (External Gateway) --
     # These run BEFORE CRS rules so that ctl:ruleRemoveById and
