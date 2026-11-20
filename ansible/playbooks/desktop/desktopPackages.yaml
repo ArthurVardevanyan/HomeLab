@@ -123,6 +123,12 @@
         url: "https://github.com/mikefarah/yq/releases/download/v{{ yq_version }}/yq_linux_amd64"
         dest: /usr/local/bin/yq
         mode: "0755"
+    - name: Download ArgoCD Vault Plugin
+      ansible.builtin.get_url:
+        # renovate: custom-github-release depName=argoproj-labs/argocd-vault-plugin
+        url: https://github.com/argoproj-labs/argocd-vault-plugin/releases/download/v1.18.1/argocd-vault-plugin_1.18.1_linux_amd64
+        dest: /usr/local/bin/argocd-vault-plugin
+        mode: "0755"
     - name: Install additional packages
       ansible.builtin.dnf:
         state: present
