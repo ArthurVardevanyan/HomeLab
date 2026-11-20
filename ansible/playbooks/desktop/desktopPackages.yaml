@@ -4,6 +4,9 @@
   gather_facts: false
   become: true
   user: arthur
+  vars:
+    # renovate: datasource=github-releases depName=mikefarah/yq
+    yq_version: "4.54.3"
   tasks:
     - name: Install RPM Fusion Free
       ansible.builtin.dnf:
@@ -116,34 +119,8 @@
           - pkgconfig # -2.3.0-3.fc43
     - name: Download YQ
       ansible.builtin.get_url:
-        # renovate: custom-github-release depName=mikefarah/yq
-        url: https://github.com/mikefarah/yq/releases/download/v4.54.1/yq_linux_amd64
-        dest: /usr/local/bin/yq
-        mode: "0755"
-    - name: Download ArgoCD Vault Plugin
-      ansible.builtin.get_url:
-        # renovate: custom-github-release depName=argoproj-labs/argocd-vault-plugin
-        url: https://github.com/argoproj-labs/argocd-vault-plugin/releases/download/v1.18.1/argocd-vault-plugin_1.18.1_linux_amd64
-        dest: /usr/local/bin/argocd-vault-plugin
-        mode: "0755"
-    - name: Install additional packages
-      ansible.builtin.dnf:
-        state: present
-        name:
-          # TODO: renovate: datasource=repology depName=fedora_43/vlc
-          - vlc # -3.0.22-1.fc43
-          # TODO: renovate: datasource=repology depName=fedora_43/gimp
-          - gimp # -3.0.6-5.fc43
-          - winetricks
-          - cura
-          - obs-studio
-          - openscad
-          - handbrake
-          - blender
-    - name: Download YQ
-      ansible.builtin.get_url:
-        # renovate: custom-github-release depName=mikefarah/yq
-        url: https://github.com/mikefarah/yq/releases/download/v4.54.1/yq_linux_amd64
+        # renovate: datasource=github-releases depName=mikefarah/yq
+        url: "https://github.com/mikefarah/yq/releases/download/v{{ yq_version }}/yq_linux_amd64"
         dest: /usr/local/bin/yq
         mode: "0755"
     - name: Download ArgoCD Vault Plugin

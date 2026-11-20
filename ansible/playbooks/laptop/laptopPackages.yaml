@@ -4,7 +4,22 @@
   gather_facts: false
   become: true
   user: arthur
+  vars:
+    # renovate: datasource=github-releases depName=mikefarah/yq
+    yq_version: "4.54.3"
   tasks:
+    - name: Import RPM Fusion GPG key
+      ansible.builtin.rpm_key:
+        # rpmfusion-free-fedora-2020 key, ID E06F8ECDD651FF2E (signs the release RPM)
+        key: https://rpmfusion.org/keys?action=AttachFile&do=get&target=RPM-GPG-KEY-rpmfusion-free-fedora-2020
+        state: present
+
+    - name: Install RPM Fusion Free
+      ansible.builtin.dnf:
+        name:
+          - https://mirrors.rpmfusion.org/free/fedora/rpmfusion-free-release-45.noarch.rpm
+        state: present
+
     - name: Upgrade all packages
       ansible.builtin.dnf:
         name: "*"
@@ -87,8 +102,8 @@
           # - arduino
     - name: Download YQ
       ansible.builtin.get_url:
-        # TODO: renovate: datasource=github-releases depName=mikefarah/yq
-        url: https://github.com/mikefarah/yq/releases/download/v4.44.2/yq_linux_arm64
+        # renovate: datasource=github-releases depName=mikefarah/yq
+        url: "https://github.com/mikefarah/yq/releases/download/v{{ yq_version }}/yq_linux_arm64"
         dest: /usr/local/bin/yq
         mode: "0755"
 
