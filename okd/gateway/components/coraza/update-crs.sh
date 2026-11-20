@@ -1,9 +1,11 @@
 #!/usr/bin/env bash
-# update-crs.sh — Regenerates OWASP CRS ConfigMaps and Secret from source.
+# update-crs.sh — Regenerates OWASP CRS RuleSources and RuleData from source.
 #                 Optionally updates recommended-conf from corazawaf/coraza.
 #
 # Supports three sources:
 #   - wasm (default): coraza-proxy-wasm repo — rules pre-validated for WASM runtime
+#     (archived upstream; kept as a known-good source until rules move to
+#     `kubectl-coraza generate`)
 #   - crs:            coreruleset/coreruleset repo — official CRS releases (newer versions)
 #   - coraza:         corazawaf/coraza repo — updates recommended-conf only
 #
@@ -131,17 +133,17 @@ if [[ "${SOURCE}" == "coraza" ]]; then
     exit 1
   fi
 
-  echo "==> Updating recommended-conf ConfigMap..."
+  echo "==> Updating recommended-conf RuleSource..."
   mkdir -p "${RECOMMENDED_CONF_DIR}"
 
-  cat >"${RECOMMENDED_CONF_DIR}/configmap.yaml" <<EOF
+  cat >"${RECOMMENDED_CONF_DIR}/rulesource.yaml" <<EOF
 ---
-apiVersion: v1
-kind: ConfigMap
+apiVersion: waf.k8s.coraza.io/v1alpha1
+kind: RuleSource
 metadata:
   name: coraza-recommended-conf
   namespace: ${NAMESPACE}
-data:
+spec:
   rules: |
     # -- Coraza Engine Configuration (from coraza.conf-recommended)
 $(sed -n '/^[^#]/{ s/^/    /; p; }' "${CONF_FILE}" || true)
@@ -149,13 +151,13 @@ EOF
 
   # Format
   if command -v prettier &>/dev/null; then
-    prettier --write "${RECOMMENDED_CONF_DIR}/configmap.yaml"
+    prettier --write "${RECOMMENDED_CONF_DIR}/rulesource.yaml"
   fi
 
   echo ""
   echo "==> Done! recommended-conf updated."
   echo "    Source: coraza (${REPO_URL})"
-  echo "    Output: ${RECOMMENDED_CONF_DIR}/configmap.yaml"
+  echo "    Output: ${RECOMMENDED_CONF_DIR}/rulesource.yaml"
   exit 0
 fi
 
@@ -212,8 +214,8 @@ for d in "${OWASP_CRS_DIR}"/*/; do
   rm -rf "${d}"
 done
 
-# ─── Generate ConfigMaps ─────────────────────────────────────────────────────
-echo "==> Generating CRS ConfigMaps..."
+# ─── Generate RuleSources ────────────────────────────────────────────────────
+echo "==> Generating CRS RuleSources..."
 declare -a COMPONENT_DIRS=()
 
 for f in "${CRS_CONF_DIR}"/*.conf; do
@@ -231,16 +233,16 @@ for f in "${CRS_CONF_DIR}"/*.conf; do
   mkdir -p "${OWASP_CRS_DIR}/${dir_name}"
   COMPONENT_DIRS+=("${dir_name}")
 
-  cat >"${OWASP_CRS_DIR}/${dir_name}/configmap.yaml" <<EOF
+  cat >"${OWASP_CRS_DIR}/${dir_name}/rulesource.yaml" <<EOF
 ---
-apiVersion: v1
-kind: ConfigMap
+apiVersion: waf.k8s.coraza.io/v1alpha1
+kind: RuleSource
 metadata:
   name: ${cm_name}
   namespace: ${NAMESPACE}
   annotations:
-    coraza.io/validation: "false"
-data:
+    waf.k8s.coraza.io/rule-validation: "false"
+spec:
   rules: |
 $(sed 's/^/    /' "${f}" || true)
 EOF
@@ -249,33 +251,33 @@ EOF
 apiVersion: kustomize.config.k8s.io/v1alpha1
 kind: Component
 resources:
-  - ./configmap.yaml
+  - ./rulesource.yaml
 EOF
 done
 
-echo "    Generated ${#COMPONENT_DIRS[@]} ConfigMap components"
+echo "    Generated ${#COMPONENT_DIRS[@]} RuleSource components"
 
-# ─── Generate Secret for .data Files ─────────────────────────────────────────
+# ─── Generate RuleData for .data Files ───────────────────────────────────────
 shopt -s nullglob
 DATA_FILES=("${CRS_DATA_DIR}"/*.data)
 shopt -u nullglob
 
 if [[ ${#DATA_FILES[@]} -gt 0 ]]; then
-  echo "==> Generating CRS data Secret (${#DATA_FILES[@]} data files)..."
-  cat >"${OWASP_CRS_DIR}/secret.yaml" <<EOF
+  echo "==> Generating CRS RuleData (${#DATA_FILES[@]} data files)..."
+  cat >"${OWASP_CRS_DIR}/ruledata.yaml" <<EOF
 ---
-apiVersion: v1
-kind: Secret
+apiVersion: waf.k8s.coraza.io/v1alpha1
+kind: RuleData
 metadata:
   name: crs-rule-data
   namespace: ${NAMESPACE}
-type: coraza/data
-stringData:
+spec:
+  files:
 EOF
   for f in "${DATA_FILES[@]}"; do
     bn=$(basename "${f}")
-    printf '  %s: |\n' "${bn}" >>"${OWASP_CRS_DIR}/secret.yaml"
-    sed 's/^/    /' "${f}" >>"${OWASP_CRS_DIR}/secret.yaml"
+    printf '    %s: |\n' "${bn}" >>"${OWASP_CRS_DIR}/ruledata.yaml"
+    sed 's/^/      /' "${f}" >>"${OWASP_CRS_DIR}/ruledata.yaml"
   done
 fi
 
@@ -302,9 +304,9 @@ done
 {
   echo "apiVersion: kustomize.config.k8s.io/v1alpha1"
   echo "kind: Component"
-  if [[ -f "${OWASP_CRS_DIR}/secret.yaml" ]]; then
+  if [[ -f "${OWASP_CRS_DIR}/ruledata.yaml" ]]; then
     echo "resources:"
-    echo "  - ./secret.yaml"
+    echo "  - ./ruledata.yaml"
   fi
   echo "components:"
   for d in "${ENABLED[@]}"; do
@@ -318,19 +320,19 @@ done
   fi
 } >"${OWASP_CRS_DIR}/kustomization.yaml"
 
-# ─── Update crs-setup/configmap.yaml ─────────────────────────────────────────
-echo "==> Updating crs-setup ConfigMap for v${CRS_VERSION}..."
+# ─── Update crs-setup/rulesource.yaml ────────────────────────────────────────
+echo "==> Updating crs-setup RuleSource for v${CRS_VERSION}..."
 CRS_SETUP_VERSION=$(echo "${CRS_VERSION}" | tr -d '.')
 mkdir -p "${CRS_SETUP_DIR}"
 
-cat >"${CRS_SETUP_DIR}/configmap.yaml" <<EOF
+cat >"${CRS_SETUP_DIR}/rulesource.yaml" <<EOF
 ---
-apiVersion: v1
-kind: ConfigMap
+apiVersion: waf.k8s.coraza.io/v1alpha1
+kind: RuleSource
 metadata:
   name: coraza-crs-setup
   namespace: ${NAMESPACE}
-data:
+spec:
   rules: |
     # -- OWASP CRS v${CRS_VERSION} Setup Configuration (from crs-setup.conf.example)
 
@@ -367,7 +369,7 @@ if command -v prettier &>/dev/null; then
   prettier --write \
     "${OWASP_CRS_DIR}/**/*.yaml" \
     "${OWASP_CRS_DIR}/*.yaml" \
-    "${CRS_SETUP_DIR}/configmap.yaml"
+    "${CRS_SETUP_DIR}/rulesource.yaml"
 else
   echo "    WARN: prettier not found in PATH, skipping formatting" >&2
 fi

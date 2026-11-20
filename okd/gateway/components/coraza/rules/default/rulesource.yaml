@@ -1,0 +1,16 @@
+---
+apiVersion: waf.k8s.coraza.io/v1alpha1
+kind: RuleSource
+metadata:
+  name: coraza-custom-default
+  namespace: openshift-ingress
+  annotations:
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+spec:
+  rules: |
+    # Include @recommended-conf
+    # Include @demo-conf
+    SecDebugLogLevel 0
+    SecRuleEngine On
+    # Include @crs-setup-conf
+    # Include @owasp_crs/*.conf

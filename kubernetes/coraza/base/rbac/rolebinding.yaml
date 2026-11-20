@@ -1,0 +1,22 @@
+---
+# Source: coraza-kubernetes-operator/templates/rolebinding.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: coraza-kubernetes-operator
+  namespace: coraza-system
+  labels:
+    helm.sh/chart: coraza-kubernetes-operator-0.5.0
+    app.kubernetes.io/name: coraza-kubernetes-operator
+    app.kubernetes.io/instance: coraza-kubernetes-operator
+    control-plane: coraza-controller-manager
+    app.kubernetes.io/version: "0.5.0"
+    app.kubernetes.io/managed-by: Helm
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: coraza-kubernetes-operator
+subjects:
+  - kind: ServiceAccount
+    name: coraza-kubernetes-operator
+    namespace: coraza-system
