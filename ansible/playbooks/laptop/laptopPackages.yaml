@@ -4,6 +4,9 @@
   gather_facts: false
   become: true
   user: arthur
+  vars:
+    # renovate: datasource=github-releases depName=mikefarah/yq
+    yq_version: "4.54.3"
   tasks:
     - name: Upgrade all packages
       ansible.builtin.dnf:
@@ -87,8 +90,8 @@
           # - arduino
     - name: Download YQ
       ansible.builtin.get_url:
-        # TODO: renovate: datasource=github-releases depName=mikefarah/yq
-        url: https://github.com/mikefarah/yq/releases/download/v4.44.2/yq_linux_arm64
+        # renovate: datasource=github-releases depName=mikefarah/yq
+        url: "https://github.com/mikefarah/yq/releases/download/v{{ yq_version }}/yq_linux_arm64"
         dest: /usr/local/bin/yq
         mode: "0755"
 

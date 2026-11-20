@@ -9,10 +9,10 @@
       ansible.builtin.yum_repository:
         name: kubernetes
         description: Kubernetes
-        baseurl: https://pkgs.k8s.io/core:/stable:/v1.36/rpm/
+        baseurl: https://pkgs.k8s.io/core:/stable:/v1.37/rpm/
         enabled: true
         gpgcheck: true
-        gpgkey: https://pkgs.k8s.io/core:/stable:/v1.36/rpm/repodata/repomd.xml.key
+        gpgkey: https://pkgs.k8s.io/core:/stable:/v1.37/rpm/repodata/repomd.xml.key
     - name: Install kubectl
       ansible.builtin.dnf:
         state: present
@@ -139,7 +139,7 @@
     - name: Download tkn
       ansible.builtin.get_url:
         # renovate: custom-github-release depName=tektoncd/cli
-        url: https://github.com/tektoncd/cli/releases/download/v0.46.1/tkn_0.46.1_Linux_aarch64.tar.gz
+        url: https://github.com/tektoncd/cli/releases/download/v0.47.0/tkn_0.47.0_Linux_aarch64.tar.gz
         dest: /tmp/tkn_Linux_aarch64.tar.gz
         mode: "0644"
       check_mode: false
@@ -168,7 +168,7 @@
     - name: Download Helm
       ansible.builtin.get_url:
         # renovate: custom-github-release depName=helm/helm
-        url: https://get.helm.sh/helm-v3.16.3-linux-arm64.tar.gz
+        url: https://get.helm.sh/helm-v3.22.1-linux-arm64.tar.gz
         dest: /tmp/helm-linux-arm64.tar.gz
         mode: "0644"
       check_mode: false
