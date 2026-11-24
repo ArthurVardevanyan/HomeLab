@@ -114,14 +114,28 @@ spec:
             description: "Replication lag is {{ $value }}s on {{ $labels.pod }}"
 
         # Backups
+        #
+        # CNPG runs a local WAL archiver (to the walStorage PVC) for every
+        # cluster, independent of spec.backup, so this alert applies to all
+        # clusters. Continuously-writing clusters (e.g. the quay registry)
+        # archive constantly, so a 1h window is appropriate. Low-activity
+        # *batch* workloads (e.g. the quay/clair CVE database, which only
+        # writes when the vulnerability updater runs) legitimately sit for
+        # hours without new WAL, so a 1h window is a permanent false positive
+        # for them; those clusters get a wider (24h) window instead. Add other
+        # batch CNPG clusters to the job list in the 24h term below. An
+        # archiver that is actively *failing* is still caught quickly by
+        # CNPGArchiveFailure / LastFailedArchiveTime regardless of this rule.
         - alert: CNPGNoRecentBackup
-          expr: time() - cnpg_pg_stat_archiver_last_archived_time > 3600
+          expr: |-
+            (time() - cnpg_pg_stat_archiver_last_archived_time{job!="quay/cnpg-clair"} > 3600)
+            or (time() - cnpg_pg_stat_archiver_last_archived_time{job="quay/cnpg-clair"} > 86400)
           for: 15m
           labels:
             severity: warning
           annotations:
             summary: "No recent WAL archive"
-            description: "No WAL archived in the last hour for {{ $labels.cluster }}"
+            description: "No WAL archived for {{ $labels.job }} (pod {{ $labels.pod }}) within the expected window"
 
         - alert: CNPGArchiveFailure
           expr: increase(cnpg_pg_stat_archiver_failed_count[1h]) > 0
