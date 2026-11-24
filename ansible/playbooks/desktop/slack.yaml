@@ -1,0 +1,19 @@
+---
+- name: Install Slack
+  hosts: ryzen
+  gather_facts: false
+  become: true
+  user: arthur
+  tasks:
+    - name: Install Slack
+      ansible.builtin.dnf:
+        state: present
+        name:
+          # renovate: datasource=slack depName=slack
+          - https://downloads.slack-edge.com/desktop-releases/linux/x64/4.53.292/slack-4.53.292-0.1.el8.x86_64.rpm
+
+    - name: Copy Slack Autostart Entry
+      ansible.builtin.copy:
+        src: "../../../machineConfigs/desktop/home/arthur/.config/autostart/slack.desktop"
+        dest: "/home/arthur/.config/autostart/slack.desktop"
+        mode: "0644"
