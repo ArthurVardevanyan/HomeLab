@@ -12,6 +12,7 @@
     - [Parsing Tool Output](#parsing-tool-output)
     - [Metric and Label Map (this cluster)](#metric-and-label-map-this-cluster)
   - [Phase 4 — Analysis and Reporting](#phase-4--analysis-and-reporting)
+  - [Post-Remediation Follow-ups](#post-remediation-follow-ups)
   - [Pitfalls Learned](#pitfalls-learned)
   - [Verification Checklist](#verification-checklist)
 
@@ -189,9 +190,10 @@ avg, count, firstTimestamp}]}` — _no raw points and no per-point
   the always-on synthetic `Watchdog`).
 - API server: `sum(rate(apiserver_request_total{code=~"5.."}[1m]))`.
 
-**Not yet usable:** `get_alerts` / `get_silences` fail until the
-`alertmanager_url` port fix from the 2026-11-24 report (F2: 9095 → 9094 in
-`okd/mcp-server/base/config.toml`) is applied. Until then, use the
+**Fixed in PR #866:** `get_alerts` / `get_silences` failed because
+`alertmanager_url` pointed at pod port 9095 (the TLS sidecar) instead of
+the Service web port 9094 — the one-line fix in
+`okd/mcp-server/base/config.toml` is PR #866. Until it merges, use the
 `ALERTS{...}` metric above as the alerts source.
 
 **kubectl ground truth (read-only)** — use when MCP data needs a second
@@ -288,6 +290,74 @@ must not be changed — OVN DNAT rewrites Service port 9094 → target port
 **Never cite `probe_http` 400s** with empty headers as evidence — they are
 a probe artifact against Go TLS listeners (see Phase 3).
 
+## Post-Remediation Follow-ups
+
+The 2026-11-24 deep dive ([report](../notes/cluster-health/)) produced
+three in-repo fixes. Their state, and the manual steps they still require:
+
+| Finding                                                            | Fix                                                                                                                                                    | PR   | Manual follow-up                                                   |
+| ------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------ | ---- | ------------------------------------------------------------------ |
+| F2 — MCP `alertmanager_url` at pod port 9095                       | one line: 9095 → 9094 in `okd/mcp-server/base/config.toml`                                                                                             | #866 | none (auto-sync); verify MCP `get_alerts` returns data after merge |
+| F4 — 11 × `PodDisruptionBudgetAtLimit` noise                       | black-hole receiver + first-in-tree route in the GitOps-managed `alertmanager-main` Secret (`okd/openshift-monitoring/overlays/okd/alertmanager.yaml`) | #868 | **manual app sync, then delete six silences** (below)              |
+| F5 — `CNPGNoRecentBackup` on clair (batch-workload false positive) | 24 h window for `job="quay/cnpg-clair"`; strict 1 h kept for all other clusters                                                                        | #867 | delete two silences (below)                                        |
+
+### F4: after #868 merges
+
+1. **Sync the app manually** — the `openshift-monitoring` ArgoCD app has
+   no `automated` sync policy: `argocd app sync openshift-monitoring`.
+2. **Verify the chain**: the `alertmanager-main` Secret matches the
+   rendered overlay → the in-cluster controller regenerates
+   `alertmanager-main-generated` (≤ 1 min — a probe edit of the source
+   Secret propagated end-to-end in under a minute on 2026-11-24) → the
+   pod's config-reloader reloads Alertmanager.
+3. **Delete the six user silences** that masked the alerts. They were
+   created 2026-02/03 with **typo'd end years** (3026/3029 — presumably
+   meant 2027) and would otherwise keep masking for ~a century. Delete via
+   the AM v2 API (port-forward the pod's 9093 — see Phase 3):
+   `curl -XDELETE http://127.0.0.1:9093/api/v2/silences/<id>`:
+
+   | ID (prefix)  | Scope                                                                                       | end as created |
+   | ------------ | ------------------------------------------------------------------------------------------- | -------------- |
+   | `5289701e-…` | quay / `clair-primary`                                                                      | 3026-02-20     |
+   | `40250d44-…` | grafana / `grafana-primary`                                                                 | 3026-03-05     |
+   | `d3ec3618-…` | homeassistant / `homeassistant-primary`                                                     | 3026-03-05     |
+   | `fd3bbd64-…` | immich / `immich-primary`                                                                   | 3026-03-05     |
+   | `abb5843a-…` | stackrox / `stackrox-primary`                                                               | 3029-03-05     |
+   | `cc8da268-…` | regex `poddisruptionbudget=~.*-primary` (covers the six clusters without a per-PDB silence) | 3026-03-06     |
+
+   **Do not delete** `6cd2facf-…` (kubevirt PDB silences, owned by the
+   `hyperconverged-cluster-operator`) or `61244d47-…` (silences a _real_
+   `PodDisruptionBudgetLimit` breach on `clair-set-00` — a separate,
+   explicit decision, and unaffected by the #868 route).
+
+### F5: after #867 merges
+
+Delete the two clair silences (both match `job=quay/cnpg-clair`):
+`a0a135e6-…` (until 2027-04-24; matches **every** alert from the job) and
+`5e0062ed-…` (until **4026**-04-06 — typo'd year; matches
+`CNPGNoRecentBackup` on `clair-.*` pods).
+
+### KCM rule patch — do not build procedures around it
+
+The stock `PodDisruptionBudgetAtLimit` rule lives in the
+`kube-controller-manager-operator` PrometheusRule. Manually patching its
+`expected_pods > 0` to `> 1` makes the 11 alerts _resolve at the source_ —
+but the `cluster-version-operator` **reverts manual edits within minutes**,
+with or without an upgrade (observed 2026-11-24: applied 19:03:50Z →
+reverted by 19:33Z; re-applied 19:47:37Z → reverted 19:50:35Z;
+`managedFields` names `cluster-version-operator` as the manager). The
+operator reverts the rule on its own reconcile, so there is no durable
+"re-apply after OKD upgrade" story. Treat the patch as a short-lived
+cosmetic mitigation (clean dashboards for a few minutes to an hour) only.
+The durable suppression is the #868 black-hole route: it lives in the
+GitOps-managed Secret, which OKD upgrades do not touch, and it keeps
+dropping the notifications even while the operator flips the rule's state.
+
+Corollary for dashboards: after the #868 sync, the 11 alerts are no longer
+_notified_, but they will still show as **firing** in Prometheus/Alertmanager
+(the rule is unchanged, and the masking silences are deleted) — expect that
+until the stock rule is fixed upstream.
+
 ## Pitfalls Learned
 
 - **zsh does not word-split**: `for p in "a b"; do set -- $p; …` silently
@@ -313,6 +383,27 @@ a probe artifact against Go TLS listeners (see Phase 3).
   apiVersions.
 - **`node_collector_evictions_total` is registered but empty** — don't
   build eviction analysis on it.
+- **`cluster-version-operator` reverts manual edits** to the
+  `kube-controller-manager-operator` PrometheusRule within minutes —
+  "patch a stock rule until the next upgrade" is not a viable mitigation
+  (see Post-Remediation Follow-ups).
+- **AlertmanagerConfig CRs are inert on this build.** The in-pod config
+  generator is a vanilla prometheus-operator 0.93.1 that only watches the
+  mounted config files (rewriting them on a fixed ~3-min cycle); it never
+  merges AMC specs — verified empirically (a test AMC in `grafana` never
+  reached the generated config) — and the alertmanager ServiceAccount has
+  no RBAC for `alertmanagerconfigs`. Extend the `alertmanager-main` Secret
+  via the `okd/openshift-monitoring` overlay instead.
+- **Alertmanager v2 API**: `POST /api/v2/silences` matchers require
+  `isRegex` (sending `type` instead is rejected with code 602);
+  `GET /api/v2/alerts` returns a bare JSON list, not
+  `{"alerts": [...]}`.
+- **`kubectl delete` prompts interactively** in this kubectl build even
+  with `--force --grace-period=0` — in a non-tty the prompt cancels the
+  deletion; pipe `yes |` to force through.
+- **Existing silences carry typo'd end years** (3006–4026; the HCO
+  kubevirt one is an intentional "forever" in 3000). Always check `endsAt`
+  before assuming a silence has expired — or will.
 
 ## Verification Checklist
 
@@ -324,9 +415,14 @@ After applying fixes (or closing an incident), confirm:
 - [ ] Descheduler quiet: `descheduler:node:eviction_count:10m == 0` on the
       affected nodes; kubelet PSI `avg10/60/300` back to ~0 at repeated
       samples.
-- [ ] Active-alert count back to baseline. Pre F4/F5 remediation the
-      baseline is 12 real alerts (11 × PodDisruptionBudgetAtLimit + 1 ×
-      CNPGNoRecentBackup); after remediation it should drop to ~0–1.
+- [ ] _Notifying_ alerts back to baseline. Pre-remediation the noise was
+      11 × `PodDisruptionBudgetAtLimit` + 1 × `CNPGNoRecentBackup`. After
+      #867 the clair alert resolves at the source; after the #868 sync the
+      AtLimit alerts are no longer _notified_ (black-hole route) — but they
+      may still show as firing in Prometheus, because the stock rule is
+      unchanged and the `cluster-version-operator` reverts any manual patch
+      within minutes (see Post-Remediation Follow-ups). Expect ~0–1
+      notifying alerts once both PRs are merged and synced.
 - [ ] etcd 3/3 healthy, no alarms; ClusterOperators all converged.
 - [ ] User-workload alerts from the last report (Velero, liveness, …) have
       cleared or are explicitly accepted.
