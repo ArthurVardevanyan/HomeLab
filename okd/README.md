@@ -4,6 +4,7 @@
   - [Deploy](#deploy)
   - [OKD WIF](#okd-wif)
   - [MTU Change](#mtu-change)
+  - [Health Checks](#health-checks)
   - [REF](#ref)
 
 ## Deploy
@@ -45,6 +46,13 @@ oc patch Network.operator.openshift.io cluster --type=merge --patch '{"spec": { 
 oc patch Network.operator.openshift.io cluster --type=merge --patch \
   '{"spec": { "migration": null, "defaultNetwork":{ "ovnKubernetesConfig": { "mtu": 8900 }}}}'
 ```
+
+## Health Checks
+
+Full-cluster health assessment: see [HEALTH-RUNBOOK.md](HEALTH-RUNBOOK.md)
+for must-gather collection (and its known gaps), MG analysis recipes, the
+live MCP tool quirks and metric/label map, and severity grading. The
+latest full report: [notes/cluster-health/](../notes/cluster-health/).
 
 ## REF
 
