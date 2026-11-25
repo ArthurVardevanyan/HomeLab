@@ -23,6 +23,11 @@ receivers:
         webhook_url: https://discord.com/api/webhooks/<path:secret/data/gitlab/discord#alert-webhook>
         title: |
           {{- if gt (len .Alerts.Firing) 0 }} [FIRING]: {{- else }} [RESOLVED]: {{- end }}  {{ .CommonLabels.alertname }}
+  # Black-hole receiver: it defines no integrations, so any alert
+  # routed to it is dropped silently. Used by the mute route below.
+  - name: pdb-primary-noop
+  # NOTE: the "lightspeed" receiver has no integrations configured,
+  # so it currently drops notifications silently (no-op).
   - name: lightspeed
 route:
   group_by:
@@ -32,6 +37,16 @@ route:
   receiver: discord
   repeat_interval: 12h
   routes:
+    # First matching route wins. CloudNativePG creates <cluster>-primary
+    # PDBs with minAvailable=1, so their disruptionsAllowed is 0 while
+    # fully healthy and the stock PodDisruptionBudgetAtLimit rule fires
+    # for them permanently. Black-hole that structural noise before it
+    # reaches the notification routes below. Real PDB breaches
+    # (PodDisruptionBudgetLimit) are unaffected and still notify.
+    - receiver: pdb-primary-noop
+      matchers:
+        - alertname="PodDisruptionBudgetAtLimit"
+        - poddisruptionbudget=~".*-primary$"
     - receiver: lightspeed
       matchers:
         - severity=~"critical|warning"
