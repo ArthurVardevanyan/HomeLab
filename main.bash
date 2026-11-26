@@ -1842,17 +1842,22 @@ update_install_plans() {
     echo -e "\nPending: ${CSV} in ${NAMESPACE}"
 
     # Find the subscription file matching this namespace
-    SUB_FILE=$(grep -rl "namespace: ${NAMESPACE}$" --include="subscription.yaml" kubernetes/ okd/ 2>/dev/null | head -1)
+    SUB_FILE=$(grep -rl "namespace: ${NAMESPACE}$" --include="subscription.yaml" kubernetes/ okd/ 2>/dev/null | head -1) || SUB_FILE=""
 
-    if [[ -z "${SUB_FILE}"  ]]; then
+    if [[ -z "${SUB_FILE}" ]]; then
       echo "  WARNING: No subscription file found for namespace '${NAMESPACE}'"
       continue
     fi
 
     # Get current startingCSV from the file
-    CURRENT_CSV=$(grep 'startingCSV:' "${SUB_FILE}" | sed 's/.*startingCSV:[[:space:]]*//' | tr -d '"' | tr -d "'" | awk '{print $1}')
+    CURRENT_CSV=$(grep 'startingCSV:' "${SUB_FILE}" | sed 's/.*startingCSV:[[:space:]]*//' | tr -d '"' | tr -d "'" | awk '{print $1}') || CURRENT_CSV=""
 
-    if [[ "${CURRENT_CSV}" == "${CSV}"  ]]; then
+    if [[ -z "${CURRENT_CSV}" ]]; then
+      echo "  WARNING: No startingCSV in ${SUB_FILE}, manual review required"
+      continue
+    fi
+
+    if [[ "${CURRENT_CSV}" == "${CSV}" ]]; then
       echo "  Already up to date: ${SUB_FILE}"
       continue
     fi
@@ -1884,7 +1889,7 @@ approve_install_plans() {
     kubectl patch installplan "${NAME}" -n "${NAMESPACE}" --type merge --patch '{"spec":{"approved":true}}'
 
     # Find and update the subscription file matching this namespace
-    SUB_FILE=$(grep -rl "namespace: ${NAMESPACE}" --include="subscription.yaml" kubernetes/ okd/ 2>/dev/null | head -1)
+    SUB_FILE=$(grep -rl "namespace: ${NAMESPACE}$" --include="subscription.yaml" kubernetes/ okd/ 2>/dev/null | head -1) || SUB_FILE=""
 
     if [[ -z "${SUB_FILE}" ]]; then
       echo "    WARNING: No subscription file found for namespace '${NAMESPACE}'"
@@ -1892,7 +1897,12 @@ approve_install_plans() {
     fi
 
     # Get current startingCSV from the file
-    CURRENT_CSV=$(grep 'startingCSV:' "${SUB_FILE}" | sed 's/.*startingCSV:[[:space:]]*//' | tr -d '"' | tr -d "'" | tr -d '\r' | awk '{print $1}')
+    CURRENT_CSV=$(grep 'startingCSV:' "${SUB_FILE}" | sed 's/.*startingCSV:[[:space:]]*//' | tr -d '"' | tr -d "'" | tr -d '\r' | awk '{print $1}') || CURRENT_CSV=""
+
+    if [[ -z "${CURRENT_CSV}" ]]; then
+      echo "    WARNING: No startingCSV in ${SUB_FILE}, manual review required"
+      continue
+    fi
 
     if [[ "${CURRENT_CSV}" == "${CSV}" ]]; then
       echo "    Already up to date: ${SUB_FILE} (${CSV})"
