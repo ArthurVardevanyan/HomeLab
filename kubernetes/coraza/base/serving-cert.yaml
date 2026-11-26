@@ -1,0 +1,42 @@
+---
+# Self-signed CA issuer for the operator's xDS serving certificate.
+apiVersion: cert-manager.io/v1
+kind: Issuer
+metadata:
+  name: coraza-xds-ca
+  namespace: coraza-system
+  annotations:
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+spec:
+  selfSigned: {}
+---
+# Serving certificate for the operator's ECDS (xDS) listener and the WASM asset
+# endpoint. The chart renders with tls.generate=false because ArgoCD re-renders
+# Helm templates on every sync and would mint a fresh CA each time, breaking the
+# CA bundle inlined into EnvoyFilters. The Deployment mounts the
+# <release>-serving-cert Secret by default, so this Certificate must keep the
+# secret name below. The SANs mirror the ones the chart's generate path would
+# produce.
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: coraza-kubernetes-operator-serving-cert
+  namespace: coraza-system
+  annotations:
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+spec:
+  secretName: coraza-kubernetes-operator-serving-cert
+  duration: 2160h # 90d
+  renewBeforePercentage: 33
+  privateKey:
+    rotationPolicy: Always
+    algorithm: ECDSA
+    size: 256
+  dnsNames:
+    - coraza-kubernetes-operator
+    - coraza-kubernetes-operator.coraza-system
+    - coraza-kubernetes-operator.coraza-system.svc
+    - coraza-kubernetes-operator.coraza-system.svc.cluster.local
+  issuerRef:
+    kind: Issuer
+    name: coraza-xds-ca

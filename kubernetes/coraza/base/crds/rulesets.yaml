@@ -3,7 +3,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.19.0
+    controller-gen.kubebuilder.io/version: v0.21.0
   name: rulesets.waf.k8s.coraza.io
 spec:
   group: waf.k8s.coraza.io
@@ -46,32 +46,55 @@ spec:
             spec:
               description: spec defines the desired state of RuleSet.
               properties:
-                ruleData:
+                data:
                   description: |-
-                    ruleData contains the name of a secret with the required data for rules.
-                    Usually rules that contain the directive '@pmFromFile'.
-                    This secret must be created containing the type coraza/data otherwise it will
-                    not be watched.
-                    Additionally, the secret must contain the name of each file as the key, and the content
-                    of the file as the value
-                  minLength: 1
-                  type: string
-                rules:
-                  description: |-
-                    rules is an ordered list of references to ConfigMaps that contain the
-                    firewall rules to be compiled into a complete set.
-
-                    Each entry refers to a ConfigMap by name in the same namespace as
-                    the RuleSet. The ConfigMap must contain a "rules" key.
+                    data is an optional list of references to RuleData objects in the same
+                    namespace as the RuleSet. Data entries are merged to provide the
+                    filesystem for @pmFromFile directives (last-listed wins on duplicate keys).
                   items:
-                    description:
-                      RuleSourceReference is a reference to a ConfigMap that
-                      contains WAF rules.
+                    description: |-
+                      DataReference is a reference to a RuleData object in the same namespace
+                      as the RuleSet.
                     properties:
                       name:
                         description:
-                          name is the name of the ConfigMap in the same namespace
+                          name is the name of the RuleData in the same namespace
                           as the RuleSet.
+                        maxLength: 253
+                        minLength: 1
+                        type: string
+                    required:
+                      - name
+                    type: object
+                  maxItems: 256
+                  minItems: 1
+                  type: array
+                  x-kubernetes-list-type: atomic
+                emptyRulesPolicy:
+                  default: Reject
+                  description: |-
+                    emptyRulesPolicy controls how an assembled RuleSet with no rules is
+                    treated. Reject fails acceptance; Allow accepts and renders an explicit
+                    no-op payload. Empty rules are never treated as missing.
+                  enum:
+                    - Reject
+                    - Allow
+                  type: string
+                sources:
+                  description: |-
+                    sources is an ordered list of references to RuleSource objects in the
+                    same namespace as the RuleSet. Sources are concatenated in list order
+                    to form the aggregated SecLang string.
+                  items:
+                    description: |-
+                      SourceReference is a reference to a RuleSource object in the same namespace
+                      as the RuleSet.
+                    properties:
+                      name:
+                        description:
+                          name is the name of the RuleSource in the same
+                          namespace as the RuleSet.
+                        maxLength: 253
                         minLength: 1
                         type: string
                     required:
@@ -82,18 +105,42 @@ spec:
                   type: array
                   x-kubernetes-list-type: atomic
               required:
-                - rules
+                - sources
               type: object
             status:
               description: status defines the observed state of RuleSet.
+              minProperties: 1
               properties:
+                acceptedContent:
+                  description: |-
+                    acceptedContent records the last accepted assembled content. It survives
+                    desired-input degradation.
+                  properties:
+                    contentHash:
+                      description: |-
+                        contentHash is the deterministic hash of the accepted assembled content,
+                        in the form sha256:<64 lowercase hexadecimal characters>.
+                      maxLength: 71
+                      minLength: 71
+                      type: string
+                    observedGeneration:
+                      description:
+                        observedGeneration is the RuleSet generation whose
+                        content was accepted.
+                      format: int64
+                      minimum: 1
+                      type: integer
+                  required:
+                    - contentHash
+                    - observedGeneration
+                  type: object
                 conditions:
                   description: |-
                     conditions represent the current state of the RuleSet resource.
                     Each condition has a unique type and reflects the status of a specific aspect of the resource.
 
                     Standard condition types include:
-                    - "Ready": the RuleSet has been processed and and the rules have been cached
+                    - "Ready": the RuleSet has been processed and the rules have been cached
                     - "Progressing": the resource is being created or updated
                     - "Degraded": the resource failed to reach or maintain its desired state
 
@@ -153,6 +200,8 @@ spec:
                       - status
                       - type
                     type: object
+                  maxItems: 16
+                  minItems: 1
                   type: array
                   x-kubernetes-list-map-keys:
                     - type

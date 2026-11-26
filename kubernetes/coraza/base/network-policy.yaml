@@ -1,97 +1,37 @@
 ---
+# Source: coraza-kubernetes-operator/templates/networkpolicy.yaml
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
-  name: deny-all-coraza
+  name: coraza-kubernetes-operator-default-deny
   namespace: coraza-system
+  labels:
+    helm.sh/chart: coraza-kubernetes-operator-0.5.0
+    app.kubernetes.io/name: coraza-kubernetes-operator
+    app.kubernetes.io/instance: coraza-kubernetes-operator
+    control-plane: coraza-controller-manager
+    app.kubernetes.io/version: "0.5.0"
+    app.kubernetes.io/managed-by: Helm
 spec:
-  podSelector: {}
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: coraza-kubernetes-operator
+      app.kubernetes.io/instance: coraza-kubernetes-operator
+      control-plane: coraza-controller-manager
   policyTypes:
     - Ingress
-    - Egress
-
----
-apiVersion: networking.k8s.io/v1
-kind: NetworkPolicy
-metadata:
-  name: allow-from-ingress
-  namespace: coraza-system
-spec:
-  podSelector: {}
+  # The cache server port (18080) is NOT listed below on purpose.
+  # Per-Engine NetworkPolicies are created dynamically by the controller to
+  # allow only the specific gateway workloads that need xDS access. Kubernetes
+  # NetworkPolicies are additive, so those policies extend this one without
+  # conflict.
   ingress:
-    - from:
-        - namespaceSelector:
-            matchLabels:
-              kubernetes.io/metadata.name: openshift-ingress
-
----
-apiVersion: networking.k8s.io/v1
-kind: NetworkPolicy
-metadata:
-  name: allow-egress-dns
-  namespace: coraza-system
-spec:
-  podSelector: {}
-  policyTypes:
-    - Egress
-  egress:
-    - to:
-        - namespaceSelector:
-            matchLabels:
-              kubernetes.io/metadata.name: openshift-dns
-          podSelector:
-            matchLabels:
-              dns.operator.openshift.io/daemonset-dns: default
-      ports:
-        - port: 53
-          protocol: UDP
-        - port: 53
+    # Health probes (startup, liveness, readiness) — the kubelet connects
+    # from the node IP so no source restriction is applied.
+    - ports:
+        - port: 8081
           protocol: TCP
----
-apiVersion: networking.k8s.io/v1
-kind: NetworkPolicy
-metadata:
-  name: allow-openshift-monitoring
-  namespace: coraza-system
-spec:
-  policyTypes:
-    - Ingress
-  podSelector: {}
-  ingress:
-    - from:
-        - namespaceSelector:
-            matchLabels:
-              name: openshift-monitoring
-          podSelector:
-            matchLabels:
-              app.kubernetes.io/name: prometheus
-        - namespaceSelector:
-            matchLabels:
-              name: openshift-user-workload-monitoring
-          podSelector:
-            matchLabels:
-              app.kubernetes.io/name: prometheus
-      ports:
-        - protocol: TCP
-          port: 8082
----
-apiVersion: networking.k8s.io/v1
-kind: NetworkPolicy
-metadata:
-  name: allow-api-server
-  namespace: coraza-system
-spec:
-  podSelector: {}
-  policyTypes:
-    - Egress
-  egress:
-    - to:
-        - podSelector:
-            matchLabels:
-              app: openshift-kube-apiserver
-          namespaceSelector:
-            matchLabels:
-              kubernetes.io/metadata.name: openshift-kube-apiserver
-      ports:
-        - protocol: TCP
-          port: 6443
+    # Metrics endpoint (HTTPS with authentication).
+    - ports:
+        - port: 8443
+          protocol: TCP

@@ -6,11 +6,11 @@ metadata:
   name: coraza-kubernetes-operator
   namespace: coraza-system
   labels:
-    helm.sh/chart: coraza-kubernetes-operator-0.1.0
+    helm.sh/chart: coraza-kubernetes-operator-0.5.0
     app.kubernetes.io/name: coraza-kubernetes-operator
     app.kubernetes.io/instance: coraza-kubernetes-operator
     control-plane: coraza-controller-manager
-    app.kubernetes.io/version: "0.2.0"
+    app.kubernetes.io/version: "0.5.0"
     app.kubernetes.io/managed-by: Helm
 spec:
   selector:
@@ -23,5 +23,16 @@ spec:
       interval: 30s
       scrapeTimeout: 10s
       scheme: https
+      # Coraza CR metrics use a `namespace` label for the resource namespace. Without
+      # honorLabels, Prometheus overwrites it with the operator pod namespace.
+      # Operator metrics must not emit `job` or `instance` labels; the guard below
+      # drops them if they ever appear so scrape-target identity stays authoritative.
+      honorLabels: true
+      bearerTokenFile: /var/run/secrets/kubernetes.io/serviceaccount/token
       tlsConfig:
+        # No CA provided; skip TLS verification for the
+        # self-signed or unverifiable metrics certificate.
         insecureSkipVerify: true
+      metricRelabelings:
+        - action: labeldrop
+          regex: ^(job|instance)$

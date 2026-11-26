@@ -6,23 +6,23 @@ metadata:
   name: coraza-kubernetes-operator
   namespace: coraza-system
   labels:
-    helm.sh/chart: coraza-kubernetes-operator-0.1.0
+    helm.sh/chart: coraza-kubernetes-operator-0.5.0
     app.kubernetes.io/name: coraza-kubernetes-operator
     app.kubernetes.io/instance: coraza-kubernetes-operator
     control-plane: coraza-controller-manager
-    app.kubernetes.io/version: "0.2.0"
+    app.kubernetes.io/version: "0.5.0"
     app.kubernetes.io/managed-by: Helm
 spec:
   type: ClusterIP
   ports:
-    - name: http
-      port: 80
+    - name: ecds
+      port: 18080
       protocol: TCP
-      targetPort: http-proxy
+      targetPort: xds
     - name: metrics
-      port: 8082
+      port: 8443
       protocol: TCP
-      targetPort: http
+      targetPort: metrics
   selector:
     app.kubernetes.io/name: coraza-kubernetes-operator
     app.kubernetes.io/instance: coraza-kubernetes-operator

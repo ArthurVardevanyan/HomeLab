@@ -6,14 +6,14 @@ metadata:
   name: coraza-kubernetes-operator
   namespace: coraza-system
   labels:
-    helm.sh/chart: coraza-kubernetes-operator-0.1.0
+    helm.sh/chart: coraza-kubernetes-operator-0.5.0
     app.kubernetes.io/name: coraza-kubernetes-operator
     app.kubernetes.io/instance: coraza-kubernetes-operator
     control-plane: coraza-controller-manager
-    app.kubernetes.io/version: "0.2.0"
+    app.kubernetes.io/version: "0.5.0"
     app.kubernetes.io/managed-by: Helm
 spec:
-  replicas: 1 # HA Currently not working due to cache  being tied to leader election
+  replicas: 1
   selector:
     matchLabels:
       app.kubernetes.io/name: coraza-kubernetes-operator
@@ -28,9 +28,6 @@ spec:
         app.kubernetes.io/instance: coraza-kubernetes-operator
         control-plane: coraza-controller-manager
     spec:
-      dnsPolicy: ClusterFirst
-      restartPolicy: Always
-      schedulerName: default-scheduler
       securityContext:
         runAsNonRoot: true
         fsGroupChangePolicy: OnRootMismatch
@@ -38,32 +35,49 @@ spec:
           type: RuntimeDefault
       automountServiceAccountToken: true
       enableServiceLinks: false
-      topologySpreadConstraints:
-        - labelSelector:
-            matchLabels:
-              app.kubernetes.io/name: coraza-kubernetes-operator
-          maxSkew: 1
-          topologyKey: topology.kubernetes.io/zone
-          whenUnsatisfiable: DoNotSchedule
-        - labelSelector:
-            matchLabels:
-              app.kubernetes.io/name: coraza-kubernetes-operator
-          maxSkew: 1
-          topologyKey: kubernetes.io/hostname
-          whenUnsatisfiable: DoNotSchedule
       containers:
         - name: manager
-          image: registry.arthurvardevanyan.com/homelab/coraza-kubernetes-operator:3.0-image@sha256:f4e47674e1d2c4d613ddfa89bb3e7181081d60136d3cf07944c4d2491534efeb
-          imagePullPolicy: IfNotPresent #"ghcr.io/networking-incubator/coraza-kubernetes-operator:latest"
+          # Built from upstream main@9793e9899cc8a81ed741194d81356f50c3dbee5a
+          # (dogfood: ECDS + bundled envoy-coraza with CRS v4.30.0 embedded);
+          # see kubernetes/coraza/README.md for the rebuild procedure.
+          image: "registry.arthurvardevanyan.com/homelab/coraza-kubernetes-operator:main-20261119-9793e98@sha256:c07bd261dae21fb1e4e29f3402ad5f933e04df8e083d354f445327426dcdf311"
+          imagePullPolicy: IfNotPresent
           command:
             - /manager
           args:
             - --leader-elect=true
             - --health-probe-bind-address=:8081
-            - --metrics-bind-address=:8082
-            - --metrics-secure=true
+            - --metrics-bind-address=:8443
             - --envoy-cluster-name=outbound|80||coraza-kubernetes-operator.coraza-system.svc.cluster.local
-            - --cache-gc-interval=3s
+            - --cache-gc-interval=5m
+            - --istio-revision=openshift-gateway
+            - --operator-name=coraza-kubernetes-operator
+            - --xds-cert-path=/etc/coraza-tls
+            - --xds-cert-name=tls.crt
+            - --xds-key-name=tls.key
+            - --xds-ca-path=/etc/coraza-tls/ca.crt
+            - --xds-auth-failure-rate=10
+            - --xds-auth-failure-burst=1024
+            - --zap-devel=false
+            - --zap-encoder=json
+            - --zap-log-level=info
+            - --zap-stacktrace-level=error
+            - --zap-time-encoding=rfc3339nano
+          ports:
+            - name: xds
+              containerPort: 18080
+              protocol: TCP
+            - name: metrics
+              containerPort: 8443
+              protocol: TCP
+            - name: health
+              containerPort: 8081
+              protocol: TCP
+          env:
+            - name: POD_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
           securityContext:
             runAsNonRoot: true
             privileged: false
@@ -101,19 +115,13 @@ spec:
             periodSeconds: 10
             successThreshold: 1
             failureThreshold: 3
-          ports:
-            - containerPort: 18080
-              name: http-proxy
-              protocol: TCP
-            - containerPort: 8082
-              name: http
-              protocol: TCP
-            - containerPort: 8081
-              name: health
-              protocol: TCP
+          volumeMounts:
+            - name: xds-serving-cert
+              mountPath: /etc/coraza-tls
+              readOnly: true
           resources:
             limits:
-              cpu: 30m
+              cpu: 500m
               memory: 256Mi
             requests:
               cpu: 10m
@@ -123,5 +131,12 @@ spec:
               restartPolicy: NotRequired
             - resourceName: memory
               restartPolicy: NotRequired
+      volumes:
+        - name: xds-serving-cert
+          secret:
+            secretName: coraza-kubernetes-operator-serving-cert
       serviceAccountName: coraza-kubernetes-operator
       terminationGracePeriodSeconds: 10
+      restartPolicy: Always
+      schedulerName: default-scheduler
+      dnsPolicy: ClusterFirst
